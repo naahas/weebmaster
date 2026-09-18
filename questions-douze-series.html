@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">60 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Ikigami","d":"easy","t":"Que reçoit la personne désignée, 24 heures avant sa mort ?","s":"Ikigami","p":"https://fr.wikipedia.org/wiki/Ikigami","b":1,"r":["L'ikigami, son préavis de mort","Une convocation au ministère","Un cercueil à son nom","Une lettre de ses proches","Un billet de train gratuit","Rien, personne n'est prévenu"],"src":"ils reçoivent de la part d'un fonctionnaire l'ikigami, leur préavis de mort qui les informe qu'il ne leur reste plus que 24 heures avant de mourir pour la nation."},{"g":"Ikigami","d":"medium","t":"Quelle proportion d'enfants reçoit le vaccin contenant la capsule mortelle ?","s":"Ikigami","p":"https://fr.wikipedia.org/wiki/Ikigami","b":1,"r":["Un sur mille","Un sur cent","Un sur dix mille","Un sur dix","Un sur cinq cents","Un sur un million"],"src":"Parmi ces enfants, un sur mille reçoit un vaccin différent des autres car il contient une micro-capsule indétectable."},{"g":"Ikigami","d":"medium","t":"Entre quels âges la capsule se déclenche-t-elle ?","s":"Ikigami","p":"https://fr.wikipedia.org/wiki/Ikigami","b":1,"r":["Entre 18 et 24 ans","Entre 20 et 30 ans","Entre 15 et 20 ans","Entre 25 et 35 ans","Entre 18 et 21 ans","À 25 ans exactement"],"src":"La capsule est programmée pour détruire le cœur de l'individu tiré au sort entre ses 18 et 24 ans."},{"g":"Ikigami","d":"hard","t":"Quel est le métier de Kengo Fujimoto, le héros de la série ?","s":"Ikigami","p":"https://fr.wikipedia.org/wiki/Ikigami","b":1,"r":["Fonctionnaire chargé de remettre les préavis de mort","Médecin qui pose les capsules","Policier","Journaliste clandestin","Fossoyeur","Professeur d'école primaire"],"src":"Kengo Fujimoto est le héros de cette histoire. Fonctionnaire travaillant pour la prospérité nationale, son rôle est de distribuer l'ikigami et d'assurer le suivi du dossier."},{"g":"Ikigami","d":"hard","t":"Quel but officiel l'État donne-t-il à ce système ?","s":"Ikigami","p":"https://fr.wikipedia.org/wiki/Ikigami","b":1,"r":["Faire prendre conscience aux adultes de la valeur de la vie","Réguler la population","Éliminer les opposants politiques","Sélectionner les plus forts","Financer les retraites","Tester un vaccin militaire"],"src":"Le but de cette action est de donner conscience aux adultes de la valeur de la vie."},{"g":"Jagaaan","d":"medium","t":"Quel est le métier de Shintarô Jagasaki ?","s":"Jagaaan","p":"https://fr.wikipedia.org/wiki/Jagaaan","b":1,"r":["Policier de quartier","Pompier","Livreur","Professeur","Journaliste","Vétérinaire"],"src":"Shintarô Jagasaki est un policier vivant une vie ennuyeuse, il s'imagine tirer sur tout ce qui l'énerve."},{"g":"Jagaaan","d":"medium","t":"Quel phénomène déclenche les transformations en monstres ?","s":"Jagaaan","p":"https://fr.wikipedia.org/wiki/Jagaaan","b":1,"r":["Une pluie de grenouilles","Une éclipse","Une épidémie","Une pluie de météores","Un tremblement de terre","Un gaz relâché dans le métro"],"src":"Après une pluie de grenouilles, certains humains perdent la raison en se transformant en monstre."},{"g":"Jagaaan","d":"hard","t":"Comment appelle-t-on les humains transformés en monstres ?","s":"Jagaaan","p":"https://fr.wikipedia.org/wiki/Jagaaan","b":1,"r":["Les humains brisés","Les grenouilles","Les déchus","Les mutants","Les possédés","Les corrompus"],"src":"certains humains perdent la raison en se transformant en monstre, ils sont appelés : les humains brisés."},{"g":"Jagaaan","d":"hard","t":"Quel animal choisit Shintarô et devient son partenaire ?","s":"Jagaaan","p":"https://fr.wikipedia.org/wiki/Jagaaan","b":1,"r":["Une chouette","Un corbeau","Un chat","Un serpent","Une grenouille","Un chien"],"src":"Choisi par une étrange chouette nommée Doku, Shintarô va devenir Jagaaan."},{"g":"Jagaaan","d":"veryhard","t":"De quoi la chouette Doku se nourrit-elle avec délectation ?","s":"Jagaaan","p":"https://fr.wikipedia.org/wiki/Jagaaan","b":1,"r":["De grenouilles","De souris","De chair humaine","D'insectes","De poissons","Elle ne mange pas"],"src":"Il s'agit d'une chouette adorant dévorer les grenouilles. C'est le partenaire de Shintarou Jagasaki."},{"g":"Black Torch","d":"medium","t":"Quelle capacité particulière Jiro possède-t-il dès le départ ?","s":"Black Torch","p":"https://fr.wikipedia.org/wiki/Black_Torch","b":1,"r":["Parler avec les animaux","Devenir invisible","Voir l'avenir","Manipuler le feu","Se dédoubler","Guérir ses blessures"],"src":"Jiro est un adolescent descendant d'une famille de ninja qui a la capacité de parler avec les animaux."},{"g":"Black Torch","d":"medium","t":"De quelle lignée Jiro est-il issu ?","s":"Black Torch","p":"https://fr.wikipedia.org/wiki/Black_Torch","b":1,"r":["Une famille de ninja","Une famille de moines","Une famille de samouraïs","Une famille d'exorcistes","Une famille de forgerons","Aucune, il est orphelin"],"src":"Jiro est un adolescent descendant d'une famille de ninja."},{"g":"Black Torch","d":"hard","t":"Quelle est la véritable nature du chat que Jiro secourt ?","s":"Black Torch","p":"https://fr.wikipedia.org/wiki/Black_Torch","b":1,"r":["Un Mononoke","Un démon-renard","Un esprit protecteur de sa famille","Un ninja transformé","Un dieu déchu","Un simple chat"],"src":"Il se trouve que le félin n'est pas qu'un simple chat mais est un puissant Mononoke."},{"g":"Black Torch","d":"hard","t":"Comment s'appelle le chat noir que Jiro sauve ?","s":"Black Torch","p":"https://fr.wikipedia.org/wiki/Black_Torch","b":1,"r":["Rago","Koga","Amagi","Doku","Shiba","Kirihara"],"src":"Ragō : Mononoke à l'apparence d'un chat noir."},{"g":"Black Torch","d":"hard","t":"Que devient Jiro après avoir fusionné avec Rago ?","s":"Black Torch","p":"https://fr.wikipedia.org/wiki/Black_Torch","b":1,"r":["Le premier être combinant un Mononoke et un humain","Un Mononoke à part entière","Le chef du Bureau des investigations","Un fantôme","Un chat","Il ne survit pas à la fusion"],"src":"Pour secourir son sauveur, Rago décide de fusionner avec lui, ce qui donne naissance au premier être combinant un Mononoke et un humain."},{"g":"Sun-Ken Rock","d":"medium","t":"Dans quel pays Ken Kitano part-il s'installer ?","s":"Sun-Ken Rock","p":"https://fr.wikipedia.org/wiki/Sun-Ken_Rock","b":1,"r":["La Corée du Sud","La Chine","Taïwan","Les États-Unis","La Thaïlande","Le Japon, il n'en part pas"],"src":"Ken Kitano, un jeune Japonais, débarque à Séoul afin d'intégrer les forces de police comme Yumin, la fille qu'il aime."},{"g":"Sun-Ken Rock","d":"medium","t":"Pourquoi Ken quitte-t-il le Japon ?","s":"Sun-Ken Rock","p":"https://fr.wikipedia.org/wiki/Sun-Ken_Rock","b":1,"r":["Pour rejoindre Yumin, la fille qu'il aime","Pour fuir les yakuzas","Pour ouvrir un restaurant","Pour retrouver son frère","Pour faire carrière dans la boxe","Pour échapper à la prison"],"src":"Ken Kitano débarque à Séoul afin d'intégrer les forces de police comme Yumin, la fille qu'il aime."},{"g":"Sun-Ken Rock","d":"hard","t":"Quel métier Yumin exerce-t-elle ?","s":"Sun-Ken Rock","p":"https://fr.wikipedia.org/wiki/Sun-Ken_Rock","b":1,"r":["Policière","Infirmière","Avocate","Journaliste","Institutrice","Chanteuse"],"src":"Elle quitte le Japon pour devenir policière en Corée du Sud."},{"g":"Sun-Ken Rock","d":"hard","t":"Que devient finalement Ken, lui qui voulait entrer dans la police ?","s":"Sun-Ken Rock","p":"https://fr.wikipedia.org/wiki/Sun-Ken_Rock","b":1,"r":["Le chef d'un gang","Policier, comme prévu","Patron d'un restaurant","Garde du corps de Yumin","Boxeur professionnel","Vendeur de jeux vidéo"],"src":"Il deviendra finalement le leader de la Sun-Ken Rock Team."},{"g":"Sun-Ken Rock","d":"veryhard","t":"Quel mensonge Ken entretient-il auprès de Yumin sur son métier ?","s":"Sun-Ken Rock","p":"https://fr.wikipedia.org/wiki/Sun-Ken_Rock","b":1,"r":["Elle le croit employé d'une entreprise de jeux vidéo","Elle le croit policier","Elle le croit étudiant","Elle le croit au chômage","Elle le croit reparti au Japon","Elle sait tout depuis le début"],"src":"Il cache souvent sa véritable position. Par exemple, Yumin le croit employé d'une entreprise de jeux vidéos."},{"g":"Battle Royale","d":"easy","t":"Combien de survivants le jeu Battle Royale doit-il laisser ?","s":"Battle Royale","p":"https://fr.wikipedia.org/wiki/Battle_Royale_(manga)","b":1,"r":["Un seul","Deux","Aucun","Trois","La moitié de la classe","Cela dépend des années"],"src":"les élèves doivent s'entretuer jusqu'à ce qu'il n'y ait plus qu'un seul survivant."},{"g":"Battle Royale","d":"medium","t":"Combien d'élèves compose la classe choisie pour le jeu ?","s":"Battle Royale","p":"https://fr.wikipedia.org/wiki/Battle_Royale_(manga)","b":1,"r":["42","30","50","24","36","60"],"src":"une classe de troisième de 42 élèves est choisie au hasard et envoyée dans un lieu isolé."},{"g":"Battle Royale","d":"medium","t":"Quel niveau scolaire est concerné par la loi Battle Royale ?","s":"Battle Royale","p":"https://fr.wikipedia.org/wiki/Battle_Royale_(manga)","b":1,"r":["Une classe de 3e de collège","Une classe de terminale","Une classe de primaire","Une promotion d'université","Une classe de seconde","N'importe quel niveau"],"src":"Battle Royale est destinée une fois par an à une classe choisie parmi toutes les classes de 3e de collège du pays, c'est-à-dire au terme de la période d'éducation scolaire obligatoire."},{"g":"Battle Royale","d":"hard","t":"Comment s'appelle le pays totalitaire où se déroule l'histoire ?","s":"Battle Royale","p":"https://fr.wikipedia.org/wiki/Battle_Royale_(manga)","b":1,"r":["La République de l'Est","La Grande République","L'Empire du Soleil","La Fédération du Nord","Le Pays Uni","Il n'est jamais nommé"],"src":"Dans un pays sous un joug totalitaire appelé « République de l'Est », les adultes redoutent les adolescents, trop enclins à la violence."},{"g":"Battle Royale","d":"hard","t":"À quelle fréquence le jeu Battle Royale a-t-il lieu ?","s":"Battle Royale","p":"https://fr.wikipedia.org/wiki/Battle_Royale_(manga)","b":1,"r":["Une fois par an","Une fois par mois","Tous les cinq ans","Deux fois par an","Tous les dix ans","Sans périodicité fixe"],"src":"Battle Royale est destinée une fois par an à une classe choisie parmi toutes les classes de 3e de collège du pays."},{"g":"Kingdom","d":"easy","t":"Quel est le rêve de Shin ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["Devenir le plus grand général sous les cieux","Devenir empereur","Venger son village","Devenir le plus riche marchand de Chine","Fonder son propre royaume","Devenir le garde du corps du roi"],"src":"le récit suit le jeune Shin dans son chemin vers l'accomplissement de son rêve : devenir le plus grand Général sous les cieux."},{"g":"Kingdom","d":"medium","t":"De quel royaume Shin est-il originaire ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["Qin","Zhao","Wei","Chu","Han","Yan"],"src":"Shin est originaire de l'État de Qin en proie à de nombreux soubresauts."},{"g":"Kingdom","d":"medium","t":"Entre combien de royaumes la Chine est-elle divisée dans Kingdom ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["Sept","Cinq","Trois","Neuf","Dix","Douze"],"src":"quand la Chine était divisée entre sept royaumes : Qin, Zhao, Han, Wei, Chu, Yan et Qi."},{"g":"Kingdom","d":"hard","t":"À quelle période historique Kingdom se déroule-t-il ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["La période des Royaumes combattants","La dynastie Tang","La période des Trois Royaumes","La dynastie Ming","La dynastie Han","Une époque entièrement imaginaire"],"src":"L'histoire se déroule durant la période des Royaumes combattants au IIIe siècle av. J.-C."},{"g":"Kingdom","d":"hard","t":"Que deviendra Ei Sei, le jeune roi que Shin accompagne ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["Le premier empereur à unifier la Chine","Un général vaincu et oublié","Le fondateur de la dynastie Han","Un tyran renversé par Shin","Un moine retiré du monde","Le roi du royaume de Zhao"],"src":"on suit également l'histoire de Ei Sei (inspiré du roi Ying Zheng), l'homme qui sera par la suite connu comme l'empereur Qin Shi Huang, l'unificateur de la Chine."},{"g":"Slam Dunk","d":"easy","t":"De qui Sakuragi tombe-t-il amoureux en entrant au lycée ?","s":"Slam Dunk","p":"https://fr.wikipedia.org/wiki/Slam_Dunk_(manga)","b":1,"r":["Haruko Akagi","Ayako","Yohei","Hikoichi","Sa voisine de classe","Personne"],"src":"Il y rencontre alors Haruko Akagi, une fille dont il tombe amoureux."},{"g":"Slam Dunk","d":"medium","t":"Quel lien unit Haruko au capitaine de l'équipe, Takenori Akagi ?","s":"Slam Dunk","p":"https://fr.wikipedia.org/wiki/Slam_Dunk_(manga)","b":1,"r":["C'est son grand frère","C'est son cousin","C'est son petit ami","C'est son père","Aucun lien","C'est son voisin"],"src":"Sakuragi finit par gagner et apprend que le capitaine n'est autre que le grand frère d'Haruko : Takenori Akagi."},{"g":"Slam Dunk","d":"medium","t":"De quel joueur Haruko est-elle amoureuse ?","s":"Slam Dunk","p":"https://fr.wikipedia.org/wiki/Slam_Dunk_(manga)","b":1,"r":["Kaede Rukawa","Hanamichi Sakuragi","Hisashi Mitsui","Ryota Miyagi","Takenori Akagi","Personne"],"src":"le garçon dont est amoureuse Haruko, Kaede Rukawa, idole de toutes les filles et joueur de première année le plus talentueux du département."},{"g":"Slam Dunk","d":"hard","t":"Quel joueur de Shohoku avait été élu MVP au collège ?","s":"Slam Dunk","p":"https://fr.wikipedia.org/wiki/Slam_Dunk_(manga)","b":1,"r":["Hisashi Mitsui","Kaede Rukawa","Takenori Akagi","Ryota Miyagi","Hanamichi Sakuragi","Kiminobu Kogure"],"src":"Ils sont rejoints plus tard par Mitsui Hisashi (MVP au collège) et Riyota Miyagi."},{"g":"Slam Dunk","d":"medium","t":"Quel titre l'équipe de Shohoku cherche-t-elle à conquérir ?","s":"Slam Dunk","p":"https://fr.wikipedia.org/wiki/Slam_Dunk_(manga)","b":1,"r":["Le titre national","Le titre départemental seulement","Le championnat d'Asie","Une place en NBA","Le tournoi de la ville","Aucun, ils jouent pour le plaisir"],"src":"Rukawa, Akagi et Sakuragi se lancent à la conquête du titre national."},{"g":"The Promised Neverland","d":"easy","t":"Comment les enfants de Grace Field appellent-ils Isabella ?","s":"The Promised Neverland","p":"https://fr.wikipedia.org/wiki/The_Promised_Neverland","b":1,"r":["« Maman »","« Madame »","« La Directrice »","« Sœur »","« Tante »","Par son prénom"],"src":"la femme qu'ils nomment « Maman » (Isabella) s'occupe d'eux et leur offre tout l'amour qu'une mère pourrait offrir."},{"g":"The Promised Neverland","d":"medium","t":"Que sont réellement les enfants de Grace Field House ?","s":"The Promised Neverland","p":"https://fr.wikipedia.org/wiki/The_Promised_Neverland","b":1,"r":["Du bétail destiné à des démons","Des cobayes d'expériences","De futurs soldats","Des clones","Des otages politiques","De vrais orphelins, rien de plus"],"src":"Emma et Norman découvrent que les enfants de cet orphelinat sont en réalité du bétail destiné à des démons."},{"g":"The Promised Neverland","d":"medium","t":"Le départ de quelle fillette met Emma et Norman sur la piste de la vérité ?","s":"The Promised Neverland","p":"https://fr.wikipedia.org/wiki/The_Promised_Neverland","b":1,"r":["Conny","Phil","Gilda","Anna","Sherry","Don"],"src":"Un soir, après le départ d'une fille appelée Conny, Emma et Norman découvrent que les enfants de cet orphelinat sont en réalité du bétail."},{"g":"The Promised Neverland","d":"medium","t":"Qui découvre la vérité en même temps qu'Emma, ce soir-là ?","s":"The Promised Neverland","p":"https://fr.wikipedia.org/wiki/The_Promised_Neverland","b":1,"r":["Norman","Ray","Gilda","Don","Phil","Personne, elle est seule"],"src":"Emma et Norman découvrent que les enfants de cet orphelinat sont en réalité du bétail destiné à des démons."},{"g":"The Promised Neverland","d":"hard","t":"À qui les enfants sont-ils livrés en quittant l'orphelinat ?","s":"The Promised Neverland","p":"https://fr.wikipedia.org/wiki/The_Promised_Neverland","b":1,"r":["À des démons","À des familles adoptives","À l'armée","À un laboratoire","À un orphelinat voisin","À personne, ils sont libérés"],"src":"Ils sont élevés dans une ferme à l'allure d'orphelinat, et livrés à des monstres avec le consentement de « Maman »."},{"g":"Hokuto no Ken","d":"easy","t":"Quelle catastrophe a ravagé le monde de Ken le Survivant ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["Une guerre nucléaire","Une épidémie","Une invasion extraterrestre","Une famine mondiale","Un impact de météore","Un tremblement de terre planétaire"],"src":"L'histoire se déroule sur une terre ravagée par une guerre nucléaire, ayant eu pour conséquence l'évaporation de la plupart des mers et océans."},{"g":"Hokuto no Ken","d":"medium","t":"Combien de cicatrices Kenshiro porte-t-il sur le torse ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["Sept","Cinq","Trois","Neuf","Six","Quatre"],"src":"un homme reconnaissable aux sept cicatrices qu'il porte sur le torse (formant la constellation de la Grande Ourse)."},{"g":"Hokuto no Ken","d":"medium","t":"Quelle constellation les cicatrices de Kenshiro dessinent-elles ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["La Grande Ourse","Orion","Cassiopée","La Croix du Sud","Le Scorpion","Le Dragon"],"src":"les sept cicatrices qu'il porte sur le torse (formant la constellation de la Grande Ourse)."},{"g":"Hokuto no Ken","d":"hard","t":"Que signifie « Hokuto » dans le titre original ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["La Grande Ourse","Le Poing du Nord","L'Étoile Polaire","Le Ciel Brisé","Le Survivant","La Voie du Sang"],"src":"Hokuto no Ken (北斗の拳, trad. litt. : « Le Poing de la Grande Ourse ») […] En japonais, la Grande Ourse se dit Hokuto (北斗)."},{"g":"Hokuto no Ken","d":"hard","t":"À quelle décennie l'histoire de Ken le Survivant est-elle censée se dérouler ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["Les années 1990","Les années 2050","Les années 2200","Les années 1970","Un futur indéterminé, sans date","Les années 2010"],"src":"L'histoire se déroule dans les années 1990 (ce qui était alors un futur relativement proche). Lors de l'introduction de la série animée on peut lire « 199X »."},{"g":"Saint Seiya","d":"veryeasy","t":"Quelle déesse les Chevaliers du Zodiaque servent-ils ?","s":"Saint Seiya","p":"https://fr.wikipedia.org/wiki/Saint_Seiya","b":1,"r":["Athéna","Artémis","Héra","Aphrodite","Déméter","Perséphone"],"src":"Les Chevaliers sont les défenseurs d'Athéna, déesse de la guerre juste et de la sagesse."},{"g":"Saint Seiya","d":"easy","t":"Comment s'appelle l'énergie intérieure que les Chevaliers font brûler ?","s":"Saint Seiya","p":"https://fr.wikipedia.org/wiki/Saint_Seiya","b":1,"r":["Le Cosmos","Le Ki","Le Chakra","L'Éther","L'Aura","Le Souffle"],"src":"Les Chevaliers puisent leur puissance dans le Cosmos, l'énergie de l'univers présente en chaque être."},{"g":"Saint Seiya","d":"medium","t":"Combien de Chevaliers d'Or existe-t-il ?","s":"Saint Seiya","p":"https://fr.wikipedia.org/wiki/Saint_Seiya","b":1,"r":["Douze","Dix","Huit","Quatorze","Treize","Vingt-quatre"],"src":"Les douze Chevaliers d'Or correspondent aux douze signes du zodiaque et gardent chacun un temple du Sanctuaire."},{"g":"Saint Seiya","d":"easy","t":"Sur quoi les armures des Chevaliers sont-elles fondées ?","s":"Saint Seiya","p":"https://fr.wikipedia.org/wiki/Saint_Seiya","b":1,"r":["Les constellations","Les éléments naturels","Les animaux du zodiaque chinois","Les dieux de l'Olympe","Les métaux précieux","Les saisons"],"src":"Chaque Chevalier porte une armure représentant une constellation."},{"g":"Saint Seiya","d":"medium","t":"Comment s'appelle le domaine grec où résident les Chevaliers d'Or ?","s":"Saint Seiya","p":"https://fr.wikipedia.org/wiki/Saint_Seiya","b":1,"r":["Le Sanctuaire","L'Olympe","Le Temple d'Athéna","La Citadelle","Le Palais du Pope","Les Enfers"],"src":"Les douze Chevaliers d'Or gardent chacun un temple du Sanctuaire, en Grèce."},{"g":"Kagurabachi","d":"medium","t":"Comment s'appelle le père de Chihiro ?","s":"Kagurabachi","p":"https://kagurabachi.fandom.com/wiki/Chihiro_Rokuhira","b":1,"r":["Kunishige Rokuhira","Chiaki Soga","Sojo","Shiba","Azami","Hiyuki"],"src":"Chihiro is the son of Chiaki Soga, the Princess Soga of the Soga Clan, and Kunishige Rokuhira, a famed swordsmith."},{"g":"Kagurabachi","d":"hard","t":"Quel groupe est responsable de la mort du père de Chihiro ?","s":"Kagurabachi","p":"https://kagurabachi.fandom.com/wiki/Chihiro_Rokuhira","b":1,"r":["Les Hishaku","Le clan Soga","Le Rakuzaichi","Les Kamunabi","Le clan Rokuhira","L'armée de Seitei"],"src":"hunting down the Hishaku, the group of sorcerers responsible for his father's death and theft of the swords."},{"g":"Kagurabachi","d":"medium","t":"À quoi Chihiro consacre-t-il sa vie après la mort de son père ?","s":"Kagurabachi","p":"https://kagurabachi.fandom.com/wiki/Chihiro_Rokuhira","b":1,"r":["Récupérer les lames volées et traquer les coupables","Reprendre la forge de son père","Fonder sa propre école de sabre","Protéger sa mère","Rejoindre l'armée","Oublier et refaire sa vie"],"src":"Chihiro dedicates his life to retrieving his father's stolen Enchanted Blades and hunting down the Hishaku."},{"g":"Kagurabachi","d":"veryhard","t":"Dans quelle guerre les lames forgées par le père de Chihiro ont-elles joué un rôle décisif ?","s":"Kagurabachi","p":"https://kagurabachi.fandom.com/wiki/Chihiro_Rokuhira","b":1,"r":["La guerre de Seitei","La guerre des Six Clans","La guerre du Rakuzaichi","La guerre des Sorciers","La guerre de Soga","Aucune, elles sont récentes"],"src":"Kunishige Rokuhira, a famed swordsmith renowned for crafting the six Enchanted Blades, which contributed greatly to winning the Seitei War."},{"g":"Kagurabachi","d":"veryhard","t":"De quel clan la mère de Chihiro est-elle la princesse ?","s":"Kagurabachi","p":"https://kagurabachi.fandom.com/wiki/Chihiro_Rokuhira","b":1,"r":["Le clan Soga","Le clan Rokuhira","Le clan Hishaku","Le clan Sazanami","Le clan Kamunabi","Aucun, elle est roturière"],"src":"Chihiro is the son of Chiaki Soga, the Princess Soga of the Soga Clan."},{"g":"YuGiOh","d":"easy","t":"Comment s'appelle le jeu de cartes au cœur de la série ?","s":"YuGiOh","p":"https://yugioh.fandom.com/fr/wiki/Duel_de_Monstres","b":1,"r":["Duel de Monstres","Duel Masters","Battle Spirits","Cardfight","Monster Arena","Le Jeu des Ombres"],"src":"Duel de Monstres (Duel Monsters) est le jeu de cartes autour duquel tourne toute la série."},{"g":"YuGiOh","d":"medium","t":"Qui a créé le jeu Duel de Monstres ?","s":"YuGiOh","p":"https://yugioh.fandom.com/fr/wiki/Maximillion_Pegasus","b":1,"r":["Maximillion Pegasus","Seto Kaiba","Le grand-père de Yugi","Marik Ishtar","Le Pharaon","Sugoroku Muto"],"src":"Maximillion Pegasus est le créateur du jeu Duel de Monstres, qu'il a conçu à partir des Jeux des Ombres de l'Égypte antique."},{"g":"YuGiOh","d":"easy","t":"Quelle entreprise Seto Kaiba dirige-t-il ?","s":"YuGiOh","p":"https://yugioh.fandom.com/fr/wiki/Seto_Kaiba","b":1,"r":["La KaibaCorp","Industrial Illusions","La Schroeder Corp","Le Kame Game Shop","La Domino Corp","Aucune, il est encore lycéen"],"src":"Seto Kaiba est le président-directeur général de la KaibaCorp."},{"g":"YuGiOh","d":"medium","t":"Quel objet du Millénium Yugi a-t-il assemblé lui-même ?","s":"YuGiOh","p":"https://yugioh.fandom.com/fr/wiki/Puzzle_du_Mill%C3%A9nium","b":1,"r":["Le Puzzle du Millénium","L'Anneau du Millénium","L'Œil du Millénium","La Clé du Millénium","La Balance du Millénium","Le Sceptre du Millénium"],"src":"Yugi Muto a passé huit ans à reconstituer le Puzzle du Millénium, que lui avait confié son grand-père."},{"g":"YuGiOh","d":"hard","t":"Comment s'appelle le tournoi organisé par Pegasus sur son île ?","s":"YuGiOh","p":"https://yugioh.fandom.com/fr/wiki/Royaume_des_Duellistes","b":1,"r":["Le Royaume des Duellistes","Battle City","Le Grand Tournoi du Millénium","La Coupe KaibaCorp","Le Tournoi des Ombres","L'Arène des Champions"],"src":"Le Royaume des Duellistes est le tournoi organisé par Maximillion Pegasus sur son île privée."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

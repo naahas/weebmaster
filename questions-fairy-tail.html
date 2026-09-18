@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">50 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Zeref","d":"easy","t":"Comment Zeref est-il surnommé ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Le Mage Noir","Le Roi des Démons","Le Mage Immortel","Le Maudit","L'Empereur Sombre","Le Dernier Mage"],"src":"Zeleph Dragnir, surnommé le Mage Noir, est un Mage utilisant la Magie Noire."},{"g":"Zeref","d":"medium","t":"Quel lien de parenté unit Zeref et Natsu ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Zeref est son grand frère","Zeref est son père","Zeref est son oncle","Zeref est son fils","Ils sont jumeaux","Aucun, c'est une rumeur"],"src":"Il est le père d'August et le grand frère de Natsu Dragnir."},{"g":"Zeref","d":"hard","t":"Depuis combien de temps Zeref est-il censé avoir vécu ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Plus de 400 ans","Plus de 100 ans","Plus de 1 000 ans","Plus de 200 ans","Plus de 50 ans","Plus de 700 ans"],"src":"Il est censé avoir vécu il y a plus de 400 ans mais il apparaît sur l'Île de Tenrô sous l'apparence d'un jeune homme d'une vingtaine d'années."},{"g":"Zeref","d":"hard","t":"Que cherchait Zeref en étudiant la magie, avant d'être maudit ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Ramener son frère à la vie","Devenir immortel","Créer une nouvelle race de dragons","Détruire les guildes noires","Comprendre l'origine de la magie","Fonder sa propre guilde"],"src":"Celui-ci cherchait à savoir la raison de la vie et de la mort, après avoir vécu le décès de son frère et de ses parents. […] Il faisait ça pour faire revivre son frère."},{"g":"Zeref","d":"veryhard","t":"Quel dieu a jeté sa malédiction sur Zeref ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Ankseram","Ishgar","Ether","Alvarez","Meldian","Nirvana"],"src":"C'est à ce moment là qu'il reçut la malédiction d'Ankseram, tuant sur le coup toutes les personnes aux alentours."},{"g":"Zeref","d":"veryhard","t":"Comment s'appelle la malédiction qui tue tout ce qui approche Zeref ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["La Malédiction Contradictoire","La Malédiction du Vide","La Vague de la Mort","La Malédiction d'Ankseram","Le Sceau Noir","La Malédiction Éternelle"],"src":"Malédiction Contradictoire : Zeleph possède la capacité de voler la vie de tout ce qui s'approche de lui. Cette Malédiction le rend également immortel."},{"g":"Zeref","d":"veryhard","t":"Dans quelle intention Zeref a-t-il créé ses démons ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Pour qu'ils parviennent à le tuer","Pour conquérir Ishgar","Pour remplacer les dragons","Pour protéger son frère","Pour servir d'armée à Alvarez","Pour percer le secret de l'immortalité"],"src":"Il aurait créé les démons issus de ses livres pour que ceux-ci puissent le tuer, car il ne peut pas mourir naturellement en raison de son immortalité."},{"g":"Zeref","d":"hard","t":"Que signifie E.N.D., le nom du plus puissant démon de Zeref ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Etherias Natsu Dragneel","Eternal Night Demon","Etherias Nine Demons","End of Natsu Dragneel","Eclipse Night Dragon","Etherias Noir Dragneel"],"src":"Alors il créa E.N.D, ou Etherias Natsu Dragnir."},{"g":"Zeref","d":"veryhard","t":"Comment Zeref appelle-t-il les démons issus de ses livres ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Des Etherias","Des Spriggans","Des Lacrimas","Des Ætherions","Des Nirvanas","Des Ankserams"],"src":"créant les démons du livre de Zeleph, qu'il appelait Ætherias, du fait qu'ils étaient faits à partir d'éther, la base de la magie."},{"g":"Zeref","d":"extreme","t":"De quoi les démons de Zeref sont-ils faits ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["D'éther, la base de la magie","De sang de dragon","De Lacrima brisée","De l'âme de ses victimes","De magie noire pure","De poussière d'étoile"],"src":"qu'il appelait Ætherias, du fait qu'ils étaient faits à partir d'éther, la base de la magie."},{"g":"Zeref","d":"hard","t":"Qu'est-ce qui a protégé Natsu de la Vague de la Mort de Zeref ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["L'écharpe que lui avait donnée Igneel","Sa magie de Dragon Slayer","La Sphère des Fées de Mavis","Son lien de sang avec Zeref","Le sceau de Makarov","Rien, il a failli mourir"],"src":"toutes choses se trouvant autour de lui viennent à mourir, sauf Natsu, qui par miracle, a pu survivre grâce à l'écharpe qu'Ignir lui avait offerte."},{"g":"Zeref","d":"veryhard","t":"Qu'arrive-t-il à l'écharpe de Natsu quand elle absorbe la Vague de la Mort ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Elle devient noire","Elle se déchire","Elle prend feu","Elle devient blanche","Elle disparaît","Elle ne change pas"],"src":"lorsqu'il se prend de plein fouet la vague de la mort, son écharpe devient noire. […] Wendy est incapable de soigner Natsu tant que son écharpe contient le sort."},{"g":"Zeref","d":"extreme","t":"Pourquoi Wendy ne peut-elle pas soigner Natsu après la Vague de la Mort ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Le sort reste retenu dans son écharpe","Sa magie ne soigne pas les Dragon Slayers","Elle a épuisé sa magie","La magie noire lui est étrangère","Natsu refuse ses soins","Zeref l'en empêche"],"src":"Wendy est incapable de soigner Natsu tant que son écharpe contient le sort."},{"g":"Zeref","d":"hard","t":"Quel est le seul être que Zeref craigne ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Acnologia","Natsu","Mavis","August","Igneel","Makarov"],"src":"Le seul être que Zeleph craint est Acnologia."},{"g":"Zeref","d":"extreme","t":"Qui a appris la magie à Mavis et aux fondateurs de Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Zeref","Makarov","Precht","Igneel","Warrod","Personne, ils ont appris seuls"],"src":"Il a rencontré Mavis, Zera, Yûri, Worlod et Hades dix jours avant la création de Fairy Tail, et leur a appris à mieux maîtriser la magie, faisant de lui un fondateur indirect de Fairy Tail.","n":"C'est vertigineux et peu connu : le Mage Noir est le <b>fondateur indirect</b> de Fairy Tail."},{"g":"Zeref","d":"extreme","t":"Combien de temps avant la création de Fairy Tail Zeref a-t-il rencontré ses fondateurs ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Dix jours","Un an","Dix ans","Un mois","Cent ans","Le jour même"],"src":"Il a rencontré Mavis, Zera, Yûri, Worlod et Hades dix jours avant la création de Fairy Tail."},{"g":"Zeref","d":"veryhard","t":"Quelle fonction Zeref occupe-t-il dans l'Empire d'Alvarez ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Empereur Spriggan","Général en chef","Grand Prêtre","Conseiller de l'ombre","Ambassadeur","Aucune, il s'y cache"],"src":"Zeleph est l'Empereur Spriggan, dirigeant d'Arbaless."},{"g":"Zeref","d":"extreme","t":"Qu'a inventé Zeref pour tenter de ressusciter son frère ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Le système R et la Porte Éclipse","La Lacrima et le Lumen Histoire","Le Nirvana et la Sphère des Fées","Les clés du zodiaque","La Tour du Paradis seule","Les Etherias"],"src":"Il a créé les plans du R-système et du Portail Éclipse pour ressusciter son petit frère Natsu Dragnir."},{"g":"Acnologia","d":"medium","t":"Comment Acnologia est-il surnommé ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Le Dragon Noir de l'Apocalypse","Le Dragon de Feu Écarlate","Le Seigneur des Cieux","Le Dragon Blanc de l'Aube","Le Dernier Dragon","Le Dragon d'Acier"],"src":"Acnologia est le Dragon Noir de l'Apocalypse, il est connu comme étant le Roi des Dragons."},{"g":"Acnologia","d":"hard","t":"Qu'était Acnologia avant de devenir un dragon ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Un humain qui soignait les dragons","Un dragon depuis toujours","Un démon de Zeref","Un Exceed","Un esprit stellaire","Un mage de Fairy Tail"],"src":"Acnologia était un humain, qui soignait les dragons grâce à sa magie."},{"g":"Acnologia","d":"veryhard","t":"Qu'est-ce qui a transformé Acnologia en dragon ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["La surutilisation de sa magie et les bains dans le sang des dragons","Une malédiction de Zeref","Un pacte passé avec le Roi des Dragons","L'absorption d'une Lacrima de dragon","La Porte Éclipse","Il est né ainsi"],"src":"en raison de la surutilisation de la magie de chasseur de dragons et de ses bains incessants dans le sang des dragons qu'il a tués, lui fit subir la dragonification."},{"g":"Acnologia","d":"hard","t":"Quelle capacité rend Acnologia unique parmi les chasseurs de dragons ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Il peut absorber toutes les magies","Il peut voler sans ailes","Il peut ressusciter les dragons","Il ne souffre d'aucun mal des transports","Il peut parler à tous les dragons","Il ne vieillit pas"],"src":"Ainsi que le Dragon Maléfique, car contrairement aux autres chasseurs de Dragon, il peut absorber toutes les magies."},{"g":"Acnologia","d":"extreme","t":"Que signifie le nom « Acnologia » ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Oracle maléfique","Fin du monde","Roi sans couronne","Souffle de cendre","Sang de dragon","Nuit éternelle"],"src":"Son nom signifie « oracle maléfique »."},{"g":"Acnologia","d":"veryhard","t":"À quelle date les dragons se sont-ils retirés d'Earthland ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Le 7 juillet X777","Le 7 juillet X784","Le 1er janvier X777","Le 7 juillet X686","Le 7 juillet X791","Le 3 mars X777"],"src":"Contrairement aux autres dragons qui se sont retirés d'Earthland le 7 Juillet X777, lui est toujours vivant."},{"g":"Acnologia","d":"extreme","t":"Quelle faiblesse bien connue Acnologia partage-t-il avec tous les chasseurs de dragons ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Le mal des transports","La peur du feu","L'incapacité à nager","La sensibilité au tonnerre","Le besoin de manger son élément","La perte de magie au contact de l'eau"],"src":"Il a le mal des transports comme tous les chasseurs de dragons. En tant que chasseur de dragons le plus puissant, son mal des transports doit être le plus fort également."},{"g":"Acnologia","d":"hard","t":"Comment s'appelle le hurlement dévastateur d'Acnologia ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Giga Flare","Aetherion","Dragon Force","Crush","Nirvana","Lumen Histoire"],"src":"Giga Flare : le Hurlement du Dragon propre à la magie d'Acnologia, consistant en un rayon hyper-concentré de magie."},{"g":"Acnologia","d":"veryhard","t":"Qu'est-ce qui a sauvé l'Île de Tenrô du hurlement d'Acnologia ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["La Sphère des Fées de Mavis","La Loi des Fées de Makarov","Le sacrifice de Gildarts","Le bouclier de Freed","La Lumen Histoire","Rien, elle a été détruite"],"src":"Ce sort aurait pu détruire l'île Tenro si Mavis ne l'avait pas protégée avec la Sphère des Fées."},{"g":"Acnologia","d":"extreme","t":"Quel membre des Spriggan 12 Acnologia a-t-il tué à mains nues ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["God Serena","August","Irene","Brandish","Jacob Lessio","Ajeel"],"src":"Il a une force phénoménale, suffisante pour renverser facilement Makarof Draer lorsqu'il est sous sa forme de dragon ou tuer God Serena à main nue, en une seule attaque."},{"g":"Acnologia","d":"veryhard","t":"Que cherche Acnologia à faire disparaître ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Tous les chasseurs de dragons","Toutes les guildes légales","L'humanité entière","Les Exceeds","Les esprits stellaires","Zeref uniquement"],"src":"Il cherche à éliminer tous les chasseurs de Dragons, ou plus précisément ceux qui possèdent la Magie des Dragons, de sorte à faire disparaître leur héritage et par extension leur race entière."},{"g":"Mavis","d":"medium","t":"Quel rôle Mavis Vermillion a-t-elle tenu dans Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Elle en fut la première maître","Elle en fut la troisième maître","Elle n'en a jamais fait partie","Elle en fut la bibliothécaire","Elle en fut la conseillère","Elle en fut la septième maître"],"src":"Elle est la première et la seule femme à avoir été maître de Fairy Tail jusqu'à ce qu'Erza le devienne."},{"g":"Mavis","d":"hard","t":"Quel surnom Mavis doit-elle à son sens de la stratégie ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["La Fée Tacticienne","La Fée Blanche","La Petite Reine","La Fée Éternelle","La Stratège Immortelle","La Fée d'Émeraude"],"src":"ce qui lui vaut le surnom de « Mavis, la Fée Tacticienne »."},{"g":"Mavis","d":"veryhard","t":"Combien d'années Mavis a-t-elle passées à étudier les stratégies militaires ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Sept ans","Trois ans","Dix ans","Cinq ans","Un an","Vingt ans"],"src":"à cause du fait qu'elle ait étudié pendant 7 ans les stratégies militaires."},{"g":"Mavis","d":"veryhard","t":"Qu'est-ce qui rend Mavis unique vis-à-vis des trois grandes magies de Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Elle est la seule à pouvoir utiliser les trois","Elle les a toutes les trois inventées","Elle n'en maîtrise aucune","Elle en a scellé deux sur trois","Elle les a apprises de Zeref","Elle les a transmises à Makarov"],"src":"Elle est la seule personne connue pouvant utiliser les trois grandes magies de Fairy Tail."},{"g":"Mavis","d":"extreme","t":"Que se révèle être Lumen Histoire, l'arme ultime de Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Le corps de Mavis enfermé dans un cristal","Un livre écrit par Zeref","Une Lacrima contenant un dragon","La véritable Loi des Fées","Le sceau d'Acnologia","Une épée forgée par les dragons"],"src":"L'arme ultime de Fairy Tail, Lumen Histoire, se révèle être le corps de Mavis enfermé dans un cristal (ou Lacrima), se trouvant dans les sous-sols du premier bâtiment de la guilde."},{"g":"Mavis","d":"extreme","t":"Où se trouve Lumen Histoire ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Dans les sous-sols du premier bâtiment de la guilde","Sur l'Île de Tenrô","Au Conseil de la Magie","Dans la tombe de Mavis","Au palais royal de Fiore","Nul ne le sait"],"src":"se trouvant dans les sous-sols du premier bâtiment de la guilde."},{"g":"Mavis","d":"extreme","t":"Sous quel genre Hiro Mashima avait-il d'abord imaginé Mavis ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Un homme","Une femme adulte","Un Exceed","Un dragon","Un enfant sans genre défini","Un esprit stellaire"],"src":"Au début, Hiro Mashima avait imaginé ce personnage comme un homme, ayant appris que Mavis allait plus à une femme, au lieu de changer son nom, il a revu le design complet du personnage.","n":"Le détail qui rend l'anecdote savoureuse : il a gardé le <b>nom</b> et refait tout le reste."},{"g":"Mavis","d":"veryhard","t":"Quelle autre femme est devenue maître de Fairy Tail après Mavis ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Mavis_Vermillion","b":1,"r":["Erza","Mirajane","Cana","Lucy","Wendy","Aucune"],"src":"Elle est la première et la seule femme à avoir été maître de Fairy Tail jusqu'à ce qu'Erza le devienne."},{"g":"Gildarts","d":"medium","t":"Quel rang Gildarts occupe-t-il parmi les mages de Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Le plus puissant de la guilde","Le second après Makarov","Le plus puissant des Rang S seulement","Le plus ancien membre","Le plus puissant après Laxus","Un mage de rang moyen"],"src":"il est le plus puissant mage de Fairy Tail et en fut également le 5e maître."},{"g":"Gildarts","d":"hard","t":"Comment s'appelle la magie de Gildarts ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Crush","Giga Flare","Fairy Glitter","Desassemblage","Nirvana","Aetherion"],"src":"Gildarts possède une magie, Crush, extrêmement destructrice, qui peut réduire les objets en miettes."},{"g":"Gildarts","d":"hard","t":"Qu'est-ce que Gildarts a perdu lors de son affrontement avec Acnologia ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Son bras gauche, sa jambe gauche et des organes internes","Son bras droit seulement","Sa magie","Ses deux jambes","La vue","Sa mémoire"],"src":"Acnologia a vaincu Gildarts Clive en lui arrachant le bras gauche, la jambe gauche et certains de ses organes internes."},{"g":"Gildarts","d":"veryhard","t":"Quelle quête Gildarts effectuait-il lorsqu'il a croisé Acnologia ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Une quête de 100 ans","Une quête de 10 ans","Une quête de Rang S ordinaire","Une mission du Conseil","Une quête de 50 ans","Une mission personnelle"],"src":"Il est connu pour avoir pris à la fois une quête de 10 ans ainsi que de 100 ans de travail. Sur cette quête, il a rencontré Acnologia."},{"g":"Gildarts","d":"extreme","t":"Qu'est-ce que la « configuration Gildarts » à Magnolia ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["La ville se réorganise pour lui ouvrir une route déserte","Un quartier entier lui est réservé","Une tour bâtie en son honneur","Le nom de son plan de bataille","La disposition des tables à la guilde","Un tarif spécial dans les auberges"],"src":"les citoyens ont laissé la guilde réorganiser la disposition de la ville chaque fois qu'il s'en approche, ce qui permet la création d'une grande route déserte qui lui permet de marcher jusqu'à la guilde en évitant tout dommage.","n":"La raison est délicieuse : avec sa magie d'effondrement, il traverse les murs au lieu de contourner les maisons."},{"g":"Gildarts","d":"extreme","t":"Quelle particularité Gildarts détient-il parmi les maîtres de Fairy Tail ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Il est resté maître le moins longtemps","Il est le seul à avoir été maître deux fois","Il est le seul à avoir refusé le titre","Il est le plus jeune à l'avoir été","Il est le seul maître non membre de la guilde","Il n'a jamais été maître"],"src":"Lorsque le maître lui propose de devenir maître de guilde, il réfléchit et refuse le lendemain ; il est donc, d'un certain côté, le maître qui est resté maître le moins longtemps."},{"g":"Gildarts","d":"veryhard","t":"Qu'est-ce qui rend le retour de Gildarts de sa mission de 100 ans exceptionnel ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Il fut le seul à en revenir vivant","Il l'a terminée en un an","Il l'a accomplie sans magie","Il est revenu rajeuni","Il a ramené un dragon avec lui","Il n'en est jamais vraiment revenu"],"src":"Il fut le seul à revenir vivant (selon Makarof) de la mission de 100 ans dans laquelle il dut affronter seul Acnologia."},{"g":"Gildarts","d":"extreme","t":"Comment Gildarts sort-il du bâtiment de la guilde ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Il détruit un bout du mur","Par la fenêtre","Par le toit","Par la porte, comme tout le monde","Il se téléporte","Par les sous-sols"],"src":"À la guilde, il n'utilise pas la porte pour sortir, mais détruit un bout du mur."},{"g":"Gildarts","d":"extreme","t":"Comment Gildarts était-il appelé avant de partir explorer le monde ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Gildarts_Clive","b":1,"r":["Gildarts de l'Ouest","Gildarts le Destructeur","Gildarts l'Errant","Gildarts du Nord","Le Poing de Fairy Tail","Le Cinquième"],"src":"Gildarts Clive, auparavant appelé Gildarts de l'Ouest car il fut le mage le plus puissant de l'Ouest de Fiore avant qu'il ne parte en exploration du monde."},{"g":"Zeref","d":"hard","t":"Lequel de ces démons n'a PAS été créé par Zeref ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Acnologia","Lullaby","Deliora","E.N.D.","Aucun, il les a tous créés","Les Etherias"],"src":"Il est à l'origine de la création des démons tels que la Lullaby, Déliora, ainsi que de la transformation du chasseur de dragon Acnologia en véritable dragon.","n":"⚠️ Piège assumé : Zeref a bien joué un rôle dans la <b>transformation</b> d'Acnologia, mais celui-ci n'est pas un démon de ses livres — c'était un humain."},{"g":"Zeref","d":"veryhard","t":"Dans quel établissement Zeref étudiait-il la magie il y a 400 ans ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["L'Institut de Magie de Meldian","L'Académie de Magnolia","L'Université d'Ishgar","Le Conseil de la Magie","L'École de Tenrô","La Tour du Paradis"],"src":"Il y a 400 ans, dans l'Institut de Magie de Meldian, étudiait le jeune Zeleph."},{"g":"Zeref","d":"extreme","t":"Quel est le lien entre Zeref et August, l'un des Spriggan 12 ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Zeleph_Dragnir","b":1,"r":["Zeref est son père","Zeref est son frère","August est son premier démon","August est son maître","Aucun lien connu","August est son fils adoptif"],"src":"Il est le père d'August et le grand frère de Natsu Dragnir."},{"g":"Acnologia","d":"extreme","t":"Pourquoi Acnologia refuse-t-il de parler aux humains ?","s":"Fairy Tail","p":"https://fairytail.fandom.com/fr/wiki/Acnologia","b":1,"r":["Il les considère comme des insectes","Il en a perdu la capacité en devenant dragon","Il a fait le vœu de se taire","Il ne comprend plus leur langue","Il les méprise depuis la mort d'Igneel","Il leur parle, au contraire"],"src":"Il ne parle pas aux humains car il les considère comme des insectes bien qu'il ait été humain lui-même."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>
