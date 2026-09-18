@@ -244,10 +244,22 @@ createApp({
             // Les vingt et une séries de bombdata.json, avec leur vrai nom.
             // Douze seulement étaient proposées : les neuf autres existaient en
             // données sans que personne puisse les choisir.
+            //
+            // ⏳ MESURE TEMPORAIRE : quatre séries sont retirées du choix, le
+            // temps d'étoffer leurs listes de personnages — Studios, Chainsaw
+            // Man, Death Note et Gintama. Elles sont ici, en commentaire : les
+            // remettre, c'est retirer les barres.
+            //
+            // ⚠️ Contrairement aux filtres du quiz, il n'y a RIEN à faire côté
+            // serveur, et c'est un défaut à connaître : « /admin/toggle-game »
+            // écrit « gameState.bombanime.serie = bombanimeSerie || 'Naruto' »
+            // sans vérifier que la série existe. Retirer une entrée d'ici la
+            // masque donc dans le tiroir, mais ne la REFUSE pas à qui forgerait
+            // la requête à la main.
             bombanimeSeries: [
                 { id: 'Prota', nom: 'Protagonistes' },
                 { id: 'Manganime', nom: 'Manganime' },
-                { id: 'Studio', nom: 'Studios' },
+                // { id: 'Studio', nom: 'Studios' },   ⏳ suspendue
                 { id: 'Naruto', nom: 'Naruto' },
                 { id: 'OnePiece', nom: 'One Piece' },
                 { id: 'Dbz', nom: 'Dragon Ball' },
@@ -260,10 +272,10 @@ createApp({
                 { id: 'Mha', nom: 'My Hero Academia' },
                 { id: 'BlackClover', nom: 'Black Clover' },
                 { id: 'Jojo', nom: 'JoJo' },
-                { id: 'ChainsawMan', nom: 'Chainsaw Man' },
-                { id: 'DeathNote', nom: 'Death Note' },
+                // { id: 'ChainsawMan', nom: 'Chainsaw Man' },   ⏳ suspendue
+                // { id: 'DeathNote', nom: 'Death Note' },       ⏳ suspendue
                 { id: 'Fma', nom: 'Fullmetal Alchemist' },
-                { id: 'Gintama', nom: 'Gintama' },
+                // { id: 'Gintama', nom: 'Gintama' },            ⏳ suspendue
                 { id: 'Pokemon', nom: 'Pokémon' },
                 { id: 'Reborn', nom: 'Reborn' },
             ],
@@ -4916,13 +4928,32 @@ createApp({
                     this.needsReconnect = false;
                 }
 
-                // 🆕 Re-joindre le lobby si l'état a été restauré (sauf si kick)
-                const wasKicked = sessionStorage.getItem('wasKicked');
+                // ⚠️ RE-JOINDRE LE SALON À CHAQUE RECONNEXION, et non une seule fois.
+                //
+                // C'était un drapeau à usage unique : « shouldRejoinLobby » n'est
+                // posé qu'au chargement de la page, dans « restoreGameState », et il
+                // était consommé ici. La PREMIÈRE reconnexion rejoignait le salon,
+                // toutes les suivantes non.
+                //
+                // Or socket.io se reconnecte tout seul en permanence — écran
+                // verrouillé, changement de réseau, onglet en arrière-plan, simple
+                // micro-coupure. Passé le sursis de soixante secondes, le serveur
+                // retire le joueur de « gameState.players » ; à son retour, rien ne
+                // l'y remettait. Son écran continuait d'afficher le salon (l'état
+                // local n'a rien perdu) pendant que l'hôte ne le voyait plus. Il
+                // fallait rafraîchir — ce qui repassait par « restoreGameState » et
+                // rearmait le drapeau.
+                //
+                // On teste donc l'ÉTAT RÉEL et non un drapeau : si l'on se croit dans
+                // un salon, on le redit au serveur. « join-lobby » retrouve l'entrée
+                // par « playerId » et la rebranche, il est donc idempotent.
                 // Reste de la v1 : le joueur choisissait son camp, donc pas de camp
                 // sauvegardé = pas de rejointure. En v2 c'est l'hôte qui répartit, et
                 // ce garde-fou faisait sortir du salon quiconque rafraîchissait sa page
                 // en mode équipes — l'hôte compris.
-                if (this.shouldRejoinLobby && this.isGameActive && !this.gameInProgress && !wasKicked) {
+                const wasKicked = sessionStorage.getItem('wasKicked');
+                const dansUnSalon = (this.hasJoined || this.shouldRejoinLobby) && !!this.roomCode;
+                if (dansUnSalon && this.isGameActive && !this.gameInProgress && !wasKicked) {
                     this.socket.emit('join-lobby', {
                         playerId: this.playerId,
                         username: this.username,
@@ -4930,7 +4961,7 @@ createApp({
                         hostToken: this.hostToken,
                     });
                     this.shouldRejoinLobby = false;
-                    console.log('✅ Re-jointure automatique du lobby après refresh');
+                    console.log('✅ Re-jointure du salon après (re)connexion');
                 } else if (wasKicked) {
                     console.log('🚫 Rejoin auto bloqué - joueur kick');
                     this.shouldRejoinLobby = false;

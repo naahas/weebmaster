@@ -5935,7 +5935,14 @@ io.on('connection', (socket) => {
             (data.playerId ? [...rooms.values()].find(r =>
                 [...r.players.values()].some(p => p.playerId === data.playerId)) : null);
 
-        if (data.playerId && gameState && gameState.isActive) {
+        // ⚠️ Pas de « && gameState.isActive » ici. Un salon peut légitimement
+        // avoir « isActive » à faux tout en gardant ses joueurs : c'est le cas
+        // à la fin d'une Classique SANS VAINQUEUR, où le serveur referme le
+        // salon sans le vider. Une reconnexion tombant dans cette fenêtre était
+        // ignorée, et le joueur restait orphelin — sa socket neuve n'était
+        // rattachée à rien. Le salon a de toute façon été retrouvé par le
+        // playerId juste au-dessus : s'il existe, le joueur en fait partie.
+        if (data.playerId && gameState) {
             socket.data.roomCode = gameState.roomCode;
             socket.join(gameState.roomCode);
             for (const [oldSocketId, player] of gameState.players.entries()) {

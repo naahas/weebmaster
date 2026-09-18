@@ -41,7 +41,8 @@
     "openings:convertir": "node scripts/openings-convertir.js",
     "rush:page": "node scripts/rush-page.js . rush-personnages.html",
     "stop": "node scripts/stop.js",
-    "restart": "node scripts/stop.js && npm start"
+    "restart": "node scripts/stop.js && npm start",
+    "test:rejointure": "node scripts/test-rejointure.js"
   },
   "keywords": [
     "quiz",
