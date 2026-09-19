@@ -81,9 +81,13 @@
     color: var(--col-or);
     border-color: rgba(255, 210, 74, 0.55);
     background: rgba(255, 210, 74, 0.09);
-    animation: colReglesBat 1.6s ease-in-out infinite;
+    animation: colReglesBat 1.5s ease-out infinite;
 }
-.col-regles-bouton.appelle::after {
+/* DEUX ondes, décalées. Une seule, régulière, se confondait avec le fond animé
+   du feutre ; le décalage donne le coup de tambour. Le second cercle vit sur
+   « ::before », libre sur ce bouton, et reste hors du flux malgré la grille. */
+.col-regles-bouton.appelle::after,
+.col-regles-bouton.appelle::before {
     content: '';
     position: absolute;
     inset: -0.2rem;
@@ -91,17 +95,26 @@
     border-radius: 0.85rem;
     opacity: 0;
     pointer-events: none;
-    animation: colReglesOnde 1.6s ease-out infinite;
+    animation: colReglesOnde 1.5s ease-out infinite;
 }
+.col-regles-bouton.appelle::before { animation-delay: 0.24s; }
 
+/* Deux battements rapprochés, puis un temps mort qui occupe plus de la moitié
+   du cycle. C'est le silence qui rend le coup suivant visible : une pulsation
+   régulière, elle, devient un fond et cesse d'être remarquée — ce qui était
+   exactement le défaut de l'ancienne, un aller-retour lent de 7 %. */
 @keyframes colReglesBat {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.07); }
+    0%   { transform: scale(1)    rotate(0deg); }
+    9%   { transform: scale(1.18) rotate(-6deg); }
+    18%  { transform: scale(1.02) rotate(4deg); }
+    27%  { transform: scale(1.13) rotate(-3deg); }
+    40%  { transform: scale(1)    rotate(0deg); }
+    100% { transform: scale(1)    rotate(0deg); }
 }
 @keyframes colReglesOnde {
-    0%   { opacity: 0.7; transform: scale(0.9); }
-    70%  { opacity: 0;   transform: scale(1.45); }
-    100% { opacity: 0;   transform: scale(1.45); }
+    0%   { opacity: 0.85; transform: scale(0.86); }
+    65%  { opacity: 0;    transform: scale(1.7); }
+    100% { opacity: 0;    transform: scale(1.7); }
 }
 
 /* ── Le fil des actions ──────────────────────────────────────────
@@ -316,6 +329,37 @@
     .col-regles-bandeau h4 { font-size: 1.3rem; }
     .col-regles-cap { padding: 0.85rem 1.1rem 0.45rem; }
     .col-regles-rang { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.5rem 1.1rem; }
+}
+
+/* ── Le même parchemin, en plus grand sur écran ──
+   Les valeurs de base servent le téléphone, où la place est comptée. Sur un
+   écran elles laissaient un panneau étriqué au milieu d'un grand vide. Le
+   seuil est celui du bloc ci-dessus, à un pixel près : ce qui est réglé au
+   doigt reste intact, par construction. */
+@media (min-width: 521px) {
+    .col-regles { width: min(34rem, 100%); }
+
+    .col-regles-bandeau { padding: 1.5rem 2.1rem 1.35rem; }
+    .col-regles-bandeau h4 { margin-bottom: 0.45rem; font-size: 1.85rem; }
+    .col-regles-bandeau p { font-size: 0.95rem; }
+
+    .col-regles-corps { padding: 0.85rem 0 1.3rem; }
+    .col-regles-cap { padding: 1.35rem 2.1rem 0.7rem; font-size: 0.62rem; }
+
+    .col-regles-rang {
+        grid-template-columns: 6.6rem 1fr;
+        gap: 1.1rem;
+        padding: 0.78rem 2.1rem;
+    }
+    .col-regles-rang b { font-size: 0.82rem; }
+    .col-regles-rang b::before { width: 0.26rem; height: 1.05rem; }
+    .col-regles-rang span { font-size: 0.9rem; }
+
+    .col-regles-x {
+        top: 0.95rem; right: 1.05rem;
+        width: 2.1rem; height: 2.1rem;
+        font-size: 1.35rem;
+    }
 }
 @keyframes colReglesEntre {
     from { opacity: 0; transform: translateY(0.6rem) scale(0.98); }

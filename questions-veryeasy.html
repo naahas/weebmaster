@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">30 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Les grands shonen","d":"veryeasy","t":"Dans quelle ville se déroule Gintama ?","s":"Gintama","p":"https://fr.wikipedia.org/wiki/Gintama","b":1,"r":["Edo","Kyoto","Osaka","Le Tokyo d'aujourd'hui","Nagasaki","Sapporo"],"src":"Dans un Edo féodal anachronique où des extraterrestres appelés « Amanto » ont colonisé le Japon et où le bakufu a démocratisé la co-existence des aliens et des humains…"},{"g":"Les grands shonen","d":"veryeasy","t":"Quelle est la particularité d'Asta, contrairement aux autres habitants du royaume ?","s":"Black Clover","p":"https://fr.wikipedia.org/wiki/Black_Clover","b":1,"r":["Il est né sans aucun pouvoir magique","Il possède deux grimoires","Il ne peut utiliser la magie que la nuit","Il est le seul à savoir lire les grimoires","Il est né sans voir les couleurs","Il a perdu ses pouvoirs dans un accident"],"src":"Asta est né sans aucun talent magique, alors que Yuno possède des prédispositions spectaculaires."},{"g":"Les grands shonen","d":"veryeasy","t":"De qui Boruto Uzumaki est-il le fils ?","s":"Boruto","p":"https://fr.wikipedia.org/wiki/Boruto","b":1,"r":["Naruto Uzumaki","Sasuke Uchiwa","Kakashi Hatake","Shikamaru Nara","Gaara","Rock Lee"],"src":"Boruto Uzumaki, fils de Naruto Uzumaki et Hinata Hyûga, vit dans l'ombre de celui-ci."},{"g":"Les grands shonen","d":"veryeasy","t":"Contre quel phénomène luttent les brigades de Fire Force ?","s":"Fire Force","p":"https://fr.wikipedia.org/wiki/Fire_Force_(manga)","b":1,"r":["La combustion humaine spontanée","Une épidémie de zombies","La montée des eaux","Des incendies criminels en série","Une invasion de démons","Un hiver nucléaire"],"src":"le monde fait face au phénomène de combustion humaine où l'humanité peut s'enflammer sans prévenir et se transformer en « torche humaine »"},{"g":"Les grands shonen","d":"veryeasy","t":"Comment s'appelle le monde des démons dans Blue Exorcist ?","s":"Blue Exorcist","p":"https://fr.wikipedia.org/wiki/Blue_Exorcist","b":1,"r":["La Géhenne","Assiah","Le Makai","L'Averne","Le Jigoku","Le Meifu"],"src":"Le premier est le monde dans lequel les êtres humains vivent, Assiah. L'autre est le monde des démons, la Géhenne."},{"g":"Les grands shonen","d":"veryeasy","t":"Quelle est la particularité des « armes » dans Soul Eater ?","s":"Soul Eater","p":"https://fr.wikipedia.org/wiki/Soul_Eater","b":1,"r":["Ce sont des êtres capables de prendre forme humaine","Elles sont forgées dans un métal vivant","Elles ne peuvent servir qu'une seule fois","Elles sont invisibles aux non-initiés","Elles absorbent la vie de leur porteur","Elles ne fonctionnent que la nuit"],"src":"former des jeunes meisters avec leurs armes démoniaques, pouvant prendre forme humaine, à faucher des âmes"},{"g":"Les grands shonen","d":"veryeasy","t":"Quelle est la particularité de Saitama ?","s":"One Punch Man","p":"https://fr.wikipedia.org/wiki/One_Punch_Man","b":1,"r":["Il bat n'importe quel adversaire d'un seul coup de poing","Il est immortel","Il peut voler","Il ne ressent aucune douleur","Il peut se dédoubler","Il lit dans les pensées"],"src":"il remarque qu'il est devenu tellement fort qu'il parvient désormais à battre tous ses adversaires d'un seul coup de poing."},{"g":"Le surnaturel","d":"veryeasy","t":"De quoi les goules se nourrissent-elles ?","s":"Tokyo Ghoul","p":"https://fr.wikipedia.org/wiki/Tokyo_Ghoul","b":1,"r":["De chair humaine","De sang animal","D'énergie spirituelle","De cadavres uniquement","De viande crue quelconque","Elles ne se nourrissent pas"],"src":"Dans la ville de Tokyo, des créatures nommées Ghouls sont apparues et se nourrissent de chair humaine pour survivre."},{"g":"Le surnaturel","d":"veryeasy","t":"De quoi naissent les démons dans Chainsaw Man ?","s":"Chainsaw Man","p":"https://fr.wikipedia.org/wiki/Chainsaw_Man","b":1,"r":["Des peurs des humains","Des péchés des humains","Des rêves des humains","De la pollution","D'un portail ouvert en enfer","D'expériences militaires"],"src":"L'histoire se déroule dans un monde où les démons naissent des peurs humaines, chacun étant unique et représentant un concept quelconque."},{"g":"Le surnaturel","d":"veryeasy","t":"Qu'avale Yuji Itadori au début de Jujutsu Kaisen ?","s":"Jujutsu Kaisen","p":"https://fr.wikipedia.org/wiki/Jujutsu_Kaisen","b":1,"r":["Un doigt de Sukuna","Un œil de Sukuna","Une dent de Sukuna","Une mèche de cheveux de Sukuna","Un cœur de fléau","Une pierre maudite"],"src":"La relique qu'ils ont trouvée est un des 20 doigts de Ryōmen Sukuna, le plus puissant des fléaux. […] En avalant cette relique, Ryōmen Sukuna prend possession du corps de Yūji."},{"g":"Le surnaturel","d":"veryeasy","t":"Sur quoi Momo et Okarun sont-ils en désaccord au début de DanDaDan ?","s":"DanDaDan","p":"https://fr.wikipedia.org/wiki/Dandadan","b":1,"r":["L'existence des fantômes et des extraterrestres","Le meilleur groupe de rock","Le club du lycée à rejoindre","Lequel des deux est le plus fort","L'existence de Dieu","Le choix de leur université"],"src":"d'un côté Momo Ayase croit aux fantômes mais pas aux extraterrestres, alors que son camarade Ken Takakura croit le contraire."},{"g":"Le surnaturel","d":"veryeasy","t":"Quel rôle Yusuke obtient-il après son retour à la vie ?","s":"Yu Yu Hakusho","p":"https://fr.wikipedia.org/wiki/Y%C5%AB_Y%C5%AB_Hakusho","b":1,"r":["Détective du monde des esprits","Passeur d'âmes","Juge des enfers","Garde du corps d'Enma","Chasseur de démons indépendant","Gardien du royaume des morts"],"src":"Yûsuke devient alors détective du monde des esprits sans le savoir, et est doté de pouvoirs."},{"g":"Le surnaturel","d":"veryeasy","t":"Quelle capacité Takemichi découvre-t-il dans Tokyo Revengers ?","s":"Tokyo Revengers","p":"https://fr.wikipedia.org/wiki/Tokyo_Revengers","b":1,"r":["Il peut remonter le temps","Il peut lire dans les pensées","Il peut devenir invisible","Il peut voir l'avenir en rêve","Il peut guérir ses blessures","Il peut échanger de corps"],"src":"Alors qu'il est sur le point d'être percuté, il fait un bond dans le temps, de douze ans en arrière."},{"g":"Sport et compétition","d":"veryeasy","t":"Quel sport est au cœur de Blue Lock ?","s":"Blue Lock","p":"https://fr.wikipedia.org/wiki/Blue_Lock","b":1,"r":["Le football","Le basket-ball","Le volley-ball","Le baseball","Le rugby","Le tennis"],"src":"Le manga commence avec l'élimination de la Coupe du monde 2018 du Japon, ce qui incite l'Union japonaise de football à lancer un programme de surveillance dans les écoles secondaires."},{"g":"Sport et compétition","d":"veryeasy","t":"Quel handicap Hinata doit-il surmonter au volley ?","s":"Haikyuu","p":"https://fr.wikipedia.org/wiki/Haiky%C5%AB!!","b":1,"r":["Sa petite taille","Sa mauvaise vue","Une blessure au genou","Son manque d'endurance","Sa peur du ballon","Son bras cassé"],"src":"Malgré sa petite taille, il est déterminé à suivre le même chemin que son joueur modèle du championnat national, surnommé le « petit géant »."},{"g":"Sport et compétition","d":"veryeasy","t":"Autour de quel domaine tourne Food Wars ?","s":"Food Wars","p":"https://fr.wikipedia.org/wiki/Shokugeki_no_Soma","b":1,"r":["La cuisine","L'agriculture","La sommellerie","La critique gastronomique","L'hôtellerie","La pâtisserie uniquement"],"src":"Sôma Yukihira rêve de devenir chef cuisinier dans le restaurant familial et ainsi surpasser les talents culinaires de son père."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Quel ennemi le groupe de Frieren a-t-il vaincu avant le début de l'histoire ?","s":"Frieren","p":"https://fr.wikipedia.org/wiki/Frieren","b":1,"r":["Le roi des démons","Un dragon ancestral","L'empereur du Nord","Un dieu déchu","Une armée de morts-vivants","Le seigneur des elfes noirs"],"src":"L'histoire suit l'elfe magicienne Frieren, une ancienne membre du groupe d'aventuriers qui a vaincu le roi des démons et restauré l'harmonie du monde après une quête de dix ans."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Dans quoi l'âme d'Alphonse Elric est-elle scellée ?","s":"Fullmetal Alchemist","p":"https://fr.wikipedia.org/wiki/Fullmetal_Alchemist","b":1,"r":["Une armure","Un livre","Une pierre précieuse","Un automate de bois","Un miroir","Une poupée"],"src":"Ed sacrifie son bras droit en scellant l'âme de son petit frère Alphonse dans une armure."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Dans quelle ville se déroule la Guerre du Saint Graal ?","s":"Fate/stay night","p":"https://fr.wikipedia.org/wiki/Fate/stay_night","b":1,"r":["Fuyuki","Tokyo","Kyoto","Yokohama","Nagoya","Shinjuku"],"src":"La Guerre du Saint Graal comporte sept Masters qui s'affrontent dans la ville de Fuyuki au Japon."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Comment les Titans peuvent-ils être tués ?","s":"Shingeki no Kyojin","p":"https://fr.wikipedia.org/wiki/L%27Attaque_des_Titans","b":1,"r":["Par une entaille profonde à la base de la nuque","En leur tranchant la tête","En visant le cœur","Par le feu","En leur crevant les yeux","En les noyant"],"src":"Les Titans n'ont pas d'organes génitaux, ont la peau dure, des capacités régénératrices et ne peuvent être tués que par une incision profonde à la base de la nuque."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Que doit remporter l'humanité pour être épargnée par les dieux ?","s":"Valkyrie Apocalypse","p":"https://fr.wikipedia.org/wiki/Valkyrie_Apocalypse","b":1,"r":["Au moins 7 des 13 duels","Les 13 duels","Un seul duel","10 des 13 duels","3 duels d'affilée","Le duel final uniquement"],"src":"Le Ragnarök oppose 13 dieux issus de diverses mythologies à 13 puissants humains qui ont fait l'histoire. Si l'humanité remporte au moins 7 des 13 duels, alors les dieux épargneront l'humanité."},{"g":"Fantasy et aventure","d":"veryeasy","t":"Dans quel pays se déroule Kingdom ?","s":"Kingdom","p":"https://fr.wikipedia.org/wiki/Kingdom_(manga)","b":1,"r":["La Chine","Le Japon","La Corée","La Mongolie","L'Inde","Le Viêt Nam"],"src":"En Chine, il y a des centaines et des centaines d'années, le récit suit le jeune Shin dans son chemin vers l'accomplissement de son rêve : devenir le plus grand Général sous les cieux."},{"g":"Seinen et classiques","d":"veryeasy","t":"Par quoi le bras manquant de Guts est-il remplacé ?","s":"Berserk","p":"https://fr.wikipedia.org/wiki/Berserk_(manga)","b":1,"r":["Un bras mécanique armé","Une lame fixée à l'épaule","Un bras de bois","Une griffe de démon","Un bouclier","Rien, il combat d'un seul bras"],"src":"Il s'équipa alors de son épée Dragonslayer, pesant une masse sans pareil, d'un bras mécanique armé, d'une longue cape noire et de divers armes tels que des couteaux."},{"g":"Seinen et classiques","d":"veryeasy","t":"Dans quel pays débute l'histoire de Monster ?","s":"Monster","p":"https://fr.wikipedia.org/wiki/Monster_(manga)","b":1,"r":["L'Allemagne","Le Japon","L'Autriche","La Suisse","La République tchèque","La Pologne"],"src":"L'histoire débute en Allemagne en 1986, à l'Eisler Memorial Hospital de Düsseldorf."},{"g":"Seinen et classiques","d":"veryeasy","t":"Quel célèbre personnage historique Vagabond raconte-t-il ?","s":"Vagabond","p":"https://fr.wikipedia.org/wiki/Vagabond_(manga)","b":1,"r":["Miyamoto Musashi","Oda Nobunaga","Tokugawa Ieyasu","Date Masamune","Sanada Yukimura","Saigo Takamori"],"src":"Changeant son nom pour Miyamoto Musashi, il défie et affronte les plus puissants samouraïs, emporté par une spirale meurtrière."},{"g":"Seinen et classiques","d":"veryeasy","t":"Dans quel genre de monde se déroule Ken le Survivant ?","s":"Hokuto no Ken","p":"https://fr.wikipedia.org/wiki/Ken_le_Survivant","b":1,"r":["Un monde post-apocalyptique ravagé par une guerre nucléaire","Un Japon féodal","Une colonie spatiale","Un monde de fantasy médiévale","Le Far West américain","Une Chine antique"],"src":"sur une terre ravagée par une guerre nucléaire, ayant eu pour conséquence l'évaporation de la plupart des mers et océans, tout comme la destruction d'une grande partie de la végétation."},{"g":"Seinen et classiques","d":"veryeasy","t":"Quel empire conquiert le Japon dans Code Geass ?","s":"Code Geass","p":"https://fr.wikipedia.org/wiki/Code_Geass","b":1,"r":["Le Saint-Empire de Britannia","La Fédération chinoise","L'Union européenne","L'Empire de Zilkhstan","L'Empire d'Eurasia","La Confédération de l'Atlantique"],"src":"le Saint-Empire de Britannia écrase les forces japonaises et conquiert le pays en moins d'un mois grâce à leur nouveaux mechas nommés Knightmare."},{"g":"Seinen et classiques","d":"veryeasy","t":"Qu'arrive-t-il à l'humanité au début de Dr. Stone ?","s":"Dr. Stone","p":"https://fr.wikipedia.org/wiki/Dr._Stone","b":1,"r":["Elle est changée en pierre","Elle perd la mémoire","Elle est décimée par un virus","Elle est réduite en esclavage par des machines","Elle perd l'usage de la parole","Elle rajeunit de dix ans"],"src":"une lumière verte brillante apparaît dans le ciel et transforme toute l'humanité en statues de pierres."},{"g":"Seinen et classiques","d":"veryeasy","t":"Quel est le vrai métier de Yor Forger ?","s":"Spy Family","p":"https://fr.wikipedia.org/wiki/Spy_%C3%97_Family","b":1,"r":["Tueuse à gages","Espionne","Policière","Médecin","Institutrice","Journaliste"],"src":"Elle est en réalité une tueuse professionnelle opérant sous le nom de code « Princesse Ibara » et cherche un homme pour préserver sa couverture."},{"g":"Seinen et classiques","d":"veryeasy","t":"Dans quoi les personnages d'Alice in Borderland se retrouvent-ils piégés ?","s":"Alice in Borderland","p":"https://fr.wikipedia.org/wiki/Alice_in_Borderland","b":1,"r":["Des jeux mortels dont dépend leur survie","Un jeu vidéo","Une émission de téléréalité","Une simulation militaire","Un rêve collectif","Une prison secrète"],"src":"ils se retrouvent transportés dans le monde parallèle de Borderland. En explorant ce monde différent qu'ils espéraient tant, ils se retrouvent coincés dans un jeu cruel. Et ils sont contraints d'y participer afin de pouvoir rester en vie…"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

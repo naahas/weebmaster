@@ -1517,9 +1517,21 @@ app.post('/admin/toggle-game', async (req, res) => {
     // pas laisser derrière lui un salon fantôme que personne ne viendrait
     // fermer. Pour lever la mesure, supprimer ce bloc et la demande côté
     // client (« demandeMdp » dans app.js).
+    // Le contrôle se fait par LISTE BLANCHE, et non en testant « si le mode
+    // demandé vaut classic ». Un mode inconnu — « Classic » avec une majuscule,
+    // ou n'importe quelle chaîne — ne déclenchait aucun contrôle, et
+    // /admin/start-game, qui aiguille sur les modes qu'il connaît et retombe
+    // SINON sur le quiz, lançait un Classique. Un salon s'ouvrait donc en
+    // Classique sans mot de passe en envoyant « lobbyMode: "pizza" ».
+    const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension'];
+    const MODES_LIBRES = ['rush', 'bombanime', 'collect', 'ascension'];
     const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
 
-    if (modeDemande === 'classic' || modeDemande === 'rivalry') {
+    if (!MODES_CONNUS.includes(modeDemande)) {
+        return res.status(400).json({ error: 'Mode de jeu inconnu.' });
+    }
+
+    if (!MODES_LIBRES.includes(modeDemande)) {
         const attendu = process.env.ADMIN_PASSWORD;
         if (!attendu) {
             // Faute de mot de passe configuré, on ferme plutôt que d'ouvrir :
@@ -1541,7 +1553,9 @@ app.post('/admin/toggle-game', async (req, res) => {
 
     // 🆕 Récupérer le mode et les noms d'équipe depuis la requête
     const { lobbyMode, teamNames, bombanimeSerie, bombanimeTimer, bombanimeLives } = req.body || {};
-    gameState.lobbyMode = lobbyMode || 'classic';
+    // On repart de la valeur validée plus haut : relire le corps de la requête
+    // rouvrirait la porte que la liste blanche vient de fermer.
+    gameState.lobbyMode = modeDemande;
     if (teamNames) gameState.teamNames = teamNames;
 
     // 💣 Configuration BombAnime
@@ -2270,8 +2284,13 @@ app.post('/admin/set-teams', (req, res) => {
     if (gameState.inProgress) {
         return res.status(400).json({ error: 'Partie déjà en cours' });
     }
-    if (gameState.lobbyMode === 'bombanime') {
-        return res.status(400).json({ error: 'Sans objet en BombAnime' });
+    // ⚠️ Liste blanche, là encore. Ce réglage ÉCRIT « lobbyMode » : il ne
+    // refusait que BombAnime, si bien qu'un salon Rush, Collect ou Ascension —
+    // qui s'ouvre librement — basculait en Classique d'un seul appel, mot de
+    // passe compris. Une liste noire ne couvre que les modes qui existaient le
+    // jour où on l'a écrite.
+    if (gameState.lobbyMode !== 'classic' && gameState.lobbyMode !== 'rivalry') {
+        return res.status(400).json({ error: 'Sans objet hors du mode Classique' });
     }
 
     const enEquipes = req.body && req.body.enabled === true;

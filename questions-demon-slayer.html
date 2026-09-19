@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">50 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Tanjiro","d":"easy","t":"Quel commerce faisait vivre la famille de Tanjiro ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Tanjiro_Kamado","b":1,"r":["La vente de charbon de bois","La vente de riz","La forge","La pêche","La culture du thé","Le tissage"],"src":"Tanjiro était responsable de la vente de charbon de bois dans la ville la plus proche afin de gagner de l'argent pour la famille."},{"g":"Tanjiro","d":"medium","t":"D'où vient la brûlure que Tanjiro porte au front ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Tanjiro_Kamado","b":1,"r":["Il a protégé son petit frère d'une théière qui tombait","D'un coup porté par Muzan","D'un entraînement avec Sakonji","D'un incendie dans la maison familiale","C'est une marque de naissance","D'une chute dans la montagne"],"src":"Il a également une brûlure sur le front, qu'il s'est faite en voulant protéger son frère d'une théière qui tombait, après un combat contre un démon elle devint rouge sombre et changea de forme."},{"g":"Tanjiro","d":"medium","t":"Que représentent les boucles d'oreilles de Tanjiro ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Tanjiro_Kamado","b":1,"r":["Un soleil levant sur une montagne","Une fleur de glycine","Une lune et une étoile","Un renard","Une vague","Une flamme"],"src":"Il porte également une paire de boucles d'oreilles hanafuda distinctes, avec l'image du soleil levant sur une montagne."},{"g":"Tanjiro","d":"hard","t":"De qui Tanjiro a-t-il appris la Danse du Dieu du Feu ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Souffle_du_Soleil","b":1,"r":["De son père, Tanjuro Kamado","De Sakonji Urokodaki","De Kyojuro Rengoku","De Giyu Tomioka","De sa mère, Kie Kamado","De son ancêtre Sumiyoshi, en rêve"],"src":"Le dernier utilisateur est Tanjiro Kamado, qui a appris ce Souffle de son père, Tanjuro Kamado."},{"g":"Tanjiro","d":"veryhard","t":"Qui a compris le premier que la Danse du Dieu du Feu était en réalité le Souffle du Soleil ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Souffle_du_Soleil","b":1,"r":["Shinjuro Rengoku, le père de Kyojuro","Kagaya Ubuyashiki","Sakonji Urokodaki","Tamayo","Gyomei Himejima","Kokushibo"],"src":"Shinjuro Rengoku identifia en premier lieu la Danse du Dieu du Feu comme étant le Souffle du Soleil, ce dernier à travers les écrits de son ancêtre pourfendeur de démons."},{"g":"Tanjiro","d":"veryhard","t":"Combien de mouvements compte réellement le Souffle du Soleil ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Souffle_du_Soleil","b":1,"r":["Treize","Douze","Dix","Quatorze","Neuf","Sept"],"src":"Le Souffle du Soleil est censé comporter douze mouvements, mais en réalité, il en existe treize. Le Treizième Mouvement est obtenu si les douze mouvements initiaux sont répétés les uns après les autres.","n":"Le leurre « douze » est le bon piège : c'est le nombre annoncé, et le treizième ne s'obtient qu'en enchaînant les douze en cercle."},{"g":"Tanjiro","d":"extreme","t":"Dans quel but le Treizième Mouvement du Souffle du Soleil a-t-il été créé ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Souffle_du_Soleil","b":1,"r":["Détruire les douze organes vitaux de Muzan","Résister à la lumière du soleil","Soigner les blessures du porteur","Réveiller la Marque des pourfendeurs","Trancher plusieurs démons d'un seul coup","Prolonger la vie du porteur"],"src":"Il est à noter que le Treizième Mouvement a été créé dans le but de détruire les douze organes vitaux de Muzan, ce dernier pouvant les déplacer librement dans son corps grâce à sa capacité de Métamorphose."},{"g":"Nezuko","d":"easy","t":"Combien de temps Nezuko a-t-elle dormi après sa transformation ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Nezuko_Kamado","b":1,"r":["Deux ans","Six mois","Un an","Trois ans","Cinq ans","Dix ans"],"src":"cela est principalement dû à l'influence que Sakonji Urokodaki a eue sur elle pendant qu'elle dormait pendant deux ans."},{"g":"Nezuko","d":"medium","t":"Qui a posé le mors de bambou sur la bouche de Nezuko ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Nezuko_Kamado","b":1,"r":["Giyu Tomioka","Sakonji Urokodaki","Tanjiro lui-même","Shinobu Kocho","Tamayo","Kagaya Ubuyashiki"],"src":"Alors que Tanjiro et Nezuko sont inconscients, Giyu enveloppe cette dernière dans un chiffon propre et attache un tube en forme de museau en bambou sur sa bouche."},{"g":"Nezuko","d":"hard","t":"Quel Pilier a tenté d'attirer Nezuko en lui offrant son propre sang ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Nezuko_Kamado","b":1,"r":["Sanemi Shinazugawa","Obanai Iguro","Giyu Tomioka","Gyomei Himejima","Tengen Uzui","Muichiro Tokito"],"src":"elle refuse Sanemi Shinazugawa après qu'il ait tenté de l'attirer dans le mordant avec son sang de Marechi."},{"g":"Nezuko","d":"hard","t":"Quelle particularité de Nezuko a changé l'objectif principal de Muzan ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Elle résiste à la lumière du soleil","Elle parle comme une humaine","Elle peut changer de taille","Elle ne vieillit pas","Elle commande d'autres démons","Elle guérit les humains"],"src":"depuis la découverte de Muzan (via Hantengu) que Nezuko Kamado est à l'épreuve du soleil, il a décidé que le premier objectif des Rangs Supérieurs était de la capturer et de l'amener à lui."},{"g":"Nezuko","d":"veryhard","t":"Quel démon a vu Nezuko en plein soleil et l'a rapporté à Muzan ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Hantengu","Gyokko","Doma","Nakime","Akaza","Kokushibo"],"src":"Hantengu et Gyokko ont tous deux été tués, mais pas avant que Hantengu ait vu (avant de mourir) Nezuko se tenir au soleil et le dire à Muzan."},{"g":"L'ordre des pourfendeurs","d":"veryeasy","t":"Combien y a-t-il de Piliers ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Piliers","b":1,"r":["Neuf","Sept","Douze","Cinq","Dix","Six"],"src":"Les Piliers (Hashira) sont les neuf épéistes les plus puissants de l'Armée des pourfendeurs de démons."},{"g":"L'ordre des pourfendeurs","d":"medium","t":"Quelles sont les deux façons de prouver qu'on mérite de devenir Pilier ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Piliers","b":1,"r":["Tuer cinquante démons, ou tuer une Lune Démoniaque","Survivre dix ans dans l'armée","Vaincre un Pilier en duel","Être choisi personnellement par Kagaya Ubuyashiki","Réveiller la Marque des pourfendeurs","Former trois successeurs"],"src":"la première méthode consiste à tuer au moins 50 démons et la deuxième méthode consiste à tuer un démon membre des Douze Lunes Démoniaques."},{"g":"L'ordre des pourfendeurs","d":"hard","t":"Combien de nuits faut-il survivre pour réussir la Sélection Finale ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/S%C3%A9lection_Finale","b":1,"r":["Sept","Trois","Dix","Une seule","Quatorze","Trente"],"src":"L'examen exige que le candidat survive sept nuits au sommet de la montagne, sans aucune aide extérieure."},{"g":"L'ordre des pourfendeurs","d":"medium","t":"Sur quelle montagne se déroule la Sélection Finale ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/S%C3%A9lection_Finale","b":1,"r":["Le mont Fujikasane","Le mont Sagiri","Le mont Natagumo","Le mont Yoko","Le mont Fuji","Le mont Kumotori"],"src":"L'examen a lieu sur le Mont Fujikasane, où les fleurs de glycine fleurissent à chaque saison."},{"g":"L'ordre des pourfendeurs","d":"hard","t":"Comment les pourfendeurs appellent-ils Kagaya Ubuyashiki ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Kagaya_Ubuyashiki","b":1,"r":["Oyakata-sama","Sensei","Daimyo","Shogun-sama","Kashira","Tono-sama"],"src":"Kagaya Ubuyashiki est le 97ème chef de l'Armée des pourfendeurs de démons connu principalement sous le nom de « Oyakata-sama » par ses subordonnés et ses pairs."},{"g":"L'ordre des pourfendeurs","d":"veryhard","t":"Comment Kagaya Ubuyashiki disparaît-il ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Kagaya_Ubuyashiki","b":1,"r":["Il se fait exploser à l'arrivée de Muzan","Muzan le décapite","Il succombe à sa maladie dans son lit","Kokushibo le tue","Il se donne la mort par seppuku","Nakime l'écrase sous le manoir"],"src":"Kagaya se fera exploser lorsque Muzan, venu pour le tuer, arriva. Il emporta toute sa famille avec son explosion.","n":"⚠️ Spoiler majeur — à cocher « spoil » à la saisie."},{"g":"L'ordre des pourfendeurs","d":"extreme","t":"Pourquoi y avait-il exactement neuf Piliers au départ ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Piliers","b":1,"r":["Le kanji « Hashira » compte neuf traits","Il existait neuf styles de Souffle d'origine","Le Japon était divisé en neuf régions à protéger","Yoriichi avait neuf disciples","Le premier chef Ubuyashiki avait neuf enfants","C'était le nombre de Lunes Supérieures de l'époque"],"src":"Le mot pour Piliers (Hashira) a neuf traits, ce qui serait la raison pour laquelle il y avait neuf Piliers au début de la série."},{"g":"Les Piliers","d":"easy","t":"Quelle arme Gyomei Himejima manie-t-il à la place d'un sabre ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Gyomei_Himejima","b":1,"r":["Des haches reliées par une chaîne","Une lance","Un arc","Deux sabres courts","Un éventail de fer","Un bâton de moine"],"src":"Gyomei est le seul Pilier connu qui n'utilise pas d'épée du soleil, privilégiant plutôt un ensemble de haches enchaînées."},{"g":"Les Piliers","d":"medium","t":"Pourquoi Shinobu Kocho ne décapite-t-elle jamais ses adversaires ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Shinobu_Kocho","b":1,"r":["Elle n'a pas la force de trancher un cou, alors elle empoisonne","Elle a juré de ne jamais tuer de ses mains","Son sabre est trop court pour cela","Elle préfère capturer les démons vivants","Sa lame ne coupe pas la chair de démon","Son Souffle le lui interdit"],"src":"elle ne possède pas assez de force physique pour couper la tête d'un démon comme les autres piliers […] elle utilise plutôt du poison comme arme."},{"g":"Les Piliers","d":"hard","t":"Qu'est-il arrivé à la bouche d'Obanai Iguro quand il avait douze ans ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Obanai_Iguro","b":1,"r":["Elle a été taillée jusqu'aux oreilles pour ressembler à celle d'un serpent","Elle a été brûlée par un démon","Elle a été cousue par son clan","Un serpent l'a mordu au visage","Il se l'est coupée lui-même en s'échappant","Elle a été marquée au fer rouge"],"src":"quand il avait douze ans, elle a été coupée de ses coins à ses oreilles pour la faire ressembler davantage à celle d'un serpent, laissant une grande blessure qu'il garde cachée sous le bandage qu'il porte sur sa face inférieure."},{"g":"Les Piliers","d":"hard","t":"Qu'est-ce qui explique la force physique de Mitsuri Kanroji ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Mitsuri_Kanroji","b":1,"r":["Une densité musculaire huit fois supérieure à la normale","Des os deux fois plus épais que la moyenne","Un cœur surdimensionné","Un sang de type Marechi","Une mutation héritée d'un démon","Des muscles qui repoussent plus vite"],"src":"Constitution unique : Mitsuri a une composition musculaire spéciale avec une densité huit fois supérieure à celle d'un humain ordinaire."},{"g":"Les Piliers","d":"veryhard","t":"D'où vient la couleur des cheveux de Mitsuri Kanroji ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Mitsuri_Kanroji","b":1,"r":["D'une consommation excessive de sakura mochi","D'une teinture qu'elle refait chaque mois","D'un héritage de sa mère","D'une brûlure d'enfance","D'un poison de démon","De sa Marque de pourfendeuse"],"src":"Elle a grandi en mangeant beaucoup plus que la moyenne et a développé une couleur de cheveux non naturelle (résultant d'une consommation excessive de sakura mochi), ce qui l'a amenée à être considérée comme un monstre."},{"g":"Les Piliers","d":"hard","t":"De quel démon Muichiro Tokito est-il le descendant ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Muichiro_Tokito","b":1,"r":["Kokushibo","Akaza","Doma","Muzan Kibutsuji","Gyutaro","Hantengu"],"src":"Muichiro, avec son frère jumeau Yuichiro Tokito, est également un descendant de la Première Lune Supérieure, Kokushibo."},{"g":"Les Piliers","d":"veryhard","t":"En combien de temps Muichiro Tokito est-il devenu Pilier ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Muichiro_Tokito","b":1,"r":["Deux mois","Six mois","Un an","Deux ans","Trois mois","Cinq ans"],"src":"En raison de sa force proéminente et de son entraînement très poussé, il a rapidement atteint le rang de Pilier en à peine deux mois."},{"g":"Les Piliers","d":"medium","t":"À qui appartenaient les deux moitiés du haori de Giyu Tomioka ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Giyu_Tomioka","b":1,"r":["À sa sœur Tsutako et à son ami Sabito","À ses deux parents","À son maître Sakonji Urokodaki","À deux Piliers morts avant lui","À Kyojuro Rengoku et Shinobu Kocho","À Tanjiro et Nezuko"],"src":"Plus tard, on apprit que ces haori appartenaient à sa sœur aînée décédée, Tsutako Tomioka, et à son ami également décédé Sabito."},{"g":"Les Piliers","d":"hard","t":"Quel mouvement Giyu Tomioka emploie-t-il pour trancher tous les fils de Rui ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Giyu_Tomioka","b":1,"r":["Le Onzième Mouvement du Souffle de l'Eau : Accalmie","Le Premier Mouvement : Surface de l'eau","Le Dixième Mouvement : Cascade","Le Septième Mouvement : Goutte percutante","Le Cinquième Mouvement : Marée bienveillante","Le Neuvième Mouvement : Courant fou"],"src":"Giyu annule l'attaque avec le Onzième Mouvement du Souffle de l'Eau : Accalmie, en coupant tous les fils."},{"g":"Muzan et les Douze Lunes","d":"easy","t":"Comment les Douze Lunes Démoniaques sont-elles réparties ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Six Lunes Supérieures et six Lunes Inférieures","Quatre groupes de trois","Douze rangs égaux","Trois Supérieures et neuf Inférieures","Deux groupes de six tirés au sort","Six paires de frères et sœurs"],"src":"Les Douze Lunes sont divisés en deux groupes, les Six Lunes Supérieures (Jôgen), numérotés de un à six, et les Six Lunes Inférieures (Kagen), numérotés de sept à douze."},{"g":"Muzan et les Douze Lunes","d":"medium","t":"Où les Lunes Démoniaques portent-elles leur rang ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Gravé dans leurs yeux","Tatoué sur la nuque","Sur la paume de la main","Au milieu du front","Sur la langue","Sur l'épaule gauche"],"src":"Les Lunes Inférieures ont leurs numéros et rangs gravés dans un seul œil, tandis que les Lunes Supérieures ont leurs numéros dans un œil et les kanji pour « Lune Supérieure » dans l'autre."},{"g":"Muzan et les Douze Lunes","d":"hard","t":"Quel événement a poussé Muzan à exterminer les Lunes Inférieures ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["La mort de Rui, qui lui a fait perdre toute foi en elles","Un complot qu'elles avaient monté contre lui","Leur refus de chercher le Lycoris Bleu","Une demande de Kokushibo","La fuite de Nezuko","Leur consommation excessive de son sang"],"src":"La mort de Rui incitera plus tard Muzan Kibutsuji à perdre toute sa foi dans la capacité de la faction et a procédé au démantèlement des rangs inférieurs restants en annihilant froidement tous les membres à l'exception du premier rang inférieur, Enmu."},{"g":"Muzan et les Douze Lunes","d":"hard","t":"Quel objet les Douze Lunes avaient-elles pour mission de trouver ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Le Lycoris Bleu","La Pierre du Soleil","Le grimoire de Yoriichi","Une glycine sans fleurs","Le Sabre Écarlate","Le Masque de Conjuration"],"src":"Trouver le Lycoris Bleu (l'ingrédient clé de la médecine expérimentale qui a fait de Muzan un démon)."},{"g":"Muzan et les Douze Lunes","d":"veryhard","t":"Depuis combien de temps aucune Lune Supérieure n'avait été tuée, avant Gyutaro et Daki ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Cent ans","Dix ans","Cinquante ans","Cinq cents ans","Vingt ans","Mille ans"],"src":"Kagaya Ubuyashiki déclare que cela faisait cent ans qu'une Lune Supérieure n'avait été tuée, après la défaite de Gyutaro et Daki."},{"g":"Muzan et les Douze Lunes","d":"hard","t":"Que refuse de faire Akaza, alors qu'il sait que cela le rendrait plus fort ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Akaza","b":1,"r":["Manger des femmes","Utiliser une arme","Boire le sang de Muzan","Affronter un Pilier","Se battre avant minuit","Absorber un autre démon"],"src":"il refuse de manger des femmes, même s'il sait que cela le rendrait plus fort."},{"g":"Muzan et les Douze Lunes","d":"medium","t":"Quel lien unit Daki et Gyutaro ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Gyutaro","b":1,"r":["Sœur et frère, partageant un même corps","Maître et disciple","Mari et femme","Deux moitiés d'un même démon, sans lien de sang","Des jumeaux séparés à la naissance","Gyutaro l'a créée à partir de son propre sang"],"src":"il partage ce rang avec sa petite sœur, Daki […] Gyutaro et Daki se révèlent alors partager des corps et sont finalement tous deux vaincus après leur décapitation simultanée."},{"g":"Muzan et les Douze Lunes","d":"extreme","t":"Comment Muzan marque-t-il un démon exclu des Douze Lunes ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Douze_Lunes_D%C3%A9moniaques","b":1,"r":["Il barre le chiffre gravé dans son œil d'une cicatrice en « X »","Il lui retire son sang","Il le change en démon ordinaire","Il lui arrache l'œil","Il le marque au fer sur la nuque","Il lui interdit de manger des humains"],"src":"Muzan Kibutsuji rétrograde ces membres en coupant à l'endroit où se trouve le nombre signifiant leur rang, créant une cicatrice en forme de « X » sur le chiffre, ce qui signifie qu'ils ne font plus partie des Douze Lunes."},{"g":"Les souffles et les sabres","d":"medium","t":"De quel Souffle tous les autres styles descendent-ils ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Souffle_du_Soleil","b":1,"r":["Le Souffle du Soleil","Le Souffle de l'Eau","Le Souffle de la Flamme","Le Souffle de la Lune","Le Souffle du Vent","Le Souffle de la Roche"],"src":"Tous les Styles de Souffle proviennent du Souffle du Soleil, le premier Style de Souffle développé."},{"g":"Les souffles et les sabres","d":"hard","t":"Quels deux Souffles ont toujours eu leur Pilier, à toutes les époques et sans exception ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Piliers","b":1,"r":["La Flamme et l'Eau","Le Soleil et la Lune","La Roche et le Vent","La Foudre et le Serpent","L'Insecte et la Fleur","La Brume et l'Amour"],"src":"Les épéistes qui peuvent utiliser le Souffle de la Flamme et le Souffle de l'Eau sont devenus Piliers à toutes les époques, sans exception jusqu'à présent."},{"g":"Les souffles et les sabres","d":"medium","t":"Que se passe-t-il quand un sabre Nichirin est dégainé pour la première fois ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Tanjiro_Kamado","b":1,"r":["Il prend une couleur propre à son porteur","Il s'enflamme","Il devient brûlant au toucher","Il émet un son aigu","Il durcit au contact de l'air","Il s'allonge"],"src":"Une fois à l'intérieur, il lui explique que les sabres du Soleil changent de couleur une fois dégainés de leur fourreau."},{"g":"Les souffles et les sabres","d":"veryhard","t":"Quelle inscription presque tous les Piliers portent-ils gravée sur leur lame ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Piliers","b":1,"r":["« Pourfendeur de démons » (Akki Messatsu)","Leur propre nom","Le nom de leur Souffle","Le blason des Ubuyashiki","Une fleur de glycine","Le chiffre de leur rang"],"src":"Presque tous les Piliers ont inscrit Pourfendeurs de Démons (Akki Messatsu) sur leurs armes, tandis que Shinobu a Démons (Akki) gravé sur le côté droit de la lame."},{"g":"Les souffles et les sabres","d":"extreme","t":"À quelles conditions physiques la Marque des pourfendeurs peut-elle apparaître ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Marque_des_pourfendeurs_de_d%C3%A9mons","b":1,"r":["Un pouls au-dessus de 200 et une température au-dessus de 39 °C","Avoir tué une Lune Supérieure","Avoir dépassé vingt-cinq ans","Maîtriser deux Souffles à la fois","Avoir bu le sang d'un démon","Avoir survécu à la Sélection Finale"],"src":"La marque ne peut apparaître que sur les pourfendeurs de démons qui ont survécu aux conditions potentiellement mortelles, donc avoir une fréquence cardiaque supérieure à 200 bpm et une température corporelle supérieure à 39° Celsius."},{"g":"Les souffles et les sabres","d":"veryhard","t":"Quel est le prix à payer pour avoir réveillé la Marque des pourfendeurs ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Marque_des_pourfendeurs_de_d%C3%A9mons","b":1,"r":["Mourir à vingt-cinq ans","Perdre la vue","Ne plus pouvoir utiliser son Souffle","Devenir un démon","Perdre la mémoire","Ne plus jamais pouvoir dormir"],"src":"On dit que les tueurs de démons qui ont réveillé la marque de tueur de démons mourront à l'âge de 25 ans."},{"g":"Autour d'eux","d":"medium","t":"Qui a formé Zenitsu à l'épée ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Zenitsu_Agatsuma","b":1,"r":["Jigoro Kuwajima, qu'il appelle « Grand-Père »","Sakonji Urokodaki","Kyojuro Rengoku","Tengen Uzui","Kaigaku","Gyomei Himejima"],"src":"Voyant qu'il avait des problèmes financiers avec les agents de recouvrement, Jigoro Kuwajima a remboursé la dette de Zenitsu et a décidé de le former comme épéiste. Zenitsu a commencé à se référer à Jigoro comme « Grand-Père »."},{"g":"Autour d'eux","d":"hard","t":"Qui était l'autre disciple de Jigoro Kuwajima, devenu plus tard un démon ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Zenitsu_Agatsuma","b":1,"r":["Kaigaku","Genya Shinazugawa","Sabito","Makomo","Murata","Yuichiro Tokito"],"src":"il a commencé à s'entraîner aux côtés de l'autre disciple de Grand-Père, Kaigaku […] Kaigaku (un ancien tueur de démons et supérieur de Zenitsu Agatsuma) est devenu le nouveau rang supérieur six."},{"g":"Autour d'eux","d":"medium","t":"À qui appartenait la tête de sanglier que porte Inosuke ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Inosuke_Hashibira","b":1,"r":["À la truie qui l'a élevé","À un sanglier qu'il a tué enfant","À son père","À un démon qu'il a vaincu","C'est un masque sculpté dans le bois","À son maître d'armes"],"src":"Sa caractéristique la plus voyante est la tête de sanglier grise qu'il porte comme masque, les yeux enlevés afin de lui permettre de voir, qui est révélé plus tard appartenir à sa mère sanglier adoptive."},{"g":"Autour d'eux","d":"veryhard","t":"Quel démon a tué la mère d'Inosuke ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Doma","b":1,"r":["Doma","Akaza","Gyutaro","Muzan lui-même","Enmu","Hantengu"],"src":"Ce culte a également accueilli la mère d'Inosuke Hashibira, Kotoha Hashibira, avant que Doma ne la tue pour avoir découvert qu'il mangeait ses partisans."},{"g":"Autour d'eux","d":"hard","t":"Comment Kanao Tsuyuri prend-elle ses décisions au début de la série ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Kanao_Tsuyuri","b":1,"r":["Elle lance une pièce","Elle demande à Shinobu","Elle tire une carte","Elle compte sur ses doigts","Elle suit toujours le premier venu","Elle consulte son corbeau"],"src":"Afin d'aider à rectifier cela, Kanae lui a donné une pièce à retourner pour décider quel chemin suivre quand elle ne savait pas quoi faire."},{"g":"Autour d'eux","d":"hard","t":"Quelle capacité Genya Shinazugawa a-t-il développée, faute de maîtriser un Souffle ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Genya_Shinazugawa","b":1,"r":["Il mange de la chair de démon et en absorbe les pouvoirs","Il ne se bat qu'au fusil","Il voit dans le noir","Il régénère ses blessures","Il commande les corbeaux","Il ne ressent pas la douleur"],"src":"Bien qu'il ait découvert qu'il n'avait aucun talent pour les styles de souffle, il a découvert qu'il pouvait manger des démons et acquérir des capacités démoniaques."},{"g":"Autour d'eux","d":"medium","t":"Comment Tamayo se nourrit-elle, contrairement aux autres démons ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Tamayo","b":1,"r":["Elle achète du sang à des donneurs consentants","Elle ne se nourrit pas du tout","Elle ne mange que des animaux","Elle se nourrit du sang d'autres démons","Elle vit de plantes médicinales","Elle boit son propre sang"],"src":"Tamayo avait une forte préférence contre la violence : au lieu de tuer des humains pour leur sang, elle a choisi d'acheter du sang de donneurs consentants pour survivre."},{"g":"Autour d'eux","d":"veryhard","t":"Que porte Sakonji Urokodaki en permanence sur le visage ?","s":"Demon Slayer","p":"https://kimetsu-no-yaiba.fandom.com/fr/wiki/Sakonji_Urokodaki","b":1,"r":["Un masque de tengu","Un masque de renard","Un bandeau sur les yeux","Un chapeau de paille","Un voile blanc","Un masque de démon"],"src":"Le visage de Sakonji n'a jamais été révélé ou représenté dans tout le manga achevé ; il est toujours vu portant un masque de tengu qui couvre tout son visage.","n":"Le leurre « masque de renard » est excellent : c'est bien lui qui les sculpte pour ses élèves, mais le sien est un tengu."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

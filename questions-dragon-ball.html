@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">30 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Cell","d":"veryhard","t":"À partir des cellules de combien de combattants Cell a-t-il été créé ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Cinq","Trois","Quatre","Six","Sept","Deux"],"src":"était un bio-organisme humanoïde créé à partir des cellules de Son Goku, Vegeta, Piccolo, Freezer et du roi Cold."},{"g":"Cell","d":"veryhard","t":"Lequel de ces combattants n'a PAS servi à la création de Cell ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Krilin","Son Goku","Vegeta","Piccolo","Freezer","Le roi Cold"],"src":"créé à partir des cellules de Son Goku, Vegeta, Piccolo, Freezer et du roi Cold."},{"g":"Cell","d":"extreme","t":"Qui a achevé Cell après que le Dr Gero eut abandonné sa création ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["L'ordinateur du Dr Gero","C-19","Le Dr Gero lui-même, plus tard","Bulma, sans le savoir","Personne, il s'est achevé seul","C-20"],"src":"Cell était un être hybride créé successivement par Gero, puis repris par son ordinateur après que ce dernier ait abandonné sa création."},{"g":"Cell","d":"hard","t":"De quel combattant Cell tient-il sa capacité à se régénérer indéfiniment ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Piccolo","Freezer","Vegeta","Le roi Cold","Son Goku","C-17"],"src":"Il a également hérité des facultés de Piccolo lui permettant de se régénérer indéfiniment."},{"g":"Cell","d":"extreme","t":"Grâce aux cellules de qui Cell peut-il survivre dans l'espace ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Freezer et le roi Cold","Piccolo et Son Goku","Vegeta seul","Piccolo seul","Son Goku et Vegeta","Aucun, c'est une faculté propre"],"src":"ainsi que des cellules de Freezer et Cold, ce qui lui permettait de reprendre leur aptitude à survivre dans l'espace."},{"g":"Cell","d":"extreme","t":"De quels combats de Son Goku les cellules de Cell ne proviennent-elles PAS ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Ceux de la planète Namek","Ceux du Tenkaichi Budokai","Ceux contre l'Armée du Ruban Rouge","Ceux contre les Saiyans sur Terre","Ceux contre Piccolo Daimao","Aucune exception, tous ses combats"],"src":"Cell a hérité des échantillons de cellules prélevées lors des combats clés de Son Goku (à l'exception des événements de la planète Namek)."},{"g":"Cell","d":"extreme","t":"Quelle limite pesait sur la puissance de Cell ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Elle n'évoluait jamais d'elle-même","Elle diminuait avec le temps","Elle dépendait de la lumière du soleil","Elle plafonnait sans C-18","Elle s'épuisait après chaque régénération","Aucune, elle croissait sans fin"],"src":"Il est important de noter que sa puissance n'évoluait jamais d'elle-même."},{"g":"Cell","d":"hard","t":"Qu'est-ce que Cell fait volontairement face à Son Gohan ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Cell","b":1,"r":["Il le laisse s'éveiller à son plus haut niveau","Il épargne ses amis","Il se retient de l'absorber","Il lui offre un Senzu","Il lui révèle son point faible","Il refuse de le combattre"],"src":"Ainsi comme Vegeta, il a intentionnellement laissé Son Gohan s'éveiller à son plus haut niveau."},{"g":"Polunga","d":"medium","t":"Combien de vœux le dragon de Namek exauce-t-il ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Trois","Un","Deux","Cinq","Sept","Autant qu'on veut"],"src":"Contrairement à Shenron, Polunga est capable de réaliser 3 vœux."},{"g":"Polunga","d":"hard","t":"Qui a créé le dragon Polunga ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Saichôrô, le Grand Chef","Dende","Nail","Le Tout-Puissant","Piccolo","Le clan du dragon, collectivement"],"src":"Polunga est le dragon sacré de la planète Namek, il a été conçu par Saichôrô en personne."},{"g":"Polunga","d":"hard","t":"Dans quelle langue les vœux doivent-ils être formulés à Polunga ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["En namek","En saiyan","Dans la langue de Freezer","En terrien","Peu importe la langue","Il ne faut rien dire"],"src":"si Polunga tarde à apparaître c'est en raison du mot de passe qu'il faut formuler en langage Namek."},{"g":"Polunga","d":"veryhard","t":"Qui garde les sept Dragon Balls de la planète Namek ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Les anciens, chefs des six villages","Saichôrô seul","Le clan du dragon en entier","Nail et Dende","Personne, elles sont dispersées","Le Tout-Puissant"],"src":"Une fois les 7 Dragon Balls, qui sont gardées par les anciens, chefs des six villages de la Planète Namek et puissants membres du clan du dragon, réunies, le dieu dragon apparaît."},{"g":"Polunga","d":"extreme","t":"Quelle limite Polunga a-t-il, que Shenron n'a pas ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Il ne peut pas ressusciter plusieurs individus à la fois","Il ne peut pas ressusciter du tout","Il ne peut agir que sur Namek","Il exige un sacrifice","Il ne comprend qu'un seul vœu par an","Il ne peut pas guérir"],"src":"L'une des nombreuses caractéristiques de Polunga est de ne pas pouvoir ressusciter plusieurs individus à la fois, et ce contrairement à Shenron."},{"g":"Polunga","d":"extreme","t":"Quel avantage Polunga a-t-il sur Shenron en matière de résurrection ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Il peut ressusciter plusieurs fois la même personne","Il peut ressusciter les morts depuis plus d'un an","Il peut ressusciter sans le corps","Il peut ressusciter des planètes entières","Il ressuscite instantanément","Aucun, il est inférieur en tout"],"src":"en revanche, à l'opposé de ce dernier, il peut ressusciter plusieurs fois la même personne."},{"g":"Polunga","d":"extreme","t":"Pourquoi les Nameks eux-mêmes n'invoquent-ils jamais Polunga ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Polunga","b":1,"r":["Étant pacifiques, ils n'ont pas l'irrespect de l'invoquer","Ils en ont perdu la formule","Il est trop dangereux pour eux","Saichôrô le leur interdit","Ils ignorent son existence","Les boules sont trop lourdes à déplacer"],"src":"mais comme les Nameks sont pacifiques, ils n'ont pas l'irrespect d'invoquer Polunga."},{"g":"Bardack","d":"medium","t":"Quel lien unit Bardack à Raditz ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["C'est son père","C'est son frère","C'est son oncle","C'est son cousin","C'est son commandant","Aucun"],"src":"était le père de Son Goku et de Raditz ainsi que le mari de Gine."},{"g":"Bardack","d":"veryhard","t":"Comment s'appelle la mère de Son Goku ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Gine","Fasha","Chi-Chi","Celipa","Panbukin","Elle n'est jamais nommée"],"src":"était le père de Son Goku et de Raditz ainsi que le mari de Gine."},{"g":"Bardack","d":"extreme","t":"Que représente le bandeau rouge que porte Bardack ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Le sang de son meilleur ami Toma","La marque de son escouade","Un cadeau du roi Vegeta","Le deuil de son épouse","Le rang d'élite chez les Saiyans","Rien, un simple accessoire"],"src":"Après la mort de ses élites, il porte un bandeau rouge du sang de son meilleur ami Toma, tué par les hommes de Dodoria."},{"g":"Bardack","d":"extreme","t":"Qui a tué Toma, le meilleur ami de Bardack ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Les hommes de Dodoria","Freezer en personne","Zarbon","Le roi Cold","Les Tsufuls","Le commando Ginyu"],"src":"il porte un bandeau rouge du sang de son meilleur ami Toma, tué par les hommes de Dodoria."},{"g":"Bardack","d":"extreme","t":"Pourquoi Toriyama a-t-il remodelé le premier design de Bardack ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Pour que son visage et sa coupe soient identiques à ceux de Goku","Pour le vieillir","Pour le rendre plus menaçant","Pour le distinguer nettement de Goku","Pour lui retirer sa cicatrice","Il ne l'a pas remodelé"],"src":"le directeur d'animation avait prévu une coupe de cheveux très différente de Son Goku. Mais Akira Toriyama n'était guère satisfait de ce design et le remodela, afin que les traits du visage et la coupe soient identiques à son fils."},{"g":"Bardack","d":"medium","t":"Comment Bardack a-t-il trouvé la mort ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Exterminé par Freezer lors du génocide des Saiyans","Tué par le roi Vegeta","Mort de vieillesse","Tué par Raditz","Disparu sans explication","Tué par les Tsufuls"],"src":"Il est l'un des premiers Saiyans à être exterminé par Freezer lors du génocide des Saiyans."},{"g":"Bardack","d":"easy","t":"Quel appareil Bardack porte-t-il pour détecter le Ki ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Un scouter","Un radar à Dragon Balls","Un bandeau capteur","Une armure sensorielle","Un bracelet de détection","Aucun, il le sent naturellement"],"src":"il porte un scouter vert qui lui permet de détecter le Ki émis par les êtres vivants aux alentours."},{"g":"Le Roi Vegeta","d":"veryhard","t":"Combien de fils le roi Vegeta a-t-il eus ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Deux","Un seul","Trois","Quatre","Aucun, Vegeta est adopté","Cinq"],"src":"il était le père de Vegeta et de Table."},{"g":"Le Roi Vegeta","d":"veryhard","t":"Contre quel peuple les Saiyans ont-ils remporté la guerre, sous le roi Vegeta ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Les Tsufuls","Les Nameks","Les Yardratiens","Les Kaïoshins","Les hommes de Freezer","Les Majins"],"src":"a conduit son peuple à la victoire dans la guerre face aux Tsufuls, dont la planète a été rebaptisée en son honneur."},{"g":"Le Roi Vegeta","d":"extreme","t":"D'où la planète Vegeta tire-t-elle son nom ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Elle a été rebaptisée en l'honneur du roi après la victoire sur les Tsufuls","C'est son nom d'origine","Freezer l'a nommée ainsi","Elle porte le nom du prince Vegeta","C'est le nom du premier Super Saiyan","Le nom vient des Kaïoshins"],"src":"a conduit son peuple à la victoire dans la guerre face aux Tsufuls, dont la planète a été rebaptisée en son honneur."},{"g":"Le Roi Vegeta","d":"hard","t":"Sur quel mot anglais les noms de la famille royale saiyane jouent-ils ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Vegetable","Vengeance","Victory","Veteran","Vegas","Aucun, c'est du japonais"],"src":"Comme ses fils, son nom est un jeu de mots sur le mot anglais « vegetable » qui signifie « légume »."},{"g":"Le Roi Vegeta","d":"extreme","t":"Où le roi Vegeta porte-t-il la marque de la famille royale ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Sur le côté gauche de son armure","Sur son front","Dans son dos","Sur sa ceinture","Sur son épaulette droite","Sur sa cape"],"src":"Il porte la marque de la famille royale sur le côté gauche de son armure, comme le faisait Vegeta enfant."},{"g":"Le Roi Vegeta","d":"hard","t":"Qu'a dû faire le roi Vegeta une fois son peuple soumis à Freezer ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Lui prêter allégeance tout en gardant le pouvoir sur son peuple","Abdiquer","S'exiler","Livrer son fils en otage","Détruire sa propre armée","Il a refusé et est mort aussitôt"],"src":"Après que son peuple fût soumis à Freezer, il n'avait pas d'autre choix que de prêter allégeance, mais a gardé le pouvoir sur son peuple."},{"g":"Le Roi Vegeta","d":"hard","t":"Quelle fonction militaire le roi Vegeta occupait-il ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Roi_Vegeta","b":1,"r":["Commandant de l'armée Saiyan","Général de la garde royale","Aucune, il ne combattait pas","Amiral de la flotte","Chef des éclaireurs","Instructeur des élites"],"src":"Il a également été le commandant de l'armée Saiyan."},{"g":"Le Roi Vegeta","d":"medium","t":"Quel signe distinctif tous les Saiyans partagent-ils ?","s":"Dragon Ball","p":"https://dragonball.fandom.com/fr/wiki/Bardack","b":1,"r":["Une queue","Une marque dans le dos","Des yeux noirs","Une armure de naissance","Un scouter greffé","Des cheveux qui repoussent"],"src":"Bardack possède les cheveux noirs comme tous les Saiyans ainsi qu'une queue qu'il garde enroulée autour de la taille (signe distinctif des Saiyans)."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

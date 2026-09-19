@@ -182,15 +182,15 @@ createApp({
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
                 { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.webp',
-                  desc: "Quiz QCM. Solo ou en deux camps, vies ou points, séries au choix." },
+                  desc: "Quiz anime/manga général. La même question s'affiche pour tout le monde, avec un temps limité pour répondre. Mode vie ou point disponible, seul ou en deux équipes." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.webp',
-                  desc: "La bombe tourne. Cite un perso avant qu'elle explose." },
+                  desc: "Le jeu de la bombe, version anime. Chaque joueur cite un personnage d'une série donnée avant qu'elle n'explose sur lui. Le dernier survivant l'emporte." },
                 { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'nagi.webp',
-                  desc: "Un portrait, un nom. La plus longue serie gagne." },
+                  desc: "Une suite de personnages s'affiche à l'écran, l'un après l'autre. Le joueur avec la plus longue série de personnages reconnus l'emporte." },
                 { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
-                  desc: "Une tour d'étages, chacun à son rythme. Le premier au sommet gagne." },
+                  desc: "Une tour à gravir étage par étage, chacun à son rythme. Chaque étage est une épreuve différente. Le premier arrivé au sommet l'emporte." },
                 { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'sora.webp',
-                  desc: "Réunis des sets du même anime. Vole ceux des autres, défends les tiens." },
+                  desc: "Jeu de cartes à plusieurs. Chacun doit réunir des personnages d'un même anime avant les autres et les poser au milieu de la table." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],

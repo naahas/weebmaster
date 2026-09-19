@@ -42,7 +42,8 @@
     "rush:page": "node scripts/rush-page.js . rush-personnages.html",
     "stop": "node scripts/stop.js",
     "restart": "node scripts/stop.js && npm start",
-    "test:rejointure": "node scripts/test-rejointure.js"
+    "test:rejointure": "node scripts/test-rejointure.js",
+    "test:mdp": "node scripts/test-mdp.js"
   },
   "keywords": [
     "quiz",

@@ -49,6 +49,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
+  `npm run test:mdp` (le mot de passe du mode Classique : la porte d entree, les modes
+  inventes, et surtout les PORTES DE SERVICE — un salon Rush, Collect ou Ascension
+  peut-il etre converti en Classique ? Voir la mesure temporaire plus bas),
   `npm run openings` liste les vignettes d openings a produire, serie par serie, avec
   le nom exact du fichier attendu — il ne verifie rien, il inventorie.
   `npm run openings:convertir` passe en WebP 400 px tout ce qui traine dans
@@ -310,8 +313,24 @@ oubliée au déploiement annulerait sinon la mesure en silence.
 Les suites ouvrent des salons Classique : elles lisent le mot de passe via `scripts/mdp-hote.js`.
 `test:hote` ouvre en Rush, son objet étant le jeton d'hôte et non cette mesure.
 
-Pour lever la mesure, trois endroits : le garde dans `/admin/toggle-game`, `demandeMdp` dans
-`app.js` (+ le voile `v2-mdp-*` dans `home.html` et `home.css`), et `scripts/mdp-hote.js`.
+⚠️ **Le garde tient par LISTE BLANCHE, et il en faut DEUX.** Deux contournements avaient été
+mesurés, tous deux ouvrant un vrai Classique sans mot de passe :
+
+- Le garde testait « si le mode demandé vaut `classic` ». Un mode **inconnu** y échappait, et
+  `/admin/start-game` — qui aiguille sur les modes qu'il connaît et **retombe SINON sur le
+  quiz** — lançait un Classique. Envoyer `lobbyMode: "Classic"` suffisait.
+- `/admin/set-teams` (le réglage *Format*) **écrit `lobbyMode`** et ne refusait que BombAnime :
+  ouvrir en Rush, Collect ou Ascension — tous libres — puis appeler la route donnait un salon
+  Classique. L'hôte a un jeton valable sur **toutes** les routes `/admin` de son salon.
+
+La leçon vaut au-delà de cette mesure : une liste noire ne couvre que les modes qui existaient
+le jour où on l'a écrite. `npm run test:mdp` tient les deux portes ; il ouvre en Rush, Collect et
+Ascension et tente la conversion.
+
+Pour lever la mesure, **quatre** endroits : le garde dans `/admin/toggle-game`, celui de
+`/admin/set-teams` (à garder, lui : ce réglage n'a rien à faire hors du quiz), `demandeMdp` dans
+`app.js` (+ le voile `v2-mdp-*` dans `home.html` et `home.css`), et `scripts/mdp-hote.js`
+(+ `scripts/test-mdp.js`).
 
 ## Conventions du code
 
