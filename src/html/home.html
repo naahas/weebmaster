@@ -223,7 +223,7 @@
                                     <span class="v2-mode-row-name">{{ m.name }}</span>
                                     <span class="v2-mode-row-kind">{{ m.kind }} · {{ m.players }}</span>
                                 </span>
-                                <span class="v2-mode-row-soon" v-if="m.soon">bientôt</span>
+                                <span class="v2-mode-row-soon" v-if="m.soon">soon</span>
                             </button>
                         </div>
 
@@ -246,7 +246,7 @@
                             <div class="v2-mode-preview-body">
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
                                 <span class="v2-mode-rule"></span>
-                                <p class="v2-mode-preview-desc">{{ currentMode.desc }}</p>
+                                <p class="v2-mode-preview-desc" v-if="currentMode.desc">{{ currentMode.desc }}</p>
                                 <button class="v2-cta" @click="createRoom" :disabled="creatingRoom || currentMode.soon">
                                     <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer un salon') }}</span>
                                     <span class="v2-cta-shine"></span>

@@ -7279,7 +7279,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    animation: v2Rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    /* 0,3 s et non 0,45 : l'écran part d'une opacité nulle, donc la première
+       moitié du fondu n'est pas lisible — c'est elle qu'on ressentait comme
+       une lenteur d'affichage. La durée est posée ici et non dans les
+       keyframes, que cinq autres blocs partagent. */
+    animation: v2Rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .v2-modes-layout {
@@ -7487,10 +7491,32 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: var(--text-primary);
 }
 
+/* ── Le titre ne bouge plus d'un mode a l'autre ──
+   Le corps du panneau est centre verticalement : sa hauteur depend donc de
+   la longueur de la description, et le gros titre montait ou descendait a
+   chaque survol — trois lignes pour Rush, quatre pour Classique, aucune pour
+   Chase. En lui reservant la hauteur du plus grand des six, le bloc garde la
+   meme taille pour tous et le titre tombe toujours au meme endroit ; le vide
+   eventuel se loge sous le bouton, ou il ne se voit pas.
+
+   15 rem, c'est le bloc le plus haut mesure : titre 3 + filet 0,14 + quatre
+   lignes 5,25 + bouton 3 + trois ecarts 3 = 14,4 rem. Une description qui
+   passerait a cinq lignes demanderait de relever cette valeur.
+
+   Bureau seulement : en dessous de 769 px le corps repasse en flux normal et
+   une hauteur reservee n'y creerait que du vide. */
+@media (min-width: 769px) {
+    .v2-mode-preview-body { min-height: 15rem; }
+}
+
 .v2-mode-preview-desc {
     max-width: 20rem;
     font-size: 0.82rem;
     line-height: 1.6;
+    /* Les retours à la ligne écrits dans la donnée sont rendus tels quels :
+       une description peut être un couplet. Sans objet pour les cinq autres,
+       qui n'en contiennent aucun. */
+    white-space: pre-line;
     color: var(--text-secondary);
 }
 
@@ -7889,6 +7915,11 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-row.soon.active { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.18); }
 .v2-mode-row.soon.active .v2-mode-row-bar { background: rgba(255, 255, 255, 0.35); box-shadow: none; }
 
+/* La pastille dorée marque le mode VERROUILLÉ — celui qu'on a choisi. Sur un
+   mode annoncé, on ne choisit rien : elle ne disait rien et venait se coller
+   contre le badge. Elle ne vaut que pour les modes qui s'ouvrent. */
+.v2-mode-row.soon.locked::after { display: none; }
+
 /* La ligne verrouillée (cliquée) garde une pastille, même en survolant ailleurs */
 .v2-mode-row.locked::after {
     content: '';
@@ -7913,9 +7944,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-collect   { --mode-color: #c3c9d4; }
 .v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
 .v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
-/* Un gris froid : le mode n'existe pas encore, il n'a droit à aucune des
-   couleurs qui identifient les cinq autres. */
-.v2-mode-preview.mode-chase     { --mode-color: #d8dde6; }
+/* Chase est le mode NOIR. Mais un accent parfaitement noir sur un fond noir
+   ne se voit pas : le filet sous le titre et la pastille de la liste sont
+   dessinés AVEC cette variable, et disparaîtraient purement et simplement.
+   D'où un noir relevé juste ce qu'il faut pour rester un trait — il se lit
+   comme du noir à côté du doré, du vert et du bleu des autres, sans être
+   absent. */
+.v2-mode-preview.mode-chase     { --mode-color: #3a3f4a; }
 /* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et
    la recouvrait : c'est elle qui teintait le filet et les particules. */
 .v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
@@ -7999,9 +8034,9 @@ body.game-active:has(.poll-game-container) #particles-js {
        c'est la largeur qui borne l'échelle, et les deux bornes bougent ensemble
        pour que le réglage garde un sens le jour où l'image change. */
     .v2-mode-char.char-chase {
-        height: 132%;
-        max-width: 76%;
-        right: -10%;
+        height: 118%;
+        max-width: 66%;
+        right: -1%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
@@ -8086,6 +8121,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     }
 }
 
+
 /* ── Un mode annoncé se montre en noir et blanc ──
    L'image est conservée EN COULEUR sur le disque et désaturée ici : le jour où
    le mode ouvre, il n'y a qu'une ligne à retirer, pas un fichier à réexporter.
@@ -8097,6 +8133,21 @@ body.game-active:has(.poll-game-container) #particles-js {
    descendant : c'est la seule place où cette règle est sans danger. */
 .v2-mode-char.soon {
     filter: grayscale(1) contrast(1.06) brightness(0.96);
+}
+
+/* ── Chase : le personnage reste une ombre ──
+   « brightness(0) » écrase toute l'image sur du noir en gardant sa
+   transparence : il ne reste que la découpe. L'« invert » qui suit relève ce
+   noir d'un cran — à zéro, la silhouette se confondrait avec le panneau ET
+   avec le fond de la page, et il n'y aurait plus rien à voir. C'est le
+   réglage à bouger pour la vouloir plus sombre ou plus présente.
+
+   ⚠️ Cette règle DOIT rester APRÈS « .soon » juste au-dessus. Les deux ont la
+   même spécificité — deux classes — et visent le même élément ; deux « filter »
+   ne s'additionnent pas, le dernier déclaré écrase l'autre. Placée avant, la
+   silhouette était purement et simplement annulée par la grisaille. */
+.v2-mode-char.char-chase {
+    filter: brightness(0) invert(0.17);
 }
 
 .v2-mode-char.plain {

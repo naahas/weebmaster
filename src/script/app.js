@@ -191,9 +191,15 @@ createApp({
                   desc: "Une tour à gravir étage par étage, chacun à son rythme. Chaque étage est une épreuve différente. Le premier arrivé au sommet l'emporte." },
                 { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'sora.webp',
                   desc: "Jeu de cartes à plusieurs. Chacun doit réunir des personnages d'un même anime avant les autres et les poser au milieu de la table." },
-                { id: 'chase',     name: 'Chase',     kind: 'En préparation', players: '?', img: 'sebastian.webp',
+                // Cette description est un COUPLET : ses retours à la ligne sont
+                // écrits dans la donnée et rendus tels quels, grâce au
+                // « white-space: pre-line » posé sur le paragraphe. Aucune de ses
+                // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
+                // en quatre lignes exactement — soit la hauteur déjà réservée plus
+                // haut pour que le titre ne bouge pas d'un mode à l'autre.
+                { id: 'chase',     name: 'Chase',     kind: 'Équipe', players: '∞', img: 'sebastian.webp',
                   soon: true,
-                  desc: "Quelque chose se prépare. Le nom est posé, le reste vient bientôt." },
+                  desc: "Et j'gère mes affaires\nDu sucre dans ma bouche amère\nLa mif sous un soleil plein\nTu touches, on touche le salaire" },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
@@ -3992,14 +3998,19 @@ createApp({
                 if (b.animate) {
                     b.animate(
                         [{ transform: 'scale(1)' }, { transform: 'scale(0.972)', offset: 0.4 }, { transform: 'scale(1)' }],
-                        { duration: 280, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' }
+                        { duration: 190, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' }
                     );
                 }
             }
+            // 90 ms et pas 190 : au-delà d'une centaine de millisecondes, une
+            // latence cesse d'être lue comme une réponse au clic et devient une
+            // lenteur — et pendant ce temps l'accueil reste strictement immobile.
+            // L'onde et l'enfoncement ont largement le temps de partir ; ils se
+            // terminent sur l'écran suivant, ce qui ne se voit pas.
             setTimeout(() => {
                 if (quoi === 'create') this.goToModes();
                 else this.openJoin();
-            }, 190);
+            }, 90);
         },
 
         goToModes() {
