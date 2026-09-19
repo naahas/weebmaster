@@ -191,6 +191,9 @@ createApp({
                   desc: "Une tour à gravir étage par étage, chacun à son rythme. Chaque étage est une épreuve différente. Le premier arrivé au sommet l'emporte." },
                 { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'sora.webp',
                   desc: "Jeu de cartes à plusieurs. Chacun doit réunir des personnages d'un même anime avant les autres et les poser au milieu de la table." },
+                { id: 'chase',     name: 'Chase',     kind: 'En préparation', players: '?', img: 'sebastian.webp',
+                  soon: true,
+                  desc: "Quelque chose se prépare. Le nom est posé, le reste vient bientôt." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],

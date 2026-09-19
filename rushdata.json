@@ -2561,13 +2561,269 @@
       "alias": [
         "Secre"
       ]
+    },
+    {
+      "id": "alice",
+      "nom": "Alice",
+      "anime": "Food Wars",
+      "img": "alice.webp",
+      "alias": []
+    },
+    {
+      "id": "erina",
+      "nom": "Erina",
+      "anime": "Food Wars",
+      "img": "erina.webp",
+      "alias": []
+    },
+    {
+      "id": "akira",
+      "nom": "Akira",
+      "anime": "Food Wars",
+      "img": "akira.webp",
+      "alias": [
+        "Hayama"
+      ]
+    },
+    {
+      "id": "chika",
+      "nom": "Chika",
+      "anime": "Kaguya-sama",
+      "img": "chika.webp",
+      "alias": [
+        "Fujiwara"
+      ]
+    },
+    {
+      "id": "kuroko",
+      "nom": "Kuroko",
+      "anime": "Kuroko no Basket",
+      "img": "kuroko.webp",
+      "alias": [
+        "Tetsuya"
+      ]
+    },
+    {
+      "id": "kise",
+      "nom": "Kise",
+      "anime": "Kuroko no Basket",
+      "img": "kise.webp",
+      "alias": [
+        "Ryota"
+      ]
+    },
+    {
+      "id": "kagami",
+      "nom": "Kagami",
+      "anime": "Kuroko no Basket",
+      "img": "kagami.webp",
+      "alias": [
+        "Taiga"
+      ]
+    },
+    {
+      "id": "murasakibara",
+      "nom": "Murasakibara",
+      "anime": "Kuroko no Basket",
+      "img": "murasakibara.webp",
+      "alias": [
+        "Atsushi"
+      ]
+    },
+    {
+      "id": "megumif",
+      "nom": "Megumi",
+      "anime": "Food Wars",
+      "img": "megumif.webp",
+      "alias": [
+        "Tadokoro"
+      ]
+    },
+    {
+      "id": "tashigi",
+      "nom": "Tashigi",
+      "anime": "One Piece",
+      "img": "tashigi.webp",
+      "alias": []
+    },
+    {
+      "id": "lucci",
+      "nom": "Lucci",
+      "anime": "One Piece",
+      "img": "lucci.webp",
+      "alias": [
+        "Rob Lucci"
+      ]
+    },
+    {
+      "id": "perona",
+      "nom": "Perona",
+      "anime": "One Piece",
+      "img": "perona.webp",
+      "alias": []
+    },
+    {
+      "id": "tayuya",
+      "nom": "Tayuya",
+      "anime": "Naruto",
+      "img": "tayuya.webp",
+      "alias": []
+    },
+    {
+      "id": "iruka",
+      "nom": "Iruka",
+      "anime": "Naruto",
+      "img": "iruka.webp",
+      "alias": [
+        "Umino"
+      ]
+    },
+    {
+      "id": "darui",
+      "nom": "Darui",
+      "anime": "Naruto",
+      "img": "darui.webp",
+      "alias": []
+    },
+    {
+      "id": "yagura",
+      "nom": "Yagura",
+      "anime": "Naruto",
+      "img": "yagura.webp",
+      "alias": []
+    },
+    {
+      "id": "kankuro",
+      "nom": "Kankuro",
+      "anime": "Naruto",
+      "img": "kankuro.webp",
+      "alias": []
+    },
+    {
+      "id": "nagato",
+      "nom": "Nagato",
+      "anime": "Naruto",
+      "img": "nagato.webp",
+      "alias": [
+        "Pain",
+        "Pein"
+      ]
+    },
+    {
+      "id": "hidan",
+      "nom": "Hidan",
+      "anime": "Naruto",
+      "img": "hidan.webp",
+      "alias": []
+    },
+    {
+      "id": "sai",
+      "nom": "Sai",
+      "anime": "Naruto",
+      "img": "sai.webp",
+      "alias": []
+    },
+    {
+      "id": "sasori",
+      "nom": "Sasori",
+      "anime": "Naruto",
+      "img": "sasori.webp",
+      "alias": []
+    },
+    {
+      "id": "kakuzu",
+      "nom": "Kakuzu",
+      "anime": "Naruto",
+      "img": "kakuzu.webp",
+      "alias": []
+    },
+    {
+      "id": "ging",
+      "nom": "Ging",
+      "anime": "Hunter Hunter",
+      "img": "ging.webp",
+      "alias": [
+        "Jin"
+      ]
+    },
+    {
+      "id": "zushi",
+      "nom": "Zushi",
+      "anime": "Hunter Hunter",
+      "img": "zushi.webp",
+      "alias": []
+    },
+    {
+      "id": "silva",
+      "nom": "Silva",
+      "anime": "Hunter Hunter",
+      "img": "silva.webp",
+      "alias": []
+    },
+    {
+      "id": "komugi",
+      "nom": "Komugi",
+      "anime": "Hunter Hunter",
+      "img": "komugi.webp",
+      "alias": []
+    },
+    {
+      "id": "biscuit",
+      "nom": "Biscuit",
+      "anime": "Hunter Hunter",
+      "img": "biscuit.webp",
+      "alias": [
+        "Bisket",
+        "Bisky"
+      ]
+    },
+    {
+      "id": "machi",
+      "nom": "Machi",
+      "anime": "Hunter Hunter",
+      "img": "machi.webp",
+      "alias": []
+    },
+    {
+      "id": "kite",
+      "nom": "Kite",
+      "anime": "Hunter Hunter",
+      "img": "kite.webp",
+      "alias": [
+        "Kaito"
+      ]
+    },
+    {
+      "id": "shizuku",
+      "nom": "Shizuku",
+      "anime": "Hunter Hunter",
+      "img": "shizuku.webp",
+      "alias": []
+    },
+    {
+      "id": "pieck",
+      "nom": "Pieck",
+      "anime": "Attack on Titan",
+      "img": "pieck.webp",
+      "alias": [
+        "Peak"
+      ]
+    },
+    {
+      "id": "danzo",
+      "nom": "Danzo",
+      "anime": "Naruto",
+      "img": "danzo.webp",
+      "alias": [
+        "Shimura"
+      ]
     }
   ],
   "filtres": {
     "overall": {
       "label": "Tout",
       "animes": [],
-      "compte": 334
+      "compte": 366
     },
     "big3": {
       "label": "Big 3",
@@ -2576,7 +2832,7 @@
         "Naruto",
         "Bleach"
       ],
-      "compte": 75
+      "compte": 89
     },
     "mainstream": {
       "label": "Mainstream",
@@ -2600,7 +2856,7 @@
         "Black Clover",
         "Jujutsu Kaisen"
       ],
-      "compte": 224
+      "compte": 251
     }
   }
 }

@@ -7913,6 +7913,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-collect   { --mode-color: #c3c9d4; }
 .v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
 .v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
+/* Un gris froid : le mode n'existe pas encore, il n'a droit à aucune des
+   couleurs qui identifient les cinq autres. */
+.v2-mode-preview.mode-chase     { --mode-color: #d8dde6; }
 /* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et
    la recouvrait : c'est elle qui teintait le filet et les particules. */
 .v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
@@ -7986,6 +7989,16 @@ body.game-active:has(.poll-game-container) #particles-js {
    mobiles, qui sont moins specifiques. */
 @media (min-width: 769px) {
     .v2-mode-char.char-classic {
+        height: 132%;
+        max-width: 76%;
+        right: -10%;
+    }
+
+    /* Sebastian est carré (1400 × 1400), exactement le rapport de Kenshin : il
+       part donc de son calage plutôt que d'un réglage inventé. Comme pour lui,
+       c'est la largeur qui borne l'échelle, et les deux bornes bougent ensemble
+       pour que le réglage garde un sens le jour où l'image change. */
+    .v2-mode-char.char-chase {
         height: 132%;
         max-width: 76%;
         right: -10%;
@@ -8071,6 +8084,19 @@ body.game-active:has(.poll-game-container) #particles-js {
            partout, et un masque de moins à faire calculer. Le fondu du bas,
            lui, reste en CSS : il est commun à tous les personnages. */
     }
+}
+
+/* ── Un mode annoncé se montre en noir et blanc ──
+   L'image est conservée EN COULEUR sur le disque et désaturée ici : le jour où
+   le mode ouvre, il n'y a qu'une ligne à retirer, pas un fichier à réexporter.
+   Le léger gain de contraste rattrape ce que la désaturation fait perdre — une
+   image simplement vidée de sa couleur paraît plate et sale.
+
+   ⚠️ « filter » crée un bloc conteneur pour les descendants en « position:
+   fixed ». Ici il porte sur la balise <img> elle-même, qui n'a pas de
+   descendant : c'est la seule place où cette règle est sans danger. */
+.v2-mode-char.soon {
+    filter: grayscale(1) contrast(1.06) brightness(0.96);
 }
 
 .v2-mode-char.plain {
