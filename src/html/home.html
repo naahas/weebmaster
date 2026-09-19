@@ -136,9 +136,14 @@
     
                         <!-- Stats générales -->
                         <div class="v2-bigstats">
+                            <!-- « en ligne » vivait ici. Il affichait 1 — le visiteur lui-même —
+                                 et c'était le tout premier chiffre de la page : le seul signal
+                                 social qu'elle donnait disait qu'il n'y avait personne. Un
+                                 compteur de présence ne flatte qu'une fois qu'on n'en a plus
+                                 besoin. Le remettre quand le trafic le portera. -->
                             <div class="v2-bigstat">
-                                <span class="v2-bigstat-value">{{ homeStats.playersOnline }}</span>
-                                <span class="v2-bigstat-label">en ligne</span>
+                                <span class="v2-bigstat-value">{{ nbModes }}</span>
+                                <span class="v2-bigstat-label">modes</span>
                             </div>
                             <span class="v2-bigstat-sep"></span>
                             <div class="v2-bigstat">
@@ -161,6 +166,11 @@
                             @mouseenter="hubHover = 'create'" @mouseleave="hubHover = null"
                             @click="pressChoice($event, 'create')">
                             <span class="v2-choice-glow"></span>
+                            <span class="v2-choice-jauge"></span>
+                            <span class="v2-choice-kanji" aria-hidden="true">創</span>
+                            <span class="v2-choice-braises" aria-hidden="true">
+                                <i v-for="(s, i) in braises" :key="i" :style="s"></i>
+                            </span>
                             <div class="v2-choice-body">
                                 <span class="v2-choice-kicker">Hôte</span>
                                 <span class="v2-choice-title">Créer</span>
@@ -174,6 +184,11 @@
                             @mouseenter="hubHover = 'join'" @mouseleave="hubHover = null"
                             @click="pressChoice($event, 'join')">
                             <span class="v2-choice-glow"></span>
+                            <span class="v2-choice-jauge"></span>
+                            <span class="v2-choice-kanji" aria-hidden="true">参</span>
+                            <span class="v2-choice-braises" aria-hidden="true">
+                                <i v-for="(s, i) in braises" :key="i" :style="s"></i>
+                            </span>
                             <div class="v2-choice-body">
                                 <span class="v2-choice-kicker">Invité</span>
                                 <span class="v2-choice-title">Rejoindre</span>

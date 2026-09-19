@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Les deux boutons de l'accueil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root {
+            --neon: #FFD700;
+            --or: #ffd24a;
+            --bleu: #7c9cff;
+            --txt: #fff;
+            --txt2: #a0a0a0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Le vrai fond de l'accueil : dégradé radial chaud, grille en fuite et
+           poussière dorée. Un bouton se juge sur son fond — posé sur du gris,
+           la moitié de ces effets ne se voient pas. */
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #17120a 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255, 210, 74, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 210, 74, 0.05) 1px, transparent 1px);
+            background-size: 3rem 3rem;
+            transform: perspective(40rem) rotateX(62deg) translateY(28%) scale(2.4);
+            transform-origin: 50% 100%;
+            mask-image: linear-gradient(to top, #000 0%, transparent 62%);
+        }
+
+        .nav, .head, .protos { position: relative; z-index: 1; }
+
+        .nav { max-width: 72rem; margin: 0 auto 2rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 2rem; transition: 0.2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,0.4); }
+
+        .head { max-width: 72rem; margin: 0 auto 3rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.03em; }
+        .head p { color: var(--txt2); font-size: 0.9rem; max-width: 48rem; line-height: 1.6; margin-top: 0.4rem; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .protos { max-width: 72rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3.4rem; }
+
+        .proto-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.35rem; }
+        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
+        .proto-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.04em; }
+        .proto-note { color: var(--txt2); font-size: 0.82rem; line-height: 1.55; max-width: 44rem; margin-bottom: 1.2rem; }
+
+        /* Les deux boutons côte à côte, comme sur l'accueil. */
+        .paire { display: flex; gap: 1.1rem; flex-wrap: wrap; }
+
+        /* ── Le socle commun ──
+           Toutes les pistes partent de la même boîte : seuls les effets
+           changent. C'est la seule façon de les comparer honnêtement. */
+        .b {
+            position: relative;
+            width: min(22rem, 100%);
+            min-height: 8rem;
+            padding: 1.3rem 1.6rem;
+            display: flex; flex-direction: column; justify-content: center; gap: 0.2rem;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            color: var(--txt);
+            font-family: inherit;
+            cursor: pointer;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .b .kick {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--c);
+            opacity: 0.85;
+        }
+        .b .lbl {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.6rem; line-height: 0.95; letter-spacing: 0.03em;
+        }
+        .b.or   { --c: var(--or);   --cr: 255, 210, 74; }
+        .b.bleu { --c: var(--bleu); --cr: 124, 156, 255; }
+
+        /* ══════════════ 1 · LAME ══════════════
+           Un trait de lumière traverse en diagonale, et le libellé se dédouble
+           une fraction de seconde sur son passage. C'est le seul effet du lot
+           qui raconte quelque chose : on tranche. */
+        .lame::before {
+            content: '';
+            position: absolute; top: -60%; bottom: -60%; left: -30%;
+            width: 40%;
+            background: linear-gradient(100deg, transparent, rgba(var(--cr), 0.85), rgba(255,255,255,0.95), rgba(var(--cr), 0.85), transparent);
+            transform: translateX(-160%) rotate(14deg);
+            filter: blur(0.35rem);
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .lame:hover::before {
+            opacity: 1;
+            animation: lameTranche 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+        }
+        @keyframes lameTranche {
+            from { transform: translateX(-160%) rotate(14deg); }
+            to   { transform: translateX(520%)  rotate(14deg); }
+        }
+        .lame:hover { border-color: rgba(var(--cr), 0.5); }
+        .lame:hover .lbl { animation: lameFente 0.55s steps(1); }
+        @keyframes lameFente {
+            0%, 100% { text-shadow: none; }
+            22% { text-shadow: 0.12em -0.05em 0 rgba(var(--cr), 0.9), -0.1em 0.05em 0 rgba(255,80,80,0.55); }
+            34% { text-shadow: -0.08em 0.04em 0 rgba(var(--cr), 0.8); }
+        }
+
+        /* ══════════════ 2 · AURA ══════════════
+           Un anneau de lumière tourne AUTOUR du bouton, en permanence et sans
+           survol : c'est le seul de la série qui appelle l'œil tout seul, ce
+           qui compte quand rien d'autre ne bouge sur la page. */
+        .aura::before {
+            content: '';
+            position: absolute; inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: conic-gradient(from var(--a, 0deg),
+                transparent 0deg, rgba(var(--cr), 0.15) 40deg,
+                rgba(var(--cr), 1) 80deg, #fff 95deg, rgba(var(--cr), 1) 110deg,
+                rgba(var(--cr), 0.15) 150deg, transparent 200deg, transparent 360deg);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+            animation: auraTourne 3.4s linear infinite;
+        }
+        @property --a { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+        @keyframes auraTourne { to { --a: 360deg; } }
+        .aura::after {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(80% 120% at 50% 130%, rgba(var(--cr), 0.22), transparent 70%);
+            opacity: 0.5;
+            transition: opacity 0.3s;
+            z-index: -1;
+        }
+        .aura:hover::after { opacity: 1; }
+        .aura:hover { animation: auraSouffle 1.1s ease-in-out infinite; }
+        @keyframes auraSouffle {
+            0%, 100% { box-shadow: 0 0 0 rgba(var(--cr), 0); }
+            50%      { box-shadow: 0 0 2.2rem rgba(var(--cr), 0.28); }
+        }
+
+        /* ══════════════ 3 · CHARGE ══════════════
+           Une jauge monte par le bas au survol, et des braises s'élèvent avec
+           elle. Le bouton se remplit au lieu de s'allumer : on sent qu'on
+           arme quelque chose avant de cliquer. */
+        .charge::before {
+            content: '';
+            position: absolute; left: 0; right: 0; bottom: 0;
+            height: 0;
+            background: linear-gradient(0deg, rgba(var(--cr), 0.38), rgba(var(--cr), 0.06) 70%, transparent);
+            transition: height 0.45s cubic-bezier(0.3, 0.9, 0.3, 1);
+            z-index: -1;
+        }
+        .charge:hover::before { height: 100%; }
+        .charge .braises { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: -1; }
+        .charge .braises i {
+            position: absolute; bottom: -0.5rem;
+            width: 0.22rem; height: 0.22rem;
+            border-radius: 50%;
+            background: var(--c);
+            box-shadow: 0 0 0.5rem var(--c);
+            opacity: 0;
+        }
+        .charge:hover .braises i { animation: braiseMonte 1.5s ease-out infinite; }
+        @keyframes braiseMonte {
+            0%   { opacity: 0;   transform: translateY(0) scale(0.6); }
+            18%  { opacity: 0.9; }
+            100% { opacity: 0;   transform: translateY(-7.5rem) scale(0.25); }
+        }
+        .charge:hover { border-color: rgba(var(--cr), 0.55); }
+        .charge .lbl { transition: transform 0.4s cubic-bezier(0.3, 0.9, 0.3, 1), text-shadow 0.4s; }
+        .charge:hover .lbl { transform: translateY(-0.12rem); text-shadow: 0 0 1.4rem rgba(var(--cr), 0.6); }
+
+        /* ══════════════ 4 · PROJECTEUR ══════════════
+           Une tache de lumière suit le curseur et découvre une trame cachée
+           sous la surface. Rien ne bouge : c'est le doigt qui éclaire. Très
+           lisible à la souris, sans objet au doigt — à ne pas retenir seul. */
+        .proj::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background-image:
+                linear-gradient(rgba(var(--cr), 0.55) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(var(--cr), 0.55) 1px, transparent 1px);
+            background-size: 0.7rem 0.7rem;
+            opacity: 0;
+            transition: opacity 0.25s;
+            -webkit-mask: radial-gradient(7rem 7rem at var(--mx, 50%) var(--my, 50%), #000 0%, transparent 65%);
+            mask: radial-gradient(7rem 7rem at var(--mx, 50%) var(--my, 50%), #000 0%, transparent 65%);
+            z-index: -1;
+        }
+        .proj:hover::before { opacity: 1; }
+        .proj::after {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(9rem 9rem at var(--mx, 50%) var(--my, 50%), rgba(var(--cr), 0.18), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.25s;
+            z-index: -1;
+        }
+        .proj:hover::after { opacity: 1; }
+        .proj:hover { border-color: rgba(var(--cr), 0.4); }
+
+        /* ══════════════ 5 · RELIEF ══════════════
+           La carte s'incline vers le curseur, et un reflet glisse en sens
+           inverse. C'est le plus sobre du lot : aucune couleur ajoutée, juste
+           de la profondeur. Celui qui vieillira le mieux. */
+        .relief {
+            transition: transform 0.18s ease-out, border-color 0.3s;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .relief:hover { border-color: rgba(var(--cr), 0.45); }
+        .relief::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.13) 50%, transparent 65%);
+            background-size: 260% 100%;
+            background-position: calc(var(--px, 0.5) * 100%) 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: -1;
+        }
+        .relief:hover::before { opacity: 1; }
+        .relief .lbl, .relief .kick { transform: translateZ(2.2rem); }
+
+        /* ══════════════ 6 · KANJI ══════════════
+           Un idéogramme immense dérive derrière le libellé — 創 « créer »,
+           参 « rejoindre ». Il ne se lit pas, il se sent : c'est de la texture,
+           et c'est ce qui ancre le mieux le bouton dans l'univers du site. */
+        .kanji::before {
+            content: attr(data-k);
+            position: absolute;
+            right: 0.75rem; top: 50%;
+            transform: translateY(-50%) translateX(0);
+            font-size: var(--kt, 5.5rem);
+            font-weight: 700;
+            line-height: 1;
+            color: rgba(var(--cr), 0.08);
+            transition: transform 0.6s cubic-bezier(0.25, 0.9, 0.3, 1), color 0.5s, filter 0.5s;
+            filter: blur(0.12rem);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .kanji:hover::before {
+            transform: translateY(-50%) translateX(-0.9rem);
+            color: rgba(var(--cr), 0.2);
+            filter: blur(0);
+        }
+        .kanji:hover { border-color: rgba(var(--cr), 0.45); background: rgba(var(--cr), 0.04); }
+        .kanji .lbl { transition: transform 0.5s cubic-bezier(0.25, 0.9, 0.3, 1); }
+        .kanji:hover .lbl { transform: translateX(0.35rem); }
+
+        /* ══════════════ 7 · FUSION (3 + 6) ══════════════
+           La jauge de la Charge et le kanji du Kanji, montés ensemble. Ce
+           n'est pas une superposition : la jauge monte DERRIÈRE l'idéogramme,
+           qui s'éclaire à mesure qu'elle le rattrape. L'un chauffe, l'autre
+           révèle — c'est ce que ni l'un ni l'autre ne faisait seul.
+
+           ⚠️ Les deux pistes d'origine se servaient toutes deux de « ::before »
+           avec un z-index négatif. Négatif, un pseudo-élément passe DERRIÈRE le
+           fond translucide du bouton et s'y ternit. Ici les quatre plans sont
+           numérotés en positif et le texte est remonté au-dessus : jauge 0,
+           kanji 1, braises 2, libellé 3. Rien n'est laissé au hasard de l'ordre
+           du document. */
+        /* Deux points de réglage retenus à l'œil : l'écart entre le surtitre et
+           le libellé, qui se touchaient presque, et la taille du kanji. */
+        .fusion { --kt: 5.5rem; gap: 0.33rem; }
+
+        /* Le surtitre glisse AVEC le libellé : décalés séparément, les deux
+           registres se désolidarisaient au survol et le bloc se disloquait. */
+        .fusion .kick, .fusion .lbl { position: relative; z-index: 3; }
+        .fusion .kick { transition: transform 0.5s cubic-bezier(0.25, 0.9, 0.3, 1); }
+        .fusion:hover .kick { transform: translateX(0.3rem); }
+
+        /* plan 0 — la jauge */
+        .fusion::after {
+            content: '';
+            position: absolute; left: 0; right: 0; bottom: 0;
+            height: 0;
+            background: linear-gradient(0deg, rgba(var(--cr), 0.42), rgba(var(--cr), 0.07) 70%, transparent);
+            transition: height 0.45s cubic-bezier(0.3, 0.9, 0.3, 1);
+            z-index: 0;
+        }
+        .fusion:hover::after { height: 100%; }
+
+        /* plan 1 — le kanji, qui reste lisible par-dessus la montée.
+           Il débordait du bord droit (« right: -0.4rem ») : collé au cadre, il
+           se lisait comme un défaut de calage plutôt que comme une texture. */
+        .fusion::before {
+            content: attr(data-k);
+            position: absolute;
+            right: 0.75rem; top: 50%;
+            transform: translateY(-50%) translateX(0);
+            font-size: var(--kt);
+            font-weight: 700;
+            line-height: 1;
+            color: rgba(var(--cr), 0.09);
+            filter: blur(0.12rem);
+            transition: transform 0.6s cubic-bezier(0.25, 0.9, 0.3, 1), color 0.5s, filter 0.5s, text-shadow 0.5s;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .fusion:hover::before {
+            transform: translateY(-50%) translateX(-0.8rem);
+            color: rgba(var(--cr), 0.26);
+            filter: blur(0);
+            text-shadow: 0 0 1.6rem rgba(var(--cr), 0.4);
+        }
+
+        /* plan 2 — les braises */
+        .fusion .braises { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+        .fusion .braises i {
+            position: absolute; bottom: -0.5rem;
+            width: 0.22rem; height: 0.22rem;
+            border-radius: 50%;
+            background: var(--c);
+            box-shadow: 0 0 0.5rem var(--c);
+            opacity: 0;
+        }
+        .fusion:hover .braises i { animation: braiseMonte 1.5s ease-out infinite; }
+
+        .fusion:hover { border-color: rgba(var(--cr), 0.55); }
+        .fusion .lbl { transition: transform 0.5s cubic-bezier(0.25, 0.9, 0.3, 1), text-shadow 0.4s; }
+        /* Uniquement vers la droite : le « translateY » d'origine faisait partir
+           le mot en diagonale, ce qui se lisait comme un décollage et non comme
+           une poussée. Même décalage que le surtitre, pour qu'ils bougent d'un bloc. */
+        .fusion:hover .lbl { transform: translateX(0.3rem); text-shadow: 0 0 1.4rem rgba(var(--cr), 0.6); }
+
+        /* Le réglage de la taille, pour trancher à l'œil plutôt qu'au jugé. */
+        .reglage {
+            display: flex; align-items: center; gap: 0.8rem;
+            margin: 0 0 1rem;
+            font-size: 0.78rem; color: var(--txt2);
+        }
+        .reglage input { width: 14rem; accent-color: var(--neon); }
+        .reglage b { color: var(--neon); font-family: 'Space Grotesk', sans-serif; min-width: 3.6rem; }
+
+        /* ══════════════ AU DOIGT ══════════════
+           Tout ce qui précède vit au survol — et le survol n'existe pas sur un
+           téléphone. Sans ce bloc, la fusion y est une carte inerte : ni jauge,
+           ni braises, ni kanji qui s'éclaire. Deux mesures, et il faut les deux.
+
+           1. L'APPUI fait ce que faisait le survol. « :active » double chaque
+              règle ; c'est verbeux, mais c'est la seule façon d'obtenir une
+              réponse au doigt sans une ligne de JavaScript.
+           2. Là où le survol n'existe PAS DU TOUT — « hover: none » —, le repos
+              est relevé : personne ne viendra révéler le kanji, alors il est
+              donné d'emblée, et un fond de jauge est déjà allumé. Sur écran,
+              rien de tout ça ne s'applique et l'effet garde sa surprise. */
+        .fusion:active::after { height: 100%; }
+        .fusion:active::before {
+            transform: translateY(-50%) translateX(-0.8rem);
+            color: rgba(var(--cr), 0.26);
+            filter: blur(0);
+            text-shadow: 0 0 1.6rem rgba(var(--cr), 0.4);
+        }
+        .fusion:active .braises i { animation: braiseMonte 1.5s ease-out infinite; }
+        .fusion:active { border-color: rgba(var(--cr), 0.55); }
+        .fusion:active .kick { transform: translateX(0.3rem); }
+        .fusion:active .lbl { transform: translateX(0.3rem); text-shadow: 0 0 1.4rem rgba(var(--cr), 0.6); }
+
+        @media (hover: none) {
+            .fusion::before { color: rgba(var(--cr), 0.17); filter: blur(0.05rem); }
+            .fusion::after { height: 34%; }
+        }
+
+        @media (max-width: 760px) {
+            .b { width: 100%; }
+            /* Le bouton devient bien plus large que haut : le kanji reculerait
+               loin du libellé et les deux cesseraient de former un ensemble.
+               On le ramène, et on le grossit un peu pour qu'il tienne la place. */
+            .fusion { --kt: 7.5rem; }
+            .fusion::before { right: 1.6rem; }
+            .reglage input { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/boutons">Boutons</a>
+        <a href="/prototypes/hub-boutons" class="on">Créer / Rejoindre</a>
+        <a href="/prototypes/code">Code du salon</a>
+        <a href="/prototypes/modes">Liste des modes</a>
+    </div>
+
+    <div class="head">
+        <h1>Les deux boutons de l'accueil</h1>
+        <p>Sept façons de traiter <b>Créer</b> et <b>Rejoindre</b>. Ils sont posés sur le vrai
+           fond — dégradé chaud, grille en fuite —, parce qu'un bouton ne se juge pas sur du
+           gris : la moitié de ces effets disparaissent hors de leur décor. Chaque piste est
+           montrée <b>en paire</b>, doré pour l'hôte et bleu pour l'invité, comme en vrai.
+           Survole pour déclencher. <b>la 07 est la fusion que tu as demandée — Charge + Kanji</b> — c'est
+           un critère, pas un détail : sur une page immobile, elle est la seule à appeler l'œil.</p>
+    </div>
+
+    <div class="protos">
+
+        <section>
+            <div class="proto-head"><span class="proto-num">01</span><span class="proto-nom">Lame</span></div>
+            <p class="proto-note">Un trait de lumière traverse en diagonale et le libellé se dédouble
+               sur son passage. C'est la seule piste du lot qui <b>raconte</b> quelque chose — on tranche —
+               et la seule qui soit d'ici plutôt que d'un site quelconque.</p>
+            <div class="paire">
+                <button class="b or lame"><span class="kick">Hôte</span><span class="lbl">Créer</span></button>
+                <button class="b bleu lame"><span class="kick">Invité</span><span class="lbl">Rejoindre</span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">02</span><span class="proto-nom">Aura</span></div>
+            <p class="proto-note">Un anneau de lumière tourne autour du contour, <b>en permanence</b>, et
+               le halo respire au survol. Seule piste qui ne dort pas : sur un écran d'accueil où rien
+               d'autre ne bouge, c'est elle qui dit où cliquer.</p>
+            <div class="paire">
+                <button class="b or aura"><span class="kick">Hôte</span><span class="lbl">Créer</span></button>
+                <button class="b bleu aura"><span class="kick">Invité</span><span class="lbl">Rejoindre</span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">03</span><span class="proto-nom">Charge</span></div>
+            <p class="proto-note">Une jauge monte par le bas et des braises s'élèvent avec elle. Le bouton
+               se <b>remplit</b> au lieu de s'allumer : on sent qu'on arme quelque chose avant de cliquer.
+               Le plus « shonen » des six, et le plus démonstratif — à toi de dire si c'est trop.</p>
+            <div class="paire">
+                <button class="b or charge"><span class="kick">Hôte</span><span class="lbl">Créer</span>
+                    <span class="braises"></span></button>
+                <button class="b bleu charge"><span class="kick">Invité</span><span class="lbl">Rejoindre</span>
+                    <span class="braises"></span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">04</span><span class="proto-nom">Projecteur</span></div>
+            <p class="proto-note">Une tache de lumière suit le curseur et découvre une trame cachée sous la
+               surface. Rien ne bouge : c'est le doigt qui éclaire. ⚠️ <b>Sans objet au doigt</b> — sur
+               téléphone il ne se passe rien. À ne pas retenir seul.</p>
+            <div class="paire">
+                <button class="b or proj" data-suit><span class="kick">Hôte</span><span class="lbl">Créer</span></button>
+                <button class="b bleu proj" data-suit><span class="kick">Invité</span><span class="lbl">Rejoindre</span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">05</span><span class="proto-nom">Relief</span></div>
+            <p class="proto-note">La carte s'incline vers le curseur et un reflet glisse en sens inverse.
+               Le plus sobre du lot : aucune couleur ajoutée, juste de la profondeur. <b>Celui qui
+               vieillira le mieux</b> — on ne s'en lasse pas, parce qu'il n'y a rien à remarquer.</p>
+            <div class="paire">
+                <button class="b or relief" data-tilt><span class="kick">Hôte</span><span class="lbl">Créer</span></button>
+                <button class="b bleu relief" data-tilt><span class="kick">Invité</span><span class="lbl">Rejoindre</span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">06</span><span class="proto-nom">Kanji</span></div>
+            <p class="proto-note">Un idéogramme immense dérive derrière le libellé — 創 pour créer,
+               参 pour rejoindre. Il ne se lit pas, il se sent : c'est de la <b>texture</b>, et c'est la
+               piste qui ancre le mieux les boutons dans l'univers du site sans rien coûter en lisibilité.</p>
+            <div class="paire">
+                <button class="b or kanji" data-k="創"><span class="kick">Hôte</span><span class="lbl">Créer</span></button>
+                <button class="b bleu kanji" data-k="参"><span class="kick">Invité</span><span class="lbl">Rejoindre</span></button>
+            </div>
+        </section>
+
+        <section>
+            <div class="proto-head"><span class="proto-num">07</span><span class="proto-nom">Fusion — Charge + Kanji</span></div>
+            <p class="proto-note">La jauge monte <b>derrière</b> l'idéogramme, qui s'éclaire à mesure qu'elle
+               le rattrape. Ce n'est pas une superposition des deux pistes : l'une chauffe, l'autre révèle —
+               c'est ce que ni l'une ni l'autre ne faisait seule. Le kanji est à 5,5 rem, décollé du bord droit, et le
+               curseur est là pour que tu tranches à l'œil.</p>
+            <div class="reglage">
+                <label for="kt">Taille du kanji</label>
+                <input type="range" id="kt" min="3.5" max="9" step="0.25" value="5.5">
+                <b id="ktv">5,5 rem</b>
+            </div>
+            <div class="paire" id="pfusion">
+                <button class="b or fusion" data-k="創"><span class="kick">Hôte</span><span class="lbl">Créer</span>
+                    <span class="braises"></span></button>
+                <button class="b bleu fusion" data-k="参"><span class="kick">Invité</span><span class="lbl">Rejoindre</span>
+                    <span class="braises"></span></button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Le curseur écrit une variable CSS sur les deux boutons à la fois :
+        // on les règle ensemble, parce qu'ils vivent côte à côte.
+        (function () {
+            var c = document.getElementById('kt'), v = document.getElementById('ktv'),
+                p = document.getElementById('pfusion');
+            function pose() {
+                v.textContent = c.value.replace('.', ',') + ' rem';
+                p.querySelectorAll('.fusion').forEach(function (b) {
+                    b.style.setProperty('--kt', c.value + 'rem');
+                });
+            }
+            c.addEventListener('input', pose);
+            pose();
+        })();
+
+        // Les braises de la piste 3 : semées une fois, à des abscisses et des
+        // retards différents. Les écrire dans le gabarit aurait donné six
+        // braises parfaitement alignées, ce qui se voit immédiatement.
+        document.querySelectorAll('.braises').forEach(function (z) {
+            for (var i = 0; i < 7; i++) {
+                var b = document.createElement('i');
+                b.style.left = (6 + i * 13 + (i % 3) * 4) + '%';
+                b.style.animationDelay = (i * 0.19).toFixed(2) + 's';
+                b.style.animationDuration = (1.25 + (i % 4) * 0.22).toFixed(2) + 's';
+                z.appendChild(b);
+            }
+        });
+
+        // Projecteur : la position du curseur passe en pourcentages, que le
+        // masque radial consomme directement. Rien n'est recalculé en JS.
+        document.querySelectorAll('[data-suit]').forEach(function (el) {
+            el.addEventListener('pointermove', function (e) {
+                var r = el.getBoundingClientRect();
+                el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+                el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+            });
+        });
+
+        // Relief : une inclinaison bornée à 7°, sinon la carte part en cerf-volant
+        // et le texte devient illisible dès qu'on s'approche d'un bord.
+        document.querySelectorAll('[data-tilt]').forEach(function (el) {
+            el.addEventListener('pointermove', function (e) {
+                var r = el.getBoundingClientRect();
+                var px = (e.clientX - r.left) / r.width;
+                var py = (e.clientY - r.top) / r.height;
+                el.style.setProperty('--px', px.toFixed(3));
+                el.style.transform = 'perspective(34rem) rotateY(' + ((px - 0.5) * 14).toFixed(2)
+                                   + 'deg) rotateX(' + ((0.5 - py) * 10).toFixed(2) + 'deg)';
+            });
+            el.addEventListener('pointerleave', function () { el.style.transform = ''; });
+        });
+    </script>
+</body>
+
+</html>

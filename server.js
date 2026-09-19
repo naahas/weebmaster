@@ -1288,6 +1288,11 @@ app.get('/prototypes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes.html');
 });
 
+// Les deux boutons de l accueil : six pistes, montrees en paire sur le vrai fond.
+app.get('/prototypes/hub-boutons', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-hub-boutons.html');
+});
+
 app.get('/prototypes/boutons', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-boutons.html');
 });

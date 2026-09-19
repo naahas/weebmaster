@@ -7032,7 +7032,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-choices {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.8rem, 1.8vh, 1.4rem);
+    gap: clamp(0.98rem, 2vh, 1.58rem);
     width: clamp(17rem, 28vw, 23rem);
     flex: 0 0 auto;
 }
@@ -7048,7 +7048,6 @@ body.game-active:has(.poll-game-container) #particles-js {
     background: linear-gradient(135deg, #17150f, #101012);
     border: 0.09rem solid rgba(255, 255, 255, 0.09);
     border-radius: 0.55rem;
-    clip-path: polygon(0 0, 100% 0, 100% 70%, 92% 100%, 0 100%);
     box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0);
     will-change: transform, opacity;
     transform: translateZ(0);
@@ -7133,8 +7132,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
+/* Aucun déplacement au survol : la carte ne se soulève plus. Tout l'effet
+   passe par la lumière — bordure, halo, jauge qui monte et kanji qui s'éclaire.
+   Un bouton qui bouge sous le curseur déplace aussi sa cible. */
 .v2-choice:hover {
-    transform: translateY(-0.4rem);
     border-color: rgba(255, 215, 0, 0.55);
     box-shadow: 0 1.2rem 3rem rgba(255, 170, 0, 0.18);
 }
@@ -7143,13 +7144,118 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Grisage de l'autre carte : opacité seule (filter/grayscale saccade au survol) */
 .v2-choice.dimmed {
     opacity: 0.42;
-    transform: translateY(0) scale(0.985);
 }
 
 .v2-choice.dimmed .v2-choice-glow { opacity: 0.18; }
 
 .v2-choice-join:hover { border-color: rgba(140, 160, 255, 0.5); box-shadow: 0 1.2rem 3rem rgba(120, 140, 255, 0.16); }
 .v2-choice-join:hover .v2-choice-arrow { color: #9db4ff; }
+
+/* ── La fusion « Charge + Kanji » ──
+   Retenue dans /prototypes/hub-boutons, piste 07. Trois plans s'ajoutent sous
+   le corps : une jauge qui monte par le bas, un idéogramme qui s'éclaire quand
+   elle le rattrape, et des braises qui s'élèvent. L'un chauffe, l'autre révèle.
+
+   ⚠️ Les trois vivent en « z-index: 1 », donc SOUS le corps (2) et sous l'onde
+   de clic (3). Entre eux, c'est l'ordre du gabarit qui décide — jauge, kanji,
+   braises — et cet ordre n'est pas décoratif : le kanji doit passer par-dessus
+   la jauge, sinon la montée le noie au lieu de l'éclairer. */
+.v2-choice-jauge,
+.v2-choice-kanji,
+.v2-choice-braises { position: absolute; z-index: 1; pointer-events: none; }
+
+.v2-choice-jauge {
+    left: 0; right: 0; bottom: 0;
+    height: 0;
+    transition: height 0.45s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+.v2-choice-create .v2-choice-jauge { background: linear-gradient(0deg, rgba(255, 210, 74, 0.34), rgba(255, 210, 74, 0.06) 70%, transparent); }
+.v2-choice-join   .v2-choice-jauge { background: linear-gradient(0deg, rgba(124, 156, 255, 0.32), rgba(124, 156, 255, 0.06) 70%, transparent); }
+.v2-choice:hover .v2-choice-jauge { height: 100%; }
+
+/* Décollé du bord droit : collé au cadre, l'idéogramme se lit comme un défaut
+   de calage et non comme une texture. */
+.v2-choice-kanji {
+    right: 0.75rem; top: 50%;
+    transform: translateY(-50%);
+    font-size: 5.5rem;
+    font-weight: 700;
+    line-height: 1;
+    filter: blur(0.12rem);
+    transition: transform 0.6s cubic-bezier(0.25, 0.9, 0.3, 1), color 0.5s, filter 0.5s, text-shadow 0.5s;
+}
+.v2-choice-create .v2-choice-kanji { color: rgba(255, 210, 74, 0.09); }
+.v2-choice-join   .v2-choice-kanji { color: rgba(124, 156, 255, 0.09); }
+.v2-choice:hover .v2-choice-kanji { transform: translateY(-50%) translateX(-0.8rem); filter: blur(0); }
+.v2-choice-create:hover .v2-choice-kanji { color: rgba(255, 210, 74, 0.26); text-shadow: 0 0 1.6rem rgba(255, 210, 74, 0.4); }
+.v2-choice-join:hover   .v2-choice-kanji { color: rgba(124, 156, 255, 0.26); text-shadow: 0 0 1.6rem rgba(124, 156, 255, 0.4); }
+
+.v2-choice-braises { inset: 0; overflow: hidden; }
+.v2-choice-braises i {
+    position: absolute; bottom: -0.5rem;
+    width: 0.22rem; height: 0.22rem;
+    border-radius: 50%;
+    opacity: 0;
+}
+.v2-choice-create .v2-choice-braises i { background: var(--neon-primary); box-shadow: 0 0 0.5rem var(--neon-primary); }
+.v2-choice-join   .v2-choice-braises i { background: #9db4ff; box-shadow: 0 0 0.5rem #9db4ff; }
+.v2-choice:hover .v2-choice-braises i { animation: v2Braise 1.5s ease-out infinite; }
+@keyframes v2Braise {
+    0%   { opacity: 0;   transform: translateY(0) scale(0.6); }
+    18%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translateY(-7.5rem) scale(0.25); }
+}
+
+/* Surtitre et titre poussent vers la droite D'UN BLOC. Décalés séparément, les
+   deux registres se désolidarisent et le bloc se disloque ; et le déplacement
+   est horizontal seul — en diagonale, le mot a l'air de décoller. */
+.v2-choice-kicker,
+.v2-choice-title { transition: transform 0.5s cubic-bezier(0.25, 0.9, 0.3, 1), text-shadow 0.4s; }
+.v2-choice:hover .v2-choice-kicker,
+.v2-choice:hover .v2-choice-title { transform: translateX(0.3rem); }
+.v2-choice-create:hover .v2-choice-title { text-shadow: 0 0 1.4rem rgba(255, 210, 74, 0.55); }
+.v2-choice-join:hover   .v2-choice-title { text-shadow: 0 0 1.4rem rgba(124, 156, 255, 0.5); }
+
+/* La carte grisée ne laisse rien filtrer de son décor : sans ça, le kanji de
+   la carte écartée reste aussi présent que celui qu'on survole. */
+.v2-choice.dimmed .v2-choice-kanji { color: rgba(255, 255, 255, 0.045); text-shadow: none; }
+.v2-choice.dimmed .v2-choice-jauge { height: 0; }
+
+/* ── Au doigt ──
+   Le survol n'existe pas, et il COLLE : sur un écran tactile, « :hover » reste
+   parfois accroché après un appui, ce qui figerait la jauge à mi-course sur une
+   carte qu'on ne touche plus. On éteint les règles de survol et on rebranche
+   tout sur l'appui. */
+@media (hover: none) {
+    .v2-choice:hover .v2-choice-jauge { height: 0; }
+    .v2-choice:hover .v2-choice-kanji { transform: translateY(-50%); filter: blur(0.12rem); text-shadow: none; }
+    .v2-choice-create:hover .v2-choice-kanji { color: rgba(255, 210, 74, 0.09); }
+    .v2-choice-join:hover   .v2-choice-kanji { color: rgba(124, 156, 255, 0.09); }
+    .v2-choice:hover .v2-choice-braises i { animation: none; }
+    .v2-choice:hover .v2-choice-kicker,
+    .v2-choice:hover .v2-choice-title { transform: none; text-shadow: none; }
+
+    .v2-choice:active .v2-choice-jauge { height: 100%; }
+    .v2-choice:active .v2-choice-kanji { transform: translateY(-50%) translateX(-0.8rem); filter: blur(0); }
+    .v2-choice-create:active .v2-choice-kanji { color: rgba(255, 210, 74, 0.26); }
+    .v2-choice-join:active   .v2-choice-kanji { color: rgba(124, 156, 255, 0.26); }
+    .v2-choice:active .v2-choice-kicker,
+    .v2-choice:active .v2-choice-title { transform: translateX(0.3rem); }
+}
+
+/* ── Le sélecteur segmenté ──
+   Sous 768 px, les deux cartes deviennent deux moitiés étroites dans un seul
+   cadre, texte centré. Un idéogramme de 6 rem y occuperait toute la largeur et
+   les braises n'auraient pas la hauteur de monter : les deux plans sont retirés,
+   et seule la jauge reste — elle, un segment sait l'accueillir. */
+@media (max-width: 768px) {
+    .v2-choice-kanji, .v2-choice-braises { display: none; }
+    .v2-choice:hover .v2-choice-kicker,
+    .v2-choice:hover .v2-choice-title,
+    .v2-choice:active .v2-choice-kicker,
+    .v2-choice:active .v2-choice-title { transform: none; }
+    .v2-choice:active .v2-choice-jauge { height: 100%; }
+}
 
 
 .v2-live-dot {
@@ -10767,7 +10873,6 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         padding: 0.95rem 0.5rem;
         border: none;
         border-radius: 0;
-        clip-path: none;
         box-shadow: none;
         background: linear-gradient(180deg, rgba(255, 215, 0, 0.13), rgba(255, 255, 255, 0.015));
     }

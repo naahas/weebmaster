@@ -631,6 +631,24 @@ createApp({
 
     computed: {
 
+        // Le nombre de modes annoncé sur l'accueil se DÉDUIT de la liste, il
+        // ne s'écrit pas à la main : un mode ajouté se compte tout seul, et
+        // un mode « bientôt » ne se compte pas — on n'annonce que ce qui se joue.
+        // Les sept braises des boutons de l'accueil. Écrites à la main dans le
+        // gabarit, elles seraient parfaitement alignées et régulières — ce qui se
+        // voit tout de suite. Abscisse, retard et durée sont décalés pour chacune.
+        braises() {
+            return Array.from({ length: 7 }, (_, i) => ({
+                left: (6 + i * 13 + (i % 3) * 4) + '%',
+                animationDelay: (i * 0.19).toFixed(2) + 's',
+                animationDuration: (1.25 + (i % 4) * 0.22).toFixed(2) + 's',
+            }));
+        },
+
+        nbModes() {
+            return this.modes.filter(m => !m.soon).length;
+        },
+
         // 🆕 v2 — mode actuellement sélectionné sur l'accueil
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
