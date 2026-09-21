@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">30 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Les débuts d'Ippo","d":"easy","t":"Quel commerce familial Ippo aide-t-il sa mère à faire tourner ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Un bateau de pêche","Une supérette","Un restaurant de ramen","Un atelier de réparation","Une poissonnerie","Un dojo"],"src":"After his father died, Ippo grew up assisting his mother with the family fishing boat business."},{"g":"Les débuts d'Ippo","d":"medium","t":"Pourquoi Ippo arrive-t-il parfois en retard en classe ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Il aide sa mère à pêcher de nuit ou au petit matin","Il s'entraîne avant l'aube","Il travaille de nuit dans une usine","Il rend visite à son père à l'hôpital","Il fuit ses harceleurs par un long détour","Il livre les journaux"],"src":"Whenever night fishing or early morning fishing was scheduled, he would turn down invitations from friends to help his mother, and because of that, he sometimes overslept and was late for class."},{"g":"Les débuts d'Ippo","d":"medium","t":"Qui sauve Ippo de ses harceleurs au tout début de la série ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Mamoru Takamura","Genji Kamogawa","Masaru Aoki","Ichiro Miyata","Tatsuya Kimura","Ryo Mashiba"],"src":"After being bullied by his classmates Masahiko Umezawa, Takemura and Matsuda, Ippo was saved by novice boxer, Mamoru Takamura, who drives the trio away."},{"g":"Les débuts d'Ippo","d":"hard","t":"Comment s'appelle le meneur des camarades qui harcèlent Ippo ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Masahiko_Umezawa","b":1,"r":["Masahiko Umezawa","Takemura","Matsuda","Yamada","Kobashi","Fujiwara"],"src":"Masahiko Umezawa, along with his friends, Takemura and Matsuda catch up to fellow student, Ippo, and began insulting and beating him underneath a bridge."},{"g":"Les débuts d'Ippo","d":"veryhard","t":"Qu'y a-t-il de dessiné sur le sac de frappe qu'Ippo tape pour la première fois ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Le visage d'Umezawa","Une cible concentrique","Le visage de Takamura","Un poisson","Rien du tout","Le visage de Miyata"],"src":"Before letting Ippo go, Takamura gave him the opportunity to punch a heavyweight bag with a drawing of Umezawa's face on it."},{"g":"Les débuts d'Ippo","d":"hard","t":"Quelle épreuve Takamura impose-t-il à Ippo avant d'accepter de l'entraîner ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Attraper dix feuilles en plein vol avec ses jabs","Courir dix kilomètres chaque matin","Tenir trois minutes face à lui","Casser une planche d'un seul coup","Faire mille pompes","Frapper le sac cent fois sans s'arrêter"],"src":"Takamura told him that he would only agree to train him if he caught ten leaves falling from a tree midair with his jabs within a week."},{"g":"Les débuts d'Ippo","d":"extreme","t":"Comment Ippo attrape-t-il finalement les dix feuilles ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["D'une seule main","Les deux mains à la fois","En sautant depuis une branche","Avec l'aide de Takamura","En les coinçant contre le tronc","En attendant qu'il n'y ait plus de vent"],"src":"With much struggle, Ippo successfully caught ten leaves on the promised day with one hand, surprising Takamura and earning his acceptance.","n":"Le détail qui fait la scène : la consigne ne l'exigeait pas, et c'est ce qui stupéfie Takamura."},{"g":"Le club Kamogawa","d":"medium","t":"Qui a fondé le club de boxe que rejoint Ippo ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Genji_Kamogawa","b":1,"r":["Genji Kamogawa","Mamoru Takamura","Ginpachi Nekota","Eiji Date","Ichiro Miyata","Le père d'Ippo"],"src":"He is a long old retired prizefighter who founded the Kamogawa gym years later after retiring."},{"g":"Le club Kamogawa","d":"hard","t":"Quel métier Kamogawa exerçait-il juste après la Seconde Guerre mondiale ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Genji_Kamogawa","b":1,"r":["Boxeur de combats à la prime","Docker","Pêcheur","Militaire","Forgeron","Entraîneur d'une école"],"src":"Kamogawa worked as a prizefighter in Japan shortly after the end of World War II."},{"g":"Le club Kamogawa","d":"extreme","t":"Quel est le bilan des combats entre Kamogawa et Nekota ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Genji_Kamogawa","b":1,"r":["Deux victoires, deux défaites et un nul","Trois victoires et deux défaites","Un seul combat, nul","Quatre victoires pour Kamogawa","Cinq défaites pour Kamogawa","Deux victoires chacun, sans nul"],"src":"He has had multiple boxing matches with former prizefighter Ginpachi Nekota, two of which he lost, two of which he won, and another that ended a draw."},{"g":"Le club Kamogawa","d":"medium","t":"Contre qui Ippo dispute-t-il son tout premier combat professionnel ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Y%C5%ABsuke_Oda","b":1,"r":["Yusuke Oda","Takeshi Sendo","Ryo Mashiba","Ryuichi Hayami","Ichiro Miyata","Masaru Aoki"],"src":"When his next match was against Ippo Makunouchi, Oda believed it would be easy, as his opponent was just starting."},{"g":"Le club Kamogawa","d":"veryhard","t":"Comment Oda avait-il remporté ses propres débuts professionnels ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Y%C5%ABsuke_Oda","b":1,"r":["Par K.-O., d'un seul coup de sa droite","Aux points, à l'unanimité","Par abandon de son adversaire","Par disqualification","Au dernier round, de justesse","Par arrêt du médecin"],"src":"He won his pro debut as a junior lightweight with only one punch from his right, knocking his opponent out and winning his coach's praise."},{"g":"Le club Kamogawa","d":"medium","t":"Quels sont les deux camarades d'entraînement d'Ippo au club Kamogawa, avec Takamura ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ippo_Makunouchi","b":1,"r":["Masaru Aoki et Tatsuya Kimura","Ichiro Miyata et Takeshi Sendo","Ryo Mashiba et Masaru Aoki","Tatsuya Kimura et Ryuichi Hayami","Yusuke Oda et Masaru Aoki","Alexander Volg et Tatsuya Kimura"],"src":"a brotherly bond with his peers Mamoru Takamura, Masaru Aoki, Tatsuya Kimura, and a deep trust for his coach, Genji Kamogawa."},{"g":"Les techniques","d":"hard","t":"Qu'est-ce qui caractérise le Gazelle Punch ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Gazelle_Punch","b":1,"r":["Le boxeur décolle légèrement du sol en frappant","Le poing part depuis le sol, genou à terre","Le coup est porté en reculant","Les deux poings frappent en même temps","Le coup traverse la garde par en dessous","Le boxeur tourne sur lui-même avant de frapper"],"src":"The Gazelle Punch is a hook-related technique where the user lifts up from the ground slightly like a gazelle."},{"g":"Les techniques","d":"veryhard","t":"Quel entraînement Kamogawa impose-t-il à Ippo pour préparer le Gazelle Punch ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Gazelle_Punch","b":1,"r":["Deux cents squats par jour pendant une semaine","Mille sauts à la corde par jour","Des montées d'escaliers avec un sac de sable","Des sprints en côte","Des sauts de haies","Des flexions sur une seule jambe"],"src":"To prepare him to use this technique, Kamogawa had Ippo do a set of two hundred squats for a week to build up the springing ability of his legs to be like a gazelle's."},{"g":"Les techniques","d":"extreme","t":"Quelle garde permet d'annuler les dégâts du Gazelle Punch ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Gazelle_Punch","b":1,"r":["Le Cross Arm Block","La garde Peek-a-Boo","La Défense Tortue","La garde haute classique","L'esquive latérale","Aucune, il traverse toutes les gardes"],"src":"Boxers are also able to break through guards using the Gazelle Punch, however, a Cross Arm Block is able to negate the damage."},{"g":"Les techniques","d":"medium","t":"Qui a inventé le Dempsey Roll dans la réalité ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Dempsey_Roll","b":1,"r":["Jack Dempsey","Mike Tyson","Muhammad Ali","Rocky Marciano","Joe Frazier","George Foreman"],"src":"The Dempsey Roll is a technique used by Ippo Makunouchi. First created by Jack Dempsey."},{"g":"Les techniques","d":"hard","t":"En observant quel boxeur Ippo a-t-il eu l'idée du Dempsey Roll ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Dempsey_Roll","b":1,"r":["Mike Tyson","Jack Dempsey","Muhammad Ali","Takamura","Date Eiji","Ricardo Martinez"],"src":"Ippo came up with the idea without knowing it already existed while watching how Mike Tyson bobbed his head and used the momentum to punch.","n":"Le point qui fait la question : Ippo l'a RÉINVENTÉ sans savoir qu'il existait — d'où le leurre « Jack Dempsey », qui est le vrai inventeur mais pas la réponse ici."},{"g":"Les techniques","d":"veryhard","t":"Quelle forme le buste d'Ippo décrit-il pendant le Dempsey Roll ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Dempsey_Roll","b":1,"r":["Un huit couché","Un cercle","Un triangle","Un zigzag vertical","Une spirale","Une croix"],"src":"Ippo lowers his stance and central balance and begins to aggressively weave his body in a pattern similar to the shape of a side way figure eight."},{"g":"Les techniques","d":"hard","t":"Quelle est la technique fétiche de Masaru Aoki ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Masaru_Aoki","b":1,"r":["Le Frog Punch","Le Dragonfish Blow","Le Flicker Jab","Le Gazelle Punch","Le Jolt Counter","Le Heart Break Shot"],"src":"He then thought of the Frog Punch, which gave him confidence and used it in his next match."},{"g":"Les techniques","d":"veryhard","t":"Qu'est-ce qui a inspiré à Aoki sa technique fétiche ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Masaru_Aoki","b":1,"r":["Une grenouille posée sur sa main","Un match vu à la télévision","Un conseil de Takamura","Un rêve","Un livre de boxe ancien","Une blessure au poignet"],"src":"A frog then jumped on his hand, which Aoki noted how, just like him, frogs can not fly. He then thought of the Frog Punch."},{"g":"Les techniques","d":"hard","t":"En quoi consiste le Dragonfish Blow de Kimura ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Dragonfish_Blow","b":1,"r":["Un coup au corps de la gauche, puis une droite à la mâchoire hors du champ de vision","Deux crochets à la suite au même endroit","Un uppercut suivi d'un direct","Une feinte basse puis un coup au foie","Un direct porté en sautant","Trois jabs rapides puis une droite"],"src":"The Dragonfish Blow is a combination of a short left body blow to a right above the opponent's line of sight, specifically hitting the jaw."},{"g":"Les techniques","d":"hard","t":"Qu'est-ce qui distingue le Flicker Jab d'un jab classique ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Flicker_Jab","b":1,"r":["Il part d'un angle bas et fouette, au lieu de jaillir tout droit","Il est porté de la main arrière","Il se lance en sautant","Il touche le corps et non la tête","Il part en deux temps","Il se porte de très près"],"src":"As opposed to snapping the left hand straight out with great speed, a Flicker Jab is thrown from a lower angle and is, as the name implies, « flicked » almost with a jerking motion."},{"g":"Les techniques","d":"veryhard","t":"Qu'est-ce qui caractérise le Jolt Counter de Miyata ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Jolt_Counter","b":1,"r":["C'est un contre porté avec tout le poids du corps","C'est un contre porté les yeux fermés","C'est un contre du bras arrière uniquement","C'est deux contres enchaînés","C'est un contre porté en reculant","C'est un contre au corps"],"src":"The Jolt Counter is a Cross Counter that is thrown with one's entire body weight behind it."},{"g":"Les rivaux","d":"easy","t":"De quelle ville Takeshi Sendo est-il originaire ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Takeshi_Send%C5%8D","b":1,"r":["Osaka","Tokyo","Kyoto","Nagoya","Sapporo","Hiroshima"],"src":"During his high school years, Sendō was already one of the most feared street fighters and gang leaders in Osaka."},{"g":"Les rivaux","d":"medium","t":"À quel club de boxe Takeshi Sendo appartient-il ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Takeshi_Send%C5%8D","b":1,"r":["Le club Naniwa","Le club Kamogawa","Le club Nekota","Le club Date","Le club Otowa","Le club Nerima"],"src":"Takeshi Sendō is a featherweight professional boxer from the Naniwa Boxing Club."},{"g":"Les rivaux","d":"hard","t":"Qu'était Sendo au lycée, avant la boxe ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Takeshi_Send%C5%8D","b":1,"r":["Un chef de bande redouté, qui défendait les plus faibles","Un élève modèle","Un joueur de baseball","Un lutteur scolaire","Un apprenti cuisinier","Un déserteur scolaire sans attaches"],"src":"During his high school years, Sendō was already one of the most feared street fighters and gang leaders in Osaka, not attacking innocent people, but rather defending the weak around his neighbourhood."},{"g":"Les rivaux","d":"veryhard","t":"Quel combat d'Ippo Sendo regarde-t-il en cassette au club Naniwa ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Takeshi_Send%C5%8D","b":1,"r":["Sa victoire par K.-O. contre Mashiba","Ses débuts contre Oda","Son combat contre Miyata","Sa défaite contre Date","Son combat contre Hayami","Un sparring contre Takamura"],"src":"At the Naniwa Boxing Club, Sendō watched a tape of the East Japan Rookie King, Ippo Makunouchi's knock out victory against Ryō Mashiba."},{"g":"Les rivaux","d":"medium","t":"De quel pays vient Alexander Volg Zangief ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Alexander_Volg_Zangief","b":1,"r":["La Russie","La Pologne","L'Ukraine","La Biélorussie","La Bulgarie","La Roumanie"],"src":"Alexander Volg Zangief is a professional boxer from Russia. Volg grew up in Russia during the Soviet Union era."},{"g":"Les rivaux","d":"hard","t":"Pour qui Mashiba veut-il remporter le titre et gravir les classements ?","s":"Hajime no Ippo","p":"https://ippo.fandom.com/wiki/Ry%C5%8D_Mashiba","b":1,"r":["Pour sa petite sœur Kumi","Pour son entraîneur","Pour venger son père","Pour rembourser une dette de jeu","Pour prouver sa valeur à Ippo","Pour financer son propre club"],"src":"Mashiba talked with his sister Kumi about how being able to win the All Japan Rookie King Tournament would put him to the top of Japan's rankings, with the Japanese title in mind, then the world so that Kumi would have no worries on life and education."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

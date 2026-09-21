@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">10 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Battle Tendency","d":"easy","t":"Quel lien de parenté unit Joseph Joestar à Jonathan ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Battle_Tendency","b":1,"r":["Il est son petit-fils","Il est son fils","Il est son frère cadet","Il est son neveu","Il est son arrière-petit-fils","Aucun, ils ne sont pas parents"],"src":"son enfant avec Erina, George Joestar, mort pendant la guerre, a eu lui aussi un fils, Joseph Joestar, élevé par Erina suite à la mort de ses parents."},{"g":"Battle Tendency","d":"medium","t":"Combien reste-t-il d'Hommes du Pilier ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Hommes_du_Pilier","b":1,"r":["Quatre","Trois","Cinq","Deux","Six","Sept"],"src":"Les ultimes représentants de cette espèce, au nombre de quatre, se nomment Kars, Esidisi, Wamuu et Santana, selon une hiérarchie décroissante."},{"g":"Battle Tendency","d":"medium","t":"Qui a conçu le Masque de Pierre ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Kars","b":1,"r":["Kars","Esidisi","Wamuu","Santana","Dio Brando","Un peuple aztèque disparu"],"src":"Kars occupe la fonction de chef des Hommes du Pilier et conçut le Masque de Pierre. Considéré comme un génie au sein du peuple des Hommes du Pilier, il est attesté comme étant l'initiateur originel du Masque de Pierre."},{"g":"Battle Tendency","d":"hard","t":"Que recherche Kars tout au long de la partie 2 ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Kars","b":1,"r":["La Pierre Rouge d'Aja","Le corps de Jonathan Joestar","Le secret de l'Onde","Un second Masque de Pierre","Le sang d'un Joestar","L'Épée de Luck et Pluck"],"src":"il recherche la Pierre Rouge d'Aja, dont il entend se prévaloir pour accroître la puissance de ses Masques."},{"g":"Battle Tendency","d":"veryhard","t":"Que faut-il pour atteindre l'état de Forme de Vie Ultime ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Hommes_du_Pilier","b":1,"r":["Un Masque de Pierre muni de la Pierre Rouge d'Aja","Absorber les trois autres Hommes du Pilier","Survivre à une exposition directe au soleil","Maîtriser l'Onde jusqu'à son terme","Un Masque de Pierre et le sang d'un Joestar","Deux Masques de Pierre portés en même temps"],"src":"« Forme de Vie Ultime » par l'activation d'un Masque de Pierre muni de la Pierre Rouge d'Aja. À ce jour, seul Kars est attesté comme ayant atteint cet état."},{"g":"Battle Tendency","d":"hard","t":"Quel tic Joseph Joestar affiche-t-il face à ses adversaires ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Joseph_Joestar","b":1,"r":["Il prédit leur prochaine réplique","Il leur demande leur nom avant de frapper","Il compte à rebours à voix haute","Il retire ses lunettes","Il claque des doigts","Il éclate de rire au premier coup reçu"],"src":"Son quolibet emblématique consiste à prédire les répliques de ses adversaires, une habitude qui s'avère toujours exacte."},{"g":"Battle Tendency","d":"veryhard","t":"De qui Caesar Zeppeli est-il le petit-fils ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Caesar_Antonio_Zeppeli","b":1,"r":["William Anthonio Zeppeli","Mario Zeppeli","Gyro Zeppeli","Robert Speedwagon","George Joestar","Il n'a aucun lien avec les Zeppeli"],"src":"Il incarne le lignage de la famille Zeppeli, étant le petit-fils de William Anthonio Zeppeli."},{"g":"Battle Tendency","d":"hard","t":"Comment Caesar Zeppeli emploie-t-il l'Onde au combat ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Caesar_Antonio_Zeppeli","b":1,"r":["Il libère des bulles de ses mains et les charge d'Onde","Il la transmet par des lames de verre","Il la projette par ses cheveux","Il l'accumule dans un gant de métal","Il la diffuse par une flûte","Il frappe à mains nues, comme Joseph"],"src":"il est capable de libérer des bulles de ses mains à tout moment et de les fusionner avec l'Onde pour les transformer en projectiles mortels."},{"g":"Battle Tendency","d":"extreme","t":"Que contient le petit anneau porté par Wamuu à la lèvre gauche ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Wamuu","b":1,"r":["L'antidote de son alliance","Un fragment de la Pierre Rouge d'Aja","Du poison de réserve","Une mèche de cheveux de Kars","Rien, c'est une parure","Une seconde corne miniature"],"src":"Jusqu'à sa défaite face à César, il porte également un petit anneau sur le côté gauche de sa lèvre, contenant l'antidote de son alliance."},{"g":"Battle Tendency","d":"extreme","t":"Jusqu'à quelle température Esidisi peut-il porter son organisme ?","s":"Jojo's Bizarre Adventure","p":"https://jjba.fandom.com/fr/wiki/Esidisi","b":1,"r":["500 °C","200 °C","1 000 °C","100 °C","350 °C","750 °C"],"src":"En mobilisant le mode Flamme, Esidisi parvient à élever la température de son organisme à des sommets, atteignant jusqu'à 500 degrés Celsius."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

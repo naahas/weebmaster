@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">50 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Le Nen","d":"easy","t":"Combien existe-t-il de types d'aura dans le Nen ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["Six","Quatre","Cinq","Sept","Huit","Trois"],"src":"Il existe six types d'aura ; chaque individu est né avec l'un de ces six types d'aura différentes."},{"g":"Le Nen","d":"medium","t":"Comment détermine-t-on son type d'aura ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["En faisant flotter une feuille sur un verre d'eau","En méditant sept jours d'affilée","En se faisant examiner par un Hunter de rang Triple Étoile","En frappant une cible et en mesurant l'aura libérée","En plongeant les mains dans un bassin d'eau froide","Par une prise de sang"],"src":"La façon la plus populaire (et le seul moyen sûr vu dans la série) de déterminer son type d'aura est par la divination de l'eau. La Divination nécessite de faire flotter une feuille au sommet d'un verre d'eau."},{"g":"Le Nen","d":"hard","t":"Lors de la divination par l'eau, que se passe-t-il chez un utilisateur du Renforcement ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["La quantité d'eau change","Le goût de l'eau change","La couleur de l'eau change","Des impuretés apparaissent","La feuille se déplace","L'eau se met à bouillir"],"src":"Si la quantité de l'eau change, l'utilisateur est du Renforcement."},{"g":"Le Nen","d":"hard","t":"Quel type d'aura est révélé par un changement de GOÛT de l'eau ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["La Transformation","Le Renforcement","L'Émission","La Matérialisation","La Manipulation","La Spécialisation"],"src":"Si le goût de l'eau change, l'utilisateur est de la Transformation."},{"g":"Le Nen","d":"veryhard","t":"Lors de la divination par l'eau, qu'est-ce qui trahit un Manipulateur ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["La feuille se déplace sur la surface","L'eau change de couleur","L'eau change de goût","Le niveau de l'eau monte","La feuille coule","Le verre se met à trembler"],"src":"Si la feuille se déplace sur la surface de l'eau, l'utilisateur est de la Manipulation."},{"g":"Le Nen","d":"veryhard","t":"Lors de la divination par l'eau, qu'est-ce qui révèle un Spécialiste ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["Un changement complètement différent des cinq autres","Le verre se brise","Rien ne se produit du tout","Les cinq changements surviennent à la fois","La feuille prend feu","L'eau disparaît entièrement"],"src":"Si un changement complètement différent apparaît, l'utilisateur est de la Spécialisation."},{"g":"Le Nen","d":"extreme","t":"Quelle est l'efficacité maximale d'un utilisateur dans les catégories voisines de la sienne ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["80 %","60 %","50 %","90 %","40 %","70 %"],"src":"on a le potentiel pour être 80% efficace à l'aide des types adjacents à son type primaire, 40% d'efficacité à la catégorie opposée ou plus éloigné, et 60% efficace dans les deux autres catégories d'aura.","n":"Les trois valeurs du tableau — 80, 60 et 40 — font d'excellents leurres les unes pour les autres."},{"g":"Le Nen","d":"extreme","t":"À quelle efficacité un utilisateur est-il limité dans la catégorie OPPOSÉE à la sienne ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["40 %","60 %","80 %","20 %","0 %","50 %"],"src":"40% d'efficacité à la catégorie opposée ou plus éloigné, et 60% efficace dans les deux autres catégories d'aura."},{"g":"L'examen Hunter","d":"easy","t":"À quelle fréquence l'examen Hunter a-t-il lieu ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Examen_Hunter","b":1,"r":["Une fois par an","Tous les six mois","Tous les deux ans","Tous les cinq ans","Tous les mois","Quand le président le décide"],"src":"L'Examen Hunter constitue une épreuve annuelle et obligatoire, supervisée par l'Association Hunter, dont la réussite confère le titre de Hunter."},{"g":"L'examen Hunter","d":"hard","t":"Qu'arrive-t-il à un candidat une fois qu'il a réussi l'examen Hunter ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Examen_Hunter","b":1,"r":["Il est Hunter à vie et ne peut plus jamais repasser l'examen","Il doit repasser l'examen tous les dix ans","Il devient Hunter pour cinq ans renouvelables","Il doit prêter serment devant les Zodiaques","Il est affecté d'office à une spécialité","Il perd son titre s'il échoue à une mission"],"src":"si le candidat est reçu, il se voit conférer le titre de Hunter à titre perpétuel et se trouve dès lors astreint à ne plus pouvoir se représenter à ladite épreuve.","n":"Le fait qu'on ne PUISSE PLUS repasser l'examen est la moitié qu'on oublie."},{"g":"L'examen Hunter","d":"medium","t":"Combien de prétendants l'examen Hunter attire-t-il chaque année ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Examen_Hunter","b":1,"r":["Plusieurs millions","Quelques centaines","Quelques milliers","Une trentaine","Une centaine","Plusieurs milliards"],"src":"cette perspective suscite chaque année la convoitise de plusieurs millions de prétendants, et ce, nonobstant une morbidité attestée au cours des épreuves éliminatoires."},{"g":"L'examen Hunter","d":"veryhard","t":"À quoi servent les éclaireurs, avant l'examen Hunter proprement dit ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Examen_Hunter","b":1,"r":["Écarter les candidats jugés incompétents et indiquer le lieu de l'épreuve suivante","Recruter des candidats dans les villages reculés","Vendre des licences au marché noir","Surveiller les anciens Hunters radiés","Transporter les candidats jusqu'à la salle d'examen","Noter les candidats pendant les épreuves"],"src":"Il s'agit d'éliminer par avance les postulants jugés trop débiles ou incompétents […] Si un éclaireur juge un candidat digne de se présenter à l'examen principal, il lui remet alors des instructions particulières afin qu'il puisse se rendre au lieu de l'épreuve subséquente."},{"g":"L'examen Hunter","d":"medium","t":"Que permet concrètement une licence de Hunter ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Association_Hunter","b":1,"r":["Aller presque partout dans le monde et faire presque tout","Commander l'armée d'un pays","Annuler n'importe quel jugement","Entrer gratuitement dans les casinos","Réquisitionner n'importe quel véhicule","Accéder aux archives de la Brigade Fantôme"],"src":"Avec le passage de l'examen, un Hunter est récompensé par une licence pour aller presque n'importe où dans le monde et presque tout faire."},{"g":"L'examen Hunter","d":"hard","t":"Sous quelle forme se présente la licence de Hunter ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Association_Hunter","b":1,"r":["Une carte","Un brassard","Un tatouage","Une bague","Un médaillon","Un badge cousu sur la veste"],"src":"Une licence Hunter est un type de carte donnée exclusivement aux Hunters après avoir passé l'examen Hunter."},{"g":"La Brigade Fantôme","d":"easy","t":"Sous quel autre nom la Brigade Fantôme est-elle connue ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["L'Araignée","Le Scorpion","La Toile","Le Corbeau","La Meute","Le Nid"],"src":"L'organisation est également connue sous le sobriquet de « L'Araignée » (蜘蛛, Kumo), tandis que ses membres sont collectivement qualifiés d'« Araignées »."},{"g":"La Brigade Fantôme","d":"medium","t":"Combien de membres la Brigade Fantôme doit-elle compter au complet ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["Treize","Douze","Dix","Quinze","Neuf","Sept"],"src":"la Brigade Fantôme se doit, en son idéal, d'être constituée de treize membres en sa totalité, un « chef » et douze « pattes »."},{"g":"La Brigade Fantôme","d":"hard","t":"Comment se répartissent les membres de la Brigade Fantôme ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["Un chef et douze « pattes »","Deux chefs et onze membres","Quatre groupes de trois, plus un chef","Un chef, un second et onze exécutants","Treize membres strictement égaux","Un chef et douze « yeux »"],"src":"la Brigade Fantôme se doit, en son idéal, d'être constituée de treize membres en sa totalité, un « chef » et douze « pattes »."},{"g":"La Brigade Fantôme","d":"hard","t":"Que porte chaque membre de la Brigade Fantôme sur le corps ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["Un tatouage d'araignée à douze pattes","Une bague gravée d'une toile","Une cicatrice en forme de croix","Un piercing numéroté","Un brassard noir","Une marque au fer rouge"],"src":"Les membres de la Brigade Fantôme arborent, en quelque endroit de leur personne, un tatouage représentant une araignée dodécapode."},{"g":"La Brigade Fantôme","d":"extreme","t":"Que représentent les deux faces de la pièce utilisée par la Brigade Fantôme pour trancher ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["L'araignée à douze pattes d'un côté, une toile de l'autre","Un crâne d'un côté, une araignée de l'autre","Le chiffre zéro d'un côté, treize de l'autre","Une toile des deux côtés","Le visage de Chrollo d'un côté, une araignée de l'autre","Une patte d'araignée d'un côté, un œil de l'autre"],"src":"Le numéraire usité à cet effet est un artefact sui generis, dont l'avers arbore l'emblème duodécapode arachnéen caractéristique de la faction, tandis que le revers figure une toile d'araignée finement ciselée."},{"g":"La Brigade Fantôme","d":"medium","t":"Lors de quel événement la Brigade Fantôme commet-elle son massacre le plus célèbre ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Brigade_Fant%C3%B4me","b":1,"r":["La foire aux enchères de Yorknew","Le Championnat des Cieux","L'examen Hunter","L'élection du président des Hunters","Le tournoi de Greed Island","Le congrès de la Mafia à Meteor City"],"src":"Cette soif de spoliation culmine lors de la foire aux enchères de Yorknew, où le massacre orchestré par les Araignées altère durablement la prépondérance des structures mafieuses sur l'échiquier mondial."},{"g":"La Brigade Fantôme","d":"hard","t":"Quel est le rôle de Feitan au sein de la Brigade Fantôme ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Feitan_Portor","b":1,"r":["Le bourreau, spécialiste de la torture","L'éclaireur","Le trésorier","Le médecin","Le stratège","Le recruteur"],"src":"Feitan se distingue au sein de la Brigade Fantôme comme l'expert attitré aux pratiques inquisitoriales, détenant une maîtrise consommée de l'art de la torture."},{"g":"La Brigade Fantôme","d":"veryhard","t":"Quelle capacité de Nen possède Pakunoda ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Pakunoda","b":1,"r":["Lire les mémoires","Effacer les souvenirs","Voir l'avenir proche","Copier les capacités d'autrui","Se rendre invisible","Parler à distance par la pensée"],"src":"Kirua saisit soudainement la signification du terme « mémoire » employé par Pakunoda, réalisant ainsi que cette dernière possède la capacité de lire les mémoires."},{"g":"La Brigade Fantôme","d":"veryhard","t":"Comment s'appelle l'attaque d'Uvogin ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Uv%C3%B4guine","b":1,"r":["Big Bang Impact","Dragon Dive","Black Voice","Fun Fun Cloth","Rising Sun","Crazy Slots"],"src":"Mimizu fut le premier à être neutralisé par le Big Bang Impact d'Uvôguine."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"medium","t":"Sur quel jeu Gon a-t-il bâti son Hatsu ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Gon_Freecss","b":1,"r":["Le pierre-papier-ciseaux","Le jeu de go","Le gungi","Les dés","Le morpion","Le jeu de l'oie"],"src":"Après avoir appris l'origine du jeu « pierre-papier-ciseaux », Gon base son Hatsu sur ce principe."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"hard","t":"Qu'avait implanté Illumi dans le cerveau de Killua ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Kirua_Zoldik","b":1,"r":["Une aiguille","Une puce","Un fragment de son propre Nen","Un ver","Un éclat de métal","Un cheveu"],"src":"Au dernier instant, Killua réalisa qu'Illumi avait implanté une aiguille dans son cerveau."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"veryhard","t":"Que récupère Killua en retirant l'aiguille de son cerveau ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Kirua_Zoldik","b":1,"r":["Le choix de fuir ou non face à plus fort que lui","Ses souvenirs d'enfance","Sa capacité à utiliser l'électricité","Le contrôle de sa vitesse","Le droit de quitter sa famille","Sa résistance aux poisons"],"src":"En extrayant l'aiguille, Killua s'affranchit de cette entrave et recouvra la pleine maîtrise de son subconscient, lui permettant ainsi de décider par lui-même s'il convenait ou non de fuir face à des adversaires plus puissants."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"medium","t":"Comment s'appellent les parents de Killua ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Kirua_Zoldik","b":1,"r":["Silva et Kikyo","Zeno et Kikyo","Silva et Alluka","Zeno et Amane","Silva et Canary","Maha et Kikyo"],"src":"ses parents, Silva et Kikyô, ainsi que son frère aîné Illumi, à lui dispenser l'instruction traditionnelle propre à son lignage."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"extreme","t":"D'où Hisoka tient-il les noms de ses deux techniques ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Hisoka_Morow","b":1,"r":["De marques de confiseries et de chewing-gums de son enfance","De deux tours de magie de son maître","De cartes à jouer","Des noms de ses deux premières victimes","De numéros de cirque","De titres de chansons"],"src":"Il est rapporté qu'il aurait attribué à ses deux techniques des appellations inspirées de marques de confiseries et de gommes à mâcher qu'il affectionnait durant son enfance. Ce faisant, il semble que ces techniques aient été désignées sous les noms de « Texture Surprise » et de « Bungee Gum »."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"hard","t":"Comment s'appellent les deux techniques d'Hisoka ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Hisoka_Morow","b":1,"r":["Bungee Gum et Texture Surprise","Bungee Gum et Skill Hunter","Texture Surprise et Black Voice","Bungee Gum et Fun Fun Cloth","Rubber Soul et Texture Surprise","Texture Surprise et Crazy Slots"],"src":"ces techniques aient été désignées sous les noms de « Texture Surprise » et de « Bungee Gum »."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"veryhard","t":"Qu'a fait Hisoka de son bras droit, après que celui-ci eut été tranché ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Hisoka_Morow","b":1,"r":["Il l'a rattaché à son moignon avec le Bungee Gum","Il l'a laissé sur place","Il s'en est servi comme projectile","Il l'a fait recoudre par un médecin de la Mafia","Il l'a remplacé par une prothèse","Il l'a conservé dans de la glace"],"src":"Lorsque son bras droit fut tranché, il le reconnecta à son moignon à l'aide de Bungee Gum, tandis qu'il relia son autre bras au menton de Kastro."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"hard","t":"Qui Hisoka paie-t-il pour lui recoudre les bras ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Hisoka_Morow","b":1,"r":["Machi","Shizuku","Pakunoda","Shalnark","Feitan","Nobunaga"],"src":"Hisoka rémunère Machi afin qu'elle lui rattache ses deux bras, dissimulant les coutures grâce à une combinaison subtile de Bungee Gum et de Texture Surprise."},{"g":"Le Nen","d":"extreme","t":"À quoi sert le « Nen de la flamme », dans le style Shingen ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["Des exercices mentaux qui renforcent la volonté, avant le vrai Nen","À enflammer son aura au corps à corps","À brûler les maléfices posés sur un allié","À mesurer la quantité d'aura d'un adversaire","À ouvrir de force les pores d'aura d'un débutant","À transformer son aura en chaleur"],"src":"Nen de la flamme est parfois utilisé en style Shingen comme un précurseur de l'apprentissage du Nen réel. Ce sont des exercices mentaux s'apparentant à la méditation qui renforcent la volonté."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"extreme","t":"Quelle condition l'aîné du clan Kurta avait-il posée à Kurapika pour sortir dans le monde extérieur ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Kurapika","b":1,"r":["Partir accompagné d'un partenaire, sans dévoiler leurs yeux écarlates","Revenir avant ses dix-huit ans","Ne jamais employer le Nen hors du village","Rapporter la preuve écrite d'un exploit","Prêter serment devant tout le clan","Ne pas révéler le nom de son clan"],"src":"Toutefois, l'aîné lui imposa une dernière épreuve, à savoir se rendre dans le monde extérieur, accompagné d'un partenaire, sans que leurs yeux écarlates ne soient dévoilés."},{"g":"Gon, Killua, Kurapika et Hisoka","d":"hard","t":"Quel membre de la Brigade Fantôme jure de traquer « l'utilisateur de la chaîne » ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Kurapika","b":1,"r":["Uvogin","Nobunaga","Feitan","Phinks","Machi","Franklin"],"src":"Ne trouvant personne, Uvôguine jure de traquer l'utilisateur de la chaîne, Kurapika."},{"g":"Les Fourmis Chimères","d":"medium","t":"Comment s'appelle le groupe qui sert directement le Roi des Fourmis Chimères ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Meruem","b":1,"r":["La Garde Royale","Les Chefs d'Escouade","Le Conseil des Fourmis","La Cour Sombre","Les Sentinelles","Les Officiers du Nid"],"src":"Les Gardes Royaux font alors leur apparition, jurant allégeance à leur souverain et proposant de le guider vers le lieu où son repas a été apprêté."},{"g":"Les Fourmis Chimères","d":"veryhard","t":"De quoi Meruem ne garde-t-il aucun souvenir ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Meruem","b":1,"r":["De toute existence antérieure à sa naissance en tant que Roi","Des premiers jours de son règne","Du visage de sa mère","De ses combats contre les Hunters","De la Sélection","De son nom d'origine"],"src":"À l'instar de Menthuthuyoupi et, semble-t-il, des deux autres Gardes Royaux, Meruem ne conserve aucun souvenir d'une existence antérieure à sa naissance en qualité de Roi des Fourmis Chimères."},{"g":"Les Fourmis Chimères","d":"hard","t":"Quel Garde Royal porte Meruem hors du nid ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Meruem","b":1,"r":["Shaiapouf","Neferpitou","Menthuthuyoupi","Colt","Youpi et Pitou ensemble","Aucun, il marche seul"],"src":"Les Gardes Royaux escortent donc le Roi hors du nid, Meruem étant porté par Shaiapouf."},{"g":"Les Fourmis Chimères","d":"medium","t":"Quel jeu la Garde Royale présente-t-elle à Meruem ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Meruem","b":1,"r":["Le gungi","Les échecs","Le go","Le shogi","Le jeu de dames","Le backgammon"],"src":"Le jeu suivant que la Garde Royale lui présente est le Gun-gi."},{"g":"Les Fourmis Chimères","d":"hard","t":"Quel exercice quotidien Netero s'était-il imposé ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Isaac_Netero","b":1,"r":["Dix mille coups de poing et autant de prières","Mille pompes et mille méditations","Cent kilomètres de course","Une journée entière de jeûne et de combat","Trois heures de méditation sous une cascade","Cent combats contre ses disciples"],"src":"Il fit le vœu de manifester cette reconnaissance à sa manière, en accomplissant chaque jour une série de dix mille coups de poing et prières."},{"g":"Les Fourmis Chimères","d":"veryhard","t":"Dans quel ordre Netero enchaîne-t-il les gestes de sa technique ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Isaac_Netero","b":1,"r":["Il concentre son chi, joint les mains, prie, puis frappe","Il frappe, puis prie pour la victime","Il prie, frappe, puis se prosterne","Il joint les mains, frappe, puis concentre son chi","Il médite, puis frappe trois fois","Il frappe et prie simultanément"],"src":"Il concentrait son chi, joignait les mains, formulait une prière, puis portait un coup."},{"g":"Les Fourmis Chimères","d":"extreme","t":"À quel moment la bombe implantée dans la poitrine de Netero se déclenche-t-elle ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Isaac_Netero","b":1,"r":["Quand son cœur s'arrête","Quand il prononce un mot de code","Au bout de vingt-quatre heures","Quand un Garde Royal le touche","Quand il perd connaissance","Quand l'Association le décide à distance"],"src":"Enfin, il subit l'implantation d'une bombe thoracique, programmée pour se désactiver lorsque son rythme cardiaque s'arrêtera."},{"g":"Les Fourmis Chimères","d":"veryhard","t":"Quel métier exerce Neon Nostrad, citée parmi les utilisateurs innés de Nen ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Nen","b":1,"r":["Diseuse de bonne aventure","Sculptrice","Exorciste","Chasseuse de primes","Collectionneuse d'art","Joueuse de gungi"],"src":"Les utilisateurs innés notables au sein de la série comprennent : Neon Nostrad, la diseuse de bonne aventure ; Bennie Doron, le meurtrier de masse ; Zepairu, le sculpteur ; Komugi, la championne du monde de gungi."},{"g":"Greed Island et le Continent","d":"medium","t":"Quel est le but du jeu Greed Island ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Greed_Island","b":1,"r":["Réunir les cent cartes à emplacement fixe","Atteindre le sommet de la tour centrale","Vaincre les trois gardiens de l'île","Survivre cent jours sur l'île","Retrouver le créateur du jeu","Éliminer tous les autres joueurs"],"src":"Le but du jeu est de trouver les 100 cartes d'emplacement fixe."},{"g":"Greed Island et le Continent","d":"veryhard","t":"Avec qui Gon et Killua terminent-ils Greed Island ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Greed_Island","b":1,"r":["Biscuit","Kurapika","Hisoka","Leorio","Wing","Zushi"],"src":"Gon, Killua et Biscuit termineront le jeu en cumulant 100 cartes à emplacement fixe."},{"g":"Greed Island et le Continent","d":"hard","t":"Quelle est la véritable apparence de Biscuit ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Biscuit_Kruger","b":1,"r":["Une femme immense et très musclée","Une vieille femme voûtée","Une femme de haute taille mais frêle","Un homme d'âge mûr","Une enfant, sa forme habituelle étant la fausse","Une femme au visage couvert de cicatrices"],"src":"Dans sa véritable forme, cette entité est une femme de stature imposante et dotée d'une musculature très développée, plusieurs fois plus grande que dans sa forme préférée."},{"g":"Greed Island et le Continent","d":"veryhard","t":"D'où proviennent les Fourmis Chimères, selon Ging ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Continent_Cach%C3%A9","b":1,"r":["Du Continent Caché","Des profondeurs de l'océan","D'un laboratoire de la Mafia","De Meteor City","D'une météorite","De Greed Island"],"src":"Ging révèle que les Kimera Ants proviennent de ce continent."},{"g":"Greed Island et le Continent","d":"extreme","t":"Combien de calamités connues du Continent Caché ont frappé l'humanité ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Continent_Cach%C3%A9","b":1,"r":["Cinq","Trois","Sept","Quatre","Six","Dix"],"src":"Les cinq calamités connues qui ont frappé l'humanité."},{"g":"L'Association et les Zodiaques","d":"medium","t":"Combien de Hunters composent les Zodiaques ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Zodiaques","b":1,"r":["Douze","Dix","Treize","Huit","Quinze","Six"],"src":"Les Zodiaques (十二支ん, Jūnishin) sont un groupe de douze Hunters qui ont été reconnus par le président Isaac Netero."},{"g":"L'Association et les Zodiaques","d":"hard","t":"D'où viennent les noms de code des Zodiaques ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Zodiaques","b":1,"r":["Des signes du zodiaque chinois","Des douze mois de l'année","Des constellations occidentales","Des douze premiers présidents de l'Association","Des douze provinces du monde","De douze animaux choisis par tirage"],"src":"Ils ont chacun un nom de code associé à l'un des signes du zodiaque chinois, dont la plupart d'entre eux ont choisi pour correspondre à l'apparence pour satisfaire Netero."},{"g":"L'Association et les Zodiaques","d":"extreme","t":"De quel rang Ging Freecss est-il Hunter ?","s":"Hunter Hunter","p":"https://hunterxhunter.fandom.com/fr/wiki/Ging_Freecss","b":1,"r":["Double Étoile, des vestiges","Triple Étoile, des vestiges","Simple Étoile","Double Étoile, des bêtes","Triple Étoile, des trésors","Il n'a aucun rang officiel"],"src":"Il exerce la qualité de Hunter des vestiges de rang Double Étoile et satisfait aux critères requis pour prétendre à l'homologation Triple Étoile.","n":"Le leurre « Triple Étoile » est le bon piège : il en remplit les critères, mais ne l'est pas."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

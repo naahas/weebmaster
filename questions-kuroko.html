@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">30 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"La Génération des Miracles","d":"easy","t":"Combien de joueurs compte la Génération des Miracles ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Generation_of_Miracles","b":1,"r":["Cinq","Six","Quatre","Sept","Trois","Huit"],"src":"The Generation of Miracles is a group of five exceptionally talented players that played together on the Teikō Junior High basketball team."},{"g":"La Génération des Miracles","d":"medium","t":"Dans quel collège la Génération des Miracles a-t-elle joué ensemble ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Generation_of_Miracles","b":1,"r":["Teiko","Seirin","Rakuzan","Shutoku","Kaijo","Yosen"],"src":"a group of five exceptionally talented players that played together on the Teikō Junior High basketball team."},{"g":"La Génération des Miracles","d":"medium","t":"Quel poste Akashi occupe-t-il ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Seij%C5%ABr%C5%8D_Akashi","b":1,"r":["Meneur","Pivot","Ailier fort","Arrière","Ailier","Pivot remplaçant"],"src":"Akashi Seijūrō is the point guard and captain of Rakuzan High."},{"g":"La Génération des Miracles","d":"hard","t":"De quelles équipes Akashi a-t-il été capitaine ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Seij%C5%ABr%C5%8D_Akashi","b":1,"r":["Rakuzan, Teiko et Vorpal Swords","Rakuzan et Seirin","Teiko uniquement","Rakuzan et Yosen","Teiko et Touou","Vorpal Swords uniquement"],"src":"He was also the captain for Team Vorpal Swords and Teikō Junior High, commanding leadership over the Generation of Miracles."},{"g":"La Génération des Miracles","d":"veryhard","t":"Qu'est-ce qui change dans les yeux d'Akashi selon sa personnalité ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Seij%C5%ABr%C5%8D_Akashi","b":1,"r":["Son œil gauche devient orange, créant une hétérochromie","Ses deux yeux virent au doré","Ses pupilles se fendent","Son œil droit se ferme","Ses yeux pâlissent jusqu'au gris","Rien, seul son ton change"],"src":"In his original personality, both eyes are the same red color. In his alternate personality, his left eye is instead an orange color, giving him complete heterochromia."},{"g":"La Génération des Miracles","d":"medium","t":"Quel poste Murasakibara occupe-t-il ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Atsushi_Murasakibara","b":1,"r":["Pivot","Meneur","Ailier","Arrière","Ailier fort","Il n'a pas de poste fixe"],"src":"Atsushi Murasakibara was the Generation of Miracles' center who now plays for Yōsen High."},{"g":"La Génération des Miracles","d":"hard","t":"Quel rôle Aomine tenait-il au sein de la Génération des Miracles ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Daiki_Aomine","b":1,"r":["Il en était l'as","Il en était le capitaine","Il en était le vice-capitaine","Il en était le pivot","Il en était le meneur","Il n'y avait pas de rôle désigné"],"src":"Daiki Aomine was the ace player of the renowned Generation of Miracles and was the former partner/light of Tetsuya Kuroko in Teikō Junior High."},{"g":"La Génération des Miracles","d":"veryhard","t":"Quel lien unissait Aomine et Kuroko à Teiko ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Daiki_Aomine","b":1,"r":["Aomine était sa « lumière », Kuroko son ombre","Ils étaient co-capitaines","Aomine était son entraîneur particulier","Ils étaient rivaux déclarés","Aomine l'avait recruté au club","Ils ne se parlaient pas"],"src":"was the former partner/light of Tetsuya Kuroko in Teikō Junior High."},{"g":"La Génération des Miracles","d":"hard","t":"Quelle phrase Aomine a-t-il adoptée à force de s'ennuyer ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Daiki_Aomine","b":1,"r":["« Le seul qui puisse me battre, c'est moi »","« Je ne perds jamais deux fois »","« Le basket, c'est la guerre »","« Personne ne m'arrive à la cheville »","« Je joue pour gagner, rien d'autre »","« La victoire ne se partage pas »"],"src":"Aomine adopted the saying of « the only one who can beat me is me » and became increasingly careless towards the sport due to his boredom."},{"g":"La Génération des Miracles","d":"hard","t":"Quel poste Midorima occupait-il dans la Génération des Miracles ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Shintar%C5%8D_Midorima","b":1,"r":["Vice-capitaine et arrière shooteur","Capitaine et meneur","Pivot titulaire","Ailier fort","Remplaçant de luxe","Meneur de jeu"],"src":"Shintarō Midorima was the vice-captain and shooting guard of the Generation of Miracles who now plays for one of the Three Kings of Tokyo, Shūtoku High."},{"g":"La Génération des Miracles","d":"veryhard","t":"Quel est le signe astrologique de Midorima ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Shintar%C5%8D_Midorima","b":1,"r":["Cancer","Scorpion","Capricorne","Vierge","Balance","Bélier"],"src":"he is set at ease when he hears that his zodiac sign, Cancer, will have a lucky day, even going as far as carrying a so-called « lucky item » with him everywhere."},{"g":"La Génération des Miracles","d":"medium","t":"Que Midorima transporte-t-il partout avec lui ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Shintar%C5%8D_Midorima","b":1,"r":["Un porte-bonheur, qui change chaque jour","Un carnet de statistiques","Une paire de lunettes de rechange","Un ballon dégonflé","Une photo de son ancienne équipe","Un bandage pour ses doigts"],"src":"Midorima is often seen with a lucky item, that varies from a stuffed frog, to a bear, to a potted cactus."},{"g":"La Génération des Miracles","d":"hard","t":"Quelle est la capacité de Kise ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Ry%C5%8Dta_Kise","b":1,"r":["Copier n'importe quelle technique qu'il voit","Tirer de n'importe où sur le terrain","Disparaître du champ de vision","Prédire les mouvements adverses","Sauter plus haut que quiconque","Épuiser son adversaire par le rythme"],"src":"He is well known for his copying abilities, as he can copy any technique he sees, often with more power than the original."},{"g":"La Génération des Miracles","d":"extreme","t":"À quelle condition Kise peut-il copier une technique ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Ry%C5%8Dta_Kise","b":1,"r":["Être physiquement au niveau de sa cible","L'avoir vue au moins trois fois","Avoir déjà affronté la cible en match officiel","Être en état de Zone","Toucher la cible pendant l'action","Aucune, il peut tout copier"],"src":"His copying ability requires one thing which is that he is somewhat on par with his target's physical abilities. The fact that he was able to copy Aomine's movements, shows that he is approximately equally strong and skillful."},{"g":"Kuroko et Kagami","d":"medium","t":"Dans quoi Kuroko est-il spécialisé ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Tetsuya_Kuroko","b":1,"r":["La misdirection et les passes","Le tir à trois points","Le rebond défensif","Le dunk","Le dribble en pénétration","L'interception"],"src":"He was the Phantom Sixth Player of the Generation of Miracles at Teikō Junior High who specialises in misdirection and passes."},{"g":"Kuroko et Kagami","d":"medium","t":"En quoi consiste la misdirection ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Misdirection","b":1,"r":["Détourner le regard de l'adversaire","Feindre une blessure","Changer de rythme brusquement","Imiter la posture d'un coéquipier","Masquer le ballon avec le corps","Crier pour couvrir les appels"],"src":"Misdirection is a technique which diverts the opponents gaze. The concept of misdirection is commonly seen in magic tricks and in sleight of hand."},{"g":"Kuroko et Kagami","d":"veryhard","t":"Quel autre joueur a démontré qu'on pouvait employer la misdirection ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Misdirection","b":1,"r":["Kise","Aomine","Akashi","Midorima","Kagami","Murasakibara"],"src":"As a general concept, misdirection to divert ones gaze can be used by anyone, as demonstrated by Ryōta Kise."},{"g":"Kuroko et Kagami","d":"veryhard","t":"Sur quelle faiblesse de l'œil repose le Vanishing Drive ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Vanishing_Drive","b":1,"r":["La vision périphérique","L'accommodation à la lumière","Le temps de clignement","La perception des couleurs","La vision nocturne","La profondeur de champ"],"src":"Kuroko utilizes the weakness of an eye's peripheral vision to divert the opponent's focus."},{"g":"Kuroko et Kagami","d":"hard","t":"Quel effet les nouvelles techniques de Kuroko ont-elles eu sur son atout d'origine ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Tetsuya_Kuroko","b":1,"r":["Son manque de présence s'est émoussé","Il a perdu toute capacité de passe","Sa vitesse a diminué","Il est devenu incapable de tirer","Son endurance s'est effondrée","Rien n'a changé"],"src":"the new skills he has learned such as the « Vanishing Drive » and « Phantom Shot » has made his « lack of presence » wear out.","n":"C'est le paradoxe du personnage : plus il devient visible, moins son arme fonctionne."},{"g":"Kuroko et Kagami","d":"hard","t":"D'où vient la peur des chiens de Kagami ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Taiga_Kagami","b":1,"r":["Il a été mordu en Amérique","Un chien a dévoré son premier ballon","Il est tombé d'un arbre en fuyant un chien","C'est une peur sans origine connue","Son frère le lui a transmise","Un chien errant a blessé Himuro"],"src":"This fear originates from his time in America, where he was once bitten by a dog."},{"g":"Kuroko et Kagami","d":"medium","t":"Sur quoi Kagami s'appuie-t-il d'abord, avant de savoir tirer ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Taiga_Kagami","b":1,"r":["Ses dunks, ses lay-ups et sa détente","Sa vitesse de course","Sa défense","Sa vision de jeu","Sa taille","Ses passes"],"src":"At first, he is a poor shooter who only relies on dunks, lay ups and his jumping ability."},{"g":"Kuroko et Kagami","d":"veryhard","t":"Que représente le collier à l'anneau que porte Kagami ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Taiga_Kagami","b":1,"r":["Sa fraternité avec Himuro","Sa victoire au Winter Cup","Un cadeau de son père","Son engagement à rejoindre la NBA","Son ancien club américain","Un pari perdu contre Aomine"],"src":"He is also occasionally seen with a shiny metal necklace with a ring on it, which represents his brotherhood with Tatsuya Himuro."},{"g":"Les techniques","d":"hard","t":"Que permet l'Œil de l'Empereur ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Emperor_Eye","b":1,"r":["Prédire les mouvements de l'adversaire","Voir à travers les écrans","Lire les pensées de ses coéquipiers","Ralentir le temps","Voir le ballon en transparence","Doubler son champ de vision"],"src":"The Emperor Eye is a term referring to the eyes with the observational ability to accurately predict the future. The user has the ability to predict the movements of the opponents."},{"g":"Les techniques","d":"extreme","t":"Que l'Œil de l'Empereur permet-il de percevoir sur le corps d'un adversaire ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Emperor_Eye","b":1,"r":["Sa respiration, ses muscles, sa tension, son rythme et sa sueur","Sa température corporelle uniquement","Son rythme cardiaque uniquement","Les micro-expressions de son visage","Sa fatigue chiffrée en pourcentage","Son aura colorée"],"src":"The Emperor Eye enables its user to see another person's body with extreme detail, such as breathing, muscle movements or muscle contractions, body tension, rhythm, sweat, etc."},{"g":"Les techniques","d":"medium","t":"Qu'est-ce que la Zone ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Zone","b":1,"r":["L'état d'un joueur ayant atteint son potentiel maximal","Une zone de défense interdite","Le périmètre à trois points","Un temps mort réglementaire","Une tactique d'attaque rapide","Le vestiaire réservé aux titulaires"],"src":"Zone is a term referring to a player's state when they reach their maximum potential."},{"g":"Les techniques","d":"veryhard","t":"Quelle condition est indispensable pour entrer dans la Zone ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Zone","b":1,"r":["Un amour et une passion extrêmes pour le jeu","Avoir déjà gagné un titre national","Être membre de la Génération des Miracles","Mesurer plus de deux mètres","Jouer en seconde mi-temps","Avoir été mené de vingt points"],"src":"One fundamental requirement to enter the zone is also to have an extreme amount of love and passion towards the game."},{"g":"Les lycées et les tournois","d":"medium","t":"Qui a fondé le club de basket de Seirin ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Seirin_High","b":1,"r":["Teppei Kiyoshi","Junpei Hyuga","Riko Aida","Shun Izuki","Kagetora Aida","Taiga Kagami"],"src":"The basketball club was founded only one year before the current story-line by Teppei Kiyoshi."},{"g":"Les lycées et les tournois","d":"hard","t":"Qu'est-ce qui rend l'entraîneuse de Seirin inhabituelle ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Seirin_High","b":1,"r":["C'est une lycéenne","Elle n'a jamais joué au basket","C'est une ancienne joueuse professionnelle","Elle entraîne deux équipes à la fois","Elle est plus jeune que les premières années","Elle n'assiste jamais aux matchs"],"src":"Quite unusually, the team's coach is a high schooler, daughter of sports trainer Kagetora Aida, Riko Aida."},{"g":"Les lycées et les tournois","d":"veryhard","t":"Où se dispute le Winter Cup ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Winter_Cup","b":1,"r":["Au gymnase métropolitain de Tokyo","Au dôme d'Osaka","Au stade national de Kyoto","Dans le gymnase de Teiko","Au palais des sports d'Akita","Il change de ville chaque année"],"src":"The Winter Cup, the National High School Basketball Championship Tournament, is a tournament that takes place during the winter and is held at the Tokyo Metropolitan Gymnasium."},{"g":"Les lycées et les tournois","d":"extreme","t":"Quel surnom la défense de Yosen a-t-elle gagné ?","s":"Kuroko no Basket","p":"https://kurokonobasuke.fandom.com/wiki/Y%C5%8Dsen_High","b":1,"r":["Le Bouclier d'Égide","Le Mur de Fer","La Forteresse du Nord","Le Filet d'Acier","La Muraille d'Akita","La Tour de Garde"],"src":"With three of their team members being the tallest players of the whole Winter Cup, their defense is unrivaled in the region, maybe even in the whole country and earned the nickname of « Shield of Aegis »."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

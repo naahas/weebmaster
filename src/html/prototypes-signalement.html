@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShonenMaster — Le drapeau de signalement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="icon.png">
+    <style>
+        :root { --neon: #FFD700; --or: #ffd24a; --rouge: #ff4242; --txt: #fff; --txt2: #a0a0a0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(120% 90% at 50% 0%, #14120d 0%, #0c0c0e 45%, #08080a 100%);
+            background-attachment: fixed;
+            color: var(--txt);
+            font-family: 'Poppins', sans-serif;
+            padding: 2.5rem clamp(1rem, 4vw, 3rem) 8rem;
+        }
+
+        .nav { max-width: 74rem; margin: 0 auto 2rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .nav a {
+            padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 600; text-decoration: none;
+            color: var(--txt2); background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 2rem; transition: 0.2s;
+        }
+        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,0.4); }
+
+        .head { max-width: 74rem; margin: 0 auto 2.6rem; }
+        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.03em; }
+        .head p { color: var(--txt2); font-size: 0.9rem; max-width: 50rem; line-height: 1.6; margin-top: 0.4rem; }
+        .head b { color: var(--neon); font-weight: 600; }
+
+        .grille {
+            max-width: 74rem; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(23rem, 1fr));
+            gap: 3.4rem 2.6rem;
+        }
+
+        .case-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.3rem; }
+        .case-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; color: var(--neon); }
+        .case-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 0.04em; }
+        .case-note { color: var(--txt2); font-size: 0.78rem; line-height: 1.5; margin-bottom: 1.5rem; min-height: 3.4rem; }
+
+        /* ── Le panneau de question, reproduit à l'identique ──
+           Mêmes valeurs que « .v2q-panel » : sans elles, un drapeau calé ici
+           ne tomberait pas au même endroit une fois posé dans le jeu. */
+        .panel {
+            position: relative;
+            padding: 2.7rem 1.75rem 1.9rem;
+            background: linear-gradient(165deg, rgba(22, 20, 16, 0.98) 0%, rgba(14, 14, 16, 0.98) 100%);
+            border: 0.06rem solid rgba(255, 215, 0, 0.22);
+            border-radius: 1rem;
+            box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.5);
+        }
+        /* la jauge de combo, qui occupe le bord haut — c'est elle que le drapeau
+           doit cohabiter avec, et c'est là que ça se jouait mal */
+        .edge {
+            position: absolute; top: -0.06rem; left: -0.06rem; right: -0.06rem;
+            height: 0.24rem; border-radius: 1rem 1rem 0 0;
+            background: rgba(255, 255, 255, 0.06); overflow: hidden;
+        }
+        .edge i {
+            position: absolute; inset: 0 55% 0 0;
+            background: linear-gradient(90deg, #ffb340, var(--or));
+        }
+        .badges { display: flex; justify-content: center; gap: 0.5rem; margin: 0.75rem 0 1.6rem; }
+        .badge {
+            padding: 0.42rem 0.95rem; font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            border-radius: 0.5rem; background: rgba(255,255,255,0.06);
+            border: 0.06rem solid rgba(255,255,255,0.09);
+        }
+        .badge.d { color: #6ee7b7; background: rgba(110,231,183,0.09); border-color: rgba(110,231,183,0.3); }
+        .qtxt { text-align: center; font-weight: 700; font-size: 1.02rem; line-height: 1.45; margin-bottom: 1.2rem; }
+        .rep {
+            padding: 0.85rem 1rem; margin-bottom: 0.6rem;
+            border-radius: 0.7rem; background: rgba(255,255,255,0.03);
+            border: 0.06rem solid rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.55); font-size: 0.86rem;
+        }
+        .rep.bon { color: #6ee7b7; background: rgba(110,231,183,0.08); border-color: rgba(110,231,183,0.35); }
+
+        /* ══════════ le socle commun des drapeaux ══════════ */
+        .f { position: absolute; cursor: pointer; background: none; border: 0; padding: 0; color: var(--rouge); }
+        .f svg { display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ══ 1 · RUBAN D'ANGLE ══
+           Un ruban replié sur le coin, comme un signet cousu à la page. Il ne
+           flotte pas : il fait partie du panneau, et le coin arrondi le tient. */
+        .f-ruban {
+            top: 0; left: 0;
+            width: 3.1rem; height: 3.1rem;
+            overflow: hidden;
+            border-radius: 1rem 0 0 0;
+        }
+        .f-ruban::before {
+            content: '';
+            position: absolute; top: -1.55rem; left: -1.55rem;
+            width: 3.1rem; height: 3.1rem;
+            background: linear-gradient(135deg, #c22, #ff4242);
+            transform: rotate(45deg);
+            transform-origin: 100% 100%;
+            transition: filter 0.25s ease;
+        }
+        .f-ruban svg {
+            position: absolute; top: 0.42rem; left: 0.42rem;
+            width: 0.95rem; height: 0.95rem;
+            color: #fff; stroke-width: 2.4;
+        }
+        .f-ruban:hover::before { filter: brightness(1.25); }
+
+        /* ══ 2 · ONGLET ══
+           Un onglet soudé au bord haut, qui dépasse à peine. C'est la pièce de
+           mobilier : on voit tout de suite qu'il appartient au panneau. */
+        .f-onglet {
+            top: -1.15rem; left: 1.4rem;
+            width: 2.5rem; height: 1.6rem;
+            display: grid; place-items: center;
+            padding-bottom: 0.25rem;
+            background: linear-gradient(180deg, #7a1a1a, #4a1212);
+            border: 0.06rem solid rgba(255, 66, 66, 0.45);
+            border-bottom: 0;
+            border-radius: 0.45rem 0.45rem 0 0;
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        .f-onglet svg { width: 0.95rem; height: 0.95rem; color: #ff8080; }
+        .f-onglet:hover { background: linear-gradient(180deg, #a52020, #6a1616); border-color: var(--rouge); }
+        .f-onglet:hover svg { color: #fff; }
+
+        /* ══ 3 · MARQUE-PAGE ══
+           Un fanion qui PEND depuis le bord haut, vers l'intérieur. Le geste est
+           celui du signet qu'on glisse dans un livre — et rien ne dépasse. */
+        .f-signet {
+            top: -0.06rem; left: 1.5rem;
+            width: 1.5rem; height: 2.3rem;
+            display: grid; place-items: start center;
+            padding-top: 0.35rem;
+            background: linear-gradient(180deg, var(--rouge), #9c1c1c);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%);
+            transition: filter 0.25s ease, height 0.25s ease;
+        }
+        .f-signet svg { width: 0.85rem; height: 0.85rem; color: #fff; stroke-width: 2.4; }
+        .f-signet:hover { filter: brightness(1.2); height: 2.6rem; }
+
+        /* ══ 4 · COIN PLIÉ ══
+           Le coin du panneau se retourne et découvre du rouge dessous. Aucun
+           élément ajouté : c'est le panneau lui-même qui se corne. */
+        .f-coin {
+            top: 0; left: 0;
+            width: 2.6rem; height: 2.6rem;
+            border-radius: 1rem 0 0 0;
+            overflow: hidden;
+        }
+        .f-coin::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, #ff4242 0%, #8c1616 60%, transparent 60%);
+            border-radius: 1rem 0 0 0;
+            transition: filter 0.25s ease;
+        }
+        .f-coin::after {
+            content: '';
+            position: absolute; top: 0; left: 0;
+            border-top: 2.6rem solid rgba(0, 0, 0, 0.35);
+            border-right: 2.6rem solid transparent;
+            opacity: 0; transition: opacity 0.25s ease;
+        }
+        .f-coin svg {
+            position: absolute; top: 0.38rem; left: 0.38rem;
+            width: 0.85rem; height: 0.85rem; color: #fff; stroke-width: 2.4;
+        }
+        .f-coin:hover::before { filter: brightness(1.25); }
+
+        /* ══ 5 · HAMPE PLANTÉE ══
+           Celle qu'on a essayée, mais RATTACHÉE : un socle posé sur l'arête tient
+           la hampe, et une encoche sombre dit qu'elle traverse la bordure. Sans
+           ce socle, le drapeau paraissait simplement posé à côté. */
+        .f-hampe { top: -1.5rem; left: 1.3rem; width: 1.9rem; height: 2.1rem; }
+        .f-hampe svg { width: 1.9rem; height: 2.1rem; color: var(--rouge); stroke-width: 1.9; }
+        .f-hampe::after {
+            content: '';
+            position: absolute; bottom: 0.42rem; left: 0.02rem;
+            width: 0.62rem; height: 0.2rem;
+            border-radius: 0.1rem;
+            background: var(--rouge);
+            box-shadow: 0 0 0.5rem rgba(255, 66, 66, 0.8);
+            transition: width 0.25s ease;
+        }
+        .f-hampe:hover svg { color: #ff7a7a; }
+        .f-hampe:hover::after { width: 0.85rem; }
+
+        /* ══ 6 · DANS LA BARRE DE BADGES ══
+           Ni au-dessus, ni au coin : à côté de la série et de la difficulté, à sa
+           place. Rien ne dépasse, rien ne chevauche, et il se lit comme une
+           troisième étiquette. */
+        .f-badge {
+            position: static;
+            display: grid; place-items: center;
+            width: 2rem; height: 2rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 66, 66, 0.1);
+            border: 0.06rem solid rgba(255, 66, 66, 0.32);
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        .f-badge svg { width: 0.95rem; height: 0.95rem; }
+        .f-badge:hover { background: rgba(255, 66, 66, 0.22); border-color: var(--rouge); }
+
+        /* Le battement, commun à ceux qui le portent. Il vit sur le SVG et jamais
+           sur le bouton : celui-ci porte déjà ses transitions de survol. */
+        .bat svg { animation: bat 2.4s ease-in-out infinite; }
+        @keyframes bat {
+            0%, 100% { filter: drop-shadow(0 0 0.1rem rgba(255, 66, 66, 0.25)); }
+            50%      { filter: drop-shadow(0 0 0.55rem rgba(255, 66, 66, 0.85)); }
+        }
+
+        .rappel { max-width: 74rem; margin: 3rem auto 0; color: var(--txt2); font-size: 0.82rem; line-height: 1.6; }
+        .rappel b { color: var(--neon); }
+    </style>
+</head>
+
+<body>
+    <div class="nav">
+        <a href="/prototypes">Mise en page</a>
+        <a href="/prototypes/hub-boutons">Créer / Rejoindre</a>
+        <a href="/prototypes/signalement" class="on">Signalement</a>
+        <a href="/prototypes/jeu">Écran de jeu</a>
+    </div>
+
+    <div class="head">
+        <h1>Le drapeau de signalement</h1>
+        <p>Six façons de poser le drapeau sur le panneau de question. Le panneau est reproduit
+           <b>aux valeurs exactes du jeu</b> — même rembourrage, même rayon, même bordure, et la
+           <b>jauge de combo sur le bord haut</b>, puisque c'est avec elle que la cohabitation se
+           passait mal. Survole chaque drapeau. Les pistes <b>1, 2, 4 et 6</b> sont solidaires du
+           panneau ; la <b>3</b> y pend ; la <b>5</b> est la seule qui dépasse encore.</p>
+    </div>
+
+    <div class="grille">
+
+        <!-- 1 -->
+        <section>
+            <div class="case-tete"><span class="case-num">01</span><span class="case-nom">Ruban d'angle</span></div>
+            <p class="case-note">Un ruban replié sur le coin, cousu à la page. Il ne flotte pas :
+               il épouse l'arrondi et fait partie du panneau. Le plus sobre, et celui qui survit
+               le mieux à un fond chargé.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <button class="f f-ruban bat" title="Signaler cette question">
+                    <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                </button>
+                <div class="badges"><span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span></div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+        <!-- 2 -->
+        <section>
+            <div class="case-tete"><span class="case-num">02</span><span class="case-nom">Onglet</span></div>
+            <p class="case-note">Un onglet soudé au bord haut, qui dépasse à peine. C'est la pièce
+               de mobilier : on voit immédiatement qu'il appartient au panneau, et il ne se confond
+               jamais avec la jauge.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <button class="f f-onglet bat" title="Signaler cette question">
+                    <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                </button>
+                <div class="badges"><span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span></div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+        <!-- 3 -->
+        <section>
+            <div class="case-tete"><span class="case-num">03</span><span class="case-nom">Marque-page</span></div>
+            <p class="case-note">Un fanion qui <b>pend depuis le bord, vers l'intérieur</b>. Le geste
+               est celui du signet glissé dans un livre — et rien ne dépasse du panneau. Il s'allonge
+               au survol.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <button class="f f-signet" title="Signaler cette question">
+                    <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                </button>
+                <div class="badges"><span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span></div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+        <!-- 4 -->
+        <section>
+            <div class="case-tete"><span class="case-num">04</span><span class="case-nom">Coin corné</span></div>
+            <p class="case-note">Le coin du panneau se retourne et découvre du rouge dessous. Aucun
+               élément ajouté : c'est le panneau lui-même qui se corne. Le plus discret des six.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <button class="f f-coin bat" title="Signaler cette question">
+                    <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                </button>
+                <div class="badges"><span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span></div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+        <!-- 5 -->
+        <section>
+            <div class="case-tete"><span class="case-num">05</span><span class="case-nom">Hampe plantée</span></div>
+            <p class="case-note">Ton idée d'origine, mais <b>rattachée</b> : un socle lumineux posé
+               sur l'arête tient la hampe. C'est lui qui manquait — sans socle, le drapeau paraissait
+               simplement posé à côté du panneau.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <button class="f f-hampe bat" title="Signaler cette question">
+                    <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                </button>
+                <div class="badges"><span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span></div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+        <!-- 6 -->
+        <section>
+            <div class="case-tete"><span class="case-num">06</span><span class="case-nom">Troisième badge</span></div>
+            <p class="case-note">Ni au-dessus, ni au coin : <b>à côté de la série et de la
+               difficulté</b>, à sa place. Rien ne dépasse, rien ne chevauche, et il se lit comme une
+               troisième étiquette. Le seul qui ne demande aucun calage.</p>
+            <div class="panel">
+                <div class="edge"><i></i></div>
+                <div class="badges">
+                    <span class="badge">Fullmetal Alchemist</span><span class="badge d">Medium</span>
+                    <button class="f f-badge bat" title="Signaler cette question">
+                        <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h11l-1.6 3.4L15 11H4"/></svg>
+                    </button>
+                </div>
+                <p class="qtxt">De quel corps s'empare Greed lors de sa deuxième réincarnation ?</p>
+                <div class="rep bon">Lin Yao</div>
+                <div class="rep">Roy Mustang</div>
+            </div>
+        </section>
+
+    </div>
+
+    <p class="rappel">⚠️ Aucune de ces pistes ne survivrait à un <b>overflow: hidden</b> posé sur
+       le panneau, sauf la <b>3</b> et la <b>6</b>, qui vivent entièrement à l'intérieur. Les pistes
+       <b>1</b> et <b>4</b> s'en accommodent aussi, puisqu'elles épousent le coin sans le dépasser.</p>
+</body>
+
+</html>

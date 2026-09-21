@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questions à saisir — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  .q.fait{opacity:.42}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .coche{margin-left:auto;display:flex;align-items:center;gap:.4rem;
+         color:var(--pale);font-size:.78rem;cursor:pointer;user-select:none}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .champ:last-of-type{border-bottom:0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.15rem}
+  .val{word-break:break-word}
+  .val.url{font-size:.8rem;color:#7aa7ff}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.4rem 1fr auto;gap:.5rem;
+       align-items:center;padding:.22rem 0}
+  .rep .i{color:var(--pale);font-size:.8rem;text-align:right}
+  .rep.bonne .t{color:var(--vert);font-weight:600}
+  .rep.bonne .i{color:var(--vert);font-weight:700}
+
+  button.c{background:transparent;border:1px solid var(--bord);color:var(--pale);
+           border-radius:.35rem;font-size:.68rem;padding:.18rem .5rem;cursor:pointer;
+           white-space:nowrap;transition:all .15s}
+  button.c:hover{border-color:var(--or);color:var(--or)}
+  button.c.ok{border-color:var(--vert);color:var(--vert)}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+</style></head><body>
+<div class="page">
+  <h1>Questions à saisir</h1>
+  <p class="sous">50 questions, aucun doublon entre elles ni avec la banque.
+     Coche une carte quand tu l'as saisie — l'état est retenu dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Les règles des Titans","d":"easy","t":"Quel est le seul point faible d'un Titan ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titans","b":1,"r":["La nuque","Le cœur","Les yeux","Les chevilles","La bouche","La colonne vertébrale entière"],"src":"La nuque des Titans est leur unique faiblesse connue à ce jour, et c'est le seul moyen possible de les tuer."},{"g":"Les règles des Titans","d":"medium","t":"Combien d'années de vie reste-t-il à celui qui hérite d'un pouvoir de Titan ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Pouvoir_des_Titans","b":1,"r":["Treize","Dix","Vingt","Sept","Quinze","Vingt-cinq"],"src":"dès lors de l'assimilation du pouvoir, la personne détentrice voit sa longévité réduite à 13 ans de vie restante."},{"g":"Les règles des Titans","d":"medium","t":"Combien de Titans Primordiaux existe-t-il ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Pouvoir_des_Titans","b":1,"r":["Neuf","Sept","Douze","Cinq","Treize","Trois"],"src":"laissant ainsi neuf Titans Primordiaux pour neuf Eldiens simultanément au maximum."},{"g":"Les règles des Titans","d":"medium","t":"Où se trouve le corps humain d'un porteur pendant qu'il est transformé ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Pouvoir_des_Titans","b":1,"r":["Dans la nuque de son Titan","Dans la poitrine de son Titan","Dans le crâne de son Titan","Il n'existe plus tant que dure la transformation","Dans le ventre de son Titan","Dans la main droite de son Titan"],"src":"Reiner Braun et Bertolt Hoover, après leur transformation, semblent avoir leurs corps humains dans la nuque du corps de leurs Titans, d'où ils le contrôlent."},{"g":"Les règles des Titans","d":"hard","t":"Qu'arrive-t-il au porteur quand son Titan est poussé à ses limites ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Pouvoir_des_Titans","b":1,"r":["Il est extrait inconscient de la nuque","Il meurt avec son Titan","Il perd son pouvoir définitivement","Il est projeté hors du corps, mais conscient","Il reste prisonnier de la chair","Son Titan se cristallise autour de lui"],"src":"Si le corps d'un Titan est poussé à ses limites, le corps de l'humain qui le contrôle sera extrait inconscient de la nuque du Titan."},{"g":"Les règles des Titans","d":"easy","t":"Qui est le tout premier Titan de l'histoire ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Ymir_Fritz","b":1,"r":["Ymir Fritz","Karl Fritz","Grisha Jäger","Eren Kruger","Rod Reiss","Zeke Jäger"],"src":"Quand elle était une jeune fille, elle s'éveilla au Pouvoir des Titans et est devenue l'aînée de tous les Titans, le Titan Originel."},{"g":"Les règles des Titans","d":"medium","t":"Quel Titan Ymir Fritz possédait-elle ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Ymir_Fritz","b":1,"r":["Le Titan Originel","Le Titan Assaillant","Le Titan Colossal","Le Titan Bestial","Le Titan Marteau d'Armes","Le Titan Féminin"],"src":"elle s'éveilla au Pouvoir des Titans et est devenue l'aînée de tous les Titans, le Titan Originel."},{"g":"Les règles des Titans","d":"hard","t":"Que doit contenir le corps d'une personne pour que Zeke puisse la changer en Titan ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Bestial","b":1,"r":["Son liquide cérébrospinal","Son sang","Un éclat de cristal","De la vapeur de son Titan","Un fragment d'os de Titan","Une injection de sérum royal"],"src":"Tout d'abord ses victimes doivent avoir en elles de son liquide cérébrospinal dans leur corps, soit par Injection Titanesque, soit par ingestion, soit par inhalation."},{"g":"Les règles des Titans","d":"hard","t":"Pourquoi Zeke peut-il commander les Titans qu'il a créés ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Bestial","b":1,"r":["Parce qu'il a du sang royal","Parce qu'il possède le Titan Originel","Parce qu'il les a nommés un par un","Parce qu'ils ont bu son sang","Parce qu'il crie dans une langue ancienne","Parce qu'ils lui ont prêté serment"],"src":"Du fait de son sang royal, après avoir créé des titans grâce à son liquide cérébrospinal, Sieg peut ensuite les contrôler à sa guise."},{"g":"Les règles des Titans","d":"veryhard","t":"Par quels moyens le liquide de Zeke peut-il pénétrer dans un corps ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Bestial","b":1,"r":["Injection, ingestion ou inhalation","Uniquement par injection","Par contact avec la peau","Par une morsure","Par le regard","Par l'eau des puits uniquement"],"src":"soit par Injection Titanesque, soit par ingestion, soit par inhalation."},{"g":"Les Neuf Titans","d":"medium","t":"Quelle est la taille du Titan Colossal ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Colossal","b":1,"r":["60 mètres","50 mètres","80 mètres","30 mètres","100 mètres","15 mètres"],"src":"Le titan Colossal mesure 60 mètres de haut et il est très lent à cause de sa taille immense."},{"g":"Les Neuf Titans","d":"medium","t":"Sur quoi le Titan Colossal exerce-t-il un contrôle important ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Colossal","b":1,"r":["La vapeur émise par son corps","Le feu","Le vent","La foudre","Le sable","Le son"],"src":"est un Titan Primordial notable pour sa taille nettement supérieure aux autres Titans et son contrôle important sur la vapeur émise par son corps."},{"g":"Les Neuf Titans","d":"hard","t":"Quel défaut la taille du Titan Colossal lui impose-t-elle ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Colossal","b":1,"r":["Il est très lent","Il ne tient debout que quelques minutes","Il ne peut pas se pencher","Il s'enfonce dans le sol","Il ne voit pas à ses pieds","Il ne peut pas courir sur un sol meuble"],"src":"Le titan Colossal mesure 60 mètres de haut et il est très lent à cause de sa taille immense, on le remarque lorsqu'Eren Jäger lui monte sur le bras pour le tuer."},{"g":"Les Neuf Titans","d":"veryhard","t":"À quoi les côtes du Titan Colossal se fixent-elles lors de sa transformation partielle ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Colossal","b":1,"r":["Au Mur Rose","Au Mur Maria","Au Mur Sina","À la porte de Shiganshina","À la tour de garde de Trost","À rien, il reste debout seul"],"src":"Bertolt se transforma en Titan incomplet, effectivement seul le haut du corps apparut, les os de ses côtes se fixant au Mur Rose."},{"g":"Les Neuf Titans","d":"hard","t":"Qu'est-ce qui rend le Titan Mâchoire particulièrement rapide ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_M%C3%A2choire","b":1,"r":["Sa petite taille","Ses quatre pattes","Ses muscles durcis","Sa mâchoire, qui l'équilibre","Son faible poids osseux","Sa capacité à bondir"],"src":"Il est également connu comme l'un des Titans les plus rapides grâce à sa petite taille."},{"g":"Les Neuf Titans","d":"medium","t":"Quelle est la forme du Titan Charrette ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Charrette","b":1,"r":["Quadrupède","Bipède et trapu","Serpentine","Ailée","Bipède et longiligne","Sans bras"],"src":"Le Titan Charrette est un Titan Primordial ayant une forme quadrupède, ainsi qu'une vitesse et une endurance dévastatrices."},{"g":"Les Neuf Titans","d":"hard","t":"Qu'est-ce qui distingue le Titan Charrette des autres Titans Primordiaux ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Charrette","b":1,"r":["Son endurance : il tient des mois sans reprendre forme humaine","Sa force brute","Sa capacité à parler","Sa régénération instantanée","Son blindage","Sa taille réduite"],"src":"Le Titan Charrette possède un niveau d'endurance supérieur à celui des autres Titans Primordiaux, permettant ainsi à ses détenteurs de participer à des missions de longue durée, pouvant durer jusqu'à plusieurs mois, sans avoir besoin de reprendre forme humaine."},{"g":"Les Neuf Titans","d":"extreme","t":"Combien de transformations d'affilée le Titan Charrette permet-il d'enchaîner, selon sa détentrice ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Charrette","b":1,"r":["Plus d'une centaine","Une dizaine","Une trentaine","Cinq","Plus d'un millier","Trois"],"src":"Grâce à sa grande endurance, son possesseur peut enchaîner de nombreuses transformations sans se fatiguer, plus d'une centaine de fois d'après Peak Finger."},{"g":"Les Neuf Titans","d":"hard","t":"Que permet la capacité du Titan Marteau d'Armes ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Marteau_d%27Armes","b":1,"r":["Produire et manipuler des structures durcies, utilisables comme armes","Briser n'importe quel durcissement","Frapper à distance par onde de choc","Forger de vraies armes de métal","Écraser un Titan d'un seul coup","Transformer son propre corps en marteau uniquement"],"src":"Le Titan Marteau d'Armes peut utiliser le Durcissement pour produire et manipuler des structures pouvant être militarisées de plusieurs façons."},{"g":"Les Neuf Titans","d":"veryhard","t":"Comment le Titan Marteau d'Armes contourne-t-il la faiblesse de la nuque ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Marteau_d%27Armes","b":1,"r":["Son détenteur s'enferme dans un cristal et commande le corps à distance","Il durcit sa nuque jusqu'à la rendre incassable","Il n'a pas de nuque","Il déplace sa nuque à volonté","Il se régénère plus vite qu'on ne le tranche","Il se dédouble en deux corps"],"src":"Lorsque le détenteur du Titan s'enferme dans son cristal, il peut générer sa forme titanesque contrôlée à distance, ce qui lui permet de se régénérer sans endommager son corps propre, et de contourner la faiblesse majeure des Titans, leur nuque."},{"g":"Les Neuf Titans","d":"extreme","t":"Qu'est-ce qui relie le cristal du Titan Marteau d'Armes à son corps titanesque ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Marteau_d%27Armes","b":1,"r":["Un long cordon","Une chaîne d'os","Un filin de vapeur","Rien de visible","Un faisceau de nerfs apparents","Une racine durcie"],"src":"Le cristal et le corps titanesque sont reliés par un long cordon."},{"g":"Les Neuf Titans","d":"medium","t":"À quel animal la silhouette du Titan Bestial fait-elle penser ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Bestial","b":1,"r":["Un singe","Un taureau","Un crocodile","Un bélier","Un faucon","Un canidé"],"src":"Du fait de la morphologie de son titan rappelant celle d'un singe, Sieg peut aisément saisir des objets et les lancer."},{"g":"Les Neuf Titans","d":"hard","t":"Pour quelle cause le Titan Assaillant a-t-il toujours combattu ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Assaillant","b":1,"r":["La liberté d'Eldia","La gloire de Mahr","La famille royale Fritz","La destruction de tous les Titans","La protection des Murs","La réunification des Neuf Titans"],"src":"Le Titan Assaillant est un Titan Primordial connu pour avoir toujours combattu pour la liberté d'Eldia."},{"g":"Les Neuf Titans","d":"veryhard","t":"Quelle capacité singulière possède le Titan Assaillant ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Titan_Assaillant","b":1,"r":["Transmettre des souvenirs à ses anciens possesseurs","Effacer les souvenirs de ses ennemis","Voir tous les avenirs possibles","Parler à tous les Titans à la fois","Se transformer sans se blesser","Revenir en arrière d'une minute"],"src":"Il possède la capacité de transmettre des souvenirs aux anciens possesseurs, comme démontré par son détenteur actuel, Eren Jäger.","n":"C'est bien vers le PASSÉ que vont les souvenirs, et non vers l'avenir : tout le paradoxe de la série tient là."},{"g":"Les murs et les batailles","d":"medium","t":"Vers quel mur l'humanité se replie-t-elle après la chute du Mur Maria ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Le Mur Rose","Le Mur Sina","Le Mur Maria, reconstruit","Aucun, elle se disperse","Le Mur de Shiganshina","Le Mur Fritz"],"src":"Après la chute de Maria, l'humanité a été poussée vers le Mur Rose."},{"g":"Les murs et les batailles","d":"hard","t":"Combien de soldats sont envoyés pour tenter de reprendre le Mur Maria ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Près de 250 000","Près de 50 000","Près de 10 000","Près d'un million","Près de 100 000","Près de 5 000"],"src":"Une campagne massive pour reprendre le Mur Maria a été lancée alors que près de 250 000 soldats enrôlés ont été envoyés pour exterminer les Titans."},{"g":"Les murs et les batailles","d":"veryhard","t":"Comment se termine la campagne de reconquête du Mur Maria ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Par l'anéantissement presque total de l'armée envoyée","Par une victoire coûteuse","Par un repli ordonné sans perte","Par la reprise d'un seul district","Par la mort de tous les Titans de la zone","Elle n'a jamais eu lieu"],"src":"cette campagne s'est soldée par un désastre et a vu l'anéantissement presque total de l'armée chargée de cette mission."},{"g":"Les murs et les batailles","d":"medium","t":"Quel mur est lourdement endommagé lors du combat d'Eren contre le Titan Féminin ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Le Mur Sina","Le Mur Rose","Le Mur Maria","Aucun, le combat a lieu hors des murs","Les trois à la fois","Le mur du District de Trost"],"src":"Quelque temps plus tard, le Mur Sina et le District de Stohess ont été lourdement endommagés quand Eren a combattu le Titan féminin."},{"g":"Les murs et les batailles","d":"hard","t":"Dans quel district Eren affronte-t-il le Titan Féminin ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Stohess","Trost","Shiganshina","Utopia","Karanes","Ehrmich"],"src":"le Mur Sina et le District de Stohess ont été lourdement endommagés quand Eren a combattu le Titan féminin."},{"g":"Les murs et les batailles","d":"veryhard","t":"Combien d'années le District de Shiganshina reste-t-il abandonné avant d'être repris ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Cinq","Trois","Dix","Deux","Sept","Un"],"src":"Après cinq ans d'abandon, le Bataillon d'exploration est retourné au District de Shiganshina et a scellé avec succès le trou du Mur Maria."},{"g":"Les murs et les batailles","d":"hard","t":"Que réussit le Bataillon d'exploration en revenant à Shiganshina ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Sceller le trou du Mur Maria","Reconstruire le district entier","Capturer le Titan Colossal vivant","Retrouver les plans des Murs","Exterminer tous les Titans de l'île","Établir un port"],"src":"Après cinq ans d'abandon, le Bataillon d'exploration est retourné au District de Shiganshina et a scellé avec succès le trou du Mur Maria."},{"g":"Les murs et les batailles","d":"hard","t":"Lors de quelle bataille Eren se transforme-t-il pour la première fois, sans en garder le moindre souvenir ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Eren_J%C3%A4ger","b":1,"r":["La bataille de Trost","La chute de Shiganshina","La bataille de Stohess","L'expédition hors les murs","La bataille de Revelio","Le siège du Mur Rose"],"src":"Eren n'a aucun contrôle sur ses actions quand il se transforme et est incapable de se rappeler de toutes les actions survenues au cours de la première bataille de Trost."},{"g":"Le Bataillon d'exploration","d":"easy","t":"Que représente l'insigne du Bataillon d'exploration ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Bataillon_d%27exploration","b":1,"r":["Deux ailes, une blanche et une bleue","Une épée croisée sur un bouclier","Une rose sur fond vert","Une licorne","Deux épées croisées","Un mur surmonté d'une couronne"],"src":"Le signe représente deux ailes d'oiseaux, une blanche et une bleue, qui signifient les « ailes de la liberté »."},{"g":"Le Bataillon d'exploration","d":"medium","t":"Comment appelle-t-on l'insigne du Bataillon d'exploration ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Bataillon_d%27exploration","b":1,"r":["Les ailes de la liberté","Les ailes de l'espoir","Le vol des braves","Les ailes du sacrifice","L'envol de Paradis","Les ailes d'Ymir"],"src":"C'est d'ailleurs pour cela que leur insigne représente deux ailes, appelées « ailes de la liberté »."},{"g":"Le Bataillon d'exploration","d":"medium","t":"Qu'est-ce qui propulse un soldat équipé de la manœuvre tridimensionnelle ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Manoeuvre_Tridimensionnelle","b":1,"r":["Du gaz comprimé en cartouches","Un ressort mécanique","La seule force des câbles","Un moteur à vapeur","Un contrepoids","La détente des jambes"],"src":"Puis en activant le mécanisme d'évacuation du gaz, qui était auparavant comprimé dans des cartouches, l'utilisateur est éjecté en direction dudit objet."},{"g":"Le Bataillon d'exploration","d":"medium","t":"Quel objectif le Bataillon d'exploration s'est-il fixé depuis la chute de Shiganshina ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Bataillon_d%27exploration","b":1,"r":["Rendre à l'humanité la liberté qu'elle a perdue","Reconstruire le Mur Maria","Capturer un Titan vivant","Trouver l'origine des Titans","Fonder une colonie hors les murs","Renverser la famille royale"],"src":"Depuis la Chute de Shiganshina, le bataillon d'exploration a pour objectif de rendre à l'être humain la liberté qu'il a jadis perdue lors de l'invasion des Titans et la destruction du Mur Maria."},{"g":"Le Bataillon d'exploration","d":"hard","t":"Quel poste Levi occupe-t-il au sein du Bataillon d'exploration ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Liva%C3%AF_Ackerman","b":1,"r":["Capitaine de l'Escouade tactique","Commandant du Bataillon","Instructeur des recrues","Chef des Brigades Spéciales","Second d'Erwin, sans escouade","Officier de liaison avec la reine"],"src":"souvent désigné comme le Caporal-Chef Livaï, est le Capitaine de l'Escouade tactique au sein du Bataillon d'exploration."},{"g":"Le Bataillon d'exploration","d":"medium","t":"Quelle réputation Levi a-t-il dans l'armée de Paradis ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Liva%C3%AF_Ackerman","b":1,"r":["Il en est le soldat le plus puissant","Il en est le plus jeune capitaine","Il en est le meilleur stratège","Il en est le seul survivant de la première expédition","Il en est le plus ancien membre","Il en est l'instructeur le plus redouté"],"src":"Il est connu pour être le soldat le plus puissant de l'Armée de Paradis."},{"g":"Les porteurs","d":"medium","t":"Que fait Annie après sa défaite face à Eren ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["Elle s'enferme dans un cristal","Elle s'enfuit hors des murs","Elle est exécutée sur place","Elle est emprisonnée dans un cachot","Elle perd son pouvoir","Elle rejoint le Bataillon"],"src":"En tant que Titan Féminin, elle sert d'antagoniste majeur avant sa défaite, durant laquelle elle s'enferma dans un solide cristal, tout en se plongeant dans le coma."},{"g":"Les porteurs","d":"hard","t":"Combien de temps Annie reste-t-elle prisonnière de son cristal ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["Quatre ans","Deux ans","Six ans","Un an","Dix ans","Huit ans"],"src":"Retenue prisonnière du cristal durant 4 années sous la garde des Brigades Spéciales, elle est actuellement enfin libre indirectement grâce à Eren."},{"g":"Les porteurs","d":"veryhard","t":"Qui gardait Annie pendant sa captivité dans le cristal ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["Les Brigades Spéciales","Le Bataillon d'exploration","Les Garnisons","La garde royale","L'escouade de Levi","Personne, le cristal suffisait"],"src":"Retenue prisonnière du cristal durant 4 années sous la garde des Brigades Spéciales."},{"g":"Les porteurs","d":"extreme","t":"Pour quelles qualités Annie a-t-elle été choisie comme porteuse du Titan Féminin ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["Sa rapidité et son agilité","Sa force brute","Sa loyauté à Mahr","Sa capacité à mentir","Son endurance","Sa maîtrise des lames"],"src":"Elle fut finalement sélectionnée comme possesseur du Titan Féminin pour sa rapidité et son agilité en 843, et ses supérieurs ne regrettèrent pas ce choix."},{"g":"Les porteurs","d":"extreme","t":"En quelle année Annie a-t-elle été choisie comme porteuse du Titan Féminin ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["843","845","840","850","838","848"],"src":"Elle fut finalement sélectionnée comme possesseur du Titan Féminin pour sa rapidité et son agilité en 843."},{"g":"Les porteurs","d":"hard","t":"Quelle escouade le Titan Féminin décime-t-il ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Annie_Leonhart","b":1,"r":["L'escouade de Levi","L'escouade de Hansi","L'escouade d'Erwin","La garde de Shiganshina","Les Brigades Spéciales","L'escouade de Mike"],"src":"Elle se retransforma en Titan Féminin, tua Petra Ral et les autres membres de l'escouade Livaï."},{"g":"Les porteurs","d":"veryhard","t":"Qui hérite du Titan Colossal après Bertholdt ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Murs","b":1,"r":["Armin","Eren","Mikasa","Conny","Jean","Historia"],"src":"la mort de Bertolt Hoover aux mains d'Armin Arlelt, transférant la possession du Titan Colossal."},{"g":"Les porteurs","d":"hard","t":"Quel Titan Eren éveille-t-il au plus fort du désespoir ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Eren_J%C3%A4ger","b":1,"r":["Le Titan Assaillant","Le Titan Originel","Le Titan Cuirassé","Le Titan Bestial","Le Titan Mâchoire","Le Titan Marteau d'Armes"],"src":"À la vue de ses camarades soldats morts ou presque, combinée à d'intenses sentiments de désespoir et son rêve d'exterminer tous les Titans, Eren réveilla sa capacité à se transformer en Titan Assaillant."},{"g":"Les porteurs","d":"medium","t":"Qu'est-ce qui distingue le Titan d'Eren des autres Titans de même taille ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Eren_J%C3%A4ger","b":1,"r":["Il est bien plus musclé et plus fort","Il est plus rapide","Il régénère plus vite","Il peut parler","Il résiste au froid","Il ne dégage pas de vapeur"],"src":"Contrairement à la plupart des autres Titans, le Titan d'Eren est considérablement plus musclé et défini ; d'après Conny Springer, ce Titan est beaucoup plus fort que les Titans de même taille."},{"g":"Les porteurs","d":"hard","t":"Où Eren et ses camarades se rendent-ils après la bataille de Shiganshina ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Eren_J%C3%A4ger","b":1,"r":["Au sous-sol de sa maison natale","Au palais royal","Au port de Paradis","Dans la forêt des arbres géants","À la chapelle des Reiss","Au quartier général du Bataillon"],"src":"Après la Bataille de Shiganshina, Eren et ses camarades arrivent finalement au sous-sol de sa maison natale."},{"g":"Les porteurs","d":"veryhard","t":"De qui Historia est-elle la fille illégitime ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Historia_Reiss","b":1,"r":["Rod Reiss","Karl Fritz","Daris Zackley","Grisha Jäger","Kenny Ackerman","Erwin Smith"],"src":"Historia est la Reine actuelle de Paradis, fille illégitime de Rhodes Reiss et d'une de ses servantes, Alma."},{"g":"Les porteurs","d":"extreme","t":"Comment s'appelle la mère d'Historia ?","s":"Shingeki no Kyojin","p":"https://attaque-des-titans.fandom.com/fr/wiki/Historia_Reiss","b":1,"r":["Alma","Frieda","Dina","Carla","Ymir","Kiyomi"],"src":"fille illégitime de Rhodes Reiss et d'une de ses servantes, Alma."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+function copier(txt, bouton) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const av = bouton.textContent;
+    bouton.textContent = '✓'; bouton.classList.add('ok');
+    setTimeout(() => { bouton.textContent = av; bouton.classList.remove('ok'); }, 800);
+  });
+}
+
+function champ(etiq, valeur, classe) {
+  const d = document.createElement('div'); d.className = 'champ';
+  d.innerHTML = '<span class="etiq">' + etiq + '</span><span class="val ' + (classe || '') + '"></span>';
+  d.children[1].textContent = valeur;
+  const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+  b.onclick = () => copier(valeur, b);
+  d.appendChild(b);
+  return d;
+}
+
+const liste = document.getElementById('liste');
+
+QUESTIONS.forEach((q, i) => {
+  const c = document.createElement('div');
+  c.className = 'q'; c.id = 'q' + i;
+  c.dataset.d = q.d; c.dataset.g = q.g || 'divers';
+
+  const tete = document.createElement('div'); tete.className = 'tete';
+  tete.innerHTML = '<span class="num">' + (i + 1) + '</span>'
+                 + '<span class="diff ' + q.d + '">' + LIB[q.d] + '</span>'
+                 + '<span class="grappe">' + (q.g || '') + '</span>';
+  const lab = document.createElement('label'); lab.className = 'coche';
+  const cb = document.createElement('input'); cb.type = 'checkbox';
+  cb.onchange = () => { c.classList.toggle('fait', cb.checked); sauver(); compter(); };
+  lab.appendChild(cb); lab.appendChild(document.createTextNode('saisie'));
+  tete.appendChild(lab); c.appendChild(tete);
+
+  c.appendChild(champ('Texte', q.t));
+  c.appendChild(champ('Série', q.s || 'Naruto'));
+  c.appendChild(champ('Preuve', q.p, 'url'));
+  c.appendChild(champ('Difficulté', LIB[q.d]));
+  c.appendChild(champ('Bonne rép.', String(q.b)));
+  c.appendChild(champ('Spoil', q.sp ? 'OUI' : 'non'));
+
+  const reps = document.createElement('div'); reps.className = 'reps';
+  q.r.forEach((r, k) => {
+    const l = document.createElement('div');
+    l.className = 'rep' + (k + 1 === q.b ? ' bonne' : '');
+    l.innerHTML = '<span class="i">' + (k + 1) + '</span><span class="t"></span>';
+    l.children[1].textContent = r;
+    const b = document.createElement('button'); b.className = 'c'; b.textContent = 'copier';
+    b.onclick = () => copier(r, b);
+    l.appendChild(b); reps.appendChild(l);
+  });
+  c.appendChild(reps);
+
+  const s = document.createElement('div'); s.className = 'src';
+  s.textContent = '« ' + q.src + ' »';
+  c.appendChild(s);
+
+  if (q.n) { const n = document.createElement('div'); n.className = 'note'; n.innerHTML = q.n; c.appendChild(n); }
+  liste.appendChild(c);
+});
+
+// ── barre de comptage ──
+const parD = {}; QUESTIONS.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+document.getElementById('barre').innerHTML =
+  ORDRE.filter(d => parD[d]).map(d => '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+  + '<span class="puce" id="reste"></span>';
+
+// ── filtres par grappe ──
+const grappes = [...new Set(QUESTIONS.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+const btnTout = document.createElement('button');
+btnTout.className = 'f actif'; btnTout.textContent = 'tout (' + QUESTIONS.length + ')';
+btnTout.onclick = () => filtrer(null, btnTout);
+fz.appendChild(btnTout);
+grappes.forEach(g => {
+  const n = QUESTIONS.filter(q => (q.g || 'divers') === g).length;
+  const b = document.createElement('button');
+  b.className = 'f'; b.textContent = g + ' (' + n + ')';
+  b.onclick = () => filtrer(g, b);
+  fz.appendChild(b);
+});
+function filtrer(g, bouton) {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+  bouton.classList.add('actif');
+  document.querySelectorAll('.q').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+
+function sauver() {
+  const etat = [...document.querySelectorAll('.coche input')].map(x => x.checked);
+  try { localStorage.setItem('qsaisies2', JSON.stringify(etat)); } catch (e) {}
+}
+function compter() {
+  const n = [...document.querySelectorAll('.coche input')].filter(x => !x.checked).length;
+  const el = document.getElementById('reste');
+  if (el) el.textContent = n + ' restante' + (n > 1 ? 's' : '');
+}
+try {
+  const etat = JSON.parse(localStorage.getItem('qsaisies2') || '[]');
+  document.querySelectorAll('.coche input').forEach((x, i) => {
+    if (etat[i]) { x.checked = true; x.closest('.q').classList.add('fait'); }
+  });
+} catch (e) {}
+compter();
+
+</script></body></html>

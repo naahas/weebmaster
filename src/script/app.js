@@ -410,8 +410,12 @@ createApp({
                 { v: 'Corriger question / reponses', l: 'Corriger la question ou les réponses' },
                 { v: 'Changer bonne réponse', l: 'Changer la bonne réponse' },
                 { v: 'Reformuler', l: 'Reformuler la question' },
-                { v: 'Doublon', l: 'Enlever un doublon' },
                 { v: 'Marquer spoil', l: 'Marquer comme spoil' },
+                // Celui-ci n'a de sens que si la question PORTE un lien : proposer de
+                // signaler une preuve invalide là où il n'y en a aucune remplirait la
+                // table de signalements ininterprétables. D'où le drapeau, que la
+                // propriété calculée ci-dessous lit pour le masquer.
+                { v: 'Lien de preuve invalide', l: 'Lien de preuve invalide', siPreuve: true },
             ],
             confirmAction: null,       // 'close' (hôte) ou 'leave' (invité)
             ringSweep: 0,              // 0 → 1 : remplissage de l'anneau à l'ouverture
@@ -652,6 +656,15 @@ createApp({
                 animationDelay: (i * 0.19).toFixed(2) + 's',
                 animationDuration: (1.25 + (i % 4) * 0.22).toFixed(2) + 's',
             }));
+        },
+
+        // Les motifs de signalement réellement proposés. Ceux marqués « siPreuve »
+        // n'apparaissent que si la question révélée porte bien un lien de preuve.
+        // ⚠️ Ce tri se fait ICI et non par un « v-if » sur le « v-for » du gabarit :
+        // en Vue 3 le « v-if » passe en premier et « m » n'y existe pas encore.
+        reportReasonsVisibles() {
+            const aPreuve = !!(this.questionResults && this.questionResults.proofUrl);
+            return this.reportReasons.filter(m => !m.siPreuve || aPreuve);
         },
 
         nbModes() {

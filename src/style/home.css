@@ -9721,36 +9721,57 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.7rem;
-    animation: v2qStatsIn 0.85s cubic-bezier(0.16, 0.9, 0.25, 1) 0.12s both;
+    /* Le même écart entre les trois : la pastille de signalement portait une
+       marge en plus pour se détacher, elle ne la porte plus. Tout se règle ici.
+       La colonne est centrée par « translateY(-50%) » : elle grandit de cet
+       écart et se recentre toute seule. */
+    gap: 1.9rem;
+    /* 0,38 s et non 0,85 : à presque une seconde, ce n'était plus un glissement
+       mais une entrée, et l'œil avait le temps de la suivre. Le retard cale les
+       deux icônes sur le drapeau, qui se plante à 0,3 s. */
+    animation: v2qStatsIn 0.38s cubic-bezier(0.16, 0.9, 0.25, 1) 0.26s both;
 }
 
 @keyframes v2qStatsIn {
-    from { opacity: 0; transform: translateY(-50%) translateX(-1.4rem); }
+    from { opacity: 0; transform: translateY(-50%) translateX(-0.75rem); }
     to   { opacity: 1; transform: translateY(-50%); }
 }
 
+/* ⚠️ Le disque vit sur un PSEUDO-ÉLÉMENT, et c'est lui seul qui grandit au
+   survol. Le « transform: scale » portait auparavant sur le bouton : un bouton
+   en « display: grid » recale son contenu pendant la mise à l'échelle, et le SVG
+   centré glissait d'une fraction de pixel vers la gauche avant de revenir d'un
+   coup au relâchement. Même effet visuel, sans le tressaillement. */
 .v2q-stats-btn {
+    position: relative;
     display: grid;
     place-items: center;
     width: 3rem;
     height: 3rem;
     padding: 0;
     color: var(--text-secondary);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+.v2q-stats-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
     background: rgba(255, 255, 255, 0.035);
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
-.v2q-stats-btn svg { width: 1.3rem; height: 1.3rem; }
+.v2q-stats-btn svg { position: relative; width: 1.3rem; height: 1.3rem; }
 
-.v2q-stats-btn:hover {
-    color: var(--neon-primary);
+.v2q-stats-btn:hover { color: var(--neon-primary); }
+.v2q-stats-btn:hover::before {
+    transform: scale(1.06);
     background: rgba(255, 215, 0, 0.07);
     border-color: rgba(255, 215, 0, 0.45);
-    transform: scale(1.06);
 }
 
 /* ============================================
@@ -9865,7 +9886,6 @@ body.game-active:has(.poll-game-container) #particles-js {
         margin-top: 1.6rem;
         animation: none;
     }
-    .v2q-stats-btn:hover { transform: scale(1.06); }
 }
 
 /* En mode vies, le repère de réponse remplace le score : il devient lisible */
@@ -10368,34 +10388,83 @@ body.v2-sheet-open .v2-hud {
    ============================================ */
 
 /* Le drapeau se range sous le bouton de détail, du même côté du panel */
+/* ── La pastille de signalement ──
+   Troisième et dernière de la colonne, et SÉPARÉE des deux autres par un écart
+   supplémentaire : les deux premières servent à consulter, celle-ci à
+   intervenir. La marge dit ce qu'un séparateur aurait dit plus lourdement.
+
+   ⚠️ L'écart est une marge sur CETTE pastille, et non un « gap » différent sur
+   la colonne : la colonne est centrée par « translateY(-50%) », elle grandit
+   donc de la marge et reste centrée toute seule. Un calage manuel se serait
+   décroché au premier changement de taille d'icône.
+
+   Comme les deux autres, le disque vit sur un pseudo-élément : lui seul grandit
+   au survol, et l'icône ne glisse pas. */
+/* Il est PLANTÉ SUR L'ARÊTE, et non posé dans le rembourrage : la hampe
+   traverse la bordure, la banderole flotte au-dessus du panneau. Le calage
+   n'est pas au jugé — dans un dessin de 24 unités, la hampe court de y=4 à
+   y=21 et la banderole de y=4 à y=11. À 1,55 rem de haut posé à -1,05 rem, la
+   hampe croise le bord pile à sa moitié et la banderole passe entièrement
+   dessus. Changer l'une des deux valeurs sans l'autre décroche le drapeau.
+
+   ⚠️ Rien ne serait visible si « .v2q-panel » avait un « overflow: hidden » :
+   il n'en a pas, et il ne doit pas en gagner un. Le z-index passe au-dessus de
+   la jauge de combo, qui occupe ce même bord. */
 .v2q-report-btn {
+    position: relative;
     display: grid;
     place-items: center;
     width: 3rem;
     height: 3rem;
     padding: 0;
     color: #e06a6a;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.25s ease;
+}
+.v2q-report-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
     background: rgba(239, 68, 68, 0.08);
     border: 0.06rem solid rgba(239, 68, 68, 0.32);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
-.v2q-report-btn svg { width: 1.25rem; height: 1.25rem; }
+/* La lueur bat sur le SVG, jamais sur le bouton : celui-ci porte déjà le
+   « transform » du disque au survol, et deux animations sur la même propriété
+   s'écrasent. Un battement discret suffit à distinguer l'outil qui INTERVIENT
+   des deux qui se contentent de montrer. */
+.v2q-report-btn svg {
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: v2qFlagBat 2.6s ease-in-out infinite;
+}
 
-.v2q-report-btn:hover {
-    color: #ff8a8a;
+.v2q-report-btn:hover { color: #ff8a8a; }
+.v2q-report-btn:hover::before {
+    transform: scale(1.06);
     background: rgba(239, 68, 68, 0.18);
     border-color: rgba(239, 68, 68, 0.6);
-    transform: scale(1.06);
 }
+
+@keyframes v2qFlagBat {
+    0%, 100% { filter: drop-shadow(0 0 0.12rem rgba(255, 66, 66, 0.3)); opacity: 0.92; }
+    50%      { filter: drop-shadow(0 0 0.6rem rgba(255, 66, 66, 0.9)); opacity: 1; }
+}
+
 
 /* ── Le lien de preuve ──
    Sous le drapeau, dans la même colonne, et du même gabarit : trois pastilles
    rondes de trois rem alignées à gauche du panneau. En bleu froid — le rouge
    est pris par le signalement, et l'or par tout le reste de l'écran. */
+/* Même traitement que l icône Détail : le disque est porté par un
+   pseudo-élément, lui seul grandit, l icône ne bouge pas d un pixel. */
 .v2q-proof-btn {
+    position: relative;
     display: grid;
     place-items: center;
     width: 3rem;
@@ -10528,6 +10597,7 @@ body.v2-sheet-open .v2-hud {
 @media (max-width: 768px) {
     .v2q-report-btn, .v2q-proof-btn { width: 2.7rem; height: 2.7rem; }
     .v2q-report-btn svg, .v2q-proof-btn svg { width: 1.1rem; height: 1.1rem; }
+
 }
 
 /* La colonne entière disparaît derrière un calque */

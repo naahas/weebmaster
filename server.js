@@ -1288,6 +1288,11 @@ app.get('/prototypes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes.html');
 });
 
+// Le drapeau de signalement : six poses sur le vrai panneau de question.
+app.get('/prototypes/signalement', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
+});
+
 // Les deux boutons de l accueil : six pistes, montrees en paire sur le vrai fond.
 app.get('/prototypes/hub-boutons', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-hub-boutons.html');

@@ -1342,6 +1342,11 @@
                             <option value="spoil">Spoil</option>
                             <option value="safe">Non-spoil</option>
                         </select>
+                        <select id="filterPreuve" onchange="filterQuestions()">
+                            <option value="">Preuve : toutes</option>
+                            <option value="sans">Sans preuve</option>
+                            <option value="avec">Avec preuve</option>
+                        </select>
                         <input type="text" class="search-input" id="searchInput" placeholder="🔍 Rechercher..." oninput="filterQuestions()">
                         <div class="question-count">
                             <span id="filteredCount">0</span> / <span id="totalCount">0</span> questions
@@ -1688,10 +1693,16 @@
             }
         }
 
+        // Les trois séries du filtre « Big 3 », en minuscules pour la comparaison.
+        // Ce sont les mêmes que SERIES_FILTERS.big3 côté serveur (dbs.js) : si l'une
+        // change là-bas, elle doit changer ici.
+        const BIG3 = ['one piece', 'naruto', 'bleach'];
+
         // Remplir le filtre des séries
         function populateSeriesFilter() {
             const select = document.getElementById('filterSerie');
-            select.innerHTML = '<option value="">Toutes les séries</option>';
+            select.innerHTML = '<option value="">Toutes les séries</option>'
+                             + '<option value="__big3__">Big 3 (One Piece, Naruto, Bleach)</option>';
             
             allSeries.forEach(serie => {
                 const option = document.createElement('option');
@@ -1706,18 +1717,41 @@
             const serieFilter = document.getElementById('filterSerie').value.toLowerCase();
             const difficultyFilter = document.getElementById('filterDifficulty').value.toLowerCase();
             const spoilFilter = document.getElementById('filterSpoil').value;
+            const preuveFilter = document.getElementById('filterPreuve').value;
             const searchFilter = document.getElementById('searchInput').value.toLowerCase();
             const filtered = allQuestions.filter(q => {
-                const matchSerie = !serieFilter || (q.serie && q.serie.toLowerCase() === serieFilter);
+                // « Big 3 » vaut pour trois séries à la fois : le jeton est testé
+                // avant l'égalité de nom, sans quoi aucune série ne s'appellerait
+                // ainsi et la liste reviendrait vide.
+                const matchSerie = !serieFilter
+                    || (serieFilter === '__big3__'
+                        ? BIG3.includes((q.serie || '').toLowerCase())
+                        : (q.serie && q.serie.toLowerCase() === serieFilter));
                 const matchDifficulty = !difficultyFilter || q.difficulty === difficultyFilter;
                 const matchSpoil = !spoilFilter || 
                     (spoilFilter === 'spoil' && q.is_spoil === true) ||
                     (spoilFilter === 'safe' && !q.is_spoil);
+                // Un champ vide ou rempli d'espaces ne compte pas comme une preuve :
+                // c'est le même test que côté serveur, sinon le compte afficherait
+                // des questions « avec preuve » qui n'en ont pas.
+                const aPreuve = !!(q.proof_url && String(q.proof_url).trim());
+                const matchPreuve = !preuveFilter
+                    || (preuveFilter === 'sans' && !aPreuve)
+                    || (preuveFilter === 'avec' && aPreuve);
+                // La recherche porte sur l'énoncé, la série ET les six réponses.
+                // Sans les réponses, retrouver une question par ce qu'elle fait
+                // deviner — un nom de personnage, un lieu — obligeait à se souvenir
+                // de la formulation exacte de l'énoncé, ce que personne ne fait.
+                // Les six champs sont lus par leur nom plutôt que par une boucle
+                // sur les clefs : une question peut n'en avoir que quatre, et les
+                // deux dernières valent alors « null ».
+                const reponses = [q.answer1, q.answer2, q.answer3, q.answer4, q.answer5, q.answer6];
                 const matchSearch = !searchFilter || 
                     q.question.toLowerCase().includes(searchFilter) ||
-                    (q.serie && q.serie.toLowerCase().includes(searchFilter));
+                    (q.serie && q.serie.toLowerCase().includes(searchFilter)) ||
+                    reponses.some(a => a && String(a).toLowerCase().includes(searchFilter));
                 
-                return matchSerie && matchDifficulty && matchSpoil && matchSearch;
+                return matchSerie && matchDifficulty && matchSpoil && matchPreuve && matchSearch;
             });
 
             document.getElementById('filteredCount').textContent = filtered.length;
