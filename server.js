@@ -4551,6 +4551,33 @@ app.get('/question', (req, res) => {
     res.sendFile(__dirname + '/src/html/question.html');
 });
 
+// ============================================
+// 📝 POSTE DE SAISIE — les lots de questions préparés hors ligne
+// ============================================
+// Les pages « questions-<lot>.html » vivent à la racine, HORS des dossiers
+// servis en statique, et elles portent les questions AVEC leur bonne réponse.
+// Les poser dans src/html les rendrait publiques : n'importe qui devinant le
+// nom du fichier lirait cinquante réponses avant qu'elles ne soient posées.
+// D'où cette route, qui exige le code du back-office AVANT d'ouvrir le fichier.
+//
+// Elle sert aussi à contourner l'absence de CORS : ouverte en « file:// », la
+// page ne pourrait pas appeler /api/add-question. Servie ici, elle est de même
+// origine que l'API et le navigateur la laisse faire.
+app.get('/saisie/:lot', (req, res) => {
+    const attendu = process.env.QUESTION_ADMIN_CODE;
+    const code = req.query && req.query.code;
+    if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
+        return res.status(401).send('Code invalide.');
+    }
+    // Le nom du lot entre dans un chemin : on le borne à un alphabet sans
+    // point ni barre oblique, sinon « ../.env » serait un lot valable.
+    const lot = String(req.params.lot || '');
+    if (!/^[a-z0-9-]+$/.test(lot)) return res.status(400).send('Nom de lot invalide.');
+    const fichier = __dirname + '/questions-' + lot + '.html';
+    if (!require('fs').existsSync(fichier)) return res.status(404).send('Lot introuvable : ' + lot);
+    res.sendFile(fichier);
+});
+
 // API ajout question - avec code spécifique
 
 // ============================================
@@ -4569,6 +4596,24 @@ const codeBackOffice = (req, res) => {
     const code = (req.body && req.body.adminCode) || (req.query && req.query.adminCode);
     if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
         res.status(401).json({ error: 'Code invalide' });
+        return false;
+    }
+    return true;
+};
+
+// ⚠️ La suppression est la seule action IRRÉVERSIBLE du back-office : une
+// question effacée ne se retrouve pas, et la banque est écrite à la main
+// depuis des mois. Elle exige donc un SECOND mot de passe, distinct de
+// celui qui ouvre la page — être entré ne suffit pas à effacer.
+//
+// Comme pour ADMIN_PASSWORD, l'absence de la variable REFUSE au lieu
+// d'autoriser : une variable oubliée au déploiement ouvrirait sinon la
+// suppression à quiconque a le code du back-office, et en silence.
+const codeSuppression = (req, res) => {
+    const attendu = process.env.QUESTION_DELETE_CODE;
+    const code = req.body && req.body.deleteCode;
+    if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
+        res.status(401).json({ error: 'Mot de passe de suppression invalide.' });
         return false;
     }
     return true;
@@ -4688,11 +4733,16 @@ app.post('/api/update-question', async (req, res) => {
 
 // 🆕 Supprimer une question
 app.post('/api/delete-question', async (req, res) => {
-    // Le corpus change : la banque en mémoire doit être relue
-    invaliderBanque();
     const { id } = req.body;
 
+    // Les DEUX portes, et avant toute chose : invaliderBanque() se trouvait
+    // en tête de route, si bien qu'un appel non authentifié suffisait à vider
+    // le cache des questions et à forcer une relecture complète de Supabase.
     if (!codeBackOffice(req, res)) return;
+    if (!codeSuppression(req, res)) return;
+
+    // Le corpus change : la banque en mémoire doit être relue
+    invaliderBanque();
 
     try {
         const { data, error } = await supabase
@@ -4735,11 +4785,16 @@ app.get('/api/series', async (req, res) => {
     if (!codeBackOffice(req, res)) return;
 
     try {
-        const { data, error } = await supabase
+        // ⚠️ PAGINÉ. Sans cela, cette route ne lisait que les mille premières
+        // lignes — le plafond « max-rows » de PostgREST, qui ne lève aucune
+        // erreur : on reçoit mille lignes et l'on croit avoir tout. La liste
+        // des séries en était tirée, si bien qu'une série n'existant QUE dans
+        // les questions au-delà de la millième n'apparaissait pas dans le
+        // tiroir du back-office, alors que ses questions se trouvaient très
+        // bien à la recherche. C'est arrivé à Kingdom.
+        const data = await toutesLesLignes(() => supabase
             .from('questions')
-            .select('serie');
-
-        if (error) throw error;
+            .select('serie'));
 
         // Extraire les séries uniques et trier
         const uniqueSeries = [...new Set(data.map(q => q.serie).filter(s => s))].sort();

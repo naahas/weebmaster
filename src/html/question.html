@@ -963,6 +963,79 @@
             position: relative;
         }
 
+        /* 🗑️ Le modal de suppression. Volontairement étroit : c'est un
+           garde-fou, pas un formulaire. Il REMPLACE le confirm() du
+           navigateur — l'énoncé visé y est rappelé, ce qui rend la boîte
+           native redondante. */
+        .modal.petit {
+            max-width: 420px;
+        }
+
+        .del-cible {
+            background: var(--bg-input);
+            border-left: 3px solid var(--error);
+            border-radius: 0 8px 8px 0;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            line-height: 1.45;
+        }
+
+        .del-label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .del-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: var(--bg-input);
+            border: 1.6px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .del-input:focus {
+            border-color: var(--error);
+        }
+
+        .del-erreur {
+            min-height: 1.1rem;
+            margin-top: 8px;
+            font-size: 0.72rem;
+            color: var(--error);
+        }
+
+        .del-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .btn-del-go {
+            padding: 8px 18px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--error);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.2s ease;
+        }
+
+        .btn-del-go:hover:not(:disabled) { filter: brightness(1.15); }
+        .btn-del-go:disabled { opacity: 0.5; cursor: default; }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -1367,6 +1440,25 @@
     </div>
 
     <!-- 🆕 Modal d'édition -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal petit">
+            <div class="modal-header">
+                <span class="modal-title">🗑️ Supprimer la question</span>
+                <button class="modal-close" onclick="fermerSuppression()">&times;</button>
+            </div>
+            <p class="del-cible" id="delCible"></p>
+            <form onsubmit="confirmerSuppression(event)">
+                <label class="del-label" for="delCode">Mot de passe de suppression</label>
+                <input type="password" id="delCode" class="del-input" autocomplete="off">
+                <p class="del-erreur" id="delErreur"></p>
+                <div class="del-actions">
+                    <button type="button" class="btn-action" onclick="fermerSuppression()">Annuler</button>
+                    <button type="submit" class="btn-del-go" id="delGo">Supprimer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="editModal">
         <div class="modal">
             <div class="modal-header">
@@ -1820,6 +1912,7 @@
                         <button class="btn-action ${q.is_spoil ? 'spoil-active' : 'spoil-inactive'}" onclick="toggleSpoil(${q.id})">
                             ${q.is_spoil ? '⚠️ Spoil' : '🔓 Non-spoil'}
                         </button>
+                        <button class="btn-action delete" onclick="deleteQuestion(${q.id})">🗑️ Supprimer</button>
                     </div>
                 </div>
             `}).join('');
@@ -2066,9 +2159,59 @@
             }
         }
 
-        // 🆕 Supprimer une question
-        async function deleteQuestion(questionId) {
-            if (!confirm('Supprimer cette question ?')) return;
+        // 🗑️ Supprimer une question — DERRIÈRE UN SECOND MOT DE PASSE.
+        //
+        // Il ne vit que dans cette variable : ni localStorage, ni
+        // sessionStorage. Recharger la page le redemande, et c'est voulu —
+        // le laisser traîner dans le navigateur reviendrait à n'avoir qu'un
+        // seul mot de passe. On le garde le temps de la session pour ne pas
+        // le retaper à chaque ligne d'un ménage.
+        let codeSuppression = '';
+
+        // L'id visé par le modal ouvert. Null quand il est fermé.
+        let cibleSuppression = null;
+
+        function deleteQuestion(questionId) {
+            const q = allQuestions.find(x => x.id === questionId);
+            cibleSuppression = questionId;
+            document.getElementById('delCible').textContent = q ? q.question : 'cette question';
+            document.getElementById('delErreur').textContent = '';
+            const champ = document.getElementById('delCode');
+            // Le code déjà saisi est rappelé : on ne le retape pas à chaque
+            // ligne d'un ménage, mais le modal reste le geste délibéré qui
+            // tient lieu de confirmation.
+            champ.value = codeSuppression;
+            const go = document.getElementById('delGo');
+            go.disabled = false;
+            go.textContent = 'Supprimer';
+            document.getElementById('deleteModal').classList.add('visible');
+            setTimeout(() => { codeSuppression ? go.focus() : champ.focus(); }, 30);
+        }
+
+        function fermerSuppression() {
+            document.getElementById('deleteModal').classList.remove('visible');
+            cibleSuppression = null;
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteModal') fermerSuppression();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') fermerSuppression();
+        });
+
+        async function confirmerSuppression(event) {
+            event.preventDefault();
+            const questionId = cibleSuppression;
+            if (questionId === null) return;
+
+            const erreur = document.getElementById('delErreur');
+            const go = document.getElementById('delGo');
+            codeSuppression = document.getElementById('delCode').value;
+            if (!codeSuppression) { erreur.textContent = 'Mot de passe requis.'; return; }
+
+            go.disabled = true;
+            go.textContent = 'Suppression…';
 
             try {
                 const response = await fetch('/api/delete-question', {
@@ -2076,22 +2219,32 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         adminCode,
+                        deleteCode: codeSuppression,
                         id: questionId
                     })
                 });
 
                 const data = await response.json();
 
+                // Un code refusé doit être OUBLIÉ : conservé, il reviendrait
+                // pré-rempli au modal suivant et toutes les suppressions
+                // échoueraient sans qu'on comprenne pourquoi.
+                if (response.status === 401) codeSuppression = '';
+
                 if (data.success) {
-                    // Retirer de allQuestions
                     allQuestions = allQuestions.filter(q => q.id !== questionId);
                     document.getElementById('totalCount').textContent = allQuestions.length;
                     filterQuestions();
+                    fermerSuppression();
                 } else {
-                    alert(data.error || 'Erreur lors de la suppression');
+                    erreur.textContent = data.error || 'Erreur lors de la suppression.';
+                    go.disabled = false;
+                    go.textContent = 'Supprimer';
                 }
-            } catch (error) {
-                alert('Erreur de connexion');
+            } catch (e) {
+                erreur.textContent = 'Serveur injoignable.';
+                go.disabled = false;
+                go.textContent = 'Supprimer';
             }
         }
 

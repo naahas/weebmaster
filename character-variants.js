@@ -240,6 +240,7 @@ const CHARACTER_VARIANTS = {
         ["HO-OH", "HO OH"],
         ["PORYGON-Z", "PORYGON Z"],
         ["LANCE", "PETER"],
+        ["OGEKO", "OGÉKO"],
         ["ASH", "SACHA"],
     ],
 
