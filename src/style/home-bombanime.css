@@ -496,8 +496,8 @@
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.7rem;
+    font-size: 1rem;
     color: rgba(255,255,255,0.35);
     font-weight: 500;
     transition: all 0.2s ease;
@@ -644,12 +644,24 @@
 
 .player-avatar {
     position: absolute;
-    left: 50%;
-    bottom: 8%;
-    transform: translateX(-50%);
-    width: 72%;
-    height: 72%;
-    border-radius: 50%;
+    left: 0;
+    bottom: 0;
+    /* Plus de translate : l element fait desormais toute la boite, c est le
+       clip-path qui lui donne sa forme. */
+    /* ⚠️ L avatar epouse l HEXAGONE, il n est plus rond.
+
+       Un disque inscrit dans un hexagone laisse ses six coins vides, quelle
+       que soit sa taille : 85 % est le maximum avant qu il ne morde sur les
+       pans obliques, et le vide restait visible. Le decouper a la meme forme
+       que le polygone le fait remplir le cadre.
+
+       Le trace suit celui du SVG — 50,3 97,25 97,75 50,97 3,75 3,25 — reduit
+       de 6 % vers le centre pour ne pas recouvrir le liseré dore, large de
+       deux unites sur cette boite de cent. */
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%,
+                       50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
     object-fit: cover;
     transition: all 0.2s ease;
     filter: grayscale(40%) brightness(0.65);
@@ -657,22 +669,19 @@
 }
 
 .bombanime-player-slot.active .player-avatar {
-    filter: grayscale(0%) brightness(1.1);
-    box-shadow: 0 0 15px rgba(240, 192, 64, 0.4);
+    filter: grayscale(0%) brightness(1.1) drop-shadow(0 0 7px rgba(240, 192, 64, 0.55));
     opacity: 1;
 }
 
 /* Moi-même quand ce n'est PAS mon tour - avatar légèrement doré */
 .bombanime-player-slot.is-me .player-avatar {
-    filter: grayscale(0%) brightness(0.95);
-    box-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
+    filter: grayscale(0%) brightness(0.95) drop-shadow(0 0 5px rgba(240, 192, 64, 0.42));
     opacity: 0.8;
 }
 
 /* Moi-même quand c'est MON tour - avatar doré vif */
 .bombanime-player-slot.active.is-me .player-avatar {
-    filter: grayscale(0%) brightness(1.15);
-    box-shadow: 0 0 20px rgba(240, 192, 64, 0.5);
+    filter: grayscale(0%) brightness(1.15) drop-shadow(0 0 10px rgba(240, 192, 64, 0.65));
     opacity: 1;
 }
 
@@ -683,9 +692,8 @@
 
 /* Animation succès - avatar brille brièvement */
 .bombanime-player-slot.success .player-avatar {
-    filter: grayscale(0%) brightness(1.3);
+    filter: grayscale(0%) brightness(1.3) drop-shadow(0 0 10px rgba(125, 206, 160, 0.75));
     opacity: 1;
-    box-shadow: 0 0 20px rgba(125, 206, 160, 0.6);
 }
 
 /* Les cœurs se rangent dans l'encoche basse droite de l'hexagone : l'axe
@@ -739,7 +747,7 @@
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 0.75rem;
+    margin-top: 0.85rem;
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.25);
     background: transparent;
@@ -990,8 +998,7 @@
 }
 
 .bombanime-player-slot.alphabet-complete .player-avatar {
-    filter: grayscale(0%) brightness(1.1);
-    box-shadow: 0 0 15px rgba(240, 192, 64, 0.5);
+    filter: grayscale(0%) brightness(1.1) drop-shadow(0 0 7px rgba(240, 192, 64, 0.65));
 }
 
 .bombanime-player-slot.alphabet-complete .player-name {

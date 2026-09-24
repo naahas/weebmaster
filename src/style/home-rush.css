@@ -500,13 +500,32 @@
 
 .rush-top li {
     display: grid;
-    grid-template-columns: 1.1rem 1fr auto;
+    /* Une colonne de plus pour l'avatar, entre le rang et le pseudo. */
+    grid-template-columns: 1.1rem auto 1fr auto;
     align-items: baseline;
     gap: 1rem;
     font-size: 0.95rem;
     color: rgba(255, 255, 255, 0.42);
     transition: color 0.3s ease;
 }
+
+/* 🖼️ La vignette, entre le rang et le pseudo. Assez petite pour que le
+   classement reste une liste qu'on survole, pas une galerie. */
+.rush-top li .a {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 50%;
+    object-fit: cover;
+    align-self: center;
+    opacity: 0.55;
+    transition: opacity 0.3s ease;
+}
+
+.rush-top li.tete .a,
+.rush-top li.moi .a { opacity: 1; }
+
+/* Le premier porte le liseré, comme son rang porte la couleur. */
+.rush-top li.tete .a { box-shadow: 0 0 0 1.5px rgba(255, 215, 0, 0.5); }
 
 /* Le rang en très petit, la valeur en gros : on lit le score, pas la place */
 .rush-top .r {

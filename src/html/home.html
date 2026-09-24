@@ -97,6 +97,17 @@
                         <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                         <span class="v2-logo-ring"></span>
                     </button>
+                    <!-- 🖼️ L'avatar se choisit ICI, à côté du pseudo : c'est le même
+                         geste — qui je suis dans cette partie — et il sert ensuite à
+                         TOUS les modes (hexagones de BombAnime, liste du salon, écran
+                         de victoire). Une seule pastille, jamais une grille : cet écran
+                         est le premier contact d'un streamer avec le site.
+                         Il ne se change que d'ici, jamais en pleine partie. -->
+                    <button class="v2-avatar-pill" @click="ouvrirAvatars"
+                            :class="{ ouvert: avatarsOuverts }" title="Changer d'avatar">
+                        <img :src="srcAvatar(avatar)" alt="" draggable="false"
+                             @error="$event.target.src='novice.png'">
+                    </button>
                     <button class="v2-identity" v-if="homeScreen !== 'join'" @click="editPseudo" title="Changer de pseudo">
                         <span class="v2-identity-dot"></span>
                         <span class="v2-identity-name">{{ username }}</span>
@@ -106,7 +117,27 @@
                         <span class="v2-identity-dot"></span>
                         <span class="v2-identity-name">{{ username }}</span>
                     </span>
+
                 </header>
+
+                <!-- 🖼️ Panneau des avatars : colonne collée au bord droit, centrée
+                     en hauteur. Sa place est FIXE, donc plus rien à mesurer au clic.
+                     Pas de nom sous les vignettes — le visage suffit à reconnaître
+                     le personnage, et l'étiquette rapetissait l'image d'autant.
+                     À la RACINE, pas dans l'en-tête : un parent portant un transform
+                     créerait un bloc conteneur et casserait son position:fixed.
+                     C'est l'erreur qui revient le plus souvent sur ce projet. -->
+                <div class="v2-avatars-voile" v-if="avatarsOuverts" @click="avatarsOuverts = false"></div>
+                <div class="v2-avatars" v-if="avatarsOuverts">
+                    <div class="v2-avatars-grille">
+                        <button v-for="a in avatarsListe" :key="a.f"
+                                class="v2-avatars-item" :class="{ on: a.f === avatar }"
+                                @click="choisirAvatar(a.f)">
+                            <img :src="srcAvatar(a.f)" alt="" draggable="false"
+                                 @error="$event.target.src='novice.png'">
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Modale : changer de pseudo -->
                 <div class="v2-pseudo-overlay" v-if="editingPseudo" @click.self="cancelPseudoEdit">
@@ -717,17 +748,32 @@
                                            @change="applySetting('/admin/bombanime/set-timer', { timer: bombanime.timer }, () => {})">
                                     <span class="v2-set-value num">{{ bombanime.timer }}s</span>
                                 </div>
+
+                                <!-- 🤖 Le partenaire. Un seul, et il joue pour de bon :
+                                     il répond en 300 ms, donc il ne perd jamais. Il sert
+                                     à faire tourner la bombe quand on est seul ou à deux,
+                                     pas à être battu. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 14h.01M15 14h.01"/></svg>
+                                    <span class="v2-set-label">Bot</span>
+                                    <span class="v2-set-value">{{ botBomb ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: !botBomb }"
+                                                @click="basculerBot(false)">Non</button>
+                                        <button class="v2-set-opt" :class="{ on: botBomb }"
+                                                @click="basculerBot(true)">Oui</button>
+                                    </span>
+                                </div>
                             </template>
 
                             <!-- 🧪 Peupler le salon sans ouvrir quinze onglets.
                                  Le serveur ne l'accepte qu'en dehors de la production.
-                                 Ouvert à Ascension et à BombAnime, les deux modes où des
+                                 Ouvert à Ascension et à Collect, les deux modes où des
                                  bots remplissent l'écran de façon utile : la tour se juge
-                                 en mouvement, et le cercle de la bombe ne montre ses
-                                 limites qu'une fois plein. Un bot ne bloque pas le tour —
-                                 l'explosion est un minuteur serveur, il perd une vie à
-                                 l'expiration et la bombe passe au suivant. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'bombanime' || lobbyMode === 'collect')">
+                                 en mouvement, le feutre ne montre ses limites qu'à cinq.
+                                 Ces bots-là sont PASSIFS — ils ne jouent pas leur tour.
+                                 BombAnime a désormais son propre partenaire, qui joue. -->
+                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect')">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
@@ -1530,8 +1576,13 @@
                                  n'y a donc rien à mesurer. Voir « ascCabines ». -->
                             <span class="asc-cabines">
                                 <span class="asc-cabine" v-for="c in ascCabines" :key="c.id"
-                                      :class="{ moi: c.moi }"
-                                      :style="{ top: ((asc.total - c.etage + 0.5) / asc.total * 100) + '%' }">{{ c.nb }}</span>
+                                      :class="{ moi: c.moi, plus: c.plus }"
+                                      :style="{ top: ((asc.total - c.etage + 0.5) / asc.total * 100) + '%',
+                                                left: c.gauche }">
+                                    <b v-if="c.plus">+{{ c.plus }}</b>
+                                    <img v-else :src="srcAvatar(c.avatar)" alt="" draggable="false"
+                                         @error="$event.target.remove()">
+                                </span>
                             </span>
                         </aside>
                         </template>
@@ -1560,6 +1611,8 @@
                                 <li v-for="(j, i) in rush.classement.slice(0, 5)" :key="j.playerId"
                                     :class="{ moi: j.playerId === playerId, tete: i === 0 }">
                                     <span class="r">{{ i + 1 }}</span>
+                                    <img class="a" :src="srcAvatar(j.avatarUrl)" alt="" draggable="false"
+                                         @error="$event.target.remove()">
                                     <span class="n">{{ j.username }}</span>
                                     <span class="s">{{ j.record }}</span>
                                 </li>
@@ -1691,7 +1744,7 @@
                                         <svg viewBox="0 0 100 100">
                                             <polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/>
                                         </svg>
-                                        <img class="player-avatar" :src="player.avatarUrl || 'novice.png'" :alt="player.username" @error="$event.target.src='novice.png'"/>
+                                        <img class="player-avatar" :src="srcAvatar(player.avatarUrl)" :alt="player.username" @error="$event.target.src='novice.png'"/>
                                         <!-- 🎯 Éléments animation gain de vie (dans player-hex) -->
                                         <div class="life-glow-ring"></div>
                                         <div class="life-glow-ring ring-2"></div>
@@ -2184,7 +2237,16 @@
                                  :class="{ me: p.playerId === playerId }">
                                 <span class="rk">{{ i + 1 }}</span>
                                 <span class="v2q-col">
-                                    <span class="nm">{{ p.username }}</span>
+                                    <!-- 🖼️ L avatar se colle au pseudo, pas au bord de la
+                                         rangee : « v2q-col » porte flex:1, une vignette posee
+                                         a cote d elle serait partie se plaquer contre le score.
+                                         Ce panneau n existe que chez l hote — le joueur voit
+                                         « Placement », qui ne nomme personne d autre. -->
+                                    <span class="v2q-top-id">
+                                        <span class="nm">{{ p.username }}</span>
+                                        <img class="v2q-top-av" :src="srcAvatar(p.avatarUrl)" alt=""
+                                             draggable="false" @error="$event.target.remove()">
+                                    </span>
                                     <span class="sub" v-if="gameMode === 'lives'">
                                         <span class="v2q-top-hp">
                                             <i v-for="n in gameLives" :key="n" :class="{ off: n > p.lives }">
@@ -2519,7 +2581,7 @@
                 <!-- Nom du gagnant avec avatar -->
                 <div class="winner-name-row" v-if="gameEndData.winner">
                     <div class="bombanime-winner-avatar">
-                        <img :src="gameEndData.winner.avatarUrl || 'novice.png'" :alt="gameEndData.winner.username">
+                        <img :src="srcAvatar(gameEndData.winner.avatarUrl)" :alt="gameEndData.winner.username">
                     </div>
                     <div class="winner-name">
                         {{ gameEndData.winner.username }}

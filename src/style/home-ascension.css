@@ -304,28 +304,53 @@
     pointer-events: none;
 }
 
+/* 🖼️ Un jeton rond par grimpeur, décalé de son voisin pour qu ils se
+   chevauchent. La largeur vient de « gauche », calculé dans ascCabines :
+   le groupe reste centré dans la gouttière quel que soit l effectif. */
 .asc-cabine {
     position: absolute;
-    left: 0;
-    width: 100%;
-    height: 1.25rem;
+    width: 1.05rem;
+    height: 1.05rem;
     /* La moitié de sa hauteur : le « top » vise le milieu du palier. */
-    margin-top: -0.625rem;
+    margin-top: -0.525rem;
     display: grid;
     place-items: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.78rem;
-    color: #0b0b0e;
+    overflow: hidden;
+    border-radius: 50%;
+    /* Le cerne sépare deux jetons qui se recouvrent : sans lui ils se
+       fondent en une seule tache. Il reprend le fond de la tour. */
+    box-shadow: 0 0 0 1.5px #0b0b0e, 0 0.1rem 0.35rem rgba(0, 0, 0, 0.55);
     background: rgba(140, 180, 255, 0.9);
-    border-radius: 0.28rem;
-    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.5);
     transition: top 0.6s cubic-bezier(0.3, 0.9, 0.25, 1);
     animation: ascCabine 0.4s cubic-bezier(0.2, 1.3, 0.35, 1) both;
 }
 
+.asc-cabine img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* La pastille de reste : un compte, pas un visage. */
+.asc-cabine.plus {
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(2px);
+}
+
+.asc-cabine.plus b {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.62rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Moi : je passe devant les autres et je porte la couleur de la tour. */
 .asc-cabine.moi {
-    background: var(--neon-primary, #ffd700);
-    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.5), 0 0 0.8rem rgba(255, 215, 0, 0.5);
+    z-index: 3;
+    box-shadow: 0 0 0 1.5px var(--neon-primary, #ffd700),
+                0 0.1rem 0.35rem rgba(0, 0, 0, 0.55),
+                0 0 0.7rem rgba(255, 215, 0, 0.45);
 }
 
 @keyframes ascCabine {

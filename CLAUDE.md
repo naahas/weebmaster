@@ -92,7 +92,10 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   exactement le mode d'avant),
   `npm run test:depart` (quitter BombAnime en pleine partie), `npm run test:plafond` (le plafond
   de BombAnime : remplissage, refus du joueur de trop), `npm run test:bomb` (réglages
-  BombAnime et enchaînement des manches), `npm run test:reprise`
+  BombAnime et enchaînement des manches), `npm run test:bot` (le partenaire de
+  BombAnime : la bascule ne pose qu UN bot et exige le jeton d hôte, et surtout
+  il JOUE — il répond à chaque tour, ne répète jamais un nom, et la bombe ne lui
+  explose jamais dessus), `npm run test:reprise`
   (l hôte revient après une coupure ; relance en équipes) et `npm run test:abandon`
   (un salon déserté se libère — à lancer avec `GRACE_SALON_VIDE=3000` des deux côtés).
   `npm run test:charge` mesure la tenue à N salons (`SALONS=15 JOUEURS=12`), il ne vérifie rien.
@@ -139,7 +142,7 @@ src/img/               avatars, questionpic
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) ; quinze joueurs au plus |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) et **bot** (non par défaut — un seul partenaire, qui joue vraiment) ; quinze joueurs au plus |
 
 ⚠️ **Le multiplicateur du Rush compte les RÉPONSES, jamais les points.** Un cran toutes les dix
 bonnes réponses d'affilée : dix réponses valent dix points et ouvrent le ×2, dix de plus en valent

@@ -237,6 +237,130 @@ let gameHistoryTableOk = null; // null = pas encore testé, false = table absent
 let questionsCountCache = { value: null, at: 0 };
 const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
 
+// ============================================
+// 🖼️ AVATARS — la liste blanche
+// ============================================
+// ⚠️ `avatarUrl` est diffusé à TOUS les joueurs et rendu dans un <img src>.
+// Laisser le client en choisir la valeur reviendrait à lui laisser faire
+// charger ce qu'il veut par le navigateur de tous les autres : une image
+// distante qui relève leurs IP, ou pire. On n'accepte donc qu'un nom de la
+// liste, et tout le reste retombe sur le défaut.
+//
+// ⚠️ Cette liste a un JUMEAU côté client : `AVATARS` dans app.js, qui peint
+// le tiroir de l'accueil. Ajouter un avatar demande les DEUX — ici pour
+// qu'il soit accepté, là-bas pour qu'il s'affiche. Les fichiers vivent dans
+// src/img/avatarpic (servi à la racine), sauf le défaut, dans src/img/avatar.
+const AVATAR_DEFAUT = 'novice.png';
+const AVATARS_AUTORISES = new Set([
+    AVATAR_DEFAUT,
+    // Naruto
+    'naruto.webp',
+    'sasuke.webp',
+    'hinata.webp',
+    // One Piece
+    'luffy.webp',
+    'zoro.webp',
+    'nami.webp',
+    // Dragon Ball
+    'goku.webp',
+    'vegeta.webp',
+    'gohan.webp',
+    'trunks.webp',
+    // Bleach
+    'ichigo.webp',
+    'aizen.webp',
+    // My Hero Academia
+    'deku.webp',
+    'bakugo.webp',
+    'shoto.webp',
+    // L Attaque des Titans
+    'mikasa.webp',
+    'levi.webp',
+    // Demon Slayer
+    'tanjiro.webp',
+    'mitsuri.webp',
+    // Fairy Tail
+    'natsu.webp',
+    'erza.webp',
+    // Death Note
+    'light.webp',
+    // Hunter x Hunter
+    'killua.webp',
+    // Jujutsu Kaisen
+    'sukuna.webp',
+    'gojo.webp',
+    // Reborn
+    'tsuna.webp',
+    // JoJo
+    'giorno.webp',
+    'dio.webp',
+    // Frieren
+    'fern.webp',
+    // Fate
+    'rin.webp',
+    // Steins Gate
+    'makise.webp',
+]);
+
+// ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
+// tiroir et un carré vide dans l'hexagone, sans rien dire. On le dit ici,
+// au démarrage, comme le fait pseudos-interdits.js pour ses termes écartés.
+{
+    const dossiers = [__dirname + '/src/img/avatarpic/', __dirname + '/src/img/avatar/'];
+    const absents = [...AVATARS_AUTORISES].filter(f =>
+        !dossiers.some(d => require('fs').existsSync(d + f)));
+    if (absents.length) {
+        console.warn('⚠️ Avatars : ' + absents.length + ' fichier(s) manquant(s) — '
+            + absents.join(', ') + '. Listés mais absents de src/img/avatarpic.');
+    }
+}
+
+// ⚠️ LE JETON DE VERSION.
+//
+// Un avatar remplacé garde son nom de fichier : le navigateur, qui le tient
+// en cache pour une semaine, continuait de servir l'ancienne image sans même
+// demander au serveur. Un rafraîchissement forcé n'y suffisait pas — le
+// panneau ne charge ses vignettes qu'à son ouverture, donc APRÈS la
+// navigation, et elles échappaient au contournement du cache.
+//
+// Chaque fichier porte donc un jeton tiré de sa date de modification.
+// Remplacer l'image change le jeton, donc l'URL, donc le cache tombe de
+// lui-même. En échange, le dossier peut être mis en cache pour un an.
+//
+// ⚠️ Le jeton ne voyage QUE dans le src des images. Le nom qui circule sur
+// le fil — ce que le client envoie à la jointure, ce que `avatarUrl` porte
+// dans les diffusions — reste nu, sans quoi la liste blanche le refuserait.
+const AVATARS_VERSIONS = new Map();
+{
+    const fsx = require('fs');
+    const dossiers = [__dirname + '/src/img/avatarpic/', __dirname + '/src/img/avatar/'];
+    for (const f of AVATARS_AUTORISES) {
+        const chemin = dossiers.map(d => d + f).find(c => fsx.existsSync(c));
+        // Un fichier absent a déjà été signalé juste au-dessus : on lui donne
+        // un jeton quand même, pour que la liste garde la même forme.
+        AVATARS_VERSIONS.set(f, chemin
+            ? Math.floor(fsx.statSync(chemin).mtimeMs).toString(36)
+            : '0');
+    }
+}
+
+// La liste que le client peint. Elle sort d'ici et de nulle part ailleurs :
+// c'est ce qui supprime le risque d'une liste cliente désynchronisée, où un
+// avatar visible dans le tiroir était refusé une fois en partie.
+app.get('/api/avatars', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.json({
+        defaut: AVATAR_DEFAUT,
+        avatars: [...AVATARS_AUTORISES].map(f => ({ f, v: AVATARS_VERSIONS.get(f) })),
+    });
+});
+
+// Rend un nom d'avatar sûr, ou le défaut. Jamais null : le gabarit s'attend
+// à une chaîne et retomberait sur son propre défaut, en désordre.
+function avatarPropre(brut) {
+    return AVATARS_AUTORISES.has(brut) ? brut : AVATAR_DEFAUT;
+}
+
 const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect' };
 
 async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
@@ -644,8 +768,12 @@ const MEDIA = { maxAge: '7d' };
 app.use(express.static('src/sound', MEDIA));
 app.use(express.static('src/img', MEDIA));
 app.use(express.static('src/img/questionpic', MEDIA));
-app.use(express.static('src/img/avatarpic', MEDIA));
-app.use(express.static('src/img/avatar', MEDIA));
+// Les avatars portent un jeton de version dans leur URL (voir
+// AVATARS_VERSIONS) : une image remplacée change d'adresse, donc le cache
+// tombe tout seul. On peut donc les garder un an au lieu d'une semaine.
+const MEDIA_AVATARS = { maxAge: '365d', immutable: true };
+app.use(express.static('src/img/avatarpic', MEDIA_AVATARS));
+app.use(express.static('src/img/avatar', MEDIA_AVATARS));
 
 
 
@@ -996,6 +1124,9 @@ function broadcastLobbyUpdate(gameState) {
             title: p.title || 'Novice courageux',
             avatarUrl: p.avatarUrl,
             team: p.team || null,
+            // Le client en déduit l'état du réglage « Bot » : pas besoin
+            // d'un second champ à tenir synchronisé.
+            estBot: !!p.estBot,
             isLastGlobalWinner: p.playerId === gameState.lastGlobalWinner,
         }))
     });
@@ -3020,7 +3151,10 @@ function revealAnswers(gameState, correctAnswer) {
                 isCorrect: isCorrect,
                 selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
                 pointsEarned: isCorrect ? getPointsForDifficulty(gameState.currentQuestion.difficulty) : 0, // 🔥 NOUVEAU
-                team: player.team || null // 🆕 Équipe du joueur
+                team: player.team || null, // 🆕 Équipe du joueur
+                // 🖼️ Le classement l affiche a cote du pseudo. Nom NU : le jeton
+                // de version est colle par le client au moment de peindre.
+                avatarUrl: player.avatarUrl || null
             });
         });
     } else {
@@ -3130,7 +3264,8 @@ function revealAnswers(gameState, correctAnswer) {
                 isCorrect: isCorrect,
                 selectedAnswer: playerAnswer?.answer ? gameState.currentQuestion.answers[playerAnswer.answer - 1] : null,
                 shieldUsed: hasShield, // 🔥 Indiquer si le Shield a été utilisé
-                team: player.team || null // 🆕 Équipe du joueur
+                team: player.team || null, // 🆕 Équipe du joueur
+                avatarUrl: player.avatarUrl || null
             });
         });
 
@@ -5108,6 +5243,50 @@ function getNextBombanimePlayer(gameState) {
     return null;
 }
 
+// ============================================
+// 🤖 BOMBANIME — le partenaire
+// ============================================
+// Un seul bot, et il joue vraiment. Contrairement aux bots de mise au
+// point (dev-add-bots), celui-ci est ouvert en production : c'est un
+// partenaire d'entraînement pour l'hôte seul ou à deux, pas une sonde.
+//
+// ⚠️ Il ne perd JAMAIS, et c'est voulu : il répond en 300 ms, donc la
+// bombe ne lui explose pas dessus. Il sert à faire tourner le cercle,
+// pas à être battu. Un humain qui joue contre lui seul finira donc par
+// perdre — c'est la règle du mode, pas un défaut du bot.
+const BOT_DELAI_MS = 300;
+
+// Un nom encore libre dans la série en cours.
+function nomLibrePourLeBot(gameState) {
+    const noms = BOMBANIME_CHARACTERS[gameState.bombanime.serie] || [];
+    if (!noms.length) return null;
+    // Départ au hasard puis balayage circulaire : repartir du début à
+    // chaque tour ferait citer les mêmes noms, dans l'ordre du fichier,
+    // partie après partie.
+    const depart = Math.floor(Math.random() * noms.length);
+    for (let i = 0; i < noms.length; i++) {
+        const n = noms[(depart + i) % noms.length];
+        if (validateBombanimeCharacter(gameState, n, gameState.bombanime.serie).valid) return n;
+    }
+    return null;
+}
+
+// Le coup du bot, joué après BOT_DELAI_MS.
+function coupDuBot(gameState, bot, turnId) {
+    // Le tour a pu tourner entre-temps : un humain plus rapide, une
+    // explosion, une fin de partie. On ne joue que si rien n'a bougé.
+    if (!gameState.bombanime.active) return;
+    if (gameState.bombanime.turnId !== turnId) return;
+    if (gameState.bombanime.currentPlayerId !== bot.playerId) return;
+    if (!gameState.players.has(bot.socketId)) return;
+
+    const nom = nomLibrePourLeBot(gameState);
+    // Banque épuisée : on ne joue pas, la bombe lui explose dessus. C'est
+    // juste — il n'a pas plus de noms qu'un humain.
+    if (!nom) return;
+    submitBombanimeName(gameState, bot.socketId, nom);
+}
+
 // Démarrer le tour d'un joueur BombAnime
 function startBombanimeTurn(gameState, playerId) {
     if (!gameState.bombanime.active) return;
@@ -5182,6 +5361,12 @@ function startBombanimeTurn(gameState, playerId) {
         }
         bombExplode(gameState, playerId);
     }, gameState.bombanime.timer * 1000);
+
+    // 🤖 Si c'est un bot, il répond tout seul. Posé APRÈS l'armement de
+    // l'explosion : si le coup échouait, la bombe continuerait de tourner.
+    if (player.estBot) {
+        setTimeout(() => coupDuBot(gameState, player, currentTurnId), BOT_DELAI_MS);
+    }
 }
 
 // La bombe explose sur un joueur
@@ -5736,6 +5921,9 @@ function rushClassement(gameState) {
                 // Le present d abord — il peut avoir change de pseudo —, sinon
                 // celui retenu au depart. Un partant garde donc sa place et son nom.
                 username: (joueur && joueur.username) || e.username || 'Joueur',
+                // 🖼️ Nom NU : le client y colle le jeton de version en peignant.
+                // Un partant garde le sien, comme il garde son pseudo.
+                avatarUrl: (joueur && joueur.avatarUrl) || e.avatarUrl || null,
                 record: e.record,
                 serie: e.score,
                 trouves: e.trouves,
@@ -6198,7 +6386,7 @@ io.on('connection', (socket) => {
             username: data.username,
             lives: gameState.lives,
             correctAnswers: 0,
-            avatarUrl: 'novice.png',
+            avatarUrl: avatarPropre(data.avatar),
             // Après un refresh on reprend son camp : le retirer au hasard
             // ferait sauter les joueurs d'un côté à l'autre à chaque rechargement.
             team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni(gameState)) : null,
@@ -6301,6 +6489,49 @@ io.on('connection', (socket) => {
     // 🧪 Outil de mise au point : peupler un salon sans ouvrir quinze onglets.
     // Réservé au développement — en production, n'importe quel hôte pourrait
     // sinon gonfler son salon de joueurs fantômes.
+    // 🤖 Ajouter ou retirer LE partenaire de BombAnime. Un seul, jamais
+    // plus : le réglage est une bascule, pas un compteur.
+    socket.on('bombanime-toggle-bot', (data) => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || gameState.inProgress) return;
+        if (gameState.lobbyMode !== 'bombanime') return;
+        if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
+
+        const existant = Array.from(gameState.players.entries()).find(([, p]) => p.estBot);
+
+        if (data.actif) {
+            if (existant) return;
+            if (gameState.players.size >= plafondDuSalon(gameState)) return;
+            // « Master » est réservé dans pseudos-interdits.js : aucun joueur
+            // ne peut le porter. Le repli numéroté reste par précaution — deux
+            // « Master » dans le cercle seraient impossibles à distinguer.
+            const pris = new Set(Array.from(gameState.players.values())
+                .map(p => String(p.username || '').toLowerCase()));
+            let nom = 'Master';
+            for (let i = 2; pris.has(nom.toLowerCase()) && i < 100; i++) nom = 'Master ' + i;
+
+            const id = 'bot_' + Date.now();
+            gameState.players.set(id, {
+                socketId: id,
+                playerId: id,
+                username: nom,
+                lives: gameState.bombanime.lives,
+                points: 0,
+                correctAnswers: 0,
+                avatarUrl: 'novice.png',
+                team: null,
+                estBot: true,
+            });
+            console.log(`🤖 ${nom} rejoint le salon — ${gameState.players.size} joueur(s)`);
+        } else {
+            if (!existant) return;
+            gameState.players.delete(existant[0]);
+            console.log(`🤖 partenaire retiré — ${gameState.players.size} joueur(s)`);
+        }
+
+        broadcastLobbyUpdate(gameState);
+    });
+
     socket.on('dev-add-bots', (data) => {
         if (process.env.NODE_ENV === 'production') return;
         const gameState = roomDeSocket(socket);

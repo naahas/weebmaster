@@ -6893,6 +6893,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: flex;
     align-items: center;
     gap: 0.55rem;
+    /* Meme hauteur que la pastille d avatar posee juste a cote : sans ca la
+       barre du pseudo lui arrivait a mi-hauteur et les deux ne formaient pas
+       une ligne. La valeur suit .v2-avatar-pill — les changer ensemble. */
+    min-height: 2.35rem;
     padding: 0.55rem 1rem;
     font-family: inherit;
     font-size: 0.82rem;
@@ -9643,6 +9647,31 @@ body.game-active:has(.poll-game-container) #particles-js {
    Les cinq feuilles sont chargees ENSEMBLE sur cette page : un nom sans prefixe
    de module y rencontre tot ou tard son homonyme. */
 .v2q-top-row .v2q-col { flex: 1; min-width: 0; }
+
+/* 🖼️ Le pseudo et son avatar forment une seule ligne. Le nom garde son
+   ellipse — « min-width: 0 » sur le conteneur, sans quoi un pseudo long
+   pousserait la vignette hors du panneau au lieu de se couper. */
+.v2q-top-row .v2q-top-id {
+    display: flex;
+    align-items: center;
+    gap: 0.38rem;
+    min-width: 0;
+}
+
+.v2q-top-row .v2q-top-av {
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+    opacity: 0.85;
+}
+
+/* Le premier du classement porte un liseré doré, comme son rang. */
+.v2q-top-row:first-of-type .v2q-top-av {
+    box-shadow: 0 0 0 1.5px rgba(255, 215, 0, 0.45);
+    opacity: 1;
+}
 
 .v2q-top-row .nm {
     display: block;
@@ -12472,10 +12501,179 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 
 @media (max-width: 768px) {
-    /* A gauche sur telephone : le coin bas droit est celui du pouce, et une
-       signature n a pas a s y trouver. Plus petite aussi — seule sur grand
-       ecran elle peut se permettre d etre grande, ici elle doit s effacer. */
-    .v2-reseaux { right: auto; left: 0.8rem; bottom: 0.9rem; gap: 0.45rem; }
+    /* En HAUT a gauche sur telephone. Le bas de l ecran est la zone du pouce et
+       celle ou le panneau des avatars vient se coucher : une signature n a rien
+       a y faire. En haut, le coin gauche est libre — le logotype ne parait pas
+       sur l accueil, le nom etant deja au centre. Elle se cale sur la hauteur
+       de la barre du pseudo, en face. Plus petite aussi : seule sur grand ecran
+       elle peut se permettre d etre grande, ici elle doit s effacer. */
+    .v2-reseaux { right: auto; left: 0.8rem; top: 1.525rem; bottom: auto; gap: 0.45rem; }
     .v2-reseau { width: 2.3rem; height: 2.3rem; border-radius: 0.65rem; }
     .v2-reseau svg { width: 1.15rem; height: 1.15rem; }
+}
+
+
+/* ═══════════════════════════════════════════════════
+   🖼️ AVATAR — la pastille de l'en-tête et son panneau
+   ═══════════════════════════════════════════════════ */
+.v2-avatar-pill {
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 210, 74, 0.28);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    overflow: hidden;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.v2-avatar-pill img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.v2-avatar-pill:hover,
+.v2-avatar-pill.ouvert {
+    border-color: var(--or, #ffd24a);
+    background: rgba(255, 210, 74, 0.1);
+}
+
+/* Le voile ne noircit rien sur grand écran : il ne sert qu'à recevoir le
+   clic qui referme. Assombrir l'accueil pour un choix d'avatar serait
+   disproportionné — on change une image, on ne prend pas une décision. */
+.v2-avatars-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+}
+
+/* Une colonne collée au bord droit, centrée en hauteur. Place fixe : rien
+   à mesurer au clic, et elle ne bouge pas si la fenêtre change de taille
+   pendant qu'elle est ouverte. */
+.v2-avatars {
+    position: fixed;
+    z-index: 901;
+    right: 1.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.85rem 0.8rem;
+    /* 70 % de la hauteur : au-delà, le panneau toucherait la barre du
+       pseudo en haut et les statistiques en bas. Ce qui dépasse défile. */
+    max-height: 70vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 1.15rem;
+    border: 1px solid rgba(255, 210, 74, 0.22);
+    background: rgba(21, 23, 29, 0.92);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
+    animation: v2AvatarsIn 0.18s ease both;
+}
+
+@keyframes v2AvatarsIn {
+    from { opacity: 0; transform: translateY(-50%) translateX(14px); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* Deux colonnes : une seule débordait dès la dixième vignette, et la liste
+   est faite pour grossir. Deux tiennent le double dans la même hauteur
+   sans rétrécir les visages. */
+.v2-avatars-grille {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 0.7rem;
+}
+
+/* Une barre de défilement système, large et claire, écraserait la colonne
+   de droite. Celle-ci se fond dans le panneau. */
+.v2-avatars::-webkit-scrollbar { width: 6px; }
+.v2-avatars::-webkit-scrollbar-track { background: transparent; }
+.v2-avatars::-webkit-scrollbar-thumb {
+    background: rgba(255, 210, 74, 0.22);
+    border-radius: 3px;
+}
+.v2-avatars::-webkit-scrollbar-thumb:hover { background: rgba(255, 210, 74, 0.4); }
+
+.v2-avatars-item {
+    width: 4.6rem;
+    height: 4.6rem;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.v2-avatars-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.v2-avatars-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    transform: scale(1.06);
+}
+
+.v2-avatars-item.on {
+    border-color: var(--or, #ffd24a);
+    background: rgba(255, 210, 74, 0.1);
+    box-shadow: 0 0 14px rgba(255, 210, 74, 0.28);
+}
+
+/* Sur téléphone la colonne de droite mangerait un tiers de la largeur :
+   le panneau se couche en bas de l'écran, sur une rangée qui défile
+   horizontalement si la liste s'allonge. Le pouce y arrive sans effort. */
+@media (max-width: 640px) {
+    .v2-avatars {
+        right: 0.75rem;
+        left: 0.75rem;
+        top: auto;
+        bottom: 0.9rem;
+        transform: none;
+        padding: 0.8rem 0.7rem;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    @keyframes v2AvatarsIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .v2-avatars-voile {
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    /* Couché en bas, le panneau retrouve UNE rangée qui défile de côté :
+       deux colonnes sur un écran large de doigt n'avancent à rien. */
+    .v2-avatars-grille {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.6rem;
+        /* La barre de defilement se colle sous les vignettes : sans cette
+           marge elle leur mord dessus. C est la GRILLE qui defile, pas le
+           panneau, donc c est ici que la place se prend. */
+        padding-bottom: 0.65rem;
+    }
+
+    .v2-avatars-item {
+        width: 3.9rem;
+        height: 3.9rem;
+        flex: 0 0 auto;
+    }
 }

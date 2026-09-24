@@ -27,6 +27,10 @@
 // bas de fichier écarte ces termes-là et le dit au démarrage ; c'est ce qui a
 // attrapé « Kakashi » refusé pour « kkk » et « Négociateur » pour « 1488 ».
 //
+//   • RESERVES — ce que le site garde pour lui. Rien d'offensant ici : ce sont
+//     des noms qui appartiennent au jeu, et qu'un joueur ne doit pas pouvoir
+//     porter. Cherchés en mot entier, comme ENTIERS.
+//
 // Pour ajuster : dans PARTOUT ce qui ne peut jamais être innocent, dans ENTIERS
 // ce qui pourrait l'être. En cas de doute, ENTIERS — un faux refus se voit tout
 // de suite et fâche, un mot passé se corrige d'un clic sur « exclure ».
@@ -71,6 +75,15 @@ const ENTIERS = [
     //   La suite de tests l'a attrapé en essayant de rejoindre sous le pseudo
     //   « Retard », qu'aucune modération ne devrait refuser ici.
 ];
+
+// Les noms que le site garde pour lui. Ils ne sont pas offensants : on les
+// refuse parce qu'ils désignent déjà quelqu'un dans le jeu.
+//
+// « master » est le partenaire de BombAnime. Deux « Master » dans le cercle
+// seraient indistinguables pendant un tour, et l'on ne saurait plus qui vient
+// de répondre. Cherché en MOT ENTIER : « Quizmaster » et « Beatmaster » passent,
+// seul « Master » tout court est refusé.
+const RESERVES = ['master'];
 
 // La forme la plus nue d'un pseudo : c'est sur celle-là qu'on cherche. Les
 // chiffres-lettres passent en lettres, les accents tombent, tout ce qui n'est
@@ -127,7 +140,7 @@ if (ecartes.length) {
 
 // Un terme en plusieurs mots s'est réduit en un seul : on le cherche alors dans
 // la suite recollée, faute de quoi il ne correspondrait à aucun jeton.
-const entiersPrets = ENTIERS.map(terme => ({
+const entiersPrets = ENTIERS.concat(RESERVES).map(terme => ({
     terme,
     nu: reduire(terme),
     colle: /\s/.test(terme),
@@ -152,4 +165,4 @@ function motInterdit(brut) {
     return null;
 }
 
-module.exports = { motInterdit, reduire, PARTOUT, ENTIERS };
+module.exports = { motInterdit, reduire, PARTOUT, ENTIERS, RESERVES };

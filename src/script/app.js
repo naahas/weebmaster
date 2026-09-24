@@ -42,6 +42,14 @@ createApp({
             username: '',
             playerId: '',
             pseudoInput: '',
+
+            // 🖼️ L'avatar : le fichier courant, le tiroir, et sa place à l'écran.
+            avatar: 'novice.png',
+            avatarsOuverts: false,
+            // Peuplée par /api/avatars au démarrage. Le chevalier seul en
+            // attendant : si l'appel échoue, le tiroir montre au moins le
+            // défaut plutôt qu'un panneau vide.
+            avatarsListe: [{ f: 'novice.png', v: '0' }],
             pseudoError: '',
             joinPending: false,
             lobbyShakeError: false,
@@ -671,6 +679,14 @@ createApp({
             return this.modes.filter(m => !m.soon).length;
         },
 
+        // 🤖 Le partenaire de BombAnime est-il dans le salon ? On le DÉDUIT de
+        // la liste des joueurs plutôt que de tenir un drapeau à part : le
+        // serveur peut refuser la bascule (salon plein, partie lancée), et un
+        // drapeau local afficherait alors « Oui » sur un bot absent.
+        botBomb() {
+            return (this.lobbyPlayers || []).some(p => p.estBot);
+        },
+
         // 🆕 v2 — mode actuellement sélectionné sur l'accueil
         // Le survol prévisualise, le clic verrouille : en sortant de la liste on
         // revient au mode verrouillé.
@@ -1130,12 +1146,42 @@ createApp({
         // compte. Ça vaut aussi à cinquante — c'est le nombre qui s'affiche,
         // pas les initiales, et c'étaient elles qui ne tenaient pas.
         ascCabines() {
+            // 🖼️ Des JETONS D AVATAR qui se chevauchent, au lieu d un compte.
+            //
+            // La gouttière fait 2,6 rem et n a RIEN à sa droite : la tour se
+            // termine où elle finit. Trois jetons y tiennent, pas quatre. Au-delà
+            // de trois grimpeurs on montre donc deux visages et une pastille
+            // « +N » — le motif habituel des piles d avatars, et jamais plus de
+            // trois objets en largeur.
+            const LARGEUR = 1.05;   // le jeton, en rem
+            const PAS = 0.62;       // ce dont chacun se décale : ils se recouvrent
             const l = [];
             for (const [etage, joueurs] of Object.entries(this.ascParPalier)) {
-                for (const j of joueurs) {
+                const nb = joueurs.length;
+                const visages = nb > 3 ? 2 : nb;
+                const objets = nb > 3 ? visages + 1 : visages;
+                // On centre le groupe dans la gouttière, quel qu en soit le nombre.
+                const debut = (2.6 - (LARGEUR + (objets - 1) * PAS)) / 2;
+
+                joueurs.forEach((j, rang) => {
+                    if (rang >= visages) return;
                     l.push({
-                        id: j.playerId, etage: Number(etage), nb: joueurs.length,
+                        id: j.playerId, etage: Number(etage), nb,
+                        avatar: j.avatarUrl,
+                        gauche: (debut + rang * PAS) + 'rem',
                         moi: j.playerId === this.playerId,
+                    });
+                });
+
+                if (nb > 3) {
+                    // La pastille n est pas un joueur : sa clef est celle de l étage.
+                    // Elle ne glisse pas d un palier à l autre, elle paraît et
+                    // disparaît — c est un compte, pas un grimpeur.
+                    l.push({
+                        id: 'plus-' + etage, etage: Number(etage), nb,
+                        plus: nb - visages,
+                        gauche: (debut + visages * PAS) + 'rem',
+                        moi: false,
                     });
                 }
             }
@@ -1504,6 +1550,15 @@ createApp({
         // Une vie perdue : le cœur correspondant se brise avant de s'éteindre
         playerLives(neuf, ancien) {
             if (neuf >= ancien) return;
+
+            // ⚠️ BombAnime raconte déjà la perte de vie à sa façon : le boum,
+            // le tremblement de l'hexagone et les cœurs du joueur.
+            // L'effet du quiz n'a rien à y faire — playLifeLostEffect joue
+            // son bruit AVANT de chercher « .v2q-lives i », qui n'existe pas sur
+            // cet écran. Il sortait donc aussitôt : on entendait un TROISIÈME son,
+            // sans rien voir, et juste avant l'explosion.
+            if (this.bombanime.active) return;
+
             this.lifeLost = ancien;
             this.$nextTick(() => this.playLifeLostEffect(ancien));
             clearTimeout(this._timerVie);
@@ -1589,6 +1644,18 @@ createApp({
                 name = this.randomPseudo();
                 localStorage.setItem('pseudo', name);
             }
+
+            // 🖼️ L'avatar suit le pseudo : gardé tant que le navigateur garde
+            // son localStorage. Un fichier retiré de la liste depuis le dernier
+            // passage retombe sur le chevalier plutôt que de laisser une image
+            // cassée dans l'hexagone.
+            const av = localStorage.getItem('avatar');
+            // On garde ce qui est en mémoire tel quel : la liste n'est pas
+            // encore arrivée. chargerAvatars() tranchera, et le serveur a de
+            // toute façon le dernier mot par sa liste blanche.
+            this.avatar = av || 'novice.png';
+
+            this.chargerAvatars();
 
             this.playerId = playerId;
             this.username = name;
@@ -3431,6 +3498,7 @@ createApp({
                     this.socket.emit('join-lobby', {
                         playerId: this.playerId,
                         username: this.username,
+                        avatar: this.avatar,
                         isHost: true,
                         code: this.roomCode,
                         hostToken: this.hostToken,
@@ -3468,11 +3536,60 @@ createApp({
             if (this.socket) this.socket.emit('dev-add-bots', { count: n, hostToken: this.hostToken });
         },
 
+        // 🤖 Le partenaire de BombAnime. L'état affiché n'est PAS tenu ici :
+        // il se déduit de la liste des joueurs à chaque lobby-update, donc
+        // un refus du serveur (salon plein, partie lancée) se voit tout seul.
+        basculerBot(actif) {
+            if (this.socket) {
+                this.socket.emit('bombanime-toggle-bot', { actif, hostToken: this.hostToken });
+            }
+        },
+
         viderBots() {
             if (this.socket) this.socket.emit('dev-clear-bots', { hostToken: this.hostToken });
         },
 
         // Le panneau vit à la racine : sa place se calcule depuis la ligne cliquée
+        // 🖼️ La liste vient du SERVEUR, jamais du client : c'est ce qui
+        // empêche un avatar visible dans le tiroir d'être refusé une fois
+        // en partie. Chaque entrée porte son jeton de version.
+        async chargerAvatars() {
+            try {
+                const r = await fetch('/api/avatars');
+                const d = await r.json();
+                if (!d || !Array.isArray(d.avatars) || !d.avatars.length) return;
+                this.avatarsListe = d.avatars;
+                // Un avatar retiré de la liste depuis le dernier passage retombe
+                // sur le défaut, plutôt que de laisser une image cassée.
+                if (!d.avatars.some(a => a.f === this.avatar)) {
+                    this.avatar = d.defaut || 'novice.png';
+                    try { localStorage.setItem('avatar', this.avatar); } catch (e) {}
+                }
+            } catch (e) {}
+        },
+
+        // Colle le jeton de version au nom du fichier. Le nom NU continue de
+        // circuler sur le fil — la liste blanche du serveur le refuserait
+        // sinon — et le jeton ne sert qu'à peindre.
+        srcAvatar(f) {
+            const nom = f || 'novice.png';
+            const e = this.avatarsListe.find(a => a.f === nom);
+            return e ? nom + '?v=' + e.v : nom;
+        },
+
+        // 🖼️ Le panneau des avatars est collé au bord droit, centré en
+        // hauteur : sa place ne dépend plus du bouton, il n'y a rien à mesurer.
+        ouvrirAvatars() {
+            this.avatarsOuverts = !this.avatarsOuverts;
+        },
+
+        choisirAvatar(f) {
+            this.avatarsOuverts = false;
+            if (f === this.avatar) return;
+            this.avatar = f;
+            try { localStorage.setItem('avatar', f); } catch (e) {}
+        },
+
         ouvrirSeriesBomb(e) {
             const r = e.currentTarget.getBoundingClientRect();
             const largeur = 20 * 16;                     // la largeur du panneau, en pixels
@@ -4089,6 +4206,7 @@ createApp({
             this.socket.emit('join-lobby', {
                 playerId: this.playerId,
                 username: this.username,
+                avatar: this.avatar,
                 code,
                 team: this.lobbyMode === 'rivalry' ? this.selectedTeam : null,
             });
@@ -5002,6 +5120,7 @@ createApp({
                     this.socket.emit('join-lobby', {
                         playerId: this.playerId,
                         username: this.username,
+                        avatar: this.avatar,
                         code: this.roomCode,
                         hostToken: this.hostToken,
                     });
@@ -5832,6 +5951,14 @@ createApp({
                 
                 // 🆕 Attendre que l'intro soit terminée ET la bombe ait tourné avant d'activer isMyTurn
                 const activateTurn = () => {
+                    // ⚠️ Ce rappel est DIFFÉRÉ de 800 ms au premier tour, le temps que
+                    // la bombe pivote. Or le partenaire répond en 300 ms : le tour
+                    // suivant commence donc AVANT que ce rappel ne se déclenche.
+                    // Sans ce garde, le rappel du tour du bot écrasait isMyTurn en
+                    // plein milieu du MIEN, et la saisie restait verrouillée jusqu au
+                    // tour d après. Invisible tant que c était un humain qui ouvrait.
+                    if (this.bombanime.currentPlayerId !== data.currentPlayerId) return;
+
                     this.bombanime.isMyTurn = data.currentPlayerId === this.playerId;
                     
                     // 🎌 Fermer le modal suggestion si c'est mon tour
