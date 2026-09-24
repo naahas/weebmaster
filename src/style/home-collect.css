@@ -262,6 +262,19 @@
    qu'un. */
 .col-regles-corps { padding: 0.6rem 0 0.9rem; }
 
+/* Un pied de modale, plus discret que les regles : c est un geste, pas une
+   regle du jeu. Il se separe du tableau par un filet. */
+.col-regles-astuce {
+    margin: 0;
+    padding: 0.7rem 1.5rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.col-regles-astuce b { color: rgba(255, 255, 255, 0.72); font-weight: 600; }
+
 .col-regles-cap {
     padding: 1rem 1.5rem 0.5rem;
     font-size: 0.56rem;

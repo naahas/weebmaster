@@ -12507,7 +12507,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        sur l accueil, le nom etant deja au centre. Elle se cale sur la hauteur
        de la barre du pseudo, en face. Plus petite aussi : seule sur grand ecran
        elle peut se permettre d etre grande, ici elle doit s effacer. */
-    .v2-reseaux { right: auto; left: 0.8rem; top: 1.525rem; bottom: auto; gap: 0.45rem; }
+    .v2-reseaux { right: auto; left: 1.1rem; top: 1.525rem; bottom: auto; gap: 0.45rem; }
     .v2-reseau { width: 2.3rem; height: 2.3rem; border-radius: 0.65rem; }
     .v2-reseau svg { width: 1.15rem; height: 1.15rem; }
 }
