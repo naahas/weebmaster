@@ -747,7 +747,10 @@
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 0.85rem;
+    /* La reponse descend d un cran de plus : collee a l hexagone elle se lisait
+       comme une legende du portrait, alors que c est le mot qui vient d etre
+       joue — la chose la plus regardee de l ecran apres la bombe. */
+    margin-top: 1.2rem;
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.25);
     background: transparent;

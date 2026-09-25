@@ -344,6 +344,54 @@ const AVATARS_VERSIONS = new Map();
     }
 }
 
+// 🤖 LE VIVIER DU PARTENAIRE.
+//
+// Le bot de BombAnime ne puise pas dans la liste des joueurs : il a son propre
+// dossier, src/img/avatarpic/bot/, et celui-ci est LU AU DEMARRAGE plutot
+// qu'ecrit en dur. Poser un fichier dedans suffit donc a l'ajouter — c'est le
+// seul endroit du projet ou l'on ajoute une image sans toucher au code, et
+// c'est voulu : ces portraits-la n'ont aucune contrainte de nom, personne ne
+// les envoie sur le fil, et le serveur seul les attribue.
+//
+// ⚠️ Ils sont EXCLUS de la liste blanche des joueurs. Le tiroir de l'accueil ne
+// les propose donc pas, et un joueur ne peut pas se faire passer pour le
+// partenaire : le vivier du bot doit rester le sien.
+const AVATARS_BOT = [];
+{
+    const fsx = require('fs');
+    const dossier = __dirname + '/src/img/avatarpic/bot/';
+    let misDeCote = 0;
+    if (fsx.existsSync(dossier)) {
+        for (const f of fsx.readdirSync(dossier).sort()) {
+            if (!/\.(webp|png|jpe?g|gif)$/i.test(f)) continue;
+            // ⚠️ Un nom qui commence par « _ » est MIS DE COTE : le fichier reste
+            // dans le dossier, mais il ne sort plus au tirage. C'est la seule
+            // facon de retirer un portrait sans le supprimer — et il en fallait
+            // une, le dossier etant lu tel quel. Un simple renommage le remet
+            // en jeu, et le demarrage dit combien sont ecartes pour qu'on ne
+            // cherche pas pourquoi un visage ne revient jamais.
+            if (f.startsWith('_')) { misDeCote++; continue; }
+
+            AVATARS_BOT.push('bot/' + f);
+            AVATARS_VERSIONS.set('bot/' + f,
+                Math.floor(fsx.statSync(dossier + f).mtimeMs).toString(36));
+        }
+    }
+    // Dossier vide ou absent : le partenaire garde le portrait par defaut, et
+    // on le dit, sinon on croirait le tirage casse.
+    console.log(AVATARS_BOT.length
+        ? '🤖 Partenaire BombAnime : ' + AVATARS_BOT.length + ' portrait(s) au tirage'
+          + (misDeCote ? ', ' + misDeCote + ' mis de cote (prefixe _).' : '.')
+        : '🤖 Partenaire BombAnime : aucun portrait dans src/img/avatarpic/bot/, il gardera ' + AVATAR_DEFAUT + '.');
+}
+
+// Le portrait du partenaire, tire au sort. Retombe sur le defaut si le vivier
+// est vide, pour que l'appelant n'ait jamais a s'en soucier.
+function avatarDeBot() {
+    if (!AVATARS_BOT.length) return AVATAR_DEFAUT;
+    return AVATARS_BOT[Math.floor(Math.random() * AVATARS_BOT.length)];
+}
+
 // La liste que le client peint. Elle sort d'ici et de nulle part ailleurs :
 // c'est ce qui supprime le risque d'une liste cliente désynchronisée, où un
 // avatar visible dans le tiroir était refusé une fois en partie.
@@ -352,6 +400,11 @@ app.get('/api/avatars', (req, res) => {
     res.json({
         defaut: AVATAR_DEFAUT,
         avatars: [...AVATARS_AUTORISES].map(f => ({ f, v: AVATARS_VERSIONS.get(f) })),
+        // ⚠️ Les portraits du bot voyagent a part : le tiroir ne doit pas les
+        // proposer, mais le client a besoin de leur jeton de version, sans quoi
+        // un fichier remplace resterait en cache un an — ce dossier est servi
+        // en « immutable ».
+        bots: AVATARS_BOT.map(f => ({ f, v: AVATARS_VERSIONS.get(f) })),
     });
 });
 
@@ -1868,6 +1921,7 @@ app.post('/admin/bombanime/update-serie', (req, res) => {
     
     gameState.bombanime.serie = serie;
     console.log(`💣 Série BombAnime mise à jour: ${serie} (${BOMBANIME_CHARACTERS[serie].length} personnages)`);
+
     
     // Notifier les joueurs du changement de série
     diffuser(gameState, 'bombanime-serie-updated', { 
@@ -5250,11 +5304,17 @@ function getNextBombanimePlayer(gameState) {
 // point (dev-add-bots), celui-ci est ouvert en production : c'est un
 // partenaire d'entraînement pour l'hôte seul ou à deux, pas une sonde.
 //
-// ⚠️ Il ne perd JAMAIS, et c'est voulu : il répond en 300 ms, donc la
-// bombe ne lui explose pas dessus. Il sert à faire tourner le cercle,
-// pas à être battu. Un humain qui joue contre lui seul finira donc par
-// perdre — c'est la règle du mode, pas un défaut du bot.
-const BOT_DELAI_MS = 300;
+// ⚠️ Il ne perd JAMAIS, et c'est voulu : il répond en une fraction de
+// seconde, donc la bombe ne lui explose pas dessus. Il sert à faire tourner
+// le cercle, pas à être battu. Un humain qui joue contre lui seul finira
+// donc par perdre — c'est la règle du mode, pas un défaut du bot.
+//
+// ⚠️ Le délai n'est pas qu'une question de rythme, il se VOIT. À 300 ms
+// l'hexagone passait de « actif » à « réussite » si vite que l'animation de
+// bonne réponse paraissait sèche, alors qu'elle est la même que celle d'un
+// joueur : elle démarrait avant que l'état actif ait eu le temps d'exister à
+// l'écran. Le raccourcir le referait.
+const BOT_DELAI_MS = 350;
 
 // Un nom encore libre dans la série en cours.
 function nomLibrePourLeBot(gameState) {
@@ -5648,6 +5708,12 @@ async function startBombanimeGame(gameState) {
     const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
     gameState.bombanime.playersOrder = shuffledPlayers.map(p => p.playerId);
     
+
+    // 🤖 Le partenaire change de visage a chaque manche. C'est fait ICI et non a
+    // sa creation pour que deux parties d'affilee dans le meme salon ne le
+    // remontrent pas identique — le salon n'est pas refait entre les manches.
+    players.forEach(p => { if (p.estBot) p.avatarUrl = avatarDeBot(); });
+
     // Initialiser les alphabets ET les vies des joueurs
     players.forEach(player => {
         gameState.bombanime.playerAlphabets.set(player.playerId, new Set());
@@ -6518,7 +6584,7 @@ io.on('connection', (socket) => {
                 lives: gameState.bombanime.lives,
                 points: 0,
                 correctAnswers: 0,
-                avatarUrl: 'novice.png',
+                avatarUrl: avatarDeBot(),
                 team: null,
                 estBot: true,
             });

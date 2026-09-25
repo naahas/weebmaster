@@ -71,7 +71,7 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   la reponse du quiz, les etages de la tour, les portes /admin, le pseudo d un
   client bricole),
   `npm run test:ascension` (le moteur d'étages, sans serveur : le tirage par sac, les
-  sept types, et surtout qu'aucun ne livre sa réponse — ni par un champ, ni par un
+  huit types, et surtout qu'aucun ne livre sa réponse — ni par un champ, ni par un
   identifiant, ni par un nom de fichier),
   `npm run test:tour` (Ascension de bout en bout : salon, réglages, départ, premier étage),
   `npm run test:ampoule` (le joker de « Devine le perso » : seuil de trois, une seule fois, reprise),
@@ -196,6 +196,20 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
   Devine le perso, Cible et l Intrus, qui montreraient une carte vide. Pour celui-là on écrit
   `{ "nom": "Ryuk", "anime": "Death Note" }` au lieu du nom seul. Sans indice trouvé ni donné,
   le mot reste jouable et le serveur le nomme au démarrage.
+- `src/img/avatarpic/bot/` — les portraits du **partenaire de BombAnime**, et le seul
+  endroit du projet ou l on ajoute une image **sans toucher au code** : le dossier est lu
+  au demarrage, poser un fichier suffit — et le PREFIXER de `_` le met de cote sans
+  le sortir du dossier (`_kon.webp` reste servi, mais ne sort plus au tirage ; un simple
+  renommage le remet en jeu, et le demarrage dit combien sont ecartes) — puis `npm run avatars:convertir`, qui traite ce
+  dossier AUSSI : aucune liste ne cite ces fichiers, donc un PNG oublie la ne casse rien,
+  il pese seulement dix fois son voisin sans que rien ne le signale (503 Ko -> 54 en WebP).
+  Le serveur annonce au demarrage combien il en a trouves. Ils
+  sont tires au sort a la creation du bot PUIS a chaque depart de manche — le salon n est
+  pas refait entre deux manches, le tirage du depart est donc ce qui le fait changer.
+  ⚠️ Ils sont **hors de `AVATARS_AUTORISES`** : le tiroir de l accueil ne les propose pas
+  et aucun joueur ne peut les porter. Ils voyagent a part dans `/api/avatars` (clef
+  `bots`), uniquement pour leur jeton de version — sans quoi un fichier remplace resterait
+  en cache un an, le dossier etant servi en « immutable ».
 - Les **questions du quiz** vivent en base Supabase (table `questions`). Ajout/édition via la page
   `/question` protégée par `QUESTION_ADMIN_CODE`.
 
@@ -273,7 +287,10 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
 Facultative aussi, et de mise au point : `ASC_ETAGE_FORCE` impose le premier étage
 d'Ascension (`wordle`, ou `match:anime_author` pour viser un sous-type de Liaison). Les
-étages suivants restent tirés au sort. Elle ne vit que dans `.env` — rien à défaire dans
+étages suivants restent tirés au sort — sauf si `ASC_ETAGE_FORCE_TOUS=1` l'accompagne,
+qui verrouille alors TOUTE la tour sur cet écran. Sans elle, régler un étage au visuel
+demandait de relancer une partie à chaque essai, et de tomber dessus par chance.
+Elle ne vit que dans `.env` — rien à défaire dans
 le code — et le serveur l'annonce au démarrage pour qu'on ne l'oublie pas en ligne.
 
 `GRACE_LOBBY_MS` (60 000) est le sursis d un joueur qui se deconnecte DU SALON — jamais
