@@ -1506,6 +1506,46 @@
                                 </div>
 
                                 <!-- ── Wordle ── -->
+                                <!-- ── L’Œil ──
+                                     Cinq portraits qui clignotent puis se retournent. Le seul
+                                     étage de mémoire de la tour : les commandes restent fermées
+                                     tant que les visages sont à l’écran, sinon il n’y aurait
+                                     rien à retenir. -->
+                                <div class="asc-jeu asc-oeil" v-else-if="asc.data.type === 'oeil'"
+                                     :class="['phase-' + asc.oeilPhase, 'var-' + asc.data.variante]">
+
+                                    <!-- Les cinq cartes. Elles restent en place à toutes les
+                                         phases : leur position EST la réponse. -->
+                                    <div class="asc-oeil-rang" :class="{ bloquee: ascBloque }">
+                                        <button class="asc-oeil-carte" v-for="(p, i) in asc.data.characters" :key="p.id"
+                                                :disabled="asc.oeilPhase !== 'cache'"
+                                                :class="{ vue: asc.oeilVues.indexOf(i + 1) >= 0 }"
+                                                @click="cliquerOeil(i + 1)">
+                                            <span class="asc-oeil-face">
+                                                <img :src="p.img" alt="" draggable="false" @load="imageVue">
+                                            </span>
+                                            <span class="asc-oeil-dos">{{ i + 1 }}</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- La consigne, SOUS les cartes : au-dessus elle poussait
+                                         la rangée vers le bas et l’œil partait d’elle. Ici on
+                                         voit d’abord les cartes, puis ce qu’on cherche. Elle ne
+                                         paraît qu’une fois retournées : plus tôt, on chercherait
+                                         un seul visage au lieu de tous les retenir. -->
+                                    <div class="asc-oeil-consigne" v-if="asc.oeilPhase === 'cache'">
+                                        <span class="asc-oeil-q">Trouve</span>
+                                        <span class="asc-oeil-n" :key="asc.cible && asc.cible.name">{{ asc.cible ? asc.cible.name : '…' }}</span>
+                                        <span class="asc-oeil-pts">
+                                            <i v-for="n in asc.data.totalTargets" :key="n" :class="{ on: n <= asc.avance }"></i>
+                                        </span>
+                                    </div>
+                                    <div class="asc-oeil-consigne vide" v-else>
+                                        <span class="asc-oeil-q">Attention…</span>
+                                    </div>
+
+                                </div>
+
                                 <div class="asc-jeu asc-wordle" v-else-if="asc.data.type === 'wordle'">
                                     <!-- La ligne qu'on remplit reste en haut, à une place fixe :
                                          sous la pile des essais, elle descendait à chaque tentative

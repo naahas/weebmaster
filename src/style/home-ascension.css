@@ -1921,3 +1921,238 @@ body.game-active:has(.asc) {
        lisent tous les deux. */
     .asc-tour { width: 6rem; --fut-x: 2.7rem; --fut-w: 3.1rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   🧠 L'ŒIL — cinq portraits, un clignotement, un retournement
+   ═══════════════════════════════════════════════════════════
+   Le seul etage de memoire de la tour. Tout s y joue sur le TEMPS :
+   ce qu on voit, combien de temps, et a quel instant les commandes
+   s ouvrent. La phase est portee par la classe du conteneur et pilotee
+   depuis app.js — une animation CSS seule ne saurait pas dire au
+   serveur quand le joueur a le droit de repondre. */
+.asc-oeil {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* La rangee et la consigne ne se touchent pas : passee SOUS les cartes,
+       il lui faut de l air pour ne pas se lire comme une legende collee a la
+       derniere. A 2,8 rem elle en etait encore trop pres. */
+    gap: 6.2rem;
+    width: 100%;
+    /* ⚠️ Au-dela du plafond de « .asc-jeu » (46 rem), et volontairement : six
+       cartes de 9,2 rem et cinq ecarts de 1,1 font 60,7 rem. Cet etage n a
+       qu une rangee, il peut se permettre la largeur que les grilles n ont pas. */
+    max-width: 62rem;
+    /* Le parent centre son contenu ; avec une seule rangee, le bloc
+       tombait au milieu exact et paraissait bas. Ce rembourrage le
+       remonte sans toucher au centrage. */
+    padding-bottom: 9rem;
+}
+
+.asc-oeil-consigne {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 2.6rem;
+}
+
+/* ⚠️ Bebas, comme TOUT le reste de la tour — le titre de l etage, les
+   altitudes, le nom vise de la Cible. Sans font-family elle retombait sur
+   la police du corps de page, et cette ligne-la jurait avec son voisinage. */
+.asc-oeil-q {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.asc-oeil-n {
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.9rem;
+    line-height: 1;
+    color: var(--neon-primary, #ffd700);
+}
+
+/* Pendant qu on regarde, la ligne ne porte qu un mot : elle garde sa
+   hauteur pour que les cartes ne sautent pas au retournement.
+   ⚠️ SEULE la couleur le distingue de « Trouve » : meme corps, meme
+   interlettrage, meme police. Il a porte un moment un halo et deux points
+   de plus, et c est ce qui le faisait passer pour une AUTRE police — a
+   cette taille l ombre epaissit le trait et Bebas ne se reconnait plus.
+   Le blanc franc suffit a le detacher du gris de veille. */
+.asc-oeil-consigne.vide .asc-oeil-q { color: #fff; }
+
+.asc-oeil-pts { display: flex; gap: 0.3rem; margin-left: 0.4rem; }
+.asc-oeil-pts i {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    transition: background 0.2s ease;
+}
+.asc-oeil-pts i.on { background: var(--neon-primary, #ffd700); }
+
+.asc-oeil-rang {
+    display: flex;
+    gap: 1.1rem;
+    perspective: 1100px;
+}
+/* Le blocage se MONTRE, comme sur la grille de la Cible : sans mise en scene,
+   les clics cessent de repondre et l on croit a une panne. Le verrou est tenu
+   par le serveur — ceci n en est que la traduction a l ecran. */
+.asc-oeil-rang.bloquee { pointer-events: none; }
+
+.asc-oeil-rang.bloquee .asc-oeil-dos {
+    animation: ascOeilFerme 0.55s ease-in-out infinite alternate;
+}
+
+/* La carte fautive reste lisible — c est tout l interet de la laisser
+   retournee — mais son liseré passe du dore au rouge : on voit du meme coup
+   QUI etait la et qu on s est trompe. Griser sa face, comme le fait la Cible
+   sur sa grille, l aurait rendue illisible au seul moment ou elle compte. */
+.asc-oeil-rang.bloquee .asc-oeil-carte.vue .asc-oeil-face {
+    border-color: rgba(255, 90, 90, 0.65);
+    box-shadow: 0 0 1rem rgba(255, 90, 90, 0.25);
+}
+
+@keyframes ascOeilFerme {
+    from {
+        border-color: rgba(255, 90, 90, 0.3);
+        box-shadow: inset 0 0 0 0.1rem rgba(255, 90, 90, 0.18);
+        color: rgba(255, 120, 120, 0.3);
+    }
+    to {
+        border-color: rgba(255, 90, 90, 0.75);
+        box-shadow: inset 0 0 0 0.1rem rgba(255, 90, 90, 0.45),
+                    0 0 1.2rem rgba(255, 90, 90, 0.2);
+        color: rgba(255, 140, 140, 0.65);
+    }
+}
+
+/* La carte a deux faces qui occupent la MEME place : c est ce qui permet
+   de la retourner sans que la rangee bouge d un pixel. Les positions
+   sont la reponse — si elles glissaient, le jeu serait fausse. */
+.asc-oeil-carte {
+    position: relative;
+    /* 6 x 9,2 + 5 x 1,1 = 60,7 rem, sous les 62 du plateau : la largeur est
+       au bout de ce que la rangee peut prendre, c est donc la HAUTEUR qui
+       grandit. Elle rapproche du coup la carte du format du portrait lui-meme
+       (225 x 350), qui remplit mieux et rogne moins de visage. */
+    width: 9.2rem;
+    height: 13.4rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: default;
+    transform-style: preserve-3d;
+    /* Un peu plus long qu un simple fondu : on doit voir la carte TOURNER,
+       c est ce qui dit qu elle est la meme et qu elle n a pas ete remplacee. */
+    transition: transform 0.55s cubic-bezier(0.34, 0.88, 0.28, 1);
+}
+
+.asc-oeil-face,
+.asc-oeil-dos {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    backface-visibility: hidden;
+    display: grid;
+    place-items: center;
+}
+
+.asc-oeil-face {
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    background: #0d0f16;
+}
+.asc-oeil-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.asc-oeil-dos {
+    transform: rotateY(180deg);
+    border: 1.5px solid rgba(255, 215, 0, 0.22);
+    background: linear-gradient(160deg, #161a26, #0d0f16);
+    font-family: 'Bebas Neue', 'Russo One', sans-serif;
+    font-size: 1.7rem;
+    color: rgba(255, 215, 0, 0.3);
+}
+
+/* L entree : les cartes se posent l une apres l autre. Sans elle elles
+   surgissaient toutes faites et le joueur decouvrait la rangee deja la —
+   le clignotement partait avant qu il ait pose les yeux dessus. */
+.asc-oeil.phase-entree .asc-oeil-carte { animation: ascOeilPose 0.62s cubic-bezier(0.16, 0.72, 0.22, 1) both; }
+.asc-oeil-carte:nth-child(1) { animation-delay: 0s; }
+.asc-oeil-carte:nth-child(2) { animation-delay: 0.1s; }
+.asc-oeil-carte:nth-child(3) { animation-delay: 0.2s; }
+.asc-oeil-carte:nth-child(4) { animation-delay: 0.3s; }
+.asc-oeil-carte:nth-child(5) { animation-delay: 0.4s; }
+.asc-oeil-carte:nth-child(6) { animation-delay: 0.5s; }
+
+/* Elles DESCENDENT : venant d en bas elles avaient l air de rebondir, et le
+   regard suivait le mouvement au lieu de se poser sur les visages. */
+@keyframes ascOeilPose {
+    from { opacity: 0; transform: translateY(-3rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Le clignotement : QUATRE battements lents. C est ce qui force a regarder —
+   un affichage fixe se laisse detailler, un clignotement non. Mais la mesure
+   est toujours allee dans le meme sens : 320 ms ne faisaient qu un
+   scintillement, 550 pressaient encore. A 825 le battement se suit a l oeil
+   nu. Le total ne bouge pas — on echange donc du nombre contre de la duree,
+   et quatre pulsations lentes valent mieux que six pressees.
+   ⚠️ 4 x 825 ms tombe pile sur le retournement calé dans app.js : toucher
+   a l un demande de refaire la somme de l autre. */
+/* ⚠️ Plus de « steps(1) » : la coupure franche faisait un stroboscope, dur a
+   l oeil et illisible. Un fondu garde le battement — on sait qu il se passe
+   quelque chose — sans jamais eteindre tout a fait le visage. */
+.asc-oeil.phase-clignote .asc-oeil-face { animation: ascOeilClin 0.825s ease-in-out 4; }
+@keyframes ascOeilClin {
+    0%   { opacity: 1; }
+    45%  { opacity: 0.18; }
+    100% { opacity: 1; }
+}
+
+/* « :not(.vue) » : une carte qu on vient de cliquer revient face visible, et
+   y reste tant que la serie tient. C est le geste du jeu de memoire. */
+.asc-oeil.phase-cache .asc-oeil-carte:not(.vue) { transform: rotateY(180deg); }
+
+.asc-oeil-carte.vue .asc-oeil-face {
+    border-color: rgba(255, 215, 0, 0.55);
+    box-shadow: 0 0 0.9rem rgba(255, 215, 0, 0.25);
+}
+
+/* Retournees, les cartes de la variante « places » redeviennent cliquables
+   et le disent. Dans « numeros » elles restent inertes : on designe la
+   place par son chiffre, en dessous. */
+.asc-oeil.phase-cache.var-places .asc-oeil-carte:not(.vue) { cursor: pointer; }
+.asc-oeil.phase-cache.var-places .asc-oeil-carte:not(.vue):hover .asc-oeil-dos {
+    border-color: rgba(255, 215, 0, 0.55);
+    color: rgba(255, 215, 0, 0.7);
+}
+
+/* ⚠️ Sur telephone la rangee devient une GRILLE 2 x 3, et c est le seul
+   endroit ou la mise en page change. En une seule ligne, six cartes tombaient
+   a 3,4 rem de large — des vignettes sur lesquelles on ne reconnaissait plus
+   personne, sur un etage qui ne demande que de reconnaitre. Un telephone a
+   de la hauteur et pas de largeur : deux colonnes rendent 7,4 rem par carte,
+   soit plus du double. Le retour a la ligne ne brouille rien tant qu il est
+   REGULIER — 1-2, 3-4, 5-6 se lit comme une page — et les numeros au dos le
+   disent de toute facon. */
+@media (max-width: 640px) {
+    .asc-oeil { gap: 2.8rem; padding-bottom: 1rem; }
+
+    .asc-oeil-rang {
+        display: grid;
+        grid-template-columns: repeat(2, auto);
+        gap: 0.7rem;
+    }
+
+    /* 2 x 7,4 + 0,7 = 15,5 rem de large, 3 x 10,8 + 2 x 0,7 = 33,8 de haut :
+       le tout tient sur le plus etroit et le plus court des telephones,
+       consigne et titre compris. */
+    .asc-oeil-carte { width: 7.4rem; height: 10.8rem; }
+    .asc-oeil-dos { font-size: 1.5rem; }
+    .asc-oeil-n { font-size: 1.5rem; }
+}

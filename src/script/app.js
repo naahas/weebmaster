@@ -50,6 +50,9 @@ createApp({
             // attendant : si l'appel échoue, le tiroir montre au moins le
             // défaut plutôt qu'un panneau vide.
             avatarsListe: [{ f: 'novice.png', v: '0' }],
+            // Les portraits du partenaire de BombAnime. Ils ne se peignent
+            // jamais dans le tiroir : on ne garde que leur jeton de version.
+            avatarsBots: [],
             pseudoError: '',
             joinPending: false,
             lobbyShakeError: false,
@@ -122,8 +125,15 @@ createApp({
                 saisies: {},     // le nom tapé sous chaque portrait (guess)
                 noms: {},        // le nom trouvé, tamponné sur le portrait
                 faux: null,      // le portrait qui vient d'être raté, le temps du flash
-                cible: null,     // ce qu'il faut cliquer maintenant (target)
-                avance: 0,       // combien de cibles d'affilée (target)
+                cible: null,     // ce qu'il faut cliquer maintenant (target, oeil)
+                avance: 0,       // combien de cibles d'affilée (target, oeil)
+
+                // 🧠 L'Œil. La phase mène la séquence : on montre, on fait
+                // clignoter, puis on retourne. Les commandes ne s'ouvrent
+                // qu'à « cache » — avant, elles laisseraient répondre sans
+                // avoir rien retenu, les visages étant encore à l'écran.
+                oeilPhase: 'entree',   // entree | montre | clignote | cache
+                oeilVues: [],          // les places déjà retournées, face visible
 
                 // L'ampoule de « Devine le perso » : sa charge, si elle a
                 // servi, et l'instant où toutes éclatent
@@ -2981,6 +2991,58 @@ createApp({
         // La grille est fermée le temps de la pénalité. Le garde est ici pour
         // l'œil ; c'est le serveur qui refuse vraiment, sinon un rechargement
         // rendrait la main aussitôt.
+        // 🧠 L'Œil ────────────────────────────────────────────────────
+        //
+        // Cinq portraits paraissent, clignotent cinq fois, puis se
+        // retournent. Les minuteries vivent ici et non en CSS : il faut
+        // savoir QUAND les commandes s'ouvrent, et une animation ne le dit
+        // pas. Elles sont annulées à chaque nouvel étage, sinon celle de
+        // l'étage précédent rouvrirait la grille en plein milieu du suivant.
+        // ⚠️ « avance » n est passe QU A LA REPRISE, et il change tout : on
+        // saute la presentation pour tomber directement sur les cartes de dos.
+        // Rejouer la sequence redonnerait a voir les cinq visages — recharger
+        // la page suffisait alors a refaire l etage sans rien retenir, et
+        // c est exactement ce qui arrivait.
+        prepararerOeil(d, avance) {
+            clearTimeout(this._oeilT0);
+            clearTimeout(this._oeilT1);
+            clearTimeout(this._oeilT2);
+            clearTimeout(this._oeilT3);
+            const reprise = typeof avance === 'number';
+            this.asc.oeilPhase = reprise ? 'cache' : 'entree';
+            this.asc.oeilVues = [];
+            this.asc.avance = reprise ? avance : 0;
+            this.asc.faux = null;
+            this.asc.cible = d && d.currentTarget ? d.currentTarget : null;
+            if (reprise) return;
+
+            // ⚠️ Le compte est CINQ SECONDES, et tout se cale dessus : les six
+            // cartes descendent (100 ms d’écart, la dernière posée vers 1 150 ms),
+            // on les laisse un instant, puis elles battent quatre fois à 825 ms —
+            // 1 700 + 4 × 825 = 5 000. Changer un battement demande de refaire
+            // la somme ICI ET EN CSS, sinon le retournement tombe au milieu
+            // d une pulsation au lieu de l heure dite.
+            this._oeilT0 = setTimeout(() => { this.asc.oeilPhase = 'montre'; }, 1150);
+            this._oeilT1 = setTimeout(() => { this.asc.oeilPhase = 'clignote'; }, 1700);
+            this._oeilT2 = setTimeout(() => { this.asc.oeilPhase = 'cache'; }, 1700 + 4 * 825);
+        },
+
+        // Le client n'envoie QUE la position : il ne connaît pas
+        // l'identifiant de la cible, seulement son nom. Retrouver la bonne
+        // carte en lisant le message est donc impossible.
+        cliquerOeil(position) {
+            if (!this.socket || this.ascBloque) return;
+            if (this.asc.oeilPhase !== 'cache') return;
+            if (this.asc.oeilVues.indexOf(position) >= 0) return;
+            // La carte se retourne TOUT DE SUITE, sans attendre le serveur :
+            // c est le geste du jeu de memoire, et il ne revele rien qu on
+            // n ait deja vu au debut de l etage. Ce qu on risque en tatant,
+            // c est les trois secondes de penalite.
+            this.asc.oeilVues.push(position);
+            this.socket.emit('ascension-check-oeil', { position });
+        },
+
+
         cliquerCible(id) {
             if (!this.socket || this.ascBloque) return;
             this.socket.emit('ascension-check-target', { characterId: id });
@@ -3559,6 +3621,7 @@ createApp({
                 const d = await r.json();
                 if (!d || !Array.isArray(d.avatars) || !d.avatars.length) return;
                 this.avatarsListe = d.avatars;
+                if (Array.isArray(d.bots)) this.avatarsBots = d.bots;
                 // Un avatar retiré de la liste depuis le dernier passage retombe
                 // sur le défaut, plutôt que de laisser une image cassée.
                 if (!d.avatars.some(a => a.f === this.avatar)) {
@@ -3571,9 +3634,14 @@ createApp({
         // Colle le jeton de version au nom du fichier. Le nom NU continue de
         // circuler sur le fil — la liste blanche du serveur le refuserait
         // sinon — et le jeton ne sert qu'à peindre.
+        // ⚠️ Cherche dans DEUX listes. « avatarsListe » est ce que peint le
+        // tiroir ; « avatarsBots » ne sert qu’aux jetons de version des
+        // portraits du partenaire, qui ne doivent pas s’y proposer mais dont le
+        // cache doit tomber de la meme facon.
         srcAvatar(f) {
             const nom = f || 'novice.png';
-            const e = this.avatarsListe.find(a => a.f === nom);
+            const e = this.avatarsListe.find(a => a.f === nom)
+                   || this.avatarsBots.find(a => a.f === nom);
             return e ? nom + '?v=' + e.v : nom;
         },
 
@@ -6517,6 +6585,7 @@ createApp({
                 if (f0 && ['guess', 'target', 'intruder'].indexOf(f0.type) >= 0) this.prepararerGrille(f0);
                 if (f0 && f0.type === 'order') this.prepararerOrdre(f0);
                 if (f0 && f0.type === 'match') this.prepararerLiaison(f0);
+                if (f0 && f0.type === 'oeil') this.prepararerOeil(f0);
 
                 // Un pas de plus dans la tour : le son le dit avant l'image.
                 // Pas au tout premier étage, où le décompte vient de sonner.
@@ -6603,6 +6672,29 @@ createApp({
                     this.asc.trouves = [];
                     this.ascRater(data.characterId);
                     this.lancerBlocageAsc(data.bloqueJusqua);
+                }
+            });
+
+            // 🧠 L'Œil. Une erreur remet la série à zéro ET ferme la grille
+            // trois secondes : sans ce délai on cliquerait les cinq cartes
+            // en rafale jusqu'à tomber juste.
+            this.socket.on('ascension-oeil-result', (data) => {
+                if (!data) return;
+                this.asc.avance = data.progress || 0;
+                if (data.currentTarget) this.asc.cible = data.currentTarget;
+                if (data.correct) {
+                    this.playSound(this.sounds.ascJuste);
+                } else {
+                    // Pas « ascRate » : ce son-là est un coup sec, fait pour une
+                    // mauvaise réponse. Ici on a seulement mal retenu — le son
+                    // de la tentative ratée de Collect dit la même chose en moins dur.
+                    this.playSound(this.sounds.ascOeilRate);
+                    this.lancerBlocageAsc(data.bloqueJusqua);
+                    // On laisse la mauvaise carte visible un instant — sans ce
+                    // temps, elle se retournerait avant qu on ait vu son erreur —
+                    // puis TOUTES retombent : la serie repart de zero.
+                    clearTimeout(this._oeilT3);
+                    this._oeilT3 = setTimeout(() => { this.asc.oeilVues = []; }, 900);
                 }
             });
 
@@ -6701,6 +6793,11 @@ createApp({
                 }
                 if (f && f.type === 'order') this.prepararerOrdre(f);
                 if (f && f.type === 'match') this.prepararerLiaison(f);
+                // Les cartes restent de dos : on ne revoit pas les visages.
+                if (f && f.type === 'oeil') {
+                    this.prepararerOeil(f, data.myOeilProgress || 0);
+                    this.lancerBlocageAsc(data.bloqueJusqua);
+                }
             });
 
             this.socket.on('ascension-progress', (data) => {
@@ -7923,6 +8020,8 @@ createApp({
                 // verrou qui claque, comme l'était le son emprunté à BombAnime.
                 ascPose: this.createPreloadedSound('dealing.mp3'),
                 ascRate: this.createPreloadedSound('wrong.mp3'),
+                // 🧠 L’Œil : se tromper de place n’est pas se tromper de réponse.
+                ascOeilRate: this.createPreloadedSound('col-vol-rate.mp3'),
                 ascEtage: this.createPreloadedSound('pickup.mp3'),
                 ascJuste: this.createPreloadedSound('pickup.mp3'),
                 ascTic: this.createPreloadedSound('click.mp3'),

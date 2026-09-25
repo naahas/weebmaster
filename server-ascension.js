@@ -101,6 +101,15 @@ function anonymiserEtage(d) {
         return d;
     }
 
+    if (d.type === 'oeil') {
+        // Sans ca l identifiant valait le nom : « naruto » sur la carte disait
+        // qui elle montrait, et il n y avait plus rien a retenir.
+        const neuf = new Map();
+        d.characters.forEach((c, i) => { neuf.set(c.id, 'c' + i); c.id = 'c' + i; });
+        if (d.targets) d.targets = d.targets.map(t => ({ id: neuf.get(t.id) || t.id, name: t.name }));
+        return d;
+    }
+
     if (d.type === 'target') {
         const neuf = new Map();
         d.characters.forEach((c, i) => { neuf.set(c.id, 'c' + i); c.id = 'c' + i; });
@@ -174,8 +183,15 @@ const ETAGE_FORCE = (() => {
     return { type: type, subtype: subtype || null };
 })();
 
+// ⏳ Et « ASC_ETAGE_FORCE_TOUS » verrouille TOUTE la tour sur cet étage, au
+// lieu du seul premier. Sans elle, éprouver un écran demandait de relancer une
+// partie a chaque essai — les trois variantes de L Œil ne se voient pas en un
+// tour. Elle ne sert a rien sans ASC_ETAGE_FORCE.
+const TOUS_ETAGES_FORCES = !!ETAGE_FORCE && !!(process.env.ASC_ETAGE_FORCE_TOUS || '').trim();
+
 if (ETAGE_FORCE) {
-    console.warn('⏳ Ascension : premier étage forcé sur « ' + ETAGE_FORCE.type
+    console.warn('⏳ Ascension : ' + (TOUS_ETAGES_FORCES ? 'TOUS les étages forcés' : 'premier étage forcé')
+        + ' sur « ' + ETAGE_FORCE.type
         + (ETAGE_FORCE.subtype ? ':' + ETAGE_FORCE.subtype : '')
         + ' » (ASC_ETAGE_FORCE). Retirer la variable pour revenir au tirage.');
 }
@@ -387,7 +403,23 @@ const GAME_TYPES = [
     'order',      // Classer des arcs par ordre
     'match',      // Relie (perso→anime, couples, techniques, armes, rivaux, voix, studio)
     'scramble',   // Anagramme : lettres mélangées du nom d'un perso, à remettre dans l'ordre
+    'oeil',       // L'Œil : cinq portraits clignotent puis se retournent — de mémoire
 ];
+
+// Une seule façon de rendre ce qu’on a retenu : cliquer la carte.
+//
+// ⚠️ Deux autres ont existé et ont été retirées, pour la même raison :
+// elles n'apportaient rien. « numeros » posait une rangée de chiffres sous
+// des cartes qui portent déjà leur numéro au dos — un doublon. « saisie »
+// demandait de TAPER le nom du personnage d’un rang donné : ce n’était plus
+// de la mémoire mais de la connaissance, et cet étage existe justement pour
+// laisser une chance à qui ne connaît pas les animes.
+const OEIL_VARIANTES = ['places'];
+
+// ⚠️ Trois secondes, et non la seconde des autres étages. Ici la pénalité
+// n'est pas une gêne, c'est le cœur du jeu : sans elle on clique les cinq
+// cartes en rafale jusqu'à tomber juste, et il n'y a plus rien à retenir.
+const OEIL_PENALITE_MS = 3000;
 
 const MATCH_SUBTYPES = [
     'char_anime',   // Perso → anime
@@ -511,6 +543,36 @@ function genererEtageBrut(type, usedData) {
                 })),
                 totalToGuess: 5,
             };
+        }
+
+        // ── L'Œil ──────────────────────────────────────────────────
+        // Cinq portraits paraissent, clignotent, puis se retournent. Le seul
+        // étage de la tour qui demande de la MÉMOIRE et non du savoir — un
+        // joueur qui découvre les animes peut le passer.
+        //
+        // ⚠️ La cible se donne par son NOM, jamais par sa position ni son
+        // identifiant : c'est le modèle de la Cible, et c'est ce qui évite
+        // que la réponse se lise dans l'onglet réseau.
+        case 'oeil': {
+            // SIX portraits. Cinq tenaient dans un coup d oeil ; le sixieme
+            // oblige a balayer la rangee, ce qui est exactement l epreuve.
+            const picked = pickRandom(chars, 6);
+            const variante = (usedData && usedData.oeilVariante)
+                || OEIL_VARIANTES[Math.floor(Math.random() * OEIL_VARIANTES.length)];
+
+            const base = {
+                type: 'oeil', variante, label: 'L\u2019\u0152il',
+                characters: picked.map(c => ({
+                    id: c.id, img: c.img, name: c.name,
+                    anime: c.anime, aliases: c.aliases || [],
+                })),
+            };
+
+            // LES SIX, dans cet ordre — donc toute la rangee. Trois laissaient
+            // s en tirer en n ayant retenu que la moitie des visages ; a six,
+            // aucune carte n est facultative. La penalite remet la serie a zero,
+            // c est elle qui tient la difficulte, pas le nombre de cibles.
+            return { ...base, targets: pickRandom(picked, 6).map(c => ({ id: c.id, name: c.name })), totalTargets: 6 };
         }
 
         case 'target': {
@@ -1018,9 +1080,12 @@ function startAscensionGame(gameState, io, options = {}) {
     ascension.floorData = [];
     const usedData = {};
     for (let i = 0; i < ascension.floors; i++) {
-        // Le premier étage se laisse imposer, les suivants restent au hasard
-        const impose = i === 0 && ETAGE_FORCE;
-        if (impose) ascension.floorSequence[0] = ETAGE_FORCE.type;
+        // Le premier étage se laisse imposer, les suivants restent au hasard —
+        // sauf si ASC_ETAGE_FORCE_TOUS verrouille toute la tour.
+        const impose = (i === 0 || TOUS_ETAGES_FORCES) && ETAGE_FORCE;
+        // ⚠️ « [i] » et non « [0] » : ecrit en dur, chaque tour de boucle
+        // reecrivait le premier etage et les suivants restaient au hasard.
+        if (impose) ascension.floorSequence[i] = ETAGE_FORCE.type;
         ascension.floorData.push(generateFloorData(
             ascension.floorSequence[i],
             impose ? Object.assign({}, usedData, { subtype: ETAGE_FORCE.subtype }) : usedData));
@@ -1049,8 +1114,8 @@ function startAscensionGame(gameState, io, options = {}) {
             for (let i = 0; i < ascension.floors; i++) {
                 ascension.playerProgress[player.playerId].personalFloorData.push(
                     generateFloorData(
-                        (i === 0 && ETAGE_FORCE) ? ETAGE_FORCE.type : personalSeq[i],
-                        (i === 0 && ETAGE_FORCE) ? { subtype: ETAGE_FORCE.subtype } : {})
+                        ((i === 0 || TOUS_ETAGES_FORCES) && ETAGE_FORCE) ? ETAGE_FORCE.type : personalSeq[i],
+                        ((i === 0 || TOUS_ETAGES_FORCES) && ETAGE_FORCE) ? { subtype: ETAGE_FORCE.subtype } : {})
                 );
             }
         }
@@ -1346,6 +1411,20 @@ function getFloorDataForClient(floorData) {
             characters: data.characters.map(c => ({ id: c.id, img: urlImage(c.img) })),
         };
     }
+    if (data.type === 'oeil') {
+        const base = {
+            type: data.type, variante: data.variante, label: data.label,
+            totalTargets: data.totalTargets,
+            // Les visages partent — il faut bien les montrer — mais rien
+            // d'autre : ni nom, ni anime, ni alias. Le fichier passe sous
+            // jeton, comme partout ailleurs dans la tour.
+            characters: data.characters.map(c => ({ id: c.id, img: urlImage(c.img) })),
+        };
+        return {
+            ...base,
+            currentTarget: data.targets[0] ? { name: data.targets[0].name } : null,
+        };
+    }
     if (data.type === 'target') {
         return {
             type: data.type, label: data.label, totalTargets: data.totalTargets,
@@ -1363,6 +1442,7 @@ function getFloorAnswers(floorData) {
         case 'wordle': return { word: floorData.word };
         case 'scramble': return { word: floorData.word };
         case 'intruder': return { targetIds: floorData.targetIds };
+        case 'oeil': return { targets: floorData.targets };
         case 'order': return { correctOrder: floorData.correctOrder };
         case 'match': return { pairs: floorData.pairs };
         case 'guess': return { characters: floorData.characters.map(c => ({ id: c.id, name: c.name })) };
@@ -1603,6 +1683,7 @@ function getAscensionStateForClient(gameState, playerId) {
     let myValidatedGuesses = [];
     let myValidatedNames = {};
     let myGuessJokerUsed = false;
+    let myOeilProgress = 0;
 
     if (pp) {
         currentFloor = pp.floor;
@@ -1625,6 +1706,16 @@ function getAscensionStateForClient(gameState, playerId) {
         if (pp.guessJokerUsed?.[currentFloor]) {
             myGuessJokerUsed = true;
         }
+
+        // 🧠 L Œil. Le plateau neuf annonce toujours la PREMIERE cible ; a la
+        // reprise il en faut une autre — celle ou le joueur en etait. Sans ca,
+        // recharger renvoyait chercher un visage deja trouve pendant que le
+        // serveur, lui, en attendait le suivant : le clic juste etait refuse.
+        if (fd && fd.type === 'oeil' && floorData) {
+            myOeilProgress = pp.oeilProgress || 0;
+            const encours = (fd.targets || [])[myOeilProgress];
+            floorData.currentTarget = encours ? { name: encours.name } : null;
+        }
     } else {
         // Admin sans pp (avant ghost-add) : retour basique
         floorData = ascension.floorData[0] ? getFloorDataForClient(ascension.floorData[0]) : null;
@@ -1642,6 +1733,7 @@ function getAscensionStateForClient(gameState, playerId) {
         myValidatedGuesses: myValidatedGuesses,
         myValidatedNames: myValidatedNames,
         myGuessJokerUsed: myGuessJokerUsed,
+        myOeilProgress: myOeilProgress,
         // La penalite survit au rechargement : sans cette echeance, recharger
         // suffisait a reprendre la main tout de suite.
         bloqueJusqua: (pp && pp.bloqueJusqua) || 0,
@@ -1803,6 +1895,15 @@ function registerAscensionSocketHandlers(io, socket, resoudreSalon) {
 
     // 🆕 Validation incrémentale d'un clic sur le mini-jeu Target (clique sur 5 persos d'affilée).
     // Client envoie {characterId}. Serveur tracke pp.targetProgress et reset à 0 sur erreur.
+    // 🧠 L’Œil. Le client envoie {position} : la place qu il croit bonne. Le
+    // serveur tient la progression dans pp.oeilProgress et la remet a zero a
+    // la moindre erreur.
+    socket.on('ascension-check-oeil', (data) => {
+        const gameState = resoudreSalon();
+        if (!gameState) return;
+        handleAscensionCheckOeil(gameState, io, socket, data);
+    });
+
     socket.on('ascension-check-target', (data) => {
         const gameState = resoudreSalon();
         if (!gameState) return;
@@ -2127,6 +2228,78 @@ function handleAscensionCheckScramble(gameState, io, socket, data) {
 
 // 🆕 Validation incrémentale du mini-jeu Target.
 // Le joueur doit cliquer sur 5 persos d'affilée. Sur erreur, progress reset à 0 et 1er target ré-affiché.
+// 🧠 L’Œil — valide un clic de position, ou un nom saisi.
+//
+// ⚠️ La position est tout ce que le client envoie : il ne connait pas
+// l identifiant de la cible, seulement son nom. C est ce qui empeche de
+// retrouver la bonne carte en lisant le message plutot qu en se souvenant.
+function handleAscensionCheckOeil(gameState, io, socket, data) {
+    const ascension = gameState.ascension;
+    if (!ascension.active) return;
+
+    const player = resolvePlayerFromSocket(gameState, socket);
+    if (!player) return;
+
+    const pp = ascension.playerProgress[player.playerId];
+    if (!pp || pp.validated) return;
+
+    const floorIndex = pp.floor;
+    const floorData = ascension.syncEpreuves
+        ? ascension.floorData[floorIndex]
+        : (pp.personalFloorData?.[floorIndex] || ascension.floorData[floorIndex]);
+
+    if (!floorData || floorData.type !== 'oeil') return;
+    if (!data) return;
+    if (pp.bloqueJusqua && Date.now() < pp.bloqueJusqua) return;
+
+    const rate = () => {
+        pp.oeilProgress = 0;
+        pp.bloqueJusqua = Date.now() + OEIL_PENALITE_MS;
+        socket.emit('ascension-oeil-result', {
+            correct: false,
+            progress: 0,
+            currentTarget: floorData.targets && floorData.targets[0]
+                ? { name: floorData.targets[0].name } : null,
+            isComplete: false,
+            bloqueJusqua: pp.bloqueJusqua,
+        });
+    };
+
+    const gagne = () => {
+        console.log(`🏔️ ✅ ${player.username} valide l'Œil à l'étage ${floorIndex + 1}`);
+        socket.emit('ascension-answer-result', { correct: true, floor: pp.floor + 1 });
+        pp.oeilProgress = 0;
+        advancePlayerToNextFloor(gameState, io, player.playerId, true);
+    };
+
+    // ── Trois positions d affilee.
+    const position = parseInt(data.position, 10);
+    if (!(position >= 1 && position <= floorData.characters.length)) return;
+
+    if (typeof pp.oeilProgress !== 'number') pp.oeilProgress = 0;
+    const attendue = floorData.targets[pp.oeilProgress];
+    if (!attendue) return;
+
+    const cliquee = floorData.characters[position - 1];
+    // Par le nom autant que par l identifiant : deux homonymes dans la meme
+    // grille rendraient sinon la bonne reponse indevinable.
+    const juste = cliquee && (cliquee.id === attendue.id || cliquee.name === attendue.name);
+
+    if (!juste) { rate(); return; }
+
+    pp.oeilProgress++;
+    const fini = pp.oeilProgress >= floorData.totalTargets;
+    const suivante = fini ? null : floorData.targets[pp.oeilProgress];
+    socket.emit('ascension-oeil-result', {
+        correct: true,
+        position,
+        progress: pp.oeilProgress,
+        currentTarget: suivante ? { name: suivante.name } : null,
+        isComplete: fini,
+    });
+    if (fini) gagne();
+}
+
 function handleAscensionCheckTarget(gameState, io, socket, data) {
     const ascension = gameState.ascension;
     if (!ascension.active) return;
@@ -2282,6 +2455,7 @@ module.exports = {
     _interne: {
         GAME_TYPES,
         MATCH_SUBTYPES,
+        OEIL_VARIANTES,
         generateFloorSequence,
         generateFloorData,
         construireSacScramble,

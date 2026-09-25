@@ -68,6 +68,7 @@ const secrets = {
     scramble: ['word'],
     target: ['targets'],
     match: ['pairs'],
+    oeil: ['targets'],
 };
 
 for (const [type, champs] of Object.entries(secrets)) {
@@ -101,6 +102,32 @@ const jetonValide = (u) => /^\/pic\/[0-9a-f]{20}$/.test(String(u));
     check('« target » ne designe pas la carte a cliquer',
         !!c.currentTarget && !('id' in c.currentTarget),
         c.currentTarget ? Object.keys(c.currentTarget).join(', ') : '(aucune cible)');
+}
+
+// L Oeil montre les visages — c est son principe — mais il ne doit livrer
+// ni les noms, ni la position des cibles. La boucle suit OEIL_VARIANTES et
+// ne cite aucune variante en dur : il y en a eu trois, il n en reste qu une,
+// et une liste figee ici aurait teste un etage disparu.
+{
+    for (const v of I.OEIL_VARIANTES) {
+        const d = I.generateFloorData('oeil', { oeilVariante: v });
+        const c = I.getFloorDataForClient(d);
+        const bavards = (c.characters || []).filter(p => 'name' in p || 'anime' in p || 'aliases' in p);
+        check('« oeil/' + v + ' » ne nomme pas ses cartes', bavards.length === 0,
+            bavards.length ? bavards.length + '/5 en disent trop' : 'retires');
+
+        const ids = (c.characters || []).filter(p => parlant(p.id));
+        check('« oeil/' + v + ' » ne trahit pas le nom par son identifiant', ids.length === 0,
+            ids.length ? 'ex. ' + ids[0].id : 'opaques');
+
+        const imgs = (c.characters || []).filter(p => !jetonValide(p.img));
+        check('« oeil/' + v + ' » sert ses portraits sous jeton', imgs.length === 0,
+            imgs.length ? 'ex. ' + imgs[0].img : 'sous jeton');
+
+        check('« oeil/' + v + ' » ne designe pas la carte a cliquer',
+            !!c.currentTarget && !('id' in c.currentTarget) && !('position' in c.currentTarget),
+            c.currentTarget ? Object.keys(c.currentTarget).join(', ') : '(aucune)');
+    }
 }
 
 {
