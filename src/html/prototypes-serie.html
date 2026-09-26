@@ -88,6 +88,7 @@ body.tel .scene { flex-direction: column; align-items: stretch; max-width: 23rem
 
 /* ── Le panneau de réglages, repris du salon ──────────────────── */
 .reglages {
+    position: relative;
     width: 19rem;
     flex: none;
     padding: 1rem;
@@ -170,6 +171,28 @@ body.tel .boite { width: 100%; }
    Arrêtée pile sur une ligne, la liste paraît finie. */
 .colonne { max-height: 19.5rem; overflow-y: auto; padding: 0.4rem; }
 
+/* La barre par defaut est large et claire : dans un panneau sombre elle
+   attire l oeil plus que la liste. On la reduit a un trait. */
+.colonne, .deplie, .dense {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+.colonne::-webkit-scrollbar,
+.deplie::-webkit-scrollbar,
+.dense::-webkit-scrollbar { width: 0.35rem; }
+.colonne::-webkit-scrollbar-track,
+.deplie::-webkit-scrollbar-track,
+.dense::-webkit-scrollbar-track { background: transparent; }
+.colonne::-webkit-scrollbar-thumb,
+.deplie::-webkit-scrollbar-thumb,
+.dense::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+}
+.colonne:hover::-webkit-scrollbar-thumb,
+.deplie:hover::-webkit-scrollbar-thumb,
+.dense:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.26); }
+
 .opt {
     display: flex;
     align-items: baseline;
@@ -239,12 +262,28 @@ body.tel .boite { width: 100%; }
    et pousse le reste. Rien ne recouvre rien, et sur téléphone c est
    la seule piste qui ne demande pas de viser une fenêtre flottante.
    ════════════════════════════════════════════════════════════════ */
+/* ⚠️ Au PREMIER PLAN, pas dans le flux. Deplie en place, le panneau poussait
+   Vies, Temps et Bot vers le bas : on choisissait sa serie en regardant le
+   reste de l ecran bouger, et en le refermant tout remontait. Pose par-dessus,
+   il recouvre au lieu de deplacer — et le panneau garde sa hauteur. */
 .deplie {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 5;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0.55rem;
+    background: #171921;
+    transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.28s ease;
 }
-.deplie.ouvert { max-height: 24rem; overflow-y: auto; }
+.deplie.ouvert {
+    max-height: 19rem;
+    overflow-y: auto;
+    border: 1px solid var(--bord);
+    box-shadow: 0 1rem 2.2rem rgba(0, 0, 0, 0.55);
+}
 .deplie .opt { font-size: 1.08rem; padding: 0.55rem 0.9rem; }
 .ligne.actif { background: rgba(255, 215, 0, 0.08); }
 .ligne.actif .fl { transform: rotate(90deg); color: var(--or); }
@@ -430,6 +469,15 @@ const hote = document.getElementById('pistes');
 
 const echapper = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
+// Le compte exact n apporte rien et donne un air de tableur : savoir qu une
+// serie pese « plus de 900 » suffit a choisir, et 903 ne se retient pas. On
+// arrondit vers le BAS — annoncer plus que ce qu on a serait mentir.
+const arrondi = n => {
+    if (n >= 100) return '+' + Math.floor(n / 100) * 100;
+    if (n >= 50) return '+50';
+    return String(n);
+};
+
 // Le panneau de réglages, identique partout : c'est le décor, pas la piste.
 function reglages(p, ouvrable) {
     const s = SERIES[choix[p]];
@@ -453,7 +501,7 @@ function options(p, dense, filtre) {
     if (!vus.length) return '<div class="vide">Aucune série ne porte ce nom.</div>';
     return vus.map(o => '<button class="opt' + (o.i === choix[p] ? ' on' : '') + '"'
         + ' data-p="' + p + '" data-i="' + o.i + '">'
-        + echapper(o.s.nom) + '<span class="n">' + o.s.n + '</span></button>').join('');
+        + echapper(o.s.nom) + '<span class="n">' + arrondi(o.s.n) + '</span></button>').join('');
 }
 
 function bande(p) {
@@ -461,7 +509,7 @@ function bande(p) {
         + '<div class="bande j-bande" data-p="' + p + '">'
         + SERIES.map((s, i) => '<button class="carte' + (i === choix[p] ? ' on' : '') + '"'
             + ' data-p="' + p + '" data-i="' + i + '">' + echapper(s.nom)
-            + '<small>' + s.n + ' noms</small></button>').join('')
+            + '<small>' + arrondi(s.n) + ' noms</small></button>').join('')
         + '</div>'
         + '<div class="gouverne">'
         +   '<button data-p="' + p + '" data-pas="-1">‹</button>'
@@ -498,7 +546,7 @@ function peindre() {
             + '<p class="note">' + pi.note + '</p>'
             + '<div class="scene" data-p="' + pi.id + '">' + scene(pi.id) + '</div>'
             + '<div class="echo">Retenu : <b>' + echapper(s.nom) + '</b> · '
-            + s.n + ' personnages dans la banque</div>'
+            + arrondi(s.n) + ' personnages dans la banque</div>'
             + '</section>';
     }).join('');
 
@@ -536,6 +584,10 @@ hote.addEventListener('click', e => {
     const opt = e.target.closest('.opt, .carte');
     if (opt) {
         choix[opt.dataset.p] = parseInt(opt.dataset.i, 10);
+        // Choisir, c est avoir fini : le dropdown se referme. Le laisser
+        // ouvert obligeait a le refermer a la main pour voir le reste des
+        // reglages, alors qu on venait justement de trancher.
+        if (opt.dataset.p === 'd') ouvertD = false;
         peindre();
         return;
     }
