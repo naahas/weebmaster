@@ -1354,21 +1354,19 @@
 
 /* Mobile: mèche plus courte */
 @media (max-width: 768px) {
-    .fuse-wave-wrap {
-        width: 36px;
-    }
-    .fuse-wave-svg {
-        width: 36px;
-    }
+
+    /* 🧨 Le viewBox reste en 52 × 12 : reduire la largeur met la courbe a
+       l echelle, il n y a rien a redessiner. */
+    .fuse-wave-wrap,
+    .fuse-wave-svg { width: 26px; }
 }
 
 @media (max-width: 480px) {
-    .fuse-wave-wrap {
-        width: 28px;
-    }
-    .fuse-wave-svg {
-        width: 28px;
-    }
+    /* Sur telephone le cercle se resserre encore : a 28 px l etincelle
+       arrivait presque au contact du joueur vise, et l on ne savait plus si
+       la bombe le designait ou l avait deja atteint. */
+    .fuse-wave-wrap,
+    .fuse-wave-svg { width: 20px; }
     .fuse-socle {
         width: 8px;
         height: 8px;
