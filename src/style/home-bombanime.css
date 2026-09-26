@@ -771,6 +771,19 @@
     text-shadow: 0 0 10px rgba(240, 192, 64, 0.5);
 }
 
+/* Quand c est AU JOUEUR de repondre, les reponses des autres remontent de
+   0,25 a 0,5. C est le seul moment ou on les lit vraiment : pour ne pas
+   redire un nom deja cite, et parce que la derniere reponse valide est celle
+   qu il faut enchainer. Le reste du temps elles restent en retrait — l oeil
+   doit aller sur celui qui joue, pas sur ce qui a deja ete dit.
+
+   Les elimines en sont exclus : leur dernier mot est fige, le relever le
+   ferait passer pour une reponse du tour. Et la transition de couleur etait
+   deja sur .player-answer, donc le passage se fait en fondu. */
+.bombanime-circle.mon-tour .bombanime-player-slot:not(.active):not(.eliminated) .player-answer {
+    color: rgba(255, 255, 255, 0.5);
+}
+
 /* ============================================
    ANIMATION SUCCÈS - Bonne réponse
    ============================================ */

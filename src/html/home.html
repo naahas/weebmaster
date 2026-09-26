@@ -1761,7 +1761,8 @@
                         </div>
                         
                         <!-- Zone du cercle de joueurs -->
-                        <div class="bombanime-circle" :style="{ '--circle-size': getBombanimeCircleSize() + 'px' }">
+                        <div class="bombanime-circle" :class="{ 'mon-tour': bombanime.isMyTurn }"
+                             :style="{ '--circle-size': getBombanimeCircleSize() + 'px' }">
                             <!-- Joueurs en cercle -->
                             <div 
                                 v-for="(player, index) in bombanime.playersData" 
