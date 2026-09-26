@@ -13,7 +13,7 @@ progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suit
 
 État : **phase 1 terminée** (suppression), refonte du mode Classique terminée (écran de jeu, salon,
 camps, classement final, passe mobile), **phase 2 terminée** : le serveur héberge autant de salons
-qu'on veut, chacun indépendant. Reste la passe visuelle mobile de **BombAnime**.
+qu'on veut, chacun indépendant.
 
 Les routes `/admin/*` sont **réservées à l'hôte** : l'ouverture d'un salon tire un jeton
 (`gameState.hostToken`) remis au seul créateur, qu'un middleware monté sur `/admin` exige ensuite en
@@ -244,6 +244,15 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 ## Accès
 
 - `/` : le jeu (saisie du pseudo puis lobby).
+- `/XXXX` : **le meme jeu, code du salon deja rempli** — l hote colle un lien dans son
+  chat au lieu d epeler quatre caracteres, ce qui retire deux gestes au viewer. Le client
+  lit le code a l ouverture et rejoint tout seul, une seule fois, jamais si une partie est
+  deja en cours.
+  ⚠️ Le motif est volontairement ETROIT (quatre caracteres de l alphabet des codes, ni I,
+  ni L, ni O, ni 0, ni 1) : un `/:code` plus large avalerait `/question`, `/prototypes`,
+  `/saisie` et tous les fichiers servis a la racine. Les minuscules passent, le client
+  remet en majuscules. Un code inconnu sert la page quand meme — c est le client qui dit
+  « code invalide » ; un 404 laisserait un ecran blanc a qui a clique trop tard.
 - `/admin/*` : plus aucune page, mais les routes HTTP que le client de l'hôte appelle (réglages,
   démarrer, question suivante, camps, exclure). **Toutes exigent le jeton d'hôte**, sauf l'ouverture
   d'un salon — c'est elle qui le crée. L'événement socket `kick-player` le porte aussi.

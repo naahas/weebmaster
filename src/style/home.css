@@ -7452,6 +7452,65 @@ body.game-active:has(.poll-game-container) #particles-js {
         linear-gradient(to top, rgba(6, 6, 8, 0.75) 4%, transparent 42%);
 }
 
+/* 👥 COMBIEN ON PEUT ÊTRE
+   ══════════════════════
+   En haut a gauche de la carte, au-dessus du voile mais sous le personnage :
+   c est la premiere chose qu on lit apres le nom du mode, et la question qu on
+   se pose vraiment avant de choisir — « est-ce que je peux jouer tout seul ? ».
+   Le maximum seul ne la tranchait pas.
+
+   ⚠️ « position: absolute » demande que « .v2-mode-preview » soit positionne.
+   Il l est deja (il porte le voile et les particules en absolu) ; si un jour il
+   ne l etait plus, la pastille partirait se coller au coin de la page. */
+.v2-mode-joueurs {
+    position: absolute;
+    top: 1.1rem;
+    left: 1.4rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    /* ⚠️ Le noir a 0,42 la faisait disparaitre dans un panneau deja noir, et
+       l icone avec. Un fond DORE tres pale la detache sans crier, et rend le
+       pictogramme lisible — c est le contraste qui manquait, pas la taille. */
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 215, 0, 0.09);
+    backdrop-filter: blur(3px);
+    color: rgba(255, 215, 0, 0.75);
+    /* Une pastille qui apparait d un coup au changement de mode saute a l oeil
+       plus que le mode lui-meme. Elle arrive avec le reste de la carte. */
+    animation: v2JoueursEntre 0.35s ease both;
+}
+
+.v2-mode-joueurs svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    opacity: 0.9;
+}
+
+/* Les nombres en Bebas, comme partout ailleurs sur le site, et nettement plus
+   gros que l ancien libelle : c est l information, pas une legende. */
+.v2-mode-joueurs .n {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--neon-primary, #ffd700);
+}
+
+.v2-mode-joueurs .t {
+    font-size: 0.8rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes v2JoueursEntre {
+    from { opacity: 0; transform: translateY(-0.35rem); }
+    to   { opacity: 1; transform: none; }
+}
+
 .v2-mode-preview-body {
     z-index: 4;
     position: absolute;
@@ -7544,7 +7603,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     backdrop-filter: blur(0.6rem);
 }
 
+/* Le libelle porte AUSSI le message d erreur : il lui faut de l air au-dessus
+   des cases, sinon « code de salon invalide » se lit comme une etiquette collee
+   au champ plutot que comme un refus. */
 .v2-join-label {
+    margin-bottom: 0.55rem;
     font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -8224,6 +8287,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 .v2-room-code-label {
+    /* Le code est gros et le libelle minuscule : colles, le second avait l air
+       de deborder du premier. */
+    display: block;
+    margin-bottom: 0.75rem;
     font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -9997,8 +10064,45 @@ body.game-active:has(.poll-game-container) #particles-js {
        filet, si l image revenait un jour par un autre chemin. */
     .v2-mode-char { display: none; }
 
-    .v2-mode-preview-body { position: relative; z-index: 4; max-width: 100%; }
+    /* ⚠️ Repasser en « relative » ne suffit pas : le « left » de la regle de
+       base survit, et sur un element relatif il ne retrecit pas la boite, il la
+       DECALE. Le texte debordait donc de l ecran, exactement de cette largeur.
+       Il faut neutraliser les quatre proprietes de placement, pas seulement
+       changer le mode de positionnement. */
+    .v2-mode-preview-body {
+        position: relative;
+        z-index: 4;
+        /* ⚠️ On neutralise le placement, mais on ne colle pas pour autant au
+           bord : « left » decalait la boite sans la retrecir, un REMBOURRAGE
+           la garde a l interieur. box-sizing: border-box est pose plus haut,
+           donc le padding se prend sur les 100 % au lieu de s y ajouter. */
+        left: 0;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        padding: 1.7rem 1.4rem 1.4rem;
+    }
     .v2-mode-preview-desc { max-width: 16rem; }
+
+    /* Le bouton pesait autant que la carte : on le rend a sa place. */
+    .v2-cta { padding: 0.8rem 1.7rem; font-size: 0.85rem; }
+
+    /* 👥 La pastille passait DERRIERE le nom du mode, qui prend toute la
+       largeur sur telephone. Elle descend se poser en bas a droite, plus
+       discrete : la ou rien ne la recouvre. */
+    .v2-mode-joueurs {
+        top: auto;
+        left: auto;
+        bottom: 0.9rem;
+        right: 1rem;
+        padding: 0.25rem 0.55rem;
+        gap: 0.3rem;
+    }
+    .v2-mode-joueurs svg { width: 0.8rem; height: 0.8rem; }
+    .v2-mode-joueurs .n { font-size: 0.9rem; }
+    .v2-mode-joueurs .t { font-size: 0.7rem; }
 
     /* ── Rejoindre : le retour tombait sur le panneau ── */
     .v2-back.left,
@@ -12117,92 +12221,112 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    Vingt et une entrées : le tiroir d'options déborderait de la colonne des
    réglages, qui rogne ce qui dépasse. Ce panneau vit à la racine.
    ============================================ */
-.v2-bserie-veil {
+/* 💣 LE CHOIX DE LA SÉRIE
+   ═════════════════════
+   Dix-sept séries dans une colonne de 290 px. À deux colonnes il restait
+   135 px par case, et « Shingeki no Kyojin » n y tenait qu en rapetissant :
+   c est le défaut qu on corrige. Une colonne rend toute la largeur au nom.
+
+   ⚠️ Le panneau est en ABSOLU, par-dessus les lignes suivantes, et non dans
+   le flux. Déplié en place il poussait Vies, Temps et Bot vers le bas : on
+   choisissait sa série en regardant le reste de l écran bouger, et tout
+   remontait à la fermeture. Il recouvre, il ne déplace pas.
+
+   ⚠️ Il est en position FIXE et non absolue. Posé dans la colonne, il
+   agrandissait sa zone défilante — un élément en absolu compte dans le
+   débordement de son ancêtre — et une seconde barre apparaissait à côté de
+   la première. Ses coordonnées se calculent donc dans app.js. */
+/* Le voile ne sert QU À attraper le clic dehors : il ne peint rien. Un fond
+   sombre serait disproportionné pour un réglage de salon, et le panneau n est
+   plus modal — le reste de la colonne se lit encore derrière lui. */
+.v2-bserie-sortie {
     position: fixed;
     inset: 0;
     z-index: 1400;
-    background: rgba(6, 6, 8, 0.55);
-    animation: v2SerieVeil 0.2s ease both;
+    background: transparent;
 }
-
-@keyframes v2SerieVeil { from { opacity: 0; } to { opacity: 1; } }
 
 .v2-bserie {
     position: fixed;
-    width: 20rem;
-    max-height: min(60vh, 26rem);
-    display: flex;
-    flex-direction: column;
-    padding: 0.9rem;
+    z-index: 1401;
+    /* Une hauteur qui s arrête au MILIEU d une ligne : la ligne coupée est ce
+       qui dit qu il y en a d autres. Arrêtée pile, la liste paraît finie et
+       personne ne fait défiler. */
+    max-height: 17.5rem;
+    overflow-y: auto;
+    padding: 0.35rem;
     background: linear-gradient(165deg, rgba(24, 21, 16, 0.99), rgba(13, 13, 15, 0.99));
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.8rem;
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.6);
-    animation: v2BSerieEntre 0.24s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    border-radius: 0.6rem;
+    box-shadow: 0 0.9rem 2.4rem rgba(0, 0, 0, 0.6);
+    animation: v2BSerieEntre 0.2s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+    /* La barre par défaut est large et claire : dans un panneau sombre elle
+       attire l œil plus que la liste. On la réduit à un trait. */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
 @keyframes v2BSerieEntre {
-    from { opacity: 0; transform: translateX(-0.6rem) scale(0.98); }
+    from { opacity: 0; transform: translateY(-0.4rem); }
     to   { opacity: 1; transform: none; }
 }
 
-.v2-bserie-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 0.7rem;
-    margin-bottom: 0.7rem;
-    border-bottom: 0.06rem solid rgba(255, 255, 255, 0.07);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
+.v2-bserie::-webkit-scrollbar { width: 0.3rem; }
+.v2-bserie::-webkit-scrollbar-track { background: transparent; }
+.v2-bserie::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
 }
-
-.v2-bserie-head button {
-    padding: 0.25rem 0.7rem;
-    font-family: inherit;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
-    border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 2rem;
-    cursor: pointer;
-}
-
-.v2-bserie-head button:hover { color: var(--text-primary); }
-
-.v2-bserie-grille {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.3rem;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
-}
-
-.v2-bserie-grille::-webkit-scrollbar { width: 0.35rem; }
-.v2-bserie-grille::-webkit-scrollbar-track { background: transparent; }
-.v2-bserie-grille::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.28); border-radius: 2rem; }
+.v2-bserie:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); }
 
 .v2-bserie-opt {
-    min-height: 2.3rem;
-    padding: 0.45rem 0.5rem;
-    font-family: inherit;
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    /* Bebas et 1,05 rem, comme dans le prototype : une colonne rend toute la
+       largeur au nom, autant s en servir. En Inter a 0,78 on retombait sur la
+       taille qu on voulait justement quitter. */
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    text-align: left;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.04);
+    background: transparent;
     border: none;
     border-radius: 0.4rem;
     cursor: pointer;
-    transition: color 0.18s ease, background 0.18s ease;
+    transition: color 0.15s ease, background 0.15s ease;
 }
+
+.v2-bserie-opt .nom { flex: 1; min-width: 0; }
+
+/* Le volume, arrondi vers le bas. Il ne décide pas à la place de l hôte, mais
+   il sépare Fullmetal Alchemist de Pokémon d un coup d œil — et c est ce qui
+   change une soirée. */
+.v2-bserie-opt .n {
+    font-family: inherit;
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.22);
+}
+
+.v2-bserie-opt:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+
+.v2-bserie-opt.on {
+    background: rgba(255, 215, 0, 0.13);
+    color: var(--neon-primary, #ffd700);
+}
+.v2-bserie-opt.on .n { color: rgba(255, 215, 0, 0.5); }
+
+/* La ligne qui ouvre le panneau reste allumée tant qu il l est : sans ça on
+   ne sait plus d où il sort. */
+.v2-set-porte.ouvert { background: rgba(255, 215, 0, 0.08); }
+.v2-set-porte.ouvert .v2-set-fleche { transform: rotate(90deg); }
+.v2-set-porte .v2-set-fleche { transition: transform 0.22s ease; }
+
 
 .v2-bserie-opt:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.1); }
 

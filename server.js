@@ -395,6 +395,16 @@ function avatarDeBot() {
 // La liste que le client peint. Elle sort d'ici et de nulle part ailleurs :
 // c'est ce qui supprime le risque d'une liste cliente désynchronisée, où un
 // avatar visible dans le tiroir était refusé une fois en partie.
+// 💣 Combien de personnages par serie de BombAnime. Le client tient la liste
+// des series — leurs noms d affichage sont a lui — mais pas leur volume, qui
+// vit dans bombdata.json. Sans cette route, le panneau de choix afficherait
+// des nombres ecrits en dur, qui deriveraient au premier ajout.
+app.get('/api/bombanime-series', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.json(Object.entries(BOMBANIME_CHARACTERS)
+        .map(([id, noms]) => ({ id, n: noms.length })));
+});
+
 app.get('/api/avatars', (req, res) => {
     res.set('Cache-Control', 'no-cache');
     res.json({
@@ -1645,6 +1655,23 @@ app.get('/prototypes/parametres', (req, res) => {
 });
 
 app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/src/html/home.html');
+});
+
+// 🔗 Un code de salon dans l adresse : shonenmaster.com/YRWD.
+//
+// Rejoindre demandait cinq gestes a un viewer : quitter le stream, ouvrir un
+// navigateur, taper le domaine, taper quatre caracteres, entrer un pseudo. Le
+// lien en supprime deux — l hote colle une adresse dans son chat au lieu
+// d epeler un code, et sur telephone c est la difference entre essayer et
+// renoncer.
+//
+// ⚠️ Le motif est TRES etroit, et il doit le rester : quatre caracteres pris
+// dans l alphabet des codes (ni I, ni L, ni O, ni 0, ni 1 — ils se confondent
+// a l oral). Un /:code plus large avalerait /question, /prototypes, /saisie et
+// tous les fichiers servis a la racine. Les minuscules sont acceptees, le
+// client les remet en majuscules : personne ne tape un lien en capitales.
+app.get('/:code([A-HJ-NP-Za-hj-np-z2-9]{4})', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });
 

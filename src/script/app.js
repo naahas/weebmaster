@@ -199,15 +199,15 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', players: '∞',  img: 'kenshin2.webp',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', min: '2', max: '∞',  img: 'kenshin2.webp',
                   desc: "Quiz anime/manga général. La même question s'affiche pour tout le monde, avec un temps limité pour répondre. Mode vie ou point disponible, seul ou en deux équipes." },
-                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   players: '15', img: 'lambo3.webp',
+                { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   min: '1', max: '15', img: 'lambo3.webp',
                   desc: "Le jeu de la bombe, version anime. Chaque joueur cite un personnage d'une série donnée avant qu'elle n'explose sur lui. Le dernier survivant l'emporte." },
-                { id: 'rush',      name: 'Rush',      kind: 'Solo',   players: '∞',  img: 'nagi.webp',
+                { id: 'rush',      name: 'Rush',      kind: 'Solo',   min: '2', max: '∞',  img: 'nagi.webp',
                   desc: "Une suite de personnages s'affiche à l'écran, l'un après l'autre. Le joueur avec la plus longue série de personnages reconnus l'emporte." },
-                { id: 'ascension', name: 'Ascension', kind: 'Solo',   players: '∞',  img: 'esdeath.webp',
+                { id: 'ascension', name: 'Ascension', kind: 'Solo',   min: '2', max: '∞',  img: 'esdeath.webp',
                   desc: "Une tour à gravir étage par étage, chacun à son rythme. Chaque étage est une épreuve différente. Le premier arrivé au sommet l'emporte." },
-                { id: 'collect',   name: 'Collect',   kind: 'Solo',   players: '5',  img: 'sora.webp',
+                { id: 'collect',   name: 'Collect',   kind: 'Solo',   min: '2', max: '5',  img: 'sora.webp',
                   desc: "Jeu de cartes à plusieurs. Chacun doit réunir des personnages d'un même anime avant les autres et les poser au milieu de la table." },
                 // Cette description est un COUPLET : ses retours à la ligne sont
                 // écrits dans la donnée et rendus tels quels, grâce au
@@ -252,7 +252,9 @@ createApp({
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
             estDev: false,        // vrai hors production : débloque l'outil de remplissage
             seriesBombOuvertes: false,
-            seriesBombPos: { top: 0, left: 0 },
+            seriesBombPos: { top: 0, left: 0, width: 0 },
+            // Les volumes de chaque serie, charges une fois depuis le serveur.
+            seriesBombVolumes: {},
             // Le tiroir les range en grille plutôt qu'en ligne, sinon leurs
             // largeurs suivaient celles des libellés.
             // ⏳ MESURE TEMPORAIRE : les quatre filtres d'une seule série sont
@@ -544,6 +546,12 @@ createApp({
     created() {
         // Hors de data : un simple compteur n a pas à être réactif
         this._notifSeq = 0;
+
+        // 🔗 Le code peut venir de l adresse. On le lit ICI et pas plus tard :
+        // restoreGameState() peut nous remettre dans une partie en cours, et il
+        // faut alors l ignorer — on ne deplace pas quelqu un qui joue deja.
+        const m = String(location.pathname || '').match(/^\/([A-Za-z0-9]{4})\/?$/);
+        this._codeUrl = m ? m[1].toUpperCase() : null;
     },
 
     async mounted() {
@@ -1533,6 +1541,22 @@ createApp({
     },
 
     watch: {
+        // 🔗 L adresse suit le salon, toujours. Poser le lien a la jointure
+        // sans jamais le reprendre laissait un code mort dans la barre : on
+        // quittait la partie, l adresse restait, et recharger donnait « code
+        // invalide ». Ici il n y a rien a penser — roomCode est la verite,
+        // l adresse en est le reflet.
+        //
+        // ⚠️ replaceState et non pushState : on ne fabrique pas une entree
+        // d historique a chaque manche, sinon le bouton Retour du navigateur
+        // remonterait le fil des salons au lieu de sortir du site.
+        roomCode(code) {
+            try {
+                const voulu = code ? '/' + code : '/';
+                if (location.pathname !== voulu) history.replaceState(null, '', voulu);
+            } catch (e) { /* un navigateur qui refuse l historique ne doit rien casser */ }
+        },
+
         // Un calque ouvert efface les icônes fixées à la racine : leur z-index
         // les placerait sinon au-dessus du voile, qui vit dans le panel.
         showTopSheet(ouvert) { this.marquerCalque(ouvert || this.showQuestionStats); },
@@ -3658,15 +3682,55 @@ createApp({
             try { localStorage.setItem('avatar', f); } catch (e) {}
         },
 
+        // Le panneau se pose SOUS la ligne qui l ouvre, sur toute sa largeur.
+        //
+        // ⚠️ Il est en position FIXE, donc hors de la colonne des reglages. Pose
+        // dedans, il agrandissait sa zone defilante et faisait apparaitre une
+        // seconde barre — un element en absolu compte dans le debordement de son
+        // ancetre, c est mecanique. Le prix a payer : les coordonnees se
+        // calculent a la main, et il faut refermer si la colonne defile.
         ouvrirSeriesBomb(e) {
-            const r = e.currentTarget.getBoundingClientRect();
-            const largeur = 20 * 16;                     // la largeur du panneau, en pixels
-            const hauteur = Math.min(window.innerHeight * 0.6, 26 * 16);
-            this.seriesBombPos = {
-                left: Math.min(r.right + 12, window.innerWidth - largeur - 12),
-                top: Math.max(12, Math.min(r.top, window.innerHeight - hauteur - 12)),
-            };
+            if (this.seriesBombOuvertes) { this.seriesBombOuvertes = false; return; }
+            this.placerSeriesBomb(e.currentTarget);
             this.seriesBombOuvertes = true;
+            this.chargerVolumesSeries();
+        },
+
+        placerSeriesBomb(ligne) {
+            const r = ligne.getBoundingClientRect();
+            const hauteur = 17.5 * 16;
+            // Si la place manque en dessous, on remonte au-dessus de la ligne
+            // plutot que de deborder de l ecran — frequent sur telephone, ou la
+            // colonne descend bas.
+            const dessous = window.innerHeight - r.bottom - 12;
+            const haut = dessous < 10 * 16 && r.top > dessous
+                ? Math.max(8, r.top - hauteur - 6)
+                : r.bottom + 6;
+            this.seriesBombPos = { top: haut, left: r.left, width: r.width };
+        },
+
+        async chargerVolumesSeries() {
+            if (Object.keys(this.seriesBombVolumes).length) return;   // une fois suffit
+            try {
+                const r = await fetch('/api/bombanime-series');
+                const d = await r.json();
+                if (!Array.isArray(d)) return;
+                const m = {};
+                for (const s of d) m[s.id] = s.n;
+                this.seriesBombVolumes = m;
+            } catch (e) { /* sans volumes le panneau reste utilisable */ }
+        },
+
+        // ⚠️ ARRONDI VERS LE BAS, et jamais vers le haut : annoncer plus que ce
+        // qu on a serait mentir. Le compte exact n aide personne a choisir —
+        // « plus de 900 » se retient, « 903 » non, et ca donnait un air de
+        // tableur a un ecran de jeu.
+        volumeSerie(id) {
+            const n = this.seriesBombVolumes[id];
+            if (!n) return '';
+            if (n >= 100) return '+' + Math.floor(n / 100) * 100;
+            if (n >= 50) return '+50';
+            return String(n);
         },
 
         choisirSerieBomb(id) {
@@ -4298,9 +4362,59 @@ createApp({
             }, 450);
         },
 
-        copyRoomCode() {
+        // On copie le LIEN, pas le code. L hote colle une adresse cliquable
+        // dans son chat au lieu d epeler quatre caracteres, et le viewer entre
+        // en un geste — c est tout l interet de /XXXX.
+        //
+        // ⚠️ Repli sur le code seul si l adresse ne s obtient pas : mieux vaut
+        // quatre caracteres dans le presse-papier que rien du tout.
+        // ⚠️ « navigator.clipboard » N EXISTE QUE sur HTTPS ou localhost. Le
+        // « ?. » avalait donc l echec en silence, et « lien copie ! » s affichait
+        // quand meme. Ca ne se voyait ni en production ni en developpement — mais
+        // exactement la ou l on teste depuis son telephone, sur le reseau local en
+        // http://192.168.x.x : on cliquait, on lisait « copie », le presse-papier
+        // restait vide.
+        //
+        // Le repli par textarea + execCommand est deprecie mais marche partout,
+        // y compris hors contexte securise. C est le seul recours a cet endroit.
+        async copierTexte(texte) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(texte);
+                    return true;
+                }
+            } catch (e) { /* refus de l utilisateur ou du navigateur : on tente l autre */ }
+
+            try {
+                const z = document.createElement('textarea');
+                z.value = texte;
+                z.setAttribute('readonly', '');
+                // Hors ecran, mais DANS le document : une selection ne se fait pas
+                // sur un element detache. Et « fixed » evite de faire defiler la page.
+                z.style.position = 'fixed';
+                z.style.top = '-1000px';
+                z.style.opacity = '0';
+                document.body.appendChild(z);
+                z.select();
+                z.setSelectionRange(0, z.value.length);   // iOS ignore select() seul
+                const ok = document.execCommand('copy');
+                document.body.removeChild(z);
+                return !!ok;
+            } catch (e) { return false; }
+        },
+
+        async copyRoomCode() {
             if (!this.roomCode) return;
-            navigator.clipboard?.writeText(this.roomCode);
+            let aCopier = this.roomCode;
+            try { aCopier = location.origin + '/' + this.roomCode; } catch (e) {}
+
+            const copie = await this.copierTexte(aCopier);
+            if (!copie) {
+                // On le DIT plutot que de laisser croire. Le code reste lisible a
+                // l ecran, en gros : l hote peut toujours l epeler.
+                this.showNotification('Copie impossible sur ce navigateur — le code reste affiche.', 'info');
+                return;
+            }
             this.codeCopied = true;
             setTimeout(() => { this.codeCopied = false; }, 1500);
         },
@@ -5139,6 +5253,20 @@ createApp({
             
             this.socket.on('connect', () => {
 
+                // 🔗 Le code venu de l adresse n est consomme qu UNE fois, et
+                // jamais si l on est deja dans une partie : une reconnexion en
+                // plein jeu ne doit pas nous renvoyer a la porte du salon.
+                if (this._codeUrl && !this.hasJoined && !this.gameInProgress) {
+                    const code = this._codeUrl;
+                    this._codeUrl = null;
+                    this.homeScreen = 'join';
+                    this.joinCode = code;
+                    // Un souffle, comme la saisie a la main : la derniere case
+                    // doit s allumer avant qu on parte, sinon on ne voit jamais
+                    // le code qu on vient de rejoindre.
+                    setTimeout(() => { if (this.joinCode === code) this.joinRoom(); }, 260);
+                }
+
                 if (this.isAuthenticated) {
                     this.socket.emit('register-authenticated', {
                         playerId: this.playerId,
@@ -5312,7 +5440,13 @@ createApp({
             });
 
             this.socket.on('game-deactivated', () => {
-                this.colOublier();
+                // ⚠️ PAS de colOublier() ici. Il remet « endStep » a zero, et
+                // endStep est ce qui revele les places de TOUS les ecrans de fin
+                // — quiz, Rush, Ascension, Collect. Appele avant le garde-fou
+                // ci-dessous, il vidait le podium du joueur des que l hote
+                // fermait le salon : la boite et le titre restaient, les lignes
+                // disparaissaient. Le menage de Collect est descendu plus bas,
+                // avec le reste du demontage.
                 this.clearSeal();
                 // 🔊 Toujours couper le tictac, même si le reste est ignoré
                 this.stopBombTicking();
@@ -5351,6 +5485,7 @@ createApp({
                 }
 
                 // Reset COMPLET de l'état du jeu
+                this.colOublier();
                 this.isGameActive = false;
                 this.gameInProgress = false;
                 // L'écran du code était resté sélectionné depuis l'entrée dans le salon

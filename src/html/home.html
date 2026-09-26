@@ -252,7 +252,7 @@
                                 <span class="v2-mode-row-bar"></span>
                                 <span class="v2-mode-row-text">
                                     <span class="v2-mode-row-name">{{ m.name }}</span>
-                                    <span class="v2-mode-row-kind">{{ m.kind }} · {{ m.players }}</span>
+                                    <span class="v2-mode-row-kind">{{ m.kind }} · {{ m.max }}</span>
                                 </span>
                                 <span class="v2-mode-row-soon" v-if="m.soon">soon</span>
                             </button>
@@ -260,6 +260,22 @@
 
                         <div class="v2-mode-preview" :class="['mode-' + currentMode.id, { 'plain-mode': currentMode.plain }]">
                             <div class="v2-mode-preview-shade"></div>
+
+                            <!-- Combien on peut être. Le maximum seul ne disait pas
+                                 l essentiel : ce qu on veut savoir avant de choisir,
+                                 c est si l on peut jouer À DEUX, ou tout seul. -->
+                            <div class="v2-mode-joueurs" :key="currentMode.id">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
+                                <span class="n">{{ currentMode.min }}</span>
+                                <span class="t">–</span>
+                                <span class="n">{{ currentMode.max }}</span>
+                            </div>
                             <!-- personnage détouré, au premier plan et débordant du cadre -->
                             <!-- type="transition" : sans lui, Vue mesure la plus longue
                                  durée trouvée sur l'image, soit les 7 s du flottement -->
@@ -364,7 +380,7 @@
                         <span class="v2-logo-ring"></span>
                     </button>
                     <div class="v2-room-topright">
-                        <button class="v2-room-code-mini" v-if="!isHost && roomCode" @click="copyRoomCode" title="Copier le code">
+                        <button class="v2-room-code-mini" v-if="!isHost && roomCode" @click="copyRoomCode" title="Copier le lien du salon">
                             {{ roomCode }}
                         </button>
                         <button class="v2-room-close" v-if="isHost" @click="askCloseRoom" title="Fermer le salon" aria-label="Fermer le salon">
@@ -393,9 +409,9 @@
                     <section class="v2-room-main">
 
                         <div class="v2-room-code-block" v-if="isHost && roomCode">
-                            <span class="v2-room-code-label">Code du salon</span>
+                            <span class="v2-room-code-label">Copie le lien du salon</span>
                             <div class="v2-room-code-row">
-                                <button class="v2-room-code" @click="copyRoomCode" title="Copier le code">
+                                <button class="v2-room-code" @click="copyRoomCode" title="Copier le lien du salon">
                                     <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
                                 </button>
 
@@ -407,7 +423,7 @@
                                     <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
                             </div>
-                            <span class="v2-room-copied" :class="{ show: codeCopied }">copié !</span>
+                            <span class="v2-room-copied" :class="{ show: codeCopied }">lien copié !</span>
                         </div>
 
                         <!-- Équipes (mode Rivalité) -->
@@ -716,10 +732,11 @@
 
                             <!-- BombAnime -->
                             <template v-else>
-                                <!-- Vingt et une séries : le tiroir habituel déborderait de la
-                                     colonne, qui rogne ce qui dépasse. Un panneau posé à côté,
-                                     ouvert au clic, s'en affranchit. -->
-                                <button class="v2-set v2-set-porte" @click="ouvrirSeriesBomb">
+                                <!-- Vingt et une séries. Le panneau s ouvre DANS la colonne,
+                                     par-dessus les lignes suivantes : il ne les pousse pas vers
+                                     le bas, sinon on choisit sa série en regardant le reste de
+                                     l écran bouger, et tout remonte quand on referme. -->
+                                <button class="v2-set v2-set-porte" :class="{ ouvert: seriesBombOuvertes }" @click="ouvrirSeriesBomb">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Série</span>
                                     <span class="v2-set-value">{{ nomSerie(bombanime.serie) }}</span>
@@ -2809,18 +2826,24 @@
         <!-- 🆕 v2 — Détail de la question (hôte) -->
         <!-- Choix de la série BombAnime : posé à la racine, sinon la colonne
              des réglages le rognerait. Sa position est calculée à l'ouverture. -->
-        <div class="v2-bserie-veil" v-if="seriesBombOuvertes" @click.self="seriesBombOuvertes = false">
-            <div class="v2-bserie" :style="{ top: seriesBombPos.top + 'px', left: seriesBombPos.left + 'px' }">
-                <div class="v2-bserie-head">
-                    <span>Série</span>
-                    <button @click="seriesBombOuvertes = false">Fermer</button>
-                </div>
-                <div class="v2-bserie-grille">
-                    <button v-for="s in bombanimeSeries" :key="s.id"
-                            class="v2-bserie-opt" :class="{ on: bombanime.serie === s.id }"
-                            @click="choisirSerieBomb(s.id)">{{ s.nom }}</button>
-                </div>
-            </div>
+
+        <!-- ── Le choix de la série de BombAnime ──
+             ⚠️ À LA RACINE, et en position fixe. Pose dans la colonne des
+             réglages, il agrandissait sa zone défilante — un élément en absolu
+             compte dans le débordement de son ancêtre — et une seconde barre
+             apparaissait. Il reste ancré sous la ligne qui l ouvre, mais il
+             n appartient plus à ce qui défile. -->
+        <div class="v2-bserie-sortie" v-if="seriesBombOuvertes"
+             @click="seriesBombOuvertes = false"></div>
+        <div class="v2-bserie" v-if="seriesBombOuvertes"
+             :style="{ top: seriesBombPos.top + 'px', left: seriesBombPos.left + 'px',
+                       width: seriesBombPos.width + 'px' }">
+            <button v-for="s in bombanimeSeries" :key="s.id"
+                    class="v2-bserie-opt" :class="{ on: bombanime.serie === s.id }"
+                    @click="choisirSerieBomb(s.id)">
+                <span class="nom">{{ s.nom }}</span>
+                <span class="n">{{ volumeSerie(s.id) }}</span>
+            </button>
         </div>
 
         <!-- Détail d'un camp, ouvert depuis le classement final -->
