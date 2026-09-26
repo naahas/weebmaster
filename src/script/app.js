@@ -3848,6 +3848,23 @@ createApp({
         ouvrirCamp(team) { this.campDetail = team; },
 
         // Le nom lisible d'une série BombAnime, à partir de son identifiant
+        // Ce que porte la ligne sous un joueur : sa saisie en cours si c est
+        // son tour et qu il tape, sinon sa derniere reponse.
+        //
+        // ⚠️ « currentTyping » vaut null quand personne ne tape, mais UNDEFINED
+        // juste apres un rafraichissement de playersData venu du serveur — qui
+        // ne porte pas ce champ. Le gabarit testait « !== null » : undefined
+        // passait le test, on affichait undefined, et la reponse disparaissait
+        // le temps d un tour avant de revenir. C est ce clignotement qu on
+        // voyait sur le bot, qui repond trop vite pour qu on le manque.
+        reponseJoueur(p) {
+            if (!p) return '';
+            const tape = p.currentTyping;
+            if (p.playerId === this.bombanime.currentPlayerId
+                && tape !== null && tape !== undefined) return tape;
+            return p.lastAnswer || '';
+        },
+
         nomSerie(id) {
             const s = this.bombanimeSeries.find(x => x.id === id);
             return s ? s.nom : id;
@@ -4796,6 +4813,8 @@ createApp({
             });
             sessionStorage.removeItem('bombanimeSuggestionUsed');
             sessionStorage.removeItem('bombanimeInProgress');
+            // Un son de tour en attente ne doit pas sonner apres la partie.
+            clearTimeout(this._bombTourSon);
 
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -6169,9 +6188,23 @@ createApp({
                         this.bombanime.showSuggestionModal = false;
                     }
                     
-                    // 🔊 Son "c'est ton tour" uniquement pour le joueur POV
+                    // 🔊 Son « c est ton tour », pour le joueur POV seulement.
+                    //
+                    // ⚠️ Il ATTEND que la bombe soit arrivee. La meche met 250 ms
+                    // a pivoter vers le joueur suivant, et le serveur annonce le
+                    // tour 150 ms apres la reponse : le son tombait donc cent
+                    // millisecondes AVANT que la bombe ne designe qui que ce soit.
+                    // Sur telephone, ou le rendu traine derriere l audio, l ecart
+                    // s entendait franchement — on savait que c etait son tour
+                    // avant de le voir.
+                    //
+                    // Le minuteur est nomme et annule a chaque tour : une suite
+                    // rapide ne doit pas empiler deux sons l un sur l autre.
+                    clearTimeout(this._bombTourSon);
                     if (this.bombanime.isMyTurn) {
-                        this.playSound(this.sounds.bombanimePlayerTurn);
+                        this._bombTourSon = setTimeout(() => {
+                            if (this.bombanime.isMyTurn) this.playSound(this.sounds.bombanimePlayerTurn);
+                        }, 110);
                     }
                     
                     // Focus sur l'input si c'est mon tour
@@ -6226,10 +6259,15 @@ createApp({
                 }
                 
                 // Animation de succès visible par TOUS sur le joueur qui vient de répondre
+                // ⚠️ 750 ms et non 500 : la classe « success » porte AUSSI les
+                // particules, et la derniere part avec 100 ms de retard pour
+                // 500 ms de duree — elle se termine donc a 600. A 500 on la
+                // coupait avant sa fin, et toutes perdaient leur trainee. On
+                // ne voyait jamais la gerbe, seulement son debut.
                 this.bombanime.successPlayerId = data.playerId;
                 setTimeout(() => {
                     this.bombanime.successPlayerId = null;
-                }, 500);
+                }, 750);
                 
                 this.bombanime.playersData = [...data.playersData];
                 this.bombanime.lastValidName = data.name;

@@ -1353,6 +1353,54 @@
 }
 
 /* Mobile: mèche plus courte */
+/* ➤ ENVOYER, AU DOIGT
+   ═══════════════════
+   Le bouton ne parait que sur telephone : au clavier physique, Entree est
+   immediate et il n encombrerait que la ligne. Pose HORS DU FLUX, a droite du
+   champ — dans le flux il retrecirait la saisie, qui est deja courte.
+
+   ⚠️ « pointer-events » reste actif meme desactive pour que le titre
+   s affiche ; c est l attribut disabled qui empeche le clic. */
+.bomb-envoi { display: none; }
+
+@media (max-width: 768px) {
+    .bomb-envoi {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        right: 0;
+        top: 0.1rem;
+        width: 2.3rem;
+        height: 2.3rem;
+        padding: 0;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        border-radius: 50%;
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--neon-primary, #ffd700);
+        cursor: pointer;
+        transition: opacity 0.2s ease, transform 0.15s ease, background 0.2s ease;
+    }
+
+    .bomb-envoi svg { width: 1.1rem; height: 1.1rem; }
+
+    .bomb-envoi:active:not(:disabled) {
+        transform: scale(0.9);
+        background: rgba(255, 215, 0, 0.2);
+    }
+
+    /* Desactive, il s efface au lieu de disparaitre : la ligne garde sa forme
+       et le champ ne saute pas d un tour a l autre. */
+    .bomb-envoi:disabled {
+        opacity: 0.25;
+        border-color: rgba(255, 255, 255, 0.12);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Le champ recule pour ne pas passer sous le bouton. */
+    .game-input { padding-right: 2.9rem; }
+}
+
 @media (max-width: 768px) {
 
     /* 🧨 Le viewBox reste en 52 × 12 : reduire la largeur met la courbe a

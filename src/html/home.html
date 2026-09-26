@@ -1857,12 +1857,8 @@
                                 <div class="player-answer" 
                                      :class="{ 'typing': player.playerId === bombanime.currentPlayerId }"
                                      :style="{ fontSize: getAnswerFontSize() }"
-                                     v-if="player.playerId === bombanime.currentPlayerId 
-                                           ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
-                                           : player.lastAnswer">
-                                    {{ player.playerId === bombanime.currentPlayerId 
-                                       ? (player.currentTyping !== null ? player.currentTyping : player.lastAnswer)
-                                       : player.lastAnswer }}
+                                     v-if="reponseJoueur(player)">
+                                    {{ reponseJoueur(player) }}
                                 </div>
                             </div>
                             
@@ -1918,6 +1914,20 @@
                                 :disabled="!bombanime.isMyTurn || bombanime.introPhase"
                             >
                             <div class="input-underline" :class="{ 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"></div>
+
+                            <!-- ⚠️ Au doigt, la touche Entree du clavier mobile est loin et mal
+                                 identifiee : elle porte une fleche coudee que beaucoup ne lisent
+                                 pas comme « valider ». Un bouton colle au champ evite de la
+                                 chercher. Il n existe que sur telephone — au clavier physique,
+                                 Entree est immediate et le bouton ne serait qu un encombrement. -->
+                            <button class="bomb-envoi" @click="submitBombanimeName"
+                                    :disabled="!bombanime.isMyTurn || bombanime.introPhase"
+                                    title="Envoyer" aria-label="Envoyer la reponse">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
+                                </svg>
+                            </button>
                             <div class="feedback-message" :class="{ show: bombanime.lastError, error: bombanime.lastError }">
                                 {{ getBombanimeErrorMessage() }}
                             </div>

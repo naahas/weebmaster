@@ -5347,7 +5347,7 @@ function getNextBombanimePlayer(gameState) {
 // bonne réponse paraissait sèche, alors qu'elle est la même que celle d'un
 // joueur : elle démarrait avant que l'état actif ait eu le temps d'exister à
 // l'écran. Le raccourcir le referait.
-const BOT_DELAI_MS = 350;
+const BOT_DELAI_MS = 400;
 
 // Un nom encore libre dans la série en cours.
 function nomLibrePourLeBot(gameState) {
@@ -5683,7 +5683,14 @@ function submitBombanimeName(gameState, socketId, name) {
         if (nextPlayerId) {
             startBombanimeTurn(gameState, nextPlayerId);
         }
-    }, 30); // 30ms - quasi-instantané
+        // ⚠️ 150 ms et non 30. A 30 le tour basculait AVANT que l animation de
+        // bonne reponse ait commence a se voir : 400 ms de secousse et de
+        // particules, recouvertes aussitot par le changement de joueur actif.
+        // Sur telephone, ou le rendu est plus lent, les sons s empilaient en
+        // plus les uns sur les autres. 150 ms suffisent a lire le coup sans
+        // casser le rythme — c est le reglage a toucher si la partie parait
+        // molle ou au contraire precipitee.
+    }, 150);
     
     return { success: true };
 }
