@@ -1498,6 +1498,12 @@ app.get('/prototypes/rush-multi', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-rush-multi.html');
 });
 
+// Le choix de la serie de BombAnime : cinq facons de presenter dix-sept
+// entrees dans une fenetre etroite, sur le vrai panneau de reglages.
+app.get('/prototypes/serie', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-serie.html');
+});
+
 app.get('/prototypes/ascension-grimpeurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ascension-grimpeurs.html');
 });

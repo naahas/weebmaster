@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — le choix de la série</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Cinq façons de choisir parmi dix-sept séries.
+
+   Le défaut à corriger : deux colonnes dans une fenêtre de 290 px
+   laissent 135 px par case, et « Shingeki no Kyojin » n'y tient
+   qu'en rapetissant. Une colonne rend les 290 px à chaque nom.
+
+   Le vrai arbitrage n'est donc pas la taille du texte, c'est la
+   HAUTEUR : dix-sept lignes lisibles font plus qu'un écran de
+   téléphone. Chaque piste s'en arrange autrement — on fait défiler,
+   on filtre, on pousse le reste, ou on fait glisser.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #FFD700;
+    --or-doux: #f0c040;
+    --panneau: #15171d;
+    --bord: rgba(255, 255, 255, 0.08);
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #1a1710, #08080b 68%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+
+.sous {
+    margin: 0 0 1.4rem;
+    max-width: 54rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.mode { display: flex; gap: 0.5rem; margin-bottom: 2.4rem; flex-wrap: wrap; }
+.mode button {
+    font: inherit; font-size: .78rem; color: #fff;
+    background: rgba(255,255,255,.07);
+    border: .06rem solid rgba(255,255,255,.12);
+    border-radius: .4rem; padding: .35rem .8rem; cursor: pointer;
+}
+.mode button.on { background: rgba(255,215,0,.18); border-color: rgba(255,215,0,.45); }
+
+/* ── La scène : le vrai panneau de réglages, à côté ───────────── */
+.pistes { display: flex; flex-direction: column; gap: 3.4rem; }
+
+.piste > h2 {
+    margin: 0 0 0.25rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.35rem;
+    letter-spacing: 0.05em;
+    color: var(--or);
+}
+.piste > .note {
+    margin: 0 0 1.2rem;
+    max-width: 46rem;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.4);
+}
+.piste > .note b { color: rgba(255, 255, 255, 0.68); font-weight: 600; }
+
+.scene {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    padding: 1.4rem;
+    border: 1px dashed rgba(255, 255, 255, 0.07);
+    border-radius: 0.8rem;
+    background: rgba(0, 0, 0, 0.25);
+    min-height: 27rem;
+}
+body.tel .scene { flex-direction: column; align-items: stretch; max-width: 23rem; }
+
+/* ── Le panneau de réglages, repris du salon ──────────────────── */
+.reglages {
+    width: 19rem;
+    flex: none;
+    padding: 1rem;
+    border: 1px solid var(--bord);
+    border-radius: 0.8rem;
+    background: var(--panneau);
+}
+body.tel .reglages { width: 100%; }
+
+.reglages > .titre {
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 0.9rem;
+}
+
+.ligne {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 0.55rem;
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 0.55rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.ligne:hover { background: rgba(255, 255, 255, 0.055); }
+.ligne .ic { font-size: 0.9rem; opacity: 0.55; }
+.ligne .lab {
+    flex: 1;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+}
+.ligne .val { font-weight: 700; color: var(--or); font-size: 0.92rem; }
+.ligne .fl { color: rgba(255, 255, 255, 0.25); font-size: 0.8rem; }
+
+/* ════════════════════════════════════════════════════════════════
+   A — UNE COLONNE
+   La demande, au pied de la lettre. 290 px pour un seul nom, donc
+   du 1,15 rem en Bebas et plus rien qui rapetisse.
+   ════════════════════════════════════════════════════════════════ */
+.boite {
+    width: 20rem;
+    flex: none;
+    border: 1px solid var(--bord);
+    border-radius: 0.8rem;
+    background: #171921;
+    box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+body.tel .boite { width: 100%; }
+
+.boite > .tete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 0.95rem;
+    border-bottom: 1px solid var(--bord);
+}
+.boite > .tete span {
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+}
+.boite > .tete button {
+    font: inherit; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--bord);
+    border-radius: 0.35rem; padding: 0.25rem 0.55rem; cursor: pointer;
+}
+
+/* ⚠️ La hauteur est FIXE et vaut un nombre de lignes ENTIER plus une
+   moitié : la ligne coupée en bas est ce qui dit qu il y en a d autres.
+   Arrêtée pile sur une ligne, la liste paraît finie. */
+.colonne { max-height: 19.5rem; overflow-y: auto; padding: 0.4rem; }
+
+.opt {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.62rem 0.8rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.82);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.035em;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.opt:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+.opt.on { background: rgba(255, 215, 0, 0.14); color: var(--or); }
+
+/* Le nombre de personnages. Ce n est pas de la décoration : c est ce
+   qui sépare « Fullmetal Alchemist, 96 noms » d un « Pokémon, 1248 »
+   quand on choisit un filtre pour une soirée. */
+.opt .n {
+    margin-left: auto;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.2);
+}
+.opt.on .n { color: rgba(255, 215, 0, 0.5); }
+
+/* ════════════════════════════════════════════════════════════════
+   B — UNE COLONNE + RECHERCHE
+   ════════════════════════════════════════════════════════════════ */
+.chercher {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 0;
+    border-bottom: 1px solid var(--bord);
+    background: rgba(255, 255, 255, 0.02);
+    color: #fff;
+    font: inherit;
+    font-size: 0.85rem;
+    outline: none;
+}
+.chercher::placeholder { color: rgba(255, 255, 255, 0.25); }
+.chercher:focus { background: rgba(255, 215, 0, 0.05); }
+.vide {
+    padding: 1.4rem 0.9rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.28);
+    text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   C — TOUT À L ÉCRAN
+   Dix-sept lignes serrées tiennent d un coup, sans défilement. On
+   perd le confort de la ligne haute, on gagne de ne rien cacher.
+   ════════════════════════════════════════════════════════════════ */
+.dense { padding: 0.35rem; }
+.dense .opt { padding: 0.4rem 0.8rem; font-size: 1.02rem; }
+
+/* ════════════════════════════════════════════════════════════════
+   D — LE RÉGLAGE S OUVRE SUR PLACE
+   Pas de fenêtre du tout : la ligne SÉRIE se déplie dans la colonne
+   et pousse le reste. Rien ne recouvre rien, et sur téléphone c est
+   la seule piste qui ne demande pas de viser une fenêtre flottante.
+   ════════════════════════════════════════════════════════════════ */
+.deplie {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.deplie.ouvert { max-height: 24rem; overflow-y: auto; }
+.deplie .opt { font-size: 1.08rem; padding: 0.55rem 0.9rem; }
+.ligne.actif { background: rgba(255, 215, 0, 0.08); }
+.ligne.actif .fl { transform: rotate(90deg); color: var(--or); }
+.ligne .fl { transition: transform 0.28s ease; display: inline-block; }
+
+/* ════════════════════════════════════════════════════════════════
+   E — LA BANDE QUI GLISSE
+   Une seule série lisible à la fois, énorme, les voisines qui
+   dépassent. Pensé pour le pouce : on fait glisser sans viser.
+   ⚠️ En contrepartie, atteindre la dix-septième demande seize
+   glissements — les flèches et les points sont là pour ça.
+   ════════════════════════════════════════════════════════════════ */
+.bande-hote { width: 20rem; flex: none; }
+body.tel .bande-hote { width: 100%; }
+
+.bande {
+    display: flex;
+    gap: 0.7rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0.2rem 0.2rem 0.9rem;
+    scrollbar-width: none;
+}
+.bande::-webkit-scrollbar { display: none; }
+
+.carte {
+    scroll-snap-align: center;
+    flex: 0 0 12.5rem;
+    height: 7.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border: 1px solid var(--bord);
+    border-radius: 0.7rem;
+    background: #171921;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+    text-align: center;
+    padding: 0 0.7rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.carte small {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.2);
+}
+.carte.on {
+    color: var(--or);
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.07);
+    transform: scale(1.04);
+}
+.carte.on small { color: rgba(255, 215, 0, 0.5); }
+
+.gouverne { display: flex; align-items: center; justify-content: center; gap: 0.8rem; }
+.gouverne button {
+    font: inherit; color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--bord);
+    border-radius: 50%; width: 1.9rem; height: 1.9rem; cursor: pointer;
+}
+.points { display: flex; gap: 0.28rem; }
+.points i {
+    width: 0.3rem; height: 0.3rem; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: background 0.2s ease, width 0.2s ease;
+}
+.points i.on { background: var(--or); width: 0.75rem; border-radius: 0.2rem; }
+
+/* ── Le choix courant, rappelé sous chaque piste ──────────────── */
+.echo {
+    margin-top: 0.9rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+.echo b { color: var(--or); font-weight: 600; }
+
+@media (max-width: 760px) {
+    .scene { flex-direction: column; align-items: stretch; }
+    .reglages, .boite, .bande-hote { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<h1>BombAnime — le choix de la série</h1>
+<p class="sous">
+    Dix-sept séries à présenter dans une fenêtre de 290&nbsp;px. À deux colonnes
+    il reste 135&nbsp;px par case, et « Shingeki no Kyojin » n'y tient qu'en
+    rapetissant : c'est le défaut qu'on veut corriger. Passer à une colonne rend
+    toute la largeur à chaque nom — mais dix-sept lignes lisibles dépassent un
+    écran de téléphone, et c'est là que les pistes divergent. Le nombre à droite
+    est le vrai volume de la banque : il sépare Fullmetal Alchemist (96 noms)
+    de Pokémon (1&nbsp;248), ce qui change une soirée.
+</p>
+
+<div class="mode">
+    <button id="m-ord" class="on">Ordinateur</button>
+    <button id="m-tel">Téléphone</button>
+</div>
+
+<div class="pistes" id="pistes"></div>
+
+<script>
+/* Les dix-sept séries proposées, avec le volume réel de leur banque.
+   Les quatre suspendues (Studios, Chainsaw Man, Death Note, Gintama) ne
+   sont pas là : le prototype doit montrer ce que l'hôte voit vraiment. */
+const SERIES = [
+    { nom: 'Protagonistes',      n: 490 },
+    { nom: 'Manganime',          n: 1177 },
+    { nom: 'Naruto',             n: 466 },
+    { nom: 'One Piece',          n: 903 },
+    { nom: 'Dragon Ball',        n: 368 },
+    { nom: 'Bleach',             n: 451 },
+    { nom: 'Hunter x Hunter',    n: 348 },
+    { nom: 'Shingeki no Kyojin', n: 222 },
+    { nom: 'Demon Slayer',       n: 152 },
+    { nom: 'Jujutsu Kaisen',     n: 186 },
+    { nom: 'Fairy Tail',         n: 370 },
+    { nom: 'My Hero Academia',   n: 711 },
+    { nom: 'Black Clover',       n: 245 },
+    { nom: 'JoJo',               n: 414 },
+    { nom: 'Fullmetal Alchemist', n: 96 },
+    { nom: 'Pokémon',            n: 1248 },
+    { nom: 'Reborn',             n: 225 },
+];
+
+const PISTES = [
+    {
+        id: 'a',
+        titre: 'A · Une colonne',
+        note: 'La demande au pied de la lettre. Chaque nom reçoit les 290&nbsp;px, '
+            + 'donc plus rien ne rapetisse. <b>La liste est coupée en plein milieu '
+            + 'd’une ligne</b>, et c’est voulu : arrêtée pile sur une ligne, '
+            + 'elle paraîtrait finie et on ne ferait jamais défiler.',
+    },
+    {
+        id: 'b',
+        titre: 'B · Une colonne, avec recherche',
+        note: 'La même, plus un champ. Dix-sept entrées, c’est peu pour chercher '
+            + 'et beaucoup pour parcourir : deux lettres suffisent à tomber dessus. '
+            + '<b>Pour l’hôte qui sait déjà ce qu’il veut</b> — et ils savent, '
+            + 'ils relancent la même série toute la soirée. Le champ est inutile au '
+            + 'doigt, en revanche : il ouvre le clavier par-dessus la liste.',
+    },
+    {
+        id: 'c',
+        titre: 'C · Tout à l’écran',
+        note: 'Une colonne, lignes serrées : les dix-sept tiennent d’un bloc, '
+            + '<b>sans un seul défilement</b>. On perd un peu de confort sur chaque '
+            + 'ligne, on gagne de ne rien cacher — et de voir du même coup tout ce '
+            + 'que le mode propose, ce qu’aucune liste qui défile ne montre.',
+    },
+    {
+        id: 'd',
+        titre: 'D · Le réglage s’ouvre sur place',
+        note: 'Pas de fenêtre. La ligne SÉRIE se déplie dans la colonne et pousse '
+            + 'Vies, Temps et Bot vers le bas. <b>Rien ne recouvre rien</b>, et sur '
+            + 'téléphone c’est la seule piste qui ne demande pas de viser une '
+            + 'fenêtre flottante puis de la refermer.',
+    },
+    {
+        id: 'e',
+        titre: 'E · La bande qui glisse',
+        note: 'Une série lisible à la fois, en très gros, les voisines qui dépassent. '
+            + 'Fait pour le pouce : on glisse sans viser. <b>En contrepartie, '
+            + 'atteindre la dix-septième demande seize glissements</b> — d’où les '
+            + 'flèches et les points. C’est la piste la plus spectaculaire et la '
+            + 'plus lente.',
+    },
+];
+
+const choix = {};            // piste -> index de la série retenue
+const hote = document.getElementById('pistes');
+
+const echapper = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+// Le panneau de réglages, identique partout : c'est le décor, pas la piste.
+function reglages(p, ouvrable) {
+    const s = SERIES[choix[p]];
+    return '<div class="reglages">'
+        + '<div class="titre">Réglages</div>'
+        + '<div class="ligne' + (ouvrable ? ' j-ouvrir' : '') + '" data-p="' + p + '">'
+        +   '<span class="ic">🎬</span><span class="lab">Série</span>'
+        +   '<span class="val j-val">' + echapper(s.nom) + '</span>'
+        +   '<span class="fl">›</span></div>'
+        + (ouvrable ? '<div class="deplie j-deplie" data-p="' + p + '"></div>' : '')
+        + '<div class="ligne"><span class="ic">🤍</span><span class="lab">Vies</span><span class="val">2</span></div>'
+        + '<div class="ligne"><span class="ic">🕐</span><span class="lab">Temps</span><span class="val">8s</span></div>'
+        + '<div class="ligne"><span class="ic">💼</span><span class="lab">Bot</span><span class="val">Non</span></div>'
+        + '</div>';
+}
+
+function options(p, dense, filtre) {
+    const f = (filtre || '').trim().toLowerCase();
+    const vus = SERIES.map((s, i) => ({ s, i }))
+        .filter(o => !f || o.s.nom.toLowerCase().includes(f));
+    if (!vus.length) return '<div class="vide">Aucune série ne porte ce nom.</div>';
+    return vus.map(o => '<button class="opt' + (o.i === choix[p] ? ' on' : '') + '"'
+        + ' data-p="' + p + '" data-i="' + o.i + '">'
+        + echapper(o.s.nom) + '<span class="n">' + o.s.n + '</span></button>').join('');
+}
+
+function bande(p) {
+    return '<div class="bande-hote">'
+        + '<div class="bande j-bande" data-p="' + p + '">'
+        + SERIES.map((s, i) => '<button class="carte' + (i === choix[p] ? ' on' : '') + '"'
+            + ' data-p="' + p + '" data-i="' + i + '">' + echapper(s.nom)
+            + '<small>' + s.n + ' noms</small></button>').join('')
+        + '</div>'
+        + '<div class="gouverne">'
+        +   '<button data-p="' + p + '" data-pas="-1">‹</button>'
+        +   '<div class="points">' + SERIES.map((s, i) =>
+                '<i class="' + (i === choix[p] ? 'on' : '') + '"></i>').join('') + '</div>'
+        +   '<button data-p="' + p + '" data-pas="1">›</button>'
+        + '</div></div>';
+}
+
+function scene(p) {
+    if (p === 'a') return reglages(p, false)
+        + '<div class="boite"><div class="tete"><span>Série</span><button>Fermer</button></div>'
+        + '<div class="colonne">' + options(p) + '</div></div>';
+
+    if (p === 'b') return reglages(p, false)
+        + '<div class="boite"><div class="tete"><span>Série</span><button>Fermer</button></div>'
+        + '<input class="chercher j-chercher" data-p="' + p + '" placeholder="Chercher une série…">'
+        + '<div class="colonne j-liste">' + options(p, false, choix.bFiltre) + '</div></div>';
+
+    if (p === 'c') return reglages(p, false)
+        + '<div class="boite"><div class="tete"><span>Série</span><button>Fermer</button></div>'
+        + '<div class="dense">' + options(p, true) + '</div></div>';
+
+    if (p === 'd') return reglages(p, true);
+
+    return reglages(p, false) + bande(p);
+}
+
+function peindre() {
+    hote.innerHTML = PISTES.map(pi => {
+        const s = SERIES[choix[pi.id]];
+        return '<section class="piste">'
+            + '<h2>' + pi.titre + '</h2>'
+            + '<p class="note">' + pi.note + '</p>'
+            + '<div class="scene" data-p="' + pi.id + '">' + scene(pi.id) + '</div>'
+            + '<div class="echo">Retenu : <b>' + echapper(s.nom) + '</b> · '
+            + s.n + ' personnages dans la banque</div>'
+            + '</section>';
+    }).join('');
+
+    // La piste D garde son dépliant ouvert d'un rendu à l'autre : le refermer
+    // à chaque clic rendrait impossible de comparer deux séries à la suite.
+    if (ouvertD) {
+        const d = hote.querySelector('.j-deplie[data-p="d"]');
+        const l = hote.querySelector('.ligne[data-p="d"]');
+        if (d) { d.innerHTML = options('d'); d.classList.add('ouvert'); }
+        if (l) l.classList.add('actif');
+    }
+    const b = hote.querySelector('.j-chercher');
+    if (b && choix.bFiltre) { b.value = choix.bFiltre; }
+    centrer();
+}
+
+// La bande est centrée sur la carte retenue, sans animation au premier rendu.
+let premierRendu = true;
+function centrer() {
+    const bande = hote.querySelector('.j-bande');
+    if (!bande) return;
+    const carte = bande.children[choix.e];
+    if (!carte) return;
+    const cible = carte.offsetLeft - (bande.clientWidth - carte.offsetWidth) / 2;
+    bande.scrollTo({ left: cible, behavior: premierRendu ? 'auto' : 'smooth' });
+    premierRendu = false;
+}
+
+let ouvertD = false;
+
+PISTES.forEach(p => { choix[p.id] = 13; });   // JoJo, comme sur la capture
+peindre();
+
+hote.addEventListener('click', e => {
+    const opt = e.target.closest('.opt, .carte');
+    if (opt) {
+        choix[opt.dataset.p] = parseInt(opt.dataset.i, 10);
+        peindre();
+        return;
+    }
+    const fleche = e.target.closest('.gouverne button');
+    if (fleche) {
+        const p = fleche.dataset.p;
+        const n = choix[p] + parseInt(fleche.dataset.pas, 10);
+        choix[p] = Math.max(0, Math.min(SERIES.length - 1, n));
+        peindre();
+        return;
+    }
+    const ligne = e.target.closest('.j-ouvrir');
+    if (ligne) {
+        ouvertD = !ouvertD;
+        peindre();
+    }
+});
+
+hote.addEventListener('input', e => {
+    const champ = e.target.closest('.j-chercher');
+    if (!champ) return;
+    choix.bFiltre = champ.value;
+    const liste = hote.querySelector('.j-liste');
+    if (liste) liste.innerHTML = options('b', false, champ.value);
+});
+
+document.getElementById('m-ord').onclick = function () {
+    document.body.classList.remove('tel');
+    this.classList.add('on');
+    document.getElementById('m-tel').classList.remove('on');
+    premierRendu = true; centrer();
+};
+document.getElementById('m-tel').onclick = function () {
+    document.body.classList.add('tel');
+    this.classList.add('on');
+    document.getElementById('m-ord').classList.remove('on');
+    premierRendu = true; centrer();
+};
+</script>
+</body>
+</html>
