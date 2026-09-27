@@ -209,8 +209,13 @@ if (ETAGE_FORCE) {
 // Reste le nom qui n'existe nulle part : Beerus, Ryûk. Pour ceux-là on écrit
 // { "mot": "RYUK", "anime": "Death Note" } au lieu du mot seul.
 //
-// Et l'indice est retiré quand il EST la réponse : annoncer « Naruto » sous
-// les lettres de NARUTO donnerait l'étage.
+// ⚠️ Et le mot est ECARTE quand son anime EST la réponse. Annoncer « Naruto »
+// sous les lettres de NARUTO donnerait l'étage — mais se contenter de retirer
+// l'indice ne suffisait pas : l'ABSENCE d'indice en est une. Un joueur qui
+// voit la ligne vide sait que le personnage porte le nom de son anime, et il
+// n'y en avait que deux dans tout le sac. On ne donnait pas la réponse, on
+// donnait de quoi la trouver en deux essais. Un mot qui ne peut pas porter
+// d'indice n'a donc rien à faire ici.
 const WORDLE_SAC = (() => {
     const parNom = {};
     for (const c of ASCENSION_DATA.characters || []) {
@@ -219,6 +224,7 @@ const WORDLE_SAC = (() => {
         for (const a of c.aliases || []) if (a) parNom[a.toUpperCase()] = c.anime;
     }
     const sans = [];
+    const sansIndice = [];
     const mots = (ASCENSION_DATA.wordle_words || []).map(e => {
         const objet = !!e && typeof e === 'object';
         const brut = objet ? e.mot : e;
@@ -226,19 +232,20 @@ const WORDLE_SAC = (() => {
         const MOT = String(brut).toUpperCase();
         const anime = (objet && e.anime) || parNom[MOT] || null;
         if (!anime) sans.push(MOT);
-        return {
-            raw: MOT,
-            groups: [MOT.length],
-            anime: anime && anime.toUpperCase() !== MOT ? anime : null,
-        };
+        // Son anime porte son nom : on l'écarte plutôt que de le servir muet.
+        if (anime && anime.toUpperCase() === MOT) { sansIndice.push(MOT); return null; }
+        return { raw: MOT, groups: [MOT.length], anime };
     }).filter(Boolean);
 
     if (sans.length) {
         console.warn('⚠️ Wordle : ' + sans.length + ' mot(s) sans indice d\'anime — introuvables dans '
             + '« characters », alias compris. Écrire { "mot": "…", "anime": "…" } : ' + sans.join(', '));
     }
-    console.log('🔡 Wordle : ' + mots.length + ' nom(s) de personnage, '
-        + mots.filter(m => m.anime).length + ' avec indice');
+    if (sansIndice.length) {
+        console.log('🔡 Wordle : ' + sansIndice.length + ' mot(s) écarté(s), leur anime porte leur nom — '
+            + sansIndice.join(', '));
+    }
+    console.log('🔡 Wordle : ' + mots.length + ' nom(s) de personnage, tous avec indice');
     return mots;
 })();
 
