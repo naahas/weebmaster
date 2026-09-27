@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — cinq — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « cinq » — 95 questions sur Parasite, The Promised Neverland, Assassination Classroom, Evangelion et Code Geass</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Shinichi et Migi","d":"veryeasy","t":"Quelle partie du corps de Shinichi est infestée par un parasite ?","b":4,"r":["Son œil gauche","Sa langue","Son épaule","Sa main droite","Son cœur","Sa jambe gauche"],"p":"https://parasyte.fandom.com/wiki/Shinichi_Izumi","src":"He is a high school student whose right arm was infected with a parasite named Migi.","s":"Parasite"},{"g":"Shinichi et Migi","d":"easy","t":"Quel nom Shinichi donne-t-il au parasite installé dans sa main ?","b":2,"r":["Kubi","Migi","Hidari","Yubi","Gotou","Mimi"],"p":"https://parasyte.fandom.com/wiki/Migi","src":"Migi est le nom choisi par le parasite qui a infesté la main droite de Shinichi Izumi — « Righty ».","s":"Parasite"},{"g":"Shinichi et Migi","d":"easy","t":"Qu'est-ce qui a empêché le parasite d'atteindre le cerveau de Shinichi ?","b":5,"r":["Il portait un casque de moto","Son crâne était trop épais","Un autre parasite l'occupait déjà","Il l'a écrasé avant qu'il n'entre","Les écouteurs qu'il portait en dormant bouchaient son oreille","Il dormait sur le ventre"],"p":"https://parasyte.fandom.com/wiki/Shinichi_Izumi","src":"The parasite is unable to enter Shinichi's ear due to some earbuds and instead tries to enter his nostril, causing him to sneeze and wake up.","s":"Parasite"},{"g":"Les parasites","d":"easy","t":"De quoi les parasites se nourrissent-ils ?","b":3,"r":["D'électricité","Du sang des animaux","D'êtres humains","De la peur de leurs victimes","Ils n'ont pas besoin de manger","De lumière"],"p":"https://parasyte.fandom.com/wiki/Parasites","src":"Parasites instinctively desire to consume the same species as their host.","s":"Parasite"},{"g":"Les parasites","d":"medium","t":"Par où un parasite cherche-t-il à entrer dans un corps humain ?","b":6,"r":["Par une plaie ouverte","Par les yeux","Par la nuque","Par la bouche pendant un repas","Par la plante des pieds","Par l'oreille ou le nez"],"p":"https://parasyte.fandom.com/wiki/Parasites","src":"Once it hatches, it can use its head as a drill to burrow into a human body, leaving no visible marks or blood.","s":"Parasite"},{"g":"Shinichi et Migi","d":"medium","t":"Quel objet Shinichi cesse-t-il de porter après l'arrivée de Migi ?","b":1,"r":["Ses lunettes","Sa montre","Son écharpe","Ses gants","Sa casquette","Son sac de cours"],"p":"https://parasyte.fandom.com/wiki/Shinichi_Izumi","src":"In the anime, Shinichi originally needed glasses, though after merging with Migi, he no longer needed them.","s":"Parasite"},{"g":"Shinichi et Migi","d":"medium","t":"De quoi Shinichi a-t-il une peur panique au début de l'histoire ?","b":4,"r":["Du noir","Du sang","Des chiens","Des insectes","Des hauteurs","De la foule"],"p":"https://parasyte.fandom.com/wiki/Shinichi_Izumi","src":"He is also considered a bit of a pushover and a wimp, due to his awkwardness and paralyzing fear of bugs.","s":"Parasite"},{"g":"Shinichi et Migi","d":"medium","t":"Comment Migi parle-t-il à Shinichi ?","b":2,"r":["Par télépathie","Il fait apparaître un œil et une bouche dans sa paume","Il écrit sur les vitres embuées","Il emprunte la voix de Shinichi","Il tape des messages en morse","Il fait vibrer les os du bras"],"p":"https://parasyte.fandom.com/wiki/Migi","src":"He can shapeshift into weapons, such as bladed tentacles, or create human-like eyes and a mouth to communicate.","s":"Parasite"},{"g":"Shinichi et Migi","d":"medium","t":"En quoi Migi se transforme-t-il pour combattre ?","b":5,"r":["En bouclier de métal","En nuage de gaz","En seconde paire de bras","En fouet électrique","En lames et en tentacules","En carapace"],"p":"https://parasyte.fandom.com/wiki/Migi","src":"He can shapeshift into weapons, such as bladed tentacles.","s":"Parasite"},{"g":"Les parasites","d":"hard","t":"Comment les parasites se reconnaissent-ils entre eux à distance ?","b":3,"r":["À leur odeur","À une marque sur la nuque","Aux ondes émises par leur cerveau","À la couleur de leurs yeux","Au son de leur voix","Ils ne se reconnaissent pas"],"p":"https://parasyte.fandom.com/wiki/Parasites","src":"Parasites can identify others of their kind through wavelengths emitted by their brains.","s":"Parasite"},{"g":"Les parasites","d":"hard","t":"Que révèle une radiographie sur un humain parasité ?","b":6,"r":["Deux cœurs dans sa poitrine","Des os creux","Une tache noire sur le poumon","Une colonne vertébrale doublée","Absolument rien","Une tête sans crâne"],"p":"https://parasyte.fandom.com/wiki/Parasites","src":"X-rays can reveal parasite hosts by showing heads that lack skulls.","s":"Parasite"},{"g":"Les parasites","d":"hard","t":"Que devient un parasite séparé du corps de son hôte ?","b":1,"r":["Il se ratatine et meurt en quelques minutes","Il rampe jusqu'à un nouvel hôte","Il durcit et devient une pierre","Il se divise en deux","Il reste en vie indéfiniment","Il explose"],"p":"https://parasyte.fandom.com/wiki/Parasites","src":"Once cut off or separated, a parasite will begin to weaken, shrivel, and eventually die within minutes.","s":"Parasite"},{"g":"Les ennemis","d":"medium","t":"Que cherche à obtenir la parasite qui se fait passer pour une enseignante au lycée de Shinichi ?","b":4,"r":["Un poste au gouvernement","La mort de Shinichi","Un remède contre sa faim","Un enfant, pour savoir si un parasite peut se reproduire","Le contrôle de la police","Un moyen de quitter le pays"],"p":"https://parasyte.fandom.com/wiki/Reiko_Tamura","src":"Reiko Tamura — relatives : A (Mate, Deceased), Child (Human).","s":"Parasite"},{"g":"Les ennemis","d":"hard","t":"Quel élève transféré dans la classe de Shinichi est en réalité un parasite envoyé pour l'observer ?","b":3,"r":["Takumi Sanada","Keisuke Shimamura","Hideo Shimada","Mamoru Uda","Osamu Kirino","Hideki Sawaki"],"p":"https://parasyte.fandom.com/wiki/Hideo_Shimada","src":"Hideo Shimada is a parasite with a teenager's body who decides to integrate with human society. He worked with Reiko Tamura to study Shinichi Izumi and Migi.","s":"Parasite"},{"g":"Les alliés","d":"hard","t":"Dans quelle partie du corps se loge le parasite de Mamoru Uda ?","b":2,"r":["Dans son épaule","Dans sa mâchoire","Dans son genou","Dans sa main gauche","Dans son dos","Dans son pied"],"p":"https://parasyte.fandom.com/wiki/Mamoru_Uda","src":"Mamoru Uda — species : Human (Partially Parasite). Partner : Jaw.","s":"Parasite"},{"g":"Les alliés","d":"hard","t":"Quel don Kana développe-t-elle sans le comprendre ?","b":5,"r":["Elle guérit ses blessures en dormant","Elle lit les pensées","Elle voit l'avenir en rêve","Elle parle la langue des parasites","Elle sent la présence des parasites autour d'elle","Elle échappe à leur odorat"],"p":"https://parasyte.fandom.com/wiki/Kana_Kimishima","src":"Migi warned Shinichi she was sending out a signal similar but weaker to other parasites.","s":"Parasite"},{"g":"Les ennemis","d":"veryhard","t":"Quelle fonction occupe Takeshi Hirokawa, l'humain qui protège les parasites ?","b":3,"r":["Chef de la police","Directeur du lycée","Maire de la ville","Médecin légiste","Patron d'une chaîne de télévision","Procureur"],"p":"https://parasyte.fandom.com/wiki/Takeshi_Hirokawa","src":"Occupation : Mayor of East Fukuyama City. Species : Human.","s":"Parasite"},{"g":"Les ennemis","d":"veryhard","t":"Quelle est la particularité du corps de Gotou ?","b":1,"r":["Il réunit cinq parasites en un seul","Il ne se nourrit pas d'humains","Il peut se dédoubler","Il est né d'un humain","Il ne dort jamais","Il change de visage chaque jour"],"p":"https://parasyte.fandom.com/wiki/Gotou","src":"His body is composed of five different parasites, four of which are suppressed by him to utilize their power.","s":"Parasite","sp":true},{"g":"Shinichi et Migi","d":"hard","t":"Qu'arrive-t-il à la mère de Shinichi ?","b":6,"r":["Elle s'enfuit à l'étranger","Elle est enlevée par le maire","Elle meurt dans l'incendie de la maison","Elle rejoint la police","Elle survit sans rien apprendre","Elle est tuée et un parasite prend possession de son corps"],"p":"https://parasyte.fandom.com/wiki/Nobuko_Izumi","src":"She was killed and decapitated as her headless body got taken over by a parasite that needed a female host body.","s":"Parasite","sp":true},{"g":"Shinichi et Migi","d":"veryhard","t":"Comment Shinichi finit-il par venir à bout de Gotou ?","b":4,"r":["Il le décapite d'un seul coup","Il le pousse dans un incinérateur","Il laisse l'armée l'achever","Il le frappe avec une barre couverte de déchets toxiques","Il le noie dans la rivière","Il le convainc de renoncer"],"p":"https://parasyte.fandom.com/wiki/Gotou","src":"He becomes fixated on a minor conflict far away, where police arrest an illegal trash dumper, allowing Shinichi to stab him with poison.","s":"Parasite","sp":true},{"g":"Grace Field","d":"veryeasy","t":"Que deviennent réellement les enfants « adoptés » de Grace Field ?","b":3,"r":["Ils sont vendus comme esclaves","Ils rejoignent une école militaire","Ils sont livrés aux démons pour être mangés","Ils sont envoyés dans une autre ferme","Ils travaillent à la capitale","Ils sont mis en sommeil"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Grace_Field_House","src":"En réalité, Grace Field House est une ferme d'élevage humaine. Les enfants sont nourris et instruits pour accroître leur « qualité cérébrale », puis envoyés à la mort pour être consommés par des démons.","s":"The Promised Neverland","sp":true},{"g":"Grace Field","d":"easy","t":"Comment les enfants de Grace Field appellent-ils Isabella ?","b":2,"r":["Madame","Maman","Sœur","La Directrice","Tante","Marraine"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Isabella","src":"Isabella, appelée aussi Maman, est l'antagoniste principale du premier arc du manga et la gérante du Grace Field House.","s":"The Promised Neverland"},{"g":"Grace Field","d":"easy","t":"Jusqu'à quel âge un enfant reste-t-il à Grace Field ?","b":4,"r":["8 ans","10 ans","11 ans","12 ans","14 ans","16 ans"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Grace_Field_House","src":"L'orphelinat héberge de jeunes enfants jusqu'à l'âge de 12 ans.","s":"The Promised Neverland"},{"g":"Grace Field","d":"easy","t":"Comment les enfants de Grace Field occupent-ils leurs journées ?","b":5,"r":["Ils cultivent un potager","Ils suivent des cours de musique","Ils s'entraînent au combat","Ils cousent leurs vêtements","Ils passent des examens écrits tous les jours","Ils n'ont aucune obligation"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Grace_Field_House","src":"Tests quotidiens : les enfants passent des examens cognitifs chaque jour. Leur score détermine leur « qualité ».","s":"The Promised Neverland"},{"g":"Grace Field","d":"medium","t":"Pourquoi un très bon score aux tests quotidiens est-il dangereux pour un enfant de Grace Field ?","b":2,"r":["Il devra surveiller les plus jeunes","Plus son score est élevé, plus il est livré tôt aux démons","Il est séparé des autres enfants","Il perd le droit de sortir","Il doit devenir Maman à son tour","Il est envoyé à la capitale"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Grace_Field_House","src":"Un enfant est « adopté » lorsqu'il atteint un certain âge ou un score élevé, il est alors livré aux démons.","s":"The Promised Neverland","sp":true},{"g":"Grace Field","d":"medium","t":"Que veut obtenir Sœur Krone en arrivant à Grace Field ?","b":1,"r":["Prendre la place d'Isabella comme Maman","Sauver les enfants","Retrouver son propre fils","Faire fermer la ferme","Devenir un démon","Quitter définitivement le système"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Krone","src":"C'est une excellente actrice qui complote continuellement contre Isabella afin d'obtenir son poste (Maman).","s":"The Promised Neverland"},{"g":"Grace Field","d":"medium","t":"Qui Isabella reçoit-elle comme assistante à Grace Field ?","b":4,"r":["Sœur Marla","Sœur Naila","Sœur Hedda","Sœur Krone","Sœur Delphine","Sœur Orna"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Krone","src":"Krone, aussi appelée Sœur Krone, est l'assistante de Maman (Isabella) en étant une sœur pendant un certain temps.","s":"The Promised Neverland"},{"g":"Les trois","d":"medium","t":"Quel rôle Ray joue-t-il à l'insu des autres enfants ?","b":3,"r":["Il prépare une évasion depuis toujours","Il est un démon déguisé","Il renseigne Isabella sur tout ce que font les autres","Il note tout dans un carnet caché","Il est le fils du Duc","Il ne sait rien de la vérité"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Ray","src":"Il a réussi à tromper Norman, Emma et tous les autres enfants de l'orphelinat en servant de taupe pour Isabella depuis ses 6 ans.","s":"The Promised Neverland","sp":true},{"g":"Les trois","d":"hard","t":"Quel lien de sang unit Ray et Isabella ?","b":2,"r":["Ils sont cousins","Elle est sa mère biologique","Elle est sa tante","Elle est sa demi-sœur","Aucun","Elle est sa grand-mère"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Ray","src":"On apprendra également qu'il est le fils biologique d'Isabella.","s":"The Promised Neverland","sp":true},{"g":"Les trois","d":"hard","t":"Quelle particularité Ray a-t-il gardée de sa petite enfance ?","b":1,"r":["Il se souvient de tout, même d'avant sa naissance","Il ne ressent pas la douleur","Il ne dort que deux heures par nuit","Il n'a su parler qu'à cinq ans","Il voit dans le noir","Les somnifères n'ont aucun effet sur lui"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Ray","src":"N'ayant pas souffert d'amnésie infantile, il se souviendra de toute son enfance et même de certains moments datant d'avant sa naissance.","s":"The Promised Neverland","sp":true},{"g":"L'évasion","d":"medium","t":"Où est placé le traceur qui permet de suivre chaque enfant de Grace Field ?","b":3,"r":["Sous la peau du poignet","Dans la nuque","Dans l'oreille","Sous l'omoplate","Dans une dent","Dans le tatouage du cou"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Emma","src":"On voit ensuite Emma, un morceau de tissu tenu par sa main gauche pour contrôler la perte de sang due à son oreille coupée, rejoindre les enfants évadés.","s":"The Promised Neverland","sp":true},{"g":"L'évasion","d":"hard","t":"Que fait Emma pour se débarrasser de son traceur ?","b":5,"r":["Elle le brûle avec une allumette","Elle demande à Ray de l'extraire","Elle le désactive avec un aimant","Elle l'écrase contre un mur","Elle se coupe l'oreille","Elle avale un produit chimique"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Emma","src":"Emma, un morceau de tissu tenu par sa main gauche pour contrôler la perte de sang due à son oreille coupée.","s":"The Promised Neverland","sp":true},{"g":"L'évasion","d":"hard","t":"Comment Ray met-il le feu le soir de l'évasion ?","b":2,"r":["Il renverse une lampe à huile","Il s'asperge de kérosène et s'immole","Il provoque un court-circuit","Il allume les rideaux du dortoir","Il fait exploser la chaudière","Il utilise une loupe et le soleil"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Ray","src":"Elle entend le cri déchirant d'Emma, appelant Ray, en proie aux flammes (il s'est immolé de kérosène).","s":"The Promised Neverland","sp":true},{"g":"Grace Field","d":"hard","t":"Quel nom porte la peluche que Norman et Emma veulent rendre à Conny ?","b":6,"r":["Mister Hoppy","Bonbon","Little Mary","Sir Wooly","Peluchon","Little Bernie"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Conny","src":"Elle avait un lapin en peluche appelé Little Bernie qu'elle aimait beaucoup.","s":"The Promised Neverland"},{"g":"Les démons","d":"medium","t":"Qu'arrive-t-il à un démon qui cesse de manger de la chair humaine ?","b":3,"r":["Il meurt en quelques jours","Il devient muet","Il régresse jusqu'à un stade primitif","Il rétrécit","Il devient immortel","Absolument rien"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/D%C3%A9mons","src":"Pour conserver leur aspect humanoïde et leur intelligence. S'ils ne mangent pas de chair humaine, ils « régressent » jusqu'au stade primitif.","s":"The Promised Neverland"},{"g":"Le dehors","d":"hard","t":"Pourquoi Mujika et Sonju refusent-ils de manger les enfants d'élevage ?","b":2,"r":["Ils n'en ont plus besoin","Leur religion le leur interdit","Ils y sont allergiques","Ils veulent les échanger contre des armes","La reine le leur a défendu","Ils préfèrent la viande d'animaux"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Musica","src":"Ils abordent tous deux des pratiques religieuses selon laquelle ils ne doivent pas manger d'humains venant des fermes.","s":"The Promised Neverland"},{"g":"Le dehors","d":"veryhard","t":"Quel lien Sonju a-t-il avec la famille royale des démons ?","b":4,"r":["Il en est le bouffon","Il en a été banni pour meurtre","Il n'a aucun lien","Il est le frère de la future reine","Il en est le médecin","Il en est le grand prêtre"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Sonju","src":"Sonju est né prince et petit frère de Legravalima future reine des démons.","s":"The Promised Neverland","sp":true},{"g":"Le dehors","d":"medium","t":"Quel nom porte le bienfaiteur qui a laissé des messages cachés dans les livres de Grace Field ?","b":3,"r":["Arthur Godwin","Edgar Bellamy","William Minerva","Henry Lucas","Owen Grimm","Peter Ratri"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/William_Minerva","src":"William Minerva — affiliations : Clan Ratri. Nom français : James Ratri.","s":"The Promised Neverland"},{"g":"Le dehors","d":"veryhard","t":"Quelle est la véritable identité de William Minerva ?","b":5,"r":["Un démon repenti","Le père d'Isabella","Un enfant évadé devenu adulte","Le premier Duc","James Ratri, un membre du clan chargé de traquer les évadés","Un humain élevé à la capitale des démons"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/William_Minerva","src":"William Minerva — nom français : James Ratri. Famille : Peter Ratri (frère), Mike Ratri (oncle).","s":"The Promised Neverland","sp":true},{"g":"Le dehors","d":"hard","t":"Quelle arme Emma choisit-elle avant de partir pour Goldy Pond ?","b":1,"r":["Un arc","Un revolver","Un couteau","Une fronde","Une lance","Un fusil à pompe"],"p":"https://the-promised-neverland.fandom.com/fr/wiki/Emma","src":"Emma choisira un arc pour se défendre et, pendant le voyage, fera preuve d'une grande précision en abattant un mangeur d'homme.","s":"The Promised Neverland","sp":true},{"g":"La mission","d":"veryeasy","t":"Quelle mission est confiée aux élèves de la classe 3-E ?","b":3,"r":["Remonter dans le classement du collège","Protéger leur professeur","Assassiner leur professeur","Retrouver qui a détruit la Lune","Réparer leur bâtiment","Battre la classe A aux examens"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Classe_3-E","src":"La classe E est le théâtre d'un assassinat confidentiel orchestré par le gouvernement visant leur professeur principal, Korosensei.","s":"Assassination Classroom"},{"g":"Koro-sensei","d":"veryeasy","t":"À quoi ressemble Koro-sensei ?","b":2,"r":["À un homme en costume noir sans visage","À une pieuvre jaune au sourire permanent","À une méduse géante","À un épouvantail","À un mille-pattes blanc","À un pantin de bois"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"M. Koro a l'apparence d'une pieuvre jaune qui mesure environ trois mètres de haut avec une grande tête bulbeuse qui affiche invariablement un très grand sourire permanent.","s":"Assassination Classroom"},{"g":"La mission","d":"easy","t":"Quelle récompense est promise à celui qui tuera Koro-sensei ?","b":4,"r":["1 million de yens","100 millions de yens","1 milliard de yens","10 milliards de yens","Une place dans n'importe quelle université","Une immunité judiciaire à vie"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Les élèves de cette classe auront pour objectif d'assassiner leur professeur afin de sauver la Terre, la récompense étant de 10 milliards de yens.","s":"Assassination Classroom"},{"g":"Koro-sensei","d":"easy","t":"Quelle catastrophe Koro-sensei s'attribue-t-il ?","b":1,"r":["La destruction de 70 % de la Lune","L'explosion d'une centrale nucléaire","La disparition d'une île du Pacifique","L'assèchement d'une mer intérieure","La chute d'une station spatiale","L'extinction d'une espèce entière"],"p":"https://assassination-classroom.fandom.com/fr/wiki/R%C3%A9sum%C3%A9","src":"Koro-sensei est une étrange créature qui déclare avoir subitement détruit 70 % de la Lune.","s":"Assassination Classroom"},{"g":"Koro-sensei","d":"easy","t":"À quelle vitesse Koro-sensei se déplace-t-il ?","b":4,"r":["Mach 2","Mach 5","Mach 10","Mach 20","Mach 50","À la vitesse de la lumière"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Koro-sensei se déplace à Mach 20.","s":"Assassination Classroom"},{"g":"La mission","d":"medium","t":"Quelle échéance Koro-sensei fixe-t-il avant de détruire la Terre ?","b":5,"r":["La fin du mois","Le Nouvel An","Le début de l'été","Noël","Le mois de mars, à la fin de l'année scolaire","Dans dix ans"],"p":"https://assassination-classroom.fandom.com/fr/wiki/R%C3%A9sum%C3%A9","src":"Il prévoit ensuite de détruire la Terre en mars prochain pour des raisons inconnues.","s":"Assassination Classroom"},{"g":"La mission","d":"medium","t":"Avec quoi les élèves peuvent-ils blesser Koro-sensei ?","b":3,"r":["Des balles en argent","Des lames trempées dans l'eau de mer","Des armes en caoutchouc spécial, inoffensives pour les humains","Du poison à action lente","Des explosifs artisanaux","Des armes bénies"],"p":"https://ansatsukyoshitsu.fandom.com/wiki/Anti-Sensei_Weapons","src":"Anti-Sensei weapons are made with a special rubber-like material that are only effective against Antimatter Tentacle-based lifeforms, thus making them harmless to ordinary humans.","s":"Assassination Classroom"},{"g":"Le collège","d":"medium","t":"Où se trouve la salle de la classe 3-E ?","b":2,"r":["Au dernier étage du bâtiment principal","Dans un vieux bâtiment isolé sur la montagne voisine","Dans un ancien gymnase","Dans une annexe du centre-ville","Au sous-sol du collège","Dans un préfabriqué de la cour"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Classe_3-E","src":"Le bâtiment de la Classe E est situé à un kilomètre du bâtiment principal, sur une montagne voisine.","s":"Assassination Classroom"},{"g":"Le collège","d":"medium","t":"Pourquoi est-on envoyé dans la classe 3-E du collège Kunugigaoka ?","b":6,"r":["Parce qu'on s'est battu","Parce qu'on a été surpris à tricher","Parce qu'on l'a demandé","Parce qu'on paie moins de frais","Parce qu'on vient d'un autre collège","Parce qu'on a les plus mauvais résultats de l'établissement"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Classe_3-E","src":"Avant d'intégrer la classe E, Nagisa était dans la classe D mais a été transféré à cause de ses mauvais résultats à l'école.","s":"Assassination Classroom"},{"g":"Les professeurs","d":"medium","t":"Quel métier Irina exerce-t-elle en plus d'enseigner l'anglais à la classe 3-E ?","b":3,"r":["Espionne pour la police","Actrice de théâtre","Tueuse à gages","Journaliste","Médecin militaire","Chanteuse"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Irina_Poufanovitch","src":"Irina Poufanovitch — professions : tueur à gage, enseignante d'anglais, employée au ministère de la Défense japonais.","s":"Assassination Classroom"},{"g":"Les professeurs","d":"medium","t":"Quelle matière Karasuma enseigne-t-il à la classe 3-E ?","b":4,"r":["Les mathématiques","L'histoire","La technologie","L'éducation physique","La musique","Les sciences"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Tadaomi_Karasuma","src":"Avant de devenir professeur d'éducation physique de la classe de 3-E, Karasuma était un soldat d'élite des forces aériennes.","s":"Assassination Classroom"},{"g":"Les professeurs","d":"hard","t":"De quel ministère Karasuma dépend-il ?","b":2,"r":["Le ministère de l'Éducation","Le ministère de la Défense","Le ministère de la Justice","Le ministère de l'Intérieur","Le ministère de la Recherche","Aucun, il est indépendant"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Tadaomi_Karasuma","src":"Tadaomi Karasuma est un agent du Ministère de la Défense Japonais.","s":"Assassination Classroom"},{"g":"Koro-sensei","d":"hard","t":"Que promet Koro-sensei à ses élèves s'ils décrochent la première place du collège dans une matière ?","b":3,"r":["Un voyage à l'étranger","Une semaine sans cours","Le droit de lui arracher un tentacule","Un million de yens à partager","Le droit de voir son vrai visage","Des armes neuves"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Korosensei motivates the class into getting first place in any of the five subjects with the reward being that they have the right to shoot off one of his tentacles.","s":"Assassination Classroom"},{"g":"Les élèves","d":"hard","t":"Quel élève de la classe 3-E porte des tentacules sur le crâne ?","b":3,"r":["Kanata Horiuchi","Itaru Hoshino","Itona Horibe","Ryôma Terasaka","Sôta Mizuki","Rei Tonami"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Itona_Horibe","src":"À la suite d'expérimentations tentées par Shiro, il possède des tentacules sur le haut du crâne.","s":"Assassination Classroom"},{"g":"Le collège","d":"hard","t":"Quel lien unit Gakushû Asano, le premier de la classe A, au dirigeant du collège ?","b":2,"r":["C'est son neveu","C'est son fils","Aucun lien","C'est son gendre","C'est son élève particulier","C'est son demi-frère"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Gakush%C3%BB_Asano","src":"Gakuhô Asano est le président du collège Kunugigaoka et le père de Gakushû Asano.","s":"Assassination Classroom"},{"g":"Koro-sensei","d":"hard","t":"Qui était Koro-sensei avant sa transformation ?","b":5,"r":["Un général à la retraite","Un professeur de collège ordinaire","Un chercheur en antimatière","Un mercenaire russe","Le meilleur assassin du monde, surnommé le Dieu de la Mort","Un prisonnier politique"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Il était autrefois un assassin de renom mondial connu sous le nom de Dieu de la Mort.","s":"Assassination Classroom","sp":true},{"g":"Koro-sensei","d":"veryhard","t":"Qu'est-ce qui a réellement détruit la Lune ?","b":3,"r":["Un essai nucléaire secret","L'explosion d'une station spatiale","L'envoi sur la Lune d'une souris traitée à l'antimatière","La chute d'un astéroïde","Une arme mise au point par Koro-sensei","Un accident du ministère de la Défense"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Lorsque Yanagisawa voulut savoir ce qui arriverait à la mort de son cobaye, il envoya une souris génétiquement modifiée par le même traitement sur la lune. L'antimatière explosa.","s":"Assassination Classroom","sp":true},{"g":"Les élèves","d":"veryhard","t":"Qui est réellement Kaede Kayano ?","b":4,"r":["Une journaliste infiltrée","La fille du président du collège","Un agent du ministère de la Défense","La sœur d'Aguri Yukimura, entrée dans la classe pour la venger","Un clone créé par Shiro","La première élève à avoir touché Koro-sensei"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Kaede_Kayano","src":"Son vrai nom est Akari Yukimura. Avant de se joindre à la classe E elle était une actrice prodige et la sœur d'Aguri Yukimura.","s":"Assassination Classroom","sp":true},{"g":"Les élèves","d":"extreme","t":"Sous quel pseudonyme Kayano était-elle actrice avant d'entrer en 3-E ?","b":2,"r":["Hinata Serizawa","Haruna Mase","Kanade Mizuhara","Nanami Kuroda","Rio Nakamura","Mei Tachibana"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Kaede_Kayano","src":"Elle était une actrice prodige sous le pseudo d'Haruna Mase.","s":"Assassination Classroom","sp":true},{"g":"La mission","d":"veryhard","t":"Que demande Koro-sensei à ses élèves lors de leur dernière nuit ensemble ?","b":2,"r":["De le laisser partir","De l'achever eux-mêmes","De le suivre dans l'espace","De ne jamais parler de lui","De réussir leurs examens d'entrée","De protéger Kayano"],"p":"https://assassination-classroom.fandom.com/fr/wiki/Koro-sensei","src":"Suppliant les enfants de lui donner la mort, le professeur leur souhaita une dernière fois bonne chance pour la vie active.","s":"Assassination Classroom","sp":true},{"g":"Les pilotes","d":"veryeasy","t":"Quel Evangelion Shinji pilote-t-il ?","b":2,"r":["L'Unité-00","L'Unité-01","L'Unité-02","L'Unité-03","L'Unité-04","L'Unité-05"],"p":"https://evangelion.fandom.com/fr/wiki/Shinji_Ikari","src":"Shinji Ikari — affiliation : NERV. Rang : pilote d'Evangelion, Third Children.","s":"Evangelion"},{"g":"Les pilotes","d":"veryeasy","t":"Quel lien unit Shinji à Gendô Ikari ?","b":3,"r":["C'est son oncle","C'est son tuteur légal","C'est son père","C'est son grand-père","C'est son frère aîné","Aucun lien de famille"],"p":"https://evangelion.fandom.com/fr/wiki/Gend%C5%8D_Ikari","src":"Yui Ikari est la conjointe de Gendô Ikari et la mère de Shinji Ikari.","s":"Evangelion"},{"g":"La NERV","d":"easy","t":"De quelle organisation Misato Katsuragi est-elle officier ?","b":4,"r":["La SEELE","Le GEHIRN","L'agence WILLE","La NERV","Le comité MAGI","La fondation Marduk"],"p":"https://evangelion.fandom.com/fr/wiki/Misato_Katsuragi","src":"Misato Katsuragi — affiliation : NERV.","s":"Evangelion"},{"g":"La NERV","d":"easy","t":"Contre quoi les Evangelions se battent-ils ?","b":2,"r":["Des machines rebelles","Des créatures appelées les Anges","Une armée étrangère","Des mutants humains","Des créatures venues des profondeurs","Une intelligence artificielle"],"p":"https://evangelion.fandom.com/fr/wiki/Ange","src":"Les Anges sont les adversaires que la NERV combat au moyen des Evangelions.","s":"Evangelion"},{"g":"Les pilotes","d":"easy","t":"De quelle couleur est l'Evangelion d'Asuka ?","b":3,"r":["Violet","Bleu","Rouge","Orange","Blanc","Noir"],"p":"https://evangelion.fandom.com/fr/wiki/Evangelion_Unit%C3%A9-02","src":"Evangelion Unité-02 — pilote : Asuka Langley Sôryû. Couleur : rouge.","s":"Evangelion"},{"g":"Les machines","d":"medium","t":"Quel liquide remplit le cockpit d'un Evangelion ?","b":3,"r":["De l'eau salée","Un gel bleu isolant","Le LCL, un liquide orangé qu'on peut respirer","De l'azote liquide","Rien, c'est de l'air comprimé","Du sang synthétique"],"p":"https://evangelion.fandom.com/fr/wiki/LCL","src":"Le LCL est un liquide translucide orangé. L'Entry Plug, contenant le cockpit, est rempli de LCL. S'agissant d'un liquide oxygéné...","s":"Evangelion"},{"g":"Les machines","d":"medium","t":"Comment un Evangelion est-il alimenté en énergie la plupart du temps ?","b":5,"r":["Par un réacteur embarqué","Par des panneaux solaires","Par des batteries changées après chaque combat","Par l'énergie de son pilote","Par un câble ombilical branché sur la ville","Il n'a pas besoin d'énergie"],"p":"https://evangelion.fandom.com/fr/wiki/Source_d%27%C3%A9nergie_des_Evangelions","src":"Le câble ombilical est un câble électrique utilisé pour connecter une Evangelion à une source externe d'énergie. Il s'agit de la manière la plus courante pour alimenter une Eva.","s":"Evangelion"},{"g":"Les machines","d":"medium","t":"Combien de temps un Evangelion tient-il sur sa batterie interne ?","b":3,"r":["Trente secondes","Deux minutes","Cinq minutes","Quinze minutes","Une heure","Le temps est illimité"],"p":"https://evangelion.fandom.com/fr/wiki/Source_d%27%C3%A9nergie_des_Evangelions","src":"Cette batterie offre une autonomie de cinq minutes, mais seulement une minute lorsque l'Eva est utilisée au maximum de ses capacités.","s":"Evangelion"},{"g":"La NERV","d":"medium","t":"Quel animal Misato garde-t-elle dans son appartement ?","b":2,"r":["Un chat","Un manchot","Un furet","Un perroquet","Un chien","Une tortue"],"p":"https://evangelion.fandom.com/fr/wiki/Pen_Pen","src":"Pen Pen est un manchot d'eau chaude adopté par Misato Katsuragi et vivant dans son appartement.","s":"Evangelion"},{"g":"Tokyo-3","d":"medium","t":"Que cache Tokyo-3 sous son centre-ville ?","b":4,"r":["Un réseau d'abris antiatomiques","Un lac artificiel","Une base militaire américaine","Le GeoFront, une cavité géante qui abrite le QG de la NERV","Une usine d'armement","Les ruines de l'ancienne Tokyo"],"p":"https://evangelion.fandom.com/fr/wiki/Tokyo-3","src":"Sous le centre-ville se trouve une gigantesque cavité circulaire : le GeoFront. Le quartier général de la NERV est installé dans cette structure souterraine.","s":"Evangelion"},{"g":"Tokyo-3","d":"hard","t":"Que font les immeubles de Tokyo-3 quand un Ange approche ?","b":1,"r":["Ils s'enfoncent sous terre","Ils se recouvrent d'un blindage","Ils se replient sur eux-mêmes","Ils s'illuminent pour aveugler l'Ange","Ils se vident par des tunnels","Rien, ils sont détruits à chaque fois"],"p":"https://evangelion.fandom.com/fr/wiki/Tokyo-3","src":"L'inspiration pour les immeubles capables de se dissimuler sous terre semble provenir de la série britannique L'Escadrille sous-marine.","s":"Evangelion"},{"g":"La NERV","d":"hard","t":"Combien de superordinateurs composent le système MAGI ?","b":2,"r":["Deux","Trois","Cinq","Sept","Neuf","Douze"],"p":"https://evangelion.fandom.com/fr/wiki/Magi","src":"Le S.C. Magi System est un trio de superordinateurs imaginé par le Dr. Naoko Akagi.","s":"Evangelion"},{"g":"La NERV","d":"extreme","t":"Quel lien unit Ritsuko Akagi à la créatrice du système MAGI ?","b":2,"r":["C'est sa tante","C'est sa mère","C'est sa sœur aînée","Aucun lien","C'est son ancienne professeure","C'est sa belle-mère"],"p":"https://evangelion.fandom.com/fr/wiki/Magi","src":"Le S.C. Magi System est un trio de superordinateurs imaginé par le Dr. Naoko Akagi lors de ses recherches sur la bio-informatique au sein de la Gehirn.","s":"Evangelion"},{"g":"Le passé","d":"hard","t":"Où s'est produit le Second Impact ?","b":3,"r":["Au Japon","Au pôle Nord","En Antarctique","Au milieu du Pacifique","En Sibérie","Sur la Lune"],"p":"https://evangelion.fandom.com/fr/wiki/Second_Impact","src":"À la fin des années 1990, la SEELE met en place une expédition en Antarctique menée par le Dr. Katsuragi.","s":"Evangelion"},{"g":"Les pilotes","d":"veryhard","t":"Que finit-on par apprendre sur Kaworu Nagisa ?","b":2,"r":["C'est un clone de Shinji","C'est un Ange","C'est le frère de Rei","C'est un agent de la SEELE venu tuer Gendô","C'est un Evangelion sous forme humaine","C'est le fils de Yui"],"p":"https://evangelion.fandom.com/wiki/Kaworu_Nagisa","src":"Kaworu Nagisa, also known as the Angel Tabris, is the Fifth Child and the seventeenth Angel.","s":"Evangelion","sp":true},{"g":"Le Geass","d":"veryeasy","t":"Que permet le Geass de Lelouch ?","b":2,"r":["De lire les pensées","De donner un ordre auquel sa cible ne peut pas désobéir","D'effacer les souvenirs de quelqu'un","De devenir invisible","D'arrêter le temps","De voir l'avenir"],"p":"https://codegeass.fandom.com/fr/wiki/Geass","src":"Le Geass de Lelouch se manifeste comme « le pouvoir de l'obéissance absolue », ce qui lui permet de planter des commandes dans l'esprit d'une personne.","s":"Code Geass"},{"g":"Le Geass","d":"veryeasy","t":"Dans quel œil apparaît le sceau du Geass de Lelouch ?","b":2,"r":["L'œil droit","L'œil gauche","Les deux à la fois","Aucun, il apparaît sur son front","Sur la paume de sa main","Sur sa nuque"],"p":"https://codegeass.fandom.com/fr/wiki/Lelouch_vi_Britannia","src":"L'activation du Geass est représentée visuellement par la manifestation d'un sceau dans son œil gauche.","s":"Code Geass"},{"g":"Le Geass","d":"easy","t":"Comment Lelouch obtient-il le Geass ?","b":3,"r":["Il naît avec","Son père le lui transmet","Par un contrat passé avec C.C.","En touchant une relique impériale","Il le vole à un chevalier britannien","Il est le fruit d'une expérience"],"p":"https://codegeass.fandom.com/fr/wiki/C.C.","src":"C.C. est l'un des personnages centraux de l'anime Code Geass car c'est en effet elle qui donne le pouvoir du Geass à Lelouch.","s":"Code Geass"},{"g":"Le Geass","d":"easy","t":"Quelle condition Lelouch doit-il remplir pour utiliser son Geass ?","b":2,"r":["Toucher sa cible","Croiser le regard de sa cible","Connaître son nom","Se tenir à moins d'un mètre","Prononcer son propre nom","Retirer son masque"],"p":"https://codegeass.fandom.com/fr/wiki/Geass","src":"Ce qui lui permet de planter des commandes dans l'esprit d'une personne lors d'un contact visuel direct.","s":"Code Geass"},{"g":"Lelouch","d":"easy","t":"Sous quel nom Lelouch vit-il en tant que lycéen ?","b":2,"r":["Lelouch Lambert","Lelouch Lamperouge","Lelouch Vandenberg","Lelouch Deveraux","Lelouch Milner","Lelouch Farnese"],"p":"https://codegeass.fandom.com/fr/wiki/Lelouch_vi_Britannia","src":"Après son exil, il utilise l'alias Lelouch Lamperouge.","s":"Code Geass"},{"g":"Lelouch","d":"medium","t":"Dans quel établissement Lelouch est-il élève ?","b":1,"r":["L'Académie Ashford","Le Collège Britannia","L'Institut Pendragon","Le Lycée de Kaminejima","L'Académie Sainte-Marianne","Le Collège Impérial de Tokyo"],"p":"https://codegeass.fandom.com/fr/wiki/Lelouch_vi_Britannia","src":"Lelouch porte habituellement l'uniforme de l'Académie Ashford.","s":"Code Geass"},{"g":"Lelouch","d":"easy","t":"De quelle couleur sont les yeux de Lelouch ?","b":3,"r":["Bleus","Verts","Violets","Dorés","Gris","Rouges"],"p":"https://codegeass.fandom.com/fr/wiki/Lelouch_vi_Britannia","src":"Les traits frappants de Lelouch sont ses cheveux noirs qu'il tient de sa mère et ses yeux violets qu'il tient de son père.","s":"Code Geass"},{"g":"Lelouch","d":"easy","t":"Quel handicap frappe Nunnally, la sœur de Lelouch ?","b":2,"r":["Elle est sourde et muette","Elle est aveugle et paralysée","Elle a perdu la mémoire","Elle est atteinte d'une maladie du sang","Elle ne parle plus depuis l'enfance","Elle ne peut pas rester debout"],"p":"https://codegeass.fandom.com/fr/wiki/Nunnally_vi_Britannia","src":"Elle endure son handicap d'aveugle et de paralysie avec un sourire et un visage joyeux.","s":"Code Geass"},{"g":"L'Empire","d":"hard","t":"Quel autre nom les rebelles donnent-ils à la Zone 11 ?","b":2,"r":["La République Libre du Japon","Les États-Unis du Japon","L'Empire du Soleil","La Fédération de Kyoto","Le Japon Souverain","La Ligue de Tokyo"],"p":"https://codegeass.fandom.com/fr/wiki/Zone_11","src":"La zone 11 est aussi connue sous le nom d'états-unis du Japon et est géographiquement parlant équivalente au Japon.","s":"Code Geass"},{"g":"Les pilotes","d":"medium","t":"Quel Knightmare blanc Suzaku pilote-t-il ?","b":2,"r":["Le Guren","Le Lancelot","Le Vercingétorix","Le Roland","Le Bayard","Le Durandal"],"p":"https://codegeass.fandom.com/fr/wiki/Suzaku_Kururugi","src":"Suzaku Kururugi — Knightmare : Lancelot.","s":"Code Geass"},{"g":"Les pilotes","d":"medium","t":"Sous quel nom de famille Kallen est-elle inscrite au lycée ?","b":2,"r":["Kôzuki","Stadtfeld","Vaulkner","Reinhardt","Weisskopf","Aschenbach"],"p":"https://codegeass.fandom.com/fr/wiki/Kallen_K%C5%8Dzuki","src":"Elle est officiellement connue comme Kallen Stadtfeld, et va à l'école sous ce nom de couverture, mais préfère Kôzuki.","s":"Code Geass"},{"g":"La rébellion","d":"hard","t":"Quelle organisation Lelouch fonde-t-il pour mener sa rébellion ?","b":2,"r":["Le Front de Libération du Japon","L'Ordre des Chevaliers Noirs","La Garde Noire","Les Lames de Kyoto","La Légion Zero","Le Cercle du Geass"],"p":"https://codegeass.fandom.com/fr/wiki/L%27Ordre_des_Chevaliers_Noirs","src":"L'Ordre des Chevaliers Noirs est l'organisation fondée par Zéro.","s":"Code Geass"},{"g":"La rébellion","d":"medium","t":"Quel animal s'enfuit avec le masque de Zero dans l'enceinte du lycée ?","b":2,"r":["Un chien","Un chat","Un corbeau","Un singe","Un furet","Un renard"],"p":"https://codegeass.fandom.com/fr/wiki/Arthur","src":"Arthur, un chat errant, est ensuite chassé dans toute l'enceinte de l'école par l'ensemble du corps étudiant après avoir erré dans la résidence Lamperouge et s'être échappé avec le masque de Zero de Lelouch.","s":"Code Geass"},{"g":"L'Empire","d":"hard","t":"Quelle fonction Euphemia occupe-t-elle en Zone 11 ?","b":4,"r":["Ambassadrice","Commandante de la garde impériale","Gouverneure militaire","Sous-vice-reine","Ministre de la Culture","Juge impériale"],"p":"https://codegeass.fandom.com/fr/wiki/Euphemia_li_Britannia","src":"Euphemia li Britannia, 16 ans, est la troisième princesse de la Famille Impériale Britannienne. Elle est aussi le Sous-vice-roi de la Zone 11.","s":"Code Geass"},{"g":"L'Empire","d":"hard","t":"Pourquoi Euphemia ordonne-t-elle le massacre des Japonais ?","b":3,"r":["Son frère l'y a contrainte","Elle venge une tentative d'assassinat","Le Geass de Lelouch lui a échappé et lui a donné cet ordre par accident","Elle a été remplacée par une sosie","Elle obéit à un ordre de l'empereur","Elle a perdu la raison après une blessure"],"p":"https://codegeass.fandom.com/fr/wiki/Euphemia_li_Britannia","src":"Euphemia li Britannia — alias : Princesse du massacre, Princesse Génocide.","s":"Code Geass","sp":true},{"g":"L'Empire","d":"hard","t":"Quel surnom Euphemia reçoit-elle après le massacre ?","b":2,"r":["La Princesse de sang","La Princesse du massacre","La Reine des cendres","La Princesse déchue","La Sainte de Britannia","La Princesse noire"],"p":"https://codegeass.fandom.com/fr/wiki/Euphemia_li_Britannia","src":"Euphemia li Britannia — alias : Princesse du massacre, Princesse Génocide, Euphie.","s":"Code Geass","sp":true},{"g":"Le Geass","d":"hard","t":"Quel pouvoir le Geass de l'empereur Charles lui donne-t-il ?","b":2,"r":["Arrêter le cœur d'un homme","Modifier librement les souvenirs de quelqu'un","Voir tous les futurs possibles","Prendre l'apparence d'autrui","Commander les morts","Faire vieillir sa cible"],"p":"https://codegeass.fandom.com/fr/wiki/Charles_zi_Britannia","src":"Le Geass de Charles possédait la capacité de modifier librement les souvenirs d'un individu.","s":"Code Geass","sp":true},{"g":"Le Geass","d":"veryhard","t":"Quel pouvoir le Geass de Rollo lui donne-t-il ?","b":4,"r":["Effacer son propre visage de la mémoire des autres","Se dédoubler","Voir à travers les murs","Figer la perception du temps chez ceux qui l'entourent","Imposer un mensonge comme vérité","Ressentir la douleur d'autrui"],"p":"https://codegeass.fandom.com/fr/wiki/Rollo_Lamperouge","src":"Le Geass de Rollo possède la capacité de modifier la notion du temps des autres dans un espace donné sans que lui-même ne soit affecté.","s":"Code Geass","sp":true},{"g":"Le Geass","d":"veryhard","t":"Comment Marianne, la mère de Lelouch, a-t-elle survécu à son assassinat ?","b":3,"r":["Elle portait un gilet pare-balles","Une sosie est morte à sa place","Son Geass a transféré son esprit dans le corps d'une autre","C.C. l'a rendue immortelle","Elle n'a pas survécu","Elle était déjà cachée à l'étranger"],"p":"https://codegeass.fandom.com/fr/wiki/Geass","src":"Marianne vi Britannia a le pouvoir de transférer son esprit dans le corps de la personne qu'elle fixe du regard. Avec ce Geass, elle a été en mesure de survivre à l'attentat dont elle a été victime.","s":"Code Geass","sp":true},{"g":"Le Geass","d":"veryhard","t":"Où C.C. porte-t-elle la marque du Geass ?","b":2,"r":["Dans l'œil droit","Sur le front, cachée par sa frange","Dans le dos","Sur la paume gauche","Sur la nuque","Sur la cheville"],"p":"https://codegeass.fandom.com/fr/wiki/C.C.","src":"Elle a des yeux dorés et des cheveux verts. Sa frange cache la marque du Geass présente sur son front.","s":"Code Geass"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+const LOT = "cinq";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>

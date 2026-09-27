@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — douze — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « douze » — 120 questions sur douze séries</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"veryeasy","t":"Comment les sorciers lancent-ils leurs sorts dans L'Atelier des Sorciers ?","b":4,"r":["En prononçant des formules","En agitant une baguette","En mélangeant des potions","En les dessinant","En chantant","En brûlant de l'encens"],"p":"https://fr.wikipedia.org/wiki/L%27Atelier_des_sorciers","src":"C'est en voyant Kieffrey à l'œuvre que Coco comprend la véritable nature de la magie : elle se dessine."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"veryeasy","t":"Qu'arrive-t-il à la mère de Coco au tout début de l'histoire ?","b":2,"r":["Elle disparaît sans laisser de trace","Elle est changée en cristal","Elle perd la mémoire","Elle est changée en oiseau","Elle tombe dans un sommeil sans fin","Elle est enlevée par des sorciers"],"p":"https://fr.wikipedia.org/wiki/L%27Atelier_des_sorciers","src":"Coco pétrifie sa mère par accident en la transformant en cristal après avoir redessiné un sort depuis un livre."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"easy","t":"Quel sorcier prend Coco comme apprentie ?","b":5,"r":["Olugio","Verdel","Mansel","Dorven","Kieffrey","Talric"],"p":"https://fr.wikipedia.org/wiki/L%27Atelier_des_sorciers","src":"Kieffrey la sauve et la prend comme apprentie pour qu'elle puisse redessiner le sort et sauver sa mère."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"easy","t":"Quel métier la mère de Coco exerce-t-elle ?","b":3,"r":["Boulangère","Herboriste","Couturière","Aubergiste","Bergère","Forgeronne"],"p":"https://witch-hat-atelier.fandom.com/wiki/Coco","src":"Prior to joining the atelier, she wore a simple white dress while working in her mother's tailor shop."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"easy","t":"À quoi reconnaît-on un sorcier au premier coup d'œil dans cette série ?","b":6,"r":["À sa cape rouge","À ses gants blancs","À son bâton","À ses tatouages","À sa lanterne","À son chapeau pointu"],"p":"https://witch-hat-atelier.fandom.com/wiki/Coco","src":"Affiliation : Pointed Hat Witches. Le titre original, Tongari Bōshi no Atelier, signifie « l'atelier du chapeau pointu »."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"medium","t":"Combien d'apprenties l'atelier de Kieffrey compte-t-il ?","b":4,"r":["Deux","Trois","Six","Quatre","Cinq","Sept"],"p":"https://witch-hat-atelier.fandom.com/wiki/Qifrey","src":"Qifrey is a witch and Coco's master. He runs an atelier and currently has four apprentices."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"medium","t":"Quelle magie est formellement interdite aux sorciers ?","b":1,"r":["Celle qui agit sur les êtres vivants","Celle qui crée de l'or","Celle qui arrête le temps","Celle qui invoque des démons","Celle qui lit les pensées","Celle qui déplace les montagnes"],"p":"https://witch-hat-atelier.fandom.com/wiki/Magic","src":"Modern witches have tabooed the use of any magic on living beings, including healing magic. Such magic are collectively known as forbidden magic."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"hard","t":"Comment se nomme la société secrète que Kieffrey traque ?","b":3,"r":["L'Ordre de la Plume","Le Cercle d'Encre","La Confrérie du Capuchon","La Guilde des Masques","Les Frères du Sceau","L'Assemblée des Ombres"],"p":"https://fr.wikipedia.org/wiki/L%27Atelier_des_sorciers","src":"La « Confrérie du Capuchon » est le groupe suspect surveillé par la milice magique."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"hard","t":"Que cache Kieffrey derrière sa mèche et ses lunettes ?","b":5,"r":["Une cicatrice de brûlure","Un œil de verre","Un tatouage interdit","Une marque de naissance","Il lui manque un œil","Un sort inachevé"],"p":"https://witch-hat-atelier.fandom.com/wiki/Qifrey","src":"He wears his hair and glasses to disguise his scar and missing right eye, as well as to enhance the vision of his left."},{"g":"L'Atelier des Sorciers","s":"L'Atelier des Sorciers","d":"veryhard","t":"Quel sorcier voisin est chargé de surveiller l'atelier de Kieffrey ?","b":2,"r":["Beldaruit","Olugio","Mansel","Verdel","Dorven","Talric"],"p":"https://fr.wikipedia.org/wiki/L%27Atelier_des_sorciers","src":"Sentinelle de l'atelier : Olugio."},{"g":"Gachiakuta","s":"Gachiakuta","d":"veryeasy","t":"Où Rudo est-il jeté après avoir été condamné ?","b":4,"r":["En prison","Sur une île déserte","Dans les égouts","Dans la fosse à déchets sous la ville","Dans une mine","Au bagne"],"p":"https://gachiakuta.fandom.com/wiki/Rudo_Surebrec","src":"He originally lived on the Sphere as a Sphereite among the Tribe folk, but was thrown into the Pit after being falsely accused of the murder of his adoptive father Regto."},{"g":"Gachiakuta","s":"Gachiakuta","d":"veryeasy","t":"Qu'est-ce qui sépare la ville des bidonvilles dans Gachiakuta ?","b":3,"r":["Un fleuve","Un désert","De hauts murs","Une voie ferrée","Une forêt","Un champ de mines"],"p":"https://gachiakuta.fandom.com/wiki/Gachiakuta","src":"The city, where the civilized class live, and the slum, where the descendants of criminals gather, are the two sides of society separated by high walls."},{"g":"Gachiakuta","s":"Gachiakuta","d":"easy","t":"Comment se nomme le père adoptif de Rudo ?","b":5,"r":["Enjin","Vargo","Delto","Kresh","Regto","Rendo"],"p":"https://gachiakuta.fandom.com/wiki/Rudo_Surebrec","src":"He was thrown into the Pit after being falsely accused of the murder of his adoptive father Regto."},{"g":"Gachiakuta","s":"Gachiakuta","d":"easy","t":"Que sont les Jinki ?","b":2,"r":["Des armes forgées par les nobles","Des objets jetés auxquels on a redonné vie","Des esprits de la fosse","Des tatouages magiques","Des créatures apprivoisées","Des pierres précieuses"],"p":"https://gachiakuta.fandom.com/wiki/Vital_Instrument","src":"Vital Instrument (人器, Jinki) are objects powered by Anima. People who use Vital Instruments are called Givers."},{"g":"Gachiakuta","s":"Gachiakuta","d":"easy","t":"Que combat le groupe que Rudo rejoint dans la fosse ?","b":6,"r":["Des bandits","Des soldats venus de la ville","Des bêtes sauvages","Des fantômes","Des machines détraquées","Des monstres nés des déchets"],"p":"https://gachiakuta.fandom.com/wiki/Cleaners","src":"They employ a large number of Givers who use their powers to exterminate Trash Beasts on the Ground."},{"g":"Gachiakuta","s":"Gachiakuta","d":"medium","t":"Quel objet sert de Jinki à Rudo ?","b":1,"r":["Ses gants","Ses bottes","Son écharpe","Un balai","Une clé","Une paire de lunettes"],"p":"https://gachiakuta.fandom.com/wiki/Rudo_Surebrec","src":"He wears dark brown gloves, son Jinki, qui amplifient son Anima."},{"g":"Gachiakuta","s":"Gachiakuta","d":"medium","t":"Comment un objet ordinaire devient-il un Jinki ?","b":3,"r":["En étant trempé dans le sang de son porteur","En étant forgé par un maître","En recevant l'attachement de son propriétaire","En étant béni par un prêtre","En restant cent ans dans la fosse","En étant volé à un ennemi"],"p":"https://gachiakuta.fandom.com/wiki/Vital_Instrument","src":"Before becoming a Giver the user has to transform into one by learning to give off Anima, this is usually done by pouring their love and care into an object."},{"g":"Gachiakuta","s":"Gachiakuta","d":"medium","t":"Qui recrute Rudo après sa chute dans la fosse ?","b":4,"r":["Riyo","Zanka","Mordo","Enjin","Velk","Sharo"],"p":"https://gachiakuta.fandom.com/wiki/Enjin","src":"Enjin, membre des Nettoyeurs, sauve Rudo à son arrivée sur le Ground et le fait entrer dans le groupe."},{"g":"Gachiakuta","s":"Gachiakuta","d":"hard","t":"De quoi les habitants des bidonvilles sont-ils les descendants ?","b":5,"r":["De nobles déchus","D'esclaves affranchis","D'étrangers exilés","De soldats vaincus","De criminels","D'ouvriers d'usine"],"p":"https://gachiakuta.fandom.com/wiki/Gachiakuta","src":"The slum, where the descendants of criminals, « tribespeople », gather."},{"g":"Gachiakuta","s":"Gachiakuta","d":"hard","t":"Qu'arrive-t-il à un Jinki lorsque son porteur meurt ?","b":2,"r":["Il se brise","Il perd son pouvoir","Il choisit un nouveau porteur","Il prend vie","Il redevient un déchet ordinaire","Il explose"],"p":"https://gachiakuta.fandom.com/wiki/Vital_Instrument","src":"When a Giver dies, their Anima disappears from their Vital Instrument and any by-products of those abilities."},{"g":"DanDaDan","s":"DanDaDan","d":"veryeasy","t":"Que font Momo et Okarun pour prouver chacun qu’il a raison ?","b":5,"r":["Ils consultent la grand-mère de Momo","Ils fouillent la bibliothèque du lycée","Ils interrogent un spécialiste","Ils organisent une veillée ensemble","Ils vont chacun sur le terrain de l’autre","Ils parient de l’argent"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Momo, qui croit aux fantômes, part sur le lieu des soucoupes ; Okarun, qui croit aux extraterrestres, part dans le tunnel hanté."},{"g":"DanDaDan","s":"DanDaDan","d":"easy","t":"Quel est le vrai nom d'Okarun ?","b":5,"r":["Kenji Takahashi","Takeru Okakura","Ken Okakura","Kenta Takamura","Ken Takakura","Kenji Takamori"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Ken Takakura, also known as Okarun, is the main male protagonist of the manga series Dandadan."},{"g":"DanDaDan","s":"DanDaDan","d":"easy","t":"D'où vient le surnom « Okarun » que Momo lui donne ?","b":2,"r":["De son ancien quartier","De sa passion pour l'occulte","D'un jeu vidéo qu'il adore","De la forme de ses lunettes","D'un personnage de dessin animé","De son club de lycée"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Alias : Occult-kun (par Momo). Le surnom vient de « occulte »."},{"g":"DanDaDan","s":"DanDaDan","d":"easy","t":"Où Okarun rencontre-t-il Turbo Mamie ?","b":4,"r":["Dans un cimetière","Dans un hôpital abandonné","Dans un temple","Dans un tunnel","Dans son école la nuit","Sous un pont"],"p":"https://dandadan.fandom.com/wiki/Turbo_Granny","src":"Turbo Granny is a well-known yokai that was previously within a tunnel located at Shono City."},{"g":"DanDaDan","s":"DanDaDan","d":"medium","t":"Quel pouvoir Momo Ayase découvre-t-elle en elle ?","b":1,"r":["Elle déplace les objets par la pensée","Elle voit l'avenir","Elle soigne les blessures","Elle parle aux morts","Elle devient invisible","Elle contrôle le feu"],"p":"https://dandadan.fandom.com/wiki/Momo_Ayase","src":"Classification : Power User. Sa rencontre avec Okarun l'amène à éveiller ses pouvoirs psychiques."},{"g":"DanDaDan","s":"DanDaDan","d":"medium","t":"Que Turbo Mamie dérobe-t-elle à Okarun lors de leur première rencontre ?","b":6,"r":["Sa voix","Ses lunettes","Son ombre","Sa mémoire","Son nom","Ses bijoux de famille"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Having his kintama missing from being cursed by the Turbo Granny."},{"g":"DanDaDan","s":"DanDaDan","d":"medium","t":"Dans quel objet Turbo Mamie se retrouve-t-elle enfermée ?","b":3,"r":["Une poupée","Un miroir","Un chat porte-bonheur","Un bocal","Une boîte à musique","Un vieux téléphone"],"p":"https://dandadan.fandom.com/wiki/Turbo_Granny","src":"After having her consciousness extracted from Okarun's body, Turbo Granny is forced to inhabit a maneki-neko doll."},{"g":"DanDaDan","s":"DanDaDan","d":"medium","t":"Que devient Okarun lorsqu'il laisse agir la malédiction ?","b":2,"r":["Il devient invisible","Il se transforme et devient extrêmement rapide","Il double de taille","Il peut voler","Il traverse les murs","Il perd tout souvenir"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Okarun in his Turbo Granny form. La malédiction de la mamie à 100 km/h lui donne une vitesse extrême."},{"g":"DanDaDan","s":"DanDaDan","d":"hard","t":"Comment se nomme la grand-mère de Momo ?","b":5,"r":["Kimiko","Tatsuko","Fumie","Haruko","Seiko","Sachie"],"p":"https://dandadan.fandom.com/wiki/Momo_Ayase","src":"Famille : Seiko Ayase (grand-mère)."},{"g":"DanDaDan","s":"DanDaDan","d":"veryhard","t":"Dans quelle ville Momo et Okarun habitent-ils ?","b":4,"r":["Shono","Mizuho","Karasuno","Kamigoe","Hoshizaki","Tsukumo"],"p":"https://dandadan.fandom.com/wiki/Okarun","src":"Résidence : Kamigoe City, Saitama Prefecture (Takakura Residence)."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"veryeasy","t":"Quel commerce Taro Sakamoto tient-il ?","b":4,"r":["Un restaurant","Une salle de sport","Un pressing","Une supérette","Une librairie","Un garage"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Hidden Weapons Arsenal: Sakamoto maintains a concealed armory inside his convenience store."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"veryeasy","t":"Quel métier Sakamoto exerçait-il avant d'ouvrir sa boutique ?","b":2,"r":["Policier","Tueur à gages","Militaire","Boxeur","Cascadeur","Garde du corps"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Shin was formerly a partner of the legendary hitman Taro Sakamoto during Sakamoto's hitman days."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"easy","t":"Pourquoi Sakamoto a-t-il raccroché ?","b":5,"r":["Il a été blessé sur un contrat","Il a été trahi par son employeur","Il a purgé une peine de prison","Il a perdu son meilleur ami","Il est tombé amoureux","Il a été déclaré mort"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Sakamoto abandonne le métier après être tombé amoureux d'Aoi, une cliente de la boutique où il faisait ses courses."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"easy","t":"Qu'est-ce qui a changé physiquement chez Sakamoto depuis sa retraite ?","b":3,"r":["Il a blanchi","Il a perdu un œil","Il a beaucoup grossi","Il s'est rasé la tête","Il a perdu un bras","Il a beaucoup maigri"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Skinny/Physical Prime Form: Sakamoto is capable of temporarily assuming a leaner form resembling the physique he possessed while still active as an assassin."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"easy","t":"Quelle règle Sakamoto s'impose-t-il depuis qu'il tient sa boutique ?","b":1,"r":["Ne plus tuer personne","Ne jamais fermer avant minuit","Ne jamais quitter son quartier","Ne plus toucher une arme à feu","Ne jamais refuser un client","Ne plus jamais courir"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Sakamoto a promis à sa femme de ne plus tuer ; il neutralise ses adversaires sans les abattre."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"medium","t":"Comment se nomme la femme de Sakamoto ?","b":3,"r":["Hana","Rin","Aoi","Yuki","Nagi","Suzu"],"p":"https://sakamoto-days.fandom.com/wiki/Aoi_Sakamoto","src":"Aoi Sakamoto — Affiliation : Sakamoto's Store. Occupation : Store Owner."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"medium","t":"Quel pouvoir possède Shin, l'employé de Sakamoto ?","b":6,"r":["Il court très vite","Il voit dans le noir","Il devine l'avenir","Il imite n'importe quelle voix","Il ne ressent pas la douleur","Il lit dans les pensées"],"p":"https://sakamoto-days.fandom.com/wiki/Shin_Asakura","src":"During Sakamoto and Shin's first battle, Shin was unable to read the veteran assassin's mind."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"medium","t":"Qui est Hana pour Taro Sakamoto ?","b":2,"r":["Sa sœur","Sa fille","Sa nièce","Son employée","Sa voisine","Son ancienne coéquipière"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"Hana est la fille de Taro et Aoi Sakamoto."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"hard","t":"D'où vient Lu Shaotang, la seconde employée de la boutique ?","b":4,"r":["D'une école d'arts martiaux","D'un cirque itinérant","D'une agence de sécurité","D'une famille de la mafia chinoise","D'un orphelinat","D'une troupe d'acrobates"],"p":"https://sakamoto-days.fandom.com/wiki/Lu_Shaotang","src":"She is the daughter of a Triad Family. Affiliation : Triad (Chinese Mafia)."},{"g":"Sakamoto Days","s":"Sakamoto Days","d":"hard","t":"Où Sakamoto cache-t-il son arsenal ?","b":5,"r":["Dans sa cave","Sous le plancher de sa chambre","Dans un coffre à la banque","Dans sa camionnette","Derrière un mur pivotant de sa boutique","Chez un voisin"],"p":"https://sakamoto-days.fandom.com/wiki/Taro_Sakamoto","src":"The arsenal is hidden behind rotating walls and can be accessed by entering a specific code into the store's cash register."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"veryeasy","t":"Dans quelle tenue Sakuta aperçoit-il Mai Sakurajima pour la première fois ?","b":5,"r":["En uniforme de marin","En tenue de sport","En kimono","En blouse blanche","En costume de lapin","En costume de chat"],"p":"https://aobuta.fandom.com/wiki/Mai_Sakurajima","src":"Her Adolescence Syndrome is being invisible to others, so she walks around in public dressed as a bunny."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"veryeasy","t":"Où Sakuta croise-t-il Mai Sakurajima pour la première fois ?","b":3,"r":["Sur la plage","Dans le train","À la bibliothèque du lycée","Au gymnase","Sur le toit du lycée","Dans un café"],"p":"https://aobuta.fandom.com/wiki/Sakuta_Azusagawa","src":"Sakuta is the one who notices Mai Sakurajima dressed as a bunny girl in the school library."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"easy","t":"Pourquoi Mai Sakurajima se promène-t-elle en costume de lapin ?","b":2,"r":["Pour un tournage","Parce qu'elle est devenue invisible aux yeux des autres","Pour faire la promotion d'un magasin","Parce qu'elle a perdu un pari","Pour échapper à ses admirateurs","Parce qu'elle s'ennuie"],"p":"https://aobuta.fandom.com/wiki/Mai_Sakurajima","src":"Her Adolescence Syndrome is being invisible to others, so she walks around in public dressed as a bunny."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"easy","t":"Quel métier Mai Sakurajima exerce-t-elle ?","b":6,"r":["Idole","Danseuse","Écrivaine","Peintre","Journaliste","Actrice"],"p":"https://aobuta.fandom.com/wiki/Mai_Sakurajima","src":"Mai Sakurajima is a notable actress/model and a third year at Minegahara High School."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"medium","t":"Comment appelle-t-on les phénomènes étranges qui frappent les adolescents de la série ?","b":4,"r":["La fièvre lycéenne","Le mal des seize ans","Le syndrome du miroir","Le syndrome de la puberté","La crise d'avril","Le trouble des seize ans"],"p":"https://aobuta.fandom.com/wiki/Adolescence_Syndrome","src":"Le phénomène est appelé « syndrome de la puberté » : des expériences anormales vécues à l'adolescence, nées de la sensibilité et de l'instabilité."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"medium","t":"Que porte Sakuta Azusagawa sur le torse ?","b":3,"r":["Un tatouage","Une brûlure","Trois griffures","Une cicatrice d'opération","Un pendentif","Une marque de naissance"],"p":"https://aobuta.fandom.com/wiki/Sakuta_Azusagawa","src":"He has three claw marks that go across his chest, which are a result of Adolescence Syndrome."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"medium","t":"Qui est Kaede pour Sakuta ?","b":1,"r":["Sa petite sœur","Sa cousine","Sa voisine","Sa camarade de classe","Son amie d'enfance","Sa demi-sœur"],"p":"https://aobuta.fandom.com/wiki/Sakuta_Azusagawa","src":"Kaede Azusagawa (Younger Sister). Sakuta is Kaede's older brother."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"hard","t":"Comment se nomme le lycée de Sakuta et Mai ?","b":5,"r":["Suimei","Shichiri","Hoshigaoka","Aobane","Minegahara","Sakuragaoka"],"p":"https://aobuta.fandom.com/wiki/Minegahara_High_School","src":"Minegahara High School is the main school that many characters attend."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"hard","t":"Quel lien Nodoka Toyohama a-t-elle avec Mai Sakurajima ?","b":2,"r":["C'est sa cousine","C'est sa demi-sœur","C'est sa rivale de tournage","C'est sa manageuse","C'est son ancienne camarade de classe","C'est sa voisine"],"p":"https://aobuta.fandom.com/wiki/Nodoka_Toyohama","src":"Nodoka Toyohama is the younger half-sister of Mai Sakurajima and a member of an idol group named Sweet Bullet."},{"g":"Bunny Girl Senpai","s":"Bunny Girl Senpai","d":"veryhard","t":"De quel club Rio Futaba est-elle la seule membre ?","b":4,"r":["Le club de littérature","Le club de photo","Le club d'astronomie","Le club de sciences","Le club de théâtre","Le club d'informatique"],"p":"https://aobuta.fandom.com/wiki/Rio_Futaba","src":"Rio Futaba is a second-year student at Minegahara High School and is the sole member of the Science Club."},{"g":"Solo Leveling","s":"Solo Leveling","d":"veryeasy","t":"Quel est le rang de Sung Jin-Woo au début de l'histoire ?","b":1,"r":["Rang E","Rang D","Rang C","Rang B","Rang A","Rang S"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Il était auparavant connu comme le Chasseur le plus faible du monde. Taille : 174 cm (Rang E)."},{"g":"Solo Leveling","s":"Solo Leveling","d":"veryeasy","t":"Comment appelle-t-on ceux qui combattent les monstres des donjons ?","b":3,"r":["Des gardiens","Des purgateurs","Des chasseurs","Des traqueurs","Des veilleurs","Des éclaireurs"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Sung Jin-Woo était auparavant connu comme le Chasseur le plus faible du monde."},{"g":"Solo Leveling","s":"Solo Leveling","d":"easy","t":"Par quoi les monstres font-ils irruption dans le monde des humains ?","b":2,"r":["Par des failles dans le ciel","Par des portails","Par des puits abandonnés","Par des miroirs","Par d'anciens tombeaux","Par la mer"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Les Portails s'ouvrent dans le monde réel et donnent accès aux Donjons que les Chasseurs doivent nettoyer."},{"g":"Solo Leveling","s":"Solo Leveling","d":"easy","t":"Quel surnom Sung Jin-Woo porte-t-il avant sa transformation ?","b":4,"r":["Le chasseur fantôme","Le chasseur maudit","Le dernier des rangs E","Le chasseur le plus faible du monde","Le survivant","Le porte-malheur des guildes"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Il était auparavant connu comme le Chasseur le plus faible du monde."},{"g":"Solo Leveling","s":"Solo Leveling","d":"medium","t":"Que reçoit Jin-Woo après avoir survécu au double donjon ?","b":5,"r":["Une arme légendaire","Un titre officiel de rang S","La protection d'une guilde","Une armure maudite","Un système qui lui permet de monter en niveau","Un serviteur immortel"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Le mystérieux système lui a permis de monter de niveau, ce qu'aucun autre Chasseur ne peut faire."},{"g":"Solo Leveling","s":"Solo Leveling","d":"medium","t":"Qu'est-ce qui rend Jin-Woo unique parmi tous les chasseurs ?","b":2,"r":["Il voit les monstres avant leur apparition","Il est le seul à pouvoir devenir plus fort","Il peut fermer les portails","Il ne ressent pas la peur","Il entend les pensées des monstres","Il ne vieillit plus"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Le rang d'un Chasseur est fixé à son éveil ; Jin-Woo est le seul dont les statistiques augmentent."},{"g":"Solo Leveling","s":"Solo Leveling","d":"medium","t":"De quoi la mère de Jin-Woo souffre-t-elle ?","b":6,"r":["D'une blessure de chasse","D'une malédiction de donjon","D'une perte de mémoire","D'une cécité soudaine","D'un empoisonnement","D'un sommeil dont elle ne se réveille pas"],"p":"https://solo-leveling.fandom.com/fr/wiki/Park_Kyung-Hye","src":"Kyung-Hye a soudainement développé des symptômes du Sommeil éternel, avant de tomber dans le coma."},{"g":"Solo Leveling","s":"Solo Leveling","d":"hard","t":"Que fait Jin-Woo des ennemis qu'il abat ?","b":3,"r":["Il revend leurs cristaux","Il absorbe leur force","Il en fait des soldats d'ombre","Il les enferme dans des pierres","Il les rend à leur donjon","Il les offre à sa guilde"],"p":"https://solo-leveling.fandom.com/fr/wiki/Igris","src":"Igris est l'un des premiers serviteurs de Sung Jinwoo. Soldat de l'Armée des Ombres."},{"g":"Solo Leveling","s":"Solo Leveling","d":"hard","t":"Quel titre Sung Jin-Woo finit-il par porter ?","b":1,"r":["Monarque des Ombres","Roi des Portails","Seigneur des Abysses","Monarque de Fer","Souverain des Flammes","Maître des Donjons"],"p":"https://solo-leveling.fandom.com/fr/wiki/Sung_Jin-Woo","src":"Classe : Monarque de L'ombre. Compétences : Monarque des Ombres."},{"g":"Solo Leveling","s":"Solo Leveling","d":"veryhard","t":"Comment se nomme le premier chevalier de l'armée des ombres de Jin-Woo ?","b":4,"r":["Beru","Tank","Kaisel","Igris","Iron","Greed"],"p":"https://solo-leveling.fandom.com/fr/wiki/Igris","src":"Igris est l'un des premiers serviteurs de Sung Jinwoo. Rang : Maréchal."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"veryeasy","t":"Qui s'affronte dans le tournoi du Ragnarök ?","b":2,"r":["Les anges et les démons","Les dieux et les humains","Les vivants et les morts","Les hommes et les bêtes","Les rois et les guerriers","Les dieux entre eux"],"p":"https://record-of-ragnarok.fandom.com/wiki/Ragnarok","src":"Ragnarok is Mankind's final struggle against the Gods."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"easy","t":"Combien de combats compte le tournoi du Ragnarök ?","b":4,"r":["Sept","Dix","Douze","Treize","Quinze","Vingt"],"p":"https://record-of-ragnarok.fandom.com/wiki/Ragnarok","src":"Each side picks thirteen fighters who will fight in thirteen one-on-one showdowns to the death."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"easy","t":"Combien de victoires faut-il pour remporter le Ragnarök ?","b":5,"r":["Cinq","Six","Huit","Dix","Sept","Treize"],"p":"https://record-of-ragnarok.fandom.com/wiki/Ragnarok","src":"The first side to reach seven victories is the winner."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"easy","t":"Qu'arrive-t-il à l'humanité si les dieux remportent le Ragnarök ?","b":3,"r":["Elle perd toute magie","Elle est réduite en esclavage","Elle est anéantie","Elle oublie son histoire","Elle est chassée de la Terre","Elle est privée de descendance"],"p":"https://record-of-ragnarok.fandom.com/wiki/Ragnarok","src":"If the Gods win the Ragnarok, Humanity's fate is sealed and it will be wiped out."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"medium","t":"Qui propose le tournoi du Ragnarök pour sauver l'humanité ?","b":2,"r":["Göll","Brunhilde","Hrist","Alvitr","Sigrun","Randgriz"],"p":"https://record-of-ragnarok.fandom.com/wiki/Brunhilde","src":"As the Gods were deciding on mankind's destruction, Brunhilde took the Humans' side and suggested the start of Ragnarok."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"medium","t":"Quel lien unit les treize valkyries du Ragnarök ?","b":4,"r":["Elles ont le même maître d'armes","Elles ont été créées par Odin","Elles ont toutes été humaines","Ce sont des sœurs","Elles ont juré fidélité à Zeus","Elles viennent de treize royaumes"],"p":"https://record-of-ragnarok.fandom.com/wiki/Brunhilde","src":"Brunhilde is the eldest of the 13 Valkyrie sisters who stood up against the Gods."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"medium","t":"Que deviennent les valkyries pendant les combats ?","b":6,"r":["Des arbitres","Des boucliers vivants","Des guérisseuses","Des porte-drapeaux","Des juges du Valhalla","Des armes pour leur champion"],"p":"https://record-of-ragnarok.fandom.com/wiki/V%C3%B6lundr","src":"A Völundr is the act of uniting the soul of a Human with the soul of a Valkyrie, which allows the Valkyrie to incarnate herself into a Divine Weapon."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"hard","t":"Tous les combien de temps les dieux se réunissent-ils pour juger l'humanité ?","b":3,"r":["Tous les cent ans","Tous les cinq cents ans","Tous les mille ans","Tous les deux mille ans","Tous les dix mille ans","Tous les cinquante ans"],"p":"https://record-of-ragnarok.fandom.com/wiki/Ragnarok","src":"Le Conseil de Valhalla se tient tous les mille ans pour décider du sort de l'humanité."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"hard","t":"Comment se nomme la plus jeune des sœurs valkyries ?","b":5,"r":["Hrist","Alvitr","Sigrun","Randgriz","Göll","Reginleif"],"p":"https://record-of-ragnarok.fandom.com/wiki/Brunhilde","src":"Relatives : Hrist (2nd) to Göll (13th) (Younger Sisters)."},{"g":"Valkyrie Apocalypse","s":"Valkyrie Apocalypse","d":"veryhard","t":"Comment appelle-t-on la fusion d'un humain et d'une valkyrie ?","b":2,"r":["Le Bifröst","Le Völund","Le Seidr","Le Gungnir","Le Fylgja","Le Seiðr d'Odin"],"p":"https://record-of-ragnarok.fandom.com/wiki/V%C3%B6lundr","src":"A Völundr (神器錬成), literally meaning « Divine Weapon Forgery », is the act of uniting the soul of a Human with the soul of a Valkyrie."},{"g":"Frieren","s":"Frieren","d":"veryeasy","t":"Contre qui Frieren et ses compagnons se sont-ils battus avant le début de l'histoire ?","b":3,"r":["Un dragon ancien","Un empereur tyrannique","Le Roi des Démons","Une déesse déchue","Un ordre de mages noirs","Un géant des montagnes"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"She was the Mage of the Hero Party and traveled alongside Himmel the Hero, Eisen the Warrior, and Heiter the Priest in a ten-year journey to defeat the Demon King."},{"g":"Frieren","s":"Frieren","d":"easy","t":"De combien de membres l'équipe du héros était-elle composée ?","b":1,"r":["Quatre","Deux","Trois","Cinq","Six","Sept"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"Himmel the Hero, Eisen the Warrior, Heiter the Priest et Frieren la mage."},{"g":"Frieren","s":"Frieren","d":"easy","t":"Comment se nomme le héros qui menait l'équipe de Frieren ?","b":4,"r":["Heiter","Helm","Silber","Himmel","Hirtz","Adler"],"p":"https://frieren.fandom.com/wiki/Himmel","src":"Himmel was the Hero of the Hero Party. With the help of Priest Heiter, Mage Frieren, and Warrior Eisen, he defeated the Demon King."},{"g":"Frieren","s":"Frieren","d":"easy","t":"Combien de temps l'équipe du héros a-t-elle voyagé pour vaincre le Roi des Démons ?","b":2,"r":["Deux ans","Dix ans","Cinq ans","Vingt ans","Cinquante ans","Cent ans"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"A ten-year journey to defeat the Demon King."},{"g":"Frieren","s":"Frieren","d":"easy","t":"De quoi Himmel est-il mort ?","b":5,"r":["Au combat","D'une malédiction","Empoisonné","Noyé","De vieillesse","Assassiné par un démon"],"p":"https://frieren.fandom.com/wiki/Himmel","src":"After his death from old age, Frieren resolves to get to know Humans better."},{"g":"Frieren","s":"Frieren","d":"medium","t":"Qui accompagne Frieren dans son nouveau voyage ?","b":3,"r":["Heiter et Eisen","Sein et Denken","Fern et Stark","Ubel et Kanne","Serie et Flamme","Personne, elle voyage seule"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"After Himmel's death, Frieren began journeying with Fern and Stark to visit Aureole and speak with Himmel once again."},{"g":"Frieren","s":"Frieren","d":"medium","t":"Qu'espère faire Frieren en atteignant le bout de son voyage vers le nord ?","b":6,"r":["Retrouver sa jeunesse","Détruire les derniers démons","Récupérer le grimoire de Flamme","Devenir mage de première classe","Refermer la porte du Roi des Démons","Reparler à Himmel"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"Frieren began journeying with Fern and Stark to visit Aureole and speak with Himmel once again."},{"g":"Frieren","s":"Frieren","d":"medium","t":"Qui a recueilli Fern avant de la confier à Frieren ?","b":2,"r":["Eisen","Heiter","Himmel","Serie","Flamme","Denken"],"p":"https://frieren.fandom.com/wiki/Fern","src":"She is an orphaned war refugee originally from the Southern Lands, later adopted by Heiter and placed under Frieren's care after his death."},{"g":"Frieren","s":"Frieren","d":"medium","t":"Sur quoi Frieren tombe-t-elle presque à chaque fois qu'elle ouvre un coffre ?","b":4,"r":["Un piège empoisonné","Un coffre vide","Un sort d'alarme","Un mimic","Une pierre sans valeur","Un squelette"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"She is willing to pursue the one percent chance of finding grimoires in treasure chests even with a ninety-nine percent probability that the chest is a mimic."},{"g":"Frieren","s":"Frieren","d":"hard","t":"Que Frieren collectionne-t-elle depuis des siècles ?","b":1,"r":["Des grimoires, même les sorts inutiles","Des armes de héros","Des pierres précieuses","Des portraits de ses compagnons","Des cartes anciennes","Des plantes rares"],"p":"https://frieren.fandom.com/wiki/Frieren","src":"She is willing to pursue the one percent chance of finding grimoires in treasure chests. Elle collectionne les sorts, y compris les plus futiles."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"veryeasy","t":"Quel métier Gabimaru exerçait-il avant d'être condamné ?","b":3,"r":["Samouraï","Bourreau","Ninja","Moine","Pirate","Marchand"],"p":"https://jigokuraku.fandom.com/wiki/Gabimaru","src":"Gabimaru, born as Saku, is an elite shinobi assassin formerly from Iwagakure."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"veryeasy","t":"Que doivent rapporter les condamnés envoyés sur l'île pour être graciés ?","b":5,"r":["Une arme légendaire","Un trésor royal","La tête d'un monstre","Une carte de l'île","L'élixir d'immortalité","Un otage"],"p":"https://jigokuraku.fandom.com/wiki/Kotaku","src":"Le shogunat promet la grâce aux condamnés qui rapporteront l'élixir de vie de l'île."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"easy","t":"Qu'est-ce qui rend l'exécution de Gabimaru impossible ?","b":2,"r":["Il s'évade à chaque fois","Aucune lame ne parvient à le tuer","Le shogun l'a gracié","Il se dédouble","Il prend l'apparence d'un autre","Personne n'ose le juger"],"p":"https://jigokuraku.fandom.com/wiki/Gabimaru","src":"Gabimaru survit à toutes les tentatives d'exécution, ce qui pousse le shogunat à lui proposer le marché de l'île."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"easy","t":"Qui Gabimaru veut-il absolument retrouver ?","b":4,"r":["Son maître","Son frère","Sa fille","Sa femme","Son ancien complice","Sa mère"],"p":"https://jigokuraku.fandom.com/wiki/Gabimaru","src":"My whole goal's to survive and make it home. Home to my wife."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"easy","t":"Qui accompagne chaque condamné sur l'île ?","b":6,"r":["Un moine","Un soldat du shogun","Un médecin","Un guide de l'île","Un autre condamné","Un bourreau chargé de le surveiller"],"p":"https://jigokuraku.fandom.com/wiki/Yamada_Asaemon_Sagiri","src":"Occupation : Heiress of the Yamada Clan, Samurai, Yamada Asaemon. Chaque criminel est escorté par un exécuteur du clan Yamada."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"medium","t":"Comment se nomme la jeune femme chargée de surveiller Gabimaru ?","b":1,"r":["Sagiri","Chizuru","Ayane","Kohaku","Shizuka","Yuzuki"],"p":"https://jigokuraku.fandom.com/wiki/Yamada_Asaemon_Sagiri","src":"Yamada Asaemon Sagiri, héritière du clan Yamada, est l'exécutrice attachée à Gabimaru."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"medium","t":"De quel clan les bourreaux de l'expédition sont-ils issus ?","b":3,"r":["Le clan Kishō","Le clan Tenza","Le clan Yamada","Le clan Senju","Le clan Aburai","Le clan Nurugai"],"p":"https://jigokuraku.fandom.com/wiki/Yamada_Asaemon_Sagiri","src":"Affiliation : Yamada Clan. Les exécuteurs portent tous le titre de Yamada Asaemon."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"medium","t":"Quel surnom Gabimaru porte-t-il dans son village ?","b":5,"r":["Gabimaru l'Ombre","Gabimaru le Muet","Gabimaru le Sang-Froid","Gabimaru le Rapide","Gabimaru le Vide","Gabimaru le Sourd"],"p":"https://jigokuraku.fandom.com/wiki/Gabimaru","src":"The last holder of the infamous alias, Gabimaru the Hollow."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"hard","t":"Pourquoi le village de Gabimaru l'a-t-il livré aux autorités ?","b":2,"r":["Il avait volé un trésor du clan","Il voulait quitter son métier d'assassin","Il avait tué son maître","Il avait révélé des secrets","Il avait refusé un contrat","Il s'était marié en secret"],"p":"https://jigokuraku.fandom.com/wiki/Gabimaru","src":"He was betrayed by his village for wanting to abandon his role as a murderer and live a peaceful life with his wife."},{"g":"Hell's Paradise","s":"Hell's Paradise","d":"veryhard","t":"Comment se nomme l'île où se déroule l'expédition ?","b":4,"r":["Hōrai","Ryukyu","Tenkai","Shinsenkyō","Jōdo","Kotobuki"],"p":"https://jigokuraku.fandom.com/wiki/Kotaku","src":"Kotaku, more commonly known as Shinsenkyō, is an island located within the southwest seas far beyond the Ryukyu Kingdom."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"veryeasy","t":"Quel métier Ai Hoshino exerce-t-elle ?","b":6,"r":["Infirmière","Professeure","Journaliste","Photographe","Coiffeuse","Idole"],"p":"https://oshinoko.fandom.com/wiki/Ai_Hoshino","src":"She was the lead idol of the original B-Komachi and the mother of Aqua and Ruby."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"easy","t":"Comment se nomme le groupe d'idoles d'Ai Hoshino ?","b":2,"r":["Sweet Lily","B-Komachi","Neo Sakura","Star Bloom","Hoshi Gumi","Lucky Cherry"],"p":"https://oshinoko.fandom.com/wiki/Ai_Hoshino","src":"She was the lead idol of the original B-Komachi."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"easy","t":"Quel secret Ai Hoshino cache-t-elle à ses admirateurs ?","b":3,"r":["Elle ne sait pas chanter","Elle veut arrêter le métier","Elle a eu des jumeaux","Elle est plus âgée qu'annoncé","Elle est mariée","Elle a une sœur rivale"],"p":"https://oshinoko.fandom.com/wiki/Ai_Hoshino","src":"After becoming pregnant with the twins, to not squander her reputation, she gave birth and raised them in secret, playing the role of both idol and mother."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"easy","t":"Comment se nomment les jumeaux d'Ai Hoshino ?","b":4,"r":["Sora et Hikari","Aoi et Rin","Kai et Rei","Aqua et Ruby","Ren et Mio","Yuki et Akane"],"p":"https://oshinoko.fandom.com/wiki/Aqua_Hoshino","src":"Aqua Hoshino, full name Aquamarine Hoshino, et sa sœur jumelle Ruby sont les enfants d'Ai."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"medium","t":"Quel métier Aqua exerçait-il dans sa vie précédente ?","b":1,"r":["Médecin","Policier","Professeur","Producteur de télévision","Journaliste","Cameraman"],"p":"https://oshinoko.fandom.com/wiki/Aqua_Hoshino","src":"Occupation : Medical Doctor (Previous life). Gorou Amamiya (Previous life)."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"medium","t":"Qu'est-ce qui apparaît dans les yeux des personnages d'Oshi no Ko ?","b":5,"r":["Un cœur","Une larme","Un croissant de lune","Une spirale","Une étoile","Une couronne"],"p":"https://oshinoko.fandom.com/wiki/Ai_Hoshino","src":"Ai avait une étoile à six branches blanche dans chaque œil, qui noircissait parfois selon son état mental."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"medium","t":"Quel âge Ai avait-elle à la naissance des jumeaux ?","b":3,"r":["Quatorze ans","Quinze ans","Seize ans","Dix-huit ans","Vingt ans","Vingt-deux ans"],"p":"https://oshinoko.fandom.com/wiki/Ai_Hoshino","src":"Âge : 16 (Chapitres 1-2)."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"hard","t":"Que cherche Aqua après la mort de sa mère ?","b":2,"r":["À reprendre le groupe d'Ai","À retrouver le père des jumeaux","À quitter le monde du spectacle","À racheter l'agence d'Ai","À protéger Ruby de la célébrité","À retrouver son ancien corps"],"p":"https://oshinoko.fandom.com/wiki/Aqua_Hoshino","src":"Hikaru Kamiki (Biological father). Aqua cherche l'homme qui a conduit à la mort de sa mère."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"hard","t":"Quelle carrière Ruby veut-elle embrasser ?","b":5,"r":["Médecin, comme son frère","Réalisatrice","Chanteuse lyrique","Actrice de théâtre","Idole, comme sa mère","Mannequin"],"p":"https://oshinoko.fandom.com/wiki/Ruby_Hoshino","src":"Occupation : Idol, Youtuber, TV Personality, Actress."},{"g":"Oshi no Ko","s":"Oshi no Ko","d":"veryhard","t":"Comment Ruby se nommait-elle dans sa vie précédente ?","b":4,"r":["Ayumi","Shizuka","Mayu","Sarina","Nanami","Chiharu"],"p":"https://oshinoko.fandom.com/wiki/Ruby_Hoshino","src":"Sarina Tendouji (Previous life)."},{"g":"Fate/stay night","s":"Fate/stay night","d":"veryeasy","t":"Combien de Servants participent à la guerre du Graal ?","b":3,"r":["Cinq","Six","Sept","Huit","Dix","Douze"],"p":"https://typemoon.fandom.com/wiki/Holy_Grail_War","src":"La guerre du Graal oppose sept Masters et leurs sept Servants, un par classe."},{"g":"Fate/stay night","s":"Fate/stay night","d":"easy","t":"Quelle classe de Servant Shirou Emiya invoque-t-il ?","b":1,"r":["Saber","Archer","Lancer","Rider","Caster","Berserker"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"Shirou Emiya is a teenage Japanese magus who acts as the Master of Artoria Pendragon during the Fifth Holy Grail War."},{"g":"Fate/stay night","s":"Fate/stay night","d":"easy","t":"Quelle est la véritable identité de Saber ?","b":4,"r":["Jeanne d'Arc","La reine Boudicca","Lancelot du Lac","Le roi Arthur","Siegfried","Charlemagne"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"Shirou Emiya acts as the Master of Artoria Pendragon, le roi Arthur de la légende."},{"g":"Fate/stay night","s":"Fate/stay night","d":"easy","t":"Qui est le Master d'Archer ?","b":5,"r":["Illyasviel","Sakura Matou","Ayako Mitsuzuri","Taiga Fujimura","Rin Tohsaka","Caren Ortensia"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"Rin Tohsaka invoque Archer pour la cinquième guerre du Graal."},{"g":"Fate/stay night","s":"Fate/stay night","d":"medium","t":"Combien de sceaux de commandement un Master possède-t-il ?","b":2,"r":["Un","Trois","Deux","Cinq","Sept","Dix"],"p":"https://typemoon.fandom.com/wiki/Command_Spell","src":"Chaque Master reçoit trois sceaux de commandement, chacun permettant un ordre absolu à son Servant."},{"g":"Fate/stay night","s":"Fate/stay night","d":"medium","t":"Quelle est la particularité de la magie de Shirou Emiya ?","b":6,"r":["Il invoque des créatures","Il soigne les blessures","Il contrôle les flammes","Il lit l'avenir","Il manipule les ombres","Il copie les armes qu'il voit"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"Attribute : Reinforcement, Projection. Reality Marble : Unlimited Blade Works."},{"g":"Fate/stay night","s":"Fate/stay night","d":"medium","t":"Qui a recueilli Shirou après le grand incendie ?","b":3,"r":["Kirei Kotomine","Taiga Fujimura","Kiritsugu Emiya","Le père de Rin","Un prêtre anonyme","Sa tante"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"He is the adopted son of Kiritsugu Emiya."},{"g":"Fate/stay night","s":"Fate/stay night","d":"hard","t":"Quel Servant Illyasviel von Einzbern commande-t-elle ?","b":5,"r":["Rider","Lancer","Caster","Assassin","Berserker","Archer"],"p":"https://typemoon.fandom.com/wiki/Illyasviel_von_Einzbern","src":"Illyasviel von Einzbern est la Master de Berserker, Héraclès, durant la cinquième guerre du Graal."},{"g":"Fate/stay night","s":"Fate/stay night","d":"hard","t":"Qui se cache derrière Archer dans Unlimited Blade Works ?","b":2,"sp":true,"r":["Le père de Rin","Shirou venu du futur","Kiritsugu Emiya","Un ancien roi","Le frère de Kirei","Gilgamesh déguisé"],"p":"https://typemoon.fandom.com/wiki/Shirou_Emiya","src":"Archer (EMIYA) est une version future de Shirou Emiya, devenue Héros Gardien ; leur Reality Marble commune est Unlimited Blade Works."},{"g":"Fate/stay night","s":"Fate/stay night","d":"veryhard","t":"Combien de vies Berserker doit-il perdre pour mourir ?","b":4,"r":["Trois","Sept","Neuf","Douze","Quinze","Une seule"],"p":"https://typemoon.fandom.com/wiki/Heracles","src":"God Hand accorde à Héraclès douze vies, une pour chacun de ses travaux."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"veryeasy","t":"Dans quelle classe Kiyotaka Ayanokoji est-il placé à son arrivée ?","b":4,"r":["La classe A","La classe B","La classe C","La classe D","La classe E","La classe F"],"p":"https://you-zitsu.fandom.com/wiki/Kiyotaka_Ayanok%C5%8Dji","src":"Following the entrance exam in which he scored precisely 50 points in every subject, he was placed in D-Class."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"easy","t":"À quoi servent les points distribués aux élèves du lycée ?","b":2,"r":["À améliorer leurs notes","À acheter tout ce qu'ils veulent sur le campus","À choisir leurs professeurs","À raccourcir leurs cours","À obtenir des jours de congé","À voter les règles de l'école"],"p":"https://you-zitsu.fandom.com/wiki/Advanced_Nurturing_High_School","src":"Each student will have their own points to be used in place of money when buying goods and services. There is nothing that cannot be bought on campus using points."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"easy","t":"Quelle classe obtient les recommandations pour l'université et l'emploi ?","b":1,"r":["La classe A","La classe B","La classe C","La classe D","Toutes les classes","Aucune, c'est au mérite individuel"],"p":"https://you-zitsu.fandom.com/wiki/Advanced_Nurturing_High_School","src":"Only the graduating students of Class A will receive the university and employment recommendation by the school."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"easy","t":"Qu'est-ce qui décide de la lettre attribuée à une classe ?","b":5,"r":["L'ancienneté des élèves","Le tirage au sort","Le choix du professeur principal","Le nombre d'élèves","Son nombre de points","Les résultats du seul premier de la classe"],"p":"https://you-zitsu.fandom.com/wiki/Advanced_Nurturing_High_School","src":"Class A through D labels are provisional and can change based on class point assignments."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"medium","t":"Quel résultat Ayanokoji a-t-il obtenu à l'examen d'entrée ?","b":3,"r":["La note maximale partout","Zéro partout","Exactement 50 sur 100 dans chaque matière","La moyenne juste en dessous du dernier admis","Il n'a pas passé l'examen","Un sans-faute sauf en sport"],"p":"https://you-zitsu.fandom.com/wiki/Kiyotaka_Ayanok%C5%8Dji","src":"Following the entrance exam in which he scored precisely 50 points in every subject, he was placed in D-Class."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"medium","t":"Quel est l'objectif de Suzune Horikita ?","b":4,"r":["Devenir présidente du conseil des élèves","Quitter le lycée","Battre Ayanokoji à tous les examens","Atteindre la classe A","Se faire des amis","Entrer dans la même université que son frère"],"p":"https://you-zitsu.fandom.com/wiki/Suzune_Horikita","src":"Despite her academic ability, she was placed in D-Class due to her inability to work with others. Nevertheless, she strives for A-Class."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"medium","t":"Que cache Kikyo Kushida derrière son sourire ?","b":2,"r":["Une maladie","Une personnalité rancunière","Une fortune familiale","Un passé de sportive de haut niveau","Un travail secret","Une sœur jumelle"],"p":"https://you-zitsu.fandom.com/wiki/Kiky%C5%8D_Kushida","src":"It is revealed that she also has a rancorous side to her personality which she hides from everyone behind her bubbly façade."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"hard","t":"Comment les points privés mensuels d'un élève sont-ils calculés ?","b":3,"r":["Selon sa moyenne générale","Selon son classement personnel","Les points de sa classe multipliés par cent","Une somme fixe pour tous","Selon le nombre d'élèves de sa classe","Selon les points qu'il a économisés"],"p":"https://you-zitsu.fandom.com/wiki/Advanced_Nurturing_High_School","src":"Every month, each student is assigned private points equal to their class points times 100."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"hard","t":"Combien de points privés faut-il pour acheter son passage dans une autre classe ?","b":5,"r":["Un million","Cinq millions","Dix millions","Cinquante millions","Vingt millions","Cent millions"],"p":"https://you-zitsu.fandom.com/wiki/Advanced_Nurturing_High_School","src":"Students can buy the right to transfer to the class of their choosing. 20,000,000 private points are required to do this."},{"g":"Classroom of the Elite","s":"Classroom of the Elite","d":"veryhard","t":"D'où vient Ayanokoji avant son entrée au lycée ?","b":2,"sp":true,"r":["D'un internat militaire","De la Chambre Blanche","D'un orphelinat d'État","D'un collège à l'étranger","D'un laboratoire de recherche","Il n'a jamais été scolarisé"],"p":"https://you-zitsu.fandom.com/wiki/Kiyotaka_Ayanok%C5%8Dji","src":"Pre-affiliation : White Room. Due to the upbringing in the White Room, he has come to see everyone around him as a tool."}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+const LOT = "douze";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>

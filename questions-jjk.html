@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — jjk — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « jjk » — 30 questions sur Jujutsu Kaisen</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Le début de l'histoire","d":"veryeasy","t":"Quel objet Yuji Itadori avale-t-il au début de l'histoire ?","b":4,"r":["Un œil de Sukuna","Une dent de Sukuna","Un fragment de son crâne","Un doigt de Sukuna","Un ongle de Sukuna","Une mèche de cheveux de Sukuna"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Yuji a avalé le doigt de Sukuna afin de l'exorciser et de sauver ses amis.","s":"Jujutsu Kaisen"},{"g":"Le début de l'histoire","d":"veryeasy","t":"Dans quelle école Yuji est-il inscrit après avoir avalé le doigt ?","b":2,"r":["L'école d'exorcisme d'Osaka","L'école d'exorcisme de Tokyo","L'école d'exorcisme de Kyoto","L'école d'exorcisme de Nagoya","L'école d'exorcisme de Sendai","L'école d'exorcisme de Yokohama"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Yuji est un élève de seconde à l'école d'exorcisme de Tokyo.","s":"Jujutsu Kaisen"},{"g":"Le début de l'histoire","d":"easy","t":"Quelle peine les hautes instances prononcent-elles contre Yuji Itadori ?","b":5,"r":["L'exil hors du Japon","La prison à vie","Le retrait de son énergie occulte","Le bannissement de l'école","La peine de mort","Les travaux forcés"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Les hautes instances condamnent Yuji à mort pour avoir ingéré un doigt de Sukuna, sentence repoussée le temps qu'il les récupère tous.","s":"Jujutsu Kaisen"},{"g":"Le début de l'histoire","d":"easy","t":"Quel dernier conseil le grand-père de Yuji lui laisse-t-il avant de mourir ?","b":3,"r":["De ne jamais faire confiance à personne","De fuir tout ce qui touche à l'occulte","D'aider les autres et de mourir entouré","De retrouver son père","De devenir le plus fort","De ne jamais montrer sa force"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Ce dernier dit à Yuji d'utiliser sa force pour aider les autres et d'être entouré au moment de sa mort.","s":"Jujutsu Kaisen"},{"g":"Le début de l'histoire","d":"extreme","t":"Dans quel lycée ordinaire Yuji étudiait-il avant de rejoindre les exorcistes ?","b":6,"r":["Le lycée Kitazawa 2","Le lycée Hasegawa","Le lycée Morisaki 1","Le lycée Tonami","Le lycée Sendagaya 4","Le lycée Sugisawa 3"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Dans la salle du club de spiritisme du lycée Sugisawa 3, Yuji assiste aux plaintes du président du conseil étudiant.","s":"Jujutsu Kaisen"},{"g":"Le début de l'histoire","d":"veryhard","t":"À quel club Yuji appartenait-il dans son lycée ?","b":1,"r":["Le club de spiritisme","Le club d'athlétisme","Le club de photo","Le club de cuisine","Le club d'astronomie","Le club de théâtre"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yuji_Itadori","src":"Club de spiritisme (Anciennement). Le club ne compte pas trois membres et doit céder sa salle.","s":"Jujutsu Kaisen"},{"g":"Les règles du monde","d":"veryeasy","t":"De quoi les fléaux naissent-ils ?","b":3,"r":["Des âmes des morts","De la magie noire","Des émotions négatives des humains","Des reliques maudites","Des animaux tués","Des lieux abandonnés"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Mahito","src":"Fléau de classe S né de la haine des humains envers leurs semblables.","s":"Jujutsu Kaisen"},{"g":"Les règles du monde","d":"medium","t":"Combien de doigts de Sukuna faut-il retrouver en tout ?","b":4,"r":["Dix","Douze","Quinze","Vingt","Dix-huit","Vingt-quatre"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Doigts_de_Ryomen_Sukuna","src":"Les Doigts de Ryomen Sukuna sont vingt doigts tous issus du Roi des Fléaux éponyme devenu une relique de classe S.","s":"Jujutsu Kaisen"},{"g":"Sukuna","d":"medium","t":"Combien de bras Sukuna possédait-il de son vivant ?","b":2,"r":["Deux","Quatre","Trois","Six","Huit","Dix"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Ryomen_Sukuna","src":"Durant sa vie passée, Sukuna était décrit comme un démon à quatre bras et à deux visages.","s":"Jujutsu Kaisen"},{"g":"Sukuna","d":"medium","t":"Combien de temps s'est-il écoulé depuis l'époque où Sukuna était humain ?","b":5,"r":["Cent ans","Deux cents ans","Cinq cents ans","Deux mille ans","Mille ans","Cinq mille ans"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Ryomen_Sukuna","src":"Humain il y a mille ans, son corps devint une puissante relique et, conservé par son adipocire, traversa les époques.","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"veryeasy","t":"Qui est le professeur de Yuji, Megumi et Nobara ?","b":3,"r":["Masamichi Yaga","Haruki Mizuno","Satoru Gojo","Shohei Nagai","Jozen Aketa","Tetsuo Kanzaki"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Satoru_Gojo","src":"Satoru Gojo est un exorciste de grade spécial et le professeur des secondes de l'école d'exorcisme de Tokyo.","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"easy","t":"Quelles armes Nobara Kugisaki utilise-t-elle au combat ?","b":2,"r":["Un arc et des flèches","Un marteau et des clous","Des aiguilles et du fil","Un fouet et des dés","Des cartes et une pique","Un éventail et des billes"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Nobara_Kugisaki","src":"Nobara combat au marteau et aux clous, qu'elle plante dans des poupées de paille pour frapper à distance.","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"easy","t":"Quels animaux Megumi Fushiguro fait-il sortir de son ombre dès ses premiers combats ?","b":6,"r":["Des corbeaux","Des singes","Des renards","Des araignées","Des loups","Des chiens"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Megumi_Fushiguro","src":"Megumi hérite de la Technique des Dix Ombres et invoque en premier lieu ses Chiens Divins.","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"easy","t":"Pourquoi Toge Inumaki ne s'exprime-t-il qu'avec des ingrédients de boulettes de riz ?","b":4,"r":["Parce qu'il a perdu la voix","Parce qu'il a fait un vœu de silence","Parce qu'un fléau lui a volé les mots","Parce que ses paroles maudissent ceux qui les entendent","Parce que c'est un code entre exorcistes","Parce qu'il refuse de parler aux vivants"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Toge_Inumaki","src":"C'est pour éviter de maudire ses proches et se protéger lui-même que Toge parle exclusivement à partir d'ingrédients de boulette de riz.","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"medium","t":"Quel objet Maki Zenin doit-elle porter pour voir les fléaux ?","b":5,"r":["Un bandeau","Une bague","Un collier","Des gants","Des lunettes","Un masque"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Maki_Zenin","src":"« Moi, je ne vois rien du tout sauf quand je porte ces lunettes ringardes. »","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"hard","t":"Qui est la sœur jumelle de Maki Zenin ?","b":1,"r":["Mai","Momo","Mika","Mayu","Maika","Mao"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Maki_Zenin","src":"Mai Zenin (Sœur jumelle).","s":"Jujutsu Kaisen"},{"g":"Les élèves de Tokyo","d":"extreme","t":"Comment se nomme l'amie d'enfance que Nobara espère retrouver à Tokyo ?","b":2,"r":["Yuko","Saori","Saeko","Sayuri","Shiori","Sanae"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Nobara_Kugisaki","src":"Nobara rejoint Tokyo avec le désir de vivre librement selon ses propres règles et souhaite retrouver son amie d'enfance, Saori.","s":"Jujutsu Kaisen"},{"g":"Panda","d":"hard","t":"Qui a créé Panda ?","b":3,"r":["Satoru Gojo","Le proviseur Shinoda","Le proviseur Yaga","L'exorciste Terashima","Un laboratoire clandestin","La famille Okada"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Panda","src":"Masamichi Yaga (Créateur). Panda a été créé et entraîné par le directeur de l'école de Tokyo.","s":"Jujutsu Kaisen"},{"g":"Panda","d":"extreme","t":"Combien de noyaux Panda possède-t-il ?","b":4,"r":["Un","Deux","Cinq","Trois","Quatre","Sept"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Panda","src":"Ce n'est pas un vrai panda, c'est un incarné à mutation spontanée qui possède trois noyaux créé par le proviseur Masamichi Yaga.","s":"Jujutsu Kaisen"},{"g":"L'école de Kyoto","d":"medium","t":"Quelle question Aoi Todo pose-t-il à tous ceux qu'il rencontre ?","b":2,"r":["Quel est ton rêve ?","Quel est ton type de femme ?","De quoi as-tu peur ?","Quelle est ta chanson préférée ?","Combien de fléaux as-tu exorcisés ?","Pour qui te battrais-tu ?"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Aoi_Todo","src":"Aoi confronte Megumi Fushiguro et demande quel est son type de fille.","s":"Jujutsu Kaisen"},{"g":"L'école de Kyoto","d":"hard","t":"Quel instrument le proviseur de l'école de Kyoto emporte-t-il au combat ?","b":6,"r":["Un tambour","Un shamisen","Une flûte","Un violon","Une cloche","Une guitare"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Yoshinobu_Gakuganji","src":"Au combat, il porte une valise qui contient sa guitare.","s":"Jujutsu Kaisen"},{"g":"L'école de Kyoto","d":"veryhard","t":"Sous quel nom l'élève de Kyoto qui combat à travers un pantin mécanique est-il connu ?","b":3,"r":["Karakuri","Tetsumaru","Mechamaru","Kikaimaru","Haganemaru","Jikomaru"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Kokichi_Muta","src":"Il utilise Mechamaru Ultimate, un pantin mécanique, comme intermédiaire pour pouvoir interagir avec le monde extérieur.","s":"Jujutsu Kaisen"},{"g":"Les adultes","d":"medium","t":"Quel métier Kento Nanami a-t-il exercé avant de redevenir exorciste ?","b":5,"r":["Professeur de lycée","Chef cuisinier","Médecin","Policier","Employé de bureau","Pompier"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Kento_Nanami","src":"Après avoir obtenu son diplôme de l'école d'exorcisme, il est devenu salarié. Employé trader à la bourse de Tokyo (Anciennement).","s":"Jujutsu Kaisen"},{"g":"Les adultes","d":"easy","t":"Qui était le meilleur ami de Satoru Gojo lorsqu'il était lycéen ?","b":4,"r":["Kento Nanami","Rintaro Amane","Shigeru Ogata","Suguru Geto","Kaito Hoshino","Tomoya Seki"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Suguru_Geto","src":"Il est un ancien élève de l'école d'exorcisme de Tokyo et le meilleur ami de Satoru Gojo.","s":"Jujutsu Kaisen"},{"g":"Les adultes","d":"veryhard","t":"Quels membres de sa famille Suguru Geto tue-t-il après avoir rompu avec les exorcistes ?","b":2,"r":["Son ancien maître","Ses parents","Sa petite sœur","Ses deux disciples","Le chef du clan Zenin","Son oncle"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Suguru_Geto","src":"Quelque temps plus tard, Suguru s'en prend également à ses parents.","s":"Jujutsu Kaisen"},{"g":"Les fléaux","d":"medium","t":"De quoi le fléau Mahito est-il né ?","b":6,"r":["De la peur de la mort","De la haine des exorcistes","Des remords des assassins","De la solitude des enfants","De la colère des morts","De la haine des humains envers les humains"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Mahito","src":"Fléau de classe S né de la haine des humains envers leurs semblables.","s":"Jujutsu Kaisen"},{"g":"Le drame de Shibuya","d":"hard","t":"Quel jour de l'année le drame de Shibuya se déroule-t-il ?","b":1,"r":["Le 31 octobre","Le 24 décembre","Le 1er janvier","Le 15 août","Le 3 mars","Le 7 juillet"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Drame_de_Shibuya","src":"« Le 31 octobre, à Shibuya, nous allons sceller Satoru Gojo. » — Suguru Geto à ses alliés.","s":"Jujutsu Kaisen"},{"g":"Le drame de Shibuya","d":"hard","t":"Qu'arrive-t-il à Satoru Gojo à la fin du drame de Shibuya ?","b":3,"r":["Il est tué","Il perd la vue","Il est scellé","Il est exilé du Japon","Il perd son énergie occulte","Il quitte l'école de Tokyo"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Drame_de_Shibuya","src":"Satoru Gojo est scellé et le faux Suguru s'échappe du Drame de Shibuya.","s":"Jujutsu Kaisen"},{"g":"Le drame de Shibuya","d":"hard","t":"Qui occupe le corps de Suguru Geto après sa mort ?","b":5,"r":["Sukuna","Kakuen","Genshiro","Jinpachi","Kenjaku","Souren"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Kenjaku","src":"Grâce à son sort lui permettant de transplanter son cerveau dans différents corps, Kenjaku traversa les siècles en occupant diverses enveloppes charnelles.","s":"Jujutsu Kaisen"},{"g":"Le drame de Shibuya","d":"veryhard","t":"Quelle marque apparaît sur le crâne de chaque corps qu'occupe Kenjaku ?","b":4,"r":["Une corne","Un tatouage en spirale","Une brûlure sur la tempe","Une cicatrice qui en fait tout le tour","Un troisième œil","Une mèche blanche"],"p":"https://jujutsu-kaisen.fandom.com/fr/wiki/Kenjaku","src":"Kenjaku reprend à l'identique l'apparence de son hôte avec pour seule différence l'apparition d'une longue cicatrice au niveau de son front et qui fait tout le tour de sa boîte crânienne.","s":"Jujutsu Kaisen"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+const LOT = "jjk";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>
