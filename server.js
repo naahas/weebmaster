@@ -280,6 +280,7 @@ const AVATARS_AUTORISES = new Set([
     // One Piece
     'luffy.webp',
     'zoro.webp',
+    'sanji.webp',
     'nami.webp',
     // Dragon Ball
     'goku.webp',
@@ -294,6 +295,7 @@ const AVATARS_AUTORISES = new Set([
     'bakugo.webp',
     'shoto.webp',
     // L Attaque des Titans
+    'eren.webp',
     'mikasa.webp',
     'levi.webp',
     // Demon Slayer
@@ -320,6 +322,10 @@ const AVATARS_AUTORISES = new Set([
     'rin.webp',
     // Steins Gate
     'makise.webp',
+    // Persona 5
+    'joker.webp',
+    // Tokyo Ghoul
+    'kaneki.webp',
 ]);
 
 // ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
