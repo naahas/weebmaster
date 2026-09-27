@@ -228,8 +228,10 @@ createApp({
             // Mesure temporaire : le mode Classique demande un mot de passe.
             // Gardé en mémoire seulement — un rechargement le redemande.
             demandeMdp: false,
+            // Le champ peut-il masquer sa saisie en restant un champ texte ?
+            // Repondu une fois a l ouverture, voir created().
+            mdpMasqueCss: false,
             mdpSalon: '',
-            mdpErreur: '',
             mdpShake: false,
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
@@ -406,7 +408,17 @@ createApp({
                     livesDistribution: { 3: 0, 2: 0, 1: 0, 0: 0 }
                 },
                 eliminatedCount: 0,
-                remainingPlayers: 0
+            // Les réponses déjà masquées sur la question en cours, par un 50/50
+            // ou par un joker.
+            //
+            // ⚠️ Tenue ICI et non lue dans le DOM : le masquage n est posé qu au
+            // bout de 100 ms, et deux clics rapides sur le 50/50 auraient trouvé
+            // l écran inchangé, recalculé le même lot, et brûlé un bonus pour
+            // rien. Remise à zéro par resetBonusEffects().
+            reponsesMasquees: [],
+            // Le jeton qui vient d être refusé — il tremble le temps que ce
+            // champ porte son nom. Pas de message : ça n arrive presque jamais.
+            jetonRefuse: null,                remainingPlayers: 0
             },
 
             // Joueur
@@ -494,7 +506,18 @@ createApp({
                 timer: 8,
                 lives: 2,
                 timeRemaining: 8,
-                timerInterval: null,
+                // La mèche : 'tour' (le minuteur repart à chaque réponse) ou
+                // 'continue' (une seule mèche pour toute la manche).
+                meche: 'tour',
+                mecheB: 3.5,          // secondes de mèche par joueur — plus réglable
+                                      // depuis l interface, gardé pour les suites
+                mecheTotal: 0,        // ce que le serveur a tiré, pour dessiner
+                // ⚠️ Fixés AU DÉBUT DU TOUR et pas retouchés ensuite : l animation
+                // de la mèche part de là et dure exactement ce temps-là. Les lire
+                // dans « timeRemaining », qui décrémente, la relancerait à chaque
+                // seconde.
+                mecheDepart: 0,       // secondes de mèche au début du tour
+                mecheCle: 0,          // change à chaque tour : relance l animation                timerInterval: null,
                 playersOrder: [],
                 playersData: [],
                 currentPlayerId: null,
@@ -546,6 +569,20 @@ createApp({
     created() {
         // Hors de data : un simple compteur n a pas à être réactif
         this._notifSeq = 0;
+
+
+        // ⚠️ Un « type=password » interdit de COPIER sa valeur : c est le
+        // navigateur qui le decide, et aucun code ne peut le lever. Un champ
+        // TEXTE masque par « -webkit-text-security » rend le copier-coller
+        // entier. On ne peut pas changer le type d un champ depuis une feuille
+        // de style : la question se pose donc ICI, et l on retombe sur
+        // « password » si la propriete manque — mieux vaut perdre le copier
+        // que montrer un mot de passe en clair a un stream.
+        try {
+            this.mdpMasqueCss = !!(window.CSS && CSS.supports &&
+                (CSS.supports('-webkit-text-security', 'disc') ||
+                 CSS.supports('text-security', 'disc')));
+        } catch (e) { this.mdpMasqueCss = false; }
 
         // 🔗 Le code peut venir de l adresse. On le lit ICI et pas plus tard :
         // restoreGameState() peut nous remettre dans une partie en cours, et il
@@ -1484,6 +1521,16 @@ createApp({
             return this.currentMode.id === 'classic';
         },
 
+        // Le champ n'est ouvert que si la carte MONTRE le mode qui en demande
+        // un. Survoler un autre mode change la carte sans changer le mode
+        // CHOISI : sans cette condition le champ restait affiché sous
+        // BombAnime ou Rush, et laissait croire qu'ils étaient réservés aussi.
+        // Le bouton reprend sa place le temps du survol et le champ revient
+        // intact — « demandeMdp » et la saisie ne bougent pas.
+        mdpOuvert() {
+            return this.demandeMdp && this.modeSousMotDePasse;
+        },
+
         // Rush : le classement peut compter trente joueurs, on n'en montre que cinq
         rushPlaces() {
             if (!this.gameEndData || this.gameEndData.gameMode !== 'rush') return [];
@@ -1541,6 +1588,7 @@ createApp({
     },
 
     watch: {
+
         // 🔗 L adresse suit le salon, toujours. Poser le lien a la jointure
         // sans jamais le reprendre laissait un code mort dans la barre : on
         // quittait la partie, l adresse restait, et recharger donnait « code
@@ -3492,7 +3540,6 @@ createApp({
         annulerMdp() {
             this.demandeMdp = false;
             this.mdpSalon = '';
-            this.mdpErreur = '';
         },
 
         async createRoom() {
@@ -3504,7 +3551,6 @@ createApp({
             // Mesure temporaire : sans le mot de passe, le serveur refuserait.
             // Autant le demander ici plutôt que d'aller chercher un 403.
             if (this.modeSousMotDePasse && !this.mdpSalon) {
-                this.mdpErreur = '';
                 this.demandeMdp = true;
                 this.$nextTick(() => {
                     const c = this.$refs.mdpInput;
@@ -3535,14 +3581,15 @@ createApp({
                 });
                 const data = await res.json();
 
-                // Refus du mot de passe : on rouvre la demande plutôt que
-                // d'afficher une erreur générique sous le bouton.
+                // Refus du mot de passe : le champ se vide et tremble en rouge.
+                // Pas de message — le serveur dit « Ouverture refusée », ce que
+                // la secousse dit déjà, et une ligne de texte rallongerait la
+                // carte à chaque essai raté.
                 if (res.status === 403 || (res.status === 503 && this.modeSousMotDePasse)) {
                     this.mdpSalon = '';
-                    this.mdpErreur = data.error || 'Ouverture refusée.';
                     this.demandeMdp = true;
                     this.mdpShake = true;
-                    setTimeout(() => { this.mdpShake = false; }, 420);
+                    setTimeout(() => { this.mdpShake = false; }, 380);
                     this.$nextTick(() => {
                         const c = this.$refs.mdpInput;
                         if (c) c.focus();
@@ -3865,6 +3912,26 @@ createApp({
             return p.lastAnswer || '';
         },
 
+        // La part de mèche au DÉBUT du tour, de 1 à 0. C est le point de
+        // départ de l animation, pas l état courant.
+        //
+        // ⚠️ Le total n est pas le même selon le réglage : en « par tour » c est
+        // la durée du tour, en « continue » celle de la manche entière, tirée au
+        // sort. Prendre « timer » dans les deux cas ferait une mèche huit fois
+        // trop rapide, puis figée à zéro.
+        mechePart() {
+            const b = this.bombanime;
+            const total = (b.meche === 'continue' ? (b.mecheTotal || b.timer) : b.timer) || 1;
+            return Math.max(0, Math.min(1, (b.mecheDepart || 0) / total));
+        },
+
+        // Et le temps que l animation doit mettre pour aller jusqu au bout :
+        // exactement ce qu il reste. C est ce qui fait tomber la mèche à zéro À
+        // L INSTANT de l explosion, sans avoir à viser une seconde en avant
+        // comme le faisait la version à paliers.
+        mecheDuree() {
+            return Math.max(0, this.bombanime.mecheDepart || 0).toFixed(2) + 's';
+        },
         nomSerie(id) {
             const s = this.bombanimeSeries.find(x => x.id === id);
             return s ? s.nom : id;
@@ -4258,6 +4325,9 @@ createApp({
             this.selectedMode = id;
             this.hoverMode = null;
             localStorage.setItem('lastMode', id);
+            // Le champ de mot de passe vit DANS la carte du mode : changer de
+            // mode doit le ranger, sinon il resterait ouvert sous un Rush.
+            if (this.demandeMdp) this.annulerMdp();
         },
 
         // Un appui sur l'un des deux choix : une onde part du point touché et le
@@ -6067,7 +6137,16 @@ createApp({
                 this.bombanime.suggestionUsed = false;
                 sessionStorage.removeItem('bombanimeSuggestionUsed');
                 this.bombanime.timer = data.timer;
-                this.bombanime.timeRemaining = data.timer; // 🆕 Reset timeRemaining pour éviter la bombe rouge
+                this.bombanime.meche = data.meche || 'tour';
+                this.bombanime.mecheTotal = data.mecheTotal || 0;
+                // ⚠️ En continue le temps de départ est celui de la MÈCHE, pas
+                // du tour : recopier « timer » ferait démarrer la bombe à 8 s
+                // alors qu elle en a trente devant elle.
+                this.bombanime.timeRemaining = this.bombanime.meche === 'continue'
+                    ? (data.mecheTotal || data.timer)
+                    : data.timer;
+                this.bombanime.mecheDepart = this.bombanime.timeRemaining;
+                this.bombanime.mecheCle++;
                 this.bombanime.inputValue = ''; // 🆕 Reset input à chaque nouvelle partie
                 this.bombanime.playersOrder = [...data.playersOrder];
                 this.bombanime.playersData = [...data.playersData];
@@ -6154,7 +6233,21 @@ createApp({
                 
                 this.bombanime.currentPlayerId = data.currentPlayerId;
                 this.bombanime.bombPointingUp = false; // La bombe tourne vers le joueur
-                this.bombanime.timeRemaining = data.timer;
+
+                // ⚠️ On prend ce que le SERVEUR annonce, pas « timer ». En mèche
+                // continue le temps ne repart pas avec le tour : recopier timer
+                // remettrait la bombe à huit secondes à chaque réponse, ce qui
+                // est exactement le mode qu on voulait quitter. « timeRemaining »
+                // n existe pas dans les anciennes annonces, d où le repli.
+                if (data.meche) this.bombanime.meche = data.meche;
+                if (data.mecheTotal) this.bombanime.mecheTotal = data.mecheTotal;
+                this.bombanime.timeRemaining = (data.timeRemaining !== undefined && data.timeRemaining !== null)
+                    ? data.timeRemaining
+                    : data.timer;
+
+                // La mèche repart d ici, pour exactement ce temps-là.
+                this.bombanime.mecheDepart = this.bombanime.timeRemaining;
+                this.bombanime.mecheCle++;
                 this.bombanime.lastError = null;
                 
                 // Reset les currentTyping de tous les joueurs (null = pas encore tapé)
@@ -6414,6 +6507,9 @@ createApp({
                 // 🔊 Son d'explosion
                 this.stopBombTicking();
                 this.playSound(this.sounds.bombanimeExplosion);
+
+                // 💥 Et l éclat au centre, en même temps que le son.
+                this.eclatBombe();
                 
                 // 🆕 Garder la tentative de réponse du joueur qui explose
                 const explodingPlayer = this.bombanime.playersData.find(p => p.playerId === data.playerId);
@@ -7306,6 +7402,17 @@ createApp({
 
             if (event) this.playSealEffect(event.currentTarget);
 
+            // Et on lâche le bouton. « :hover » est traité au-dessus, mais
+            // « :focus » colle lui aussi après un appui, et survivrait au
+            // changement de question puisque Vue réutilise le même nœud.
+            //
+            // ⚠️ Seulement si le clic vient d un pointeur : « detail » vaut 0
+            // quand c est le clavier qui a validé, et lui retirer le focus
+            // renverrait le lecteur en haut de page.
+            if (event && event.detail > 0 && event.currentTarget) {
+                event.currentTarget.blur();
+            }
+
             this.socket.emit('submit-answer', {
                 answer: answerIndex,
                 bonusActive: this.activeBonusEffect
@@ -7921,6 +8028,19 @@ createApp({
                 return;
             }
 
+            // Un 50/50 quand il ne reste qu une réponse ne masquerait rien : on
+            // refuse plutôt que de le consommer. Arrive après deux 50/50 sur une
+            // question à quatre réponses, ou après un joker.
+            if (bonusType === '5050' && this.currentQuestion) {
+                const restant = this.currentQuestion.answers.length - this.reponsesMasquees.length;
+                if (restant < 2) {
+                    this.jetonRefuse = bonusType;
+                    clearTimeout(this._jetonRefuseT);
+                    this._jetonRefuseT = setTimeout(() => { this.jetonRefuse = null; }, 400);
+                    return;
+                }
+            }
+
             // Envoyer au serveur
             this.socket.emit('use-bonus', { bonusType });
 
@@ -7961,37 +8081,36 @@ createApp({
 
             const totalAnswers = this.currentQuestion.answers.length;
 
-            console.log(`🎯 Bonus 50/50 - Bonne réponse: ${correctIndex}, Total: ${totalAnswers}`);
-
-            // 🔥 Calculer combien garder visible (50% arrondi au supérieur)
-            const toKeepVisible = Math.ceil(totalAnswers / 2);
-            // Si 4 réponses → 2 visibles (50%)
-            // Si 6 réponses → 3 visibles (50%)
-
-            console.log(`📊 50% de ${totalAnswers} = ${toKeepVisible} réponses à garder`);
-
-            // Toutes les MAUVAISES réponses
-            const wrongIndexes = [];
+            // ⚠️ On part de ce qui RESTE, pas du nombre de réponses. C est ce qui
+            // permet d en enchaîner deux sur la même question : chaque 50/50 coupe
+            // en deux ce qu on voit encore, et le second finit le travail du
+            // premier au lieu de le refaire.
+            //
+            //   4 réponses → 2 masquées, il en reste 2
+            //                → 1 masquée, il en reste 1  (le joker, en deux temps)
+            //   6 réponses → 3 masquées, il en reste 3
+            //                → 1 masquée, il en reste 2  (3 ne se coupe pas en deux)
+            //                → 1 masquée, il en reste 1
+            //
+            // L arrondi INFÉRIEUR garantit qu on ne touche jamais à la bonne :
+            // il y a toujours « reste - 1 » mauvaises, et floor(reste / 2) ne
+            // dépasse jamais ce nombre.
+            const visibles = [];
             for (let i = 1; i <= totalAnswers; i++) {
-                if (i !== correctIndex) {
-                    wrongIndexes.push(i);
-                }
+                if (!this.reponsesMasquees.includes(i)) visibles.push(i);
             }
 
-            // 🔥 Nombre de mauvaises réponses à GARDER visibles
-            const wrongToKeepCount = toKeepVisible - 1; // -1 car la bonne est déjà comptée
-            // Si 4 réponses (2 à garder) → 1 mauvaise à garder
-            // Si 6 réponses (3 à garder) → 2 mauvaises à garder
+            const aMasquer = Math.floor(visibles.length / 2);
+            if (aMasquer < 1) return;
 
-            // Mélanger et prendre les N premières
+            const wrongIndexes = visibles.filter(i => i !== correctIndex);
             const shuffledWrong = [...wrongIndexes].sort(() => 0.5 - Math.random());
-            const wrongToKeep = shuffledWrong.slice(0, wrongToKeepCount);
+            const toHide = shuffledWrong.slice(0, aMasquer);
 
-            // Toutes les autres seront masquées
-            const toHide = wrongIndexes.filter(idx => !wrongToKeep.includes(idx));
+            // Comptabilisé TOUT DE SUITE : le masquage, lui, attend 100 ms.
+            this.reponsesMasquees = this.reponsesMasquees.concat(toHide);
 
-            console.log(`✅ Visibles: ${correctIndex} (bonne) + ${wrongToKeep} (mauvaises) = ${toKeepVisible} total`);
-            console.log(`🙈 Masquées: ${toHide} = ${toHide.length} réponses`);
+            console.log(`🎯 50/50 — ${visibles.length} visible(s) → ${toHide.length} masquée(s), reste ${visibles.length - toHide.length}`);
 
             // Appliquer
             setTimeout(() => {
@@ -8020,6 +8139,14 @@ createApp({
             const totalAnswers = this.currentQuestion.answers.length;
 
             console.log(`💡 Bonus Révéler - Bonne réponse: ${correctIndex}`);
+
+            // Le joker nourrit la MÊME liste que le 50/50 : sans ça, un 50/50
+            // joué après lui se serait cru devant six réponses intactes.
+            for (let i = 1; i <= totalAnswers; i++) {
+                if (i !== correctIndex && !this.reponsesMasquees.includes(i)) {
+                    this.reponsesMasquees.push(i);
+                }
+            }
 
             // Masquer TOUTES les mauvaises réponses
             setTimeout(() => {
@@ -8051,6 +8178,10 @@ createApp({
             document.querySelectorAll('.v2q-answer').forEach(btn => {
                 btn.classList.remove('bonus-5050-hidden', 'bonus-revealed');
             });
+
+            // Et la mémoire de ce qui était masqué, sans quoi le 50/50 de la
+            // question suivante se croirait déjà à moitié joué.
+            this.reponsesMasquees = [];
 
             // Le jeton allumé s'éteint avec l'effet
             this.activeBonusEffect = null;
@@ -8404,13 +8535,21 @@ createApp({
             const totalMs = this.bombanime.timeRemaining * 1000;
             this.bombanime.debugMs = totalMs;
             
+            // ⚠️ En mèche continue, ce qu on reçoit du serveur est fractionnaire
+            // (« 7,8 s »), alors que le compteur entier décrémente de 1 en 1.
+            // On garde donc le départ exact et on recalcule à chaque seconde
+            // depuis l horloge : sans ça, six tours de suite accumulaient six
+            // fois l arrondi et la bombe explosait avant la fin de la barre.
+            const departS = this.bombanime.timeRemaining;
+            
             this.bombanime.debugMsInterval = setInterval(() => {
                 const elapsed = Date.now() - startTime;
                 this.bombanime.debugMs = Math.max(0, totalMs - elapsed);
             }, 50); // 50ms suffit pour un affichage fluide
             
             this.bombanime.timerInterval = setInterval(() => {
-                this.bombanime.timeRemaining--;
+                const ecoule = (Date.now() - startTime) / 1000;
+                this.bombanime.timeRemaining = Math.max(0, Math.ceil(departS - ecoule));
                 
                 // 🔊 Mettre à jour la vitesse du tictac
                 this.updateTictacSpeed();
@@ -8421,10 +8560,15 @@ createApp({
                     this.bombanime.debugMs = 0;
                     this.stopBombTicking();
                     
-                    // 🆕 Désactiver immédiatement l'input quand le timer atteint 0
+                    // 🆕 Désactiver immédiatement l'input quand le timer atteint 0.
+                    //
+                    // ⚠️ On ne VIDE PLUS le champ. Jeter ce qui est tapé au moment
+                    // précis où l on essayait de l envoyer donne exactement la
+                    // sensation d un bug : le texte disparaît, la touche Entrée ne
+                    // fait rien, et rien n explique pourquoi. Le champ se grise,
+                    // le texte reste, et le tour suivant le remplacera.
                     if (this.bombanime.isMyTurn) {
                         this.bombanime.isMyTurn = false;
-                        this.bombanime.inputValue = '';
                         // Défocuser l'input
                         const input = document.getElementById('bombanimeInput');
                         if (input) input.blur();
@@ -8433,6 +8577,67 @@ createApp({
             }, 1000);
         },
         
+        // 💥 L éclat au centre, au moment où la bombe saute.
+        //
+        // Réglages venus du prototype /prototypes/bomb-eclats, piste
+        // « Poussière » : trente grains, portée 0,70, rotation pleine, le tout
+        // en 325 ms. Trente petits morceaux plutôt que quatorze gros : la bombe
+        // ne se brise pas, elle se PULVÉRISE, et ça paraît plus violent à durée
+        // égale.
+        //
+        // ⚠️ Tout est calé sur la TAILLE DE LA BOMBE, portée comme grains. Elle
+        // va de 78 px à huit joueurs sur ordinateur à 44 px sur téléphone : des
+        // pixels en dur auraient donné un nuage démesuré en petit, et des
+        // miettes invisibles en grand.
+        eclatBombe() {
+            const socle = document.querySelector('.bomb-wrapper');
+            if (!socle) return;
+
+            const t = this.getBombSize();
+            const D = 325;
+
+            const couche = document.createElement('div');
+            couche.className = 'bomb-eclat';
+            socle.appendChild(couche);
+
+            const flash = document.createElement('div');
+            flash.className = 'bomb-flash';
+            flash.style.setProperty('--f', (t * 2.4).toFixed(0) + 'px');
+            couche.appendChild(flash);
+
+            const PALETTE = ['#ffdd66', '#ff8c2a', '#ff4422', '#fff1c0'];
+            const hasard = (x, y) => x + Math.random() * (y - x);
+            const N = 30;
+
+            for (let i = 0; i < N; i++) {
+                const ang = (i / N) * Math.PI * 2 + hasard(-0.22, 0.22);
+                // Portée 0,70 × la fourchette d origine [0,8 – 2,2].
+                const r = hasard(0.56, 1.54) * t;
+                const g = document.createElement('div');
+                g.className = 'bomb-grain';
+                g.style.setProperty('--dx', (Math.cos(ang) * r).toFixed(1) + 'px');
+                g.style.setProperty('--dy', (Math.sin(ang) * r).toFixed(1) + 'px');
+                g.style.setProperty('--rot', hasard(-420, 420).toFixed(0) + 'deg');
+                g.style.setProperty('--w', (t * hasard(0.043, 0.10)).toFixed(1) + 'px');
+                g.style.setProperty('--h', (t * hasard(0.029, 0.057)).toFixed(1) + 'px');
+                g.style.setProperty('--c', PALETTE[i % PALETTE.length]);
+                g.style.setProperty('--d', D + 'ms');
+                couche.appendChild(g);
+            }
+
+            // Le corps encaisse sans disparaître.
+            const corps = document.querySelector('.bomb-body-wrap');
+            if (corps) {
+                corps.classList.add('encaisse');
+                setTimeout(() => corps.classList.remove('encaisse'), D + 40);
+            }
+
+            // ⚠️ La couche entière part d un coup : laisser trente nœuds morts
+            // derrière chaque explosion, c est vingt-cinq manches de débris
+            // empilés dans le DOM sur une partie à treize joueurs.
+            setTimeout(() => couche.remove(), D + 120);
+        },
+
         // 🔊 Démarrer le son tictac de la bombe
         startBombTicking() {
             if (!this.tictacSound || this.soundMuted || !this.bombanime.active) return;
@@ -8740,8 +8945,9 @@ createApp({
             if (screenWidth <= 768) {
                 return Math.min(58, Math.max(46, 38 + (total * 1.3)));
             }
-            // Desktop
-            const size = Math.min(70, Math.max(58, 48 + (total * 1.7)));
+            // Desktop — un cheveu plus grosse que les autres tailles : c est le
+            // seul écran où le cercle a de la place autour d elle.
+            const size = Math.min(78, Math.max(65, 54 + (total * 1.9)));
             // 2K+
             if (screenWidth >= 2560) {
                 return Math.round(size * 1.25);
@@ -8895,6 +9101,7 @@ createApp({
                 'character_not_found': 'Personnage inconnu',
                 'already_used': 'Déjà utilisé !',
                 'not_your_turn': 'Ce n\'est pas ton tour',
+                'time_expired': 'Trop tard — la mèche était finie',
                 'invalid_input': 'Entrée invalide'
             };
             return messages[this.bombanime.lastError] || this.bombanime.lastError;

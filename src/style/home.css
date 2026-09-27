@@ -9074,10 +9074,22 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, opacity 0.3s ease;
 }
 
-.v2q-answer:hover:not(:disabled) {
-    background: rgba(255, 215, 0, 0.07);
-    border-color: rgba(255, 215, 0, 0.4);
-    transform: translateY(-0.1rem);
+/* ⚠️ Le survol est réservé aux appareils QUI EN ONT UN.
+
+   Sur téléphone, un navigateur garde « :hover » sur le dernier élément touché
+   jusqu à ce qu on touche ailleurs. Vue réutilise les boutons d une question à
+   la suivante — même position, même nœud — si bien que la réponse tapée restait
+   allumée sous la NOUVELLE question, à la même place. Rien de cassé, mais on
+   croyait avoir déjà répondu.
+
+   « hover: hover » ne vaut que pour un vrai pointeur ; au doigt la règle n est
+   même pas lue, et il n y a plus rien à décoller. */
+@media (hover: hover) {
+    .v2q-answer:hover:not(:disabled) {
+        background: rgba(255, 215, 0, 0.07);
+        border-color: rgba(255, 215, 0, 0.4);
+        transform: translateY(-0.1rem);
+    }
 }
 
 .v2q-answer:disabled { cursor: default; }
@@ -9114,7 +9126,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2q-mark.m4 { color: #fca5a5; background: rgba(252, 165, 165, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(252, 165, 165, 0.35); }
 .v2q-mark.m5 { color: #fdba74; background: rgba(253, 186, 116, 0.12); box-shadow: inset 0 0 0 0.06rem rgba(253, 186, 116, 0.35); }
 
-.v2q-answer:hover:not(:disabled) .v2q-mark { transform: scale(1.12); }
+@media (hover: hover) {
+    .v2q-answer:hover:not(:disabled) .v2q-mark { transform: scale(1.12); }
+}
 
 /* Balayage doré au survol */
 .v2q-answer::before {
@@ -9126,7 +9140,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.v2q-answer:hover:not(:disabled)::before { width: 100%; }
+@media (hover: hover) {
+    .v2q-answer:hover:not(:disabled)::before { width: 100%; }
+}
 
 .v2q-answer-pct { z-index: 1; }
 
@@ -9196,12 +9212,66 @@ body.game-active:has(.poll-game-container) #particles-js {
     gap: 0.7rem;
 }
 
+/* Sur ORDINATEUR les jetons sont une COLONNE, à droite du panneau de question.
+   Le bas de l écran les éloignait trop des réponses : on y jette un œil sans
+   quitter la question du regard.
+
+   ⚠️ Le panneau fait « min(30rem, 92vw) » et se centre : sa moitié vaut donc
+   « min(15rem, 46vw) ». C est de là qu on part, et non d une largeur fixe —
+   sous 32.6rem de fenêtre le panneau passe en 92vw, et une marge en dur aurait
+   posé la colonne par-dessus lui.
+
+   Sur téléphone, rien ne change : la place manque à droite, et la rangée du bas
+   y est déjà réglée par quatre autres règles. */
+@media (min-width: 769px) {
+    .v2-bonus {
+        left: calc(50% + min(15rem, 46vw) + 2.8rem);
+        top: 50%;
+        bottom: auto;
+        transform: translateY(-50%);
+        flex-direction: column;
+        gap: 0.95rem;
+    }
+}
+
+/* ── L entrée et la sortie des jetons, à chaque question ──
+   Le CONTENEUR ne porte que le fondu, les JETONS portent le mouvement.
+
+   ⚠️ Et ce partage n est pas un choix de style : le « transform » du conteneur
+   sert au PLACEMENT — « translateY(-50%) » pour la colonne, « translateX(-50%) »
+   pour la rangée du téléphone — et l animer aurait fait voyager toute la barre
+   à travers l écran. Les jetons, eux, n ont pas de transform de placement.
+
+   Ils entrent l un après l autre et sortent ensemble : on attend l arrivée,
+   on n attend pas le départ. */
+.v2-bonus-f-enter-active { transition: opacity 0.3s ease; }
+.v2-bonus-f-leave-active { transition: opacity 0.2s ease; }
+.v2-bonus-f-enter-from,
+.v2-bonus-f-leave-to { opacity: 0; }
+
+.v2-bonus-f-enter-from .v2-token { transform: translateX(0.7rem); }
+.v2-bonus-f-leave-to .v2-token   { transform: translateX(0.5rem); }
+
+.v2-bonus-f-enter-active .v2-token {
+    transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.v2-bonus-f-leave-active .v2-token { transition: transform 0.2s ease; }
+
+.v2-bonus-f-enter-active .v2-token:nth-child(2) { transition-delay: 0.07s; }
+.v2-bonus-f-enter-active .v2-token:nth-child(3) { transition-delay: 0.14s; }
+
+/* Le halo ne respire pas pendant la glissade : allumé, il aurait laissé une
+   traînée derrière le jeton. */
+.v2-bonus-f-enter-active .v2-token::before,
+.v2-bonus-f-leave-active .v2-token::before { animation: none; }
+
 .v2-token {
     position: relative;
     display: grid;
     place-items: center;
-    width: 3.4rem;
-    height: 3.4rem;
+    width: 3.2rem;
+    height: 3.2rem;
     padding: 0;
     background: rgba(255, 255, 255, 0.04);
     border: 0.06rem solid rgba(255, 255, 255, 0.12);
@@ -9210,7 +9280,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
-.v2-token img { width: 1.55rem; height: 1.55rem; }
+.v2-token img { width: 1.45rem; height: 1.45rem; }
 
 .v2-token-n {
     position: absolute;
@@ -9238,9 +9308,81 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-token.off { opacity: 0.45; cursor: default; }
 .v2-token.used { opacity: 0.25; }
 
+/* ── Un bonus utilisable respire ──
+   getBonusState() ne rend que « available » ou « locked ». « off » s ajoute
+   quand on ne peut pas s en servir MAINTENANT, et « actif » quand il est déjà
+   en cours — celui-là porte son propre halo, fixe, qu il ne faut pas animer.
+
+   ⚠️ Rien sur le « transform » DU BOUTON : il est déjà pris par le survol, et
+   une animation écrase toujours une déclaration normale — le jeton serait
+   resté collé en bas au passage de la souris. Le halo bouge donc sur le
+   bouton, l échelle sur l icône, et les deux ne se marchent pas dessus. */
+/* La lueur vit dans un CALQUE À PART, derrière le jeton, et seule son opacité
+   bouge — l opacité se compose sur le GPU, elle ne coûte rien.
+
+   ⚠️ C est ce qui manquait à la première version : elle animait « filter:
+   drop-shadow » sur l icône ET « box-shadow » sur le bouton. Ni l un ni l
+   autre ne se compose : le navigateur redessinait trois jetons à chaque image,
+   d où le tremblement. Il ne reste plus qu une opacité et une échelle. */
+.v2-token::before {
+    content: '';
+    position: absolute;
+    inset: -0.45rem;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+                rgba(255, 205, 50, 0.3) 0%,
+                rgba(255, 190, 30, 0.1) 45%,
+                transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.v2-token.available:not(.off):not(.actif):not(:disabled)::before {
+    animation: v2TokenHalo 2.6s ease-in-out infinite;
+}
+
+.v2-token.available:not(.off):not(.actif):not(:disabled) img {
+    animation: v2TokenIcone 2.6s ease-in-out infinite;
+}
+
+/* Au survol, le halo du survol reprend la main : la respiration s arrête,
+   sinon elle continuerait de l effacer une fois sur deux.
+
+   ⚠️ Sauf pendant un refus. On clique forcément en SURVOLANT le jeton, et
+   « :hover:not(:disabled) » l emporte sur « .refus » : sans cette exception,
+   le « animation: none » aurait éteint le tremblement au moment précis où il
+   doit se voir. */
+.v2-token:hover:not(:disabled):not(.refus),
+.v2-token:hover:not(:disabled)::before,
+.v2-token:hover:not(:disabled) img { animation: none; }
+
+/* Un 50/50 qui ne masquerait plus rien : le jeton tremble, on ne consomme pas
+   le bonus, et on n écrit rien — le cas est trop rare pour mériter un message. */
+.v2-token.refus { animation: v2TokenRefus 0.34s ease; }
+
+@keyframes v2TokenRefus {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-0.18rem); }
+    55%      { transform: translateX(0.15rem); }
+    80%      { transform: translateX(-0.07rem); }
+}
+
+@keyframes v2TokenHalo {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 1; }
+}
+
+@keyframes v2TokenIcone {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.07); }
+}
+
 @media (max-width: 768px) {
     .v2-bonus { gap: 0.5rem; bottom: 0.8rem; }
     .v2-token { width: 3rem; height: 3rem; }
+    /* ⚠️ L icône est REPOSÉE à sa taille d avant : seul l ordinateur devait
+       rétrécir, et la règle de base s applique aussi ici. */
+    .v2-token img { width: 1.55rem; height: 1.55rem; }
 }
 
 /* ============================================
@@ -12376,66 +12518,192 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    MESURE TEMPORAIRE — mot de passe du mode Classique
    Tout est regroupé ici pour qu'un seul bloc parte le jour où
    la mesure est levée.
+
+   ⚠️ C'était une modale, et elle saccadait. Le voile portait un
+   « backdrop-filter: blur » PLEIN ÉCRAN dont on animait l'opacité,
+   et la boîte posée dessus en portait un SECOND, imbriqué : à
+   chaque image le navigateur refloutait toute l'illustration du
+   mode et ses particules, puis refloutait le résultat sous la
+   boîte. Animer l'opacité d'un flou plein écran est le pire cas
+   qu'on puisse demander au compositeur.
+
+   Le champ pousse maintenant À LA PLACE du bouton, dans la même
+   case. Rien ne se floute, rien ne se réagence : seules l'opacité
+   et une découpe bougent, et le compositeur les tient sans toucher
+   à la mise en page.
    ════════════════════════════════════════════════════════════ */
-.v2-mdp-voile {
-    position: fixed;
-    inset: 0;
-    z-index: 120;
+
+/* ⚠️ La carte du mode est une colonne « align-items: flex-start » :
+   le bouton y est CALÉ À GAUCHE et large comme son texte. La case
+   prend donc toute la largeur — invisible, elle ne déplace rien — et
+   remet ses enfants à gauche, sinon le bouton se recentrerait. */
+.v2-cta-case {
+    position: relative;
     display: grid;
-    place-items: center;
-    padding: 1.2rem;
-    background: rgba(6, 6, 9, 0.82);
-    backdrop-filter: blur(0.35rem);
-    animation: v2MdpParait 0.22s ease both;
+    justify-items: start;
+    width: 100%;
 }
 
-@keyframes v2MdpParait {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+/* Le bouton reste le SEUL enfant dans le flux : c'est sa hauteur qui
+   devient celle de la case, même quand il est effacé. La carte ne peut
+   donc pas sauter au moment de l'échange. */
+.v2-cta-case .v2-cta {
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.7, 0.2),
+                opacity 0.15s ease,
+                visibility 0s linear 0s,
+                box-shadow 0.3s ease,
+                filter 0.25s ease;
 }
 
-.v2-mdp-boite {
-    gap: 0.85rem;
-    padding: 1.7rem 1.6rem;
-    background: rgba(255, 255, 255, 0.04);
-    animation: v2MdpMonte 0.28s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+.v2-cta-case.mdp .v2-cta {
+    transform: scale(0.9);
+    opacity: 0;
+    /* « visibility » plutôt que « display » : elle se retarde le temps de
+       l'effacement, et sort le bouton du parcours au clavier une fois
+       caché — ce que l'opacité seule ne fait pas. */
+    visibility: hidden;
+    transition-delay: 0s, 0s, 0.15s, 0s, 0s;
+    box-shadow: none;
 }
 
-@keyframes v2MdpMonte {
-    from { opacity: 0; transform: translateY(0.7rem) scale(0.98); }
-    to   { opacity: 1; transform: none; }
+/* Le champ est HORS DU FLUX, calé sur le bord gauche du bouton, et se
+   découvre vers la droite. Une découpe et une opacité : ni largeur ni
+   hauteur ne changent, donc aucun recalcul de mise en page. */
+.v2-mdp-champ {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: min(12rem, 100%);
+    padding: 0.8rem 0.5rem 0.8rem 0.9rem;
+    background: rgba(14, 12, 8, 0.82);
+    border: 0.09rem solid rgba(255, 215, 0, 0.5);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.4rem 1.5rem rgba(255, 175, 0, 0.16),
+                inset 0 0 1.4rem rgba(255, 190, 40, 0.06);
+    transform: translateY(-50%);
+    /* Fermé : entièrement rogné par la droite. Le « round » suit le rayon
+       de la boîte, sinon les coins se carreraient pendant l'ouverture. */
+    clip-path: inset(0 100% 0 0 round 0.5rem);
+    opacity: 0;
+    visibility: hidden;
+    transition: clip-path 0.38s cubic-bezier(0.22, 1, 0.32, 1),
+                opacity 0.18s ease,
+                visibility 0s linear 0.38s,
+                border-color 0.25s ease,
+                box-shadow 0.3s ease;
 }
 
-.v2-mdp-boite.ko { animation: v2MdpSecoue 0.4s ease; }
-
-@keyframes v2MdpSecoue {
-    0%, 100% { transform: translateX(0); }
-    20%      { transform: translateX(-0.5rem); }
-    45%      { transform: translateX(0.45rem); }
-    70%      { transform: translateX(-0.25rem); }
+.v2-cta-case.mdp .v2-mdp-champ {
+    clip-path: inset(0 0 0 0 round 0.5rem);
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.04s, 0.04s, 0s, 0s, 0s;
 }
 
+.v2-cta-case.mdp .v2-mdp-champ:focus-within {
+    border-color: rgba(255, 215, 0, 0.82);
+    box-shadow: 0 0.4rem 1.6rem rgba(255, 175, 0, 0.26),
+                inset 0 0 1.4rem rgba(255, 190, 40, 0.1);
+}
 
-.v2-mdp-boite .v2-join-err { margin-top: 0.1rem; min-height: 0; }
+/* Le cadenas dit de quoi il s'agit sans ajouter de ligne de texte :
+   la carte garde exactement la hauteur qu'elle avait avec le bouton. */
+.v2-mdp-cadenas {
+    flex: none;
+    width: 0.95rem;
+    height: 0.95rem;
+    /* Un ecart a lui seul, plus large que celui qui le separe de la fleche :
+       colle au premier caractere, le cadenas se lisait comme une lettre. */
+    margin-right: 0.45rem;
+    color: rgba(255, 215, 0, 0.55);
+}
 
 .v2-mdp-input {
-    width: 100%;
-    padding: 0.85rem 0.9rem;
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0;
     font-family: 'Space Grotesk', monospace;
-    font-size: 1.15rem;
-    letter-spacing: 0.28em;
-    text-align: center;
+    font-size: 0.88rem;
+    letter-spacing: 0.12em;
     color: rgba(255, 250, 235, 0.96);
-    background: rgba(255, 255, 255, 0.045);
-    border: 0.09rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
+    background: transparent;
+    border: none;
     outline: none;
-    transition: border-color 0.25s ease, background 0.25s ease;
+    /* ⚠️ Le champ est un « text » et non un « password » — voir created() :
+       c est ce qui rend le copier-coller entier. C est donc CETTE ligne qui
+       masque la saisie, et elle ne doit jamais partir. */
+    -webkit-text-security: disc;
+    text-security: disc;
 }
 
-.v2-mdp-input:focus {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 215, 0, 0.45);
+/* Le gabarit est en chasse fixe et très espacé ; la consigne, elle, doit
+   se lire d'un coup, donc elle reprend la police du site. */
+.v2-mdp-input::placeholder {
+    font-family: inherit;
+    /* ⚠️ C est la consigne qui fixe la largeur minimale du champ : « Temporairement
+       réservé… » se coupait, d où « Réservé… ». La raccourcir est donc ce qu il faut
+       faire avant de vouloir un champ plus court. */
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.32);
+}
+
+/* La fleche ne porte PAS de pastille pleine : le champ a deja sa bordure
+   doree, et un second aplat jaune a l interieur alourdissait la carte. Reste
+   le seul trait, qui s eclaire au survol. */
+.v2-mdp-ok {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: rgba(255, 215, 0, 0.7);
+    background: transparent;
+    border: none;
+    border-radius: 0.35rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.v2-mdp-ok svg { width: 1.05rem; height: 1.05rem; }
+
+.v2-mdp-ok:hover:not(:disabled) {
+    color: var(--neon-primary);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.v2-mdp-ok:active:not(:disabled) { transform: scale(0.88); }
+.v2-mdp-ok:disabled { cursor: default; opacity: 0.35; }
+
+/* Un refus ne se dit QUE par là : pas de ligne de texte sous le champ, qui
+   rallongerait la carte pour une information que le tremblement donne déjà.
+   D'où une secousse courte et de faible amplitude — elle doit se remarquer
+   sans faire sursauter.
+
+   ⚠️ Elle écrase « transform », qui porte déjà le « translateY(-50%) » du
+   centrage : chaque image doit le reposer, sinon le champ sauterait d'une
+   demi-hauteur le temps de l'animation. */
+.v2-cta-case.mdp .v2-mdp-champ.ko {
+    border-color: rgba(255, 95, 115, 0.75);
+    box-shadow: 0 0.3rem 1.2rem rgba(255, 60, 85, 0.2),
+                inset 0 0 1.4rem rgba(255, 60, 85, 0.07);
+    animation: v2MdpSecoue 0.34s ease;
+}
+
+@keyframes v2MdpSecoue {
+    0%, 100% { transform: translate(0, -50%); }
+    22%      { transform: translate(-0.2rem, -50%); }
+    50%      { transform: translate(0.17rem, -50%); }
+    78%      { transform: translate(-0.08rem, -50%); }
+}
+
+/* Au doigt, la carte occupe toute la largeur : le champ la prend aussi. */
+@media (max-width: 768px) {
+    .v2-mdp-champ { width: 100%; }
 }
 
 

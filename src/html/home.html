@@ -294,10 +294,59 @@
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
                                 <span class="v2-mode-rule"></span>
                                 <p class="v2-mode-preview-desc" v-if="currentMode.desc">{{ currentMode.desc }}</p>
-                                <button class="v2-cta" @click="createRoom" :disabled="creatingRoom || currentMode.soon">
-                                    <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer un salon') }}</span>
-                                    <span class="v2-cta-shine"></span>
-                                </button>
+                                <!-- MESURE TEMPORAIRE — le bouton et le champ de mot de passe
+                                     occupent la MEME case. Le second pousse a la place du
+                                     premier au lieu de s ouvrir en modale : pas de voile, donc
+                                     pas de « backdrop-filter » plein ecran a animer.
+
+                                     ⚠️ Aucun « v-if » ni « v-show » sur ces deux-la : un element
+                                     qui passe de « display: none » a visible dans la meme image
+                                     que son changement de classe n a pas d etat de depart, donc
+                                     RIEN NE S ANIME — on verrait le champ apparaitre d un coup.
+                                     C est la classe « mdp » posee sur la case qui decide, et le
+                                     CSS seul qui fait passer l un devant l autre. Le bouton reste
+                                     donc toujours dans le flux : c est lui qui donne sa hauteur a
+                                     la case, et la carte ne saute jamais.
+
+                                     Pour lever la mesure : ne garder que le bouton. -->
+                                <div class="v2-cta-case" :class="{ mdp: mdpOuvert }">
+                                    <button class="v2-cta" @click="createRoom"
+                                            :disabled="creatingRoom || currentMode.soon"
+                                            :tabindex="mdpOuvert ? -1 : 0">
+                                        <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer un salon') }}</span>
+                                        <span class="v2-cta-shine"></span>
+                                    </button>
+
+                                    <div class="v2-mdp-champ" :class="{ ko: mdpShake }">
+                                        <svg class="v2-mdp-cadenas" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <rect x="4" y="10.5" width="16" height="10.5" rx="2"/>
+                                            <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+                                        </svg>
+                                        <input
+                                            :type="mdpMasqueCss ? 'text' : 'password'"
+                                            class="v2-mdp-input"
+                                            ref="mdpInput"
+                                            v-model="mdpSalon"
+                                            :disabled="creatingRoom"
+                                            @keyup.enter="validerMdp"
+                                            @keyup.esc="annulerMdp"
+                                            placeholder="Réservé…"
+                                            autocomplete="off"
+                                            spellcheck="false">
+                                        <button class="v2-mdp-ok" @click="validerMdp" :disabled="creatingRoom"
+                                                title="Ouvrir le salon" aria-label="Ouvrir le salon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Pas de ligne d erreur sous le champ : un refus se dit par la
+                                     secousse rouge, et rien de plus. Une ligne de texte aurait
+                                     rallonge la carte pour une information que le tremblement
+                                     donne deja — voir « .v2-mdp-champ.ko ». -->
                                 <div class="v2-action-error" v-if="createError">{{ createError }}</div>
                             </div>
                         </div>
@@ -756,7 +805,32 @@
                                     </span>
                                 </div>
 
-                                <div class="v2-set">
+                                <!-- 🧨 La mèche. « Par tour » est le mode de toujours : le
+                                     minuteur repart à zéro dès qu on répond. « Continue »
+                                     laisse UNE mèche brûler pour toute la manche et exploser
+                                     sur celui qui la tient — répondre vite cesse de n aider
+                                     que soi, on refile la bombe. -->
+                                <div class="v2-set" data-info="bomb-meche">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="11" cy="16" r="5"/><path d="M14.5 12.5L18 9M18 9l-1.5-.6M18 9l.6-1.5"/></svg>
+                                    <span class="v2-set-label">Mèche</span>
+                                    <span class="v2-set-value">{{ bombanime.meche === 'continue' ? 'Continue' : 'Par tour' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: bombanime.meche !== 'continue' }"
+                                                @click="applySetting('/admin/bombanime/set-meche', { meche: 'tour' }, () => bombanime.meche = 'tour')">Par tour</button>
+                                        <button class="v2-set-opt" :class="{ on: bombanime.meche === 'continue' }"
+                                                @click="applySetting('/admin/bombanime/set-meche', { meche: 'continue' }, () => bombanime.meche = 'continue')">Continue</button>
+                                    </span>
+                                </div>
+
+                                <!-- ⚠️ Pas de réglage de durée en « continue » : elle se calcule
+                                     sur le nombre de joueurs, avec sa part de hasard. Un curseur
+                                     y avait été posé, en secondes PAR JOUEUR — mais à deux ou
+                                     trois le plancher de douze secondes mangeait toute sa course,
+                                     l estimation affichait « ≈ 12s » d un bout à l autre, et le
+                                     réglage avait l air cassé. Un réglage qui ne change rien la
+                                     moitié du temps vaut moins qu un calcul qu on n a pas à
+                                     comprendre. -->
+                                <div class="v2-set" v-if="bombanime.meche !== 'continue'">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
                                     <span class="v2-set-label">Temps</span>
                                     <input class="v2-range" type="range" min="5" max="10" step="1"
@@ -765,6 +839,7 @@
                                            @change="applySetting('/admin/bombanime/set-timer', { timer: bombanime.timer }, () => {})">
                                     <span class="v2-set-value num">{{ bombanime.timer }}s</span>
                                 </div>
+
 
                                 <!-- 🤖 Le partenaire. Un seul, et il joue pour de bon :
                                      il répond en 300 ms, donc il ne perd jamais. Il sert
@@ -816,6 +891,14 @@
                     <span class="v2-set-info" data-pour="asc-timer" tabindex="0">!
                         <span class="v2-set-bulle">Le temps laissé sur chaque étage. Dépassé,
                             on reste où l'on est et l'étage recommence.</span>
+                    </span>
+                </template>
+
+                <template v-if="isHost && lobbyMode === 'bombanime'">
+                    <span class="v2-set-info" data-pour="bomb-meche" tabindex="0">!
+                        <span class="v2-set-bulle"><b>Par tour</b> : la bombe se restaure à chaque
+                            bonne réponse.<br><b>Continue</b> : elle se consume en continu jusqu à
+                            l explosion.</span>
                     </span>
                 </template>
 
@@ -1875,7 +1958,19 @@
                                     <div class="fuse-pivot" :style="{ transform: 'rotate(' + (getBombFuseAngle() - 90) + 'deg)' }">
                                         <div class="fuse-inner">
                                             <div class="fuse-socle"></div>
-                                            <div class="fuse-wave-wrap">
+                                            <!-- ⚠️ C est la LARGEUR du cadre qui raccourcit, pas
+                                                 le trace. Le SVG garde ses 52 px et l ondulation
+                                                 garde sa forme ; le cadre la coupe par la droite,
+                                                 du cote de la flamme, exactement comme une meche
+                                                 se consume. Redessiner le chemin l aurait ecrase
+                                                 au lieu de le raccourcir.
+
+                                                 Et comme les trois elements sont en ligne, la
+                                                 flamme suit toute seule : elle descend vers la
+                                                 bombe sans qu on ait a la placer. -->
+                                            <div class="fuse-wave-wrap" :key="bombanime.mecheCle"
+                                                 :style="{ '--meche-part': mechePart().toFixed(3),
+                                                           animationDuration: mecheDuree() }">
                                                 <svg class="fuse-wave-svg" viewBox="0 0 52 12">
                                                     <path d="M0,6 Q13,2.5 26,6 Q39,9.5 52,6"/>
                                                 </svg>
@@ -2532,27 +2627,6 @@
              Pour lever la mesure : supprimer ce bloc, le garde dans
              /admin/toggle-game et « demandeMdp » dans app.js.
              ============================================ -->
-        <div class="v2-mdp-voile" v-if="demandeMdp" @click.self="annulerMdp">
-            <div class="v2-join-box v2-mdp-boite" :class="{ ko: mdpShake }">
-                <span class="v2-join-label">Mode temporairement réservé</span>
-                <!-- Ni bouton d'envoi ni bouton d'annulation : Entrée valide,
-                     un clic hors de la boîte ou Échap ferme. -->
-                <input
-                    type="password"
-                    class="v2-mdp-input"
-                    ref="mdpInput"
-                    v-model="mdpSalon"
-                    :disabled="creatingRoom"
-                    @input="mdpErreur = ''"
-                    @keyup.enter="validerMdp"
-                    placeholder="••••••••"
-                    autocomplete="off"
-                    spellcheck="false">
-                <!-- « v-if » et non une simple opacité : réservée en permanence,
-                     la ligne d'erreur creusait un vide sous le champ. -->
-                <p class="v2-join-err vu" v-if="mdpErreur">{{ mdpErreur }}</p>
-            </div>
-        </div>
 
         <!-- L ancien bouton Instagram vivait ici, seul et seulement avant la
              saisie du pseudo. Les deux reseaux sont maintenant dans « v2-reseaux »,
@@ -2945,9 +3019,13 @@
         </div>
 
         <!-- 🆕 v2 — Bonus en jetons toujours visibles -->
+        <!-- ⚠️ La barre est montee et demontee a CHAQUE question — « questionShown »
+             retombe entre deux. Sans transition les jetons disparaissaient et
+             resurgissaient d un coup au passage a la question suivante. -->
+        <transition name="v2-bonus-f">
         <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && !showResults && lobbyMode !== 'bombanime' && bonusEnabled && !estSpectateur">
             <button class="v2-token"
-                    :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus() }]"
+                    :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus(), refus: jetonRefuse === '5050' }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"
                     @click="useBonusStrip('5050')" title="50/50 — retire deux mauvaises réponses">
                 <img src="5050.png" alt="50/50">
@@ -2971,6 +3049,7 @@
                 <span class="v2-token-n" v-if="bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2']">{{ bonusInventory[gameMode === 'lives' ? 'shield' : 'doublex2'] }}</span>
             </button>
         </div>
+        </transition>
 
 
         <!-- 🆕 SYSTÈME DE DÉFIS - Bandelettes à gauche -->
