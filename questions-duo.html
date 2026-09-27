@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — duo — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « duo » — 40 questions sur Bleach et Yu-Gi-Oh</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Kon","d":"easy","t":"Dans quel corps Kon se retrouve-t-il coincé ?","b":3,"r":["Un chat errant","Un mannequin de vitrine","Une peluche en forme de lion","Un ours en peluche","Une poupée de chiffon","Un épouvantail"],"p":"https://bleach.fandom.com/fr/wiki/Kon","src":"Ichigo trouva dans une déchèterie une peluche en forme de lion. Il enfonça la petite boule verte dans le corps de cette peluche.","s":"Bleach"},{"g":"Kon","d":"veryhard","t":"Sous quel nom de code la Soul Society a-t-elle créé les âmes artificielles comme Kon ?","b":2,"r":["Projet Kaiser","Spear-head","Projet Kurushimi","Le Programme Reigai","Opération Nozomi","Le Plan Shinigami"],"p":"https://bleach.fandom.com/fr/wiki/Kon","src":"Kon est une âme artificielle modifiée par un projet de la Soul Society connu sous le nom de « Spear-head ».","s":"Bleach"},{"g":"Uryû","d":"medium","t":"Quel lien unit Uryû Ishida et Ryûken ?","b":4,"r":["C'est son oncle","C'est son maître d'armes","C'est son grand-père","C'est son père","C'est son frère aîné","C'est son cousin"],"p":"https://bleach.fandom.com/fr/wiki/Ury%C3%BB_Ishida","src":"Uryû Ishida — relations : Ryûken Ishida (Père), Sôken Ishida (Grand-père).","s":"Bleach"},{"g":"Uryû","d":"hard","t":"Quel talent inattendu Uryû met-il au service de ses amis ?","b":5,"r":["La cuisine","La médecine","Le piano","La mécanique","La couture","La calligraphie"],"p":"https://bleach.fandom.com/fr/wiki/Ury%C3%BB_Ishida","src":"Uryū est membre du club d'artisanat du lycée Karakura et est très compétent en couture.","s":"Bleach"},{"g":"Uryû","d":"hard","t":"Qui a formé Uryû au combat de Quincy ?","b":3,"r":["Son père","Un Quincy resté en Allemagne","Son grand-père","Urahara","Un livre de sa famille","Ryûken, contre son gré"],"p":"https://bleach.fandom.com/fr/wiki/Ury%C3%BB_Ishida","src":"Enfant, Uryû a surtout interagi avec son grand-père, Sōken Ishida, qui s'est chargé de son entraînement.","s":"Bleach"},{"g":"Orihime","d":"medium","t":"Comment se nomme le pouvoir d'Orihime ?","b":2,"r":["Rikka no Mai","Shun Shun Rikka","Tensa Rikka","Hakurei Rokka","Shun Kessho","Rikka Tensho"],"p":"https://bleach.fandom.com/fr/wiki/Orihime_Inoue","src":"Orihime Inoue — pouvoir : Shun Shun Rikka.","s":"Bleach"},{"g":"Orihime","d":"hard","t":"Dans quel objet le pouvoir d'Orihime est-il logé ?","b":4,"r":["Un pendentif","Un bracelet","Une bague","Ses épingles à cheveux","Un éventail","Une écharpe"],"p":"https://bleach.fandom.com/fr/wiki/Orihime_Inoue","src":"Elle n'enlève pas ses épingles à cheveux, sauf pour dormir, car elle les porte à la mémoire de son frère et elles abritent ses fées.","s":"Bleach"},{"g":"Orihime","d":"medium","t":"Quel lien unissait Orihime et Sora ?","b":6,"r":["C'était son père","C'était son tuteur","C'était son voisin","C'était son professeur","C'était son fiancé","C'était son frère"],"p":"https://bleach.fandom.com/fr/wiki/Orihime_Inoue","src":"Orihime Inoue — relations : Sora Inoue (frère).","s":"Bleach"},{"g":"Le Gotei 13","d":"hard","t":"De quelle division Urahara était-il le capitaine ?","b":3,"r":["La 2e","La 9e","La 12e","La 5e","La 8e","La 13e"],"p":"https://bleach.fandom.com/fr/wiki/Kisuke_Urahara","src":"Étant l'ancien capitaine de la 12e Division, Urahara possède une grande quantité de pouvoir spirituel.","s":"Bleach"},{"g":"Le Gotei 13","d":"hard","t":"Quelle unité secrète Yoruichi commandait-elle ?","b":2,"r":["Le Bureau de Développement Technique","L'Onmitsukidô","La Chambre des 46","La Division Zéro","La Garde Royale","Le Kidô Shû"],"p":"https://bleach.fandom.com/fr/wiki/Yoruichi_Shih%C3%B4in","src":"Yoruichi Shihôin — occupation : Capitaine de la Deuxième Division, Commandante suprême de l'Onmitsukidô.","s":"Bleach"},{"g":"Le Gotei 13","d":"medium","t":"De quelle division Byakuya est-il le capitaine ?","b":5,"r":["La 3e","La 4e","La 5e","La 2e","La 6e","La 10e"],"p":"https://bleach.fandom.com/fr/wiki/Byakuya_Kuchiki","src":"Byakuya Kuchiki — occupation : Capitaine de la Sixième Division, 28e Chef de la Famille Kuchiki.","s":"Bleach"},{"g":"Le Gotei 13","d":"veryhard","t":"Combien de chefs la famille Kuchiki a-t-elle eus avant Byakuya ?","b":3,"r":["Sept","Douze","Vingt-sept","Quarante","Cent","Trois"],"p":"https://bleach.fandom.com/fr/wiki/Byakuya_Kuchiki","src":"Byakuya Kuchiki — 28e Chef de la Famille Kuchiki.","s":"Bleach"},{"g":"Les Zanpakutô","d":"medium","t":"Comment se nomme le Zanpakutô de Rukia ?","b":4,"r":["Yuki no Mai","Shirayuki Hime","Hyôrinmaru","Sode no Shirayuki","Fuyu no Tsurugi","Shirogane"],"p":"https://bleach.fandom.com/fr/wiki/Rukia_Kuchiki","src":"Rukia Kuchiki — shikai : Sode no Shirayuki.","s":"Bleach"},{"g":"Les Zanpakutô","d":"medium","t":"Comment se nomme le Zanpakutô de Byakuya ?","b":2,"r":["Kôgetsu","Senbonzakura","Hanakaze","Sakuramaru","Chirizakura","Tsubakihime"],"p":"https://bleach.fandom.com/fr/wiki/Byakuya_Kuchiki","src":"Byakuya Kuchiki — shikai : Senbonzakura.","s":"Bleach"},{"g":"Komamura","d":"hard","t":"De quel peuple Komamura est-il issu ?","b":3,"r":["Un clan de forgerons exilés","Une lignée de géants","Un clan de loups-garous","Une tribu de nomades du Rukongai","Une famille de Quincy","Un clan d'assassins"],"p":"https://bleach.fandom.com/fr/wiki/Sajin_Komamura","src":"Originaire d'un clan de loups-garous qui vit dans la clandestinité.","s":"Bleach"},{"g":"Kenpachi","d":"medium","t":"Quel lien Kenpachi entretient-il avec Yachiru ?","b":4,"r":["C'est sa petite sœur","C'est son élève et rien de plus","C'est sa nièce","C'est sa fille adoptive","C'est son garde du corps","Elle le suit sans qu'il sache pourquoi"],"p":"https://bleach.fandom.com/fr/wiki/Kenpachi_Zaraki","src":"Kenpachi Zaraki — relations : Yachiru Kusajishi (fille adoptive).","s":"Bleach"},{"g":"Kenpachi","d":"hard","t":"Qu'accroche Kenpachi au bout de ses pointes de cheveux ?","b":2,"r":["Des perles","Des clochettes","Des lames","Des rubans","Des anneaux","Des plumes"],"p":"https://bleach.fandom.com/fr/wiki/Kenpachi_Zaraki","src":"Il coiffe ses cheveux en pointes avec des clochettes. Dix-sept mois après la défaite d'Aizen, il n'a plus ses clochettes.","s":"Bleach"},{"g":"Les Hollows","d":"hard","t":"Quelle est l'étape ultime de l'évolution d'un Hollow ?","b":5,"r":["Le Gillian","L'Arrancar","L'Adjuchas","Le Menos Grande","Le Vasto Lorde","Le Hollow Royal"],"p":"https://bleach.fandom.com/fr/wiki/Hollow","src":"L'étape ultime de l'évolution d'un Hollow est le Vasto Lorde.","s":"Bleach"},{"g":"Le Hueco Mundo","d":"hard","t":"Quel rang Yammy occupe-t-il une fois sa forme libérée atteinte ?","b":1,"r":["Le rang 0","Le rang 1","Le rang 2","Le rang 4","Le rang 9","Il garde son rang 10"],"p":"https://bleach.fandom.com/fr/wiki/Yammy_Riyalgo","src":"Yammy Riyalgo — occupation : Espada nº10, Espada 0 (Forme libérée).","s":"Bleach"},{"g":"Karakura","d":"medium","t":"Quel métier Don Kanonji exerce-t-il ?","b":3,"r":["Prêtre d'un temple","Directeur d'hôpital","Vedette de télévision","Professeur au lycée","Médecin de quartier","Policier"],"p":"https://bleach.fandom.com/fr/wiki/Don_Kanonji","src":"Don Kanonji — occupation : Médium, Vedette de télévision. Il est la star de son émission.","s":"Bleach"},{"g":"Pegasus","d":"medium","t":"Quelle entreprise Maximillion Pegasus dirige-t-il ?","b":4,"r":["KaibaCorp","Le Groupe Aknadin","Le Consortium Devlin","Illusions Industrielles","Le Groupe Ishtar","Les Ateliers Crowford"],"p":"https://yugioh.fandom.com/fr/wiki/Maximillion_Pegasus","src":"Maximillion Pegasus — occupation : PDG d'Illusions Industrielles.","s":"YuGiOh"},{"g":"Pegasus","d":"hard","t":"Quel objet du Millénium Pegasus possède-t-il ?","b":2,"r":["La Clé","L'Œil","La Balance","Le Sceptre","Le Collier","L'Anneau"],"p":"https://yugioh.fandom.com/fr/wiki/Objets_du_Mill%C3%A9nium","src":"Maximillion Pegasus reçut l'Œil du Millénium de la part de Shadi alors qu'il s'était rendu en Égypte.","s":"YuGiOh"},{"g":"Pegasus","d":"hard","t":"Que cherchait Pegasus en se rendant en Égypte ?","b":3,"r":["Une carte légendaire","Le tombeau du Pharaon","Un moyen de ramener sa femme","Le secret de KaibaCorp","La trace des Ishtar","Une nouvelle fortune"],"p":"https://yugioh.fandom.com/fr/wiki/Maximillion_Pegasus","src":"Il voulut matérialiser sa femme grâce à son Œil mystique et à la technologie de KaibaCorp.","s":"YuGiOh"},{"g":"Pegasus","d":"veryhard","t":"Qui remet l'Œil du Millénium à Pegasus ?","b":5,"r":["Un gardien du temple de Louxor","Le grand-père de Yugi","Le chef de l'expédition anglaise","Un prêtre du tombeau","Shadi","Un antiquaire du Caire"],"p":"https://yugioh.fandom.com/fr/wiki/Maximillion_Pegasus","src":"Pegasus rencontra Shadi, un homme énigmatique portant la Clé Millénaire. Il reçut l'Œil du Millénium de sa part.","s":"YuGiOh"},{"g":"Le Puzzle","d":"medium","t":"Sous quelle forme Yugi reçoit-il le Puzzle du Millénium ?","b":3,"r":["Déjà assemblé, autour du cou","Dans un coffre-fort","En pièces détachées, dans un coffret","Enterré dans le jardin","En cadeau de Kaiba","Caché dans un deck de cartes"],"p":"https://yugioh.fandom.com/fr/wiki/Objets_du_Mill%C3%A9nium","src":"Yugi Muto reçut en cadeau le Puzzle du Millénium en pièces. Son grand-père lui a offert un coffret qu'il a ramené d'Égypte.","s":"YuGiOh"},{"g":"Le Puzzle","d":"hard","t":"Quel vœu Yugi formule-t-il en reconstituant le Puzzle ?","b":2,"r":["Devenir le meilleur duelliste","Avoir des amis fidèles","Revoir ses parents","Comprendre le passé du Pharaon","Sauver le magasin de son grand-père","Battre Seto Kaiba"],"p":"https://yugioh.fandom.com/fr/wiki/Yugi_Muto","src":"Yugi se met en tête de le reconstituer en formulant le souhait d'avoir des amis honnêtes et loyaux envers lui.","s":"YuGiOh"},{"g":"Le Puzzle","d":"medium","t":"Qui a rapporté le Puzzle du Millénium d'Égypte ?","b":4,"r":["Le père de Yugi","Un collectionneur de Domino City","Shadi","Le grand-père de Yugi","Le musée de Domino","Un archéologue anonyme"],"p":"https://yugioh.fandom.com/fr/wiki/Objets_du_Mill%C3%A9nium","src":"Le Puzzle du Millénium fut découvert en Égypte lors d'une expédition de Salomon Muto.","s":"YuGiOh"},{"g":"L'Anneau","d":"veryhard","t":"Quel esprit habite l'Anneau du Millénium ?","b":3,"r":["Un prêtre d'Égypte","Un scribe du Pharaon","Un voleur vieux de cinq mille ans","Un général déchu","Un sorcier de Kul Elna","Le frère du Pharaon"],"p":"https://yugioh.fandom.com/fr/wiki/Objets_du_Mill%C3%A9nium","src":"L'Anneau du Millénium renferme l'esprit d'un antique voleur vieux de 5000 ans et seul survivant du massacre de Kul Elna.","s":"YuGiOh"},{"g":"Kaiba","d":"easy","t":"Quel lien unit Seto et Mokuba ?","b":5,"r":["Ce sont des cousins","Mokuba est son fils adoptif","Ce sont des rivaux sans lien","Mokuba est son garde du corps","Mokuba est son petit frère","Mokuba est son associé"],"p":"https://yugioh.fandom.com/fr/wiki/Makuba_Kaiba","src":"Makuba Kaiba — famille : Seto Kaiba (grand frère).","s":"YuGiOh"},{"g":"Kaiba","d":"medium","t":"Qui a mis au point le Disque de Duel ?","b":2,"r":["Illusions Industrielles","KaibaCorp","Le Groupe Ishtar","Schroeder Corp","Le grand-père de Yugi","Duke Devlin"],"p":"https://yugioh.fandom.com/fr/wiki/Disque_de_Duel","src":"Ils ont été fabriqués pour la première fois par KaibaCorp. Seto Kaiba a développé les prototypes de première génération.","s":"YuGiOh"},{"g":"Kaiba","d":"hard","t":"Contre quoi Kaiba a-t-il conçu le premier Disque de Duel ?","b":4,"r":["La triche aux cartes","Les Duels des Ombres","Les cartes contrefaites","La lecture de pensée de Pegasus","Les objets du Millénium","Le vol de decks"],"p":"https://yugioh.fandom.com/fr/wiki/Disque_de_Duel","src":"Seto Kaiba a développé les prototypes de Disque de Duel de première génération afin de parer les capacités de lire dans les pensées de Maximillien Pegasus.","s":"YuGiOh"},{"g":"Kaiba","d":"hard","t":"Que Kaiba vient-il chercher au magasin du grand-père de Yugi ?","b":3,"r":["Le Puzzle du Millénium","Une carte piège rare","Le quatrième Dragon Blanc aux Yeux Bleus","Le Magicien des Ténèbres","Un deck complet","Une carte d'Exodia"],"p":"https://yugioh.fandom.com/fr/wiki/Yugi_Muto","src":"Il se rend à son magasin, et tente d'échanger le 4ème et dernier Dragon Blanc aux Yeux Bleus du grand-père de Yugi.","s":"YuGiOh"},{"g":"Duke Devlin","d":"hard","t":"Quel jeu Duke Devlin a-t-il inventé ?","b":2,"r":["Le Duel des Ombres","Le Duel des Monstres des Dés","Le Jeu du Capsule Monster","Le Duel Runner","Le Duel du Royaume","Le Jeu des Sept Objets"],"p":"https://yugioh.fandom.com/fr/wiki/Duke_Devlin","src":"Duke Devlin est le créateur du Duel des Monstres des Dés.","s":"YuGiOh"},{"g":"Duke Devlin","d":"veryhard","t":"Que Duke impose-t-il à Joey après l'avoir battu ?","b":4,"r":["De quitter la ville","De lui céder son deck","De travailler dans sa boutique","De porter un costume de chien","De ne plus jamais jouer","De s'excuser en public"],"p":"https://yugioh.fandom.com/fr/wiki/Duke_Devlin","src":"Il fera porter à Joey un costume de chien après sa victoire sur lui.","s":"YuGiOh"},{"g":"Duke Devlin","d":"medium","t":"Quel commerce Duke Devlin tient-il ?","b":6,"r":["Un casino","Une salle d'arcade","Un club de duel","Un restaurant","Une imprimerie de cartes","Une boutique rivale de celle du grand-père de Yugi"],"p":"https://yugioh.fandom.com/fr/wiki/Duke_Devlin","src":"Il est le propriétaire d'une boutique rivale à celle du grand-père de Yugi Muto.","s":"YuGiOh"},{"g":"Les dieux","d":"medium","t":"Combien de cartes de Dieu Égyptien existe-t-il ?","b":2,"r":["Deux","Trois","Cinq","Sept","Dix","Une seule"],"p":"https://yugioh.fandom.com/fr/wiki/Obelisk,_le_Tourmenteur","src":"Les trois cartes de Dieu Égyptien : Slifer le Dragon Céleste, Obelisk le Tourmenteur et Le Dragon Ailé de Râ.","s":"YuGiOh"},{"g":"Les dieux","d":"hard","t":"Quel animal Slifer représente-t-il ?","b":5,"r":["Un taureau","Un phénix","Un scarabée","Un serpent à plumes","Un dragon","Un faucon"],"p":"https://yugioh.fandom.com/fr/wiki/Slifer,_le_Dragon_C%C3%A9leste","src":"Slifer, le Dragon Céleste.","s":"YuGiOh"},{"g":"Les dieux","d":"medium","t":"Sous quelle forme Le Dragon Ailé de Râ arrive-t-il d'abord sur le terrain ?","b":3,"r":["En phénix","En statue de pierre","En sphère","Sous sa forme définitive","En œuf","En colonne de feu"],"p":"https://yugioh.fandom.com/fr/wiki/Le_Dragon_Ail%C3%A9_de_R%C3%A2","src":"Le Dragon Ailé de Râ — Mode Sphère, puis L'Invincible Phénix.","s":"YuGiOh"},{"g":"5D's","d":"hard","t":"Quel engin Yusei pilote-t-il pour ses duels ?","b":2,"r":["Un Disque de Duel géant","Un Duel Runner","Un Duel Board","Un Solid Vision","Un D-Wheel volant","Une Duel Boat"],"p":"https://yugioh.fandom.com/fr/wiki/Yusei_Fudo","src":"Yusei Fudo est le protagoniste principal de Yu-Gi-Oh! 5D's. Duel Runner.","s":"YuGiOh"},{"g":"5D's","d":"veryhard","t":"Quelle marque Yusei et ses alliés portent-ils sur le corps ?","b":4,"r":["Le sceau d'Orichalque","L'œil d'Horus","La marque des Ishtar","La marque du Dragon Cramoisi","Le signe du Pharaon","Le sceau des Cinq"],"p":"https://yugioh.fandom.com/fr/wiki/Yusei_Fudo","src":"Il est l'un des 5 Pactisants qui portent la marque du Dragon Cramoisi.","s":"YuGiOh"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+const LOT = "duo";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>

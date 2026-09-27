@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — sept — ShonenMaster</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « sept » — 110 questions sur Steins Gate, Rainbow, SAO, Erased, A Silent Voice, Shaman King, Hellsing et Beelzebub</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Le laboratoire","d":"veryeasy","t":"Quel nom de scientifique fou Okabe se donne-t-il ?","b":1,"r":["Hououin Kyouma","Hijiri Mamoru","Tennouji Kyouma","Kurogane Reiji","Shirogane Souma","Amakusa Juuza"],"p":"https://steins-gate.fandom.com/wiki/Rintaro_Okabe","src":"Rintaro Okabe, often nicknamed Okarin, is the self-proclaimed insane mad scientist Hououin Kyouma.","s":"Steins Gate"},{"g":"Le laboratoire","d":"easy","t":"Dans quel quartier de Tokyo le laboratoire est-il installé ?","b":3,"r":["Shibuya","Ikebukuro","Akihabara","Asakusa","Shinjuku","Ueno"],"p":"https://steins-gate.fandom.com/wiki/Future_Gadget_Laboratory","src":"The Future Gadget Lab is located in Akihabara, in an apartment rented from Yuugo Tennouji above the Braun Tube Workshop.","s":"Steins Gate"},{"g":"Le laboratoire","d":"medium","t":"Au-dessus de quel commerce le laboratoire se trouve-t-il ?","b":5,"r":["Un maid café","Une supérette","Une librairie de mangas","Une salle d'arcade","Un atelier de télévisions cathodiques","Un magasin de figurines"],"p":"https://steins-gate.fandom.com/wiki/Future_Gadget_Laboratory","src":"In an apartment rented from Yuugo Tennouji above the Braun Tube Workshop.","s":"Steins Gate"},{"g":"Le laboratoire","d":"easy","t":"Quel appareil du laboratoire envoie des messages dans le passé ?","b":3,"r":["Un vieil ordinateur","Une télévision cathodique","Un four à micro-ondes relié à un téléphone","Un téléphone à cadran","Un réfrigérateur","Une console de jeu"],"p":"https://steins-gate.fandom.com/wiki/PhoneWave_(name_subject_to_change)","src":"The PhoneWave (name subject to change) is one of the inventions of the Future Gadget Laboratory, Future Gadget No. 8. With it, you can send messages to the past.","s":"Steins Gate"},{"g":"Le laboratoire","d":"medium","t":"Qu'est-ce que le tout premier essai du four transforme en gelée ?","b":3,"r":["Un morceau de viande","Un œuf","Une banane","Un téléphone","Une pomme","Une pièce de monnaie"],"p":"https://steins-gate.fandom.com/wiki/PhoneWave_(name_subject_to_change)","src":"Gelbana.png — The gelbana attached to the banana bunch left on the table.","s":"Steins Gate"},{"g":"Les D-Mails","d":"easy","t":"Comment appelle-t-on les messages envoyés dans le passé ?","b":3,"r":["Les T-Mails","Les K-Mails","Les D-Mails","Les Z-Mails","Les Gate-Mails","Les Titor-Mails"],"p":"https://steins-gate.fandom.com/wiki/D-Mail","src":"D-Mails are messages that are sent to the past.","s":"Steins Gate"},{"g":"Les D-Mails","d":"medium","t":"De quoi « D-Mail » est-il l'abréviation ?","b":1,"r":["DeLorean Mail","Dimension Mail","Delta Mail","Divergence Mail","Doomsday Mail","Digital Mail"],"p":"https://steins-gate.fandom.com/wiki/D-Mail","src":"D-Mails (short for DeLorean Mail) are messages that are sent to the past.","s":"Steins Gate"},{"g":"Okabe","d":"medium","t":"Quel nom Okabe donne-t-il à sa capacité à se souvenir des autres lignes du monde ?","b":2,"r":["Steiner Effect","Reading Steiner","Divergence Sense","Gate Memory","World Memory","Titor Sense"],"p":"https://steins-gate.fandom.com/wiki/Reading_Steiner","src":"Reading Steiner is the name that Okabe gives to his rare ability to remember the events of other world lines.","s":"Steins Gate"},{"g":"Okabe","d":"medium","t":"Où Okabe habite-t-il ?","b":2,"r":["Chez Mayuri","À Ikebukuro, chez ses parents","Dans un hôtel de capsules","Au laboratoire, il y dort","Chez Daru","Dans une chambre au-dessus d'un maid café"],"p":"https://steins-gate.fandom.com/wiki/Rintaro_Okabe","src":"He lives in Ikebukuro with his parents, where he is neighbors with his childhood friend.","s":"Steins Gate"},{"g":"Okabe","d":"medium","t":"Quel surnom Okabe donne-t-il sans cesse à Kurisu ?","b":4,"r":["Docteur","Zombie","Génie","Christina","La rousse","Makise-san"],"p":"https://steins-gate.fandom.com/wiki/Kurisu_Makise","src":"Kurisu Makise — Okabe ne l appelle presque jamais par son nom : il lui donne « Christina », qu elle déteste, et refuse d en changer.","s":"Steins Gate"},{"g":"Le laboratoire","d":"medium","t":"Quel rôle Daru tient-il dans la bande ?","b":1,"r":["C'est le pirate informatique","Il tient les comptes","Il conduit la camionnette","Il traduit les textes anglais","Il fabrique les boîtiers","Il démarche les sponsors du labo"],"p":"https://steins-gate.fandom.com/wiki/Itaru_Hashida","src":"Itaru Hashida — the lab's hacker, added the timer in seconds to the PhoneWave.","s":"Steins Gate"},{"g":"Les autres","d":"hard","t":"Quelle particularité a Ruka, l'ami d'enfance d'Okabe ?","b":1,"r":["C'est un garçon","Il est muet","Il vient du futur","Il ne vieillit pas","C'est un fantôme","Il travaille pour le SERN"],"p":"https://steins-gate.fandom.com/wiki/Luka_Urushibara","src":"Luka Urushibara — le fils du prêtre du sanctuaire, régulièrement pris pour une fille.","s":"Steins Gate"},{"g":"Le SERN","d":"hard","t":"Quel organisme cherche à mettre la main sur la machine à voyager dans le temps ?","b":4,"r":["Le FBI","Le consortium Rounders","L'ONU","Le SERN","L'Institut Mikado","La NASA"],"p":"https://steins-gate.fandom.com/wiki/SERN","src":"As part of the Committee of 300, their goal is to create a dystopia by taking control of time travel.","s":"Steins Gate"},{"g":"Le SERN","d":"veryhard","t":"Quel ordinateur ancien est indispensable pour entrer dans la base du SERN ?","b":6,"r":["Le MSX-2","Le Commodore 64","L'Apple II","Le PDP-11","L'Altair 8800","L'IBN 5100"],"p":"https://steins-gate.fandom.com/wiki/John_Titor","src":"The original John Titor claimed to be a soldier from the year 2036, sent to 1975 to retrieve an IBM 5100.","s":"Steins Gate"},{"g":"Suzuha","d":"hard","t":"Que découvre-t-on sur John Titor, le voyageur temporel du forum ?","b":2,"r":["C'est un programme du SERN","C'est Suzuha, venue de 2036","C'est un canular monté par Okabe","C'est le père de Kurisu","C'est le fondateur du SERN","C'est Okabe lui-même, plus vieux"],"p":"https://steins-gate.fandom.com/wiki/John_Titor","src":"Suzuha Amane reveals herself as a time traveller from the future who, under the guise of John Titor, came to meet her father in 2010.","s":"Steins Gate"},{"g":"Suzuha","d":"veryhard","t":"Quel lien unit Suzuha à Daru ?","b":6,"r":["C'est sa petite-fille","C'est sa sœur","C'est sa cousine","C'est sa nièce","C'est son ancienne élève","C'est sa fille"],"p":"https://steins-gate.fandom.com/wiki/Suzuha_Amane","src":"As the child of Itaru Hashida, who is rebuilding a time machine, she and her mother were constantly on the run.","s":"Steins Gate"},{"g":"Suzuha","d":"medium","t":"Quel objet Suzuha rapporte-t-elle de 2036 ?","b":5,"r":["Un journal daté de 2036","Une arme","Un échantillon de sang","Un ordinateur portable","Un compteur à tubes qui affiche la divergence","Une photographie de son père"],"p":"https://steins-gate.fandom.com/wiki/Divergence_Meter","src":"The Divergence Meter is a device brought back from 2036 by Suzuha, invented by the future Okabe.","s":"Steins Gate"},{"g":"Les lignes du monde","d":"veryhard","t":"Quel seuil de divergence Okabe cherche à franchir ?","b":1,"r":["1 %","5 %","2 %","10 %","0,1 %","50 %"],"p":"https://steins-gate.fandom.com/wiki/Divergence_Meter","src":"Okabe is trying to reach a value starting with a different digit (1 in this instance) to reach a different attractor field.","s":"Steins Gate"},{"g":"Mayuri","d":"hard","t":"Que devient Mayuri dans presque toutes les lignes du monde qu'Okabe essaie ?","b":4,"r":["Elle tombe dans le coma","Elle disparaît sans laisser de trace","Elle rejoint le SERN","Elle meurt","Elle perd la mémoire","Elle part à l'étranger"],"p":"https://steins-gate.fandom.com/wiki/Mayuri_Shiina","src":"John Titor's identity is revealed later in the story, after Okabe tries to save Mayuri from various deaths.","s":"Steins Gate"},{"g":"Kurisu","d":"hard","t":"Dans quel état Okabe découvre-t-il Kurisu la toute première fois ?","b":2,"r":["En pleine conférence, au pupitre","Morte, poignardée","En train de le suivre dans la rue","Sur une photo du journal","Endormie dans le laboratoire","Devant la porte du SERN"],"p":"https://steins-gate.fandom.com/wiki/Kurisu_Makise","src":"Okabe finds Kurisu's body at the Radio Kaikan before she reappears alive — the event that opens the story.","s":"Steins Gate"},{"g":"La cellule","d":"easy","t":"Où les sept garçons se rencontrent-ils ?","b":1,"r":["Dans une maison de redressement","Dans une usine","Dans un orphelinat","Dans un camp de travail","Sur un chantier","Dans un club de boxe"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Dans la première partie du manga, ils se retrouvent dans une même cellule, dans la maison de redressement de Shonan.","s":"Rainbow"},{"g":"La cellule","d":"medium","t":"En quelle année commence l'histoire ?","b":3,"r":["1945","1950","1955","1960","1964","1968"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Rokurôta, alias Anchan, 17 ans en 1955, est le leader du groupe.","s":"Rainbow"},{"g":"Anchan","d":"easy","t":"Quel sport Anchan pratique-t-il ?","b":3,"r":["Le judo","Le karaté","La boxe","Le sumo","La lutte","L'athlétisme"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Il les admirait beaucoup, c'est la raison pour laquelle il pratique la boxe.","s":"Rainbow"},{"g":"Anchan","d":"medium","t":"Quel rôle Anchan tient-il auprès des six autres ?","b":6,"r":["Il leur apprend à lire","Il les surveille pour les gardiens","Il refuse de leur parler","Il leur sert d'interprète","Il est le plus jeune et se fait protéger","C'est leur aîné et leur meneur"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Rokurôta, alias Anchan, 17 ans en 1955, est le leader du groupe.","s":"Rainbow"},{"g":"Les sept","d":"medium","t":"Quel surnom porte Tadayoshi, le plus costaud de la bande ?","b":3,"r":["La Montagne","Le Taureau","Le Soldat","Le Géant","Le Bûcheron","Le Rocher"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Tadayoshi, alias Heitai (Soldat), 17 ans en 1955, est le plus costaud du groupe.","s":"Rainbow"},{"g":"Les sept","d":"hard","t":"D'où vient la cicatrice sous l'œil de Heitai ?","b":5,"r":["D'un accident de chantier","D'un coup de matraque d'un gardien","D'une bagarre de rue","Il se l'est faite lui-même","De sa propre mère, avec un bout de verre","De son père"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"La cicatrice sous son œil gauche a été faite par sa propre mère avec un bout de verre cassé.","s":"Rainbow"},{"g":"Les sept","d":"hard","t":"Qu'est-ce qui a coûté sa famille à Suppon, le plus petit du groupe ?","b":2,"r":["La famine","La bombe atomique","Une épidémie","Un règlement de comptes","Un accident de train","Un incendie"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Il devient un enfant des rues à la suite de la perte de sa famille à cause de la bombe atomique.","s":"Rainbow"},{"g":"Les sept","d":"medium","t":"Qu'est-ce qui distingue Jô des six autres au premier regard ?","b":3,"r":["Il est roux","Il est borgne","Il est métis, blond aux yeux bleus","Il est bien plus grand","Il porte des lunettes","Il est tatoué sur tout le corps"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Joe / Jô, 16 ans en 1955, est le plus timide du groupe. Il est métis, blond aux yeux bleus.","s":"Rainbow"},{"g":"Les sept","d":"hard","t":"D'où vient le surnom de Kyabetsu, « Chou » ?","b":2,"r":["Il ne mange que des légumes","D'un tatouage sur son épaule","Il travaillait dans une ferme","Il a été arrêté en volant au marché","Il a les oreilles décollées","Il bégaie en parlant"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Mansaku, alias Kyabetsu (Chou), est le plus bête du groupe, il porte un chou-fleur tatoué sur l'épaule.","s":"Rainbow"},{"g":"La prison","d":"medium","t":"Qui est Ishihara ?","b":3,"r":["Le directeur de la maison de redressement","L'avocat des sept","Un gardien sadique et vénal","Le père d'Anchan","Un détenu d'une autre cellule","Le médecin de la prison"],"p":"https://fr.wikipedia.org/wiki/Rainbow_(manga)","src":"Gardien vénal et sadique. Il n'hésite pas à vendre des jeunes garçons.","s":"Rainbow"},{"g":"Aincrad","d":"veryeasy","t":"Combien d'étages compte le château flottant d'Aincrad ?","b":4,"r":["25","50","75","100","150","200"],"p":"https://sword-art-online.fandom.com/fr/wiki/Aincrad","src":"L'Aincrad correspond à l'empilement des 100 étages qui le constitue.","s":"Sword Art Online"},{"g":"Aincrad","d":"easy","t":"Quel casque permet de se connecter à Sword Art Online ?","b":6,"r":["L'Argus Link","Le FullDive Mk-II","L'AmuSphere","Le Soul Translator","Le Medicuboid","Le Nerve Gear"],"p":"https://sword-art-online.fandom.com/fr/wiki/Nerve_Gear","src":"Le Nerve Gear est la deuxième génération de la technologie Full Dive créée par Akihiko Kayaba, sorti en Mai 2022.","s":"Sword Art Online"},{"g":"Aincrad","d":"medium","t":"Par quoi le Nerve Gear peut-il tuer son porteur ?","b":5,"r":["Une décharge électrique","Un laser","Une injection","Une surchauffe de la batterie","Une rafale de micro-ondes","Un gaz"],"p":"https://sword-art-online.fandom.com/fr/wiki/Nerve_Gear","src":"Les émetteurs du Nerve Gear possèdent assez de puissance pour faire frire le cerveau du joueur avec une rafale de micro-ondes.","s":"Sword Art Online"},{"g":"Aincrad","d":"hard","t":"Quelle société a fabriqué le Nerve Gear ?","b":5,"r":["RECT Progress","Seed","Kamura","Ymir","Argus","Glowgen"],"p":"https://sword-art-online.fandom.com/fr/wiki/Nerve_Gear","src":"Après l'incident de Sword Art Online, la société responsable de la fabrication du Nerve Gear, Argus, a fait faillite.","s":"Sword Art Online"},{"g":"Aincrad","d":"hard","t":"Quel appareil remplace le Nerve Gear après l'incident ?","b":3,"r":["Le Seed Nexus","Le Medicuboid","L'AmuSphere","Le Dream Link","Le Soul Translator","Le FullDive II"],"p":"https://sword-art-online.fandom.com/fr/wiki/Nerve_Gear","src":"La plupart des utilisateurs utilisent à la place l'AmuSphere de la compagnie RECT, nettement moins puissant.","s":"Sword Art Online"},{"g":"Kirito","d":"easy","t":"Quel est le vrai nom de Kirito ?","b":5,"r":["Kazuma Kirisaki","Kazuto Kiryuu","Kazuya Kirihara","Kazuto Yuuki","Kazuto Kirigaya","Katsuto Kirigami"],"p":"https://sword-art-online.fandom.com/fr/wiki/Kazuto_Kirigaya","src":"Kirito → redirection vers Kazuto Kirigaya.","s":"Sword Art Online"},{"g":"Kirito","d":"medium","t":"Quel surnom méprisant les autres joueurs collent-ils à Kirito ?","b":3,"r":["Le Déserteur","Le Fantôme","Beater","Le Rat","Le Solitaire","Le Traître"],"p":"https://sword-art-online.fandom.com/fr/wiki/Kazuto_Kirigaya","src":"Kazuto Kirigaya — alias en jeu : Beater.","s":"Sword Art Online"},{"g":"Kirito","d":"medium","t":"Qu'est-ce qui vaut ce surnom à Kirito ?","b":4,"r":["Il a trahi sa guilde","Il a tué un joueur","Il vole les objets des morts","Il a participé à la bêta du jeu","Il refuse d'aider les autres","Il connaît Kayaba"],"p":"https://sword-art-online.fandom.com/fr/wiki/Kazuto_Kirigaya","src":"Kirito a eu la chance d'être Bêta-Testeur pour la bêta fermée de SAO.","s":"Sword Art Online"},{"g":"Asuna","d":"easy","t":"Quel surnom Asuna porte-t-elle dans le jeu ?","b":3,"r":["La Lame","La Reine","L'Éclair","L'Ombre","La Flèche","La Tempête"],"p":"https://sword-art-online.fandom.com/fr/wiki/Asuna_Yuuki","src":"Asuna Yuuki — alias en jeu : L'Éclair.","s":"Sword Art Online"},{"g":"Asuna","d":"medium","t":"Quelle arme Asuna manie-t-elle ?","b":5,"r":["Deux dagues","Une lance","Une hache","Un arc","Une rapière","Une faux"],"p":"https://sword-art-online.fandom.com/fr/wiki/Asuna_Yuuki","src":"Elle brandit une rapière forgée par Lisbeth, appelée « Lambent Light ».","s":"Sword Art Online"},{"g":"Asuna","d":"hard","t":"À qui Asuna a-t-elle emprunté le Nerve Gear avec lequel elle se connecte ?","b":3,"r":["À une amie de lycée","À son père","À son frère","À un camarade de club","Elle l'a gagné à un concours","Elle l'a acheté elle-même"],"p":"https://sword-art-online.fandom.com/fr/wiki/Asuna_Yuuki","src":"Elle se connecte à SAO après avoir emprunté le Nerve Gear de son frère parti en voyage d'affaires.","s":"Sword Art Online"},{"g":"Asuna","d":"medium","t":"Quelle place Asuna occupe-t-elle dans la Confrérie des Chevaliers du sang ?","b":1,"r":["Sous-cheffe","Porte-étendard","Elle l'a fondée","Cheffe","Simple membre","Responsable des marchands"],"p":"https://sword-art-online.fandom.com/fr/wiki/Asuna_Yuuki","src":"Dans SAO, elle était sous-chef dans la guilde de la Confrérie des Chevaliers du sang.","s":"Sword Art Online"},{"g":"Kayaba","d":"hard","t":"Sous quel pseudonyme Kayaba se cache-t-il parmi les joueurs ?","b":1,"r":["Heathcliff","Marlowe","Aldwin","Cresswell","Rothgar","Diavel"],"p":"https://sword-art-online.fandom.com/fr/wiki/Akihiko_Kayaba","src":"Akihiko Kayaba — pseudo : Heathcliff. Boss du 100e palier de l'Aincrad.","s":"Sword Art Online"},{"g":"Kayaba","d":"hard","t":"Quelle guilde Heathcliff dirige-t-il ?","b":3,"r":["La Compagnie Fuurinkazan","L'Ordre du Cristal","La Confrérie des Chevaliers du sang","La Garde de Granzam","Les Lames d'Ébène","Le Serment d'Acier"],"p":"https://sword-art-online.fandom.com/fr/wiki/Akihiko_Kayaba","src":"Akihiko Kayaba — guilde : Confrérie des Chevaliers du sang, chef.","s":"Sword Art Online"},{"g":"Kayaba","d":"veryhard","t":"À quel étage d'Aincrad Kayaba attend-il les joueurs ?","b":6,"r":["Au 1er","Au 22e","Au 50e","Au 74e","Au 95e","Au 100e"],"p":"https://sword-art-online.fandom.com/fr/wiki/Akihiko_Kayaba","src":"Akihiko Kayaba — occupation en jeu : Boss du 100ème palier de l'Aincrad.","s":"Sword Art Online"},{"g":"Les autres","d":"hard","t":"Que découvrent Kirito et Asuna dans la forêt du 22e étage ?","b":2,"r":["Une maison abandonnée","Une petite fille qui est une intelligence artificielle","Un boss caché","Un marchand secret","Un passage vers l'étage suivant","Le corps d'un joueur"],"p":"https://sword-art-online.fandom.com/fr/wiki/Yui","src":"Yui est une intelligence artificielle, trouvée par Kirito et Asuna dans les forêts du 22ème étage.","s":"Sword Art Online"},{"g":"Les autres","d":"medium","t":"Quel nom porte la guilde qui recueille Kirito et qu'il finit par perdre ?","b":1,"r":["Les Chats noirs du clair de lune","Les Lames d'Argent","La Compagnie Fuurinkazan","Le Cercle Pourpre","La Rose de Fer","Les Veilleurs d'Aincrad"],"p":"https://sword-art-online.fandom.com/fr/wiki/Les_chats_noirs_du_clair_de_lune","src":"Les chats noirs du clair de lune — la guilde de Sachi.","s":"Sword Art Online"},{"g":"Les autres","d":"medium","t":"Quel lien unit Kirito et Suguha ?","b":3,"r":["Ce sont des camarades de classe","C'est sa demi-sœur du côté paternel","Ils ont grandi comme frère et sœur","Elle est sa cousine par alliance","Ce sont des voisins","C'est sa belle-sœur"],"p":"https://sword-art-online.fandom.com/fr/wiki/Suguha_Kirigaya","src":"Suguha Kirigaya, alias Leafa dans ALfheim Online.","s":"Sword Art Online"},{"g":"Les autres","d":"hard","t":"Quel est le vrai nom de Sinon ?","b":3,"r":["Shiho Asakura","Shinobu Asano","Shino Asada","Shiori Asagi","Shina Azuma","Shino Amasawa"],"p":"https://sword-art-online.fandom.com/fr/wiki/Shino_Asada","src":"Sinon → Shino Asada.","s":"Sword Art Online"},{"g":"Les autres","d":"medium","t":"Quel est le vrai nom de Klein, le premier joueur que Kirito aide ?","b":4,"r":["Ryohei Tsubota","Ryuunosuke Tsuboi","Ryousuke Tsubasa","Ryoutarou Tsuboi","Ryouta Tsubaki","Rentarou Tsubame"],"p":"https://sword-art-online.fandom.com/fr/wiki/Ryoutarou_Tsuboi","src":"Klein → Ryoutarou Tsuboi.","s":"Sword Art Online"},{"g":"Satoru","d":"easy","t":"Quel métier Satoru exerce-t-il au début de l'histoire ?","b":6,"r":["Vendeur en librairie","Journaliste","Dessinateur de presse","Professeur","Policier","Livreur de pizzas"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Satoru_Fujinuma","src":"Satoru Fujinuma — occupation : Manga Artist, Oasi Pizza Delivery Associate.","s":"Erased"},{"g":"Satoru","d":"medium","t":"Quel nom Satoru donne-t-il au phénomène qui le renvoie dans le passé ?","b":2,"r":["L'Écho","Le Revival","La Spirale","Le Retour","Le Saut","La Boucle"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Revival","src":"Revival is an involuntary special phenomenon exclusive to Satoru that allows him to jump back in time.","s":"Erased"},{"g":"Satoru","d":"medium","t":"De combien de temps le phénomène le fait-il reculer, d'ordinaire ?","b":5,"r":["D'une semaine","D'une journée","D'une heure","D'un mois","De quelques secondes","D'un an"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Revival","src":"Satoru begins to feel a discomfort, before being brought back in time by a few seconds prior to a forthcoming incident.","s":"Erased"},{"g":"Satoru","d":"medium","t":"À quoi Satoru reconnaît-il qu'un Revival va se produire ?","b":6,"r":["Sa vue se brouille","Ses mains tremblent","Il entend une sonnerie","Il voit une lumière blanche","Il perd connaissance","Il ressent un malaise soudain"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Revival","src":"Satoru begins to feel a discomfort, before being brought back in time.","s":"Erased"},{"g":"1988","d":"hard","t":"En quelle année Satoru se retrouve-t-il projeté ?","b":3,"r":["1978","1984","1988","1992","1996","2000"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Satoru_Fujinuma","src":"Satoru Fujinuma — age : 10-11 (1988), 29 (2006).","s":"Erased"},{"g":"1988","d":"medium","t":"Quelle camarade de classe Satoru cherche à sauver en 1988 ?","b":6,"r":["Sachiko Kobayashi","Aya Nakanishi","Yuuki Sugita","Misato Yanagihara","Kaori Shiratori","Kayo Hinazuki"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Kayo_Hinazuki","src":"Kayo Hinazuki — died : March 1, 1988 (Before Revival).","s":"Erased"},{"g":"1988","d":"veryhard","t":"Que devient Kayo dans la ligne du temps où Satoru réussit ?","b":4,"r":["Elle retrouve sa mère","Elle disparaît sans laisser de trace","Elle reste seule toute sa vie","Elle se marie et a un fils","Elle devient institutrice","Elle quitte le pays"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Kayo_Hinazuki","src":"Kayo Hinazuki — family : Hiromi Sugita (Husband), Mirai Sugita (Son).","s":"Erased"},{"g":"La mère","d":"medium","t":"Quel métier Sachiko, la mère de Satoru, a-t-elle exercé ?","b":3,"r":["Institutrice","Infirmière","Présentatrice de journal télévisé","Policière","Libraire","Avocate"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Sachiko_Fujinuma","src":"Sachiko Fujinuma is a former news announcer and the mother of Satoru Fujinuma.","s":"Erased"},{"g":"Le coupable","d":"hard","t":"Quelle place le coupable occupe-t-il dans la vie de Satoru en 1988 ?","b":3,"r":["C'est son voisin","C'est le père d'un camarade","C'est son professeur principal","C'est un inconnu de passage","C'est le gérant de la supérette","C'est le chauffeur du car scolaire"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Gaku_Yashiro","src":"Gaku Yashiro is Satoru Fujinuma's homeroom teacher in primary five and a serial killer who primarily targets children.","s":"Erased"},{"g":"Le coupable","d":"veryhard","t":"Combien de temps Satoru passe-t-il dans le coma ?","b":2,"r":["Dix ans","Quinze ans","Vingt ans","Deux ans","Trente ans","Cinq ans"],"p":"https://bokudakegainaimachi.fandom.com/wiki/Sachiko_Fujinuma","src":"Sachiko Fujinuma — 49 (Satoru's 15 year coma).","s":"Erased"},{"g":"Shōko","d":"veryeasy","t":"Quel handicap Shōko a-t-elle ?","b":6,"r":["Elle est amnésique","Elle boite","Elle est daltonienne","Elle est aveugle","Elle est muette","Elle est sourde"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dko_Nishimiya","src":"Atteinte de surdité, elle peine à comprendre les discussions dans son entourage.","s":"A Silent Voice"},{"g":"Shōko","d":"medium","t":"D'où vient la surdité de Shōko ?","b":4,"r":["D'un accident dans l'enfance","D'un choc à la tête","D'une explosion","Elle est sourde depuis sa naissance","D'une otite mal soignée","D'un traitement mal dosé"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dko_Nishimiya","src":"Shōko est sourde depuis sa naissance, sa mère ayant été malade pendant sa grossesse.","s":"A Silent Voice"},{"g":"Shōko","d":"hard","t":"Comment le père de Shōko réagit-il à sa surdité ?","b":4,"r":["Il l'inscrit dans une école spécialisée","Il déménage avec elle","Il refuse d'en parler","Il demande le divorce","Il l'emmène voir des spécialistes","Il apprend la langue des signes"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dko_Nishimiya","src":"Sa famille paternelle ne l'a pas reconnue et son père a demandé le divorce avec sa mère.","s":"A Silent Voice"},{"g":"Shōya","d":"easy","t":"Comment Shōya se comporte-t-il envers Shōko à l'école primaire ?","b":1,"r":["Il mène le harcèlement contre elle","Il la défend contre les autres","Il tombe amoureux d'elle","Il l'ignore complètement","Il apprend la langue des signes pour elle","Il la dénonce aux professeurs"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dya_Ishida","src":"Il va être impliqué activement dans le harcèlement qui va naître à l'encontre de Shōko et ne ressent pas de culpabilité quand il lui fait du mal.","s":"A Silent Voice"},{"g":"Shōya","d":"hard","t":"Comment le regard de Shōya sur les autres est-il montré à l'écran ?","b":6,"r":["Leurs visages sont flous","Ils sont plus petits que lui","Ils sont dessinés en noir et blanc","Ils n'ont pas de bouche","Leurs voix sont étouffées","Une croix leur barre le visage"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dya_Ishida","src":"Il ne peut regarder les autres dans les yeux et cette perception est interprétée par des croix sur le visage des autres.","s":"A Silent Voice"},{"g":"Shōya","d":"hard","t":"Qu'arrive-t-il à la croix sur le visage de Tomohiro ?","b":2,"r":["Elle change de couleur","Elle tombe","Elle devient un trait","Elle grossit","Elle se dédouble","Elle se fissure"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dya_Ishida","src":"Tomohiro est la première personne avec laquelle Shōya s'est lié d'amitié après six ans, en témoigne la croix qui tombe.","s":"A Silent Voice"},{"g":"Shōya","d":"medium","t":"Depuis combien de temps Shōya n'a-t-il plus un seul ami quand il rencontre Tomohiro ?","b":6,"r":["Huit ans","Dix ans","Deux ans","Un an","Quatre ans","Six ans"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dya_Ishida","src":"Tomohiro est la première personne avec laquelle Shōya s'est lié d'amitié après six ans sans s'être fait le moindre ami.","s":"A Silent Voice"},{"g":"Yuzuru","d":"medium","t":"Pour quoi Yuzuru se fait-elle passer lors de sa première rencontre avec Shōya ?","b":6,"r":["Pour la mère de Shōko","Pour une inconnue de passage","Pour une journaliste","Pour une camarade de Shōya","Pour une élève d'une autre école","Pour un garçon"],"p":"https://koenokatachi.fandom.com/fr/wiki/Yuzuru_Nishimiya","src":"Quand elle est rencontrée pour la première fois, Yuzuru a l'air d'un garçon et se prétend en être un, afin de protéger sa sœur.","s":"A Silent Voice"},{"g":"Yuzuru","d":"medium","t":"Quelle passion Yuzuru traîne-t-elle partout avec elle ?","b":6,"r":["L'escalade","Le cinéma","La musique","La cuisine","Le dessin","La photographie"],"p":"https://koenokatachi.fandom.com/fr/wiki/Yuzuru_Nishimiya","src":"Elle est passionnée de photographie et emporte très souvent avec elle son appareil photo.","s":"A Silent Voice"},{"g":"Les autres","d":"hard","t":"Que fait Miyoko pour pouvoir parler avec Shōko ?","b":5,"r":["Elle lui écrit des lettres","Elle demande à un professeur de traduire","Elle parle plus fort","Elle lui fait des dessins","Elle apprend la langue des signes","Elle apprend à lire sur les lèvres"],"p":"https://koenokatachi.fandom.com/fr/wiki/Sh%C5%8Dko_Nishimiya","src":"Miyoko s'est tout de suite liée d'amitié avec Shōko et a décidé d'apprendre la langue des signes.","s":"A Silent Voice"},{"g":"Le tournoi","d":"easy","t":"Que gagne le vainqueur du Shaman Fight ?","b":6,"r":["L'immortalité","Le titre honorifique et rien d'autre","Une fortune","Une place au conseil des Patch","Le droit de ressusciter un mort","Le pouvoir de fusionner avec le Grand Esprit"],"p":"https://shamanking.fandom.com/wiki/Shaman_Fight","src":"A tournament held for shamans around the world to recognize an individual who is strong enough to merge with the Great Spirit and become the Shaman King.","s":"Shaman King"},{"g":"Le tournoi","d":"medium","t":"Tous les combien le Shaman Fight a-t-il lieu ?","b":2,"r":["Tous les dix ans","Tous les cinq cents ans","Tous les mille ans","Tous les cent ans","Tous les cinquante ans","Il n'a lieu qu'une fois"],"p":"https://shamanking.fandom.com/wiki/Shaman_Fight","src":"Hao chose to be reborn 500 years later — le tournoi revient tous les cinq cents ans.","s":"Shaman King"},{"g":"Amidamaru","d":"easy","t":"Qu'était Amidamaru de son vivant ?","b":1,"r":["Un samouraï","Un seigneur","Un moine","Un forgeron","Un paysan","Un marchand"],"p":"https://shamanking.fandom.com/wiki/Amidamaru","src":"Amidamaru is a 600-year-old samurai who serves Asakura Yoh as his Guardian Ghost.","s":"Shaman King"},{"g":"Amidamaru","d":"hard","t":"Depuis combien de temps Amidamaru est-il mort quand Yoh le rencontre ?","b":4,"r":["Trois cents ans","Cinquante ans","Mille ans","Six cents ans","Cent ans","Deux mille ans"],"p":"https://shamanking.fandom.com/wiki/Amidamaru","src":"Amidamaru is a 600-year-old samurai. Amidamaru was born on January 6, 1385 in Japan.","s":"Shaman King"},{"g":"Amidamaru","d":"hard","t":"Pourquoi les katanas du jeune Amidamaru cassaient-ils sans cesse ?","b":6,"r":["Il frappait trop fort","Il s'entraînait contre la pierre","Ils étaient maudits","Il les prêtait à d'autres","Il ne savait pas les entretenir","Il était trop pauvre pour du bon acier"],"p":"https://shamanking.fandom.com/wiki/Amidamaru","src":"However, his katanas frequently broke because he was too poor to afford quality steel.","s":"Shaman King"},{"g":"Amidamaru","d":"medium","t":"Pourquoi Amidamaru traînait-il une mauvaise réputation jusqu'à aujourd'hui ?","b":5,"r":["Il avait trahi son seigneur","Il avait brûlé un temple","Il avait volé un sabre sacré","Il avait refusé de se battre","Il avait tué un très grand nombre d'hommes","Il avait abandonné son poste"],"p":"https://shamanking.fandom.com/wiki/Amidamaru","src":"Amidamaru's numerous killings earned him a bad reputation which was carried all the way to the present time.","s":"Shaman King"},{"g":"Hao","d":"hard","t":"Quel lien unit Hao et Yoh ?","b":5,"r":["C'est son maître","C'est son fils","C'est son grand-père","C'est son oncle","C'est son frère jumeau","C'est son père"],"p":"https://shamanking.fandom.com/wiki/Asakura_Hao","src":"During his third life, he was reborn as the twin brother of his descendant Asakura Yoh.","s":"Shaman King"},{"g":"Hao","d":"veryhard","t":"Qu'était Hao dans sa toute première vie ?","b":3,"r":["Un général","Un chef de clan Patch","Un onmyōji de l'époque de Heian","Un moine errant","Un forgeron de sabres","Un empereur"],"p":"https://shamanking.fandom.com/wiki/Asakura_Hao","src":"He rose to prominence as an onmyōji during Japan's Heian period, and after receiving the name Asakura Hao, he founded the Asakura Family.","s":"Shaman King"},{"g":"Hao","d":"veryhard","t":"Pourquoi Hao a-t-il choisi de renaître dans la tribu Patch ?","b":1,"r":["Pour voler l'Esprit du Feu","Pour échapper aux Asakura","Pour retrouver sa mère","Pour apprendre leurs rites","Pour organiser le tournoi à sa guise","Pour s'y cacher mille ans"],"p":"https://shamanking.fandom.com/wiki/Asakura_Hao","src":"Hao chose to be reborn 500 years later in the Patch Tribe, so that he could steal the Spirit of Fire, one of the Five Grand Elemental Spirits.","s":"Shaman King"},{"g":"Anna","d":"medium","t":"Quel lien Anna a-t-elle avec Yoh dès le départ ?","b":5,"r":["C'est sa sœur adoptive","C'est sa cousine","C'est son professeur","C'est sa voisine","C'est sa fiancée","C'est sa rivale au tournoi"],"p":"https://shamanking.fandom.com/wiki/Asakura_Anna","src":"Anna Kyōyama — itako, fiancée de Yoh Asakura et son entraîneuse.","s":"Shaman King"},{"g":"Alucard","d":"medium","t":"Quelle identité se cache derrière le nom d'Alucard ?","b":2,"r":["Abraham Van Helsing","Le comte Dracula","Un démon sans nom","Un ancien chevalier de la Reine","Vlad Tepes le vivant","Le premier des Hellsing"],"p":"https://hellsing.fandom.com/wiki/Alucard","src":"Alucard — aliases : Count Dracula, Vampire Alucard, Nosferatu Alucard, Hellsing's Trump Card.","s":"Hellsing"},{"g":"Alucard","d":"medium","t":"Quel surnom Alucard porte-t-il au sein de l'organisation ?","b":6,"r":["L'Exécuteur","La Lame de la Reine","Le Veilleur","Le Dernier Rempart","Le Chien noir","L'Atout de Hellsing"],"p":"https://hellsing.fandom.com/wiki/Alucard","src":"Alucard — aliases : Hellsing's Trump Card.","s":"Hellsing"},{"g":"Integra","d":"medium","t":"Quelle place Integra occupe-t-elle dans la famille Hellsing ?","b":6,"r":["C'est l'épouse du chef","C'est la nièce du fondateur","Elle a été adoptée","C'est la belle-fille du chef","C'est la fille cadette","C'est la dernière du nom, et elle dirige"],"p":"https://hellsing.fandom.com/wiki/Integral_Fairbrook_Wingates_Hellsing","src":"A noblewoman member of the Protestant Knights who is the head and last member of the Hellsing family.","s":"Hellsing"},{"g":"Integra","d":"hard","t":"De quel personnage célèbre la famille Hellsing descend-elle ?","b":2,"r":["Allan Quatermain","Abraham Van Helsing","John Seward","Mina Murray","Sherlock Holmes","Jonathan Harker"],"p":"https://hellsing.fandom.com/wiki/Integral_Fairbrook_Wingates_Hellsing","src":"A descendant of Abraham Van Helsing, Integra Hellsing runs the Hellsing Agency.","s":"Hellsing"},{"g":"Seras","d":"medium","t":"Quel métier Seras exerçait-elle avant de devenir vampire ?","b":4,"r":["Religieuse","Infirmière","Militaire","Policière","Journaliste","Étudiante"],"p":"https://hellsing.fandom.com/wiki/Seras_Victoria","src":"Seras Victoria — aliases : Police Girl, « Miss Police Girl » (by Walter).","s":"Hellsing"},{"g":"Seras","d":"hard","t":"Pourquoi Alucard transforme-t-il Seras en vampire ?","b":3,"r":["Parce qu'elle était déjà mordue","Pour punir son maître","Pour la sauver d'une balle qu'il a lui-même tirée","Pour la recruter de force","Pour tester son pouvoir","Elle le lui a demandé depuis longtemps"],"p":"https://hellsing.fandom.com/wiki/Seras_Victoria","src":"Seras was turned into a vampire by Alucard to save her from a would-be fatal gunshot wound in the chest that he also caused while shooting the perpetrator.","s":"Hellsing"},{"g":"Seras","d":"hard","t":"Que refuse obstinément Seras après sa transformation ?","b":3,"r":["De quitter son uniforme","De dormir le jour","De boire du sang","De tuer des goules","D'obéir à Integra","De porter une arme"],"p":"https://hellsing.fandom.com/wiki/Seras_Victoria","src":"She clings to her humanity; she refuses to drink blood, fearing her own power.","s":"Hellsing"},{"g":"Walter","d":"medium","t":"Quelle fonction Walter occupe-t-il chez les Hellsing ?","b":1,"r":["Majordome","Jardinier","Armurier","Médecin","Chauffeur","Secrétaire"],"p":"https://hellsing.fandom.com/wiki/Walter_C._Dornez","src":"Walter — Hellsing Family Butler, Hellsing Trashman, The Oldster, Angel of Death.","s":"Hellsing"},{"g":"Walter","d":"veryhard","t":"Quel surnom Walter s'est-il gagné dans sa jeunesse ?","b":1,"r":["L'Ange de la Mort","Le Faucheur","La Main gauche","Le Fil d'argent","Le Boucher de Londres","Le Loup blanc"],"p":"https://hellsing.fandom.com/wiki/Walter_C._Dornez","src":"Walter — Angel of Death, Death, Black One.","s":"Hellsing"},{"g":"L'Iscariote","d":"hard","t":"Quel surnom Alexander Anderson doit-il à ses armes ?","b":5,"r":["Le Bourreau du Vatican","Anderson le Clouté","Le Croisé","La Lame bénie","Anderson la Baïonnette","Le Prêtre d'acier"],"p":"https://hellsing.fandom.com/wiki/Alexander_Anderson","src":"Alexander Anderson — aliases : Bayonet Anderson, The Regenerator, Iscariot's Trump Card.","s":"Hellsing"},{"g":"Baby Beel","d":"veryeasy","t":"Où Baby Beel passe-t-il ses journées ?","b":1,"r":["Sur le dos d'Oga","Dans les bras de Hilda","Dans un berceau au lycée","Dans le sac d'Oga","Chez les Furuichi","Il marche tout seul"],"p":"https://beelzebub.fandom.com/fr/wiki/Beelzebub_IV","src":"Il aime être sur le dos d'Oga et l'imite parfois dans ses gestes.","s":"Beelzebub"},{"g":"Baby Beel","d":"veryeasy","t":"Comment Baby Beel est-il habillé ?","b":4,"r":["D'une grenouillère verte","D'un uniforme de lycéen miniature","D'une cape noire","Il est tout nu","D'un simple lange","D'un costume de démon"],"p":"https://beelzebub.fandom.com/fr/wiki/Beelzebub_IV","src":"Il ne porte jamais de vêtements, sauf une écharpe en hiver. Il méprise les vêtements et est généralement vu nu.","s":"Beelzebub"},{"g":"Baby Beel","d":"easy","t":"De quelle couleur sont les cheveux de Baby Beel ?","b":5,"r":["Blancs","Roux","Bleus","Noirs","Verts","Violets"],"p":"https://beelzebub.fandom.com/fr/wiki/Beelzebub_IV","src":"Baby Beel est un mignon bébé aux cheveux et aux yeux verts.","s":"Beelzebub"},{"g":"Baby Beel","d":"easy","t":"Quel objet Baby Beel garde-t-il presque toujours à la bouche ?","b":3,"r":["Un biberon","Son pouce","Une tétine jaune","Un hochet","Un morceau de tissu","Une sucette"],"p":"https://beelzebub.fandom.com/fr/wiki/Beelzebub_IV","src":"Il a toujours sa tétine jaune sur sa bouche, sauf quand il mange.","s":"Beelzebub"},{"g":"Baby Beel","d":"medium","t":"Quelle place Baby Beel occupe-t-il chez les démons ?","b":2,"r":["C'est un orphelin recueilli","C'est le fils du Grand Seigneur démon","C'est un démon de rang inférieur","C'est un prince en exil","C'est le neveu du roi","C'est une expérience ratée"],"p":"https://beelzebub.fandom.com/fr/wiki/Beelzebub_IV","src":"Beelzebub IV — occupation : Seigneur Démon. Famille : Grand Seigneur (Père), Tatsumi Oga (père adoptif).","s":"Beelzebub"},{"g":"La rencontre","d":"medium","t":"Dans quelles circonstances Oga tombe-t-il sur Baby Beel ?","b":4,"r":["Le bébé était déposé devant chez lui","Hilda le lui met dans les bras en pleine rue","Il le trouve dans les décombres du lycée","Un homme en sous-vêtements dérivait sur une rivière","Il le gagne dans un pari","Le bébé apparaît dans sa chambre"],"p":"https://beelzebub.fandom.com/fr/wiki/Tatsumi_Oga","src":"Il vit un moustachu en sous-vêtements, dérivant sur l'eau nommé Alaindelon (démon trans-dimensionnel).","s":"Beelzebub"},{"g":"La rencontre","d":"medium","t":"Quel est le rôle d'Alaindelon ?","b":3,"r":["Il sert de garde du corps à Hilda","C'est le médecin du bébé","Il fait passer d'un monde à l'autre","Il est le précepteur de Baby Beel","C'est un espion du roi démon","Il n'a aucun pouvoir"],"p":"https://beelzebub.fandom.com/fr/wiki/Alindelon","src":"Alindelon est un démon trans-dimensionnel qui a transporté Beelzebub IV du monde des démons au monde des humains.","s":"Beelzebub"},{"g":"La rencontre","d":"veryhard","t":"De quelle célébrité le nom d'Alaindelon s'inspire-t-il ?","b":2,"r":["Un chanteur italien","Un acteur français","Un lutteur américain","Un peintre espagnol","Un écrivain russe","Un footballeur brésilien"],"p":"https://beelzebub.fandom.com/fr/wiki/Alindelon","src":"Son nom Alindelon est inspiré de l'acteur français Alain Delon.","s":"Beelzebub"},{"g":"La rencontre","d":"hard","t":"Chez qui Alaindelon s'installe-t-il de force ?","b":5,"r":["Chez les Oga","Chez les Kunieda","À l'infirmerie du lycée","Chez Hilda","Chez les Furuichi","Chez le principal"],"p":"https://beelzebub.fandom.com/fr/wiki/Alindelon","src":"Il forcera la main de la famille Furuichi, pour qui il semble avoir un faible, pour l'héberger.","s":"Beelzebub"},{"g":"Hilda","d":"easy","t":"Quel rôle Hilda tient-elle auprès de Baby Beel ?","b":2,"r":["Elle est sa garde du corps et rien d'autre","Elle lui sert de mère","C'est sa grande sœur","Elle est chargée de le ramener aux enfers","C'est sa professeure particulière","Elle le surveille sans jamais l'approcher"],"p":"https://beelzebub.fandom.com/fr/wiki/Hilda","src":"Hilda est une servante démoniaque et fait office de mère à Beelzebub.","s":"Beelzebub"},{"g":"Hilda","d":"medium","t":"Quel est le vrai nom de Hilda ?","b":4,"r":["Hildemarde","Hildara","Hildegonde","Hildegarde","Hildeberte","Hildaline"],"p":"https://beelzebub.fandom.com/fr/wiki/Hilda","src":"Hilda, de son vrai nom Hildegarde (ヒルデガルダ, Hirudegaruda), est une servante démoniaque.","s":"Beelzebub"},{"g":"Hilda","d":"hard","t":"Pourquoi Hilda garde-t-elle une mèche devant l'œil gauche ?","b":3,"r":["Elle cache une cicatrice","C'est la marque de sa fonction","Cet œil est si performant qu'il lui donne des migraines","Elle l'a perdu au combat","C'est une coquetterie, rien de plus","Il change de couleur quand elle ment"],"p":"https://beelzebub.fandom.com/fr/wiki/Hilda","src":"Hilda a toujours une mèche devant l'œil gauche car il est si performant qu'il lui donne des migraines.","s":"Beelzebub"},{"g":"Hilda","d":"hard","t":"Quel lien unit Hilda et Yolda ?","b":6,"r":["Ce sont des rivales sans lien de famille","Yolda est sa fille","Yolda est son ancienne maîtresse","Yolda est sa supérieure","Yolda est sa cousine","Ce sont des sœurs"],"p":"https://beelzebub.fandom.com/fr/wiki/Yolda","src":"Yolda est une servante démoniaque et la sœur de Hilda.","s":"Beelzebub"},{"g":"Oga","d":"easy","t":"Quel rôle Furuichi tient-il auprès d'Oga ?","b":1,"r":["C'est son seul ami","C'est son petit frère","C'est son rival de toujours","C'est son cousin","C'est son voisin qu'il déteste","C'est son entraîneur"],"p":"https://beelzebub.fandom.com/fr/wiki/Takayuki_Furuichi","src":"Il est très proche de Tatsumi Oga, ils sont meilleurs amis.","s":"Beelzebub"},{"g":"Oga","d":"medium","t":"Dans quel lycée Oga se fait-il connaître ?","b":3,"r":["Kunugigaoka","Teikou","Ishiyama","Shiratorizawa","Karasuno","Hakuryô"],"p":"https://beelzebub.fandom.com/fr/wiki/Ishiyama_High_School","src":"Tatsumi Oga — affiliation : Académie St Ishiyama, Ishiyama High School.","s":"Beelzebub"},{"g":"Oga","d":"hard","t":"Comment Oga déclenche-t-il la marque qu'il porte ?","b":2,"r":["En criant le nom du démon","En donnant un coup de poing","En la touchant de l'autre main","En versant son sang dessus","Baby Beel doit la toucher","Elle part toute seule"],"p":"https://beelzebub.fandom.com/fr/wiki/Tatsumi_Oga","src":"Beelze-Marque : Oga crée un beelze-emblème depuis sa marque du roi qu'il fait exploser en donnant un coup de poing.","s":"Beelzebub"},{"g":"Ishiyama","d":"medium","t":"Quel titre Aoi Kunieda porte-t-elle à Ishiyama ?","b":5,"r":["La Princesse","La Dame de fer","La Louve","L'Impératrice","La Reine","La Gardienne"],"p":"https://beelzebub.fandom.com/fr/wiki/Aoi_Kunieda","src":"Aoi Kunieda est la Reine du lycée d'Ishiyama et une membre du Quadriumvirat TKKH.","s":"Beelzebub"},{"g":"Ishiyama","d":"medium","t":"Qui compose le groupe des Red Tails ?","b":3,"r":["Les professeurs du lycée","Les quatre plus forts de l'école","Toutes les filles d'Ishiyama","Les anciens élèves","Les démons envoyés sur Terre","Le club de karaté"],"p":"https://beelzebub.fandom.com/fr/wiki/Aoi_Kunieda","src":"Elle est la chef des « Red Tails », un groupe qui réunit toutes les filles d'Ishiyama pour se protéger des délinquants masculins.","s":"Beelzebub"},{"g":"Ishiyama","d":"veryhard","t":"Qui a fondé les Red Tails ?","b":4,"r":["Aoi Kunieda","La mère de Hilda","Une ancienne professeure","La grande sœur d'Oga","Hilda elle-même","Le principal du lycée"],"p":"https://beelzebub.fandom.com/fr/wiki/Misaki_Oga","src":"Misaki Oga — Tatsumi Oga (petit frère). Elle est la fondatrice des Red Tails ainsi que la 1ère chef.","s":"Beelzebub"},{"g":"Ishiyama","d":"hard","t":"Quel surnom Hidetora Tôjô porte-t-il ?","b":2,"r":["Le Fauve d'Ishiyama","La légende d'Ishiyama","Le Roi sans couronne","Le Dernier Rempart","L'Ombre d'Ishiyama","Le Titan"],"p":"https://beelzebub.fandom.com/fr/wiki/Hidetora_T%C3%B4j%C3%B4","src":"Hidetora Tōjō — autres : La légende d'Ishiyama. C'est aussi le membre le plus fort du TKKH.","s":"Beelzebub"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+const LOT = "sept";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>
