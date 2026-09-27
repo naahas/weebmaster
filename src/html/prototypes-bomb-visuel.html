@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — le visuel de la bombe</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Six bombes, et une contrainte que la plupart des jolies bombes
+   ne savent pas tenir.
+
+   ⚠️ LA BOMBE DÉSIGNE QUELQU'UN. Elle est au centre d'un cercle de
+   joueurs et sa mèche pivote vers celui dont c'est le tour — c'est
+   la seule chose qui dit « à toi ». Un visuel qui n'a pas de
+   direction est donc disqualifié, aussi beau soit-il : c'est
+   pour ça que chaque piste ci-dessous porte un repère
+   directionnel, et que le curseur « angle » existe.
+
+   ⚠️ ET ELLE EST PETITE. 60 px de large sur ordinateur, moins à
+   plusieurs. Tout ce qui demande d'être regardé de près est
+   perdu d'avance ; ce qui se lit, c'est la COULEUR, la VITESSE et
+   la SILHOUETTE. Le curseur de taille est là pour ça — une piste
+   qui ne tient pas à 44 px ne tiendra pas à huit joueurs.
+
+   Les trois états viennent du jeu : normal au-dessus de 5 s,
+   warning entre 5 et 2, critical en dessous.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd24a;
+    --chaud: #ffb300;
+    --rouge: #ff4433;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.6rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.75); font-weight: 600; }
+
+/* ── La barre de réglages ─────────────────────────────────────── */
+.reglages {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.1rem;
+    margin: 0 -1.5rem 2.2rem;
+    padding: 0.85rem 1.5rem;
+    background: rgba(10, 9, 12, 0.92);
+    backdrop-filter: blur(0.5rem);
+    border-bottom: 0.06rem solid rgba(255,255,255,0.08);
+}
+.grp { display: flex; align-items: center; gap: 0.4rem; }
+.grp > label { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.reglages button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.35rem 0.75rem;
+    background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.45rem;
+}
+.reglages button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+.reglages input[type=range] { width: 8rem; accent-color: var(--or); }
+.val { min-width: 3.4rem; font-size: 0.72rem; font-variant-numeric: tabular-nums; color: var(--or); }
+
+/* ── La grille des pistes ─────────────────────────────────────── */
+.grille { display: flex; flex-wrap: wrap; gap: 2.2rem 1.8rem; }
+.piste { width: 320px; }
+.piste h2 {
+    margin: 0 0 0.15rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem; letter-spacing: 0.07em;
+    color: var(--or);
+}
+.piste h2 span { font-size: 0.7rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.3); }
+.piste p { margin: 0 0 0.9rem; font-size: 0.72rem; line-height: 1.55; color: rgba(255,255,255,0.42); min-height: 6.2em; }
+
+/* La scène : un bout de plateau, avec le joueur visé au bord. */
+.scene {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 230px;
+    border-radius: 0.9rem;
+    background:
+        radial-gradient(55% 55% at 50% 50%, rgba(255,255,255,0.035), transparent 70%),
+        #0c0b0f;
+    border: 0.06rem solid rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+
+/* Le joueur visé — il tourne avec l'angle, pour qu'on voie si le
+   repère directionnel de la bombe le désigne vraiment. */
+.vise {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 2.1rem; height: 2.4rem;
+    margin: -1.2rem 0 0 -1.05rem;
+    display: grid; place-items: center;
+    font-size: 0.6rem; font-weight: 700;
+    color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.05);
+    border: 0.06rem solid rgba(255,255,255,0.12);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.socle { position: relative; display: grid; place-items: center; }
+
+.mesure {
+    margin-top: 0.55rem;
+    font-size: 0.66rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.3);
+}
+.mesure b { color: rgba(255,255,255,0.6); font-weight: 600; }
+
+/* ════════════════════════════════════════════════════════════════
+   1 — LA MÈCHE VIVANTE
+   La bombe d'aujourd'hui, avec la seule chose qui lui manque :
+   une mèche qui RACCOURCIT. Aujourd'hui elle garde 52 px du début
+   à la fin et seule l'étincelle change de couleur ; l'œil n'a donc
+   aucun repère de longueur. Ici l'étincelle descend vers le corps,
+   et la distance qui reste EST le temps qui reste.
+   ════════════════════════════════════════════════════════════════ */
+.b1-corps {
+    position: relative;
+    width: var(--t); height: var(--t);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 28%, #4a4a4a, #222 55%, #111);
+    box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.55), inset 0 0 0.9rem rgba(255,255,255,0.04);
+    transition: background 0.5s, box-shadow 0.5s;
+}
+.b1-corps::after {
+    content: ''; position: absolute;
+    top: 14%; left: 22%; width: 28%; height: 16%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.18), transparent);
+    border-radius: 50%; transform: rotate(-15deg);
+}
+.b1-pivot {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b1-svg { position: absolute; overflow: visible; }
+.b1-trait { fill: none; stroke: #9a9a9a; stroke-width: 2.6; stroke-linecap: round; transition: stroke 0.4s; }
+.b1-braise { fill: none; stroke: #ff9a2a; stroke-width: 2.6; stroke-linecap: round; opacity: 0.85; }
+.b1-flamme {
+    position: absolute; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff3b0, var(--chaud) 45%, transparent 72%);
+    box-shadow: 0 0 0.7rem rgba(255,190,40,0.75);
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.s-warn .b1-corps { background: radial-gradient(circle at 34% 28%, #5a4020, #2d1a08 55%, #1a0f00); box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.55), 0 0 1.2rem rgba(255,150,0,0.2); }
+.s-warn .b1-trait { stroke: #b98a44; }
+.s-warn .b1-flamme { background: radial-gradient(circle, #ffe9a0, #ff7b00 45%, transparent 72%); box-shadow: 0 0 0.9rem rgba(255,140,0,0.85); }
+.s-crit .b1-corps { background: radial-gradient(circle at 34% 28%, #5a1515, #2d0808 55%, #1a0000); box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.55), 0 0 1.6rem rgba(255,50,0,0.35); }
+.s-crit .b1-trait { stroke: #b04040; }
+.s-crit .b1-flamme { background: radial-gradient(circle, #fff, #ff2a00 45%, transparent 72%); box-shadow: 0 0 1.2rem rgba(255,60,0,0.95); }
+
+/* ════════════════════════════════════════════════════════════════
+   2 — LE SCEAU
+   Pas de bombe du tout : un talisman hexagonal, de la même famille
+   que les cadres des joueurs. L'anneau se vide comme une jauge et
+   sa TÊTE sert de repère directionnel — un seul objet fait les
+   deux travaux, ce qui est rare.
+   ════════════════════════════════════════════════════════════════ */
+.b2-cadre {
+    position: relative;
+    width: var(--t); height: var(--t);
+    display: grid; place-items: center;
+}
+.b2-hex {
+    width: 72%; height: 72%;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: linear-gradient(160deg, #2a2418, #14110c);
+    display: grid; place-items: center;
+    transition: background 0.4s;
+}
+.b2-kanji {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: calc(var(--t) * 0.34);
+    line-height: 1;
+    color: var(--or);
+    text-shadow: 0 0 0.5rem rgba(255,200,60,0.7);
+    transition: color 0.4s, text-shadow 0.4s;
+}
+.b2-anneau {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    /* La jauge : un dégradé conique rogné en couronne. */
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 3px), #000 calc(50% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(50% - 3px), #000 calc(50% - 3px));
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b2-tete {
+    position: absolute; top: 50%; left: 50%;
+    width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%;
+    background: #fff3c0;
+    box-shadow: 0 0 0.5rem rgba(255,210,70,0.95);
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.s-warn .b2-hex { background: linear-gradient(160deg, #33220f, #170e05); }
+.s-warn .b2-kanji { color: #ffa326; text-shadow: 0 0 0.6rem rgba(255,140,0,0.8); }
+.s-crit .b2-hex { background: linear-gradient(160deg, #331010, #170404); }
+.s-crit .b2-kanji { color: #ff5340; text-shadow: 0 0 0.7rem rgba(255,50,0,0.9); }
+.s-crit .b2-tete { background: #fff; box-shadow: 0 0 0.7rem rgba(255,60,0,1); }
+
+/* ════════════════════════════════════════════════════════════════
+   3 — LE NOYAU
+   La lumière est DEDANS et elle sort par les fissures. C'est la
+   seule piste où l'objet ne change pas de couleur : il s'ouvre.
+   Le repère directionnel est une comète courte qui file vers le
+   joueur — plus lisible qu'une mèche quand la bombe est minuscule.
+   ════════════════════════════════════════════════════════════════ */
+.b3-coque {
+    position: relative;
+    width: var(--t); height: var(--t);
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #3a3a40, #1a1a1e 58%, #0b0b0d);
+    box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.6), inset 0 0 0.9rem rgba(0,0,0,0.6);
+    overflow: hidden;
+}
+/* Les fissures : deux traits croisés, dont l'éclat monte avec le temps. */
+.b3-fissure {
+    position: absolute; inset: 0;
+    background:
+        linear-gradient(58deg,  transparent 47%, var(--lueur) 48%, var(--lueur) 51%, transparent 52%),
+        linear-gradient(-34deg, transparent 44%, var(--lueur) 45%, var(--lueur) 47%, transparent 48%),
+        linear-gradient(12deg,  transparent 62%, var(--lueur) 63%, var(--lueur) 65%, transparent 66%);
+    --lueur: rgba(255,170,40,0);
+    filter: blur(0.3px);
+}
+.b3-coeur {
+    position: absolute; inset: 22%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,210,90,0.9), rgba(255,120,0,0.35) 55%, transparent 72%);
+    opacity: 0;
+}
+.b3-comete {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b3-queue {
+    position: absolute; top: -2px;
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, rgba(255,190,60,0), rgba(255,200,80,0.9));
+    box-shadow: 0 0 0.5rem rgba(255,170,40,0.6);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4 — LA BOMBE À RUBAN
+   La bombe de dessin animé, assumée : corps rond, collerette
+   métallique, et une mèche BOUCLÉE qui se dévide pour de vrai.
+   C'est la plus lisible de loin et la plus « clip » — à peser si
+   la cible est TikTok plutôt qu'un salon entre amis.
+   ════════════════════════════════════════════════════════════════ */
+.b4-corps {
+    position: relative;
+    width: var(--t); height: var(--t);
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #55555d, #1d1d22 58%, #0e0e11);
+    box-shadow: 0 0.3rem 0.8rem rgba(0,0,0,0.6), inset -0.2rem -0.25rem 0.8rem rgba(0,0,0,0.5);
+    transition: background 0.5s;
+}
+.b4-corps::after {
+    content: ''; position: absolute;
+    top: 16%; left: 20%; width: 26%; height: 18%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.3), transparent 70%);
+    border-radius: 50%; transform: rotate(-20deg);
+}
+.b4-pivot {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b4-col {
+    position: absolute;
+    width: 26%; height: 16%;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #9a9aa2, #55555c, #83838b);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.b4-svg { position: absolute; overflow: visible; }
+.b4-trait { fill: none; stroke: #c8b48a; stroke-width: 3; stroke-linecap: round; transition: stroke 0.4s; }
+.b4-flamme {
+    position: absolute; border-radius: 50% 50% 55% 45%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 50% 65%, #fffbe8, #ffc400 40%, #ff5a00 72%, transparent 80%);
+    box-shadow: 0 0 0.9rem rgba(255,170,20,0.9);
+}
+.s-warn .b4-corps { background: radial-gradient(circle at 32% 26%, #66503a, #241a10 58%, #120c06); }
+.s-crit .b4-corps { background: radial-gradient(circle at 32% 26%, #6b2b2b, #2a0e0e 58%, #150505); }
+.s-crit .b4-trait { stroke: #d08a6a; }
+
+/* ════════════════════════════════════════════════════════════════
+   5 — LE COMPTE À REBOURS
+   La bombe EST le chiffre. C'est la piste la plus lisible sur un
+   stream compressé, et la seule où l'on sait combien il reste sans
+   estimer une longueur. Le prix à payer : elle ressemble moins à
+   une bombe, donc l'objet porte moins le mode.
+   ════════════════════════════════════════════════════════════════ */
+.b5-cadre { position: relative; width: var(--t); height: var(--t); display: grid; place-items: center; }
+.b5-fond {
+    position: absolute; inset: 9%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 32%, #1c1a22, #0c0b0f);
+    box-shadow: inset 0 0 0.8rem rgba(0,0,0,0.7);
+}
+.b5-jauge {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 4px), #000 calc(50% - 4px));
+    mask: radial-gradient(farthest-side, transparent calc(50% - 4px), #000 calc(50% - 4px));
+}
+.b5-chiffre {
+    position: relative;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: calc(var(--t) * 0.52);
+    line-height: 1;
+    color: var(--or);
+    text-shadow: 0 0 0.6rem rgba(255,200,60,0.6);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.35s, text-shadow 0.35s;
+}
+/* Le repère directionnel sort de l'anneau : un chevron posé dehors. */
+.b5-fleche {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b5-pointe {
+    position: absolute;
+    width: 0; height: 0;
+    border-left: 7px solid var(--or);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    transform: translateY(-5px);
+    filter: drop-shadow(0 0 0.25rem rgba(255,200,60,0.8));
+    transition: border-left-color 0.35s;
+}
+.s-warn .b5-chiffre { color: #ffa326; text-shadow: 0 0 0.7rem rgba(255,140,0,0.7); }
+.s-warn .b5-pointe { border-left-color: #ffa326; }
+.s-crit .b5-chiffre { color: #ff5340; text-shadow: 0 0 0.9rem rgba(255,50,0,0.85); }
+.s-crit .b5-pointe { border-left-color: #ff5340; }
+
+/* ════════════════════════════════════════════════════════════════
+   6 — L'ORBE INSTABLE
+   Aucune mèche : trois étincelles en orbite. Elles resserrent leur
+   cercle et accélèrent à mesure que le temps tombe, et toutes
+   passent par le MÊME point — celui qui vise le joueur. La
+   direction se lit au rythme, pas à une forme.
+   ════════════════════════════════════════════════════════════════ */
+.b6-orbe {
+    position: relative;
+    width: var(--t); height: var(--t);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 38% 32%, rgba(255,255,255,0.35), transparent 42%),
+        radial-gradient(circle at 50% 50%, var(--c1), var(--c2) 60%, #0a0a0c);
+    --c1: #5b4bd8;
+    --c2: #221a55;
+    box-shadow: 0 0 1.2rem var(--halo), inset 0 0 1rem rgba(0,0,0,0.5);
+    --halo: rgba(90,70,220,0.35);
+    transition: background 0.5s, box-shadow 0.5s;
+}
+.b6-voile {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.14), transparent 45%);
+    animation: b6tourne 3.2s linear infinite;
+}
+@keyframes b6tourne { to { transform: rotate(360deg); } }
+.b6-orbite {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+}
+.b6-etincelle {
+    position: absolute;
+    width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0.45rem var(--etinc), 0 0 0.9rem var(--etinc);
+    --etinc: rgba(150,130,255,0.9);
+}
+.b6-mire {
+    position: absolute; top: 50%; left: 50%;
+    transform-origin: 0 0;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.b6-trait {
+    position: absolute; top: -1px;
+    height: 2px; border-radius: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.55));
+}
+.s-warn .b6-orbe { --c1: #d88a2a; --c2: #5a2f08; --halo: rgba(255,150,30,0.4); }
+.s-warn .b6-etincelle { --etinc: rgba(255,190,60,0.95); }
+.s-crit .b6-orbe { --c1: #e03a22; --c2: #5a0d05; --halo: rgba(255,60,20,0.55); }
+.s-crit .b6-etincelle { --etinc: rgba(255,90,60,1); }
+
+/* ── Tremblements, communs à toutes les pistes ────────────────── */
+.s-warn .secoue { animation: trembleWarn 0.35s ease-in-out infinite; }
+.s-crit .secoue { animation: trembleCrit 0.12s ease-in-out infinite; }
+@keyframes trembleWarn { 0%,100% { transform: translate(0,0); } 50% { transform: translate(0.8px,-0.8px); } }
+@keyframes trembleCrit { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-1.6px,1px); } 75% { transform: translate(1.6px,-1px); } }
+
+.pied {
+    margin: 3rem 0 0;
+    padding-top: 1.2rem;
+    border-top: 0.06rem solid rgba(255,255,255,0.07);
+    max-width: 60rem;
+    font-size: 0.75rem; line-height: 1.6; color: rgba(255,255,255,0.35);
+}
+.pied b { color: rgba(255,255,255,0.7); font-weight: 600; }
+
+@media (max-width: 720px) {
+    .piste { width: 100%; }
+    .reglages { position: static; }
+}
+</style>
+</head>
+<body>
+
+<h1>BombAnime — le visuel de la bombe</h1>
+<p class="sous">
+    Six façons de dessiner la bombe, jouées en vrai : le compte à rebours tourne, les trois états
+    s'enchaînent, et la mèche pivote comme en partie. <b>Deux contraintes décident, pas le goût :</b>
+    la bombe <b>désigne quelqu'un</b> — sa direction est la seule chose qui dit « à toi » — et elle est
+    <b>petite</b>, 60 px sur ordinateur, moins à huit joueurs. Pousse le curseur de taille à 44 px :
+    c'est là que les pistes se départagent, pas à 90.
+</p>
+
+<div class="reglages">
+    <div class="grp">
+        <button id="bJouer" class="on">⏸ Pause</button>
+        <button id="bRejouer">↻ Rejouer</button>
+    </div>
+    <div class="grp">
+        <label for="rTemps">Temps</label>
+        <input type="range" id="rTemps" min="0" max="8" step="0.05" value="8">
+        <span class="val" id="vTemps">8,0 s</span>
+    </div>
+    <div class="grp">
+        <label for="rTaille">Taille</label>
+        <input type="range" id="rTaille" min="40" max="110" step="1" value="60">
+        <span class="val" id="vTaille">60 px</span>
+    </div>
+    <div class="grp">
+        <label for="rAngle">Angle</label>
+        <input type="range" id="rAngle" min="0" max="359" step="1" value="0">
+        <span class="val" id="vAngle">0°</span>
+        <button id="bTour" class="on">Tour auto</button>
+    </div>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<p class="pied">
+    <b>Ce que chaque piste coûte.</b>
+    La <b>mèche vivante</b> garde l'objet actuel et ne corrige qu'un défaut — la mèche ne raccourcissait
+    jamais —, donc c'est la moins risquée et la moins marquante. Le <b>sceau</b> et le <b>compte à rebours</b>
+    font porter la direction et le temps par un seul anneau, ce qui est élégant mais éloigne de l'idée de bombe.
+    Le <b>noyau</b> et l'<b>orbe</b> se lisent au rythme plutôt qu'à la forme : très bien à 44 px, moins
+    parlants sur une capture figée — juge-les en mouvement. La <b>bombe à ruban</b> est la plus lisible
+    de loin, donc la plus faite pour un clip ; à voir si ce registre va au reste du site.
+</p>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Une seule horloge pour les six pistes : elles doivent être
+   comparées au MÊME instant du compte à rebours, sinon on compare
+   un état à un autre au lieu de comparer deux dessins.
+   ════════════════════════════════════════════════════════════════ */
+const DUREE = 8;          // le tour le plus long du jeu
+const SEUIL_WARN = 5;     // les deux seuils viennent de home.html
+const SEUIL_CRIT = 2;
+
+const PISTES = [
+    { id: 'b1', nom: 'La mèche vivante', tag: 'l\'actuelle, corrigée',
+      texte: "Le corps d'aujourd'hui, et la seule chose qui lui manquait : une mèche qui RACCOURCIT. Aujourd'hui elle garde sa longueur du début à la fin, seule l'étincelle change de couleur — l'œil n'a donc aucun repère. Ici la flamme descend vers le corps, et ce qui reste de mèche EST ce qui reste de temps." },
+    { id: 'b2', nom: 'Le sceau', tag: 'talisman hexagonal',
+      texte: "Pas de bombe : un talisman, de la même famille que les cadres des joueurs. L'anneau se vide comme une jauge et sa tête sert de repère directionnel — un seul objet fait les deux travaux, ce qui est rare et ce qui tient très bien en petit." },
+    { id: 'b3', nom: 'Le noyau', tag: 'la lumière est dedans',
+      texte: "La seule piste où l'objet ne change pas de couleur : il s'OUVRE. Les fissures s'allument de l'intérieur et le cœur finit par déborder. La direction est une comète courte, plus lisible qu'une mèche quand la bombe fait 44 px." },
+    { id: 'b4', nom: 'La bombe à ruban', tag: 'dessin animé assumé',
+      texte: "Corps rond, collerette métallique, mèche bouclée qui se dévide pour de vrai. La plus lisible de loin et la plus « clip » — à peser si la cible est TikTok plutôt qu'un salon entre amis. C'est aussi la plus éloignée du reste du site." },
+    { id: 'b5', nom: 'Le compte à rebours', tag: 'le chiffre EST la bombe',
+      texte: "La plus lisible sur un stream compressé, et la seule où l'on sait combien il reste sans estimer une longueur. Le prix : elle ressemble moins à une bombe, donc l'objet porte moins le mode. Le chevron posé hors de l'anneau fait la direction." },
+    { id: 'b6', nom: 'L\'orbe instable', tag: 'aucune mèche',
+      texte: "Trois étincelles en orbite qui resserrent leur cercle et accélèrent. Elles passent toutes par le même point, celui qui vise le joueur : la direction se lit au RYTHME, pas à une forme. À juger en mouvement — une capture figée ne lui rend pas justice." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const el = document.createElement('div');
+    el.className = 'piste';
+    el.innerHTML =
+        '<h2>' + p.nom + ' <span>· ' + p.tag + '</span></h2>' +
+        '<p>' + p.texte + '</p>' +
+        '<div class="scene" id="sc-' + p.id + '">' +
+            '<div class="vise" id="vi-' + p.id + '">tour</div>' +
+            '<div class="socle" id="so-' + p.id + '"></div>' +
+        '</div>' +
+        '<div class="mesure" id="me-' + p.id + '"></div>';
+    grille.appendChild(el);
+}
+
+/* ── Les six dessins ─────────────────────────────────────────── */
+const socle = id => document.getElementById('so-' + id);
+
+// 1 — La mèche vivante
+socle('b1').innerHTML =
+    '<div class="b1-corps secoue" id="b1c">' +
+        '<div class="b1-pivot" id="b1p">' +
+            '<svg class="b1-svg" id="b1s"><path class="b1-trait" id="b1t"/><path class="b1-braise" id="b1b"/></svg>' +
+            '<div class="b1-flamme" id="b1f"></div>' +
+        '</div>' +
+    '</div>';
+
+// 2 — Le sceau
+socle('b2').innerHTML =
+    '<div class="b2-cadre secoue">' +
+        '<div class="b2-anneau" id="b2a"><div class="b2-tete" id="b2t"></div></div>' +
+        '<div class="b2-hex"><span class="b2-kanji">爆</span></div>' +
+    '</div>';
+
+// 3 — Le noyau
+socle('b3').innerHTML =
+    '<div class="b3-coque secoue" id="b3c">' +
+        '<div class="b3-fissure" id="b3f"></div>' +
+        '<div class="b3-coeur" id="b3o"></div>' +
+    '</div>' +
+    '<div class="b3-comete" id="b3m"><div class="b3-queue" id="b3q"></div></div>';
+
+// 4 — La bombe à ruban
+socle('b4').innerHTML =
+    '<div class="b4-corps secoue" id="b4c">' +
+        '<div class="b4-pivot" id="b4p">' +
+            '<div class="b4-col" id="b4l"></div>' +
+            '<svg class="b4-svg" id="b4s"><path class="b4-trait" id="b4t"/></svg>' +
+            '<div class="b4-flamme" id="b4f"></div>' +
+        '</div>' +
+    '</div>';
+
+// 5 — Le compte à rebours
+socle('b5').innerHTML =
+    '<div class="b5-cadre secoue">' +
+        '<div class="b5-jauge" id="b5j"></div>' +
+        '<div class="b5-fond"></div>' +
+        '<span class="b5-chiffre" id="b5n">8</span>' +
+        '<div class="b5-fleche" id="b5a"><div class="b5-pointe" id="b5t"></div></div>' +
+    '</div>';
+
+// 6 — L'orbe instable
+socle('b6').innerHTML =
+    '<div class="b6-orbe secoue" id="b6o">' +
+        '<div class="b6-voile"></div>' +
+    '</div>' +
+    '<div class="b6-orbite" id="b6r1"><div class="b6-etincelle" id="b6e1"></div></div>' +
+    '<div class="b6-orbite" id="b6r2"><div class="b6-etincelle" id="b6e2"></div></div>' +
+    '<div class="b6-orbite" id="b6r3"><div class="b6-etincelle" id="b6e3"></div></div>' +
+    '<div class="b6-mire" id="b6m"><div class="b6-trait" id="b6q"></div></div>';
+
+const $ = id => document.getElementById(id);
+
+/* ── L'horloge ───────────────────────────────────────────────── */
+let temps = DUREE;
+let angle = 0;
+let taille = 60;
+let joue = true;
+let tourAuto = true;
+let dernier = performance.now();
+let prochainTour = 2.2;      // en secondes de l'horloge réelle
+let phase = 0;               // pour les orbites de la piste 6
+
+function etat(t) {
+    if (t > SEUIL_WARN) return 's-norm';
+    if (t > SEUIL_CRIT) return 's-warn';
+    return 's-crit';
+}
+
+function boucle(maintenant) {
+    const dt = Math.min(0.05, (maintenant - dernier) / 1000);
+    dernier = maintenant;
+
+    if (joue) {
+        temps -= dt;
+        if (temps <= 0) temps = DUREE;
+        $('rTemps').value = temps;
+
+        if (tourAuto) {
+            prochainTour -= dt;
+            if (prochainTour <= 0) {
+                // Un pas franc, jamais le même : la bombe saute d'un joueur
+                // à un autre, elle ne balaie pas le cercle.
+                angle = (angle + 80 + Math.floor(Math.random() * 180)) % 360;
+                $('rAngle').value = angle;
+                prochainTour = 1.6 + Math.random() * 1.6;
+            }
+        }
+    }
+    // La phase avance toujours, même en pause : sinon l'orbe se fige
+    // et on ne peut plus juger ce qui fait justement sa valeur.
+    phase += dt * (1 + (DUREE - temps) * 0.55);
+
+    dessiner();
+    requestAnimationFrame(boucle);
+}
+
+function dessiner() {
+    const t = temps;
+    const part = Math.max(0, Math.min(1, t / DUREE));   // 1 → 0
+    const cls = etat(t);
+
+    $('vTemps').textContent = t.toFixed(1).replace('.', ',') + ' s';
+    $('vAngle').textContent = Math.round(angle) + '°';
+    $('vTaille').textContent = taille + ' px';
+
+    for (const p of PISTES) {
+        const sc = $('sc-' + p.id);
+        sc.classList.remove('s-norm', 's-warn', 's-crit');
+        sc.classList.add(cls);
+        sc.style.setProperty('--t', taille + 'px');
+
+        // Le joueur visé se place sur le bord, dans la direction de la bombe.
+        const r = 82;
+        $('vi-' + p.id).style.transform =
+            'translate(' + (Math.cos(angle * Math.PI / 180) * r).toFixed(1) + 'px,' +
+                           (Math.sin(angle * Math.PI / 180) * r).toFixed(1) + 'px)';
+
+        $('me-' + p.id).innerHTML =
+            '<b>' + taille + ' px</b> · ' + t.toFixed(1).replace('.', ',') + ' s · ' +
+            (cls === 's-norm' ? 'normal' : cls === 's-warn' ? 'warning' : 'critical');
+    }
+
+    dessiner1(part);
+    dessiner2(part);
+    dessiner3(part);
+    dessiner4(part);
+    dessiner5(part);
+    dessiner6(part);
+}
+
+/* 1 — la mèche raccourcit, la flamme descend vers le corps */
+function dessiner1(part) {
+    const LONG = taille * 0.9;        // longueur au départ
+    const H = 14;
+    $('b1p').style.transform = 'rotate(' + angle + 'deg)';
+    const s = $('b1s');
+    s.setAttribute('viewBox', '0 0 ' + LONG + ' ' + H);
+    s.style.width = LONG + 'px';
+    s.style.height = H + 'px';
+    s.style.left = (taille * 0.46) + 'px';
+    s.style.top = (-H / 2) + 'px';
+
+    // Une ondulation, tracée sur la longueur courante.
+    const vivant = Math.max(4, LONG * part);
+    const d = 'M0,' + (H / 2) +
+              ' Q' + (vivant * 0.25) + ',' + (H / 2 - 3.5) +
+              ' ' + (vivant * 0.5) + ',' + (H / 2) +
+              ' T' + vivant + ',' + (H / 2);
+    $('b1t').setAttribute('d', d);
+    // La braise : les derniers pixels, plus chauds que le reste.
+    const braise = 'M' + Math.max(0, vivant - 9) + ',' + (H / 2) + ' L' + vivant + ',' + (H / 2);
+    $('b1b').setAttribute('d', braise);
+
+    const f = $('b1f');
+    const df = 9 + (1 - part) * 7;
+    f.style.width = df + 'px';
+    f.style.height = df + 'px';
+    f.style.left = (taille * 0.46 + vivant) + 'px';
+    f.style.top = '0px';
+}
+
+/* 2 — l'anneau se vide, sa tête vise le joueur */
+function dessiner2(part) {
+    const a = $('b2a');
+    const deg = part * 360;
+    const col = part > 0.375 ? '#ffd24a' : part > 0.15 ? '#ffa326' : '#ff5340';
+    a.style.background =
+        'conic-gradient(' + col + ' 0deg, ' + col + ' ' + deg + 'deg, rgba(255,255,255,0.07) ' + deg + 'deg)';
+    // L'anneau part de l'angle visé : sa tête EST le repère directionnel.
+    a.style.transform = 'rotate(' + (angle - 90) + 'deg)';
+    const R = taille / 2 - 3;
+    const rad = (deg - 90) * Math.PI / 180;
+    $('b2t').style.transform =
+        'translate(' + (Math.cos(rad) * R).toFixed(1) + 'px,' + (Math.sin(rad) * R).toFixed(1) + 'px)';
+}
+
+/* 3 — les fissures s'ouvrent, le cœur déborde */
+function dessiner3(part) {
+    const chaleur = 1 - part;
+    $('b3f').style.setProperty('--lueur',
+        'rgba(255,' + Math.round(190 - chaleur * 110) + ',' + Math.round(70 - chaleur * 60) + ',' + (chaleur * 0.95).toFixed(2) + ')');
+    $('b3f').style.filter = 'blur(' + (0.3 + chaleur * 1.1).toFixed(2) + 'px)';
+    $('b3o').style.opacity = Math.pow(chaleur, 1.8).toFixed(3);
+    $('b3o').style.transform = 'scale(' + (0.7 + chaleur * 0.5 + Math.sin(phase * 6) * 0.04 * chaleur).toFixed(3) + ')';
+
+    $('b3m').style.transform = 'rotate(' + angle + 'deg)';
+    const q = $('b3q');
+    q.style.left = (taille * 0.52) + 'px';
+    q.style.width = (10 + chaleur * 14).toFixed(0) + 'px';
+    q.style.opacity = (0.35 + chaleur * 0.65).toFixed(2);
+}
+
+/* 4 — la mèche bouclée se dévide */
+function dessiner4(part) {
+    const W = taille * 1.15, H = taille * 0.8;
+    $('b4p').style.transform = 'rotate(' + angle + 'deg)';
+    const l = $('b4l');
+    l.style.left = (taille * 0.42) + 'px';
+    l.style.top = (-taille * 0.08) + 'px';
+
+    const s = $('b4s');
+    s.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    s.style.width = W + 'px';
+    s.style.height = H + 'px';
+    s.style.left = (taille * 0.62) + 'px';
+    s.style.top = (-H / 2) + 'px';
+
+    // Une boucle en S, rognée par dashoffset : le tracé ne change pas,
+    // seule la part visible bouge — c'est ce qui garde la courbe stable.
+    const d = 'M0,' + (H / 2) +
+              ' C' + (W * 0.3) + ',' + (H * 0.12) +
+              ' ' + (W * 0.55) + ',' + (H * 0.95) +
+              ' ' + (W * 0.78) + ',' + (H * 0.42) +
+              ' S' + (W * 0.98) + ',' + (H * 0.02) + ' ' + W + ',' + (H * 0.18);
+    const p = $('b4t');
+    p.setAttribute('d', d);
+    const L = p.getTotalLength();
+    const vu = Math.max(6, L * part);
+    p.style.strokeDasharray = L;
+    p.style.strokeDashoffset = (L - vu);
+
+    const pt = p.getPointAtLength(vu);
+    const f = $('b4f');
+    const df = 11 + (1 - part) * 9;
+    f.style.width = df + 'px';
+    f.style.height = (df * 1.25) + 'px';
+    f.style.left = (taille * 0.62 + pt.x) + 'px';
+    f.style.top = (-H / 2 + pt.y) + 'px';
+}
+
+/* 5 — le chiffre et sa jauge */
+function dessiner5(part) {
+    const deg = part * 360;
+    const col = part > 0.375 ? '#ffd24a' : part > 0.15 ? '#ffa326' : '#ff5340';
+    $('b5j').style.background =
+        'conic-gradient(' + col + ' 0deg, ' + col + ' ' + deg + 'deg, rgba(255,255,255,0.06) ' + deg + 'deg)';
+    // Le chiffre s'arrondit au SUPÉRIEUR : à 0,4 s il reste « 1 », pas « 0 ».
+    // Afficher zéro pendant presque une seconde fait croire que c'est fini.
+    $('b5n').textContent = Math.max(0, Math.ceil(temps));
+    $('b5a').style.transform = 'rotate(' + angle + 'deg)';
+    $('b5t').style.left = (taille / 2 + 4) + 'px';
+}
+
+/* 6 — trois étincelles qui se resserrent et accélèrent */
+function dessiner6(part) {
+    const chaleur = 1 - part;
+    const R = taille * (0.72 - chaleur * 0.2);
+    for (let i = 1; i <= 3; i++) {
+        // Toutes passent par l'angle visé, décalées d'un tiers de tour.
+        const a = angle + phase * (90 + chaleur * 260) + (i - 1) * 120;
+        $('b6r' + i).style.transform = 'rotate(' + a + 'deg)';
+        const e = $('b6e' + i);
+        e.style.left = R.toFixed(1) + 'px';
+        const d = 4 + chaleur * 3;
+        e.style.width = d + 'px';
+        e.style.height = d + 'px';
+        e.style.marginLeft = (-d / 2) + 'px';
+        e.style.marginTop = (-d / 2) + 'px';
+    }
+    $('b6m').style.transform = 'rotate(' + angle + 'deg)';
+    const q = $('b6q');
+    q.style.left = (taille * 0.55) + 'px';
+    q.style.width = (R - taille * 0.5).toFixed(0) + 'px';
+    q.style.opacity = (0.3 + chaleur * 0.5).toFixed(2);
+}
+
+/* ── Les réglages ────────────────────────────────────────────── */
+$('bJouer').onclick = () => {
+    joue = !joue;
+    $('bJouer').textContent = joue ? '⏸ Pause' : '▶ Jouer';
+    $('bJouer').classList.toggle('on', joue);
+};
+$('bRejouer').onclick = () => { temps = DUREE; };
+$('bTour').onclick = () => {
+    tourAuto = !tourAuto;
+    $('bTour').classList.toggle('on', tourAuto);
+};
+$('rTemps').oninput = e => { temps = parseFloat(e.target.value); joue = false; $('bJouer').textContent = '▶ Jouer'; $('bJouer').classList.remove('on'); };
+$('rTaille').oninput = e => { taille = parseInt(e.target.value, 10); };
+$('rAngle').oninput = e => { angle = parseInt(e.target.value, 10); tourAuto = false; $('bTour').classList.remove('on'); };
+
+requestAnimationFrame(boucle);
+</script>
+</body>
+</html>

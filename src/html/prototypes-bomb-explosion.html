@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — l'explosion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Six explosions pour le centre du cercle.
+
+   ⚠️ LE BUDGET EST TRÈS COURT, et ce n'est pas un avis de style :
+   le serveur annonce le tour suivant CENT MILLISECONDES après
+   l'explosion. La bombe repart donc vers le joueur d'après presque
+   tout de suite. Un effet qui masque le centre une seconde cache
+   le moment où l'on découvre qui doit jouer.
+
+   La règle tenue ici : le gros de l'éclat tient en 250–400 ms, et
+   ce qui traîne après est transparent et ne cache rien. Le curseur
+   de vitesse est là pour éprouver ça — pousse-le à 1,5× et regarde
+   si ça reste lisible.
+
+   ⚠️ Et aujourd'hui il n'y a RIEN au centre : seulement un
+   tremblement de 250 ms sur le joueur touché, plus le son. C'est
+   pour ça que ça fait « mhhh ».
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --chaud: #ffb300; --rouge: #ff4433; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.6rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.78); font-weight: 600; }
+
+.reglages {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem;
+    margin: 0 -1.5rem 2.2rem; padding: 0.85rem 1.5rem;
+    background: rgba(10, 9, 12, 0.93);
+    backdrop-filter: blur(0.5rem);
+    border-bottom: 0.06rem solid rgba(255,255,255,0.08);
+}
+.grp { display: flex; align-items: center; gap: 0.4rem; }
+.grp > label { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.reglages button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1); border-radius: 0.45rem;
+}
+.reglages button.fort { background: var(--or); border-color: var(--or); color: #17140a; }
+.reglages input[type=range] { width: 8rem; accent-color: var(--or); }
+.val { min-width: 3rem; font-size: 0.72rem; font-variant-numeric: tabular-nums; color: var(--or); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.2rem 1.8rem; }
+.piste { width: 330px; }
+.piste h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.07em; color: var(--or); }
+.piste h2 span { font-size: 0.7rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.3); }
+.piste p { margin: 0 0 0.85rem; font-size: 0.72rem; line-height: 1.55; color: rgba(255,255,255,0.42); min-height: 5.6em; }
+
+.scene {
+    position: relative; display: grid; place-items: center;
+    height: 230px; border-radius: 0.9rem; cursor: pointer;
+    background: radial-gradient(55% 55% at 50% 50%, rgba(255,255,255,0.035), transparent 70%), #0c0b0f;
+    border: 0.06rem solid rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+.scene:hover { border-color: rgba(255,215,0,0.25); }
+.scene .relance {
+    position: absolute; right: 0.5rem; bottom: 0.4rem;
+    font-size: 0.62rem; color: rgba(255,255,255,0.22);
+    pointer-events: none;
+}
+.centre { position: relative; width: 0; height: 0; }
+
+/* La bombe au repos, reprise du jeu : on juge l'éclat SUR elle. */
+.bombe {
+    position: absolute; top: 50%; left: 50%;
+    width: var(--t); height: var(--t);
+    margin: calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 28%, #5a1515, #2d0808 55%, #1a0000);
+    box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.55), 0 0 1.4rem rgba(255,50,0,0.3);
+}
+.bombe.partie { animation: bombePart var(--d) cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+@keyframes bombePart {
+    0%   { transform: scale(1); opacity: 1; }
+    18%  { transform: scale(0.72); opacity: 1; }
+    34%  { transform: scale(1.5); opacity: 0.25; }
+    100% { transform: scale(2.1); opacity: 0; }
+}
+.bombe.revient { animation: bombeRevient calc(var(--d) * 0.9) cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+@keyframes bombeRevient {
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.ec { position: absolute; top: 50%; left: 50%; pointer-events: none; }
+
+/* ── 1. ÉCLATS ──────────────────────────────────────────────────
+   Des morceaux durs, pas des points : ils tournent en partant et
+   s'arrêtent net. C'est le plus « impact » et le plus court. */
+.e1 {
+    width: var(--w); height: var(--h);
+    margin: calc(var(--h) / -2) 0 0 calc(var(--w) / -2);
+    background: var(--c);
+    clip-path: polygon(0 50%, 60% 0, 100% 45%, 55% 100%);
+    animation: e1v var(--d) cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+@keyframes e1v {
+    0%   { transform: translate(0,0) rotate(0deg) scale(0.4); opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1); opacity: 0; }
+}
+
+/* ── 2. ONDE DE CHOC ────────────────────────────────────────────
+   Presque pas de matière : deux anneaux qui s'ouvrent et
+   s'amincissent. Le moins salissant, celui qui cache le moins. */
+.e2 {
+    width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    border: 3px solid var(--c);
+    animation: e2v var(--d) cubic-bezier(0.1, 0.75, 0.25, 1) forwards;
+    animation-delay: var(--del);
+}
+@keyframes e2v {
+    0%   { transform: scale(0.2); opacity: 0.95; border-width: 4px; }
+    100% { transform: scale(var(--s)); opacity: 0; border-width: 0.5px; }
+}
+
+/* ── 3. BRAISES ─────────────────────────────────────────────────
+   Des points chauds projetés qui RETOMBENT : une courbe, pas une
+   ligne droite. Le plus chaud, le plus « feu », un peu plus long. */
+.e3 {
+    width: var(--w); height: var(--w); margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0.5rem var(--c);
+    animation: e3v var(--d) cubic-bezier(0.15, 0.6, 0.35, 1) forwards;
+}
+@keyframes e3v {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    55%  { transform: translate(calc(var(--dx) * 0.7), calc(var(--dy) * 0.55)) scale(0.85); opacity: 1; }
+    100% { transform: translate(var(--dx), calc(var(--dy) + var(--chute))) scale(0.2); opacity: 0; }
+}
+
+/* ── 4. KANJI ───────────────────────────────────────────────────
+   Le registre manga : des traits de vitesse qui partent du centre
+   et un 爆 qui claque. Aucune particule — c'est du dessin. */
+.e4t {
+    width: var(--w); height: 2px; margin: -1px 0 0 0;
+    transform-origin: 0 50%;
+    background: linear-gradient(to right, var(--c), transparent);
+    animation: e4v var(--d) cubic-bezier(0.1, 0.85, 0.2, 1) forwards;
+}
+@keyframes e4v {
+    0%   { transform: rotate(var(--a)) translateX(var(--r0)) scaleX(0.2); opacity: 1; }
+    100% { transform: rotate(var(--a)) translateX(var(--r1)) scaleX(1); opacity: 0; }
+}
+.e4k {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: calc(var(--t) * 1.15); line-height: 1;
+    color: #fff; text-shadow: 0 0 1rem rgba(255,80,20,0.95), 0 0 2rem rgba(255,40,0,0.7);
+    transform: translate(-50%, -50%);
+    animation: e4kv var(--d) cubic-bezier(0.2, 1.5, 0.3, 1) forwards;
+}
+@keyframes e4kv {
+    0%   { transform: translate(-50%,-50%) scale(0.3) rotate(-14deg); opacity: 0; }
+    22%  { transform: translate(-50%,-50%) scale(1.12) rotate(4deg); opacity: 1; }
+    60%  { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translate(-50%,-50%) scale(1.25) rotate(0deg); opacity: 0; }
+}
+
+/* ── 5. IMPLOSION ───────────────────────────────────────────────
+   Elle ASPIRE avant de partir. Quatre-vingts millisecondes
+   d'anticipation, et l'éclat paraît deux fois plus gros sans durer
+   plus longtemps. Le plus efficace par image dépensée. */
+.e5a {
+    width: var(--w); height: var(--w); margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
+    border-radius: 50%; background: var(--c);
+    animation: e5av var(--d) ease-in forwards;
+}
+@keyframes e5av {
+    0%   { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+    35%  { transform: translate(calc(var(--dx) * 0.15), calc(var(--dy) * 0.15)) scale(0.6); opacity: 1; }
+    45%  { transform: translate(0,0) scale(0.3); opacity: 1; }
+    100% { transform: translate(calc(var(--dx) * -1.6), calc(var(--dy) * -1.6)) scale(0.8); opacity: 0; }
+}
+
+/* ── 6. FUMÉE ───────────────────────────────────────────────────
+   Un cœur blanc très bref, puis une bouffée qui reste un instant et
+   d'où la bombe ressort. Le plus « lourd » visuellement — à juger
+   surtout en enchaînement, pas isolé. */
+.e6 {
+    width: var(--w); height: var(--w); margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--c), transparent 70%);
+    filter: blur(6px);
+    animation: e6v var(--d) cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes e6v {
+    0%   { transform: translate(0,0) scale(0.3); opacity: 0.9; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.9); opacity: 0; }
+}
+.flash {
+    width: calc(var(--t) * 2.4); height: calc(var(--t) * 2.4);
+    margin: calc(var(--t) * -1.2) 0 0 calc(var(--t) * -1.2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, rgba(255,220,150,0.65) 30%, transparent 68%);
+    animation: flashv 180ms ease-out forwards;
+}
+@keyframes flashv {
+    0%   { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+
+.mesure { margin-top: 0.55rem; font-size: 0.66rem; color: rgba(255,255,255,0.3); }
+.mesure b { color: rgba(255,255,255,0.62); font-weight: 600; }
+
+.pied {
+    margin: 3rem 0 0; padding-top: 1.2rem;
+    border-top: 0.06rem solid rgba(255,255,255,0.07);
+    max-width: 60rem; font-size: 0.75rem; line-height: 1.6; color: rgba(255,255,255,0.35);
+}
+.pied b { color: rgba(255,255,255,0.7); font-weight: 600; }
+
+@media (max-width: 720px) { .piste { width: 100%; } .reglages { position: static; } }
+</style>
+</head>
+<body>
+
+<h1>BombAnime — l'explosion</h1>
+<p class="sous">
+    Six éclats pour le centre du cercle, jouables au clic. <b>Le budget est très court, et ce n'est
+    pas une question de goût :</b> le serveur annonce le tour suivant <b>cent millisecondes</b> après
+    l'explosion — la bombe repart donc vers le joueur d'après presque tout de suite. Un effet qui
+    masque le centre une seconde cache le moment où l'on découvre qui doit jouer. Le gros de l'éclat
+    tient ici en <b>250 à 400 ms</b>, et ce qui traîne ensuite ne cache rien. Pousse la vitesse à
+    1,5× : c'est là que ça se départage.
+</p>
+
+<div class="reglages">
+    <div class="grp">
+        <button id="bTout" class="fort">💥 Tout rejouer</button>
+        <button id="bManche">▶ Une manche entière</button>
+    </div>
+    <div class="grp">
+        <label for="rVit">Vitesse</label>
+        <input type="range" id="rVit" min="0.5" max="1.6" step="0.05" value="1">
+        <span class="val" id="vVit">1,00×</span>
+    </div>
+    <div class="grp">
+        <label for="rT">Bombe</label>
+        <input type="range" id="rT" min="44" max="100" step="1" value="70">
+        <span class="val" id="vT">70 px</span>
+    </div>
+    <div class="grp">
+        <button id="bBoucle">↻ En boucle</button>
+    </div>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<p class="pied">
+    <b>Ce que chacun coûte.</b>
+    Les <b>éclats</b> et l'<b>onde de choc</b> sont les plus courts et les moins salissants — l'onde
+    ne cache quasiment rien, c'est le choix sûr. Les <b>braises</b> et la <b>fumée</b> durent plus
+    longtemps et laissent une traîne sur le centre : magnifiques isolés, à vérifier en enchaînement
+    avec « une manche entière ». Le <b>kanji</b> est le plus marqué « anime » et le plus lisible sur
+    un stream compressé, mais c'est un parti pris fort qui ne se fond pas dans le reste du site.
+    L'<b>implosion</b> est la plus rentable : quatre-vingts millisecondes d'aspiration avant l'éclat,
+    et il paraît deux fois plus gros sans durer plus longtemps.
+</p>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Un seul fabricant de particules pour les six pistes : ce qui se
+   compare, c'est le DESSIN, pas la plomberie.
+   ════════════════════════════════════════════════════════════════ */
+const PISTES = [
+    { id: 1, nom: 'Éclats', tag: '250 ms', ms: 250,
+      texte: "Des morceaux DURS, pas des points : ils tournent en partant et s'arrêtent net. Le plus « impact » et le plus court des six — il a tout donné avant même que la bombe ait fini de pivoter." },
+    { id: 2, nom: 'Onde de choc', tag: '300 ms', ms: 300,
+      texte: "Presque pas de matière : deux anneaux qui s'ouvrent et s'amincissent. C'est celui qui cache le moins le centre, donc le plus sûr quand le tour suivant démarre aussitôt. Discret, peut-être trop." },
+    { id: 3, nom: 'Braises', tag: '520 ms', ms: 520,
+      texte: "Des points chauds projetés qui RETOMBENT — une courbe, pas une ligne droite. Le plus chaud et le plus « feu ». Il dure deux fois plus que les éclats : à juger en enchaînement, pas isolé." },
+    { id: 4, nom: 'Kanji', tag: '420 ms', ms: 420,
+      texte: "Le registre manga : des traits de vitesse qui fusent du centre et un 爆 qui claque. Aucune particule, c'est du dessin. Le plus lisible sur un stream compressé, mais un parti pris fort." },
+    { id: 5, nom: 'Implosion', tag: '380 ms', ms: 380,
+      texte: "Elle ASPIRE avant de partir. Quatre-vingts millisecondes d'anticipation, et l'éclat paraît deux fois plus gros sans durer plus longtemps. Le plus rentable par image dépensée." },
+    { id: 6, nom: 'Fumée', tag: '560 ms', ms: 560,
+      texte: "Un cœur blanc très bref, puis une bouffée qui reste un instant et d'où la bombe ressort. Le plus lourd visuellement — c'est aussi le seul qui donne un vrai temps de respiration entre deux tours." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const el = document.createElement('div');
+    el.className = 'piste';
+    el.innerHTML =
+        '<h2>' + p.nom + ' <span>· ' + p.tag + '</span></h2>' +
+        '<p>' + p.texte + '</p>' +
+        '<div class="scene" id="sc' + p.id + '">' +
+            '<div class="centre" id="ce' + p.id + '">' +
+                '<div class="bombe" id="bo' + p.id + '"></div>' +
+            '</div>' +
+            '<span class="relance">clic = rejouer</span>' +
+        '</div>' +
+        '<div class="mesure" id="me' + p.id + '"></div>';
+    grille.appendChild(el);
+}
+
+let vitesse = 1, taille = 70, boucle = false, minuteurBoucle = null;
+const $ = id => document.getElementById(id);
+const dur = ms => Math.round(ms / vitesse);
+
+// Une particule : on lui passe ses variables, le CSS fait le reste.
+function pose(centre, classe, vars, ms) {
+    const d = document.createElement('div');
+    d.className = 'ec ' + classe;
+    for (const [k, v] of Object.entries(vars)) d.style.setProperty(k, v);
+    d.style.setProperty('--d', ms + 'ms');
+    centre.appendChild(d);
+    setTimeout(() => d.remove(), ms + 60);
+    return d;
+}
+
+const hasard = (a, b) => a + Math.random() * (b - a);
+
+function jouer(n) {
+    const centre = $('ce' + n);
+    const bombe = $('bo' + n);
+    const p = PISTES[n - 1];
+    const D = dur(p.ms);
+
+    // La bombe part, puis revient — c'est ce qui rend l'éclat crédible.
+    bombe.classList.remove('partie', 'revient');
+    void bombe.offsetWidth;
+    bombe.style.setProperty('--d', dur(260) + 'ms');
+    bombe.classList.add('partie');
+    setTimeout(() => {
+        bombe.classList.remove('partie');
+        void bombe.offsetWidth;
+        bombe.classList.add('revient');
+    }, D + dur(90));
+
+    // Le flash blanc, commun à tous sauf l'onde : il donne le « coup ».
+    if (n !== 2) pose(centre, 'flash', { '--t': taille + 'px' }, dur(180));
+
+    if (n === 1) {
+        for (let i = 0; i < 14; i++) {
+            const a = (i / 14) * Math.PI * 2 + hasard(-0.2, 0.2);
+            const r = hasard(taille * 0.9, taille * 1.9);
+            pose(centre, 'e1', {
+                '--dx': (Math.cos(a) * r).toFixed(1) + 'px',
+                '--dy': (Math.sin(a) * r).toFixed(1) + 'px',
+                '--rot': hasard(-320, 320).toFixed(0) + 'deg',
+                '--w': hasard(7, 15).toFixed(0) + 'px',
+                '--h': hasard(4, 8).toFixed(0) + 'px',
+                '--c': ['#ffdd66', '#ff8c2a', '#ff4422', '#fff1c0'][i % 4],
+            }, D);
+        }
+    } else if (n === 2) {
+        for (let i = 0; i < 3; i++) {
+            pose(centre, 'e2', {
+                '--s': (taille * hasard(0.42, 0.58)).toFixed(1),
+                '--c': ['#fff1c0', '#ff9a2a', '#ff4422'][i],
+                '--del': (i * dur(55)) + 'ms',
+            }, D);
+        }
+    } else if (n === 3) {
+        for (let i = 0; i < 20; i++) {
+            const a = hasard(-Math.PI, 0) + hasard(-0.35, 0.35);
+            const r = hasard(taille * 0.7, taille * 1.7);
+            pose(centre, 'e3', {
+                '--dx': (Math.cos(a) * r).toFixed(1) + 'px',
+                '--dy': (Math.sin(a) * r * 0.85).toFixed(1) + 'px',
+                '--chute': hasard(taille * 0.9, taille * 1.7).toFixed(1) + 'px',
+                '--w': hasard(3, 7).toFixed(1) + 'px',
+                '--c': ['#fff3c0', '#ffc24a', '#ff8a1a', '#ff5510'][i % 4],
+            }, D);
+        }
+    } else if (n === 4) {
+        for (let i = 0; i < 12; i++) {
+            pose(centre, 'e4t', {
+                '--a': ((i / 12) * 360 + hasard(-7, 7)).toFixed(1) + 'deg',
+                '--r0': (taille * 0.32).toFixed(0) + 'px',
+                '--r1': (taille * hasard(0.75, 1.25)).toFixed(0) + 'px',
+                '--w': (taille * hasard(0.45, 0.85)).toFixed(0) + 'px',
+                '--c': i % 3 === 0 ? '#fff' : '#ffb42a',
+            }, D);
+        }
+        const k = pose(centre, 'e4k', { '--t': taille + 'px' }, D);
+        k.textContent = '爆';
+    } else if (n === 5) {
+        for (let i = 0; i < 16; i++) {
+            const a = (i / 16) * Math.PI * 2;
+            const r = hasard(taille * 0.75, taille * 1.35);
+            pose(centre, 'e5a', {
+                '--dx': (Math.cos(a) * r).toFixed(1) + 'px',
+                '--dy': (Math.sin(a) * r).toFixed(1) + 'px',
+                '--w': hasard(4, 9).toFixed(1) + 'px',
+                '--c': ['#fff1c0', '#ffc24a', '#ff6a1a'][i % 3],
+            }, D);
+        }
+    } else if (n === 6) {
+        for (let i = 0; i < 9; i++) {
+            const a = hasard(0, Math.PI * 2);
+            const r = hasard(taille * 0.25, taille * 0.8);
+            pose(centre, 'e6', {
+                '--dx': (Math.cos(a) * r).toFixed(1) + 'px',
+                '--dy': (Math.sin(a) * r - taille * 0.25).toFixed(1) + 'px',
+                '--w': hasard(taille * 0.5, taille * 0.95).toFixed(0) + 'px',
+                '--c': i < 3 ? 'rgba(255,225,170,0.85)' : 'rgba(140,130,125,0.7)',
+            }, D);
+        }
+    }
+
+    $('me' + n).innerHTML = '<b>' + D + ' ms</b> · bombe ' + taille + ' px · ' +
+        (D <= 300 ? 'ne cache rien' : D <= 450 ? 'courte traîne' : '⚠️ traîne sur le centre');
+}
+
+function tout() { for (const p of PISTES) jouer(p.id); }
+
+function tailles() {
+    for (const p of PISTES) $('bo' + p.id).style.setProperty('--t', taille + 'px');
+}
+
+for (const p of PISTES) $('sc' + p.id).onclick = () => jouer(p.id);
+
+$('bTout').onclick = tout;
+$('rVit').oninput = e => { vitesse = parseFloat(e.target.value); $('vVit').textContent = vitesse.toFixed(2).replace('.', ',') + '×'; };
+$('rT').oninput = e => { taille = parseInt(e.target.value, 10); $('vT').textContent = taille + ' px'; tailles(); };
+$('bBoucle').onclick = () => {
+    boucle = !boucle;
+    $('bBoucle').classList.toggle('fort', boucle);
+    if (minuteurBoucle) clearInterval(minuteurBoucle);
+    if (boucle) { tout(); minuteurBoucle = setInterval(tout, 1600); }
+};
+
+/* Une manche entière : c'est le seul moyen de juger la traîne.
+   La bombe explose, et CENT MILLISECONDES plus tard le tour suivant
+   commence — exactement comme sur le serveur. */
+$('bManche').onclick = () => {
+    for (const p of PISTES) {
+        jouer(p.id);
+        const bombe = $('bo' + p.id);
+        setTimeout(() => {
+            bombe.style.transition = 'transform 250ms cubic-bezier(0.4,0,0.2,1)';
+            bombe.style.transform = 'translateX(' + (Math.random() > 0.5 ? 46 : -46) + 'px)';
+            setTimeout(() => { bombe.style.transform = ''; }, 900);
+        }, 100);
+    }
+};
+
+tailles();
+tout();
+</script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — six éclats</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Six déclinaisons des ÉCLATS, celle qui a été retenue.
+
+   Ce qui change d'une piste à l'autre n'est jamais la couleur : le
+   NOMBRE de morceaux, leur TAILLE, ce qu'ils laissent derrière eux,
+   et s'ils partent en une fois ou en deux. À couleur égale, ce sont
+   ces quatre choses qui font qu'une explosion paraît sèche,
+   pulvérisée ou lourde.
+
+   ⚠️ Le budget n'a pas bougé : le serveur annonce le tour suivant
+   CENT MILLISECONDES après l'explosion. « Une manche entière »
+   rejoue ce délai — c'est le seul moyen de voir si la traîne gêne.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif; color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #17150f, #08080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.6rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.78); font-weight: 600; }
+
+.reglages {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem;
+    margin: 0 -1.5rem 2.2rem; padding: 0.85rem 1.5rem;
+    background: rgba(10, 9, 12, 0.93); backdrop-filter: blur(0.5rem);
+    border-bottom: 0.06rem solid rgba(255,255,255,0.08);
+}
+.grp { display: flex; align-items: center; gap: 0.4rem; }
+.grp > label { font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.reglages button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1); border-radius: 0.45rem;
+}
+.reglages button.fort { background: var(--or); border-color: var(--or); color: #17140a; }
+.reglages input[type=range] { width: 7rem; accent-color: var(--or); }
+.val { min-width: 3rem; font-size: 0.72rem; font-variant-numeric: tabular-nums; color: var(--or); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.2rem 1.8rem; }
+.piste { width: 330px; }
+.piste h2 { margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.07em; color: var(--or); }
+.piste h2 span { font-size: 0.7rem; letter-spacing: 0.04em; color: rgba(255,255,255,0.3); }
+.piste p { margin: 0 0 0.85rem; font-size: 0.72rem; line-height: 1.55; color: rgba(255,255,255,0.42); min-height: 5.6em; }
+
+.scene {
+    position: relative; display: grid; place-items: center;
+    height: 230px; border-radius: 0.9rem; cursor: pointer;
+    background: radial-gradient(55% 55% at 50% 50%, rgba(255,255,255,0.035), transparent 70%), #0c0b0f;
+    border: 0.06rem solid rgba(255,255,255,0.06); overflow: hidden;
+}
+.scene:hover { border-color: rgba(255,215,0,0.25); }
+.scene .relance { position: absolute; right: 0.5rem; bottom: 0.4rem; font-size: 0.62rem; color: rgba(255,255,255,0.22); pointer-events: none; }
+.centre { position: relative; width: 0; height: 0; }
+
+.bombe {
+    position: absolute; top: 50%; left: 50%;
+    width: var(--t); height: var(--t);
+    margin: calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 28%, #5a1515, #2d0808 55%, #1a0000);
+    box-shadow: 0 0.25rem 0.9rem rgba(0,0,0,0.55), 0 0 1.4rem rgba(255,50,0,0.3);
+}
+.bombe.partie { animation: bombePart var(--d) cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+@keyframes bombePart {
+    0%   { transform: scale(1); opacity: 1; }
+    18%  { transform: scale(0.72); opacity: 1; }
+    34%  { transform: scale(1.5); opacity: 0.25; }
+    100% { transform: scale(2.1); opacity: 0; }
+}
+.bombe.revient { animation: bombeRevient calc(var(--d) * 0.9) cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+@keyframes bombeRevient {
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.ec { position: absolute; top: 50%; left: 50%; pointer-events: none; }
+
+/* ── Le morceau, commun aux six ──────────────────────────────────
+   Un quadrilatère irrégulier, jamais un rond : c'est ce qui le fait
+   lire comme un DÉBRIS et non comme une étincelle. */
+.mo {
+    width: var(--w); height: var(--h);
+    margin: calc(var(--h) / -2) 0 0 calc(var(--w) / -2);
+    background: var(--c);
+    clip-path: polygon(0 50%, 60% 0, 100% 45%, 55% 100%);
+    /* ⚠️ DEUX animations. Le trajet part vite et s arrête net (courbe très en
+       avant) ; la disparition, elle, se fait en LINÉAIRE sur la moitié de la
+       durée. Avec une seule animation, la courbe du trajet s appliquait aussi
+       à l opacité : le morceau restait plein puis s éteignait d un coup. */
+    animation: moV var(--d) cubic-bezier(0.1, 0.8, 0.2, 1) forwards,
+               moF var(--d) linear forwards;
+    animation-delay: var(--del, 0ms), var(--del, 0ms);
+}
+@keyframes moV {
+    0%   { transform: translate(0,0) rotate(0deg) scale(0.4); }
+    62%  { transform: translate(calc(var(--dx) * 0.86), calc(var(--dy) * 0.86))
+                      rotate(calc(var(--rot) * 0.86)) scale(1); }
+    /* Il rapetisse sur la fin : avec le fondu, il se dissout au lieu de
+       s éteindre en gardant sa taille. */
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.72); }
+}
+@keyframes moF {
+    0%, 30% { opacity: 1; }
+    100%    { opacity: 0; }
+}
+
+/* ── La traînée : un trait couché DANS L'AXE du départ ───────────
+   ⚠️ Son « transform-origin » est à gauche et elle tourne AVANT de
+   s'étirer : posée à plat puis pivotée, elle partait de travers. */
+.tr {
+    height: var(--e); width: var(--l);
+    margin: calc(var(--e) / -2) 0 0 0;
+    transform-origin: 0 50%;
+    border-radius: var(--e);
+    background: linear-gradient(to right, var(--c), transparent);
+    animation: trV var(--d) cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    animation-delay: var(--del, 0ms);
+}
+@keyframes trV {
+    0%   { transform: rotate(var(--a)) translateX(0) scaleX(0.15); opacity: 0.9; }
+    60%  { opacity: 0.55; }
+    100% { transform: rotate(var(--a)) translateX(var(--r)) scaleX(1); opacity: 0; }
+}
+
+.onde {
+    width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border-radius: 50%; border: 3px solid var(--c);
+    animation: ondeV var(--d) cubic-bezier(0.1, 0.75, 0.25, 1) forwards;
+}
+@keyframes ondeV {
+    0%   { transform: scale(0.2); opacity: 0.95; border-width: 4px; }
+    100% { transform: scale(var(--s)); opacity: 0; border-width: 0.5px; }
+}
+
+.flash {
+    width: calc(var(--t) * 2.4); height: calc(var(--t) * 2.4);
+    margin: calc(var(--t) * -1.2) 0 0 calc(var(--t) * -1.2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, rgba(255,220,150,0.65) 30%, transparent 68%);
+    animation: flashV var(--d) ease-out forwards;
+}
+@keyframes flashV {
+    0%   { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+
+.mesure { margin-top: 0.55rem; font-size: 0.66rem; color: rgba(255,255,255,0.3); }
+.mesure b { color: rgba(255,255,255,0.62); font-weight: 600; }
+
+.pied {
+    margin: 3rem 0 0; padding-top: 1.2rem;
+    border-top: 0.06rem solid rgba(255,255,255,0.07);
+    max-width: 60rem; font-size: 0.75rem; line-height: 1.6; color: rgba(255,255,255,0.35);
+}
+.pied b { color: rgba(255,255,255,0.7); font-weight: 600; }
+
+@media (max-width: 720px) { .piste { width: 100%; } .reglages { position: static; } }
+</style>
+</head>
+<body>
+
+<h1>BombAnime — six éclats</h1>
+<p class="sous">
+    Six déclinaisons de la piste retenue. <b>Ce qui change n'est jamais la couleur</b> : le nombre de
+    morceaux, leur taille, ce qu'ils laissent derrière eux, et s'ils partent en une fois ou en deux.
+    À couleur égale, ce sont ces quatre choses qui font qu'une explosion paraît sèche, pulvérisée ou
+    lourde. Les trois curseurs du bas agissent sur <b>toutes</b> les pistes à la fois : si tu en
+    aimes une mais la trouves trop bavarde, baisse le nombre et regarde-la tenir. Et
+    <b>« Une manche entière »</b> rejoue le délai réel de cent millisecondes avant le tour suivant.
+</p>
+
+<div class="reglages">
+    <div class="grp">
+        <button id="bTout" class="fort">💥 Tout rejouer</button>
+        <button id="bManche">▶ Une manche entière</button>
+        <button id="bBoucle">↻ En boucle</button>
+    </div>
+    <div class="grp">
+        <label for="rVit">Vitesse</label>
+        <input type="range" id="rVit" min="0.5" max="1.6" step="0.05" value="0.8">
+        <span class="val" id="vVit">0,80×</span>
+    </div>
+    <div class="grp">
+        <label for="rNb">Nombre</label>
+        <input type="range" id="rNb" min="0.4" max="1.8" step="0.05" value="1">
+        <span class="val" id="vNb">1,00×</span>
+    </div>
+    <div class="grp">
+        <label for="rPo">Portée</label>
+        <input type="range" id="rPo" min="0.5" max="1.8" step="0.05" value="0.7">
+        <span class="val" id="vPo">0,70×</span>
+    </div>
+    <div class="grp">
+        <label for="rRo">Rotation</label>
+        <input type="range" id="rRo" min="0" max="2" step="0.05" value="1">
+        <span class="val" id="vRo">1,00×</span>
+    </div>
+    <div class="grp">
+        <label for="rT">Bombe</label>
+        <input type="range" id="rT" min="44" max="100" step="1" value="70">
+        <span class="val" id="vT">70 px</span>
+    </div>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<p class="pied">
+    <b>Comment les départager.</b> Regarde-les à <b>1,4×</b> : à vitesse normale ils passent tous, c'est
+    en accéléré qu'on voit lequel garde sa forme. Puis lance <b>« Une manche entière »</b> et surveille
+    le centre au moment où la bombe repart — <b>Deux temps</b> et <b>Traînée</b> sont les deux qui
+    peuvent encore parler quand le tour suivant a commencé. Enfin, descends la bombe à <b>44 px</b> :
+    c'est la taille à huit joueurs, et <b>Gros morceaux</b> y gagne là où <b>Poussière</b> disparaît.
+</p>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Un seul moteur : chaque piste n'est qu'un jeu de réglages. C'est
+   ce qui permet de comparer les DESSINS et pas les implémentations.
+   ════════════════════════════════════════════════════════════════ */
+const PALETTE = ['#ffdd66', '#ff8c2a', '#ff4422', '#fff1c0'];
+
+const PISTES = [
+    { id: 1, nom: 'Net', tag: 'la référence', ms: 250,
+      nb: 14, w: [7, 15], h: [4, 8], portee: [0.9, 1.9], rot: 320,
+      texte: "Celle que tu as retenue, telle quelle : quatorze morceaux en couronne, une portée courte, un arrêt franc. Elle a tout donné avant même que la bombe ait fini de pivoter. C'est le point de comparaison." },
+
+    { id: 2, nom: 'Poussière', tag: '✅ EN JEU', ms: 260,
+      nb: 30, w: [3, 7], h: [2, 4], portee: [0.8, 2.2], rot: 420,
+      texte: "Deux fois plus de morceaux, deux fois plus petits. La bombe ne se brise pas, elle se PULVÉRISE — l'éclat paraît plus violent à durée égale. ⚠️ À 44 px, les morceaux deviennent des pixels : vérifie-la en petit avant de la choisir." },
+
+    { id: 3, nom: 'Gros morceaux', tag: 'lisible en petit', ms: 290,
+      nb: 8, w: [13, 24], h: [7, 13], portee: [1.0, 1.7], rot: 200,
+      texte: "Huit morceaux seulement, mais chacun se lit. Ils tournent plus lentement, donc on VOIT la forme du débris au lieu d'un scintillement. La seule qui tienne vraiment à 44 px, donc à huit joueurs ou sur un téléphone." },
+
+    { id: 4, nom: 'Traînée', tag: 'la plus violente', ms: 280,
+      nb: 14, w: [7, 15], h: [4, 8], portee: [1.0, 2.0], rot: 300, trainee: true,
+      texte: "Les mêmes morceaux, mais chacun tire un trait derrière lui, dans son axe. L'œil lit la VITESSE au lieu de la position : à durée identique, c'est la plus brutale des six. Elle laisse aussi le plus de choses au centre." },
+
+    { id: 5, nom: 'Deux temps', tag: 'en deux vagues', ms: 380,
+      nb: 9, w: [12, 20], h: [6, 11], portee: [0.9, 1.5], rot: 240, seconde: { nb: 16, w: [3, 7], h: [2, 4], portee: [1.2, 2.4], rot: 400, retard: 90 },
+      texte: "Une première vague de gros morceaux, puis quatre-vingt-dix millisecondes plus tard une seconde de poussière qui les dépasse. C'est le seul qui donne une PROFONDEUR à l'explosion — et le plus long, à surveiller en enchaînement." },
+
+    { id: 6, nom: 'Éclats + onde', tag: 'avec le souffle', ms: 300,
+      nb: 12, w: [8, 16], h: [4, 9], portee: [0.9, 1.8], rot: 280, onde: true,
+      texte: "Les morceaux, plus un anneau de souffle qui les devance. L'anneau ne coûte presque rien — c'est un seul élément — et il donne le COUP que les morceaux seuls ne portent pas. Le meilleur rapport entre l'effet et ce qu'il cache." },
+];
+
+const grille = document.getElementById('grille');
+for (const p of PISTES) {
+    const el = document.createElement('div');
+    el.className = 'piste';
+    el.innerHTML =
+        '<h2>' + p.nom + ' <span>· ' + p.tag + '</span></h2>' +
+        '<p>' + p.texte + '</p>' +
+        '<div class="scene" id="sc' + p.id + '">' +
+            '<div class="centre" id="ce' + p.id + '"><div class="bombe" id="bo' + p.id + '"></div></div>' +
+            '<span class="relance">clic = rejouer</span>' +
+        '</div>' +
+        '<div class="mesure" id="me' + p.id + '"></div>';
+    grille.appendChild(el);
+}
+
+// La page s ouvre sur les réglages RETENUS : « Poussière », 0,8× de vitesse
+// (325 ms) et 0,70 de portée. C est ce qui tourne dans le jeu.
+let vitesse = 0.8, taille = 70, kNb = 1, kPo = 0.7, kRo = 1, boucle = false, bt = null;
+const $ = id => document.getElementById(id);
+const dur = ms => Math.round(ms / vitesse);
+const hasard = (a, b) => a + Math.random() * (b - a);
+
+function pose(centre, classe, vars, ms) {
+    const d = document.createElement('div');
+    d.className = 'ec ' + classe;
+    for (const [k, v] of Object.entries(vars)) d.style.setProperty(k, v);
+    d.style.setProperty('--d', ms + 'ms');
+    centre.appendChild(d);
+    setTimeout(() => d.remove(), ms + (parseInt(vars['--del']) || 0) + 80);
+    return d;
+}
+
+// Une vague de morceaux. La traînée part du MÊME angle que son morceau :
+// c'est ce qui fait qu'on lit un trajet et non deux objets.
+function vague(centre, cfg, D, retard, trainee) {
+    const n = Math.max(3, Math.round(cfg.nb * kNb));
+    for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + hasard(-0.22, 0.22);
+        const r = hasard(cfg.portee[0], cfg.portee[1]) * taille * kPo;
+        const c = PALETTE[i % PALETTE.length];
+        pose(centre, 'mo', {
+            '--dx': (Math.cos(a) * r).toFixed(1) + 'px',
+            '--dy': (Math.sin(a) * r).toFixed(1) + 'px',
+            '--rot': (hasard(-cfg.rot, cfg.rot) * kRo).toFixed(0) + 'deg',
+            '--w': hasard(cfg.w[0], cfg.w[1]).toFixed(0) + 'px',
+            '--h': hasard(cfg.h[0], cfg.h[1]).toFixed(0) + 'px',
+            '--c': c,
+            '--del': retard + 'ms',
+        }, D);
+        if (trainee) {
+            pose(centre, 'tr', {
+                '--a': (a * 180 / Math.PI).toFixed(1) + 'deg',
+                '--r': (r * 0.62).toFixed(1) + 'px',
+                '--l': (r * 0.5).toFixed(1) + 'px',
+                '--e': hasard(2, 4).toFixed(1) + 'px',
+                '--c': c,
+                '--del': retard + 'ms',
+            }, D);
+        }
+    }
+    return n;
+}
+
+function jouer(n) {
+    const p = PISTES[n - 1];
+    const centre = $('ce' + n);
+    const bombe = $('bo' + n);
+    const D = dur(p.ms);
+
+    bombe.classList.remove('partie', 'revient');
+    void bombe.offsetWidth;
+    bombe.style.setProperty('--d', dur(260) + 'ms');
+    bombe.classList.add('partie');
+    setTimeout(() => {
+        bombe.classList.remove('partie');
+        void bombe.offsetWidth;
+        bombe.classList.add('revient');
+    }, D + dur(90));
+
+    pose(centre, 'flash', { '--t': taille + 'px' }, dur(180));
+
+    let total = vague(centre, p, D, 0, p.trainee);
+
+    if (p.seconde) {
+        const r = dur(p.seconde.retard);
+        total += vague(centre, p.seconde, dur(p.ms - p.seconde.retard), r, false);
+    }
+    if (p.onde) {
+        pose(centre, 'onde', { '--s': (taille * 0.5).toFixed(1), '--c': '#fff1c0' }, D);
+        total += 1;
+    }
+
+    $('me' + n).innerHTML = '<b>' + D + ' ms</b> · ' + total + ' éléments · bombe ' + taille + ' px · ' +
+        (D <= 300 ? 'ne cache rien' : D <= 450 ? 'courte traîne' : '⚠️ traîne sur le centre');
+}
+
+function tout() { for (const p of PISTES) jouer(p.id); }
+function tailles() { for (const p of PISTES) $('bo' + p.id).style.setProperty('--t', taille + 'px'); }
+for (const p of PISTES) $('sc' + p.id).onclick = () => jouer(p.id);
+
+const lie = (id, val, f) => {
+    $(id).oninput = e => { f(parseFloat(e.target.value)); };
+};
+$('bTout').onclick = tout;
+lie('rVit', 0, v => { vitesse = v; $('vVit').textContent = v.toFixed(2).replace('.', ',') + '×'; });
+lie('rNb', 0, v => { kNb = v; $('vNb').textContent = v.toFixed(2).replace('.', ',') + '×'; });
+lie('rPo', 0, v => { kPo = v; $('vPo').textContent = v.toFixed(2).replace('.', ',') + '×'; });
+lie('rRo', 0, v => { kRo = v; $('vRo').textContent = v.toFixed(2).replace('.', ',') + '×'; });
+lie('rT', 0, v => { taille = Math.round(v); $('vT').textContent = taille + ' px'; tailles(); });
+
+$('bBoucle').onclick = () => {
+    boucle = !boucle;
+    $('bBoucle').classList.toggle('fort', boucle);
+    if (bt) clearInterval(bt);
+    if (boucle) { tout(); bt = setInterval(tout, 1600); }
+};
+
+$('bManche').onclick = () => {
+    for (const p of PISTES) {
+        jouer(p.id);
+        const bombe = $('bo' + p.id);
+        setTimeout(() => {
+            bombe.style.transition = 'transform 250ms cubic-bezier(0.4,0,0.2,1)';
+            bombe.style.transform = 'translateX(' + (Math.random() > 0.5 ? 46 : -46) + 'px)';
+            setTimeout(() => { bombe.style.transform = ''; }, 900);
+        }, 100);
+    }
+};
+
+tailles();
+tout();
+</script>
+</body>
+</html>

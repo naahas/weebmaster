@@ -498,7 +498,7 @@
     transform: translateX(-50%);
     margin-bottom: 0.7rem;
     font-size: 1rem;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.56);
     font-weight: 500;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -546,7 +546,7 @@
 
 .player-hex svg polygon {
     fill: #101018;
-    stroke: rgba(255,255,255,0.08);
+    stroke: rgba(255,255,255,0.14);
     stroke-width: 2;
     transition: all 0.2s ease;
 }
@@ -664,8 +664,12 @@
                        50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
     object-fit: cover;
     transition: all 0.2s ease;
-    filter: grayscale(40%) brightness(0.65);
-    opacity: 0.55;
+    /* Assez éteint pour que l actif ressorte, assez vivant pour qu on lise
+       encore le visage : à 40 % de gris et 0,55 d opacité, les joueurs en
+       course avaient l air à moitié éliminés. L écart avec l actif reste
+       large — lui monte à 1,1 de luminosité et s entoure d or. */
+    filter: grayscale(20%) brightness(0.85);
+    opacity: 0.78;
 }
 
 .bombanime-player-slot.active .player-avatar {
@@ -752,7 +756,7 @@
        joue — la chose la plus regardee de l ecran apres la bombe. */
     margin-top: 1.2rem;
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.42);
     background: transparent;
     padding: 0;
     text-align: center;
@@ -781,7 +785,7 @@
    ferait passer pour une reponse du tour. Et la transition de couleur etait
    deja sur .player-answer, donc le passage se fait en fondu. */
 .bombanime-circle.mon-tour .bombanime-player-slot:not(.active):not(.eliminated) .player-answer {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.66);
 }
 
 /* ============================================
@@ -1093,6 +1097,92 @@
 /* ============================================
    BOMBE BOMBANIME - REDESIGN
    ============================================ */
+/* ════════════════════════════════════════════════════════════
+   L ÉCLAT AU CENTRE
+   Jusqu ici la bombe explosait sans rien montrer : un tremblement
+   de 250 ms sur le joueur touché, et le son. Tout se passait au
+   bord du cercle, rien là où l on regardait.
+
+   ⚠️ Le budget est très court, et il vient du serveur : le tour
+   suivant est annoncé CENT MILLISECONDES après l explosion. Tout
+   tient donc en 325 ms, et rien ne masque le centre — la bombe ne
+   disparaît jamais, elle encaisse et revient. Un trou d un tiers de
+   seconde au milieu cacherait le moment où l on découvre qui joue.
+   ════════════════════════════════════════════════════════════ */
+.bomb-eclat {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index: 6;
+    pointer-events: none;
+}
+
+/* Un quadrilatère irrégulier, jamais un rond : c est ce qui le fait lire
+   comme un DÉBRIS et non comme une étincelle. */
+.bomb-grain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--w);
+    height: var(--h);
+    margin: calc(var(--h) / -2) 0 0 calc(var(--w) / -2);
+    background: var(--c);
+    clip-path: polygon(0 50%, 60% 0, 100% 45%, 55% 100%);
+    /* ⚠️ DEUX animations, et c est tout l intérêt : le trajet part vite et
+       s arrête net (courbe très en avant), pendant que la disparition se fait
+       en LINÉAIRE sur la moitié de la durée. Avec une seule animation, la
+       courbe du trajet s appliquait aussi à l opacité : le grain restait plein
+       puis s éteignait d un coup, ce qui se voyait. */
+    animation: bombGrain var(--d) cubic-bezier(0.1, 0.8, 0.2, 1) forwards,
+               bombGrainFondu var(--d) linear forwards;
+}
+
+@keyframes bombGrain {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(0.4); }
+    62%  { transform: translate(calc(var(--dx) * 0.86), calc(var(--dy) * 0.86))
+                      rotate(calc(var(--rot) * 0.86)) scale(1); }
+    /* Il rapetisse sur la fin : avec le fondu, il se dissout au lieu de
+       s éteindre en gardant sa taille. */
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.72); }
+}
+
+@keyframes bombGrainFondu {
+    0%, 30% { opacity: 1; }
+    100%    { opacity: 0; }
+}
+
+.bomb-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--f);
+    height: var(--f);
+    margin: calc(var(--f) / -2) 0 0 calc(var(--f) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, rgba(255, 220, 150, 0.65) 30%, transparent 68%);
+    animation: bombFlash 225ms ease-out forwards;
+}
+
+@keyframes bombFlash {
+    0%   { transform: scale(0.2); opacity: 1; }
+    100% { transform: scale(1.25); opacity: 0; }
+}
+
+/* Le corps encaisse : il se tasse, gonfle en s effaçant à moitié, puis
+   revient. ⚠️ Il ne DISPARAÎT pas — la mèche pivote déjà vers le joueur
+   suivant pendant ce temps-là, et elle aurait tourné dans le vide. */
+.bomb-body-wrap.encaisse { animation: bombEncaisse 325ms cubic-bezier(0.3, 0, 0.2, 1); }
+
+@keyframes bombEncaisse {
+    0%   { transform: scale(1); opacity: 1; }
+    14%  { transform: scale(0.72); opacity: 1; }
+    36%  { transform: scale(1.42); opacity: 0.2; }
+    70%  { transform: scale(0.94); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
 .bomb-container {
     position: absolute;
     top: 50%;
@@ -1178,9 +1268,47 @@
     transition: background 0.4s, border-color 0.4s;
 }
 
+/* ── La mèche se consume ──
+   La largeur vient du gabarit ; ici on coupe ce qui dépasse et on rend le
+   changement continu.
+
+   ⚠️ « overflow: hidden » est ce qui fait tout le travail : le tracé garde sa
+   forme et sa longueur, seul le cadre rétrécit, donc l ondulation ne s écrase
+   jamais. Le bout coupé est net, mais la flamme est posée dessus et le cache.
+
+   ⚠️ Et la transition dure UNE SECONDE, en linéaire, parce que la valeur ne
+   change qu une fois par seconde : c est elle qui fait le mouvement, pas le
+   rendu. Un « ease » ferait avancer la flamme par à-coups, avec un temps mort
+   au milieu de chaque seconde. */
 .fuse-wave-wrap {
-    width: 52px;
+    /* La longueur PLEINE, redefinie par ecran plus bas. Le gabarit ne pose que
+       la part restante : un nombre de pixels en ligne aurait ecrase les largeurs
+       mobiles, et la meche serait restee longue de 52 px sur un telephone ou le
+       trace, lui, n en fait que 26. */
+    --meche-max: 52px;
+    width: max(4px, calc(var(--meche-max) * var(--meche-part, 1)));
     height: 12px;
+    overflow: hidden;
+
+    /* ⚠️ Une ANIMATION, pas une transition. La durée vient du gabarit et vaut
+       le temps qu il reste ; la clef Vue posée sur l élément le recrée à chaque
+       tour, ce qui relance l animation depuis la largeur courante.
+
+       La version d avant avançait par paliers d une seconde, chacun lissé par
+       une transition d une seconde. Mais un tour commence sur un temps
+       FRACTIONNAIRE — « 7,05 s » — quand le palier suivant est « 7 » : la
+       transition avait une seconde pleine pour parcourir cinq centièmes, et la
+       mèche semblait s arrêter au passage de la bombe. Ici il n y a plus de
+       palier, donc plus de désaccord possible. */
+    animation-name: mecheBrule;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+/* Pas de « from » : l animation part de la largeur calculée, celle que
+   « --meche-part » vient de poser. */
+@keyframes mecheBrule {
+    to { width: 4px; }
 }
 
 .fuse-wave-svg {
@@ -1405,7 +1533,7 @@
 
     /* 🧨 Le viewBox reste en 52 × 12 : reduire la largeur met la courbe a
        l echelle, il n y a rien a redessiner. */
-    .fuse-wave-wrap,
+    .fuse-wave-wrap { --meche-max: 26px; }
     .fuse-wave-svg { width: 26px; }
 }
 
@@ -1413,7 +1541,7 @@
     /* Sur telephone le cercle se resserre encore : a 28 px l etincelle
        arrivait presque au contact du joueur vise, et l on ne savait plus si
        la bombe le designait ou l avait deja atteint. */
-    .fuse-wave-wrap,
+    .fuse-wave-wrap { --meche-max: 20px; }
     .fuse-wave-svg { width: 20px; }
     .fuse-socle {
         width: 8px;

@@ -40,7 +40,20 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   valide, la derniere ecrase la premiere en silence, et la page ne blanchit meme pas :
   elle appelle simplement la mauvaise fonction. C est arrive, et le vol de Collect en
   est reste injouable sans que rien ne le signale. `check` ne voit aucun des trois,
-  ce sont des expressions valides), puis,
+  ce sont des expressions valides).
+
+  ⚠️ `check:vue` enchaîne DEUX filets, et le second vient de ce qui a blanchi la page le
+  27 septembre 2026 : **le gabarit appelait `mechePart()` alors que la méthode n existait
+  plus** — une découpe un peu large dans `app.js` l avait emportée avec sa voisine. Les
+  deux contrôles d alors sont passés au vert : `check` compile le gabarit, et `mechePart()`
+  y est une expression parfaitement valide ; `verif-calculees.js` ne surveillait que les
+  méthodes préfixées `col` (Collect). Résultat : écran noir, **et les sons du jeu qui
+  continuent** — le script tourne, c est le RENDU qui s arrête sur une TypeError.
+  `scripts/verif-appels.js` lit maintenant toutes les expressions du gabarit (moustaches,
+  `:`, `@`, `v-`) et exige que chaque appel à la racine existe dans `app.js`. Deux pièges
+  qu il a fallu lui apprendre : les méthodes `async` (dont `applySetting`, citée vingt-deux
+  fois) et les mots suivis d une parenthèse DANS UNE CHAÎNE (« portrait(s) pour… »).
+  Puis,
   serveur lancé à côté :
   `npm run smoke` (cycle de jeu complet), `npm run test:host` (contrôles de l'hôte, camps,
   rafraîchissement), `npm run test:tie` (départage solo et en camps, ~1 min), `npm run test:hote`
@@ -86,7 +99,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
   Longtemps intermittente : elle rejouait 700 ms après une erreur, alors que celle-ci
   ferme la grille une seconde — le second clic tombait dans le vide une fois sur trois.
-  Six passages d'affilée depuis), `npm run test:rush` (le mode Rush de bout en bout),
+  Six passages d'affilée depuis), `npm run test:meche` (la mèche continue : le réglage, et surtout qu'elle NE REPART PAS
+  après une bonne réponse — mesuré, pas supposé),
+  `npm run test:rush` (le mode Rush de bout en bout),
   `npm run test:rush-mult` (le barème du multiplicateur : le palier se compte en
   réponses et non en points, la casse sur une erreur, et le réglage éteint rend
   exactement le mode d'avant),
@@ -142,7 +157,62 @@ src/img/               avatars, questionpic
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut) et **bot** (non par défaut — un seul partenaire, qui joue vraiment) ; quinze joueurs au plus |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment) et **mèche** (*Par tour* par défaut, ou *Continue* — voir plus bas) ; quinze joueurs au plus |
+
+⚠️ **La mèche *Continue* de BombAnime ne garantit PAS un tour complet, et c'est voulu.**
+En *Par tour* (le défaut, le mode de toujours) le minuteur repart à zéro dès qu'on répond :
+la bombe n'est alors qu'un minuteur de tour déguisé, et répondre vite ne sert qu'à soi. En
+*Continue*, UNE seule mèche brûle pour toute la manche et explose sur celui qui la tient —
+répondre vite devient une arme contre les autres.
+
+Sa durée vaut `joueurs vivants × B × aléa(0,8–1,3)`, bornée à 12–75 s, avec B = 3,5 s par
+joueur.
+
+⚠️ **Elle n'est PAS réglable depuis le salon**, et un curseur y avait pourtant été posé. À
+deux ou trois joueurs, le plancher de 12 s mangeait toute sa course : l'estimation affichait
+« ≈ 12s » d'un bout à l'autre et le réglage avait l'air cassé. Un réglage qui ne change rien
+la moitié du temps vaut moins qu'un calcul qu'on n'a pas à comprendre. Le champ `mecheB`
+reste dans l'état du salon et la route `set-meche` accepte toujours un `b` : c'est ce qui
+permet aux suites de régler la longueur d'une manche d'essai.
+
+Deux choses se jouent dans la formule, et les défaire
+casserait le mode sans qu'aucun test ne le voie :
+
+- **L'aléa.** Sans lui on compte, on sait qui va l'avoir, et l'on ralentit ou accélère exprès.
+- **Le fait qu'elle puisse partir avant que tout le monde ait joué.** Une mèche assez longue
+  pour garantir un tour complet rendrait le premier tour SANS DANGER : la bombe ne
+  *pourrait* pas partir, tout le monde le sentirait en deux parties, et le mode ne
+  commencerait qu'au second tour. Or la tension, c'est « elle peut partir maintenant ».
+
+⚠️ Et **aucun chiffre à l'écran** : c'est ce qui a écarté les autres visuels de la bombe
+(`/prototypes/bomb-visuel`). La mèche dit « bientôt » sans dire « dans 4,2 s » ; une jauge
+ou un compteur suffiraient à résoudre la manche de tête.
+
+Côté code : `armerMeche()` et `mecheRestante()` dans `server.js`, et un garde-fou à
+connaître — **`mecheTimeout` est SÉPARÉ de `turnTimeout`**, parce que ce dernier est annulé
+à chaque tour ET à chaque bonne réponse. Annuler la mèche à ces deux endroits ramènerait
+exactement le mode d'avant, en silence. `npm run test:meche` le mesure : il relève le temps
+restant à chaque réponse et exige qu'il DESCENDE.
+
+⚠️ Et l ECHEANCE D UNE REPONSE n est pas la meme selon le reglage : en continue on peut
+garder la bombe aussi longtemps qu il reste de la meche — c est meme LA strategie, on
+attend le dernier moment pour la refiler. Le garde-fou de  comparait
+au minuteur de tour et refusait donc tout envoi passe huit secondes, alors que la meche en
+avait encore vingt : l envoi etait ignore, sans rien a l ecran pour le dire. La suite le
+tient avec cinq joueurs (la meche vaut « joueurs × B », il en faut assez pour depasser
+l attente) et verifie qu aucune manche ne s est terminee pendant la mesure.
+
+À l'écran, la mèche raccourcit dans les deux modes (elle gardait ses 52 px du début à la
+fin, seule l'étincelle changeait de couleur — l'œil n'avait aucun repère). C'est la LARGEUR
+du cadre qui bouge, pas le tracé : `overflow: hidden` coupe l'ondulation par la droite, du
+côté de la flamme, et les trois éléments étant en ligne la flamme descend toute seule vers
+la bombe. ⚠️ Le gabarit ne pose que `--meche-part` ; la longueur PLEINE reste au CSS, qui la
+redéfinit à 26 px puis 20 px sur téléphone. Une largeur en pixels posée en ligne écraserait
+ces deux règles.
+
+ℹ️ Le bot répond en 400 ms fixes : en *Continue*, c'est donc l'humain qui tient la bombe
+presque tout le temps et qui explose. Assumé — le partenaire sert à s'entraîner à trouver
+des noms, pas à être battu.
 
 ⚠️ **Le multiplicateur du Rush compte les RÉPONSES, jamais les points.** Un cran toutes les dix
 bonnes réponses d'affilée : dix réponses valent dix points et ouvrent le ×2, dix de plus en valent
@@ -260,6 +330,10 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/rush-multi` : le multiplicateur RETENU, isole hors d une manche
   pour qu on puisse le regler sans jouer, avec le vrai bareme deroule a cote.
+  Et `/prototypes/bomb-visuel` : six visuels de la bombe de BombAnime, joues en vrai
+  sur une seule horloge. Deux contraintes y decident : la bombe DESIGNE quelqu un
+  (d ou le curseur d angle) et elle est PETITE (d ou celui de taille — une piste qui
+  ne tient pas a 44 px ne tiendra pas a huit joueurs).
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/rush-multi` : cinq facons d afficher le multiplicateur de Rush,

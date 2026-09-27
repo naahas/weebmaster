@@ -165,7 +165,27 @@ const BOMBANIME_CONFIG = {
     DEFAULT_TIMER: 8,
     MIN_TIMER: 5,
     MAX_TIMER: 10,
-    ALPHABET_BONUS_LIVES: 1
+    ALPHABET_BONUS_LIVES: 1,
+
+    // ── Mèche CONTINUE ──
+    // Une seule mèche pour toute la manche, tirée au sort au départ.
+    //
+    // ⚠️ Elle ne garantit PAS un tour complet, et c est voulu. Une mèche assez
+    // longue pour que chacun joue une fois rendrait le premier tour sans
+    // danger : la bombe ne POURRAIT pas partir, tout le monde le sentirait au
+    // bout de deux parties, et le mode ne commencerait qu au second tour. Or
+    // la tension, c est « elle peut partir maintenant ».
+    //
+    // La durée vaut « joueurs vivants × B × aléa », B étant réglé par l hôte.
+    // À dix joueurs et B = 3,5 ça boucle presque toujours ; si le groupe
+    // traîne, elle part au huitième, et c est mérité.
+    MECHE_B_DEFAUT: 3.5,        // secondes de mèche par joueur
+    MECHE_B_MIN: 2,
+    MECHE_B_MAX: 5,
+    MECHE_ALEA_MIN: 0.8,        // l aléa, sans quoi on compterait
+    MECHE_ALEA_MAX: 1.3,
+    MECHE_PLANCHER: 12,         // à deux, la formule donnerait 7 s
+    MECHE_PLAFOND: 75           // à quinze, elle donnerait plus d une minute
 };
 
 
@@ -801,9 +821,13 @@ app.get('/game/state', (req, res) => {
             playersData: gameState.bombanime.active ? getBombanimePlayersData(gameState) : [],
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
-            timeRemaining: gameState.bombanime.turnStartTime ? 
-                Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
-                gameState.bombanime.timer
+            meche: gameState.bombanime.meche,
+            mecheTotal: gameState.bombanime.mecheTotal,
+            // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit
+            // pas du début du tour, la mèche ne repart pas avec lui.
+            timeRemaining: gameState.bombanime.active
+                ? mecheRestante(gameState)
+                : gameState.bombanime.timer
         } : null
     });
 });
@@ -952,6 +976,7 @@ function fermerRoom(gameState) {
         if (gameState[t]) clearTimeout(gameState[t]);
     }
     if (gameState.bombanime && gameState.bombanime.turnTimeout) clearTimeout(gameState.bombanime.turnTimeout);
+    if (gameState.bombanime && gameState.bombanime.mecheTimeout) clearTimeout(gameState.bombanime.mecheTimeout);
     // Rush en porte une par joueur, plus celle de fin de manche
     if (gameState.rush) {
         if (gameState.rush.timeoutFin) clearTimeout(gameState.rush.timeoutFin);
@@ -1071,6 +1096,16 @@ function etatNeuf() {
         active: false,              // Mode BombAnime actif
         serie: 'Naruto',            // Série sélectionnée
         timer: 8,                   // Timer par défaut (secondes)
+        // La mèche : 'tour' remet le minuteur à zéro à chaque réponse (ce qui
+        // se fait depuis toujours), 'continue' laisse UNE mèche brûler pour
+        // toute la manche et exploser sur celui qui la tient.
+        meche: 'tour',
+        mecheB: 3.5,                // secondes de mèche par joueur, en continue
+        mecheFin: null,             // quand elle part (timestamp)
+        mecheTotal: 0,              // ce qui a été tiré, pour dessiner la mèche
+        mecheTimeout: null,         // ⚠️ SÉPARÉ de turnTimeout : ce dernier est
+                                    // annulé à chaque tour, la mèche ne doit pas
+                                    // l être — c est tout l intérêt du mode
         lives: 2,                   // Vies par joueur
         playersOrder: [],           // Ordre des joueurs (playerIds) dans le cercle
         currentPlayerIndex: 0,      // Index du joueur actuel dans playersOrder
@@ -1514,6 +1549,30 @@ app.get('/prototypes/serie', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-serie.html');
 });
 
+// Six declinaisons des ECLATS, la piste retenue. Ce qui change n est jamais la
+// couleur : le nombre de morceaux, leur taille, la trainee, et s ils partent en
+// une fois ou en deux. Trois curseurs agissent sur toutes les pistes a la fois,
+// pour regler celle qu on garde sans toucher au code.
+app.get('/prototypes/bomb-eclats', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-eclats.html');
+});
+
+// L explosion au centre du cercle : six eclats. ⚠️ Le budget est tres court —
+// le serveur annonce le tour suivant CENT MILLISECONDES apres l explosion, et
+// un effet qui masque le centre une seconde cache le moment ou l on decouvre
+// qui doit jouer. Le bouton « une manche entiere » rejoue exactement ce delai.
+app.get('/prototypes/bomb-explosion', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-explosion.html');
+});
+
+// Le visuel de la bombe de BombAnime : six pistes, jouees en vrai. La bombe
+// DESIGNE quelqu un (sa meche pivote vers le joueur dont c est le tour) et elle
+// est PETITE — 60 px, moins a huit joueurs. Les deux curseurs de la page servent
+// exactement a eprouver ces deux contraintes-la.
+app.get('/prototypes/bomb-visuel', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-visuel.html');
+});
+
 app.get('/prototypes/ascension-grimpeurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ascension-grimpeurs.html');
 });
@@ -1921,6 +1980,47 @@ app.post('/admin/bombanime/set-timer', (req, res) => {
     console.log(`💣 Timer BombAnime : ${t}s`);
     diffuser(gameState, 'bombanime-config-updated', { timer: t, lives: gameState.bombanime.lives });
     res.json({ success: true, timer: t });
+});
+
+// 💣 La mèche : par tour (le défaut) ou continue, et son B.
+//
+// Une seule route pour les deux : ils ne veulent rien dire l un sans l autre,
+// et l hôte les règle dans le même geste.
+app.post('/admin/bombanime/set-meche', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    // ⚠️ On VALIDE TOUT avant d écrire quoi que ce soit. La première version
+    // posait « meche » puis refusait un B hors bornes : l appel repartait en
+    // 400 et le salon avait quand même changé de mode. Un refus ne doit rien
+    // laisser derrière lui — c est la même règle que pour l ouverture d un
+    // salon sous mot de passe.
+    const m = req.body && req.body.meche;
+    if (m !== undefined && m !== 'tour' && m !== 'continue') {
+        return res.status(400).json({ error: 'Mèche invalide' });
+    }
+
+    let bRetenu = null;
+    if (req.body && req.body.b !== undefined) {
+        const b = parseFloat(req.body.b);
+        if (!(b >= BOMBANIME_CONFIG.MECHE_B_MIN && b <= BOMBANIME_CONFIG.MECHE_B_MAX)) {
+            return res.status(400).json({ error: 'Durée invalide' });
+        }
+        // Au demi-cran : le curseur n a pas à produire 3,27.
+        bRetenu = Math.round(b * 2) / 2;
+    }
+
+    if (m !== undefined) gameState.bombanime.meche = m;
+    if (bRetenu !== null) gameState.bombanime.mecheB = bRetenu;
+
+    console.log(`🧨 Mèche : ${gameState.bombanime.meche} (B=${gameState.bombanime.mecheB})`);
+    diffuser(gameState, 'bombanime-config-updated', {
+        timer: gameState.bombanime.timer,
+        lives: gameState.bombanime.lives,
+        meche: gameState.bombanime.meche,
+        mecheB: gameState.bombanime.mecheB
+    });
+    res.json({ success: true, meche: gameState.bombanime.meche, mecheB: gameState.bombanime.mecheB });
 });
 
 // 💣 Une ou deux vies
@@ -5380,6 +5480,47 @@ function coupDuBot(gameState, bot, turnId) {
     submitBombanimeName(gameState, bot.socketId, nom);
 }
 
+// ── La mèche continue ──
+// Tirée au départ de chaque MANCHE (pas de chaque tour), et jamais annoncée :
+// un nombre à l écran suffirait à savoir qui va l avoir.
+function armerMeche(gameState) {
+    const b = gameState.bombanime;
+    if (b.mecheTimeout) { clearTimeout(b.mecheTimeout); b.mecheTimeout = null; }
+    if (b.meche !== 'continue') { b.mecheFin = null; b.mecheTotal = 0; return 0; }
+
+    const n = Math.max(1, getAliveBombanimePlayers(gameState).length);
+    const C = BOMBANIME_CONFIG;
+    const alea = C.MECHE_ALEA_MIN + Math.random() * (C.MECHE_ALEA_MAX - C.MECHE_ALEA_MIN);
+    const secondes = Math.min(C.MECHE_PLAFOND, Math.max(C.MECHE_PLANCHER, n * b.mecheB * alea));
+
+    b.mecheTotal = secondes;
+    b.mecheFin = Date.now() + secondes * 1000;
+    console.log(`🧨 Mèche continue : ${secondes.toFixed(1)}s pour ${n} joueur(s) (B=${b.mecheB})`);
+
+    // ⚠️ L explosion vise CELUI QUI TIENT LA BOMBE À CET INSTANT, pas un
+    // joueur décidé d avance : on lit currentPlayerId au moment du feu.
+    b.mecheTimeout = setTimeout(() => {
+        b.mecheTimeout = null;
+        if (!b.active) return;
+        const porteur = b.currentPlayerId;
+        if (porteur) bombExplode(gameState, porteur);
+    }, secondes * 1000);
+
+    return secondes;
+}
+
+// Ce qu il reste à la mèche, en secondes. En mode « tour » c est le minuteur
+// du tour ; en continue, la mèche de la manche.
+function mecheRestante(gameState) {
+    const b = gameState.bombanime;
+    if (b.meche === 'continue') {
+        if (!b.mecheFin) return b.mecheTotal || 0;
+        return Math.max(0, (b.mecheFin - Date.now()) / 1000);
+    }
+    if (!b.turnStartTime) return b.timer;
+    return Math.max(0, b.timer - (Date.now() - b.turnStartTime) / 1000);
+}
+
 // Démarrer le tour d'un joueur BombAnime
 function startBombanimeTurn(gameState, playerId) {
     if (!gameState.bombanime.active) return;
@@ -5434,7 +5575,10 @@ function startBombanimeTurn(gameState, playerId) {
     gameState.bombanime.turnStartTime = Date.now();
     gameState.bombanime.isPaused = false;
     
-    console.log(`💣 Tour de ${player.username} (${gameState.bombanime.timer}s) [turnId=${currentTurnId}]`);
+    const enContinue = gameState.bombanime.meche === 'continue';
+    const restant = mecheRestante(gameState);
+
+    console.log(`💣 Tour de ${player.username} (${restant.toFixed(1)}s ${enContinue ? 'de mèche' : 'de tour'}) [turnId=${currentTurnId}]`);
     
     // Envoyer l'état à tous les clients
     diffuser(gameState, 'bombanime-turn-start', {
@@ -5442,18 +5586,28 @@ function startBombanimeTurn(gameState, playerId) {
         currentPlayerUsername: player.username,
         timer: gameState.bombanime.timer,
         playersOrder: gameState.bombanime.playersOrder,
-        direction: gameState.bombanime.bombDirection
+        direction: gameState.bombanime.bombDirection,
+        // La mèche : le client en a besoin pour dessiner ce qui reste, et
+        // « restant » n est PAS « timer » en continue — il ne repart pas.
+        meche: gameState.bombanime.meche,
+        mecheTotal: gameState.bombanime.mecheTotal,
+        timeRemaining: restant
     });
     
-    // Timeout pour l'explosion - vérifie turnId pour éviter race condition
-    gameState.bombanime.turnTimeout = setTimeout(() => {
-        // Si le turnId a changé, le joueur a répondu à temps
-        if (gameState.bombanime.turnId !== currentTurnId) {
-            console.log(`⏱️ Explosion annulée [turnId changé: ${currentTurnId} -> ${gameState.bombanime.turnId}]`);
-            return;
-        }
-        bombExplode(gameState, playerId);
-    }, gameState.bombanime.timer * 1000);
+    // ⚠️ En continue, PAS de minuteur de tour. C est la mèche de la manche qui
+    // décide, et elle a été armée au départ ; la réarmer ici reviendrait
+    // exactement au mode d avant. Qui traîne explose, sans autre garde-fou.
+    if (!enContinue) {
+        // Timeout pour l'explosion - vérifie turnId pour éviter race condition
+        gameState.bombanime.turnTimeout = setTimeout(() => {
+            // Si le turnId a changé, le joueur a répondu à temps
+            if (gameState.bombanime.turnId !== currentTurnId) {
+                console.log(`⏱️ Explosion annulée [turnId changé: ${currentTurnId} -> ${gameState.bombanime.turnId}]`);
+                return;
+            }
+            bombExplode(gameState, playerId);
+        }, gameState.bombanime.timer * 1000);
+    }
 
     // 🤖 Si c'est un bot, il répond tout seul. Posé APRÈS l'armement de
     // l'explosion : si le coup échouait, la bombe continuerait de tourner.
@@ -5516,6 +5670,10 @@ function bombExplode(gameState, playerId) {
     // Pause puis passer au joueur suivant
     gameState.bombanime.isPaused = true;
     setTimeout(() => {
+        // Une manche vient de se finir : en continue, on retire une mèche.
+        // Le nombre de joueurs a baissé si quelqu un est éliminé, donc elle
+        // raccourcit d elle-même à mesure que le cercle se vide.
+        armerMeche(gameState);
         const nextPlayerId = getNextBombanimePlayer(gameState);
         if (nextPlayerId) {
             startBombanimeTurn(gameState, nextPlayerId);
@@ -5543,18 +5701,53 @@ function submitBombanimeName(gameState, socketId, name) {
     const player = gameState.players.get(socketId);
     if (!player) return { success: false, reason: 'player_not_found' };
     
+    // ⚠️ Un refus se DIT, toujours. Ces deux-là repartaient muets : pour le
+    // joueur, la touche Entrée ne faisait rien du tout, et aucune trace nulle
+    // part. On répond à la seule socket concernée — le tremblement du slot
+    // public n a pas à s allumer parce que quelqu un a tapé trop tard.
+    const direNon = (raison) => {
+        const sock = io.sockets.sockets.get(socketId);
+        if (sock) sock.emit('bombanime-name-rejected', {
+            playerId: player.playerId,
+            name: name,
+            reason: raison,
+            prive: true
+        });
+    };
+
     // Vérifier que c'est le tour de ce joueur
     if (player.playerId !== gameState.bombanime.currentPlayerId) {
+        direNon('not_your_turn');
         return { success: false, reason: 'not_your_turn' };
     }
     
-    // IMPORTANT: Vérifier que le temps n'est pas écoulé côté serveur
-    // Ceci empêche les réponses qui arrivent après l'expiration du timer
-    const elapsedMs = Date.now() - gameState.bombanime.turnStartTime;
-    const timerMs = gameState.bombanime.timer * 1000;
-    if (elapsedMs >= timerMs) {
-        console.log(`⏱️ Réponse REJETÉE pour ${player.username} - temps écoulé (${elapsedMs}ms >= ${timerMs}ms)`);
-        return { success: false, reason: 'time_expired' };
+    // IMPORTANT: Vérifier que le temps n'est pas écoulé côté serveur.
+    // Ceci empêche les réponses qui arrivent après l'expiration du timer.
+    //
+    // ⚠️ L ÉCHÉANCE N EST PAS LA MÊME SELON LE RÉGLAGE, et s y tromper rend le
+    // mode continue injouable de la pire façon : par intermittence.
+    //
+    // En « par tour », le délai part du début du tour — c est le minuteur.
+    // En « continue », il N Y A PAS de minuteur de tour : on peut garder la
+    // bombe aussi longtemps qu il reste de la mèche, et c est même la
+    // stratégie — on attend le dernier moment pour la refiler. Comparer au
+    // « timer » refusait alors toute réponse passé huit secondes, alors que la
+    // mèche en avait encore vingt : le joueur voyait son envoi ignoré sans
+    // rien à l écran pour le lui dire.
+    if (gameState.bombanime.meche === 'continue') {
+        if (mecheRestante(gameState) <= 0) {
+            console.log(`⏱️ Réponse REJETÉE pour ${player.username} - la mèche est finie`);
+            direNon('time_expired');
+            return { success: false, reason: 'time_expired' };
+        }
+    } else {
+        const elapsedMs = Date.now() - gameState.bombanime.turnStartTime;
+        const timerMs = gameState.bombanime.timer * 1000;
+        if (elapsedMs >= timerMs) {
+            console.log(`⏱️ Réponse REJETÉE pour ${player.username} - temps écoulé (${elapsedMs}ms >= ${timerMs}ms)`);
+            direNon('time_expired');
+            return { success: false, reason: 'time_expired' };
+        }
     }
     
     // Valider le nom
@@ -5785,9 +5978,16 @@ async function startBombanimeGame(gameState) {
     });
     
     // Envoyer l'événement de démarrage
+    // La première mèche est tirée AVANT l annonce : le client doit la recevoir
+    // avec le reste, sans quoi il dessinerait une mèche pleine sur une manche
+    // déjà entamée.
+    armerMeche(gameState);
+
     diffuser(gameState, 'bombanime-game-started', {
         serie: gameState.bombanime.serie,
         timer: gameState.bombanime.timer,
+        meche: gameState.bombanime.meche,
+        mecheTotal: gameState.bombanime.mecheTotal,
         playersOrder: gameState.bombanime.playersOrder,
         playersData: getBombanimePlayersData(gameState),
         totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0,
@@ -5844,6 +6044,13 @@ async function endBombanimeGame(gameState, winner) {
     if (gameState.bombanime.turnTimeout) {
         clearTimeout(gameState.bombanime.turnTimeout);
     }
+    // Et la mèche, qui ne dépend d aucun tour : sans ça elle exploserait
+    // encore une fois, sur un salon déjà au classement.
+    if (gameState.bombanime.mecheTimeout) {
+        clearTimeout(gameState.bombanime.mecheTimeout);
+        gameState.bombanime.mecheTimeout = null;
+    }
+    gameState.bombanime.mecheFin = null;
     
     gameState.bombanime.active = false;
     
@@ -6214,6 +6421,15 @@ function resetBombanimeState(gameState) {
     if (gameState.bombanime.turnTimeout) {
         clearTimeout(gameState.bombanime.turnTimeout);
     }
+    if (gameState.bombanime.mecheTimeout) {
+        clearTimeout(gameState.bombanime.mecheTimeout);
+        gameState.bombanime.mecheTimeout = null;
+    }
+    // ⚠️ On garde « meche » et « mecheB » : ce sont des RÉGLAGES du salon,
+    // pas de l état de la partie. Les effacer ici remettrait l hôte en
+    // « par tour » à chaque relance, sans qu il comprenne pourquoi.
+    gameState.bombanime.mecheFin = null;
+    gameState.bombanime.mecheTotal = 0;
     
     gameState.bombanime.active = false;
     gameState.bombanime.playersOrder = [];
@@ -7244,9 +7460,13 @@ io.on('connection', (socket) => {
             myAlphabet: myAlphabet,
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
-            timeRemaining: gameState.bombanime.turnStartTime ? 
-                Math.max(0, gameState.bombanime.timer - Math.floor((Date.now() - gameState.bombanime.turnStartTime) / 1000)) : 
-                gameState.bombanime.timer,
+            meche: gameState.bombanime.meche,
+            mecheTotal: gameState.bombanime.mecheTotal,
+            // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit
+            // pas du début du tour, la mèche ne repart pas avec lui.
+            timeRemaining: gameState.bombanime.active
+                ? mecheRestante(gameState)
+                : gameState.bombanime.timer,
             // 🎯 Défis et bonus
             challenges: myChallenges,
             bonuses: myBonuses
