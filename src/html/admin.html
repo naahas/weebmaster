@@ -134,6 +134,19 @@ button { font-family: inherit; color: inherit; }
 .scene-tete h1 { font-size: 1.32rem; font-weight: 600; letter-spacing: -.02em; }
 .scene-tete p { color: var(--doux); font-size: .84rem; }
 .scene-tete .relu { margin-left: auto; color: var(--tres-doux); font-size: .76rem; }
+.relire {
+    border: 1px solid var(--bord); background: rgba(255,255,255,.04);
+    color: var(--doux); cursor: pointer; border-radius: 9px;
+    padding: .34rem; display: inline-grid; place-items: center;
+    align-self: center;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.relire:hover { color: var(--texte); border-color: var(--bord-fort); background: rgba(255,255,255,.09); }
+.relire:disabled { cursor: default; color: var(--accent-clair); border-color: rgba(109,92,255,.4); }
+/* ⚠️ La rotation est posée sur le SVG et non sur le bouton : sur le bouton,
+   elle ferait tourner aussi sa bordure et son fond, ce qui se voit. */
+.relire:disabled svg { animation: tourne .7s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
 
 /* ⚠️ Une seule vue à la fois. La règle avait sauté le jour où il n'y en avait
    plus qu'une : les trois sections s'empilaient alors toutes ensemble, quel que
@@ -747,6 +760,9 @@ body:not(.entre) { overflow: hidden; }
     <g id="i-couronne" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 18h18M4 8l4 4 4-8 4 8 4-4-2 10H6z"/>
     </g>
+    <g id="i-relire" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 11-2.6-6.4"/><path d="M21 3v6h-6"/>
+    </g>
     <g id="i-gens" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
       <path d="M22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/>
@@ -855,6 +871,9 @@ body:not(.entre) { overflow: hidden; }
         <h1 id="scene-titre">Vue d'ensemble</h1>
         <p id="scene-sous">Ce qui se joue, et ce qui a été joué</p>
         <span class="relu" id="relu"></span>
+        <button class="relire" id="b-relire" title="Tout relire">
+            <svg width="15" height="15"><use href="#i-relire"/></svg>
+        </button>
     </div>
 
     <!-- ── Vue : ensemble ── -->
@@ -2178,6 +2197,31 @@ async function supprimerSuggestion(id) {
         lireSuggestions();
     } catch (e) { alert(e.message); }
 }
+
+// ── Tout relire ─────────────────────────────────────────────────────
+// ⚠️ L'historique n'est lu QU'UNE FOIS, à l'entrée : seul le direct se
+// rafraîchit tout seul (10 s). Sans ce bouton, une partie qui vient de se
+// terminer n'apparaissait qu'après un rechargement de la page.
+//
+// On ne relit que ce qui est DÉJÀ chargé : rouvrir la banque de questions
+// parce qu'on voulait voir une partie de plus ferait une requête paginée
+// pour rien.
+$('b-relire').onclick = async () => {
+    const b = $('b-relire');
+    if (b.disabled) return;
+    b.disabled = true;
+    try {
+        await Promise.all([
+            lireStats(),
+            lireDirect(),
+            CHARGE.questions ? lireQuestions() : null,
+            CHARGE.suggestions ? lireSuggestions() : null,
+        ].filter(Boolean));
+    } catch (e) { /* chaque lecture affiche déjà son propre échec */ }
+    // Un tour complet au minimum : sans ça, sur une réponse instantanée,
+    // l'icône sursaute sans qu'on voie qu'il s'est passé quelque chose.
+    setTimeout(() => { b.disabled = false; }, 700);
+};
 
 // ── Vider ───────────────────────────────────────────────────────────
 $('b-vider').onclick = () => {

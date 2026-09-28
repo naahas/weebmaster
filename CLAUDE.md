@@ -403,8 +403,16 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   ⚠️ Deux compteurs de presence, a ne pas confondre : `surLeSite` compte TOUTES
   les sockets ouvertes (accueil et saisie de pseudo compris), `joueursEnLigne`
   seulement ceux qui sont DANS un salon.
+  ⚠️ Seul le DIRECT se rafraichit tout seul (10 s) ; l historique est lu UNE
+  FOIS a l entree. Un bouton dans l en-tete relit tout — direct, historique, et
+  ce qui est deja charge dans les autres onglets, rien de plus : rouvrir la
+  banque de questions pour voir une partie de plus ferait une requete paginee
+  pour rien.
   La vignette d un salon porte un bouton qui ouvre la liste de ses joueurs —
-  couronne pour l hote, coeurs des vies, marque « bot ». ⚠️ Elle ne s affiche
+  avatar, couronne pour l hote, marque « bot ». L URL de l avatar est fabriquee
+  par le SERVEUR (`srcAvatarServeur`), jeton de version compris : la recomposer
+  dans la page la ferait diverger de `srcAvatar()` cote jeu, et le dossier est
+  servi en « immutable » pour un an. ⚠️ Elle ne s affiche
   QUE sur demande : montree d office dans une bulle, a quinze joueurs, elle
   debordait et personne ne la lisait. La modale se rafraichit avec le direct et
   dit si le salon a ferme pendant qu on le regardait.
