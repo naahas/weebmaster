@@ -658,8 +658,12 @@ body:not(.entre) { overflow: hidden; }
             <div class="defile">
                 <table>
                     <thead><tr>
-                        <th class="coche"><input type="checkbox" id="coche-tout"
-                            title="Tout cocher"></th>
+                        <!-- ⚠️ Pas de case « tout cocher » ici, et c'est voulu :
+                             elle armait la suppression de TOUTES les parties
+                             d'un clic, à côté du bouton qui les jette. « Vider
+                             l'historique » existe déjà pour ça, avec sa
+                             confirmation. La colonne reste, pour l'alignement. -->
+                        <th class="coche"></th>
                         <th>Quand</th><th>Mode</th><th>Joueurs</th>
                         <th>Durée</th><th>Vainqueur</th><th></th>
                     </tr></thead>
@@ -1076,19 +1080,7 @@ function majSelection() {
           ' de jeu · ' + (joueurs / n).toFixed(1) + ' joueurs en moyenne'
         : '';
     $('sel-jeter-txt').textContent = 'Supprimer ' + (n > 1 ? 'les ' + n : '');
-
-    const tout = $('coche-tout');
-    tout.checked = n > 0 && n === visibles.length;
-    // Le trait horizontal : « une partie seulement », ni vide ni plein.
-    tout.indeterminate = n > 0 && n < visibles.length;
 }
-
-$('coche-tout').onclick = e => {
-    const oui = e.target.checked;
-    for (const p of lignesVisibles()) oui ? COCHES.add(p.id) : COCHES.delete(p.id);
-    DERNIERE = null;
-    leTableau();
-};
 
 $('sel-rien').onclick = () => { COCHES.clear(); DERNIERE = null; leTableau(); };
 

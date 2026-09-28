@@ -404,10 +404,14 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   `/api/verify-question-code`. Le `?code=` qu on y mettait n avait jamais rien
   fait — et les deux secrets etant distincts, il n y aurait eu que le mauvais a
   y mettre.
-  Les lignes se cochent — case par case, **Maj+clic pour une plage**, ou tout
-  d un coup — et partent ensemble (`/admin/site/supprimer`, qui accepte `id`
-  comme `ids`) : on ne garde que les vraies parties et l on jette celles de
-  mise au point. Une seule requete Supabase (`.in`), plafonnee a 500.
+  Les lignes se cochent — case par case ou **Maj+clic pour une plage** — et
+  partent ensemble (`/admin/site/supprimer`, qui accepte `id` comme `ids`) :
+  on ne garde que les vraies parties et l on jette celles de mise au point.
+  Une seule requete Supabase (`.in`), plafonnee a 500.
+  ⚠️ **Pas de case « tout cocher »**, volontairement : elle armait la
+  suppression de TOUTES les parties d un clic, juste a cote du bouton qui les
+  jette. « Vider l historique » fait deja ca, avec sa confirmation. La colonne
+  de l en-tete reste vide, pour l alignement.
   ⚠️ La barre de selection ne compte que le VISIBLE : cocher puis changer de
   filtre annoncerait sinon des lignes qu on ne voit plus, et « Supprimer » en
   jetterait sans les montrer.
