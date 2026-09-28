@@ -901,9 +901,19 @@ body:not(.entre) { overflow: hidden; }
                     <option value="sans">Sans preuve</option>
                     <option value="avec">Avec preuve</option>
                 </select>
+                <!-- ⚠️ `readonly` AU DEPART, leve au premier clic. C est le seul
+                     remede qui tienne : `autocomplete="off"` est ignore par
+                     Chrome, et retirer le formulaire de code du document
+                     arrive TROP TARD — ca se passe dans entrer(), apres une
+                     requete reseau, alors que le remplissage a deja eu lieu.
+                     Un champ en lecture seule, lui, n est jamais rempli.
+                     Symptome d avant : les questions s affichaient PUIS
+                     disparaissaient, parce que le remplissage declenche
+                     l evenement `input` et relance le filtre avec une adresse
+                     e-mail dedans. -->
                 <input type="search" id="q-rech" name="recherche-questions"
                        placeholder="Rechercher un énoncé, une série, une réponse…"
-                       autocomplete="off" spellcheck="false"
+                       autocomplete="off" spellcheck="false" readonly
                        data-1p-ignore data-lpignore="true" data-form-type="other">
             </div>
 
@@ -1669,6 +1679,11 @@ function rendreQuestions(vues) {
 
 ['q-serie', 'q-diff', 'q-spoil', 'q-preuve'].forEach(id => { $(id).onchange = filtrerQuestions; });
 $('q-rech').oninput = filtrerQuestions;
+// On rend le champ ecrivable au moment ou l on s en sert, pas avant.
+// `pointerdown` autant que `focus` : la tabulation aussi doit l ouvrir.
+['focus', 'pointerdown'].forEach(e => {
+    $('q-rech').addEventListener(e, () => $('q-rech').removeAttribute('readonly'));
+});
 
 // ── Le formulaire, pour ajouter comme pour modifier ─────────────────
 function ouvrirForm(id) {
