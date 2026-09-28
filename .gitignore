@@ -4,3 +4,7 @@ node_modules/
 *.log
 
 desktop.ini
+
+# Brouillons de travail : scripts de retouche, lots de questions, sondes.
+# Jamais versionnes — rien la-dedans ne doit partir en production.
+.lot/

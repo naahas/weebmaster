@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ShonenMaster — Panneau</title>
+<link rel="icon" href="/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════
+   LE PANNEAU — feuille de style
+   ════════════════════════════════════════════
+   Une seule page, sans framework : elle n'est ouverte que par Adem, charger
+   Vue pour quelques compteurs serait du poids pour rien.
+
+   ⚠️ La page ne défile PAS. C'est la contrainte qui décide de toute la mise
+   en page : hauteur bloquée à 100dvh, barre latérale fixe, et deux vues
+   qu'on échange au lieu d'empiler. Seul le tableau des parties défile, à
+   l'intérieur de son cadre. */
+:root {
+    --fond: #090a0f;
+    --panneau: #0e1016;
+    --carte: #13161f;
+    --carte-haut: #171b26;
+    --bord: rgba(255,255,255,.07);
+    --bord-fort: rgba(255,255,255,.14);
+    --texte: #f2f4f9;
+    --doux: #7d8598;
+    --tres-doux: #565d6e;
+    --accent: #6d5cff;
+    --accent-clair: #9b8cff;
+    --cyan: #22d3ee;
+    --vert: #34d399;
+    --or: #fbbf24;
+    --rose: #f472b6;
+    --rouge: #fb7185;
+    --rail: 15rem;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    background: var(--fond);
+    color: var(--texte);
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    display: flex;
+    /* ⚠️ C'est ici que se joue « pas de défilement de page ». */
+    overflow: hidden;
+}
+svg { display: block; flex: 0 0 auto; }
+button { font-family: inherit; color: inherit; }
+
+/* ════════════════════════════════════════════
+   LE RAIL
+   ════════════════════════════════════════════ */
+.rail {
+    width: var(--rail); flex: 0 0 auto;
+    background: var(--panneau);
+    border-right: 1px solid var(--bord);
+    display: flex; flex-direction: column;
+    padding: 1.4rem 0 1rem;
+}
+.marque {
+    display: flex; align-items: center; gap: .7rem;
+    padding: 0 1.25rem 1.5rem;
+}
+.marque img {
+    width: 34px; height: 34px; object-fit: contain;
+    /* Le logo est un PNG sur fond sombre : une lueur le détache du rail. */
+    filter: drop-shadow(0 2px 8px rgba(109,92,255,.45));
+}
+.marque b { font-size: 1.02rem; font-weight: 600; letter-spacing: -.01em; }
+.marque span { display: block; font-size: .7rem; color: var(--tres-doux); font-weight: 400; }
+
+.rail-titre {
+    font-size: .66rem; font-weight: 600; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--tres-doux);
+    padding: 0 1.25rem .6rem;
+}
+.rail-groupe { padding-bottom: 1.4rem; }
+.onglet, .rail-lien {
+    display: flex; align-items: center; gap: .7rem; width: 100%;
+    padding: .62rem 1.25rem; border: 0; background: none; cursor: pointer;
+    font-size: .89rem; font-weight: 500; color: var(--doux);
+    text-decoration: none; text-align: left;
+    border-left: 2px solid transparent;
+    transition: color .15s, background .15s, border-color .15s;
+}
+.onglet:hover, .rail-lien:hover { color: var(--texte); background: rgba(255,255,255,.03); }
+.onglet[aria-selected="true"] {
+    color: var(--texte); background: rgba(109,92,255,.1);
+    border-left-color: var(--accent);
+}
+.onglet[aria-selected="true"] svg { color: var(--accent-clair); }
+.onglet .compte {
+    margin-left: auto; font-size: .72rem; font-weight: 600;
+    color: var(--tres-doux); font-variant-numeric: tabular-nums;
+}
+.rail-bas { margin-top: auto; }
+.rail-lien.danger:hover { color: var(--rouge); background: rgba(251,113,133,.07); }
+
+/* La pastille du direct, dans le rail : elle doit se voir sans changer d'onglet. */
+.temoin {
+    margin-left: auto; display: flex; align-items: center; gap: .35rem;
+    font-size: .72rem; font-weight: 600; color: var(--tres-doux);
+    font-variant-numeric: tabular-nums;
+}
+.temoin.actif { color: var(--vert); }
+.point { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.temoin.actif .point { animation: battre 1.9s ease-out infinite; }
+@keyframes battre {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,.6); }
+    70%  { box-shadow: 0 0 0 9px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+}
+
+/* ════════════════════════════════════════════
+   LA SCÈNE
+   ════════════════════════════════════════════ */
+.scene {
+    flex: 1; min-width: 0; height: 100dvh;
+    display: flex; flex-direction: column;
+    padding: 1.4rem 1.6rem 1.2rem;
+    gap: 1rem;
+    /* Halo discret, fixe : il ne doit pas suivre un défilement. */
+    background:
+        radial-gradient(900px 420px at 18% -8%, rgba(109,92,255,.1), transparent 62%),
+        radial-gradient(700px 380px at 95% 4%, rgba(34,211,238,.06), transparent 62%);
+}
+.scene-tete { display: flex; align-items: baseline; gap: .8rem; flex: 0 0 auto; }
+.scene-tete h1 { font-size: 1.32rem; font-weight: 600; letter-spacing: -.02em; }
+.scene-tete p { color: var(--doux); font-size: .84rem; }
+.scene-tete .relu { margin-left: auto; color: var(--tres-doux); font-size: .76rem; }
+
+.vue { flex: 1; min-height: 0; display: none; flex-direction: column; gap: 1rem; }
+.vue.active { display: flex; }
+
+/* ── Les cartes ──────────────────────────── */
+.carte {
+    background: var(--carte); border: 1px solid var(--bord);
+    border-radius: 14px;
+}
+.carte-tete {
+    display: flex; align-items: center; gap: .55rem;
+    padding: .95rem 1.15rem; border-bottom: 1px solid var(--bord);
+    font-size: .92rem; font-weight: 600;
+}
+.carte-tete svg { color: var(--doux); }
+.carte-tete small { color: var(--tres-doux); font-weight: 400; font-size: .78rem; }
+.carte-corps { padding: 1.15rem; }
+
+/* ── Le bandeau du direct ────────────────── */
+.direct {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 1rem;
+    padding: .85rem 1.15rem; border-radius: 14px;
+    background: var(--carte); border: 1px solid var(--bord);
+}
+.direct.actif {
+    background: linear-gradient(100deg, rgba(52,211,153,.09), var(--carte) 45%);
+    border-color: rgba(52,211,153,.24);
+}
+.direct-rond {
+    width: 36px; height: 36px; border-radius: 10px; flex: 0 0 auto;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.05); color: var(--doux);
+}
+.direct.actif .direct-rond { background: rgba(52,211,153,.14); color: var(--vert); }
+.direct-texte b { font-size: .92rem; font-weight: 600; }
+.direct-texte p { color: var(--doux); font-size: .81rem; }
+.salons {
+    margin-left: auto; display: flex; gap: .5rem;
+    overflow-x: auto; max-width: 62%; padding-bottom: 2px;
+}
+.salon {
+    border: 1px solid var(--bord); border-radius: 10px;
+    padding: .45rem .7rem; background: rgba(0,0,0,.3); flex: 0 0 auto;
+}
+.salon-haut { display: flex; align-items: center; gap: .5rem; }
+.salon-code {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    letter-spacing: .08em; font-size: .88rem;
+}
+.salon-bas { color: var(--doux); font-size: .73rem; margin-top: .12rem; }
+.jauge {
+    font-size: .64rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; padding: .1rem .4rem; border-radius: 5px;
+}
+.jauge.joue { background: rgba(52,211,153,.15); color: var(--vert); }
+.jauge.attend { background: rgba(255,255,255,.07); color: var(--doux); }
+
+/* ── Les chiffres ────────────────────────── */
+.chiffres {
+    flex: 0 0 auto; display: grid; gap: .8rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.chiffre {
+    background: var(--carte); border: 1px solid var(--bord);
+    border-radius: 14px; padding: .95rem 1.1rem;
+    display: flex; flex-direction: column; gap: .45rem;
+}
+.chiffre-tete {
+    display: flex; align-items: center; gap: .45rem;
+    color: var(--doux); font-size: .74rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em;
+}
+.chiffre-tete svg { width: 14px; height: 14px; }
+.chiffre-val {
+    font-size: 1.85rem; font-weight: 700; line-height: 1.05;
+    letter-spacing: -.035em; font-variant-numeric: tabular-nums;
+}
+.chiffre-note { color: var(--tres-doux); font-size: .76rem; margin-top: -.15rem; }
+
+/* ── La rangée du bas de la vue d'ensemble ─ */
+.duo { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+.duo > .carte { display: flex; flex-direction: column; min-height: 0; }
+.duo > .carte > .carte-corps { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ── Les modes ───────────────────────────── */
+.mode { margin-bottom: .9rem; }
+.mode:last-child { margin-bottom: 0; }
+.mode-tete {
+    display: flex; align-items: baseline; gap: .5rem;
+    margin-bottom: .32rem; font-size: .86rem;
+}
+.mode-nom { font-weight: 600; }
+.mode-detail { color: var(--tres-doux); font-size: .76rem; }
+.mode-part { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.barre { height: 6px; border-radius: 99px; background: rgba(255,255,255,.055); overflow: hidden; }
+.barre > i {
+    display: block; height: 100%; border-radius: 99px; background: var(--accent);
+    /* La largeur arrive après le premier rendu : la transition la fait pousser. */
+    width: 0; transition: width .8s cubic-bezier(.22,1,.36,1);
+}
+.mode[data-m="bombanime"] .barre > i { background: linear-gradient(90deg, var(--or), #f97316); }
+.mode[data-m="rush"]      .barre > i { background: linear-gradient(90deg, var(--vert), var(--cyan)); }
+.mode[data-m="collect"]   .barre > i { background: linear-gradient(90deg, var(--rose), #a855f7); }
+.mode[data-m="ascension"] .barre > i { background: linear-gradient(90deg, var(--cyan), #3b82f6); }
+.mode[data-m="classic"]   .barre > i { background: linear-gradient(90deg, var(--accent-clair), var(--accent)); }
+
+/* ── Les quatorze jours ──────────────────── */
+.jours { display: flex; align-items: flex-end; gap: 5px; flex: 1; min-height: 90px; }
+.jour { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.jour > i {
+    display: block; border-radius: 4px 4px 2px 2px; min-height: 3px;
+    background: linear-gradient(180deg, var(--accent), rgba(109,92,255,.3));
+    height: 0; transition: height .7s cubic-bezier(.22,1,.36,1);
+}
+.jour.creux > i { background: rgba(255,255,255,.055); }
+.jour.aujourdhui > i { background: linear-gradient(180deg, var(--vert), rgba(52,211,153,.25)); }
+.jours-pieds {
+    display: flex; gap: 5px; color: var(--tres-doux);
+    font-size: .67rem; text-align: center; margin-top: .5rem;
+}
+.jours-pieds > span { flex: 1; overflow: hidden; }
+
+/* ── Le tableau ──────────────────────────── */
+.vue-parties > .carte { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.filtres { display: flex; gap: .35rem; flex-wrap: wrap; margin-left: auto; }
+.filtre {
+    font-size: .76rem; font-weight: 600; padding: .28rem .65rem;
+    border-radius: 7px; cursor: pointer; background: transparent;
+    color: var(--doux); border: 1px solid var(--bord); transition: all .15s;
+}
+.filtre:hover { color: var(--texte); border-color: var(--bord-fort); }
+.filtre[aria-pressed="true"] {
+    background: rgba(109,92,255,.16); color: var(--accent-clair);
+    border-color: rgba(109,92,255,.4);
+}
+/* ⚠️ C'est le SEUL endroit qui défile de la page. */
+.defile { flex: 1; min-height: 0; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+thead th {
+    position: sticky; top: 0; z-index: 2; background: var(--carte-haut);
+    text-align: left; color: var(--tres-doux); font-weight: 600; font-size: .7rem;
+    text-transform: uppercase; letter-spacing: .07em;
+    padding: .7rem .9rem; white-space: nowrap;
+    border-bottom: 1px solid var(--bord);
+}
+
+/* ── Cocher ──────────────────────────────── */
+/* La colonne des cases est étroite mais sa ZONE DE CLIC ne l'est pas : c'est
+   la cellule entière qui coche, sinon on vise une boîte de 15 px. */
+td.coche, th.coche { width: 1%; padding-right: 0; cursor: pointer; }
+th.coche { cursor: default; }
+input[type="checkbox"] {
+    width: 16px; height: 16px; cursor: pointer; vertical-align: middle;
+    accent-color: var(--accent);
+}
+tbody tr.cochee { background: rgba(109,92,255,.11); }
+tbody tr.cochee:hover { background: rgba(109,92,255,.15); }
+tbody tr.cochee td:not(:last-child) { opacity: 1; }
+
+/* ── La barre de sélection ───────────────── */
+/* Elle prend la place de rien : elle se déplie entre l'en-tête et le tableau,
+   et ne coûte donc aucune hauteur quand on ne s'en sert pas. */
+.selection {
+    display: none; align-items: center; gap: .8rem;
+    padding: .7rem 1.15rem;
+    background: rgba(109,92,255,.09);
+    border-bottom: 1px solid rgba(109,92,255,.22);
+}
+.selection.ouverte { display: flex; }
+.selection b { font-size: .87rem; font-weight: 600; }
+.selection .doux { font-size: .8rem; }
+.selection .a-droite { margin-left: auto; display: flex; gap: .5rem; }
+.mini {
+    font-size: .8rem; font-weight: 600; padding: .38rem .8rem;
+    border-radius: 8px; cursor: pointer; border: 1px solid var(--bord-fort);
+    background: rgba(255,255,255,.04);
+    display: inline-flex; align-items: center; gap: .4rem;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.mini:hover { background: rgba(255,255,255,.09); }
+.mini.danger { border-color: rgba(251,113,133,.45); color: var(--rouge); }
+.mini.danger:hover { background: rgba(251,113,133,.15); }
+.mini:disabled { opacity: .5; cursor: default; }
+thead th:last-child { text-align: right; }
+td { padding: .78rem .9rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+tbody tr { transition: background .12s; }
+tbody tr:hover { background: rgba(255,255,255,.028); }
+tbody tr.sous-seuil td:not(:last-child) { opacity: .55; }
+tbody tr.part { opacity: 0; transition: opacity .2s; }
+.etiq {
+    font-size: .74rem; font-weight: 600; padding: .16rem .5rem;
+    border-radius: 6px; white-space: nowrap;
+    background: rgba(109,92,255,.15); color: var(--accent-clair);
+}
+.etiq[data-m="bombanime"] { background: rgba(251,191,36,.13); color: var(--or); }
+.etiq[data-m="rush"]      { background: rgba(52,211,153,.13); color: var(--vert); }
+.etiq[data-m="collect"]   { background: rgba(244,114,182,.13); color: var(--rose); }
+.etiq[data-m="ascension"] { background: rgba(34,211,238,.13); color: var(--cyan); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doux { color: var(--tres-doux); }
+.hors {
+    font-size: .66rem; color: var(--tres-doux); border: 1px solid var(--bord);
+    border-radius: 4px; padding: .02rem .28rem; margin-left: .35rem; white-space: nowrap;
+}
+td.actions { text-align: right; width: 1%; }
+.jeter {
+    border: 1px solid transparent; background: none; cursor: pointer;
+    color: var(--tres-doux); padding: .28rem; border-radius: 7px;
+    display: inline-grid; place-items: center;
+    /* Discret au repos : la colonne ne doit pas crier « supprime-moi ». */
+    opacity: 0; transition: opacity .15s, color .15s, background .15s, border-color .15s;
+}
+tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
+.jeter:hover { color: var(--rouge); background: rgba(251,113,133,.1); border-color: rgba(251,113,133,.3); }
+.jeter[data-sur="1"] {
+    opacity: 1; color: var(--rouge); background: rgba(251,113,133,.14);
+    border-color: var(--rouge);
+}
+
+/* ── Les états ───────────────────────────── */
+.etat {
+    color: var(--tres-doux); text-align: center; padding: 2.2rem 1rem;
+    font-size: .88rem;
+}
+
+/* ── La modale ───────────────────────────── */
+.voile {
+    position: fixed; inset: 0; background: rgba(4,5,9,.78);
+    display: none; align-items: center; justify-content: center;
+    padding: 1.5rem; z-index: 50;
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.voile.ouvert { display: flex; }
+.modale {
+    background: var(--carte-haut); border: 1px solid var(--bord-fort);
+    border-radius: 16px; padding: 1.5rem; max-width: 420px; width: 100%;
+    box-shadow: 0 24px 70px rgba(0,0,0,.65);
+}
+.modale h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .5rem; }
+.modale p { color: var(--doux); font-size: .87rem; line-height: 1.55; margin-bottom: 1.2rem; }
+.modale-actions { display: flex; gap: .55rem; justify-content: flex-end; }
+.bouton {
+    font-size: .85rem; font-weight: 600; padding: .55rem 1rem;
+    border-radius: 9px; cursor: pointer; border: 1px solid var(--bord-fort);
+    background: rgba(255,255,255,.04);
+    transition: background .15s, border-color .15s;
+}
+.bouton:hover { background: rgba(255,255,255,.09); }
+.bouton.danger { border-color: rgba(251,113,133,.4); color: var(--rouge); }
+.bouton.danger:hover { background: rgba(251,113,133,.14); }
+.bouton:disabled { opacity: .5; cursor: default; }
+
+/* ── Écrans étroits ──────────────────────── */
+@media (max-width: 1000px) {
+    body { overflow: auto; }
+    .rail {
+        position: sticky; top: 0; width: 100%; flex-direction: row;
+        align-items: center; padding: .6rem .8rem; gap: .3rem;
+        border-right: 0; border-bottom: 1px solid var(--bord); z-index: 10;
+        overflow-x: auto;
+    }
+    .marque { padding: 0 .8rem 0 0; }
+    .marque div, .rail-titre { display: none; }
+    .rail-groupe { display: flex; padding: 0; }
+    .rail-bas { margin-top: 0; display: flex; }
+    .onglet, .rail-lien {
+        width: auto; padding: .45rem .7rem; border-left: 0;
+        border-bottom: 2px solid transparent; white-space: nowrap;
+    }
+    .onglet[aria-selected="true"] { border-left: 0; border-bottom-color: var(--accent); }
+    .scene { height: auto; min-height: calc(100dvh - 56px); padding: 1rem; }
+    .duo { grid-template-columns: 1fr; }
+    .salons { max-width: 100%; margin-left: 0; }
+    .direct { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     LES ICÔNES
+     ════════════════════════════════════════════
+     Des symboles SVG définis une fois, repris par <use>. Aucune emoji : à
+     l'écran elles dépendent de la police du système, ne s'alignent pas sur le
+     texte et changent d'un appareil à l'autre. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="i-direct" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12h3l3 8 4-16 3 8h5"/>
+    </g>
+    <g id="i-liste" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>
+    </g>
+    <g id="i-crayon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>
+    </g>
+    <g id="i-manette" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/>
+      <rect x="2" y="6" width="20" height="12" rx="4"/>
+    </g>
+    <g id="i-poubelle" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>
+    </g>
+    <g id="i-cible" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>
+    </g>
+    <g id="i-graphe" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 21h18M7 21V10M12 21V4M17 21v-7"/>
+    </g>
+    <g id="i-jeux" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>
+    </g>
+    <g id="i-soleil" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+    </g>
+    <g id="i-horloge" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+    </g>
+    <g id="i-couronne" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 18h18M4 8l4 4 4-8 4 8 4-4-2 10H6z"/>
+    </g>
+    <g id="i-historique" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 10 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4.5l3 1.8"/>
+    </g>
+  </defs>
+</svg>
+
+<!-- ── LE RAIL ─────────────────────────────── -->
+<nav class="rail">
+    <a class="marque" href="/" target="_blank" title="ShonenMaster">
+        <img src="/logo-sm.png" alt="ShonenMaster" draggable="false">
+        <div><b>Panneau</b><span>ShonenMaster</span></div>
+    </a>
+
+    <div class="rail-groupe">
+        <div class="rail-titre">Suivi</div>
+        <button class="onglet" data-vue="ensemble" aria-selected="true">
+            <svg width="17" height="17"><use href="#i-direct"/></svg>
+            Vue d'ensemble
+            <span class="temoin" id="temoin"><span class="point"></span><span id="temoin-n">0</span></span>
+        </button>
+        <button class="onglet" data-vue="parties" aria-selected="false">
+            <svg width="17" height="17"><use href="#i-liste"/></svg>
+            Les parties
+            <span class="compte" id="compte-parties"></span>
+        </button>
+    </div>
+
+    <div class="rail-bas">
+        <div class="rail-titre">Raccourcis</div>
+        <a class="rail-lien" id="lien-question">
+            <svg width="17" height="17"><use href="#i-crayon"/></svg> Questions
+        </a>
+        <a class="rail-lien" href="/" target="_blank">
+            <svg width="17" height="17"><use href="#i-manette"/></svg> Le jeu
+        </a>
+        <button class="rail-lien danger" id="b-vider">
+            <svg width="17" height="17"><use href="#i-poubelle"/></svg> Vider l'historique
+        </button>
+    </div>
+</nav>
+
+<!-- ── LA SCÈNE ────────────────────────────── -->
+<main class="scene">
+
+    <div class="scene-tete">
+        <h1 id="scene-titre">Vue d'ensemble</h1>
+        <p id="scene-sous"></p>
+        <span class="relu" id="relu"></span>
+    </div>
+
+    <!-- ── Vue : ensemble ── -->
+    <section class="vue active" data-vue="ensemble">
+        <div class="direct" id="direct">
+            <div class="direct-rond"><svg width="19" height="19"><use href="#i-direct"/></svg></div>
+            <div class="direct-texte">
+                <b id="direct-titre">En ce moment</b>
+                <p id="direct-doux">Lecture…</p>
+            </div>
+            <div class="salons" id="salons"></div>
+        </div>
+
+        <div class="chiffres" id="chiffres"></div>
+
+        <div class="duo">
+            <div class="carte">
+                <div class="carte-tete">
+                    <svg width="16" height="16"><use href="#i-cible"/></svg>
+                    Par mode <small>· classés au temps de jeu</small>
+                </div>
+                <div class="carte-corps" id="modes"><div class="etat">Lecture…</div></div>
+            </div>
+            <div class="carte">
+                <div class="carte-tete">
+                    <svg width="16" height="16"><use href="#i-graphe"/></svg>
+                    Les 14 derniers jours
+                </div>
+                <div class="carte-corps" style="display:flex;flex-direction:column">
+                    <div class="jours" id="jours"></div>
+                    <div class="jours-pieds" id="jours-pieds"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Vue : parties ── -->
+    <section class="vue vue-parties" data-vue="parties">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16"><use href="#i-liste"/></svg>
+                Historique <small id="parties-note"></small>
+                <span class="filtres" id="filtres"></span>
+            </div>
+            <div class="selection" id="selection">
+                <b id="sel-n"></b>
+                <span class="doux" id="sel-detail"></span>
+                <span class="a-droite">
+                    <button class="mini" id="sel-rien">Tout décocher</button>
+                    <button class="mini danger" id="sel-jeter">
+                        <svg width="14" height="14"><use href="#i-poubelle"/></svg>
+                        <span id="sel-jeter-txt">Supprimer</span>
+                    </button>
+                </span>
+            </div>
+            <div class="defile">
+                <table>
+                    <thead><tr>
+                        <th class="coche"><input type="checkbox" id="coche-tout"
+                            title="Tout cocher"></th>
+                        <th>Quand</th><th>Mode</th><th>Joueurs</th>
+                        <th>Durée</th><th>Vainqueur</th><th></th>
+                    </tr></thead>
+                    <tbody id="lignes"><tr><td colspan="7"><div class="etat">Lecture…</div></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div class="voile" id="voile">
+    <div class="modale">
+        <h3>Vider l'historique ?</h3>
+        <p id="voile-texte"></p>
+        <div class="modale-actions">
+            <button class="bouton" id="b-annuler">Annuler</button>
+            <button class="bouton danger" id="b-confirmer">Oui, tout supprimer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// LE PANNEAU — le script
+// ════════════════════════════════════════════
+// Le code du back-office est dans l'adresse. On le reprend tel quel pour
+// interroger les routes, et on le passe au lien vers /question.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+
+// ⚠️ Pas de ?code= ici. /question ne lit RIEN dans l'adresse : il a son
+// propre formulaire, qui interroge /api/verify-question-code. Le ?code= qu'on
+// y mettait ne servait à rien — et avec deux secrets distincts, il n'y aurait
+// eu que le mauvais à y mettre.
+document.getElementById('lien-question').href = '/question';
+
+const $ = id => document.getElementById(id);
+let PARTIES = [];
+let SEUILS = { seuilCompteur: 3, seuilListe: 5 };
+let FILTRE = 'tout';
+// Les identifiants cochés. Un Set et non un tableau : on coche et décoche vite,
+// et l appartenance se teste à chaque redessin de ligne.
+const COCHES = new Set();
+// La dernière ligne cochée, pour la sélection par PLAGE (Maj+clic). Trier dix
+// parties d essai qui se suivent, c est le geste qu on fait naturellement.
+let DERNIERE = null;
+
+// ⚠️ « rivalry » n'est pas un mode : c'est le réglage Format du quiz, et le jeu
+// affiche déjà « Classique » dans les deux cas. Les anciennes parties le
+// portent encore en base ; on les replie ici pour que le panneau dise la même
+// chose que le jeu, au lieu d'inventer un sixième mode qui n'existe pas.
+const REPLI = { rivalry: 'classic' };
+const mode = p => REPLI[p.mode] || p.mode || 'inconnu';
+
+const NOMS = { classic: 'Classique', bombanime: 'BombAnime', rush: 'Rush',
+               ascension: 'Ascension', collect: 'Collect' };
+
+// ── Les formats ─────────────────────────────────────────────────────
+function duree(s) {
+    s = Math.max(0, Math.round(s || 0));
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'min' + (s % 60 ? ' ' + (s % 60) + 's' : '');
+    return Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0');
+}
+
+// « il y a combien de temps » plutôt qu'une date : ce qu'on veut savoir en
+// ouvrant la page, c'est si ça vient de se jouer.
+function ilYA(iso) {
+    const d = new Date(iso);
+    const s = Math.round((Date.now() - d.getTime()) / 1000);
+    if (s < 60) return "à l'instant";
+    if (s < 3600) return 'il y a ' + Math.floor(s / 60) + ' min';
+    if (s < 86400) return 'il y a ' + Math.floor(s / 3600) + ' h';
+    const j = Math.floor(s / 86400);
+    if (j === 1) return 'hier';
+    if (j < 7) return 'il y a ' + j + ' jours';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+function heure(iso) {
+    return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+// Les pseudos sont saisis par les joueurs : ils ne rentrent jamais crus.
+const ech = s => String(s === null || s === undefined ? '' : s)
+    .replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icone = (nom, t) => '<svg width="' + (t || 16) + '" height="' + (t || 16) +
+    '"><use href="#i-' + nom + '"/></svg>';
+
+// ⚠️ Deux images d'attente avant de poser la taille : écrite tout de suite,
+// elle serait la valeur de départ et la transition n'aurait rien à jouer —
+// les barres apparaîtraient pleines au lieu de pousser.
+function pousser(sel, cle, prop) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.querySelectorAll(sel).forEach(b => { b.style[prop] = b.dataset[cle] + '%'; });
+    }));
+}
+
+// ── Les onglets ─────────────────────────────────────────────────────
+const TITRES = {
+    ensemble: ["Vue d'ensemble", 'Ce qui se joue, et ce qui a été joué'],
+    parties: ['Les parties', 'Toutes les parties enregistrées, parties de test comprises'],
+};
+document.querySelectorAll('.onglet').forEach(o => {
+    o.onclick = () => {
+        document.querySelectorAll('.onglet').forEach(x =>
+            x.setAttribute('aria-selected', String(x === o)));
+        document.querySelectorAll('.vue').forEach(v =>
+            v.classList.toggle('active', v.dataset.vue === o.dataset.vue));
+        $('scene-titre').textContent = TITRES[o.dataset.vue][0];
+        $('scene-sous').textContent = TITRES[o.dataset.vue][1];
+    };
+});
+$('scene-sous').textContent = TITRES.ensemble[1];
+
+// ── Le direct ───────────────────────────────────────────────────────
+async function lireDirect() {
+    let d;
+    try {
+        const r = await fetch('/admin/site/direct?code=' + encodeURIComponent(CODE));
+        if (!r.ok) throw new Error(r.status === 401 ? 'Code invalide' : 'Erreur ' + r.status);
+        d = await r.json();
+    } catch (e) {
+        $('direct-doux').textContent = e.message;
+        return;
+    }
+
+    const vide = d.salons.length === 0;
+    $('direct').classList.toggle('actif', !vide);
+    $('temoin').classList.toggle('actif', !vide);
+    $('temoin-n').textContent = d.joueursEnLigne;
+    $('direct-titre').textContent = vide ? 'Personne en ligne' : 'En ce moment';
+
+    if (vide) {
+        $('direct-doux').textContent = 'Aucun salon ouvert.';
+        $('salons').innerHTML = '';
+        return;
+    }
+    const j = d.joueursEnLigne, p = d.partiesEnCours;
+    $('direct-doux').innerHTML =
+        '<strong>' + j + '</strong> joueur' + (j > 1 ? 's' : '') + ' dans <strong>' +
+        d.salons.length + '</strong> salon' + (d.salons.length > 1 ? 's' : '') +
+        (p ? ' · <strong>' + p + '</strong> partie' + (p > 1 ? 's' : '') + ' en cours' : '');
+
+    $('salons').innerHTML = d.salons.map(s =>
+        '<div class="salon" title="' + ech(s.noms.join(', ')) + '">' +
+        '<div class="salon-haut"><span class="salon-code">' + ech(s.code) + '</span>' +
+        '<span class="jauge ' + (s.enPartie ? 'joue' : 'attend') + '">' +
+        (s.enPartie ? 'en jeu' : 'salon') + '</span></div>' +
+        '<div class="salon-bas">' + ech(s.modeLabel) + ' · ' + s.joueurs + ' joueur' +
+        (s.joueurs > 1 ? 's' : '') +
+        (s.enPartie && s.depuis ? ' · ' + duree(s.depuis / 1000) : '') + '</div></div>').join('');
+}
+
+// ── L'historique ────────────────────────────────────────────────────
+async function lireStats() {
+    try {
+        const r = await fetch('/admin/site/stats?code=' + encodeURIComponent(CODE));
+        if (!r.ok) {
+            const m = await r.json().catch(() => ({}));
+            throw new Error(m.error || (r.status === 401 ? 'Code invalide' : 'Erreur ' + r.status));
+        }
+        const d = await r.json();
+        PARTIES = d.parties || [];
+        SEUILS = { seuilCompteur: d.seuilCompteur, seuilListe: d.seuilListe };
+        dessiner();
+    } catch (e) {
+        $('modes').innerHTML = '<div class="etat">' + ech(e.message) + '</div>';
+        $('lignes').innerHTML = '<tr><td colspan="7"><div class="etat">' +
+            ech(e.message) + '</div></td></tr>';
+    }
+}
+
+function dessiner() {
+    grandsChiffres();
+    parModes();
+    parJours();
+    lesFiltres();
+    leTableau();
+    $('compte-parties').textContent = PARTIES.length;
+    $('relu').textContent = 'relu à ' + new Date().toLocaleTimeString('fr-FR');
+}
+
+function grandsChiffres() {
+    const P = PARTIES;
+    const secondes = P.reduce((a, p) => a + (p.duration || 0), 0);
+    const maintenant = Date.now();
+    const depuis = h => P.filter(p => maintenant - new Date(p.created_at).getTime() < h * 3600e3).length;
+    const gros = P.reduce((m, p) => Math.max(m, p.players_count || 0), 0);
+
+    const cases = [
+        ['jeux', 'Parties jouées', P.length, ''],
+        ['soleil', "Aujourd'hui", depuis(24), ''],
+        ['horloge', 'Temps de jeu', duree(secondes),
+            P.length ? 'en moyenne ' + duree(secondes / P.length) + ' par partie' : ''],
+        ['couronne', 'Record de table', gros ? gros + ' joueurs' : '—', ''],
+        ['historique', 'Dernière partie', P.length ? ilYA(P[0].created_at) : '—',
+            P.length ? (NOMS[mode(P[0])] || mode(P[0])) + ' · ' +
+                       (P[0].players_count || 0) + ' joueurs' : ''],
+    ];
+    $('chiffres').innerHTML = cases.map(c =>
+        '<div class="chiffre">' +
+        '<div class="chiffre-tete">' + icone(c[0], 14) + ech(c[1]) + '</div>' +
+        '<div class="chiffre-val">' + ech(c[2]) + '</div>' +
+        (c[3] ? '<div class="chiffre-note">' + ech(c[3]) + '</div>' : '') + '</div>').join('');
+}
+
+// Le classement par mode dit ce que les gens PRÉFÈRENT. On classe au temps de
+// jeu et non au nombre de parties : une partie de BombAnime pèse dix manches
+// de Rush, les compter à l'unité donnerait le Rush gagnant à tort.
+function parModes() {
+    if (!PARTIES.length) { $('modes').innerHTML = '<div class="etat">Aucune partie.</div>'; return; }
+    const m = new Map();
+    for (const p of PARTIES) {
+        const k = mode(p);
+        const e = m.get(k) || { n: 0, t: 0, j: 0 };
+        e.n++; e.t += p.duration || 0; e.j += p.players_count || 0;
+        m.set(k, e);
+    }
+    const tot = PARTIES.reduce((a, p) => a + (p.duration || 0), 0) || 1;
+    const rangs = [...m.entries()].sort((a, b) => b[1].t - a[1].t);
+
+    $('modes').innerHTML = rangs.map(r => {
+        const k = r[0], e = r[1];
+        const part = Math.round(e.t / tot * 100);
+        return '<div class="mode" data-m="' + ech(k) + '">' +
+            '<div class="mode-tete"><span class="mode-nom">' + ech(NOMS[k] || k) + '</span>' +
+            '<span class="mode-detail">' + e.n + ' partie' + (e.n > 1 ? 's' : '') + ' · ' +
+            duree(e.t) + ' · ' + (e.j / e.n).toFixed(1) + ' joueurs</span>' +
+            '<span class="mode-part">' + part + '%</span></div>' +
+            '<div class="barre"><i data-p="' + part + '"></i></div></div>';
+    }).join('');
+    pousser('.barre > i', 'p', 'width');
+}
+
+function parJours() {
+    const JOURS = 14;
+    // Clef locale et non ISO : toISOString() bascule en UTC, et une partie
+    // jouée à 1 h du matin tomberait la veille.
+    const cle = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+                     '-' + String(d.getDate()).padStart(2, '0');
+    const seaux = new Map();
+    const etiq = [];
+    for (let i = JOURS - 1; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400e3);
+        seaux.set(cle(d), 0);
+        etiq.push({ k: cle(d), jour: d.getDate(), aujourdhui: i === 0 });
+    }
+    for (const p of PARTIES) {
+        const k = cle(new Date(p.created_at));
+        if (seaux.has(k)) seaux.set(k, seaux.get(k) + 1);
+    }
+    const haut = Math.max(1, ...seaux.values());
+    $('jours').innerHTML = etiq.map(e => {
+        const n = seaux.get(e.k);
+        return '<div class="jour' + (n ? '' : ' creux') + (e.aujourdhui ? ' aujourdhui' : '') +
+            '" title="' + n + ' partie(s)"><i data-h="' +
+            (n ? Math.max(4, Math.round(n / haut * 100)) : 2) + '"></i></div>';
+    }).join('');
+    $('jours-pieds').innerHTML = etiq.map(e => '<span>' + e.jour + '</span>').join('');
+    pousser('.jour > i', 'h', 'height');
+}
+
+function lesFiltres() {
+    const modes = [...new Set(PARTIES.map(mode))];
+    const l = [['tout', 'Tout']].concat(modes.map(m => [m, NOMS[m] || m]));
+    $('filtres').innerHTML = l.map(f =>
+        '<button class="filtre" data-f="' + ech(f[0]) + '" aria-pressed="' +
+        (FILTRE === f[0]) + '">' + ech(f[1]) + '</button>').join('');
+    $('filtres').querySelectorAll('.filtre').forEach(b => {
+        b.onclick = () => { FILTRE = b.dataset.f; DERNIERE = null; lesFiltres(); leTableau(); };
+    });
+}
+
+function leTableau() {
+    const vues = FILTRE === 'tout' ? PARTIES : PARTIES.filter(p => mode(p) === FILTRE);
+    $('parties-note').textContent = '· ' + vues.length;
+    if (!vues.length) {
+        $('lignes').innerHTML = '<tr><td colspan="7"><div class="etat">Aucune partie.</div></td></tr>';
+        majSelection();
+        return;
+    }
+    // Plus de coupe à 150 : le cadre défile, et il faut pouvoir atteindre
+    // n'importe quelle ligne pour la supprimer.
+    $('lignes').innerHTML = vues.map(p => {
+        const n = p.players_count || 0;
+        const k = mode(p);
+        // Une partie sous le seuil public est montrée — c'est la demande —
+        // mais en retrait et signalée : sinon on la lirait comme du trafic.
+        const sous = n < SEUILS.seuilCompteur;
+        return '<tr class="' + (sous ? 'sous-seuil' : '') +
+            (COCHES.has(p.id) ? ' cochee' : '') + '" data-id="' + p.id + '">' +
+            '<td class="coche"><input type="checkbox" data-id="' + p.id + '"' +
+            (COCHES.has(p.id) ? ' checked' : '') + '></td>' +
+            '<td class="num">' + ech(ilYA(p.created_at)) +
+            '<span class="doux"> · ' + ech(heure(p.created_at)) + '</span></td>' +
+            '<td><span class="etiq" data-m="' + ech(k) + '">' + ech(NOMS[k] || k) + '</span></td>' +
+            '<td class="num">' + n + (sous ? '<span class="hors">hors compteur</span>' : '') + '</td>' +
+            '<td class="num">' + duree(p.duration) + '</td>' +
+            '<td>' + (p.winner_name ? ech(p.winner_name) : '<span class="doux">—</span>') + '</td>' +
+            '<td class="actions"><button class="jeter" data-id="' + p.id +
+            '" title="Supprimer cette partie">' + icone('poubelle', 15) + '</button></td></tr>';
+    }).join('');
+    $('lignes').querySelectorAll('.jeter').forEach(b => { b.onclick = () => jeter(b); });
+
+    // ⚠️ La zone de clic est la CELLULE, pas la case de 16 px. On écoute donc
+    // sur la cellule, et l on arrête l événement quand il vient déjà de la
+    // case — sinon un clic dessus compterait deux fois et s annulerait.
+    $('lignes').querySelectorAll('td.coche').forEach(td => {
+        td.onclick = e => {
+            const c = td.querySelector('input');
+            if (e.target !== c) c.checked = !c.checked;
+            cocher(parseInt(c.dataset.id, 10), c.checked, e.shiftKey);
+        };
+    });
+    majSelection();
+}
+
+// ── Cocher ──────────────────────────────────────────────────────────
+function lignesVisibles() {
+    return FILTRE === 'tout' ? PARTIES : PARTIES.filter(p => mode(p) === FILTRE);
+}
+
+function cocher(id, oui, plage) {
+    const liste = lignesVisibles();
+    let cibles = [id];
+
+    // Maj+clic : toute la plage entre la dernière cochée et celle-ci.
+    if (plage && DERNIERE !== null && DERNIERE !== id) {
+        const a = liste.findIndex(p => p.id === DERNIERE);
+        const b = liste.findIndex(p => p.id === id);
+        if (a !== -1 && b !== -1) {
+            cibles = liste.slice(Math.min(a, b), Math.max(a, b) + 1).map(p => p.id);
+        }
+    }
+    for (const c of cibles) oui ? COCHES.add(c) : COCHES.delete(c);
+    DERNIERE = id;
+
+    // On repeint les lignes touchées sans redessiner tout le tableau : la
+    // liste ne sursaute pas et le défilement reste où on l avait laissé.
+    for (const c of cibles) {
+        const tr = $('lignes').querySelector('tr[data-id="' + c + '"]');
+        if (!tr) continue;
+        tr.classList.toggle('cochee', COCHES.has(c));
+        const box = tr.querySelector('input[type="checkbox"]');
+        if (box) box.checked = COCHES.has(c);
+    }
+    majSelection();
+}
+
+function majSelection() {
+    const visibles = lignesVisibles();
+    // ⚠️ On ne compte que ce qui est VISIBLE : cocher des parties puis changer
+    // de filtre laisserait sinon une barre qui annonce des lignes qu'on ne
+    // voit plus, et « Supprimer » en jetterait sans les montrer.
+    const vus = visibles.filter(p => COCHES.has(p.id));
+    const n = vus.length;
+
+    $('selection').classList.toggle('ouverte', n > 0);
+    $('sel-n').textContent = n + ' partie' + (n > 1 ? 's' : '') + ' cochée' + (n > 1 ? 's' : '');
+    const joueurs = vus.reduce((a, p) => a + (p.players_count || 0), 0);
+    $('sel-detail').textContent = n
+        ? '· ' + duree(vus.reduce((a, p) => a + (p.duration || 0), 0)) +
+          ' de jeu · ' + (joueurs / n).toFixed(1) + ' joueurs en moyenne'
+        : '';
+    $('sel-jeter-txt').textContent = 'Supprimer ' + (n > 1 ? 'les ' + n : '');
+
+    const tout = $('coche-tout');
+    tout.checked = n > 0 && n === visibles.length;
+    // Le trait horizontal : « une partie seulement », ni vide ni plein.
+    tout.indeterminate = n > 0 && n < visibles.length;
+}
+
+$('coche-tout').onclick = e => {
+    const oui = e.target.checked;
+    for (const p of lignesVisibles()) oui ? COCHES.add(p.id) : COCHES.delete(p.id);
+    DERNIERE = null;
+    leTableau();
+};
+
+$('sel-rien').onclick = () => { COCHES.clear(); DERNIERE = null; leTableau(); };
+
+$('sel-jeter').onclick = async () => {
+    const ids = lignesVisibles().filter(p => COCHES.has(p.id)).map(p => p.id);
+    if (!ids.length) return;
+    const b = $('sel-jeter');
+    b.disabled = true;
+    try {
+        const r = await fetch('/admin/site/supprimer?code=' + encodeURIComponent(CODE), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+        });
+        const m = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(m.error || 'Erreur ' + r.status);
+        const morts = new Set(ids);
+        PARTIES = PARTIES.filter(p => !morts.has(p.id));
+        for (const id of ids) COCHES.delete(id);
+        DERNIERE = null;
+        dessiner();
+    } catch (e) {
+        alert(e.message);
+    }
+    b.disabled = false;
+};
+
+// ── Supprimer une partie ────────────────────────────────────────────
+// ⚠️ Pas de modale ici : on en supprime plusieurs d'affilée pour faire le tri,
+// et confirmer chaque ligne serait insupportable. Un premier clic arme le
+// bouton, un second confirme — et l'armement retombe tout seul.
+let arme = null;
+async function jeter(b) {
+    if (arme && arme !== b) arme.removeAttribute('data-sur');
+    if (b.dataset.sur !== '1') {
+        b.dataset.sur = '1';
+        arme = b;
+        clearTimeout(jeter._t);
+        jeter._t = setTimeout(() => { b.removeAttribute('data-sur'); arme = null; }, 2600);
+        return;
+    }
+    clearTimeout(jeter._t);
+    arme = null;
+    b.disabled = true;
+    const id = parseInt(b.dataset.id, 10);
+    try {
+        const r = await fetch('/admin/site/supprimer?code=' + encodeURIComponent(CODE), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+        });
+        const m = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(m.error || 'Erreur ' + r.status);
+        // On retire la ligne sur place plutôt que de tout relire : la liste ne
+        // sursaute pas, et le défilement reste où on l'avait laissé.
+        const tr = b.closest('tr');
+        tr.classList.add('part');
+        setTimeout(() => tr.remove(), 200);
+        PARTIES = PARTIES.filter(p => p.id !== id);
+        COCHES.delete(id);
+        if (DERNIERE === id) DERNIERE = null;
+        majSelection();
+        $('compte-parties').textContent = PARTIES.length;
+        $('parties-note').textContent = '· ' + (FILTRE === 'tout'
+            ? PARTIES.length : PARTIES.filter(p => mode(p) === FILTRE).length);
+        grandsChiffres();
+        parModes();
+        parJours();
+    } catch (e) {
+        b.disabled = false;
+        alert(e.message);
+    }
+}
+
+// ── Vider ───────────────────────────────────────────────────────────
+$('b-vider').onclick = () => {
+    $('voile-texte').textContent = PARTIES.length
+        ? 'Les ' + PARTIES.length + ' parties enregistrées seront supprimées de la base, ' +
+          "et le compteur de l'accueil repartira de zéro. C'est définitif."
+        : "L'historique est déjà vide.";
+    $('voile').classList.add('ouvert');
+};
+$('b-annuler').onclick = () => $('voile').classList.remove('ouvert');
+$('voile').onclick = e => { if (e.target === $('voile')) $('voile').classList.remove('ouvert'); };
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') $('voile').classList.remove('ouvert');
+});
+$('b-confirmer').onclick = async () => {
+    const b = $('b-confirmer');
+    b.disabled = true;
+    b.textContent = 'Suppression…';
+    try {
+        const r = await fetch('/admin/site/vider?code=' + encodeURIComponent(CODE), { method: 'POST' });
+        const m = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(m.error || 'Erreur ' + r.status);
+        $('voile').classList.remove('ouvert');
+        COCHES.clear();
+        DERNIERE = null;
+        await lireStats();
+    } catch (e) {
+        alert(e.message);
+    }
+    b.disabled = false;
+    b.textContent = 'Oui, tout supprimer';
+};
+
+// ── Le départ ───────────────────────────────────────────────────────
+lireStats();
+lireDirect();
+// Le direct seul se rafraîchit : relire tout l'historique toutes les dix
+// secondes ferait une requête paginée pour rien.
+setInterval(lireDirect, 10000);
+</script>
+</body>
+</html>

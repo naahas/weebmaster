@@ -462,18 +462,16 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
         endedAt: new Date().toISOString(),
     };
 
-    // Le filtre était à l'écriture : une partie sous le seuil n'entrait jamais
-    // en base, et ne pouvait donc plus être comptée après coup. On garde
-    // maintenant tout ce qui atteint trois joueurs, et l'on trie à l'affichage.
-    if (entry.playersCount < MIN_JOUEURS_COMPTEUR) {
-        console.log(`📊 Partie non retenue : ${entry.playersCount} joueur(s), minimum ${MIN_JOUEURS_COMPTEUR}`);
-        return;
-    }
+    // ⚠️ On n écarte plus rien À L ÉCRITURE. Une partie à deux joueurs n est
+    // pas comptée dans le chiffre public, mais elle ENTRE en base : sinon elle
+    // serait perdue pour toujours, et le panneau ne pourrait pas la montrer.
+    // Le tri se fait à la lecture, où les requêtes publiques filtrent déjà sur
+    // players_count.
+    const compteAuPublic = entry.playersCount >= MIN_JOUEURS_COMPTEUR;
+    if (compteAuPublic) gamesPlayedTotal++;
 
-    gamesPlayedTotal++;
-
-    // La liste, elle, ne montre qu au-dessus de cinq
-    if (entry.playersCount >= MIN_JOUEURS_LISTE) {
+    // La liste de l accueil, elle, ne montre qu au-dessus de cinq
+    if (compteAuPublic && entry.playersCount >= MIN_JOUEURS_LISTE) {
         recentGames.unshift(entry);
         if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
     }
@@ -1758,6 +1756,12 @@ app.use('/admin', (req, res, next) => {
     // Mais un jeton présenté et non reconnu reste une erreur : sans ce test,
     // l'hôte dont le salon a disparu en ouvrait un neuf en cliquant « fermer ».
     if (req.path === '/toggle-game' && !req.get('X-Host-Token')) return next();
+
+    // ⚠️ Le PANNEAU du site n'est pas une route d'hôte : il ne pilote aucun
+    // salon, il regarde le site entier. Un navigateur qui l'ouvre n'a pas de
+    // jeton et n'en aura jamais. Ces chemins-là sont donc exemptés ici et
+    // gardés par QUESTION_ADMIN_CODE, comme /question et /saisie.
+    if (req.path === '/' || req.path.startsWith('/site/')) return next();
 
     if (!req.room) {
         return res.status(403).json({ error: "Réservé à l'hôte du salon" });
@@ -4891,6 +4895,132 @@ app.get('/question', (req, res) => {
 // Elle sert aussi à contourner l'absence de CORS : ouverte en « file:// », la
 // page ne pourrait pas appeler /api/add-question. Servie ici, elle est de même
 // origine que l'API et le navigateur la laisse faire.
+// ════════════════════════════════════════════
+// 📊 LE PANNEAU DU SITE — /admin
+// ════════════════════════════════════════════
+// Réservé à Adem. Garde : PANEL_ADMIN_CODE, qui lui est PROPRE.
+//
+// ⚠️ Ce n est PAS QUESTION_ADMIN_CODE, et il ne faut pas y retomber en
+// secours : le panneau ouvre l historique du site entier et sa suppression,
+// le back-office des questions n ouvre que les questions. Un code partagé
+// ferait que donner l un donnerait l autre.
+// Sans la variable, on REFUSE plutôt qu on autorise — une variable oubliée
+// au déploiement ouvrirait sinon le panneau à tout le monde en silence.
+//
+// ⚠️ Le code voyage dans l adresse (?code=…), comme pour /saisie. C est
+// acceptable ici parce que la page n est jamais partagée ; ne pas étendre ce
+// motif à quoi que ce soit qu un joueur pourrait ouvrir.
+function gardePanneau(req, res) {
+    const attendu = process.env.PANEL_ADMIN_CODE;
+    const code = (req.query && req.query.code) || req.get('X-Admin-Code');
+    if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
+        res.status(401).json({ error: 'Code invalide.' });
+        return false;
+    }
+    return true;
+}
+
+app.get('/admin', (req, res) => {
+    const attendu = process.env.PANEL_ADMIN_CODE;
+    const code = req.query && req.query.code;
+    if (!attendu || code !== attendu) return res.status(401).send('Code invalide.');
+    res.sendFile(__dirname + '/src/html/admin.html');
+});
+
+// Ce qui se joue EN CE MOMENT : c est la réponse à « est-ce que des gens
+// jouent de leur côté ? », et aucune base ne peut la donner — les salons
+// vivent dans la mémoire du processus.
+app.get('/admin/site/direct', (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const salons = [];
+    for (const [code, g] of rooms) {
+        salons.push({
+            code,
+            mode: g.lobbyMode,
+            modeLabel: MODE_LABELS[g.lobbyMode] || g.lobbyMode,
+            joueurs: g.players.size,
+            ouvert: !!g.isActive,
+            enPartie: !!g.inProgress,
+            depuis: g.gameStartTime ? Date.now() - g.gameStartTime : null,
+            noms: [...g.players.values()].map(p => p.username).slice(0, 20),
+        });
+    }
+    salons.sort((a, b) => b.joueurs - a.joueurs);
+    res.json({
+        salons,
+        joueursEnLigne: salons.reduce((a, s) => a + s.joueurs, 0),
+        partiesEnCours: salons.filter(s => s.enPartie).length,
+        maintenant: Date.now(),
+    });
+});
+
+// L historique complet, sans aucun seuil. Le tri et les totaux se font ici :
+// renvoyer 2 000 lignes au navigateur pour qu il les additionne serait
+// inutilement lourd sur un téléphone.
+app.get('/admin/site/stats', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    try {
+        // ⚠️ toutesLesLignes() et non select() : PostgREST s arrête à mille
+        // lignes SANS RIEN DIRE, et l historique finira par les dépasser.
+        // ⚠️ Et l ordre se demande À LA BASE : un select() sans order() rend
+        // les PREMIÈRES lignes, pas les dernières.
+        const parties = await toutesLesLignes(() => supabase
+            .from('game_history')
+            .select('id,mode,players_count,winner_name,duration,created_at')
+            .order('created_at', { ascending: false }));
+        res.json({ parties, seuilCompteur: MIN_JOUEURS_COMPTEUR, seuilListe: MIN_JOUEURS_LISTE });
+    } catch (e) {
+        res.status(500).json({ error: 'Historique illisible : ' + e.message });
+    }
+});
+
+// Supprimer UNE partie. Le panneau montre tout, parties de test comprises :
+// il faut donc pouvoir faire le tri à la main, sans vider l historique entier.
+app.post('/admin/site/supprimer', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+
+    // On accepte une partie seule ou un lot. Faire le tri, c est cocher dix
+    // lignes d essai et les jeter ensemble : dix requetes la ou une suffit,
+    // et dix rechargements du compteur, n aurait pas de sens.
+    const brut = (req.body && req.body.ids) || (req.body && req.body.id);
+    const ids = [...new Set((Array.isArray(brut) ? brut : [brut])
+        .map(x => parseInt(x, 10))
+        .filter(Number.isInteger))];
+
+    if (!ids.length) return res.status(400).json({ error: 'Identifiant manquant.' });
+    // ⚠️ Un plafond : « supprime tout » a deja son bouton, et une requete
+    // `in` de plusieurs milliers d identifiants ne passerait pas.
+    if (ids.length > 500) return res.status(400).json({ error: 'Trop de parties d un coup (500 au plus).' });
+
+    try {
+        const { error } = await supabase.from('game_history').delete().in('id', ids);
+        if (error) throw error;
+        // ⚠️ Le compteur public et la liste de l accueil vivent en mémoire :
+        // sans ce rechargement, la partie supprimée continuerait d y figurer
+        // jusqu au prochain redémarrage du dyno.
+        await loadRecentGamesFromDb();
+        console.log(`🗑️ ${ids.length} partie(s) supprimée(s) depuis le panneau`);
+        res.json({ success: true, supprimees: ids.length, gamesPlayed: gamesPlayedTotal });
+    } catch (e) {
+        res.status(500).json({ error: 'Suppression impossible : ' + e.message });
+    }
+});
+
+app.post('/admin/site/vider', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    try {
+        // .neq('id', 0) : Supabase refuse un delete sans condition, par sécurité.
+        const { error } = await supabase.from('game_history').delete().neq('id', 0);
+        if (error) throw error;
+        gamesPlayedTotal = 0;
+        recentGames.length = 0;
+        console.log('🗑️ Historique des parties vidé depuis le panneau');
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Suppression impossible : ' + e.message });
+    }
+});
+
 app.get('/saisie/:lot', (req, res) => {
     const attendu = process.env.QUESTION_ADMIN_CODE;
     const code = req.query && req.query.code;

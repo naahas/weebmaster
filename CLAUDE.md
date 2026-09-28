@@ -72,6 +72,11 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   en PNG pese 400 a 800 Ko : les 171 vignettes feraient plus de 100 Mo, contre 5 en WebP.
   Un dossier peut lui etre passe (`-- ~/Bureau`) : il n y prend alors que les fichiers
   nommes `op_*` et ne supprime RIEN — on ne touche pas a ce qui vit hors du depot.
+  `npm run test:panneau` (le panneau `/admin` : les quatre routes sont-elles
+  fermees sans le code, la vue du direct voit-elle un vrai salon et ses joueurs,
+  et surtout une partie a DEUX entre-t-elle en base SANS bouger le compteur
+  public — ~45 s, une manche de Rush jouee pour de vrai. Le code se lit dans
+  l environnement : `QUESTION_ADMIN_CODE=… npm run test:panneau`),
   `npm run test:preuve` (le lien de preuve d une question n atteint le joueur
   qu APRES la revelation : ni `new-question` ni `/game/state` ne le portent),
   `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf
@@ -360,13 +365,68 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   de ses vols contre 86 % de reussite pour celui qui choisit sa classe.
   Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
   avec un curseur de joueurs et les mesures sous chaque telephone.
+- `/admin` : **le panneau du site**, pour Adem seul. Ce qui se joue EN CE MOMENT
+  (salons ouverts, joueurs dedans, pseudos, temps de partie — rafraichi seul
+  toutes les 10 s), puis l historique complet : parties, temps de jeu, classement
+  des modes AU TEMPS et non au nombre (une partie de BombAnime pese dix manches
+  de Rush), activite sur quatorze jours, jour le plus charge, heure de pointe,
+  et un bouton pour vider l historique. Les parties sous trois joueurs y sont
+  montrees, en retrait et marquees « hors compteur » — sinon on les lirait comme
+  du trafic reel.
+  ⚠️ Le raccourci vers `/question` ne porte **pas** de `?code=` : cette page
+  ne lit RIEN dans l adresse, elle a son propre formulaire qui interroge
+  `/api/verify-question-code`. Le `?code=` qu on y mettait n avait jamais rien
+  fait — et les deux secrets etant distincts, il n y aurait eu que le mauvais a
+  y mettre.
+  Les lignes se cochent — case par case, **Maj+clic pour une plage**, ou tout
+  d un coup — et partent ensemble (`/admin/site/supprimer`, qui accepte `id`
+  comme `ids`) : on ne garde que les vraies parties et l on jette celles de
+  mise au point. Une seule requete Supabase (`.in`), plafonnee a 500.
+  ⚠️ La barre de selection ne compte que le VISIBLE : cocher puis changer de
+  filtre annoncerait sinon des lignes qu on ne voit plus, et « Supprimer » en
+  jetterait sans les montrer.
+  ⚠️ La suppression rappelle `loadRecentGamesFromDb()` : le compteur public et
+  la liste de l accueil vivent EN MEMOIRE, sans ce rechargement ils garderaient
+  la partie effacee jusqu au prochain redemarrage du dyno.
+  ⚠️ Deux pieges de routage. D abord le **garde-fou de l hote** est monte sur
+  TOUT `/admin` et exige un `X-Host-Token` : un navigateur qui ouvre la page n en
+  a aucun, donc `req.path === '/'` et `/site/*` sont exemptes dans le middleware.
+  Ensuite, l exemption etant faite, ces chemins doivent etre gardes AUTREMENT —
+  c est `QUESTION_ADMIN_CODE`, le meme que `/question` et `/saisie`, passe en
+  `?code=`. Sans lui les cinq routes seraient ouvertes a tous, avec la
+  suppression de l historique dedans.
+
+  Trois choix de forme, qui tiennent ensemble :
+  - **La page ne defile pas.** C est la contrainte qui decide de toute la mise
+    en page : hauteur bloquee a `100dvh`, rail fixe a gauche, et DEUX VUES qu on
+    echange au lieu d empiler. Seul le tableau des parties defile, dans son
+    cadre. Tout mettre a la suite redonnerait la page a rallonge d avant.
+  - **Aucune emoji a l ecran** : elles dependent de la police du systeme, ne s
+    alignent pas sur le texte et changent d un appareil a l autre. Des `<symbol>`
+    SVG sont definis en haut de la page et repris par `<use href="#i-…">` ; le JS
+    en cite par concatenation (`icone('couronne')`), donc un grep de `#i-` ne les
+    trouve pas tous. Les ⚠️ des COMMENTAIRES restent, elles ne sont pas affichees.
+  - **`rivalry` est replie sur `classic`** dans la page (`REPLI` dans le script).
+    Ce n est pas un mode mais le reglage *Format* du quiz, et le jeu affiche deja
+    « Classique » des deux cotes ; les anciennes parties le portent encore en
+    base. Le panneau dirait sinon un sixieme mode qui n existe pas.
+
+  Une seule page (`src/html/admin.html`), sans Vue : charger un framework pour
+  quelques compteurs n aurait servi a rien.
 - `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`. Trois onglets :
   ajouter, lister, et relire les **suggestions de personnages** envoyées depuis BombAnime
   (`/api/suggestions`, `/api/suggestion-status`, `/api/delete-suggestion` — même code).
 
 ## Variables d'environnement (`.env`, non versionné)
 
-`NODE_ENV`, `PORT` (7000), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `QUESTION_ADMIN_CODE`.
+`NODE_ENV`, `PORT` (7000), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `QUESTION_ADMIN_CODE`,
+`PANEL_ADMIN_CODE`.
+
+⚠️ `PANEL_ADMIN_CODE` garde `/admin` et n est **PAS** `QUESTION_ADMIN_CODE` : le panneau
+ouvre l historique du site entier et sa suppression, le back-office des questions n ouvre que
+les questions. Aucun repli de l un sur l autre — un code partage ferait que donner l un
+donnerait l autre. Et **sans la variable, on REFUSE** : oubliee au deploiement, un repli
+silencieux ouvrirait le panneau a tout le monde.
 
 Facultative aussi, et de mise au point : `ASC_ETAGE_FORCE` impose le premier étage
 d'Ascension (`wordle`, ou `match:anime_author` pour viser un sous-type de Liaison). Les
@@ -474,11 +534,17 @@ fait que deplacer la fuite. Le client le recoit par `question-results`.
 ## Points d'attention
 
 - L accueil compte les parties et en montre les dernieres, avec deux seuils :
-  `MIN_JOUEURS_COMPTEUR` (3) pour ce qu on garde et ce qu on compte — c est ce
-  chiffre qui renseigne sur le trafic —, `MIN_JOUEURS_LISTE` (5) pour ce qu on
-  affiche, tous modes confondus. Le filtre est a l ecriture pour le premier : une
-  partie sous trois joueurs n entre jamais en base, et ne pourra donc pas etre
-  comptee apres coup.
+  `MIN_JOUEURS_COMPTEUR` (3) pour ce qu on COMPTE — c est ce chiffre qui
+  renseigne sur le trafic —, `MIN_JOUEURS_LISTE` (5) pour ce qu on AFFICHE, tous
+  modes confondus.
+  ⚠️ Les deux filtrent **a la lecture**. Le premier etait a l ECRITURE : une
+  partie a deux joueurs n entrait jamais en base, et etait donc perdue pour
+  toujours — impossible de la retrouver apres coup. Le panneau `/admin` devant
+  les montrer, `recordFinishedGame()` ecrit desormais TOUT et ne fait qu eviter
+  d incrementer `gamesPlayedTotal` sous le seuil. Le chiffre public est
+  inchange : les requetes de `loadRecentGamesFromDb()` portaient deja leur
+  `.gte('players_count', …)`. `npm run test:panneau` tient les deux bouts —
+  la partie a deux DOIT entrer en base, le compteur public NE DOIT PAS bouger.
 - ⚠️ **Supabase ne rend jamais plus de MILLE lignes** par requete — le plafond `max-rows` de
   PostgREST. Il ne leve aucune erreur : on recoit mille lignes et l on croit avoir tout. La
   banque de questions a franchi ce seuil, et six questions etaient devenues invisibles pour le
