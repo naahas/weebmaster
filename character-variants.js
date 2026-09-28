@@ -346,6 +346,11 @@ const CHARACTER_VARIANTS = {
         ["MERMAID MELODY" , "PICHI PICHI PITCH"],
         ["TOKYO MEW MEW" , "MEW MEW POWER"],
         ["THE IDOLMASTER" , "IDOLMASTER"],
+        ["QUEENS BLADE" , "QUEEN'S BLADE"],
+        ["BOYS ABYSS" , "BOY'S ABYSS"],
+        // ⚠️ Ne PAS confondre avec « Nura le seigneur des yokai », qui est une
+        // autre œuvre et a deja son groupe plus haut.
+        ["NATSUMES BOOK OF FRIENDS" , "NATSUME BOOK OF FRIENDS" , "NATSUME'S BOOK OF FRIENDS" , "LE PACTE DES YOKAI"],
         ["HARUKANA MACHI E" , "QUARTIER LOINTAIN"],
         ["SHINSEKAI YORI" , "SHIN SEKAI YORI"],
         ["BOKU NO HERO ACADEMIA" , "MY HERO ACADEMIA" , "BNHA" , "MHA"],
