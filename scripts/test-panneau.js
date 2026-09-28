@@ -159,7 +159,14 @@ async function json(chemin, opts) {
         dire(!vu.enPartie, 'il sait que la partie n\'a pas commencé');
         // ⚠️ Un seul nom : l'hôte. Lister tous les joueurs donnait une bulle
         // qu'on ne lit pas, et qui débordait à quinze.
-        dire(!('noms' in vu), 'la liste de tous les pseudos ne part plus');
+        // ⚠️ La liste complète repart, mais elle ne s'AFFICHE que sur demande,
+        // derrière un bouton. C'est la bulle d'office qui avait été retirée :
+        // à quinze joueurs personne ne la lisait et elle débordait.
+        dire(Array.isArray(vu.noms) && vu.noms.length === 2,
+            'la liste des joueurs accompagne le salon', (vu.noms || []).length + ' entrée(s)');
+        const lHote = (vu.noms || []).filter(p => p.hote);
+        dire(lHote.length === 1 && lHote[0].nom === 'PanneauUn',
+            'et un seul y porte la marque d\'hôte', lHote.map(p => p.nom).join(', '));
         // ⚠️ Et c'est bien celui qui a OUVERT le salon, pas le premier arrivé :
         // « players » est indexée par socket.id, la résolution se fait sur le
         // champ playerId. Ici PanneauUn ouvre ET entre en premier, le cas où

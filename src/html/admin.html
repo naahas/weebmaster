@@ -191,10 +191,42 @@ button { font-family: inherit; color: inherit; }
 /* L'hôte du salon. Un seul nom suffit : lister tous les joueurs dans une
    bulle donnait une liste qu'on ne lit pas. */
 .salon-hote {
-    display: flex; align-items: center; gap: .3rem;
-    color: var(--tres-doux); font-size: .72rem; margin-top: .18rem;
+    display: flex; align-items: center; gap: .4rem;
+    color: var(--tres-doux); font-size: .72rem; margin-top: .35rem;
 }
+.salon-hote > span:first-child { flex: 1; }
 .salon-hote svg { width: 11px; height: 11px; }
+/* Le bouton « qui est dedans ». Discret : le salon se lit sans lui, il
+   n'est là que pour la question qu'on se pose parfois. */
+.salon-qui {
+    border: 1px solid var(--bord); background: rgba(255,255,255,.04);
+    color: var(--doux); cursor: pointer; border-radius: 7px;
+    padding: .2rem .4rem; display: inline-flex; align-items: center; gap: .25rem;
+    font-size: .7rem; font-weight: 600; font-family: inherit;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.salon-qui:hover { color: var(--texte); border-color: var(--bord-fort); background: rgba(255,255,255,.09); }
+
+/* La liste des joueurs, dans sa modale. */
+.gens { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.2rem; }
+.gens > div {
+    display: flex; align-items: center; gap: .55rem;
+    padding: .5rem .7rem; border-radius: 9px;
+    background: rgba(255,255,255,.03); border: 1px solid var(--bord);
+    font-size: .9rem;
+}
+.gens .rang {
+    color: var(--tres-doux); font-size: .74rem; min-width: 1.2rem;
+    font-variant-numeric: tabular-nums;
+}
+.gens .marque-hote { color: var(--or); display: inline-grid; place-items: center; }
+.gens .marque-bot {
+    margin-left: auto; font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; padding: .1rem .38rem; border-radius: 5px;
+    background: rgba(255,255,255,.07); color: var(--tres-doux);
+}
+.gens .vies { margin-left: auto; color: var(--rouge); font-size: .8rem; }
+.gens .vies + .marque-bot { margin-left: .4rem; }
 .jauge {
     font-size: .64rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .05em; padding: .1rem .4rem; border-radius: 5px;
@@ -711,6 +743,13 @@ body:not(.entre) { overflow: hidden; }
     <g id="i-couronne" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 18h18M4 8l4 4 4-8 4 8 4-4-2 10H6z"/>
     </g>
+    <g id="i-gens" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/>
+    </g>
+    <g id="i-couronne-pleine" fill="currentColor" stroke="none">
+      <path d="M3 18h18v2H3zM4 8l4 4 4-8 4 8 4-4-2 8H6z"/>
+    </g>
     <g id="i-plus" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 5v14M5 12h14"/>
     </g>
@@ -1028,6 +1067,17 @@ body:not(.entre) { overflow: hidden; }
 <!-- ⚠️ La suppression d'une question exige un SECOND mot de passe. Une
      question effacée ne se retrouve pas, et la banque est écrite à la main
      depuis des mois : être entré dans le panneau ne suffit pas à effacer. -->
+<div class="voile" id="voile-gens">
+    <div class="modale">
+        <h3 id="gens-titre">Salon</h3>
+        <p id="gens-sous"></p>
+        <div class="gens" id="gens-liste"></div>
+        <div class="modale-actions">
+            <button class="bouton" id="gens-fermer">Fermer</button>
+        </div>
+    </div>
+</div>
+
 <div class="voile" id="voile-sup">
     <div class="modale">
         <h3>Supprimer la question</h3>
@@ -1257,8 +1307,63 @@ async function lireDirect() {
         '<div class="salon-bas">' + ech(s.modeLabel) + ' · ' + s.joueurs + ' joueur' +
         (s.joueurs > 1 ? 's' : '') +
         (s.enPartie && s.depuis ? ' · ' + duree(s.depuis / 1000) : '') + '</div>' +
-        (s.hote ? '<div class="salon-hote">' + icone('couronne', 11) +
-                  ech(s.hote) + '</div>' : '') +
+        '<div class="salon-hote">' +
+        (s.hote ? icone('couronne', 11) + ech(s.hote) : '<span></span>') +
+        '<button class="salon-qui" data-code="' + ech(s.code) + '" title="Voir les joueurs">' +
+        icone('gens', 12) + s.joueurs + '</button>' +
+        '</div></div>').join('');
+
+    // ⚠️ On garde la derniere reponse : la modale doit pouvoir se remplir au
+    // clic sans relancer une requete, et se rafraichir toute seule si elle
+    // est ouverte quand le direct revient.
+    DIRECT = d;
+    $('salons').querySelectorAll('.salon-qui').forEach(b => {
+        b.onclick = () => montrerJoueurs(b.dataset.code);
+    });
+    if (GENS_CODE) remplirGens(GENS_CODE);
+}
+
+// ── Qui est dans le salon ───────────────────────────────────────────
+let DIRECT = null;
+let GENS_CODE = null;
+
+function montrerJoueurs(code) {
+    GENS_CODE = code;
+    remplirGens(code);
+    $('voile-gens').classList.add('ouvert');
+}
+
+function fermerGens() { $('voile-gens').classList.remove('ouvert'); GENS_CODE = null; }
+$('gens-fermer').onclick = fermerGens;
+$('voile-gens').onclick = e => { if (e.target === $('voile-gens')) fermerGens(); };
+
+function remplirGens(code) {
+    const s = DIRECT && DIRECT.salons.find(x => x.code === code);
+    // ⚠️ Le salon peut avoir ferme pendant qu'on le regardait : le direct se
+    // rafraichit toutes les dix secondes, et remplirGens() est rappele a
+    // chaque fois. On le dit, on ne vide pas la modale en silence.
+    if (!s) {
+        $('gens-titre').textContent = 'Salon ' + code;
+        $('gens-sous').textContent = 'Ce salon vient de fermer.';
+        $('gens-liste').innerHTML = '';
+        return;
+    }
+    $('gens-titre').textContent = 'Salon ' + s.code;
+    $('gens-sous').textContent = s.modeLabel + ' · ' + s.joueurs + ' joueur' +
+        (s.joueurs > 1 ? 's' : '') +
+        (s.enPartie ? ' · en jeu depuis ' + duree(s.depuis / 1000) : ' · en attente');
+
+    const gens = s.noms || [];
+    if (!gens.length) { $('gens-liste').innerHTML = '<div class="etat">Personne dedans.</div>'; return; }
+    $('gens-liste').innerHTML = gens.map((p, i) =>
+        '<div>' +
+        '<span class="rang">' + (i + 1) + '</span>' +
+        (p.hote ? '<span class="marque-hote" title="Hôte du salon">' + icone('couronne-pleine', 13) + '</span>' : '') +
+        '<span>' + ech(p.nom) + '</span>' +
+        (p.vies !== null && p.vies !== undefined
+            ? '<span class="vies" title="Vies restantes">' + '\u2665'.repeat(Math.max(0, Math.min(5, p.vies))) + '</span>'
+            : '') +
+        (p.bot ? '<span class="marque-bot">bot</span>' : '') +
         '</div>').join('');
 }
 
@@ -2083,6 +2188,7 @@ $('voile').onclick = e => { if (e.target === $('voile')) $('voile').classList.re
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     // La plus haute d'abord : fermer celle du dessous laisserait l'autre.
+    if ($('voile-gens').classList.contains('ouvert')) { fermerGens(); return; }
     if ($('voile-sup').classList.contains('ouvert')) { fermerSuppression(); return; }
     if ($('voile-q').classList.contains('ouvert')) { fermerForm(); return; }
     $('voile').classList.remove('ouvert');

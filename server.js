@@ -5075,6 +5075,17 @@ app.get('/admin/site/direct', (req, res) => {
             enPartie: !!g.inProgress,
             depuis: g.gameStartTime ? Date.now() - g.gameStartTime : null,
             hote: h ? h.username : null,
+            // La liste complète, pour le bouton du panneau. ⚠️ Elle ne
+            // s affiche QUE sur demande : à quinze joueurs, la montrer d office
+            // donnait une bulle que personne ne lisait et qui débordait.
+            // Bornée à trente — le plafond d un salon est de quinze, la marge
+            // suffit et rien ne peut gonfler la réponse.
+            noms: [...g.players.values()].slice(0, 30).map(p => ({
+                nom: p.username,
+                bot: !!p.estBot,
+                hote: !!(g.hostPlayerId && p.playerId === g.hostPlayerId),
+                vies: typeof p.lives === 'number' ? p.lives : null,
+            })),
         });
     }
     salons.sort((a, b) => b.joueurs - a.joueurs);

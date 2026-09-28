@@ -403,6 +403,11 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   ⚠️ Deux compteurs de presence, a ne pas confondre : `surLeSite` compte TOUTES
   les sockets ouvertes (accueil et saisie de pseudo compris), `joueursEnLigne`
   seulement ceux qui sont DANS un salon.
+  La vignette d un salon porte un bouton qui ouvre la liste de ses joueurs —
+  couronne pour l hote, coeurs des vies, marque « bot ». ⚠️ Elle ne s affiche
+  QUE sur demande : montree d office dans une bulle, a quinze joueurs, elle
+  debordait et personne ne la lisait. La modale se rafraichit avec le direct et
+  dit si le salon a ferme pendant qu on le regardait.
   ⚠️ L hote d un salon : le jeton dit qu on EST l hote, il ne dit pas QUI. Le
   client envoie son `playerId` a l ouverture (`gameState.hostPlayerId`), et le
   panneau le resout au moment d afficher. La resolution se fait **sur le champ**
