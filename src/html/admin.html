@@ -415,21 +415,25 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 
 /* ── Une question dans la liste ──────────── */
 .q {
-    padding: .85rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
+    padding: 1.1rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
     transition: background .12s;
 }
 .q:hover { background: rgba(255,255,255,.022); }
 .q-haut { display: flex; align-items: flex-start; gap: .7rem; }
-.q-txt { flex: 1; min-width: 0; font-size: .9rem; line-height: 1.45; }
+.q-txt { flex: 1; min-width: 0; font-size: 1rem; line-height: 1.45; font-weight: 500; }
 .q-meta { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; flex: 0 0 auto; }
 .q-rep {
-    display: grid; gap: .3rem; margin-top: .6rem;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    display: grid; gap: .35rem; margin-top: .7rem;
+    /* ⚠️ Deux colonnes FIXES, pas « auto-fit » : sur un large écran les six
+       réponses tenaient sur une seule ligne, chacune coupée à l'ellipse. En
+       trois lignes de deux, chacune se lit en entier. */
+    grid-template-columns: 1fr 1fr;
 }
+@media (max-width: 700px) { .q-rep { grid-template-columns: 1fr; } }
 .q-rep > span {
-    font-size: .79rem; color: var(--doux);
+    font-size: .86rem; color: var(--doux);
     background: rgba(255,255,255,.03); border: 1px solid var(--bord);
-    border-radius: 7px; padding: .3rem .5rem;
+    border-radius: 7px; padding: .4rem .6rem;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* La bonne réponse se voit d'un coup d'œil : c'est ce qu'on vérifie en
