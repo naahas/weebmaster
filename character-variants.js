@@ -87,7 +87,7 @@ const CHARACTER_VARIANTS = {
         ["CYGAMESPICTURES", "CYGAMES PICTURES"],
         ["EIGHT BIT", "8 BIT"],
         ["KYOTO ANIMATION", "KYOANIMATION", "KYO ANIMATION" , "KYOANI"],
-        ["PRODUCTIONS I.G", "PRODUCTIONS IG"],
+        ["PRODUCTION I.G", "PRODUCTION IG"],
         ["PROJECT NO 9", "PROJECT 9"],
         ["STUDIO A CAT", "STUDIO A-CAT", "A CAT", "A-CAT"]
     ],
@@ -121,6 +121,10 @@ const CHARACTER_VARIANTS = {
         ["CAESAR", "CAESAR CLOWN", "CESAR", "CESAR CLOWN"],
         ["CHOUCHOU", "SHUSHU"],
         ["ENER", "ENERU", "ENEL"],
+        // Le wiki FR ecrit « Gabban », Google plutot « Gaban ». On ne tranche
+        // pas : les quatre formes comptent pour un seul personnage.
+        ["SCOPPER GABAN", "GABAN", "SCOPPER GABBAN", "GABBAN"],
+        ["BANCHINA", "BANKINA"],
         ["IMU", "IM"],
         ["SAINT SHEPHERD JU PETER" , "PETER" , "JUPITER"],
         ["JABRA", "JABURA"],
@@ -490,7 +494,7 @@ const CHARACTER_VARIANTS = {
         ["K ON" , "KON"],
         ["MISS KOBAYASHIS DRAGON MAID" , "DRAGON MAID"],
         ["BAKI HANMA" , "BAKI"],
-        ["tHE EMINENCE IN SHADOW" , "EMINENCE IN SHADOW"],
+        ["THE EMINENCE IN SHADOW" , "EMINENCE IN SHADOW"],
         ["RAKUDAI KISHI NO CAVALRY" , "CHIVALRY OF A FAILED KNIGHT"],
         ["ACE OF DIAMOND" , "DIAMOND NO ACE"],
         ["THE PRINCE OF TENNIS" , "PRINCE OF TENNIS"],
