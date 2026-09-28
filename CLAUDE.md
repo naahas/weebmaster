@@ -383,6 +383,13 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   l historique du site et sa suppression —, donc qu il ouvre aussi les questions ne lui
   donne rien de plus. **La reciproque reste fausse** : le code des questions n ouvre
   toujours pas le panneau. `npm run test:banque` tient les deux sens.
+  ⚠️ Une suggestion se **corrige sur place** avant d etre acceptee : un clic sur
+  le nom (ou la serie) le change en champ, Entree valide, Echap annule
+  (`/api/update-suggestion`, borne a 80 / 60 caracteres). Les joueurs la tapent en
+  pleine partie, les fautes sont la regle — et « Accepter » ne fait que marquer un
+  statut : c est la liste des acceptees qu on recopie ensuite A LA MAIN dans
+  `bombdata.json`, donc une faute non corrigee y reste. Un refus de la base REMET
+  l ancien texte a l ecran, sans quoi on croirait la correction enregistree.
   ⚠️ Le bouton **spoil** de la liste appelait `toggleSpoil()`, une fonction qui
   n existait NULLE PART dans l ancienne page : il ne faisait rien depuis toujours, en
   silence. Il passe maintenant par `/api/update-question`, qui exige la question ENTIERE
@@ -455,6 +462,12 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
   Le code est saisi une fois (`POST /admin/site/verifier`), retenu en
   `localStorage`, et presente ensuite en en-tete **`X-Admin-Code`**.
+  ⚠️ Le formulaire de code porte un champ identifiant INVISIBLE MAIS PRESENT
+  (`autocomplete="username"`, classe `.hors-vue`). Sans cible, Chrome garnissait le
+  premier champ texte de la page avec une adresse e-mail — la recherche des
+  questions, qui renvoyait alors « aucune question ne correspond ». Ni `hidden` ni
+  `display:none` : un champ reellement masque est ignore par le remplissage, et
+  Chrome repart en chasse ailleurs.
   ⚠️ Il ne voyage plus dans l adresse : il y restait dans l historique du
   navigateur et s affichait en clair dans la barre pendant un partage d ecran —
   or il ouvre la suppression de tout l historique. `?code=` reste accepte par
