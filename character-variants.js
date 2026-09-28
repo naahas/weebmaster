@@ -120,7 +120,7 @@ const CHARACTER_VARIANTS = {
         ["BAGGY", "BUGGY"],
         ["CAESAR", "CAESAR CLOWN", "CESAR", "CESAR CLOWN"],
         ["CHOUCHOU", "SHUSHU"],
-        ["ENER", "ENERU"],
+        ["ENER", "ENERU", "ENEL"],
         ["IMU", "IM"],
         ["SAINT SHEPHERD JU PETER" , "PETER" , "JUPITER"],
         ["JABRA", "JABURA"],
