@@ -605,6 +605,9 @@ body:not(.entre) { overflow: hidden; }
    « code invalide » n'apprend rien qu'on ne sache déjà. */
 .porte-carte.refus { animation: refus .4s; }
 .porte-carte.refus .porte-champ { border-color: var(--rouge); }
+/* Même refus pour la suppression d'une question. */
+.modale.refus { animation: refus .4s; }
+.modale.refus input { border-color: var(--rouge); }
 @keyframes refus {
     0%, 100% { transform: translateX(0); }
     20% { transform: translateX(-7px); }
@@ -1032,7 +1035,6 @@ body:not(.entre) { overflow: hidden; }
         <div class="champ" style="margin-bottom:1rem">
             <label>Mot de passe de suppression</label>
             <input type="password" id="sup-code" autocomplete="off">
-            <span class="mot mal" id="sup-erreur"></span>
         </div>
         <div class="modale-actions">
             <button class="bouton" id="sup-annuler">Annuler</button>
@@ -1070,20 +1072,50 @@ const CLEF = 'panneau:code';
 
 // Toute requête du panneau passe par ici : c'est le seul endroit qui connaît
 // l'en-tête, et le seul qui sache quoi faire d'un refus.
-async function appel(chemin, opts) {
+// « sortirSur401 » vaut true partout, SAUF là où un 401 ne parle pas du code
+// du panneau.
+//
+// ⚠️ C'est le cas de /api/delete-question, qui répond 401 quand le SECOND mot
+// de passe — celui de la suppression — est faux. Sans cette distinction, se
+// tromper une fois en supprimant une question déconnectait du panneau entier.
+async function appel(chemin, opts, sortirSur401 = true) {
     const o = Object.assign({}, opts);
     o.headers = Object.assign({}, o.headers, { 'X-Admin-Code': CODE });
     const r = await fetch(chemin, o);
-    // ⚠️ Un 401 en cours de route veut dire que le code ne vaut plus rien — il
-    // a changé sur le serveur. On revient à la porte plutôt que d'afficher
+    // Un 401 ici veut dire que le code du panneau ne vaut plus rien — il a
+    // changé sur le serveur. On revient à la porte plutôt que d'afficher
     // « Erreur 401 » dans chaque bloc de la page.
-    if (r.status === 401) {
-        try { localStorage.removeItem(CLEF); } catch (e) { /* navigation privée */ }
-        CODE = '';
-        document.body.classList.remove('entre');
+    if (r.status === 401 && sortirSur401) {
+        revenirALaPorte();
         throw new Error('Code refusé');
     }
     return r;
+}
+
+// Le formulaire de code. ⚠️ Declare ICI et non plus bas, ou il vivait :
+// revenirALaPorte() s en sert, et un `const` utilise avant sa ligne leve une
+// ReferenceError. Ca ne se produisait pas — l appel n arrive qu apres — mais
+// se reposer sur l ordre d execution pour un `const`, c est un piege qu on
+// finit par declencher en deplacant trois lignes.
+const PORTE = $('porte');
+const PORTE_PLACE = PORTE.nextSibling;
+
+// Le retour à l'écran de saisie, d'où qu'il vienne.
+//
+// ⚠️ Il REMET le formulaire dans le document. Sans ça, une déconnexion
+// laissait une page NOIRE : le rail et la scène sont masqués hors « entre »,
+// et le formulaire, lui, avait été retiré du document à l'entrée (pour que
+// Chrome cesse de garnir la recherche). Plus rien à l'écran, aucun moyen de
+// revenir.
+function revenirALaPorte() {
+    try { localStorage.removeItem(CLEF); } catch (e) { /* navigation privée */ }
+    CODE = '';
+    CODE_SUP = '';
+    clearInterval(entrer._t);
+    if (!PORTE.parentNode) document.body.insertBefore(PORTE, PORTE_PLACE);
+    document.body.classList.remove('entre');
+    $('porte-code').value = '';
+    $('porte-code').focus();
 }
 
 const $ = id => document.getElementById(id);
@@ -1821,7 +1853,6 @@ function demanderSuppression(id) {
     const q = QUESTIONS.find(x => x.id === id);
     CIBLE_SUP = id;
     $('sup-cible').textContent = q ? q.question : 'cette question';
-    $('sup-erreur').textContent = '';
     // Le code déjà saisi est rappelé : on ne le retape pas à chaque ligne
     // d'un ménage, et la modale reste le geste délibéré qui confirme.
     $('sup-code').value = CODE_SUP;
@@ -1830,6 +1861,16 @@ function demanderSuppression(id) {
     $('voile-sup').classList.add('ouvert');
     setTimeout(() => (CODE_SUP ? $('sup-go') : $('sup-code')).focus(), 30);
 }
+// Pas de message d'erreur : la modale tremble et le champ rougit. « Mot de
+// passe refusé » n'apprend rien qu'on ne sache déjà.
+function refusSuppression() {
+    const carte = $('voile-sup').querySelector('.modale');
+    carte.classList.remove('refus');
+    void carte.offsetWidth;   // force le redémarrage de l'animation
+    carte.classList.add('refus');
+    $('sup-code').select();
+}
+
 function fermerSuppression() { $('voile-sup').classList.remove('ouvert'); CIBLE_SUP = null; }
 $('sup-annuler').onclick = fermerSuppression;
 $('voile-sup').onclick = e => { if (e.target === $('voile-sup')) fermerSuppression(); };
@@ -1838,16 +1879,18 @@ $('sup-code').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $(
 $('sup-go').onclick = async () => {
     if (CIBLE_SUP === null) return;
     CODE_SUP = $('sup-code').value;
-    if (!CODE_SUP) { $('sup-erreur').textContent = 'Mot de passe requis.'; return; }
+    if (!CODE_SUP) { refusSuppression(); return; }
     const b = $('sup-go');
     b.disabled = true;
     b.textContent = 'Suppression…';
     try {
+        // ⚠️ false : ici un 401 parle du mot de passe de SUPPRESSION, pas du
+        // code du panneau. Laisser appel() le traiter déconnectait de tout.
         const r = await appel('/api/delete-question', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deleteCode: CODE_SUP, id: CIBLE_SUP }),
-        });
+        }, false);
         const d = await r.json().catch(() => ({}));
         // ⚠️ Un code refusé doit être OUBLIÉ : conservé, il reviendrait
         // pré-rempli à la modale suivante et toutes les suppressions
@@ -1858,7 +1901,7 @@ $('sup-go').onclick = async () => {
         fermerSuppression();
         filtrerQuestions();
     } catch (e) {
-        $('sup-erreur').textContent = e.message;
+        refusSuppression();
         b.disabled = false;
         b.textContent = 'Supprimer';
     }
@@ -2067,10 +2110,6 @@ async function verifier(code) {
     return r.ok;
 }
 
-// Le formulaire de code, mis de cote une fois entre. On garde le noeud pour
-// le remettre a la deconnexion.
-const PORTE = $('porte');
-const PORTE_PLACE = PORTE.nextSibling;
 
 function entrer(code, retenir) {
     CODE = code;
@@ -2119,19 +2158,9 @@ $('porte-carte').onsubmit = async e => {
     $('porte-code').select();
 };
 
-$('b-sortir').onclick = () => {
-    try { localStorage.removeItem(CLEF); } catch (e) { /* navigation privée */ }
-    CODE = '';
-    // Le mot de passe de suppression part avec : il n'a rien à faire en
-    // mémoire une fois qu'on est sorti.
-    CODE_SUP = '';
-    clearInterval(entrer._t);
-    document.body.classList.remove('entre');
-    // On le remet exactement ou il etait.
-    if (!PORTE.parentNode) document.body.insertBefore(PORTE, PORTE_PLACE);
-    $('porte-code').value = '';
-    $('porte-code').focus();
-};
+// Un seul chemin de sortie : voir revenirALaPorte(). Le mot de passe de
+// suppression part avec, il n'a rien à faire en mémoire une fois dehors.
+$('b-sortir').onclick = revenirALaPorte;
 
 // ── Le départ ───────────────────────────────────────────────────────
 (async () => {
