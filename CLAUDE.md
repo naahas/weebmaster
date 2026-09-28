@@ -74,8 +74,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   nommes `op_*` et ne supprime RIEN — on ne touche pas a ce qui vit hors du depot.
   `npm run test:banque` (la banque depuis le panneau : les deux clefs qui ouvrent
   `/api/*`, le SENS INTERDIT — le code des questions ne doit pas ouvrir le panneau —,
-  la redirection de `/question`, puis le cycle complet d une question sur la VRAIE
-  banque : ajout, bascule du spoil (en verifiant que les six reponses SURVIVENT),
+  que `/question` ET `/question.html` rendent bien 404, puis le cycle complet d une
+  question sur la VRAIE banque : ajout, bascule du spoil (en verifiant que les six
+  reponses SURVIVENT),
   suppression avec son second mot de passe. Il nettoie derriere lui. Trois codes dans
   l environnement : `PANEL_ADMIN_CODE`, `QUESTION_ADMIN_CODE`, `QUESTION_DELETE_CODE`),
   `npm run test:panneau` (le panneau `/admin` : les routes de donnees sont-elles
@@ -481,14 +482,14 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
   Une seule page (`src/html/admin.html`), sans Vue : charger un framework pour
   quelques compteurs n aurait servi a rien.
-- `/question` : **a demenage dans `/admin`**, la route ne fait plus que rediriger et
-  `question.html` a ete supprime. Deux interfaces pour la meme chose se seraient mises a
-  diverger, et il aurait fallu porter chaque changement deux fois.
-  ⚠️ La redirection remplace l ANCIENNE route, elle n a pas ete ajoutee apres : Express
-  prend la premiere qui correspond, une seconde `app.get('/question')` declaree plus loin
-  n aurait jamais ete atteinte.
-  ⚠️ Et le fichier devait partir, pas seulement la route : `express.static('src/html')`
-  sert tout le dossier, donc `/question.html` restait joignable en direct (mesure : HTTP 200).
+- `/question` : **n existe plus**. Le back-office a demenage dans `/admin` ; la route ET
+  `question.html` ont ete supprimes, l adresse rend un 404. Deux interfaces pour la meme
+  chose se seraient mises a diverger, et il aurait fallu porter chaque changement deux fois.
+  ⚠️ Ne pas y remettre de redirection : elle laisserait croire que `/question` est
+  encore une adresse du site.
+  ⚠️ Et **le fichier devait partir, pas seulement la route** :
+  `express.static('src/html')` sert tout le dossier, donc `/question.html` restait
+  joignable en direct — mesure d alors : HTTP 200. `npm run test:banque` tient les deux.
   Les routes `/api/*` du back-office n ont PAS bouge et gardent leur code : c est ce qui
   permet aux pages `/saisie/:lot` de continuer a fonctionner.
 

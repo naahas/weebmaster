@@ -4984,19 +4984,14 @@ async function endGameRivalryPoints(gameState) {
 
 
 
-// ⚠️ Le back-office des questions a DEMENAGE dans le panneau. Cette route
-// servait `question.html` ; elle redirige. Deux interfaces pour la meme chose
-// se seraient mises a diverger, et il aurait fallu porter chaque changement
-// deux fois.
-//
-// ⚠️ La redirection est ICI et non plus bas : Express prend la PREMIERE
-// route qui correspond, et celle-ci etait declaree avant. Une seconde
-// `app.get('/question')` ajoutee plus loin n aurait jamais ete atteinte.
+// ⚠️ Il n y a plus de route `/question` : le back-office a demenage dans
+// `/admin`, et `question.html` a ete supprime. L adresse rend un 404, ce qui
+// est exact — la page n existe plus. Ne pas y remettre de redirection : elle
+// laisserait croire que `/question` est encore une adresse du site.
 //
 // Les routes `/api/*` du back-office, elles, n ont pas bouge : elles servent
 // toujours, et QUESTION_ADMIN_CODE les ouvre toujours — c est ce qui permet
 // aux pages `/saisie/:lot` de continuer a fonctionner.
-app.get('/question', (req, res) => res.redirect(302, '/admin'));
 
 // ============================================
 // 📝 POSTE DE SAISIE — les lots de questions préparés hors ligne

@@ -52,10 +52,14 @@ const ROUTES = ['/api/questions', '/api/series', '/api/suggestions'];
     const fuite2 = await get('/admin/site/stats?code=' + encodeURIComponent(QCODE));
     d(fuite2.status === 401, 'ni par l adresse', 'HTTP ' + fuite2.status);
 
-    // /question renvoie vers le panneau.
-    const red = await fetch(BASE + '/question', { redirect: 'manual' });
-    d(red.status === 302 && (red.headers.get('location') || '').includes('/admin'),
-        '/question redirige vers /admin', 'HTTP ' + red.status + ' → ' + red.headers.get('location'));
+    // ⚠️ /question n'existe plus du tout : ni route, ni fichier. Et les DEUX
+    // comptent — express.static('src/html') sert tout le dossier, donc
+    // supprimer la route sans supprimer le fichier laissait /question.html
+    // joignable en direct (mesure d'alors : HTTP 200).
+    for (const c of ['/question', '/question.html']) {
+        const r = await fetch(BASE + c, { redirect: 'manual' });
+        d(r.status === 404, c + " n'existe plus", 'HTTP ' + r.status);
+    }
 
     console.log('\n═══ 2. LE CYCLE D UNE QUESTION ═══\n');
 
