@@ -329,6 +329,35 @@ tbody tr.part { opacity: 0; transition: opacity .2s; }
 .etiq[data-m="rush"]      { background: rgba(52,211,153,.13); color: var(--vert); }
 .etiq[data-m="collect"]   { background: rgba(244,114,182,.13); color: var(--rose); }
 .etiq[data-m="ascension"] { background: rgba(34,211,238,.13); color: var(--cyan); }
+/* ── Le point info des réglages ──────────── */
+/* Une bulle en CSS et non un attribut « title » : le title met une bonne
+   seconde à sortir, et on survole ces lignes en les parcourant vite. */
+.info {
+    position: relative; display: inline-grid; place-items: center;
+    width: 17px; height: 17px; border-radius: 50%;
+    border: 1px solid var(--bord-fort); color: var(--tres-doux);
+    font-size: .64rem; font-weight: 700; cursor: default;
+    margin-left: .4rem; vertical-align: middle;
+    transition: color .15s, border-color .15s;
+}
+.info:hover { color: var(--accent-clair); border-color: var(--accent); }
+.info > span {
+    position: absolute; bottom: calc(100% + 7px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--carte-haut); border: 1px solid var(--bord-fort);
+    border-radius: 9px; padding: .5rem .65rem;
+    font-size: .76rem; font-weight: 400; color: var(--texte);
+    white-space: nowrap; text-align: left; line-height: 1.5;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55);
+    opacity: 0; visibility: hidden; transition: opacity .13s;
+    z-index: 5; pointer-events: none;
+}
+.info:hover > span { opacity: 1; visibility: visible; }
+.info b { font-weight: 600; color: var(--doux); }
+/* ⚠️ Les premières lignes du tableau n'ont pas de place au-dessus : leur
+   bulle passe dessous. */
+tbody tr:nth-child(-n+3) .info > span { bottom: auto; top: calc(100% + 7px); }
+
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .doux { color: var(--tres-doux); }
 td.actions { text-align: right; width: 1%; }
@@ -909,6 +938,55 @@ function lesFiltres() {
     });
 }
 
+// Les réglages d'une partie, mis en mots. ⚠️ Le libellé se fabrique ICI et
+// non en base : un texte figé à l'enregistrement vieillirait mal, alors que
+// les valeurs brutes, elles, restent justes.
+const SERIES_BOMB = {
+    Prota: 'Protagonistes', Manganime: 'Manganime', Studio: 'Studios',
+    Naruto: 'Naruto', OnePiece: 'One Piece', Dbz: 'Dragon Ball', Hxh: 'Hunter x Hunter',
+    Snk: 'L\'Attaque des Titans', BlackClover: 'Black Clover', Pokemon: 'Pokémon',
+    Bleach: 'Bleach', DemonSlayer: 'Demon Slayer', Reborn: 'Reborn', DeathNote: 'Death Note',
+    FairyTail: 'Fairy Tail', JujutsuKaisen: 'Jujutsu Kaisen', ChainsawMan: 'Chainsaw Man',
+    Gintama: 'Gintama', Fma: 'Fullmetal Alchemist', Mha: 'My Hero Academia', Jojo: 'JoJo',
+};
+const FILTRES = {
+    overall: 'Tout', mainstream: 'Mainstream', big3: 'Big 3',
+    onepiece: 'One Piece', naruto: 'Naruto', dbz: 'Dragon Ball', bleach: 'Bleach',
+};
+
+function lignesReglages(p) {
+    const g = p.reglages;
+    if (!g) return null;
+    const L = [];
+    const k = mode(p);
+
+    // Volontairement court : la série (ou le filtre, selon le mode) et l'hôte.
+    // Le reste des réglages est bien enregistré en base, il suffira de le
+    // rajouter ici le jour où il servira.
+    if (k === 'bombanime' && g.serie) {
+        L.push(['Série', SERIES_BOMB[g.serie] || g.serie]);
+    } else if ((k === 'rush' || k === 'classic') && g.filtre) {
+        L.push(['Filtre', FILTRES[g.filtre] || g.filtre]);
+    } else if (k === 'collect' && g.main) {
+        L.push(['Main', g.main + ' cartes']);
+    } else if (k === 'ascension' && g.etages) {
+        L.push(['Étages', g.etages]);
+    }
+    if (g.hote) L.push(['Hôte', g.hote]);
+
+    return L.length ? L : null;
+}
+
+function bulleReglages(p) {
+    const L = lignesReglages(p);
+    // ⚠️ Rien pour les parties d'avant la colonne « reglages » : on n'affiche
+    // pas un point info vide, il ferait croire à une panne.
+    if (!L) return '';
+    return '<span class="info" aria-label="Réglages">i<span>' +
+        L.map(x => '<b>' + ech(x[0]) + '</b> ' + ech(x[1])).join('<br>') +
+        '</span></span>';
+}
+
 function leTableau() {
     const vues = FILTRE === 'tout' ? PARTIES : PARTIES.filter(p => mode(p) === FILTRE);
     $('parties-note').textContent = '· ' + vues.length;
@@ -927,7 +1005,8 @@ function leTableau() {
             (COCHES.has(p.id) ? ' checked' : '') + '></td>' +
             '<td class="num">' + ech(ilYA(p.created_at)) +
             '<span class="doux"> · ' + ech(heure(p.created_at)) + '</span></td>' +
-            '<td><span class="etiq" data-m="' + ech(k) + '">' + ech(NOMS[k] || k) + '</span></td>' +
+            '<td><span class="etiq" data-m="' + ech(k) + '">' + ech(NOMS[k] || k) + '</span>' +
+            bulleReglages(p) + '</td>' +
             '<td class="num">' + n + '</td>' +
             '<td class="num">' + duree(p.duration) + '</td>' +
             '<td>' + (p.winner_name ? ech(p.winner_name) : '<span class="doux">—</span>') + '</td>' +

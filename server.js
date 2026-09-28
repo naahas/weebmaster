@@ -212,6 +212,8 @@ app.set('trust proxy', 1);
 // la table `game_history` si elle existe. SQL de création : docs/game-history.sql
 const recentGames = [];
 let gamesPlayedTotal = 0;   // parties terminées (depuis la base si game_history existe)
+// null = pas encore su, true = la colonne « reglages » existe, false = absente.
+let colonneReglagesOk = null;
 const RECENT_GAMES_MAX = 8;
 
 // Ajouté au compteur de questions affiché sur l'accueil — c'est un chiffre de
@@ -452,7 +454,68 @@ function avatarPropre(brut) {
 
 const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect' };
 
-async function recordFinishedGame({ mode, playersCount, winnerName, duration }) {
+// Les réglages d une partie, résumés pour le panneau. On les prend À LA FIN :
+// l hôte peut les avoir changés entre l ouverture du salon et le départ.
+//
+// ⚠️ Rien de sensible ici, mais rien d inutile non plus : seulement ce qui
+// change la partie. Le libellé lisible est fabriqué côté panneau, on ne stocke
+// que les valeurs brutes — un libellé figé en base vieillirait mal.
+function reglagesDeLaPartie(gameState) {
+    if (!gameState) return null;
+    const g = gameState;
+
+    // Qui a ouvert le salon. ⚠️ `players` est indexee par SOCKET.ID, pas par
+    // playerId : on cherche dans les valeurs. Et on le releve MAINTENANT, a la
+    // fin — l hote a pu partir, et son entree ne sera plus la dans une seconde.
+    const h = g.hostPlayerId
+        ? [...g.players.values()].find(p => p.playerId === g.hostPlayerId)
+        : null;
+    const hote = h ? h.username : null;
+
+    const avec = x => Object.assign({ hote }, x);
+
+    switch (g.lobbyMode) {
+        case 'bombanime': {
+            const b = g.bombanime || {};
+            return avec({
+                serie: b.serie,
+                temps: b.timer,
+                vies: b.lives,
+                meche: b.meche,
+                // Le bot ne se lit pas dans un réglage : il EST un joueur.
+                bot: [...g.players.values()].some(p => p.estBot),
+            });
+        }
+        case 'rush': {
+            const x = g.rush || {};
+            return avec({
+                filtre: x.filtre,
+                duree: x.duree,
+                limite: x.tempsParPerso,
+                multiplicateur: !!x.multiplicateur,
+            });
+        }
+        case 'classic':
+        case 'rivalry':
+            return avec({
+                filtre: g.serieFilter,
+                bareme: g.mode,            // 'lives' ou 'points'
+                vies: g.lives,
+                temps: g.questionTime,
+                reponses: g.answersCount,
+                equipes: g.lobbyMode === 'rivalry',
+            });
+        case 'collect':
+            return avec({ main: g.collect && g.collect.main, animes: g.collect && g.collect.nbAnimes });
+        case 'ascension':
+            return avec({ etages: g.ascension && g.ascension.floors, temps: g.ascension && g.ascension.timer });
+        default:
+            // Meme sans reglage connu, l hote vaut la peine d etre garde.
+            return hote ? { hote } : null;
+    }
+}
+
+async function recordFinishedGame({ mode, playersCount, winnerName, duration, gameState }) {
     const entry = {
         mode,
         modeLabel: MODE_LABELS[mode] || mode,
@@ -460,6 +523,7 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
         winnerName: winnerName || null,
         duration: duration || 0,
         endedAt: new Date().toISOString(),
+        reglages: reglagesDeLaPartie(gameState),
     };
 
     // ⚠️ On n écarte plus rien À L ÉCRITURE. Une partie à deux joueurs n est
@@ -470,21 +534,46 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration }) 
     const compteAuPublic = entry.playersCount >= MIN_JOUEURS_COMPTEUR;
     if (compteAuPublic) gamesPlayedTotal++;
 
-    // La liste de l accueil, elle, ne montre qu au-dessus de cinq
+    // La liste de l accueil, elle, ne montre qu au-dessus de cinq.
+    //
+    // ⚠️ On pousse une COPIE SANS les réglages. `recentGames` part tel quel sur
+    // /api/home-stats, qui est public : y laisser l entrée complète ferait
+    // sortir la série, le barème et les vies de chaque partie sur l accueil.
+    // Le trou ne se serait vu qu après la première partie terminée — au
+    // démarrage, loadRecentGamesFromDb() refabrique des entrées propres.
     if (compteAuPublic && entry.playersCount >= MIN_JOUEURS_LISTE) {
-        recentGames.unshift(entry);
+        const { reglages, ...publique } = entry;
+        recentGames.unshift(publique);
         if (recentGames.length > RECENT_GAMES_MAX) recentGames.length = RECENT_GAMES_MAX;
     }
 
     if (gameHistoryTableOk === false) return;
 
+    const ligne = {
+        mode: entry.mode,
+        players_count: entry.playersCount,
+        winner_name: entry.winnerName,
+        duration: entry.duration,
+    };
+
     try {
-        const { error } = await supabase.from('game_history').insert({
-            mode: entry.mode,
-            players_count: entry.playersCount,
-            winner_name: entry.winnerName,
-            duration: entry.duration,
-        });
+        // ⚠️ La colonne « reglages » est arrivée après la table. Si elle
+        // manque — SQL pas encore joué en production —, l insertion ENTIÈRE
+        // échouerait et l on perdrait l historique au complet, pas seulement
+        // les réglages. On réessaie donc sans, une fois, et l on note que la
+        // colonne n est pas là pour ne pas repayer l aller-retour à chaque
+        // partie.
+        const avec = colonneReglagesOk !== false && entry.reglages
+            ? Object.assign({ reglages: entry.reglages }, ligne)
+            : ligne;
+        let { error } = await supabase.from('game_history').insert(avec);
+        if (error && avec !== ligne) {
+            console.log('ℹ️ Colonne game_history.reglages absente — voir docs/game-history.sql');
+            colonneReglagesOk = false;
+            ({ error } = await supabase.from('game_history').insert(ligne));
+        } else if (!error && avec !== ligne) {
+            colonneReglagesOk = true;
+        }
         if (error) throw error;
         gameHistoryTableOk = true;
     } catch (e) {
@@ -577,6 +666,7 @@ function emitGameEnded(gameState, payload) {
         playersCount: gameState.initialPlayerCount || (payload.playersData || []).length,
         winnerName: payload.winner?.username || payload.winner?.name || null,
         duration: payload.duration,
+        gameState,
     });
 }
 
@@ -587,6 +677,7 @@ function emitBombanimeGameEnded(gameState, payload) {
         playersCount: gameState.initialPlayerCount || (payload.ranking || []).length,
         winnerName: payload.winner?.username || null,
         duration: payload.duration,
+        gameState,
     });
 }
 
@@ -2229,6 +2320,7 @@ app.post('/admin/start-game', async (req, res) => {
                     playersCount: gameState.initialPlayerCount || podium.length,
                     winnerName: winner ? winner.username : null,
                     duration: Math.round((Date.now() - debut) / 1000),
+                    gameState,
                 });
             },
         });
@@ -2253,6 +2345,7 @@ app.post('/admin/start-game', async (req, res) => {
                     playersCount: gameState.initialPlayerCount || 0,
                     winnerName: nom,
                     duration: secondes,
+                    gameState,
                 });
             },
         });
@@ -4998,10 +5091,23 @@ app.get('/admin/site/stats', async (req, res) => {
         // lignes SANS RIEN DIRE, et l historique finira par les dépasser.
         // ⚠️ Et l ordre se demande À LA BASE : un select() sans order() rend
         // les PREMIÈRES lignes, pas les dernières.
-        const parties = await toutesLesLignes(() => supabase
-            .from('game_history')
-            .select('id,mode,players_count,winner_name,duration,created_at')
-            .order('created_at', { ascending: false }));
+        // ⚠️ `reglages` n existe qu à partir du jour où le SQL a été joué :
+        // les parties d avant le rendront `null`, c est normal. Si la colonne
+        // manque encore, la requête échoue en entier — on retombe alors sur
+        // les champs d origine.
+        const champs = 'id,mode,players_count,winner_name,duration,created_at';
+        let parties;
+        try {
+            parties = await toutesLesLignes(() => supabase
+                .from('game_history')
+                .select(champs + ',reglages')
+                .order('created_at', { ascending: false }));
+        } catch (e) {
+            parties = await toutesLesLignes(() => supabase
+                .from('game_history')
+                .select(champs)
+                .order('created_at', { ascending: false }));
+        }
         res.json({ parties, seuilCompteur: MIN_JOUEURS_COMPTEUR, seuilListe: MIN_JOUEURS_LISTE });
     } catch (e) {
         res.status(500).json({ error: 'Historique illisible : ' + e.message });
@@ -6568,6 +6674,7 @@ function terminerRush(gameState) {
         playersCount: gameState.initialPlayerCount || classement.length,
         winnerName: gagnant ? gagnant.username : null,
         duration: gameState.rush.duree,
+        gameState,
     });
 
     gameState.inProgress = false;

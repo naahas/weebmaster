@@ -380,6 +380,25 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   panneau le resout au moment d afficher. La resolution se fait **sur le champ**
   `playerId` des valeurs : `gameState.players` est indexee par **socket.id**, un
   `get(hostPlayerId)` rend toujours `undefined`.
+
+  Chaque partie garde ses **reglages** (`game_history.reglages`, jsonb) :
+  `reglagesDeLaPartie()` les releve A LA FIN — l hote a pu les changer entre
+  l ouverture et le depart — et un point info les montre a cote du mode. La
+  bulle n affiche que la serie et l hote ; le reste est enregistre et attend
+  d etre utile.
+  ⚠️ Trois pieges ici :
+  - La colonne est arrivee APRES la table. Sans elle, l insertion entiere
+    echouait et l on perdait TOUT l historique, pas seulement les reglages. Le
+    serveur reessaie donc sans, une fois, et retient que la colonne manque
+    (`colonneReglagesOk`). Les parties d avant rendent `null` : le panneau
+    n affiche alors aucun point info, plutot qu un rond vide.
+  - `recentGames` part tel quel sur **`/api/home-stats`, qui est publique** : on
+    y pousse une copie SANS les reglages, sinon la serie et le bareme de chaque
+    partie sortiraient sur l accueil. Le trou ne se voyait qu apres la premiere
+    vraie partie terminee — au demarrage, `loadRecentGamesFromDb()` refabrique
+    des entrees propres.
+  - Le libelle se fabrique dans la PAGE, pas en base : un texte fige a
+    l enregistrement vieillirait mal, les valeurs brutes restent justes.
   ⚠️ Le raccourci vers `/question` ne porte **pas** de `?code=` : cette page
   ne lit RIEN dans l adresse, elle a son propre formulaire qui interroge
   `/api/verify-question-code`. Le `?code=` qu on y mettait n avait jamais rien

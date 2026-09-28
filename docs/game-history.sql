@@ -39,3 +39,18 @@ alter table public.game_history enable row level security;
 
 -- Ou seulement les essais, en gardant les vraies parties :
 --   DELETE FROM game_history WHERE created_at < now() - interval '1 day';
+
+-- ============================================
+-- AJOUT : les reglages de chaque partie
+-- ============================================
+-- A executer une fois, apres coup. Le panneau /admin affiche ensuite le filtre
+-- et les reglages utilises a cote de chaque partie.
+--
+-- Les parties enregistrees AVANT cet ajout rendront « null » : c'est normal,
+-- l'information n'existait pas. Seules les nouvelles la porteront.
+--
+-- Le serveur tient les deux cas : sans la colonne, il insere sans elle plutot
+-- que d'echouer, et l'historique continue d'etre ecrit. Rien a redeployer.
+
+alter table public.game_history
+    add column if not exists reglages jsonb;
