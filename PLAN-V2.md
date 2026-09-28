@@ -154,6 +154,11 @@ function createRoom(hostSocket, opts) {
   Pas d'IA : 300-800 ms de latence, un coût par appel et une dépendance externe pour un gain marginal.
 - Filet de sécurité réel : le **host voit les pseudos et peut kick** (`kick-player` existe déjà)
 
+✅ **Fait** (vérifié le 28/09/2026). Le filtre vit dans `pseudos-interdits.js` : normalisation
+(accents, leet `4→a 3→e 0→o 1→i $→s 7→t`, caractères répétés) puis deux listes — 73 motifs
+cherchés **partout** dans le pseudo, 52 en **mot entier**, et 1 réservé (« Master », le bot de
+BombAnime). Pas d'IA, comme prévu.
+
 ---
 
 ## Phase 4 — Mobile-first / vertical
@@ -197,7 +202,7 @@ Pour TikTok, ce sera **code de room + navigateur mobile**, point.
 | 0 | Filet de sécurité | ▁ | nul | ✅ fait |
 | 1 | Suppression | ███ | faible | ✅ fait |
 | 2 | Multi-room | █████ | **élevé** | ✅ fait |
-| 3 | Identité invité | ██ | faible | 🟡 version minimale en place |
+| 3 | Identité invité | ██ | faible | ✅ fait |
 | 4 | Mobile-first | ████ | moyen | ✅ fait (accueil, salon, quiz, Rush, Ascension, BombAnime) |
 | 5 | Chat Twitch | ███ | moyen | à faire |
 
@@ -222,10 +227,12 @@ Fait en plus de ce qui était prévu :
   immédiatement attrapé deux régressions (crash à chaque connexion socket, `game.id` orphelin).
 - Route `/admin/report-question` **restaurée** : elle concerne la qualité des questions, pas les comptes.
 
-Reste connu, à traiter en phase 2 :
-- `admin.js` garde des branches mortes sur les modes supprimés (jamais atteintes, inoffensives).
-- Le champ réseau s'appelle encore `twitchId` alors qu'il porte le `playerId` invité.
-- L'écran idle du panel affiche des tirets à la place des anciennes stats globales.
+Reste connu à l'époque, **tout réglé depuis** (vérifié le 28/09/2026) :
+- ~~`admin.js` garde des branches mortes sur les modes supprimés.~~ Le fichier n'existe plus :
+  le panel host a été absorbé par `app.js`, l'hôte et les joueurs partagent la même page.
+- ~~Le champ réseau s'appelle encore `twitchId`.~~ Zéro occurrence dans le dépôt.
+- ~~L'écran idle du panel affiche des tirets.~~ Parti avec le panel. La route `/admin` sert
+  maintenant **le panneau du site** (stats et historique, pour Adem seul) — voir CLAUDE.md.
 
 Validation manuelle après chaque phase (aucun test automatisé dans le projet) : créer une room,
 rejoindre à 2 onglets, lancer une partie de chaque mode, kicker, se déconnecter/reconnecter,

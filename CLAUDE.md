@@ -11,9 +11,9 @@ Domaine prod : `shonenmaster.com`. Auteur : Adem (`naahas`).
 ⚠️ **Cette branche est la refonte v2.** `main` porte encore la v1 (comptes Twitch, 7 modes,
 progression). Voir [PLAN-V2.md](PLAN-V2.md) pour l'état d'avancement et la suite.
 
-État : **phase 1 terminée** (suppression), refonte du mode Classique terminée (écran de jeu, salon,
-camps, classement final, passe mobile), **phase 2 terminée** : le serveur héberge autant de salons
-qu'on veut, chacun indépendant.
+État : **phases 0 à 4 terminées** — suppression, multi-salons (le serveur en héberge autant qu'on
+veut, chacun indépendant), identité invité, et passe mobile sur tous les écrans conservés. Il ne
+reste que la **phase 5, le mode chat Twitch**, qui n'a pas commencé.
 
 Les routes `/admin/*` sont **réservées à l'hôte** : l'ouverture d'un salon tire un jeton
 (`gameState.hostToken`) remis au seul créateur, qu'un middleware monté sur `/admin` exige ensuite en
