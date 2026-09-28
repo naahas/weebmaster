@@ -326,8 +326,14 @@ const AVATARS_AUTORISES = new Set([
     'makise.webp',
     // Persona 5
     'joker.webp',
-    // Tokyo Ghoul
-    'kaneki.webp',
+    // Code Geass
+    'cc.webp',
+    // Bocchi the Rock!
+    'bocchi.webp',
+    // The Dangers in My Heart (Bokuyaba)
+    'anna.webp',
+    // A Sign of Affection
+    'yuki.webp',
 ]);
 
 // ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
