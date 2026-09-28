@@ -4984,9 +4984,19 @@ async function endGameRivalryPoints(gameState) {
 
 
 
-app.get('/question', (req, res) => {
-    res.sendFile(__dirname + '/src/html/question.html');
-});
+// ⚠️ Le back-office des questions a DEMENAGE dans le panneau. Cette route
+// servait `question.html` ; elle redirige. Deux interfaces pour la meme chose
+// se seraient mises a diverger, et il aurait fallu porter chaque changement
+// deux fois.
+//
+// ⚠️ La redirection est ICI et non plus bas : Express prend la PREMIERE
+// route qui correspond, et celle-ci etait declaree avant. Une seconde
+// `app.get('/question')` ajoutee plus loin n aurait jamais ete atteinte.
+//
+// Les routes `/api/*` du back-office, elles, n ont pas bouge : elles servent
+// toujours, et QUESTION_ADMIN_CODE les ouvre toujours — c est ce qui permet
+// aux pages `/saisie/:lot` de continuer a fonctionner.
+app.get('/question', (req, res) => res.redirect(302, '/admin'));
 
 // ============================================
 // 📝 POSTE DE SAISIE — les lots de questions préparés hors ligne
@@ -5028,6 +5038,7 @@ function gardePanneau(req, res) {
 app.get('/admin', (req, res) => {
     res.sendFile(__dirname + '/src/html/admin.html');
 });
+
 
 // Le portail du panneau. Le code ne voyage plus dans l adresse — il resterait
 // dans l historique du navigateur et s afficherait en clair dans la barre
@@ -5193,10 +5204,27 @@ app.get('/saisie/:lot', (req, res) => {
 // n'était pas configurée — ce qui était le cas de MASTER_ADMIN_CODE, jamais
 // définie nulle part. D'où les deux gardes avant la comparaison : le code
 // attendu doit exister, et celui présenté doit être une chaîne non vide.
+// Deux clefs ouvrent ces routes, et c est voulu :
+//  • `adminCode` = QUESTION_ADMIN_CODE, la porte historique du back-office ;
+//  • l en-tête `X-Admin-Code` = PANEL_ADMIN_CODE, celle du panneau, qui
+//    héberge désormais les questions.
+//
+// ⚠️ Le panneau est la porte LARGE : il ouvre déjà l historique du site et sa
+// suppression. Qu il ouvre aussi les questions ne lui donne rien de plus. La
+// réciproque serait fausse, et c est pour ça que le code des questions
+// n ouvre toujours PAS le panneau — voir gardePanneau().
 const codeBackOffice = (req, res) => {
-    const attendu = process.env.QUESTION_ADMIN_CODE;
+    const attenduQ = process.env.QUESTION_ADMIN_CODE;
+    const attenduP = process.env.PANEL_ADMIN_CODE;
     const code = (req.body && req.body.adminCode) || (req.query && req.query.adminCode);
-    if (!attendu || typeof code !== 'string' || !code || code !== attendu) {
+    const duPanneau = req.get('X-Admin-Code');
+
+    // ⚠️ Deux absences sont égales : chaque comparaison exige que le code
+    // attendu existe ET que celui présenté soit une chaîne non vide.
+    const parQuestions = !!(attenduQ && typeof code === 'string' && code && code === attenduQ);
+    const parPanneau = !!(attenduP && typeof duPanneau === 'string' && duPanneau && duPanneau === attenduP);
+
+    if (!parQuestions && !parPanneau) {
         res.status(401).json({ error: 'Code invalide' });
         return false;
     }

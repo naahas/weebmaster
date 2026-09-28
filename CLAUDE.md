@@ -72,6 +72,12 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   en PNG pese 400 a 800 Ko : les 171 vignettes feraient plus de 100 Mo, contre 5 en WebP.
   Un dossier peut lui etre passe (`-- ~/Bureau`) : il n y prend alors que les fichiers
   nommes `op_*` et ne supprime RIEN — on ne touche pas a ce qui vit hors du depot.
+  `npm run test:banque` (la banque depuis le panneau : les deux clefs qui ouvrent
+  `/api/*`, le SENS INTERDIT — le code des questions ne doit pas ouvrir le panneau —,
+  la redirection de `/question`, puis le cycle complet d une question sur la VRAIE
+  banque : ajout, bascule du spoil (en verifiant que les six reponses SURVIVENT),
+  suppression avec son second mot de passe. Il nettoie derriere lui. Trois codes dans
+  l environnement : `PANEL_ADMIN_CODE`, `QUESTION_ADMIN_CODE`, `QUESTION_DELETE_CODE`),
   `npm run test:panneau` (le panneau `/admin` : les routes de donnees sont-elles
   fermees sans le code, le portail refuse-t-il un code faux ET lentement, la vue
   du direct voit-elle un vrai salon et son HOTE, et surtout une partie a DEUX
@@ -366,7 +372,21 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   de ses vols contre 86 % de reussite pour celui qui choisit sa classe.
   Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
   avec un curseur de joueurs et les mesures sous chaque telephone.
-- `/admin` : **le panneau du site**, pour Adem seul. UN SEUL ecran, sans onglets :
+- `/admin` : **le panneau du site**, pour Adem seul. Trois onglets — **Vue d ensemble**,
+  **Questions** (la banque : ajouter, lister, modifier, supprimer) et **Suggestions**
+  (les personnages proposes depuis BombAnime). Chaque onglet ne va chercher ses donnees
+  qu a sa premiere ouverture.
+  ⚠️ `codeBackOffice()` accepte desormais DEUX clefs : `adminCode` =
+  `QUESTION_ADMIN_CODE` (la porte historique, dont `/saisie` se sert encore) et l en-tete
+  `X-Admin-Code` = `PANEL_ADMIN_CODE`. Le panneau est la porte LARGE — il ouvre deja
+  l historique du site et sa suppression —, donc qu il ouvre aussi les questions ne lui
+  donne rien de plus. **La reciproque reste fausse** : le code des questions n ouvre
+  toujours pas le panneau. `npm run test:banque` tient les deux sens.
+  ⚠️ Le bouton **spoil** de la liste appelait `toggleSpoil()`, une fonction qui
+  n existait NULLE PART dans l ancienne page : il ne faisait rien depuis toujours, en
+  silence. Il passe maintenant par `/api/update-question`, qui exige la question ENTIERE
+  — n envoyer que le drapeau effacerait les six reponses.
+  La **Vue d ensemble** tient sur un seul ecran :
   ce qui se joue EN CE MOMENT (salons ouverts, leur HOTE, joueurs dedans, temps
   de partie — rafraichi seul toutes les 10 s), les compteurs, le classement des
   modes AU TEMPS et non au nombre (une partie de BombAnime pese dix manches de
@@ -461,9 +481,16 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
   Une seule page (`src/html/admin.html`), sans Vue : charger un framework pour
   quelques compteurs n aurait servi a rien.
-- `/question` : back-office des questions, protégé par `QUESTION_ADMIN_CODE`. Trois onglets :
-  ajouter, lister, et relire les **suggestions de personnages** envoyées depuis BombAnime
-  (`/api/suggestions`, `/api/suggestion-status`, `/api/delete-suggestion` — même code).
+- `/question` : **a demenage dans `/admin`**, la route ne fait plus que rediriger et
+  `question.html` a ete supprime. Deux interfaces pour la meme chose se seraient mises a
+  diverger, et il aurait fallu porter chaque changement deux fois.
+  ⚠️ La redirection remplace l ANCIENNE route, elle n a pas ete ajoutee apres : Express
+  prend la premiere qui correspond, une seconde `app.get('/question')` declaree plus loin
+  n aurait jamais ete atteinte.
+  ⚠️ Et le fichier devait partir, pas seulement la route : `express.static('src/html')`
+  sert tout le dossier, donc `/question.html` restait joignable en direct (mesure : HTTP 200).
+  Les routes `/api/*` du back-office n ont PAS bouge et gardent leur code : c est ce qui
+  permet aux pages `/saisie/:lot` de continuer a fonctionner.
 
 ## Variables d'environnement (`.env`, non versionné)
 

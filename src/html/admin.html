@@ -381,6 +381,132 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
     font-size: .88rem;
 }
 
+/* ════════════════════════════════════════════
+   LES QUESTIONS ET LES SUGGESTIONS
+   ════════════════════════════════════════════ */
+.vue-pleine > .carte { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.tete-actions { margin-left: auto; display: flex; gap: .5rem; }
+.mini.vif { background: var(--accent); border-color: transparent; color: #fff; }
+.mini.vif:hover { background: #7e6fff; }
+.compte.pastille {
+    background: var(--accent); color: #fff; border-radius: 99px;
+    padding: .05rem .4rem; font-size: .68rem; min-width: 18px; text-align: center;
+}
+
+/* La ligne de filtres, au-dessus de la liste. */
+.filtres-ligne {
+    display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
+    padding: .75rem 1.15rem; border-bottom: 1px solid var(--bord);
+}
+.filtres-ligne select, .filtres-ligne input {
+    font-family: inherit; font-size: .82rem; color: var(--texte);
+    background: rgba(0,0,0,.28); border: 1px solid var(--bord);
+    border-radius: 8px; padding: .4rem .55rem; outline: none;
+    transition: border-color .15s;
+}
+.filtres-ligne select:focus, .filtres-ligne input:focus { border-color: var(--accent); }
+.filtres-ligne input[type="search"] { flex: 1; min-width: 200px; }
+.filtres-ligne option { background: var(--carte-haut); }
+
+/* ── Une question dans la liste ──────────── */
+.q {
+    padding: .85rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: background .12s;
+}
+.q:hover { background: rgba(255,255,255,.022); }
+.q-haut { display: flex; align-items: flex-start; gap: .7rem; }
+.q-txt { flex: 1; min-width: 0; font-size: .9rem; line-height: 1.45; }
+.q-meta { display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; flex: 0 0 auto; }
+.q-rep {
+    display: grid; gap: .3rem; margin-top: .6rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.q-rep > span {
+    font-size: .79rem; color: var(--doux);
+    background: rgba(255,255,255,.03); border: 1px solid var(--bord);
+    border-radius: 7px; padding: .3rem .5rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* La bonne réponse se voit d'un coup d'œil : c'est ce qu'on vérifie en
+   relisant une question. */
+.q-rep > span.bonne {
+    background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.35); color: var(--vert);
+    font-weight: 600;
+}
+.q-actions { display: flex; gap: .4rem; margin-top: .6rem; opacity: 0; transition: opacity .15s; }
+.q:hover .q-actions, .q:focus-within .q-actions { opacity: 1; }
+.dif {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; padding: .12rem .4rem; border-radius: 5px;
+    background: rgba(255,255,255,.07); color: var(--doux); white-space: nowrap;
+}
+.dif[data-d="veryeasy"] { background: rgba(52,211,153,.14); color: var(--vert); }
+.dif[data-d="easy"]     { background: rgba(34,211,238,.13); color: var(--cyan); }
+.dif[data-d="medium"]   { background: rgba(109,92,255,.16); color: var(--accent-clair); }
+.dif[data-d="hard"]     { background: rgba(251,191,36,.13); color: var(--or); }
+.dif[data-d="veryhard"] { background: rgba(244,114,182,.13); color: var(--rose); }
+.dif[data-d="extreme"]  { background: rgba(251,113,133,.15); color: var(--rouge); }
+.pt-spoil { color: var(--rouge); font-size: .7rem; font-weight: 700; }
+.q-preuve { display: inline-grid; place-items: center; color: var(--tres-doux); }
+.q-preuve.a { color: var(--cyan); }
+.q-preuve.a:hover { color: #67e8f9; }
+
+/* ── Une suggestion ──────────────────────── */
+.s {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    padding: .8rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.s:hover { background: rgba(255,255,255,.022); }
+.s-nom { font-weight: 600; font-size: .92rem; }
+.s-serie {
+    font-size: .74rem; padding: .14rem .45rem; border-radius: 6px;
+    background: rgba(109,92,255,.15); color: var(--accent-clair);
+}
+.s-meta { color: var(--tres-doux); font-size: .77rem; }
+.s-actions { margin-left: auto; display: flex; gap: .4rem; }
+.s-etat {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; padding: .12rem .4rem; border-radius: 5px;
+}
+.s-etat[data-e="pending"]  { background: rgba(251,191,36,.14); color: var(--or); }
+.s-etat[data-e="approved"] { background: rgba(52,211,153,.14); color: var(--vert); }
+.s-etat[data-e="rejected"] { background: rgba(251,113,133,.14); color: var(--rouge); }
+.mini.ok { border-color: rgba(52,211,153,.4); color: var(--vert); }
+.mini.ok:hover { background: rgba(52,211,153,.13); }
+.mini.non { border-color: rgba(251,191,36,.4); color: var(--or); }
+.mini.non:hover { background: rgba(251,191,36,.13); }
+
+/* ── La modale du formulaire ─────────────── */
+.modale.large { max-width: 900px; }
+.form-lignes { display: grid; gap: .8rem; grid-template-columns: 1fr 1fr; }
+@media (max-width: 800px) { .form-lignes { grid-template-columns: 1fr; } }
+.champ { display: flex; flex-direction: column; gap: .3rem; }
+.champ > label {
+    font-size: .74rem; font-weight: 600; color: var(--doux);
+    text-transform: uppercase; letter-spacing: .05em;
+}
+.champ > label b { color: var(--rouge); font-weight: 700; }
+.champ input, .champ select, .champ textarea {
+    font-family: inherit; font-size: .88rem; color: var(--texte);
+    background: rgba(0,0,0,.28); border: 1px solid var(--bord);
+    border-radius: 9px; padding: .52rem .65rem; outline: none;
+    transition: border-color .15s;
+}
+.champ textarea { resize: vertical; min-height: 68px; line-height: 1.45; }
+.champ input:focus, .champ select:focus, .champ textarea:focus { border-color: var(--accent); }
+.champ option { background: var(--carte-haut); }
+.deux { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+/* La réponse choisie comme bonne se colore dans le formulaire : on voit ce
+   qu'on va enregistrer sans relire le sélecteur. */
+.champ.est-bonne input { border-color: rgba(52,211,153,.5); background: rgba(52,211,153,.06); }
+.modale-corps { max-height: min(70vh, 640px); overflow-y: auto; padding-right: .3rem; }
+.mot {
+    font-size: .8rem; color: var(--tres-doux); margin-right: auto;
+    align-self: center;
+}
+.mot.bien { color: var(--vert); }
+.mot.mal { color: var(--rouge); }
+
 /* ── L'écran de saisie ───────────────────── */
 /* Il couvre tout tant qu'on n'est pas entré : la page dessous n'a de toute
    façon aucune donnée, mais un panneau à moitié visible inviterait à insister. */
@@ -549,6 +675,16 @@ body:not(.entre) { overflow: hidden; }
     <g id="i-couronne" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 18h18M4 8l4 4 4-8 4 8 4-4-2 10H6z"/>
     </g>
+    <g id="i-plus" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </g>
+    <g id="i-ampoule" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.5.4.8 1 .9 1.6l.1.6h5.2l.1-.6c.1-.6.4-1.2.9-1.6A6 6 0 0012 3z"/>
+    </g>
+    <g id="i-lien" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/>
+      <path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/>
+    </g>
     <g id="i-cadenas" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 018 0v3"/>
     </g>
@@ -591,11 +727,27 @@ body:not(.entre) { overflow: hidden; }
         <div><b>Panneau</b><span>ShonenMaster</span></div>
     </a>
 
+    <div class="rail-groupe">
+        <div class="rail-titre">Suivi</div>
+        <button class="onglet" data-vue="ensemble" aria-selected="true">
+            <svg width="17" height="17"><use href="#i-direct"/></svg>
+            Vue d'ensemble
+            <span class="temoin" id="temoin"><span class="point"></span><span id="temoin-n">0</span></span>
+        </button>
+        <button class="onglet" data-vue="questions" aria-selected="false">
+            <svg width="17" height="17"><use href="#i-crayon"/></svg>
+            Questions
+            <span class="compte" id="compte-questions"></span>
+        </button>
+        <button class="onglet" data-vue="suggestions" aria-selected="false">
+            <svg width="17" height="17"><use href="#i-ampoule"/></svg>
+            Suggestions
+            <span class="compte pastille" id="compte-sug" hidden>0</span>
+        </button>
+    </div>
+
     <div class="rail-bas">
         <div class="rail-titre">Raccourcis</div>
-        <a class="rail-lien" id="lien-question">
-            <svg width="17" height="17"><use href="#i-crayon"/></svg> Questions
-        </a>
         <a class="rail-lien" href="/" target="_blank">
             <svg width="17" height="17"><use href="#i-manette"/></svg> Le jeu
         </a>
@@ -612,8 +764,8 @@ body:not(.entre) { overflow: hidden; }
 <main class="scene">
 
     <div class="scene-tete">
-        <h1>Vue d'ensemble</h1>
-        <p>Ce qui se joue, et ce qui a été joué</p>
+        <h1 id="scene-titre">Vue d'ensemble</h1>
+        <p id="scene-sous">Ce qui se joue, et ce qui a été joué</p>
         <span class="relu" id="relu"></span>
     </div>
 
@@ -673,7 +825,167 @@ body:not(.entre) { overflow: hidden; }
             </div>
         </div>
     </section>
+
+    <!-- ── Vue : questions ──────────────────────────────────────────
+         Ajouter, lister et modifier au même endroit. Le formulaire vit
+         dans une modale plutôt qu'en haut de page : la liste garde
+         toute la hauteur, et c'est elle qu'on lit. -->
+    <section class="vue vue-pleine" data-vue="questions">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16"><use href="#i-crayon"/></svg>
+                La banque <small id="q-note"></small>
+                <span class="tete-actions">
+                    <button class="mini vif" id="q-ajouter">
+                        <svg width="14" height="14"><use href="#i-plus"/></svg> Ajouter
+                    </button>
+                </span>
+            </div>
+
+            <div class="filtres-ligne">
+                <select id="q-serie"><option value="">Toutes les séries</option></select>
+                <select id="q-diff">
+                    <option value="">Toutes difficultés</option>
+                    <option value="veryeasy">Very Easy</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="veryhard">Very Hard</option>
+                    <option value="extreme">Extreme</option>
+                </select>
+                <select id="q-spoil">
+                    <option value="">Spoil : tous</option>
+                    <option value="spoil">Spoil</option>
+                    <option value="safe">Non-spoil</option>
+                </select>
+                <select id="q-preuve">
+                    <option value="">Preuve : toutes</option>
+                    <option value="sans">Sans preuve</option>
+                    <option value="avec">Avec preuve</option>
+                </select>
+                <input type="search" id="q-rech" placeholder="Rechercher un énoncé, une série, une réponse…"
+                       autocomplete="off" spellcheck="false">
+            </div>
+
+            <div class="defile" id="q-liste">
+                <div class="etat">Lecture…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Vue : suggestions ────────────────────────────────────── -->
+    <section class="vue vue-pleine" data-vue="suggestions">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16"><use href="#i-ampoule"/></svg>
+                Ce que les joueurs proposent <small id="s-note"></small>
+                <span class="filtres" id="s-filtres">
+                    <button class="filtre" data-s="pending" aria-pressed="true">En attente</button>
+                    <button class="filtre" data-s="approved" aria-pressed="false">Acceptées</button>
+                    <button class="filtre" data-s="rejected" aria-pressed="false">Refusées</button>
+                    <button class="filtre" data-s="all" aria-pressed="false">Toutes</button>
+                </span>
+            </div>
+            <div class="defile" id="s-liste">
+                <div class="etat">Lecture…</div>
+            </div>
+        </div>
+    </section>
 </main>
+
+<!-- ── LE FORMULAIRE, POUR AJOUTER COMME POUR MODIFIER ──────────────
+     Une seule modale pour les deux : c'est le même formulaire, et deux
+     copies auraient divergé au premier champ ajouté. -->
+<div class="voile" id="voile-q">
+    <div class="modale large">
+        <h3 id="q-titre">Ajouter une question</h3>
+        <form id="q-form">
+            <input type="hidden" id="q-id">
+            <div class="modale-corps">
+                <div class="form-lignes">
+                    <div style="display:flex;flex-direction:column;gap:.8rem">
+                        <div class="champ">
+                            <label>Énoncé <b>*</b></label>
+                            <textarea id="q-texte" required
+                                placeholder="Ex : Quel est le nom du titan d'Eren ?"></textarea>
+                        </div>
+                        <div class="champ">
+                            <label>Série <b>*</b></label>
+                            <input type="text" id="q-serie-c" required list="q-series-connues"
+                                   placeholder="Ex : Attack on Titan" autocomplete="off">
+                            <datalist id="q-series-connues"></datalist>
+                        </div>
+                        <div class="champ">
+                            <label>Lien de preuve</label>
+                            <input type="url" id="q-preuve-c" placeholder="https://…" autocomplete="off">
+                        </div>
+                        <div class="deux">
+                            <div class="champ">
+                                <label>Difficulté</label>
+                                <select id="q-diff-c" required>
+                                    <option value="veryeasy">Very Easy</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="hard">Hard</option>
+                                    <option value="veryhard">Very Hard</option>
+                                    <option value="extreme">Extreme</option>
+                                </select>
+                            </div>
+                            <div class="champ">
+                                <label>Bonne réponse</label>
+                                <select id="q-bonne" required>
+                                    <option value="1">1</option><option value="2">2</option>
+                                    <option value="3">3</option><option value="4">4</option>
+                                    <option value="5">5</option><option value="6">6</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="champ">
+                            <label>Spoil</label>
+                            <label style="display:flex;align-items:center;gap:.5rem;text-transform:none;letter-spacing:0;font-size:.86rem;color:var(--texte);cursor:pointer">
+                                <input type="checkbox" id="q-spoil-c" style="width:16px;height:16px;accent-color:var(--rouge)">
+                                <span id="q-spoil-mot">Non</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:.6rem">
+                        <div class="champ" data-rep="1"><label>Réponse 1 <b>*</b></label><input type="text" id="q-r1" required autocomplete="off"></div>
+                        <div class="champ" data-rep="2"><label>Réponse 2 <b>*</b></label><input type="text" id="q-r2" required autocomplete="off"></div>
+                        <div class="champ" data-rep="3"><label>Réponse 3 <b>*</b></label><input type="text" id="q-r3" required autocomplete="off"></div>
+                        <div class="champ" data-rep="4"><label>Réponse 4 <b>*</b></label><input type="text" id="q-r4" required autocomplete="off"></div>
+                        <div class="champ" data-rep="5"><label>Réponse 5 <b>*</b></label><input type="text" id="q-r5" required autocomplete="off"></div>
+                        <div class="champ" data-rep="6"><label>Réponse 6 <b>*</b></label><input type="text" id="q-r6" required autocomplete="off"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modale-actions" style="margin-top:1.1rem">
+                <span class="mot" id="q-mot"></span>
+                <button type="button" class="bouton" id="q-annuler">Fermer</button>
+                <button type="submit" class="bouton" id="q-valider"
+                        style="background:var(--accent);border-color:transparent;color:#fff">Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ⚠️ La suppression d'une question exige un SECOND mot de passe. Une
+     question effacée ne se retrouve pas, et la banque est écrite à la main
+     depuis des mois : être entré dans le panneau ne suffit pas à effacer. -->
+<div class="voile" id="voile-sup">
+    <div class="modale">
+        <h3>Supprimer la question</h3>
+        <p id="sup-cible"></p>
+        <div class="champ" style="margin-bottom:1rem">
+            <label>Mot de passe de suppression</label>
+            <input type="password" id="sup-code" autocomplete="off">
+            <span class="mot mal" id="sup-erreur"></span>
+        </div>
+        <div class="modale-actions">
+            <button class="bouton" id="sup-annuler">Annuler</button>
+            <button class="bouton danger" id="sup-go">Supprimer</button>
+        </div>
+    </div>
+</div>
 
 <div class="voile" id="voile">
     <div class="modale">
@@ -701,11 +1013,6 @@ body:not(.entre) { overflow: hidden; }
 // favori d'avant ne doit pas cesser de marcher. On le retire alors de la barre.
 let CODE = '';
 const CLEF = 'panneau:code';
-
-// ⚠️ Pas de ?code= sur le raccourci vers /question : cette page ne lit RIEN
-// dans l'adresse, elle a son propre formulaire qui interroge
-// /api/verify-question-code. Le ?code= qu'on y mettait ne servait à rien.
-document.getElementById('lien-question').href = '/question';
 
 // Toute requête du panneau passe par ici : c'est le seul endroit qui connaît
 // l'en-tête, et le seul qui sache quoi faire d'un refus.
@@ -785,6 +1092,29 @@ function pousser(sel, cle, prop) {
         document.querySelectorAll(sel).forEach(b => { b.style[prop] = b.dataset[cle] + '%'; });
     }));
 }
+
+// ── Les onglets ─────────────────────────────────────────────────────
+const TITRES = {
+    ensemble: ["Vue d'ensemble", 'Ce qui se joue, et ce qui a été joué'],
+    questions: ['Questions', 'La banque du mode Classique'],
+    suggestions: ['Suggestions', 'Les personnages proposés depuis BombAnime'],
+};
+// Chaque section ne va chercher ses données qu'à sa première ouverture :
+// tout charger au départ ferait trois requêtes dont deux inutiles.
+const CHARGE = {};
+document.querySelectorAll('.onglet').forEach(o => {
+    o.onclick = () => {
+        const v = o.dataset.vue;
+        document.querySelectorAll('.onglet').forEach(x =>
+            x.setAttribute('aria-selected', String(x === o)));
+        document.querySelectorAll('.vue').forEach(s =>
+            s.classList.toggle('active', s.dataset.vue === v));
+        $('scene-titre').textContent = TITRES[v][0];
+        $('scene-sous').textContent = TITRES[v][1];
+        if (v === 'questions' && !CHARGE.questions) { CHARGE.questions = true; lireQuestions(); }
+        if (v === 'suggestions' && !CHARGE.suggestions) { CHARGE.suggestions = true; lireSuggestions(); }
+    };
+});
 
 // ── Le direct ───────────────────────────────────────────────────────
 async function lireDirect() {
@@ -1153,6 +1483,414 @@ async function jeter(b) {
     }
 }
 
+// ════════════════════════════════════════════
+// LES QUESTIONS
+// ════════════════════════════════════════════
+let QUESTIONS = [];
+let SERIES = [];
+// Le mot de passe de suppression, retenu le temps d'un ménage. ⚠️ Jamais
+// écrit en localStorage : il ne doit pas survivre à la fermeture de l'onglet.
+let CODE_SUP = '';
+let CIBLE_SUP = null;
+
+// Les trois séries du filtre « Big 3 ». ⚠️ Mêmes que SERIES_FILTERS.big3
+// côté serveur (dbs.js) : si l'une change là-bas, elle doit changer ici.
+const BIG3 = ['one piece', 'naruto', 'bleach'];
+
+async function lireQuestions() {
+    const zone = $('q-liste');
+    zone.innerHTML = '<div class="etat">Lecture…</div>';
+    try {
+        // ⚠️ Plus de « adminCode » dans l'adresse : le panneau présente son
+        // en-tête X-Admin-Code, que codeBackOffice() accepte désormais.
+        const [rq, rs] = await Promise.all([
+            appel('/api/questions'),
+            appel('/api/series'),
+        ]);
+        const dq = await rq.json();
+        const ds = await rs.json();
+        if (!dq.success) throw new Error(dq.error || 'Lecture impossible');
+        QUESTIONS = dq.questions || [];
+        SERIES = (ds && ds.success && ds.series) || [];
+        remplirSeries();
+        filtrerQuestions();
+    } catch (e) {
+        zone.innerHTML = '<div class="etat">' + ech(e.message) + '</div>';
+    }
+}
+
+function remplirSeries() {
+    const sel = $('q-serie');
+    const garde = sel.value;
+    sel.innerHTML = '<option value="">Toutes les séries</option>' +
+        '<option value="__big3__">Big 3 (One Piece, Naruto, Bleach)</option>' +
+        SERIES.map(s => '<option value="' + ech(s) + '">' + ech(s) + '</option>').join('');
+    sel.value = garde;
+    // La même liste sert de suggestions dans le formulaire : on ne retape pas
+    // « Attack on Titan » à la main quatre-vingts fois.
+    $('q-series-connues').innerHTML = SERIES.map(s => '<option value="' + ech(s) + '">').join('');
+}
+
+function filtrerQuestions() {
+    const fSerie = $('q-serie').value.toLowerCase();
+    const fDiff = $('q-diff').value.toLowerCase();
+    const fSpoil = $('q-spoil').value;
+    const fPreuve = $('q-preuve').value;
+    const rech = $('q-rech').value.toLowerCase().trim();
+
+    const vues = QUESTIONS.filter(q => {
+        // ⚠️ « Big 3 » vaut pour trois séries à la fois : le jeton se teste
+        // AVANT l'égalité de nom, sinon aucune série ne s'appelle ainsi et la
+        // liste revient vide.
+        const okSerie = !fSerie || (fSerie === '__big3__'
+            ? BIG3.includes((q.serie || '').toLowerCase())
+            : (q.serie || '').toLowerCase() === fSerie);
+        const okDiff = !fDiff || q.difficulty === fDiff;
+        const okSpoil = !fSpoil || (fSpoil === 'spoil' ? q.is_spoil === true : !q.is_spoil);
+        // Un champ rempli d'espaces ne compte pas comme une preuve — même
+        // test que côté serveur.
+        const aPreuve = !!(q.proof_url && String(q.proof_url).trim());
+        const okPreuve = !fPreuve || (fPreuve === 'avec' ? aPreuve : !aPreuve);
+        // La recherche porte sur l'énoncé, la série ET les six réponses :
+        // retrouver une question par ce qu'elle fait deviner est le geste
+        // naturel, se souvenir de la formulation exacte ne l'est pas.
+        const reps = [q.answer1, q.answer2, q.answer3, q.answer4, q.answer5, q.answer6];
+        const okRech = !rech
+            || (q.question || '').toLowerCase().includes(rech)
+            || (q.serie || '').toLowerCase().includes(rech)
+            || reps.some(a => a && String(a).toLowerCase().includes(rech));
+        return okSerie && okDiff && okSpoil && okPreuve && okRech;
+    });
+
+    const spoils = QUESTIONS.filter(q => q.is_spoil === true).length;
+    $('q-note').textContent = '· ' + vues.length + ' / ' + QUESTIONS.length +
+        (spoils ? ' · ' + spoils + ' spoil' + (spoils > 1 ? 's' : '') : '');
+    $('compte-questions').textContent = QUESTIONS.length;
+    rendreQuestions(vues);
+}
+
+const DIFFS = { veryeasy: 'Very Easy', easy: 'Easy', medium: 'Medium',
+                hard: 'Hard', veryhard: 'Very Hard', extreme: 'Extreme' };
+
+function rendreQuestions(vues) {
+    const zone = $('q-liste');
+    if (!vues.length) { zone.innerHTML = '<div class="etat">Aucune question ne correspond.</div>'; return; }
+    // ⚠️ Coupé à 300 : la banque dépasse 1500 questions, et les rendre toutes
+    // fige la page une seconde à chaque frappe dans la recherche. Le nombre
+    // total reste affiché dans l'en-tête, donc la coupe ne se lit pas comme
+    // « il n'y en a que 300 ».
+    const COUPE = 300;
+    const liste = vues.slice(0, COUPE);
+    zone.innerHTML = liste.map(q => {
+        const aPreuve = !!(q.proof_url && String(q.proof_url).trim());
+        const reps = [1, 2, 3, 4, 5, 6].map(i => {
+            const a = q['answer' + i];
+            if (!a) return '';
+            return '<span class="' + (q.coanswer === i ? 'bonne' : '') + '">' +
+                i + '. ' + ech(a) + '</span>';
+        }).join('');
+        return '<div class="q" data-id="' + q.id + '">' +
+            '<div class="q-haut">' +
+            '<div class="q-txt">' + (q.is_spoil ? '<span class="pt-spoil">● </span>' : '') +
+            ech(q.question) + '</div>' +
+            '<div class="q-meta">' +
+            '<span class="etiq">' + ech(q.serie || '—') + '</span>' +
+            '<span class="dif" data-d="' + ech(q.difficulty) + '">' +
+            ech(DIFFS[q.difficulty] || q.difficulty) + '</span>' +
+            (aPreuve
+                ? '<a class="q-preuve a" href="' + ech(q.proof_url) + '" target="_blank" rel="noopener" title="Voir la preuve">' + icone('lien', 14) + '</a>'
+                : '<span class="q-preuve" title="Pas de preuve">' + icone('lien', 14) + '</span>') +
+            '</div></div>' +
+            '<div class="q-rep">' + reps + '</div>' +
+            '<div class="q-actions">' +
+            '<button class="mini" data-act="modifier" data-id="' + q.id + '">Modifier</button>' +
+            '<button class="mini" data-act="spoil" data-id="' + q.id + '">' +
+            (q.is_spoil ? 'Retirer le spoil' : 'Marquer spoil') + '</button>' +
+            '<button class="mini danger" data-act="supprimer" data-id="' + q.id + '">Supprimer</button>' +
+            '</div></div>';
+    }).join('') + (vues.length > COUPE
+        ? '<div class="etat">' + (vues.length - COUPE) + ' autres — affine la recherche pour les voir.</div>'
+        : '');
+
+    zone.querySelectorAll('.mini[data-act]').forEach(b => {
+        const id = parseInt(b.dataset.id, 10);
+        if (b.dataset.act === 'modifier') b.onclick = () => ouvrirForm(id);
+        if (b.dataset.act === 'spoil') b.onclick = () => basculerSpoil(id, b);
+        if (b.dataset.act === 'supprimer') b.onclick = () => demanderSuppression(id);
+    });
+}
+
+['q-serie', 'q-diff', 'q-spoil', 'q-preuve'].forEach(id => { $(id).onchange = filtrerQuestions; });
+$('q-rech').oninput = filtrerQuestions;
+
+// ── Le formulaire, pour ajouter comme pour modifier ─────────────────
+function ouvrirForm(id) {
+    const q = id ? QUESTIONS.find(x => x.id === id) : null;
+    $('q-id').value = q ? q.id : '';
+    $('q-titre').textContent = q ? 'Modifier la question' : 'Ajouter une question';
+    $('q-valider').textContent = q ? 'Enregistrer' : 'Ajouter';
+    $('q-texte').value = q ? q.question : '';
+    $('q-serie-c').value = q ? (q.serie || '') : '';
+    $('q-preuve-c').value = q ? (q.proof_url || '') : '';
+    $('q-diff-c').value = q ? (q.difficulty || 'medium') : 'medium';
+    $('q-bonne').value = q ? (q.coanswer || 1) : 1;
+    for (let i = 1; i <= 6; i++) $('q-r' + i).value = q ? (q['answer' + i] || '') : '';
+    $('q-spoil-c').checked = q ? q.is_spoil === true : false;
+    majSpoilMot();
+    majBonne();
+    $('q-mot').textContent = '';
+    $('q-mot').className = 'mot';
+    $('voile-q').classList.add('ouvert');
+    setTimeout(() => $('q-texte').focus(), 30);
+}
+
+function fermerForm() { $('voile-q').classList.remove('ouvert'); }
+
+function majSpoilMot() {
+    const oui = $('q-spoil-c').checked;
+    $('q-spoil-mot').textContent = oui ? 'Oui' : 'Non';
+    $('q-spoil-mot').style.color = oui ? 'var(--rouge)' : '';
+}
+// La réponse désignée comme bonne se colore : on voit ce qu'on enregistre
+// sans avoir à relire le sélecteur.
+function majBonne() {
+    const n = $('q-bonne').value;
+    document.querySelectorAll('.champ[data-rep]').forEach(c => {
+        c.classList.toggle('est-bonne', c.dataset.rep === n);
+    });
+}
+$('q-spoil-c').onchange = majSpoilMot;
+$('q-bonne').onchange = majBonne;
+$('q-ajouter').onclick = () => ouvrirForm(null);
+$('q-annuler').onclick = fermerForm;
+$('voile-q').onclick = e => { if (e.target === $('voile-q')) fermerForm(); };
+
+$('q-form').onsubmit = async e => {
+    e.preventDefault();
+    const id = $('q-id').value;
+    const reps = [1, 2, 3, 4, 5, 6].map(i => $('q-r' + i).value.trim());
+    const mot = $('q-mot');
+    if (reps.some(a => !a)) {
+        mot.textContent = 'Les six réponses sont requises.';
+        mot.className = 'mot mal';
+        return;
+    }
+    const b = $('q-valider');
+    b.disabled = true;
+    const corps = {
+        question: $('q-texte').value.trim(),
+        answers: reps,
+        correctAnswer: parseInt($('q-bonne').value, 10),
+        serie: $('q-serie-c').value.trim(),
+        difficulty: $('q-diff-c').value,
+        proof_url: $('q-preuve-c').value.trim() || null,
+        is_spoil: $('q-spoil-c').checked,
+    };
+    if (id) corps.id = id;
+    try {
+        const r = await appel(id ? '/api/update-question' : '/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps),
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
+
+        mot.textContent = id ? '✓ Modifiée' : '✓ Ajoutée';
+        mot.className = 'mot bien';
+        if (id) {
+            fermerForm();
+        } else {
+            // On garde la modale ouverte et on vide : saisir vingt questions
+            // d'affilée est le vrai usage, la rouvrir à chaque fois userait.
+            $('q-texte').value = '';
+            for (let i = 1; i <= 6; i++) $('q-r' + i).value = '';
+            $('q-preuve-c').value = '';
+            $('q-texte').focus();
+        }
+        await lireQuestions();
+    } catch (err) {
+        mot.textContent = err.message;
+        mot.className = 'mot mal';
+    }
+    b.disabled = false;
+};
+
+// ── Le spoil, en un clic ────────────────────────────────────────────
+// ⚠️ Ce bouton existait dans l'ancienne page mais appelait « toggleSpoil »,
+// une fonction qui n'était définie NULLE PART : il ne faisait rien depuis
+// toujours, en silence. Il passe ici par /api/update-question, qui exige la
+// question entière — on renvoie donc tous ses champs, pas seulement le drapeau.
+async function basculerSpoil(id, bouton) {
+    const q = QUESTIONS.find(x => x.id === id);
+    if (!q) return;
+    bouton.disabled = true;
+    try {
+        const r = await appel('/api/update-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: q.id,
+                question: q.question,
+                answers: [q.answer1, q.answer2, q.answer3, q.answer4, q.answer5, q.answer6],
+                correctAnswer: q.coanswer,
+                serie: q.serie,
+                difficulty: q.difficulty,
+                proof_url: q.proof_url || null,
+                is_spoil: !q.is_spoil,
+            }),
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
+        q.is_spoil = !q.is_spoil;
+        filtrerQuestions();
+    } catch (e) {
+        alert(e.message);
+        bouton.disabled = false;
+    }
+}
+
+// ── La suppression, avec son second mot de passe ────────────────────
+function demanderSuppression(id) {
+    const q = QUESTIONS.find(x => x.id === id);
+    CIBLE_SUP = id;
+    $('sup-cible').textContent = q ? q.question : 'cette question';
+    $('sup-erreur').textContent = '';
+    // Le code déjà saisi est rappelé : on ne le retape pas à chaque ligne
+    // d'un ménage, et la modale reste le geste délibéré qui confirme.
+    $('sup-code').value = CODE_SUP;
+    $('sup-go').disabled = false;
+    $('sup-go').textContent = 'Supprimer';
+    $('voile-sup').classList.add('ouvert');
+    setTimeout(() => (CODE_SUP ? $('sup-go') : $('sup-code')).focus(), 30);
+}
+function fermerSuppression() { $('voile-sup').classList.remove('ouvert'); CIBLE_SUP = null; }
+$('sup-annuler').onclick = fermerSuppression;
+$('voile-sup').onclick = e => { if (e.target === $('voile-sup')) fermerSuppression(); };
+$('sup-code').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('sup-go').click(); } };
+
+$('sup-go').onclick = async () => {
+    if (CIBLE_SUP === null) return;
+    CODE_SUP = $('sup-code').value;
+    if (!CODE_SUP) { $('sup-erreur').textContent = 'Mot de passe requis.'; return; }
+    const b = $('sup-go');
+    b.disabled = true;
+    b.textContent = 'Suppression…';
+    try {
+        const r = await appel('/api/delete-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deleteCode: CODE_SUP, id: CIBLE_SUP }),
+        });
+        const d = await r.json().catch(() => ({}));
+        // ⚠️ Un code refusé doit être OUBLIÉ : conservé, il reviendrait
+        // pré-rempli à la modale suivante et toutes les suppressions
+        // échoueraient sans qu'on comprenne pourquoi.
+        if (r.status === 401) { CODE_SUP = ''; throw new Error(d.error || 'Mot de passe refusé.'); }
+        if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
+        QUESTIONS = QUESTIONS.filter(q => q.id !== CIBLE_SUP);
+        fermerSuppression();
+        filtrerQuestions();
+    } catch (e) {
+        $('sup-erreur').textContent = e.message;
+        b.disabled = false;
+        b.textContent = 'Supprimer';
+    }
+};
+
+// ════════════════════════════════════════════
+// LES SUGGESTIONS
+// ════════════════════════════════════════════
+let S_STATUT = 'pending';
+
+function quandSug(iso) {
+    if (!iso) return '';
+    const s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return "à l'instant";
+    const m = Math.round(s / 60);
+    if (m < 60) return 'il y a ' + m + ' min';
+    const h = Math.round(m / 60);
+    if (h < 24) return 'il y a ' + h + ' h';
+    return 'il y a ' + Math.round(h / 24) + ' j';
+}
+
+async function lireSuggestions() {
+    const zone = $('s-liste');
+    zone.innerHTML = '<div class="etat">Lecture…</div>';
+    try {
+        const r = await appel('/api/suggestions?status=' + encodeURIComponent(S_STATUT));
+        if (!r.ok) throw new Error('Erreur ' + r.status);
+        const { suggestions, counts } = await r.json();
+
+        // La pastille du rail ne compte que ce qui ATTEND une décision.
+        const attente = (counts && counts.pending) || 0;
+        $('compte-sug').textContent = attente;
+        $('compte-sug').hidden = attente === 0;
+        $('s-note').textContent = '· ' + (suggestions || []).length;
+
+        if (!suggestions || !suggestions.length) {
+            zone.innerHTML = '<div class="etat">Rien à relire ici.</div>';
+            return;
+        }
+        const ETATS = { pending: 'en attente', approved: 'acceptée', rejected: 'refusée' };
+        zone.innerHTML = suggestions.map(s =>
+            '<div class="s">' +
+            '<span class="s-nom">' + ech(s.character_name) + '</span>' +
+            '<span class="s-serie">' + ech(s.anime) + '</span>' +
+            '<span class="s-etat" data-e="' + ech(s.status) + '">' +
+            ech(ETATS[s.status] || s.status) + '</span>' +
+            '<span class="s-meta">par ' + ech(s.submitted_by || 'anonyme') +
+            ' · ' + ech(quandSug(s.created_at)) + '</span>' +
+            '<span class="s-actions">' +
+            '<button class="mini ok" data-s="approved" data-id="' + s.id + '">Accepter</button>' +
+            '<button class="mini non" data-s="rejected" data-id="' + s.id + '">Refuser</button>' +
+            '<button class="mini danger" data-s="del" data-id="' + s.id + '">Supprimer</button>' +
+            '</span></div>').join('');
+
+        zone.querySelectorAll('.mini[data-s]').forEach(b => {
+            b.onclick = () => (b.dataset.s === 'del'
+                ? supprimerSuggestion(parseInt(b.dataset.id, 10))
+                : statuerSuggestion(parseInt(b.dataset.id, 10), b.dataset.s));
+        });
+    } catch (e) {
+        zone.innerHTML = '<div class="etat">' + ech(e.message) + '</div>';
+    }
+}
+
+$('s-filtres').querySelectorAll('.filtre').forEach(b => {
+    b.onclick = () => {
+        S_STATUT = b.dataset.s;
+        $('s-filtres').querySelectorAll('.filtre').forEach(x =>
+            x.setAttribute('aria-pressed', String(x === b)));
+        lireSuggestions();
+    };
+});
+
+async function statuerSuggestion(id, status) {
+    try {
+        const r = await appel('/api/suggestion-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status }),
+        });
+        if (!r.ok) throw new Error('Erreur ' + r.status);
+        lireSuggestions();
+    } catch (e) { alert(e.message); }
+}
+
+async function supprimerSuggestion(id) {
+    if (!confirm('Supprimer cette suggestion ?')) return;
+    try {
+        const r = await appel('/api/delete-suggestion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+        });
+        if (!r.ok) throw new Error('Erreur ' + r.status);
+        lireSuggestions();
+    } catch (e) { alert(e.message); }
+}
+
 // ── Vider ───────────────────────────────────────────────────────────
 $('b-vider').onclick = () => {
     $('voile-texte').textContent = PARTIES.length
@@ -1164,7 +1902,11 @@ $('b-vider').onclick = () => {
 $('b-annuler').onclick = () => $('voile').classList.remove('ouvert');
 $('voile').onclick = e => { if (e.target === $('voile')) $('voile').classList.remove('ouvert'); };
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') $('voile').classList.remove('ouvert');
+    if (e.key !== 'Escape') return;
+    // La plus haute d'abord : fermer celle du dessous laisserait l'autre.
+    if ($('voile-sup').classList.contains('ouvert')) { fermerSuppression(); return; }
+    if ($('voile-q').classList.contains('ouvert')) { fermerForm(); return; }
+    $('voile').classList.remove('ouvert');
 });
 $('b-confirmer').onclick = async () => {
     const b = $('b-confirmer');
@@ -1237,6 +1979,9 @@ $('porte-carte').onsubmit = async e => {
 $('b-sortir').onclick = () => {
     try { localStorage.removeItem(CLEF); } catch (e) { /* navigation privée */ }
     CODE = '';
+    // Le mot de passe de suppression part avec : il n'a rien à faire en
+    // mémoire une fois qu'on est sorti.
+    CODE_SUP = '';
     clearInterval(entrer._t);
     document.body.classList.remove('entre');
     $('porte-code').value = '';
