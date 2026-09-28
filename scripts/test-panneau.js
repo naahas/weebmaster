@@ -121,10 +121,12 @@ async function json(chemin, opts) {
     // Un vrai salon, deux vrais joueurs : le panneau doit les voir. C'est
     // l'information que la base ne peut PAS donner — les salons vivent dans la
     // mémoire du processus.
+    // Le playerId est ce qui permet au panneau de NOMMER l'hôte : le jeton dit
+    // qu'on est l'hôte, il ne dit pas qui. Le vrai client l'envoie aussi.
     const ouvert = await json('/admin/toggle-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lobbyMode: 'rush' }),
+        body: JSON.stringify({ lobbyMode: 'rush', playerId: 'panneau-PanneauUn' }),
     });
     const jeton = ouvert.corps && ouvert.corps.hostToken;
     const salon = ouvert.corps && ouvert.corps.roomCode;
@@ -155,8 +157,14 @@ async function json(chemin, opts) {
         dire(vu.joueurs === 2, 'il compte les deux joueurs', vu.joueurs + ' joueur(s)');
         dire(vu.mode === 'rush', 'il donne le bon mode', vu.mode);
         dire(!vu.enPartie, 'il sait que la partie n\'a pas commencé');
-        dire(vu.noms.includes('PanneauUn') && vu.noms.includes('PanneauDeux'),
-            'il nomme les joueurs', vu.noms.join(', '));
+        // ⚠️ Un seul nom : l'hôte. Lister tous les joueurs donnait une bulle
+        // qu'on ne lit pas, et qui débordait à quinze.
+        dire(!('noms' in vu), 'la liste de tous les pseudos ne part plus');
+        // ⚠️ Et c'est bien celui qui a OUVERT le salon, pas le premier arrivé :
+        // « players » est indexée par socket.id, la résolution se fait sur le
+        // champ playerId. Ici PanneauUn ouvre ET entre en premier, le cas où
+        // les deux diffèrent est tenu par la sonde de mise au point.
+        dire(vu.hote === 'PanneauUn', 'il nomme l\'hôte du salon', String(vu.hote));
     }
     dire(direct.joueursEnLigne >= 2, 'le total en ligne les inclut',
         direct.joueursEnLigne + ' en ligne');

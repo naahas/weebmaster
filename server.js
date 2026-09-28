@@ -1064,6 +1064,11 @@ function etatNeuf() {
     // Tiré à l'ouverture du salon et connu du seul créateur : c'est lui qui
     // distingue l'hôte de n'importe quel visiteur sur les routes /admin.
     hostToken: null,
+    // Qui a ouvert le salon. Le jeton dit qu on EST l hote, il ne dit pas QUI.
+    // Le panneau veut un nom : le client le donne en ouvrant, et on le
+    // résout dans `players` au moment de l afficher — un pseudo peut avoir
+    // changé, et l hôte peut être parti.
+    hostPlayerId: null,
     teamNames: { 1: 'Team A', 2: 'Team B' },
     teamCounts: { 1: 0, 2: 0 },
     teamScores: { 1: 0, 2: 0 }, // Vies restantes ou points totaux par équipe
@@ -1864,6 +1869,9 @@ app.post('/admin/toggle-game', async (req, res) => {
     console.log(`🎮 Mode: ${gameState.lobbyMode}${gameState.lobbyMode === 'bombanime' ? ` (${gameState.bombanime.serie})` : ''}`);
 
     // Le jeton ne part qu'ici, dans la réponse à celui qui vient d'ouvrir
+    gameState.hostPlayerId = (req.body && typeof req.body.playerId === 'string')
+        ? req.body.playerId : null;
+
     res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
 });
 
@@ -4947,6 +4955,14 @@ app.get('/admin/site/direct', (req, res) => {
     if (!gardePanneau(req, res)) return;
     const salons = [];
     for (const [code, g] of rooms) {
+        // L hôte, résolu maintenant : son pseudo a pu changer depuis
+        // l ouverture, et il a pu quitter le salon qu il a créé.
+        // ⚠️ `players` est indexée par SOCKET.ID, pas par playerId — un
+        // `get(hostPlayerId)` rend toujours undefined. On cherche dans les
+        // valeurs, où le playerId est un champ.
+        const h = g.hostPlayerId
+            ? [...g.players.values()].find(p => p.playerId === g.hostPlayerId)
+            : null;
         salons.push({
             code,
             mode: g.lobbyMode,
@@ -4955,13 +4971,18 @@ app.get('/admin/site/direct', (req, res) => {
             ouvert: !!g.isActive,
             enPartie: !!g.inProgress,
             depuis: g.gameStartTime ? Date.now() - g.gameStartTime : null,
-            noms: [...g.players.values()].map(p => p.username).slice(0, 20),
+            hote: h ? h.username : null,
         });
     }
     salons.sort((a, b) => b.joueurs - a.joueurs);
     res.json({
         salons,
         joueursEnLigne: salons.reduce((a, s) => a + s.joueurs, 0),
+        // ⚠️ Pas la même chose : `joueursEnLigne` compte ceux qui sont DANS
+        // un salon, `surLeSite` toutes les sockets ouvertes — accueil et
+        // saisie de pseudo compris. C est ce second chiffre qui dit combien
+        // de monde il y a sur le site en même temps.
+        surLeSite: io ? io.engine.clientsCount : 0,
         partiesEnCours: salons.filter(s => s.enPartie).length,
         maintenant: Date.now(),
     });

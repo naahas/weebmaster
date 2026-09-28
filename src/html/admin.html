@@ -135,8 +135,7 @@ button { font-family: inherit; color: inherit; }
 .scene-tete p { color: var(--doux); font-size: .84rem; }
 .scene-tete .relu { margin-left: auto; color: var(--tres-doux); font-size: .76rem; }
 
-.vue { flex: 1; min-height: 0; display: none; flex-direction: column; gap: 1rem; }
-.vue.active { display: flex; }
+.vue { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1rem; }
 
 /* ── Les cartes ──────────────────────────── */
 .carte {
@@ -184,6 +183,13 @@ button { font-family: inherit; color: inherit; }
     letter-spacing: .08em; font-size: .88rem;
 }
 .salon-bas { color: var(--doux); font-size: .73rem; margin-top: .12rem; }
+/* L'hôte du salon. Un seul nom suffit : lister tous les joueurs dans une
+   bulle donnait une liste qu'on ne lit pas. */
+.salon-hote {
+    display: flex; align-items: center; gap: .3rem;
+    color: var(--tres-doux); font-size: .72rem; margin-top: .18rem;
+}
+.salon-hote svg { width: 11px; height: 11px; }
 .jauge {
     font-size: .64rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .05em; padding: .1rem .4rem; border-radius: 5px;
@@ -214,21 +220,31 @@ button { font-family: inherit; color: inherit; }
 .chiffre-note { color: var(--tres-doux); font-size: .76rem; margin-top: -.15rem; }
 
 /* ── La rangée du bas de la vue d'ensemble ─ */
-.duo { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+.duo { flex: 1; min-height: 0; display: grid; gap: 1rem; grid-template-columns: 22rem 1fr; }
 .duo > .carte { display: flex; flex-direction: column; min-height: 0; }
 .duo > .carte > .carte-corps { flex: 1; min-height: 0; overflow-y: auto; }
+@media (max-width: 1250px) { .duo { grid-template-columns: 1fr; } }
 
 /* ── Les modes ───────────────────────────── */
-.mode { margin-bottom: .9rem; }
-.mode:last-child { margin-bottom: 0; }
-.mode-tete {
-    display: flex; align-items: baseline; gap: .5rem;
-    margin-bottom: .32rem; font-size: .86rem;
+.mode {
+    padding: .85rem .9rem; border-radius: 11px;
+    background: rgba(255,255,255,.022); border: 1px solid var(--bord);
+    margin-bottom: .6rem;
 }
-.mode-nom { font-weight: 600; }
-.mode-detail { color: var(--tres-doux); font-size: .76rem; }
-.mode-part { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.barre { height: 6px; border-radius: 99px; background: rgba(255,255,255,.055); overflow: hidden; }
+.mode:last-child { margin-bottom: 0; }
+.mode-tete { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .1rem; }
+.mode-nom { font-weight: 600; font-size: 1rem; }
+.mode-part {
+    margin-left: auto; font-weight: 700; font-size: 1.05rem;
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+/* Le détail passe SOUS le nom : à côté, il poussait le pourcentage hors du
+   cadre dès que la colonne se rétrécissait. */
+.mode-detail {
+    color: var(--tres-doux); font-size: .78rem; display: block;
+    margin-bottom: .55rem;
+}
+.barre { height: 7px; border-radius: 99px; background: rgba(255,255,255,.05); overflow: hidden; }
 .barre > i {
     display: block; height: 100%; border-radius: 99px; background: var(--accent);
     /* La largeur arrive après le premier rendu : la transition la fait pousser. */
@@ -240,24 +256,7 @@ button { font-family: inherit; color: inherit; }
 .mode[data-m="ascension"] .barre > i { background: linear-gradient(90deg, var(--cyan), #3b82f6); }
 .mode[data-m="classic"]   .barre > i { background: linear-gradient(90deg, var(--accent-clair), var(--accent)); }
 
-/* ── Les quatorze jours ──────────────────── */
-.jours { display: flex; align-items: flex-end; gap: 5px; flex: 1; min-height: 90px; }
-.jour { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
-.jour > i {
-    display: block; border-radius: 4px 4px 2px 2px; min-height: 3px;
-    background: linear-gradient(180deg, var(--accent), rgba(109,92,255,.3));
-    height: 0; transition: height .7s cubic-bezier(.22,1,.36,1);
-}
-.jour.creux > i { background: rgba(255,255,255,.055); }
-.jour.aujourdhui > i { background: linear-gradient(180deg, var(--vert), rgba(52,211,153,.25)); }
-.jours-pieds {
-    display: flex; gap: 5px; color: var(--tres-doux);
-    font-size: .67rem; text-align: center; margin-top: .5rem;
-}
-.jours-pieds > span { flex: 1; overflow: hidden; }
-
 /* ── Le tableau ──────────────────────────── */
-.vue-parties > .carte { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .filtres { display: flex; gap: .35rem; flex-wrap: wrap; margin-left: auto; }
 .filtre {
     font-size: .76rem; font-weight: 600; padding: .28rem .65rem;
@@ -291,7 +290,6 @@ input[type="checkbox"] {
 }
 tbody tr.cochee { background: rgba(109,92,255,.11); }
 tbody tr.cochee:hover { background: rgba(109,92,255,.15); }
-tbody tr.cochee td:not(:last-child) { opacity: 1; }
 
 /* ── La barre de sélection ───────────────── */
 /* Elle prend la place de rien : elle se déplie entre l'en-tête et le tableau,
@@ -321,7 +319,6 @@ thead th:last-child { text-align: right; }
 td { padding: .78rem .9rem; border-bottom: 1px solid rgba(255,255,255,.04); }
 tbody tr { transition: background .12s; }
 tbody tr:hover { background: rgba(255,255,255,.028); }
-tbody tr.sous-seuil td:not(:last-child) { opacity: .55; }
 tbody tr.part { opacity: 0; transition: opacity .2s; }
 .etiq {
     font-size: .74rem; font-weight: 600; padding: .16rem .5rem;
@@ -334,10 +331,6 @@ tbody tr.part { opacity: 0; transition: opacity .2s; }
 .etiq[data-m="ascension"] { background: rgba(34,211,238,.13); color: var(--cyan); }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .doux { color: var(--tres-doux); }
-.hors {
-    font-size: .66rem; color: var(--tres-doux); border: 1px solid var(--bord);
-    border-radius: 4px; padding: .02rem .28rem; margin-left: .35rem; white-space: nowrap;
-}
 td.actions { text-align: right; width: 1%; }
 .jeter {
     border: 1px solid transparent; background: none; cursor: pointer;
@@ -513,9 +506,6 @@ body:not(.entre) { overflow: hidden; }
     <g id="i-cible" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>
     </g>
-    <g id="i-graphe" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 21h18M7 21V10M12 21V4M17 21v-7"/>
-    </g>
     <g id="i-jeux" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/>
       <rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>
@@ -572,20 +562,6 @@ body:not(.entre) { overflow: hidden; }
         <div><b>Panneau</b><span>ShonenMaster</span></div>
     </a>
 
-    <div class="rail-groupe">
-        <div class="rail-titre">Suivi</div>
-        <button class="onglet" data-vue="ensemble" aria-selected="true">
-            <svg width="17" height="17"><use href="#i-direct"/></svg>
-            Vue d'ensemble
-            <span class="temoin" id="temoin"><span class="point"></span><span id="temoin-n">0</span></span>
-        </button>
-        <button class="onglet" data-vue="parties" aria-selected="false">
-            <svg width="17" height="17"><use href="#i-liste"/></svg>
-            Les parties
-            <span class="compte" id="compte-parties"></span>
-        </button>
-    </div>
-
     <div class="rail-bas">
         <div class="rail-titre">Raccourcis</div>
         <a class="rail-lien" id="lien-question">
@@ -607,8 +583,8 @@ body:not(.entre) { overflow: hidden; }
 <main class="scene">
 
     <div class="scene-tete">
-        <h1 id="scene-titre">Vue d'ensemble</h1>
-        <p id="scene-sous"></p>
+        <h1>Vue d'ensemble</h1>
+        <p>Ce qui se joue, et ce qui a été joué</p>
         <span class="relu" id="relu"></span>
     </div>
 
@@ -635,25 +611,10 @@ body:not(.entre) { overflow: hidden; }
             </div>
             <div class="carte">
                 <div class="carte-tete">
-                    <svg width="16" height="16"><use href="#i-graphe"/></svg>
-                    Les 14 derniers jours
+                    <svg width="16" height="16"><use href="#i-liste"/></svg>
+                    Les parties <small id="parties-note"></small>
+                    <span class="filtres" id="filtres"></span>
                 </div>
-                <div class="carte-corps" style="display:flex;flex-direction:column">
-                    <div class="jours" id="jours"></div>
-                    <div class="jours-pieds" id="jours-pieds"></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ── Vue : parties ── -->
-    <section class="vue vue-parties" data-vue="parties">
-        <div class="carte">
-            <div class="carte-tete">
-                <svg width="16" height="16"><use href="#i-liste"/></svg>
-                Historique <small id="parties-note"></small>
-                <span class="filtres" id="filtres"></span>
-            </div>
             <div class="selection" id="selection">
                 <b id="sel-n"></b>
                 <span class="doux" id="sel-detail"></span>
@@ -675,6 +636,7 @@ body:not(.entre) { overflow: hidden; }
                     </tr></thead>
                     <tbody id="lignes"><tr><td colspan="7"><div class="etat">Lecture…</div></td></tr></tbody>
                 </table>
+            </div>
             </div>
         </div>
     </section>
@@ -791,23 +753,6 @@ function pousser(sel, cle, prop) {
     }));
 }
 
-// ── Les onglets ─────────────────────────────────────────────────────
-const TITRES = {
-    ensemble: ["Vue d'ensemble", 'Ce qui se joue, et ce qui a été joué'],
-    parties: ['Les parties', 'Toutes les parties enregistrées, parties de test comprises'],
-};
-document.querySelectorAll('.onglet').forEach(o => {
-    o.onclick = () => {
-        document.querySelectorAll('.onglet').forEach(x =>
-            x.setAttribute('aria-selected', String(x === o)));
-        document.querySelectorAll('.vue').forEach(v =>
-            v.classList.toggle('active', v.dataset.vue === o.dataset.vue));
-        $('scene-titre').textContent = TITRES[o.dataset.vue][0];
-        $('scene-sous').textContent = TITRES[o.dataset.vue][1];
-    };
-});
-$('scene-sous').textContent = TITRES.ensemble[1];
-
 // ── Le direct ───────────────────────────────────────────────────────
 async function lireDirect() {
     let d;
@@ -822,12 +767,15 @@ async function lireDirect() {
 
     const vide = d.salons.length === 0;
     $('direct').classList.toggle('actif', !vide);
-    $('temoin').classList.toggle('actif', !vide);
-    $('temoin-n').textContent = d.joueursEnLigne;
-    $('direct-titre').textContent = vide ? 'Personne en ligne' : 'En ce moment';
+    $('direct-titre').textContent = vide ? 'Aucun salon ouvert' : 'En ce moment';
+    // Le nombre de connectés se met à jour même sans salon : quelqu'un peut
+    // être sur l'accueil, en train de saisir son pseudo.
+    majEnLigne(d.surLeSite, d.joueursEnLigne);
 
     if (vide) {
-        $('direct-doux').textContent = 'Aucun salon ouvert.';
+        $('direct-doux').textContent = d.surLeSite
+            ? (d.surLeSite > 1 ? d.surLeSite + ' personnes sur le site' : '1 personne sur le site')
+            : 'Personne sur le site.';
         $('salons').innerHTML = '';
         return;
     }
@@ -837,14 +785,19 @@ async function lireDirect() {
         d.salons.length + '</strong> salon' + (d.salons.length > 1 ? 's' : '') +
         (p ? ' · <strong>' + p + '</strong> partie' + (p > 1 ? 's' : '') + ' en cours' : '');
 
+    // ⚠️ Un seul nom : celui de l'hôte. Lister tous les joueurs donnait une
+    // bulle qu'on ne lit pas, et qui débordait à quinze.
     $('salons').innerHTML = d.salons.map(s =>
-        '<div class="salon" title="' + ech(s.noms.join(', ')) + '">' +
+        '<div class="salon">' +
         '<div class="salon-haut"><span class="salon-code">' + ech(s.code) + '</span>' +
         '<span class="jauge ' + (s.enPartie ? 'joue' : 'attend') + '">' +
         (s.enPartie ? 'en jeu' : 'salon') + '</span></div>' +
         '<div class="salon-bas">' + ech(s.modeLabel) + ' · ' + s.joueurs + ' joueur' +
         (s.joueurs > 1 ? 's' : '') +
-        (s.enPartie && s.depuis ? ' · ' + duree(s.depuis / 1000) : '') + '</div></div>').join('');
+        (s.enPartie && s.depuis ? ' · ' + duree(s.depuis / 1000) : '') + '</div>' +
+        (s.hote ? '<div class="salon-hote">' + icone('couronne', 11) +
+                  ech(s.hote) + '</div>' : '') +
+        '</div>').join('');
 }
 
 // ── L'historique ────────────────────────────────────────────────────
@@ -869,11 +822,23 @@ async function lireStats() {
 function dessiner() {
     grandsChiffres();
     parModes();
-    parJours();
     lesFiltres();
     leTableau();
-    $('compte-parties').textContent = PARTIES.length;
     $('relu').textContent = 'relu à ' + new Date().toLocaleTimeString('fr-FR');
+}
+
+// ⚠️ À part du reste : ce chiffre vient du direct, rafraîchi toutes les dix
+// secondes, alors que les autres viennent de l'historique, lu une fois. Le
+// faire passer par dessiner() le figerait au chargement.
+let EN_LIGNE = { site: 0, salons: 0 };
+function majEnLigne(site, salons) {
+    EN_LIGNE = { site: site || 0, salons: salons || 0 };
+    const c = $('c-enligne');
+    if (!c) return;
+    c.querySelector('.chiffre-val').textContent = EN_LIGNE.site;
+    c.querySelector('.chiffre-note').textContent = EN_LIGNE.salons
+        ? 'dont ' + EN_LIGNE.salons + ' en salon'
+        : 'personne en salon';
 }
 
 function grandsChiffres() {
@@ -884,6 +849,11 @@ function grandsChiffres() {
     const gros = P.reduce((m, p) => Math.max(m, p.players_count || 0), 0);
 
     const cases = [
+        // ⚠️ Celle-ci est remplie par majEnLigne(), pas ici : elle vit au
+        // rythme du direct. On lui donne son id pour qu'il la retrouve.
+        ['direct', 'En ligne', EN_LIGNE.site,
+            EN_LIGNE.salons ? 'dont ' + EN_LIGNE.salons + ' en salon' : 'personne en salon',
+            'c-enligne'],
         ['jeux', 'Parties jouées', P.length, ''],
         ['soleil', "Aujourd'hui", depuis(24), ''],
         ['horloge', 'Temps de jeu', duree(secondes),
@@ -894,10 +864,10 @@ function grandsChiffres() {
                        (P[0].players_count || 0) + ' joueurs' : ''],
     ];
     $('chiffres').innerHTML = cases.map(c =>
-        '<div class="chiffre">' +
+        '<div class="chiffre"' + (c[4] ? ' id="' + c[4] + '"' : '') + '>' +
         '<div class="chiffre-tete">' + icone(c[0], 14) + ech(c[1]) + '</div>' +
         '<div class="chiffre-val">' + ech(c[2]) + '</div>' +
-        (c[3] ? '<div class="chiffre-note">' + ech(c[3]) + '</div>' : '') + '</div>').join('');
+        '<div class="chiffre-note">' + ech(c[3] || '') + '</div></div>').join('');
 }
 
 // Le classement par mode dit ce que les gens PRÉFÈRENT. On classe au temps de
@@ -928,34 +898,6 @@ function parModes() {
     pousser('.barre > i', 'p', 'width');
 }
 
-function parJours() {
-    const JOURS = 14;
-    // Clef locale et non ISO : toISOString() bascule en UTC, et une partie
-    // jouée à 1 h du matin tomberait la veille.
-    const cle = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
-                     '-' + String(d.getDate()).padStart(2, '0');
-    const seaux = new Map();
-    const etiq = [];
-    for (let i = JOURS - 1; i >= 0; i--) {
-        const d = new Date(Date.now() - i * 86400e3);
-        seaux.set(cle(d), 0);
-        etiq.push({ k: cle(d), jour: d.getDate(), aujourdhui: i === 0 });
-    }
-    for (const p of PARTIES) {
-        const k = cle(new Date(p.created_at));
-        if (seaux.has(k)) seaux.set(k, seaux.get(k) + 1);
-    }
-    const haut = Math.max(1, ...seaux.values());
-    $('jours').innerHTML = etiq.map(e => {
-        const n = seaux.get(e.k);
-        return '<div class="jour' + (n ? '' : ' creux') + (e.aujourdhui ? ' aujourdhui' : '') +
-            '" title="' + n + ' partie(s)"><i data-h="' +
-            (n ? Math.max(4, Math.round(n / haut * 100)) : 2) + '"></i></div>';
-    }).join('');
-    $('jours-pieds').innerHTML = etiq.map(e => '<span>' + e.jour + '</span>').join('');
-    pousser('.jour > i', 'h', 'height');
-}
-
 function lesFiltres() {
     const modes = [...new Set(PARTIES.map(mode))];
     const l = [['tout', 'Tout']].concat(modes.map(m => [m, NOMS[m] || m]));
@@ -980,17 +922,13 @@ function leTableau() {
     $('lignes').innerHTML = vues.map(p => {
         const n = p.players_count || 0;
         const k = mode(p);
-        // Une partie sous le seuil public est montrée — c'est la demande —
-        // mais en retrait et signalée : sinon on la lirait comme du trafic.
-        const sous = n < SEUILS.seuilCompteur;
-        return '<tr class="' + (sous ? 'sous-seuil' : '') +
-            (COCHES.has(p.id) ? ' cochee' : '') + '" data-id="' + p.id + '">' +
+        return '<tr class="' + (COCHES.has(p.id) ? 'cochee' : '') + '" data-id="' + p.id + '">' +
             '<td class="coche"><input type="checkbox" data-id="' + p.id + '"' +
             (COCHES.has(p.id) ? ' checked' : '') + '></td>' +
             '<td class="num">' + ech(ilYA(p.created_at)) +
             '<span class="doux"> · ' + ech(heure(p.created_at)) + '</span></td>' +
             '<td><span class="etiq" data-m="' + ech(k) + '">' + ech(NOMS[k] || k) + '</span></td>' +
-            '<td class="num">' + n + (sous ? '<span class="hors">hors compteur</span>' : '') + '</td>' +
+            '<td class="num">' + n + '</td>' +
             '<td class="num">' + duree(p.duration) + '</td>' +
             '<td>' + (p.winner_name ? ech(p.winner_name) : '<span class="doux">—</span>') + '</td>' +
             '<td class="actions"><button class="jeter" data-id="' + p.id +
@@ -1134,12 +1072,10 @@ async function jeter(b) {
         COCHES.delete(id);
         if (DERNIERE === id) DERNIERE = null;
         majSelection();
-        $('compte-parties').textContent = PARTIES.length;
         $('parties-note').textContent = '· ' + (FILTRE === 'tout'
             ? PARTIES.length : PARTIES.filter(p => mode(p) === FILTRE).length);
         grandsChiffres();
         parModes();
-        parJours();
     } catch (e) {
         b.disabled = false;
         alert(e.message);

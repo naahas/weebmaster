@@ -3577,6 +3577,9 @@ createApp({
                     body: JSON.stringify({
                         lobbyMode: this.selectedMode,
                         motDePasse: this.mdpSalon || undefined,
+                        // Pour que le panneau puisse NOMMER l'hôte d'un salon :
+                        // le jeton dit qu'on est l'hôte, il ne dit pas qui.
+                        playerId: this.playerId || undefined,
                     }),
                 });
                 const data = await res.json();

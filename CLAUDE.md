@@ -72,11 +72,12 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   en PNG pese 400 a 800 Ko : les 171 vignettes feraient plus de 100 Mo, contre 5 en WebP.
   Un dossier peut lui etre passe (`-- ~/Bureau`) : il n y prend alors que les fichiers
   nommes `op_*` et ne supprime RIEN — on ne touche pas a ce qui vit hors du depot.
-  `npm run test:panneau` (le panneau `/admin` : les quatre routes sont-elles
-  fermees sans le code, la vue du direct voit-elle un vrai salon et ses joueurs,
-  et surtout une partie a DEUX entre-t-elle en base SANS bouger le compteur
-  public — ~45 s, une manche de Rush jouee pour de vrai. Le code se lit dans
-  l environnement : `QUESTION_ADMIN_CODE=… npm run test:panneau`),
+  `npm run test:panneau` (le panneau `/admin` : les routes de donnees sont-elles
+  fermees sans le code, le portail refuse-t-il un code faux ET lentement, la vue
+  du direct voit-elle un vrai salon et son HOTE, et surtout une partie a DEUX
+  entre-t-elle en base SANS bouger le compteur public, puis se supprime-t-elle
+  seule comme en lot — ~45 s, une manche de Rush jouee pour de vrai. Le code se
+  lit dans l environnement : `PANEL_ADMIN_CODE=… npm run test:panneau`),
   `npm run test:preuve` (le lien de preuve d une question n atteint le joueur
   qu APRES la revelation : ni `new-question` ni `/game/state` ne le portent),
   `npm run test:collect` (le moteur de Collect sans serveur : les regles, les neuf
@@ -365,14 +366,20 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   de ses vols contre 86 % de reussite pour celui qui choisit sa classe.
   Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
   avec un curseur de joueurs et les mesures sous chaque telephone.
-- `/admin` : **le panneau du site**, pour Adem seul. Ce qui se joue EN CE MOMENT
-  (salons ouverts, joueurs dedans, pseudos, temps de partie — rafraichi seul
-  toutes les 10 s), puis l historique complet : parties, temps de jeu, classement
-  des modes AU TEMPS et non au nombre (une partie de BombAnime pese dix manches
-  de Rush), activite sur quatorze jours, jour le plus charge, heure de pointe,
-  et un bouton pour vider l historique. Les parties sous trois joueurs y sont
-  montrees, en retrait et marquees « hors compteur » — sinon on les lirait comme
-  du trafic reel.
+- `/admin` : **le panneau du site**, pour Adem seul. UN SEUL ecran, sans onglets :
+  ce qui se joue EN CE MOMENT (salons ouverts, leur HOTE, joueurs dedans, temps
+  de partie — rafraichi seul toutes les 10 s), les compteurs, le classement des
+  modes AU TEMPS et non au nombre (une partie de BombAnime pese dix manches de
+  Rush), et la liste des parties a cote. Toutes les parties y sont montrees, y
+  compris celles a deux joueurs.
+  ⚠️ Deux compteurs de presence, a ne pas confondre : `surLeSite` compte TOUTES
+  les sockets ouvertes (accueil et saisie de pseudo compris), `joueursEnLigne`
+  seulement ceux qui sont DANS un salon.
+  ⚠️ L hote d un salon : le jeton dit qu on EST l hote, il ne dit pas QUI. Le
+  client envoie son `playerId` a l ouverture (`gameState.hostPlayerId`), et le
+  panneau le resout au moment d afficher. La resolution se fait **sur le champ**
+  `playerId` des valeurs : `gameState.players` est indexee par **socket.id**, un
+  `get(hostPlayerId)` rend toujours `undefined`.
   ⚠️ Le raccourci vers `/question` ne porte **pas** de `?code=` : cette page
   ne lit RIEN dans l adresse, elle a son propre formulaire qui interroge
   `/api/verify-question-code`. Le `?code=` qu on y mettait n avait jamais rien
