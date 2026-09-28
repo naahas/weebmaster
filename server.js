@@ -5272,6 +5272,37 @@ app.post('/api/suggestion-status', async (req, res) => {
     }
 });
 
+// Corriger le nom (et la serie) d une suggestion avant de statuer dessus.
+app.post('/api/update-suggestion', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+
+    const id = parseInt(req.body && req.body.id, 10);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    // ⚠️ On BORNE ce qui entre. Le nom part en base puis dans le panneau,
+    // et il finira recopie a la main dans bombdata.json : un champ de
+    // quinze kilo-octets n y a rien a faire.
+    const propre = (v, max) => {
+        if (typeof v !== 'string') return undefined;
+        const s = v.replace(/\s+/g, ' ').trim();
+        return s ? s.slice(0, max) : undefined;
+    };
+    const characterName = propre(req.body.characterName, 80);
+    const anime = propre(req.body.anime, 60);
+
+    if (!characterName && !anime) {
+        return res.status(400).json({ error: 'Rien à corriger.' });
+    }
+
+    try {
+        const suggestion = await db.updateSuggestionTexte(id, { characterName, anime });
+        res.json({ success: true, suggestion });
+    } catch (e) {
+        console.error('Erreur correction suggestion:', e);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
 app.post('/api/delete-suggestion', async (req, res) => {
     if (!codeBackOffice(req, res)) return;
     try {

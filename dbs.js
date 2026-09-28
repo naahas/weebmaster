@@ -295,6 +295,28 @@ const db = {
         return data;
     },
 
+    // Corriger le texte d une suggestion. Les joueurs la tapent au clavier
+    // en pleine partie : « SHINSEKAI YORI » arrive aussi bien en
+    // « shinsekai yory ». On corrige AVANT d accepter, sinon la faute reste
+    // dans la liste des acceptees — celle qu on recopie ensuite a la main
+    // dans bombdata.json.
+    async updateSuggestionTexte(id, { characterName, anime }) {
+        const champs = { updated_at: new Date().toISOString() };
+        if (typeof characterName === 'string') champs.character_name = characterName;
+        if (typeof anime === 'string') champs.anime = anime;
+
+        const { data, error } = await supabase
+            .from('bombanime_suggestions')
+            .update(champs)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        console.log(`✏️ Suggestion ${id} corrigée : ${champs.character_name || ''}`);
+        return data;
+    },
+
     async deleteSuggestion(id) {
         const { error } = await supabase
             .from('bombanime_suggestions')
