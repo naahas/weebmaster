@@ -42,11 +42,16 @@ async function json(chemin, opts) {
     // Le garde-fou d'hôte est monté sur tout /admin et exige un X-Host-Token.
     // La page et ses routes en sont exemptées : il faut donc vérifier qu'elles
     // sont bien gardées par AUTRE CHOSE, et non pas ouvertes à tous.
+    // ⚠️ /admin n'est PAS dans cette liste, et c'est voulu : la page est une
+    // coquille vide qui demande le code puis va chercher le reste, exactement
+    // comme /question. Ce sont les routes /admin/site/* qui gardent les
+    // données. Exiger un code pour servir le HTML empêcherait le formulaire
+    // d'exister.
     const nues = [
-        ['GET', '/admin'],
         ['GET', '/admin/site/stats'],
         ['GET', '/admin/site/direct'],
         ['POST', '/admin/site/vider'],
+        ['POST', '/admin/site/supprimer'],
     ];
     let refus = 0;
     for (const [methode, chemin] of nues) {
@@ -60,10 +65,37 @@ async function json(chemin, opts) {
     const faux = await json('/admin/site/stats?code=paslebon');
     dire(faux.statut === 401, 'un code inventé est refusé', 'HTTP ' + faux.statut);
 
-    const page = await fetch(BASE + '/admin?code=' + q);
+    const page = await fetch(BASE + '/admin');
     const html = await page.text();
-    dire(page.status === 200 && html.includes('Panneau'), 'la page s\'ouvre avec le bon code',
-        'HTTP ' + page.status);
+    dire(page.status === 200 && html.includes('porte-code'),
+        'la page se sert sans code, avec son formulaire', 'HTTP ' + page.status);
+    // ⚠️ Elle part à qui la demande : elle ne doit donc porter AUCUN secret.
+    dire(!html.includes(CODE), 'et elle ne contient aucun code en dur');
+
+    console.log('');
+    console.log('═══ 1 bis. LE PORTAIL ═══');
+    console.log('');
+
+    const portail = c => json('/admin/site/verifier', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: c }),
+    });
+    dire((await portail('nimportequoi')).statut === 401, 'un code faux est refusé');
+    dire((await portail('')).statut === 401, 'un code vide est refusé');
+    // ⚠️ L'échec est volontairement lent : sans cela on essaie des milliers de
+    // codes à la seconde, et une erreur de frappe ne se voit pas passer.
+    const t0 = Date.now();
+    await portail('encoreFaux');
+    const delai = Date.now() - t0;
+    dire(delai >= 550, 'l\'échec est ralenti, contre les essais en rafale', delai + ' ms');
+    dire((await portail(CODE)).statut === 200, 'le bon code passe');
+
+    // Le code voyage en EN-TÊTE, plus dans l'adresse.
+    const parEnTete = await json('/admin/site/stats', { headers: { 'X-Admin-Code': CODE } });
+    dire(parEnTete.statut === 200, 'X-Admin-Code ouvre les routes', 'HTTP ' + parEnTete.statut);
+    const mauvaisEnTete = await json('/admin/site/stats', { headers: { 'X-Admin-Code': 'faux' } });
+    dire(mauvaisEnTete.statut === 401, 'un mauvais en-tête est refusé',
+        'HTTP ' + mauvaisEnTete.statut);
 
     // ⚠️ L'exemption porte sur « /site/ » : un chemin qui commence par là et
     // remonte d'un cran ne doit pas atteindre une route d'hôte.

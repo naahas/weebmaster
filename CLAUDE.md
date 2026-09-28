@@ -392,9 +392,27 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   TOUT `/admin` et exige un `X-Host-Token` : un navigateur qui ouvre la page n en
   a aucun, donc `req.path === '/'` et `/site/*` sont exemptes dans le middleware.
   Ensuite, l exemption etant faite, ces chemins doivent etre gardes AUTREMENT —
-  c est `QUESTION_ADMIN_CODE`, le meme que `/question` et `/saisie`, passe en
-  `?code=`. Sans lui les cinq routes seraient ouvertes a tous, avec la
-  suppression de l historique dedans.
+  c est `PANEL_ADMIN_CODE`. Sans lui les routes seraient ouvertes a tous, avec
+  la suppression de l historique dedans.
+
+  **La page, elle, se sert a tout le monde** — comme `/question`, c est une
+  coquille vide qui demande le code puis va chercher le reste. Exiger un code
+  pour servir le HTML empecherait le formulaire d exister. Ce sont les routes
+  `/admin/site/*` qui gardent les donnees, et elles seules.
+  ⚠️ Donc la page ne doit **porter aucun secret** : `test:panneau` verifie que
+  le HTML servi ne contient pas le code.
+
+  Le code est saisi une fois (`POST /admin/site/verifier`), retenu en
+  `localStorage`, et presente ensuite en en-tete **`X-Admin-Code`**.
+  ⚠️ Il ne voyage plus dans l adresse : il y restait dans l historique du
+  navigateur et s affichait en clair dans la barre pendant un partage d ecran —
+  or il ouvre la suppression de tout l historique. `?code=` reste accepte par
+  `gardePanneau` (les suites s en servent, et un vieux favori doit marcher) mais
+  la page le retire aussitot de la barre.
+  ⚠️ L echec du portail est **volontairement ralenti de 600 ms** : sans cela on
+  essaie des milliers de codes a la seconde. Et un 401 recu en cours de route
+  ramene a l ecran de saisie — le code a change sur le serveur — plutot que
+  d afficher « Erreur 401 » dans chaque bloc.
 
   Trois choix de forme, qui tiennent ensemble :
   - **La page ne defile pas.** C est la contrainte qui decide de toute la mise

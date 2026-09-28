@@ -4921,10 +4921,23 @@ function gardePanneau(req, res) {
 }
 
 app.get('/admin', (req, res) => {
-    const attendu = process.env.PANEL_ADMIN_CODE;
-    const code = req.query && req.query.code;
-    if (!attendu || code !== attendu) return res.status(401).send('Code invalide.');
     res.sendFile(__dirname + '/src/html/admin.html');
+});
+
+// Le portail du panneau. Le code ne voyage plus dans l adresse — il resterait
+// dans l historique du navigateur et s afficherait en clair dans la barre
+// pendant un partage d écran. La page le demande, le retient, et le présente
+// ensuite en en-tête `X-Admin-Code`.
+app.post('/admin/site/verifier', (req, res) => {
+    const attendu = process.env.PANEL_ADMIN_CODE;
+    const code = req.body && req.body.code;
+    if (attendu && typeof code === 'string' && code && code === attendu) {
+        res.json({ success: true });
+    } else {
+        // ⚠️ Un délai sur l échec : sans lui, on peut essayer des milliers de
+        // codes à la seconde. Une erreur de frappe ne se voit pas passer.
+        setTimeout(() => res.status(401).json({ success: false }), 600);
+    }
 });
 
 // Ce qui se joue EN CE MOMENT : c est la réponse à « est-ce que des gens
