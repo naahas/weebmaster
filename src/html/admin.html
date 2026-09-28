@@ -225,8 +225,12 @@ button { font-family: inherit; color: inherit; }
     letter-spacing: .05em; padding: .1rem .38rem; border-radius: 5px;
     background: rgba(255,255,255,.07); color: var(--tres-doux);
 }
-.gens .vies { margin-left: auto; color: var(--rouge); font-size: .8rem; }
-.gens .vies + .marque-bot { margin-left: .4rem; }
+/* Le visage. object-fit: cover — les portraits n'ont pas tous le même
+   format, un « contain » laisserait des bandes autour. */
+.gens .frimousse {
+    width: 30px; height: 30px; border-radius: 8px; object-fit: cover;
+    background: rgba(255,255,255,.05); flex: 0 0 auto;
+}
 .jauge {
     font-size: .64rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: .05em; padding: .1rem .4rem; border-radius: 5px;
@@ -1355,14 +1359,14 @@ function remplirGens(code) {
 
     const gens = s.noms || [];
     if (!gens.length) { $('gens-liste').innerHTML = '<div class="etat">Personne dedans.</div>'; return; }
+    // Le pseudo et le visage, rien d'autre. Les vies changeaient à chaque
+    // manche et n'apprenaient rien qu'on veuille savoir en regardant qui est là.
     $('gens-liste').innerHTML = gens.map((p, i) =>
         '<div>' +
         '<span class="rang">' + (i + 1) + '</span>' +
-        (p.hote ? '<span class="marque-hote" title="Hôte du salon">' + icone('couronne-pleine', 13) + '</span>' : '') +
+        '<img class="frimousse" src="' + ech(p.avatar) + '" alt="" loading="lazy">' +
+        (p.hote ? '<span class="marque-hote" title="Hote du salon">' + icone('couronne-pleine', 13) + '</span>' : '') +
         '<span>' + ech(p.nom) + '</span>' +
-        (p.vies !== null && p.vies !== undefined
-            ? '<span class="vies" title="Vies restantes">' + '\u2665'.repeat(Math.max(0, Math.min(5, p.vies))) + '</span>'
-            : '') +
         (p.bot ? '<span class="marque-bot">bot</span>' : '') +
         '</div>').join('');
 }

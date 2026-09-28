@@ -376,6 +376,15 @@ const AVATARS_VERSIONS = new Map();
     }
 }
 
+// L adresse d un avatar, telle qu une page doit l ecrire. Les deux dossiers
+// sont servis a la racine, le jeton de version vient d AVATARS_VERSIONS.
+// C est le pendant serveur de `srcAvatar()` dans app.js.
+function srcAvatarServeur(f) {
+    const nom = f || AVATAR_DEFAUT;
+    const v = AVATARS_VERSIONS.get(nom);
+    return '/' + nom + (v ? '?v=' + v : '');
+}
+
 // 🤖 LE VIVIER DU PARTENAIRE.
 //
 // Le bot de BombAnime ne puise pas dans la liste des joueurs : il a son propre
@@ -5084,7 +5093,12 @@ app.get('/admin/site/direct', (req, res) => {
                 nom: p.username,
                 bot: !!p.estBot,
                 hote: !!(g.hostPlayerId && p.playerId === g.hostPlayerId),
-                vies: typeof p.lives === 'number' ? p.lives : null,
+                // ⚠️ L URL est fabriquee ICI, jeton de version compris. Le
+                // panneau pourrait la recomposer, mais il finirait par diverger
+                // de `srcAvatar()` cote jeu — et le dossier est servi en
+                // « immutable » pour un an : sans jeton, un avatar remplace
+                // resterait affiche a l ancienne.
+                avatar: srcAvatarServeur(p.avatarUrl),
             })),
         });
     }
