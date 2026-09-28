@@ -458,8 +458,8 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 
 /* ── Une suggestion ──────────────────────── */
 .s {
-    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
-    padding: .8rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
+    display: flex; align-items: center; gap: .9rem; flex-wrap: wrap;
+    padding: 1.15rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
 }
 .s:hover { background: rgba(255,255,255,.022); }
 /* Le nom et la série se corrigent SUR PLACE : un clic, on tape, Entrée.
@@ -468,7 +468,7 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
    lettres, sur vingt-quatre suggestions, personne ne le ferait. */
 .s-nom, .s-serie { cursor: text; }
 .s-nom {
-    font-weight: 600; font-size: .92rem;
+    font-weight: 600; font-size: 1rem;
     border-bottom: 1px dashed transparent; transition: border-color .15s;
 }
 .s-nom:hover { border-bottom-color: var(--tres-doux); }
@@ -481,7 +481,7 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 .s-champ.serie { font-size: .8rem; font-weight: 400; min-width: 90px; }
 .s.corrigee { background: rgba(52,211,153,.07); }
 .s-serie {
-    font-size: .74rem; padding: .14rem .45rem; border-radius: 6px;
+    font-size: .78rem; padding: .2rem .55rem; border-radius: 6px;
     background: rgba(109,92,255,.15); color: var(--accent-clair);
 }
 .s-meta { color: var(--tres-doux); font-size: .77rem; }
@@ -1151,7 +1151,14 @@ document.querySelectorAll('.onglet').forEach(o => {
             s.classList.toggle('active', s.dataset.vue === v));
         $('scene-titre').textContent = TITRES[v][0];
         $('scene-sous').textContent = TITRES[v][1];
-        if (v === 'questions' && !CHARGE.questions) { CHARGE.questions = true; lireQuestions(); }
+        if (v === 'questions' && !CHARGE.questions) {
+            CHARGE.questions = true;
+            // Filet : si un gestionnaire de mots de passe a quand meme garni
+            // la recherche, on repart d un champ vide plutot que d afficher
+            // « aucune question ne correspond » sans raison visible.
+            $('q-rech').value = '';
+            lireQuestions();
+        }
         if (v === 'suggestions' && !CHARGE.suggestions) { CHARGE.suggestions = true; lireSuggestions(); }
     };
 });
@@ -2041,12 +2048,25 @@ async function verifier(code) {
     return r.ok;
 }
 
+// Le formulaire de code, mis de cote une fois entre. On garde le noeud pour
+// le remettre a la deconnexion.
+const PORTE = $('porte');
+const PORTE_PLACE = PORTE.nextSibling;
+
 function entrer(code, retenir) {
     CODE = code;
     if (retenir) {
         try { localStorage.setItem(CLEF, code); } catch (e) { /* navigation privée */ }
     }
     document.body.classList.add('entre');
+    // ⚠️ On le RETIRE du document, on ne le masque pas. Un champ de mot de
+    // passe qui reste dans la page, meme en display:none, fait chercher a
+    // Chrome un champ identifiant a remplir : faute d en trouver un dans le
+    // formulaire (masque, donc ignore), il garnissait le premier champ texte
+    // VISIBLE venu — la recherche des questions, qui se retrouvait avec une
+    // adresse e-mail et renvoyait « aucune question ne correspond ».
+    // Plus de champ de mot de passe dans le document, plus de chasse.
+    if (PORTE.parentNode) PORTE.remove();
     lireStats();
     lireDirect();
     // Le direct seul se rafraîchit : relire tout l'historique toutes les dix
@@ -2088,6 +2108,8 @@ $('b-sortir').onclick = () => {
     CODE_SUP = '';
     clearInterval(entrer._t);
     document.body.classList.remove('entre');
+    // On le remet exactement ou il etait.
+    if (!PORTE.parentNode) document.body.insertBefore(PORTE, PORTE_PLACE);
     $('porte-code').value = '';
     $('porte-code').focus();
 };
