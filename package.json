@@ -36,7 +36,7 @@
     "test:debit": "node scripts/test-debit.js",
     "test:collect": "node scripts/test-collect.js",
     "test:collect-salon": "node scripts/test-collect-salon.js",
-    "check:vue": "node scripts/verif-calculees.js && node scripts/verif-appels.js",
+    "check:vue": "node scripts/verif-calculees.js && node scripts/verif-appels.js && node scripts/verif-panneau.js",
     "test:rush-mult": "node scripts/test-rush-multiplicateur.js",
     "test:preuve": "node scripts/test-preuve.js",
     "openings": "node scripts/openings.js",
@@ -48,7 +48,8 @@
     "test:rejointure": "node scripts/test-rejointure.js",
     "test:mdp": "node scripts/test-mdp.js",
     "test:panneau": "node scripts/test-panneau.js",
-    "test:banque": "node scripts/test-banque.js"
+    "test:banque": "node scripts/test-banque.js",
+    "check:panneau": "node scripts/verif-panneau.js"
   },
   "keywords": [
     "quiz",

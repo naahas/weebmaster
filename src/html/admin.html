@@ -1060,6 +1060,13 @@ body:not(.entre) { overflow: hidden; }
 // ════════════════════════════════════════════
 // Le code du back-office est dans l'adresse. On le reprend tel quel pour
 // interroger les routes, et on le passe au lien vers /question.
+// Le raccourci vers le DOM. ⚠️ DECLARE EN PREMIER, avant tout ce qui s en
+// sert : c est un `const`, donc l utiliser plus haut que sa ligne leve une
+// ReferenceError qui tue le SCRIPT ENTIER. La page s affiche alors
+// normalement et plus aucun bouton ne repond — sans rien dans la console
+// qui pointe vers la vraie cause.
+const $ = id => document.getElementById(id);
+
 // ⚠️ Le code ne voyage plus dans l'adresse. Il y restait dans l'historique du
 // navigateur et s'affichait en clair dans la barre pendant un partage d'écran —
 // et il ouvre la suppression de tout l'historique. Il est saisi une fois, gardé
@@ -1118,7 +1125,6 @@ function revenirALaPorte() {
     $('porte-code').focus();
 }
 
-const $ = id => document.getElementById(id);
 let PARTIES = [];
 let SEUILS = { seuilCompteur: 3, seuilListe: 5 };
 let FILTRE = 'tout';
