@@ -330,8 +330,6 @@ const AVATARS_AUTORISES = new Set([
     'cc.webp',
     // Bocchi the Rock!
     'bocchi.webp',
-    // The Dangers in My Heart (Bokuyaba)
-    'anna.webp',
     // A Sign of Affection
     'yuki.webp',
 ]);
