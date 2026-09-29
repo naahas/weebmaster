@@ -79,6 +79,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   reponses SURVIVENT),
   suppression avec son second mot de passe. Il nettoie derriere lui. Trois codes dans
   l environnement : `PANEL_ADMIN_CODE`, `QUESTION_ADMIN_CODE`, `QUESTION_DELETE_CODE`),
+  `npm run test:bot-fantome` (un salon ou il ne reste que le bot se referme, et un salon
+  ou reste un humain NON — a lancer avec `GRACE_SALON_VIDE=2000 GRACE_LOBBY_MS=2000` des
+  deux cotes, sinon il faut dix minutes ; il lui faut aussi `PANEL_ADMIN_CODE`),
   `npm run test:panneau` (le panneau `/admin` : les routes de donnees sont-elles
   fermees sans le code, le portail refuse-t-il un code faux ET lentement, la vue
   du direct voit-elle un vrai salon et son HOTE, et surtout une partie a DEUX
@@ -610,6 +613,13 @@ Pour lever la mesure, **quatre** endroits : le garde dans `/admin/toggle-game`, 
   paramètre**, toujours nommé `gameState`.
 - Toute diffusion passe par `diffuser(gameState, evt, payload)` → `io.to(roomCode)`. **Ne jamais
   appeler `io.emit` directement** : le message partirait à tous les salons.
+- ⚠️ **Le bot de BombAnime ne compte pas comme quelqu un** dans les deux menages de salons
+  (`humainsDuSalon`). Il siege dans `players` comme un joueur, mais il n a pas de socket —
+  donc jamais de `disconnectedAt` — et il ne part jamais de lui-meme. Les deux tests le
+  comptaient : un hote qui posait un bot puis fermait son onglet laissait un salon ouvert
+  POUR TOUJOURS. Vu en ligne, un salon reste la matinee entiere avec le seul bot dedans.
+  `npm run test:bot-fantome` tient les deux bouts — le salon fantome se ferme, et celui ou
+  reste un humain NE se ferme PAS.
 - Un salon vide se referme après dix minutes ; à `MAX_ROOMS` (50), les salons abandonnés depuis
   plus d'une minute sont récupérés d'abord. Le délai protège un salon qui vient d'ouvrir : son hôte
   n'y est pas encore entré.

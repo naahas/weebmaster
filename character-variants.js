@@ -43,6 +43,7 @@ const CHARACTER_VARIANTS = {
         ["LANFAN", "RANFAN"],
         ["BARTA", "BURTER"],
         ["KAFLA", "KEFLA"],
+        ["CHEELAI", "CHEELY"],
         ["CAULIFLA", "CAULIFA"],
         ["NAM", "NAMU"],
         ["TAO PAI PAI", "TAOPAIPAI"],

@@ -49,7 +49,8 @@
     "test:mdp": "node scripts/test-mdp.js",
     "test:panneau": "node scripts/test-panneau.js",
     "test:banque": "node scripts/test-banque.js",
-    "check:panneau": "node scripts/verif-panneau.js"
+    "check:panneau": "node scripts/verif-panneau.js",
+    "test:bot-fantome": "node scripts/test-bot-fantome.js"
   },
   "keywords": [
     "quiz",

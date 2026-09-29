@@ -1016,11 +1016,22 @@ const MAX_ROOMS = parseInt(process.env.MAX_ROOMS, 10) || 50;
 // d'y entrer. Le récupérer serait lui prendre son salon sous les pieds.
 const AGE_MINIMUM_RECUPERATION = 60 * 1000;
 
+// ⚠️ Le partenaire de BombAnime N'EST PAS quelqu'un. Il siège dans `players`
+// comme un joueur, mais personne ne l'attend et il ne partira jamais de
+// lui-même : un salon où il ne reste que lui est un salon vide.
+//
+// Les deux ménages ci-dessous le comptaient. Un hôte qui posait un bot puis
+// fermait son onglet laissait donc un salon ouvert POUR TOUJOURS — vu en
+// ligne, un salon resté la matinée entière avec le seul bot dedans.
+function humainsDuSalon(r) {
+    return [...r.players.values()].filter(p => !p.estBot);
+}
+
 function libererSalonsVides() {
     const maintenant = Date.now();
     let n = 0;
     for (const r of [...rooms.values()]) {
-        if (r.players.size || r.inProgress) continue;
+        if (humainsDuSalon(r).length || r.inProgress) continue;
         if (maintenant - r.creeA < AGE_MINIMUM_RECUPERATION) continue;
         fermerRoom(r);
         n++;
@@ -1063,7 +1074,12 @@ setInterval(() => {
     for (const r of [...rooms.values()]) {
         // Une partie dont plus personne n'est connecté est abandonnée, même si
         // ses joueurs restent inscrits en attendant un retour.
-        const joueurs = [...r.players.values()];
+        //
+        // ⚠️ Le bot est écarté du compte : il n'a pas de socket, donc pas de
+        // `disconnectedAt`, et il faisait échouer les DEUX tests ci-dessous à
+        // lui tout seul. Un salon ne contenant plus que lui ne se fermait
+        // jamais.
+        const joueurs = humainsDuSalon(r);
         const desert = joueurs.length === 0 ||
             joueurs.every(p => p.disconnectedAt && maintenant - p.disconnectedAt > GRACE_SALON_VIDE);
 
