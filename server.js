@@ -6879,6 +6879,23 @@ io.on('connection', (socket) => {
     });
 
     // 🔥 NOUVEAU: Événement pour enregistrer l'authentification
+    // ⚠️ L'HEURE DU SERVEUR, sur demande.
+    //
+    // Plusieurs modes envoient une ÉCHÉANCE ABSOLUE — `finA` du Rush,
+    // `timerEndTime` et `bloqueJusqua` d'Ascension. Le client les comparait à
+    // son propre `Date.now()`, ce qui revient à supposer les deux machines à
+    // l'heure. Elles ne le sont pas : une horloge en retard de trois secondes
+    // affichait « 3 s » au moment où le serveur coupait la manche, et la jauge
+    // d'Ascension s'arrêtait avant le bout.
+    //
+    // Le client mesure l'écart une fois à la connexion et l'applique ensuite
+    // partout. Corriger le décalage À LA SOURCE évite d'avoir à envoyer un
+    // temps restant dans chacune des six émissions concernées — et tout
+    // minuteur ajouté plus tard en profite sans rien faire.
+    socket.on('horloge', (rien, repondre) => {
+        if (typeof repondre === 'function') repondre(Date.now());
+    });
+
     socket.on('register-authenticated', (data) => {
         // Le pseudo passe au tamis dès l'entrée : tout ce qui suit le reprend.
         if (data) data.username = pseudoPropre(data.username) || 'Joueur';

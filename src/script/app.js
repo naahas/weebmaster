@@ -36,6 +36,11 @@ const COL_SERIES = {
 createApp({
     data() {
         return {
+            // ⚠️ L'écart entre notre horloge et celle du serveur, en ms. Mesuré
+            // à chaque connexion (voir « mesurerHorloge »), utilisé par
+            // « maintenant() ». Zéro tant qu'il n'est pas mesuré : c'est le
+            // comportement d'avant, jamais pire.
+            decalageHorloge: 0,
             // Authentification
             isAuthenticated: false,
             showBonusArcMobile: false,
@@ -109,7 +114,7 @@ createApp({
                 etage: 0,            // l'étage où j'en suis
                 total: 15,
                 data: null,          // le contenu de l'étage courant
-                finA: 0,             // échéance de l'étage, en ms epoch
+                finA: 0,             // échéance de l'étage, en ms epoch (horloge SERVEUR)
                 reste: 0,
                 progres: [],         // où en sont les autres
                 fini: false,
@@ -1901,12 +1906,43 @@ createApp({
         // on doit pouvoir se tenir prêt sans regarder l'écran. Le départ et la
         // reprise passent tous deux par ici — sinon, recharger pendant le
         // décompte faisait paraître le jeu avant l'heure.
+        // ⚠️ L'HEURE DU SERVEUR, vue d'ici.
+        //
+        // Plusieurs modes envoient une ÉCHÉANCE ABSOLUE — `finA` du Rush,
+        // `timerEndTime` et `bloqueJusqua` d'Ascension. Les comparer à notre
+        // `Date.now()` revient à supposer les deux machines à l'heure : une
+        // horloge en retard de trois secondes affichait « 3 s » quand le
+        // serveur coupait la manche, et la jauge d'Ascension s'arrêtait avant
+        // le bout. Mesuré en jeu, pas supposé.
+        //
+        // On demande l'heure au serveur et l'on retranche la MOITIÉ de
+        // l'aller-retour : la réponse a mis ce temps à revenir, l'heure qu'elle
+        // porte date donc d'il y a environ rtt/2.
+        //
+        // ⚠️ En cas d'échec on garde 0 — c'est exactement le comportement
+        // d'avant, jamais pire.
+        mesurerHorloge() {
+            if (!this.socket) return;
+            const t0 = Date.now();
+            this.socket.timeout(3000).emit('horloge', null, (err, serveur) => {
+                if (err || typeof serveur !== 'number') return;
+                const rtt = Date.now() - t0;
+                this.decalageHorloge = serveur - (t0 + rtt / 2);
+            });
+        },
+
+        // L'heure du serveur, telle qu'on peut la reconstituer. À utiliser
+        // PARTOUT où l'on compare à une échéance venue du serveur.
+        maintenant() {
+            return Date.now() + (this.decalageHorloge || 0);
+        },
+
         lancerDecompteAsc(finA) {
             clearTimeout(this._ascDecompteT);
             if (!finA) { this.asc.decompte = 0; return; }
             let dernier = null;
             const pas = () => {
-                const r = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
+                const r = Math.max(0, Math.ceil((finA - this.maintenant()) / 1000));
                 if (r !== dernier) {
                     if (r > 0) this.playSound(this.sounds.ascTic);
                     else if (dernier !== null) this.playSound(this.sounds.ascPartir);
@@ -1926,7 +1962,7 @@ createApp({
         calerJaugeAsc() {
             const d = this.asc.timer || 0;
             if (!d || !this.asc.finA) { this.asc.styleJauge = {}; return; }
-            const ecoule = Math.min(d, Math.max(0, d - (this.asc.finA - Date.now()) / 1000));
+            const ecoule = Math.min(d, Math.max(0, d - (this.asc.finA - this.maintenant()) / 1000));
             this.asc.styleJauge = {
                 animationDuration: d + 's',
                 animationDelay: (-ecoule).toFixed(2) + 's',
@@ -1977,7 +2013,7 @@ createApp({
             this.arreterChronoAsc();
             this.asc.finA = finA || 0;
             const tic = () => {
-                const reste = Math.max(0, Math.ceil((this.asc.finA - Date.now()) / 1000));
+                const reste = Math.max(0, Math.ceil((this.asc.finA - this.maintenant()) / 1000));
                 this.asc.reste = reste;
                 if (reste <= 0) this.arreterChronoAsc();
             };
@@ -2026,7 +2062,7 @@ createApp({
             this.asc.bloqueA = finA || 0;
             clearTimeout(this._ascBloqueT);
             if (!finA) return;
-            const reste = finA - Date.now();
+            const reste = finA - this.maintenant();
             if (reste <= 0) { this.asc.bloqueA = 0; return; }
             this._ascBloqueT = setTimeout(() => { this.asc.bloqueA = 0; }, reste);
         },
@@ -5359,6 +5395,10 @@ createApp({
             this.socket = io({ autoConnect: false });
             
             this.socket.on('connect', () => {
+
+                // 🕰️ On mesure l'écart entre notre horloge et celle du serveur,
+                // à chaque connexion. Voir « maintenant() » plus bas.
+                this.mesurerHorloge();
 
                 // 🔗 Le code venu de l adresse n est consomme qu UNE fois, et
                 // jamais si l on est deja dans une partie : une reconnexion en

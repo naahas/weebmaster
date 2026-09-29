@@ -666,8 +666,14 @@ fait que deplacer la fuite. Le client le recoit par `question-results`.
   Le serveur envoie desormais **`reste`** en millisecondes, et le client fabrique son echeance
   sur SA montre. La latence reseau (quelques dizaines de ms) est sans commune mesure avec le
   decalage d horloge.
-  ⚠️ **Ascension a le meme defaut, non corrige** : `countdownEndsAt`, `timerEndTime` et
-  `bloqueJusqua` sont compares a `Date.now()` cote client, a quatre endroits d `app.js`.
+  ⚠️ Ascension avait le meme defaut — la jauge de l etage s arretait avant le bout. Corrige
+  AUTREMENT, et c est la bonne facon : le client MESURE l ecart entre les deux horloges a
+  chaque connexion (`mesurerHorloge`, evenement socket `horloge`, avec la moitie de
+  l aller-retour retranchee) et l applique par **`maintenant()`**.
+  ⚠️ **Toute comparaison a une echeance venue du serveur passe par `maintenant()`**, jamais
+  par `Date.now()`. Corriger le decalage a la source evite d ajouter un temps restant dans
+  chacune des six emissions d Ascension, et tout minuteur ajoute plus tard en profite sans
+  rien faire. Sans mesure, l ecart vaut zero : le comportement d avant, jamais pire.
 - ⚠️ `transform` sur un ancêtre crée un bloc conteneur et casse le `position: fixed` de ses
   descendants. C'est l'erreur qui revient le plus souvent sur ce projet.
 - ⚠️ Une reconnexion socket passe par `register-authenticated` (qui rebranche l'entrée du joueur sur
