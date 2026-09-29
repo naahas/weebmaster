@@ -6707,6 +6707,12 @@ function demarrerRush(gameState) {
     diffuser(gameState, 'rush-game-started', {
         duree: gameState.rush.duree,
         finA: gameState.rush.finA,
+        // ⚠️ Le temps QUI RESTE, en millisecondes, et pas seulement l'échéance.
+        // `finA` est une date de l'horloge du SERVEUR : le client la comparait à
+        // la sienne, si bien qu'une machine en retard de trois secondes voyait
+        // « 3 s » au moment où la manche s'arrêtait. Avec le reste, le client
+        // fabrique son échéance sur SA propre horloge, et l'écart disparaît.
+        reste: Math.max(0, gameState.rush.finA - Date.now()),
         limite: gameState.rush.tempsParPerso,
         filtre: gameState.rush.filtre,
         multiplicateur: gameState.rush.multiplicateur,
@@ -7601,6 +7607,9 @@ io.on('connection', (socket) => {
             duree: gameState.rush.duree,
             limite: gameState.rush.tempsParPerso,
             finA: gameState.rush.finA,
+            // Le reste compte plus que l'échéance — voir rush-game-started.
+            // À la reprise il vaut d'autant plus : la manche a déjà couru.
+            reste: Math.max(0, (gameState.rush.finA || 0) - Date.now()),
             portrait: rushPortrait(gameState, joueur.playerId),
             serie: etat.score,
             mult: rushMultiplicateur(gameState, etat),

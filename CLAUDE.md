@@ -660,6 +660,14 @@ fait que deplacer la fuite. Le client le recoit par `question-results`.
   portent l'extension : elle doit correspondre au fichier.
 - Valider une modif : `npm run check`, puis `npm start` et les trois suites, et ouvrir `/` dans le
   navigateur.
+- ⚠️ **Une echeance du SERVEUR ne se compare pas a l horloge du CLIENT.** Le Rush envoyait
+  `finA` (une date de son horloge) et le client faisait `finA - Date.now()` : une machine en
+  retard de trois secondes voyait 93 s au depart et « 3 s » au moment ou la manche s arretait.
+  Le serveur envoie desormais **`reste`** en millisecondes, et le client fabrique son echeance
+  sur SA montre. La latence reseau (quelques dizaines de ms) est sans commune mesure avec le
+  decalage d horloge.
+  ⚠️ **Ascension a le meme defaut, non corrige** : `countdownEndsAt`, `timerEndTime` et
+  `bloqueJusqua` sont compares a `Date.now()` cote client, a quatre endroits d `app.js`.
 - ⚠️ `transform` sur un ancêtre crée un bloc conteneur et casse le `position: fixed` de ses
   descendants. C'est l'erreur qui revient le plus souvent sur ce projet.
 - ⚠️ Une reconnexion socket passe par `register-authenticated` (qui rebranche l'entrée du joueur sur

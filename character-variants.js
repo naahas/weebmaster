@@ -197,7 +197,7 @@ const CHARACTER_VARIANTS = {
         ["BUROVUTA", "BLOSTER"],
         ["POUF", "SHAIAPOUF" , "PUFU"],
         ["YUPI", "YOUPI", "MONTUTYUPI"],
-        ["KURORO", "KURORO LUCIFER", "CHROLLO", "CHROLLO LUCILFER"],
+        ["KURORO", "LUCIFER", "KURORO LUCIFER", "CHROLLO", "CHROLLO LUCILFER"],
         ["CANARY", "KANARIA"],
         ["PITOU", "PITO", "NEFERUPITO", "NEFERPITOU"],
         ["KNOV", "NOVU"],

@@ -528,11 +528,51 @@ function generateFloorData(type, usedData) {
     return anonymiserEtage(genererEtageBrut(type, usedData));
 }
 
+// Le vivier des épreuves à portraits, calculé une fois.
+//
+// On écarte les `match_only` (ils n'existent que comme cible de la Liaison),
+// puis l'on DÉDOUBLONNE PAR IMAGE.
+//
+// ⚠️ Deux entrées peuvent désigner le même personnage sous deux noms —
+// « todoroki » et « shoto », « hancock » et « boa hancock » — avec le MÊME
+// fichier de portrait. Sans ce tri, une grille tirait les deux et affichait
+// deux fois le même visage. Vu en partie, sur « trouve les persos de My Hero ».
+//
+// ⚠️ Et l'on ne PERD aucun nom : celui de l'entrée écartée rejoint les alias de
+// celle qu'on garde, sinon « Devine le perso » refuserait une réponse juste.
+// Chacune citait déjà l'autre en alias ; la fusion ne fait que l'assurer.
+let VIVIER_GRILLES = null;
+function vivierDesGrilles() {
+    if (VIVIER_GRILLES) return VIVIER_GRILLES;
+    const parImage = new Map();
+    for (const c of (ASCENSION_DATA.characters || [])) {
+        if (c.match_only) continue;
+        const deja = parImage.get(c.img);
+        if (!deja) {
+            parImage.set(c.img, Object.assign({}, c, { aliases: [...(c.aliases || [])] }));
+            continue;
+        }
+        const connus = new Set(deja.aliases.map(a => String(a).toLowerCase()));
+        connus.add(String(deja.name).toLowerCase());
+        for (const a of [c.name, ...(c.aliases || [])]) {
+            const k = String(a || '').toLowerCase();
+            if (k && !connus.has(k)) { deja.aliases.push(a); connus.add(k); }
+        }
+    }
+    VIVIER_GRILLES = [...parImage.values()];
+    const ecartes = (ASCENSION_DATA.characters || []).filter(c => !c.match_only).length
+        - VIVIER_GRILLES.length;
+    if (ecartes > 0) {
+        console.log('🖼️ Ascension : ' + ecartes + ' portrait(s) en double écarté(s) des grilles.');
+    }
+    return VIVIER_GRILLES;
+}
+
 function genererEtageBrut(type, usedData) {
     // 🆕 Pour les jeux où le perso est la cible (guess/intruder/target/char_anime),
     //    on exclut les persos marqués `match_only: true` (ils n'existent que pour servir de
     //    cible dans couples/rivals/same_voice/techniques/weapons côté Liaison).
-    const chars = (ASCENSION_DATA.characters || []).filter(c => !c.match_only);
+    const chars = vivierDesGrilles();
     const animes = ASCENSION_DATA.animes;
     
     switch (type) {

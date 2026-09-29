@@ -719,6 +719,16 @@
     filter: drop-shadow(0 0 0.3rem rgba(255, 210, 74, 0.85));
 }
 
+/* ⚠️ Un peu plus grandes SUR ORDINATEUR seulement. Sur téléphone, l'objectif
+   est déjà collé à l'éventail et au chrono : les grossir là-bas reprendrait de
+   la place à ce qui compte, les cartes. Le seuil est le même que celui du
+   passe mobile plus bas (780 px), pour qu'il n'y ait qu'une frontière à
+   déplacer si elle bouge un jour. */
+@media (min-width: 781px) {
+    .col-etoiles { gap: 0.26rem; padding: 0.26rem 0.62rem; }
+    .col-etoiles i { width: 0.92rem; height: 0.92rem; }
+}
+
 /* ── Le point qui vient d'être marqué ──
    Deux ou trois fois par partie, et c'est TOUT ce qu'on cherche : la pastille
    se dilate, un anneau s'en échappe, et les points allumés blanchissent. Sans

@@ -4794,12 +4794,27 @@ createApp({
 
         // Le décompte tourne côté client : le serveur donne l'heure de fin, on
         // n'a pas besoin d'un message par seconde pour trente joueurs.
-        lancerChronoRush(finA) {
+        // ⚠️ L'échéance est fabriquée sur NOTRE horloge, à partir du temps
+        // restant envoyé par le serveur — et non à partir de `finA`, qui est
+        // une date de l'horloge du SERVEUR.
+        //
+        // Les comparer revenait à supposer les deux machines à l'heure. Une
+        // horloge en retard de trois secondes affichait « 3 s » au moment où le
+        // serveur arrêtait la manche : la partie semblait se couper avant la
+        // fin, sans rien pour l'expliquer. La latence du réseau (quelques
+        // dizaines de millisecondes) est sans commune mesure avec cet écart.
+        //
+        // `finA` reste accepté en repli : pendant un déploiement, un client
+        // neuf peut recevoir un message d'un serveur qui ne l'envoie pas encore.
+        lancerChronoRush(finA, reste) {
             clearInterval(this.rush._tic);
+            const fin = (typeof reste === 'number')
+                ? Date.now() + reste
+                : finA;
             const tic = () => {
-                const reste = Math.max(0, Math.ceil((finA - Date.now()) / 1000));
-                this.rush.reste = reste;
-                if (reste <= 0) clearInterval(this.rush._tic);
+                const r = Math.max(0, Math.ceil((fin - Date.now()) / 1000));
+                this.rush.reste = r;
+                if (r <= 0) clearInterval(this.rush._tic);
             };
             tic();
             this.rush._tic = setInterval(tic, 250);
@@ -6650,7 +6665,7 @@ createApp({
                 this.gameEnded = false;
                 this.lobbyMode = 'rush';
                 document.body.classList.add('game-active');
-                this.lancerChronoRush(data.finA);
+                this.lancerChronoRush(data.finA, data.reste);
                 this.jouerEntreeRush();
             });
 
@@ -7158,7 +7173,7 @@ createApp({
                 this.lobbyMode = 'rush';
                 this.rush.intro = null;      // on reprend en pleine manche : pas d'entrée
                 document.body.classList.add('game-active');
-                this.lancerChronoRush(data.finA);
+                this.lancerChronoRush(data.finA, data.reste);
                 this.focusRush();
             });
 
