@@ -168,26 +168,76 @@
     /* ═══ LES ÉCLATS ═══
        Huit fragments par vie, générés une fois et réutilisés. Chacun porte
        son angle et sa distance en variables : une seule keyframe suffit. */
-    .eclats { position: absolute; inset: 0; pointer-events: none; }
+    /* ⚠️ Les éclats DÉBORDENT de la vie, largement. Tant que `.eclats` gardait
+       la taille de la boîte, l explosion restait polie : on ne partait jamais
+       plus loin que soi. La boîte fait maintenant trois fois la vie, centrée
+       dessus, et c est ce qui change tout. */
+    .eclats {
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 300%; height: 300%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
     .eclat {
         position: absolute;
         left: 50%; top: 50%;
-        width: calc(var(--t) * .3);
-        height: calc(var(--t) * .3);
+        width: calc(var(--t) * .34);
+        height: calc(var(--t) * .34);
         background: var(--c, #ef4444);
         opacity: 0;
         transform: translate(-50%, -50%);
     }
 
+    /* ⚠️ LE CHOC. Une explosion qui ne secoue rien n en est pas une : c est
+       ce qui manquait le plus. La rangée entière encaisse pendant 220 ms,
+       donc les vies voisines bougent aussi — l œil le prend comme un impact
+       et pas comme une animation locale. */
+    .pe-vies.choc { animation: choc .22s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes choc {
+        0%, 100% { transform: translate(0, 0); }
+        18%  { transform: translate(-3px, 2px); }
+        38%  { transform: translate(3px, -2px); }
+        58%  { transform: translate(-2px, -1px); }
+        78%  { transform: translate(2px, 1px); }
+    }
+
+    /* Le halo de départ : il part avec l explosion, pas après. */
+    .vie.casse::before {
+        content: '';
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 180%; height: 180%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--c, #ef4444) 0%, transparent 68%);
+        animation: halo .34s ease-out forwards;
+        pointer-events: none;
+    }
+    @keyframes halo {
+        0%   { opacity: .85; transform: translate(-50%,-50%) scale(.25); }
+        100% { opacity: 0;   transform: translate(-50%,-50%) scale(1.5); }
+    }
+
     /* ── 1. Cœur · éclats ── */
     .p1 .eclat { clip-path: polygon(50% 0%, 100% 62%, 22% 100%); }
     .vie.casse.p1 .eclat { animation: eclat-part .62s cubic-bezier(.2,.7,.3,1) forwards; }
+    /* ⚠️ LA COURBE FAIT TOUT. Une explosion part à pleine vitesse et ralentit
+       — pas l inverse. Le palier à 14 % projette les éclats presque
+       instantanément, le reste de l animation n est que la retombée. Avec un
+       `ease-out` ordinaire, ils avaient l air de s éloigner poliment.
+       Et ils GROSSISSENT d abord : une trajectoire seule ne fait pas un
+       souffle. */
     @keyframes eclat-part {
-        0%   { opacity: 1; transform: translate(-50%,-50%) rotate(0deg) scale(1); }
+        0%   { opacity: 1; transform: translate(-50%,-50%) rotate(0deg) scale(.5); }
+        14%  { opacity: 1;
+               transform: translate(calc(-50% + cos(var(--a)) * calc(var(--d) * .55)),
+                                    calc(-50% + sin(var(--a)) * calc(var(--d) * .55)))
+                          rotate(calc(var(--r) * .4)) scale(1.35); }
         100% { opacity: 0;
                transform: translate(calc(-50% + cos(var(--a)) * var(--d)),
                                     calc(-50% + sin(var(--a)) * var(--d)))
-                          rotate(var(--r)) scale(.35); }
+                          rotate(var(--r)) scale(.25); }
     }
     .vie.casse.p1 .forme { animation: forme-pop .32s ease-out forwards; }
     @keyframes forme-pop {
@@ -224,8 +274,8 @@
         animation: onde .55s ease-out forwards;
     }
     @keyframes onde {
-        0%   { opacity: .85; transform: scale(.4); }
-        100% { opacity: 0;   transform: scale(2.6); }
+        0%   { opacity: 1; transform: scale(.25); border-width: 4px; }
+        100% { opacity: 0;   transform: scale(4.2); border-width: 1px; }
     }
 
     /* ── 4. Cristal · éclats irréguliers ──
@@ -266,12 +316,12 @@
     .vie.casse.c1 .forme { animation: verre-flash .5s ease-out forwards; }
     @keyframes verre-flash {
         0%   { filter: brightness(1); transform: scale(1); }
-        12%  { filter: brightness(3.4); transform: scale(1.3); }
-        26%  { filter: brightness(1); transform: scale(1.06); }
+        10%  { filter: brightness(6) saturate(0); transform: scale(1.75); }
+        22%  { filter: brightness(1.4); transform: scale(.88); }
         100% { filter: brightness(1); transform: scale(1); }
     }
     .c1 .eclat { clip-path: polygon(50% 0, 100% 78%, 8% 100%); }
-    .vie.casse.c1 .eclat { animation: eclat-part .55s cubic-bezier(.1,.8,.3,1) forwards; }
+    .vie.casse.c1 .eclat { animation: eclat-part .5s cubic-bezier(.05,.92,.2,1) forwards; }
 
     /* ── c2. Fêlure puis chute ── il se fend en deux, les moitiés tombent ──
        ⚠️ Deux demi-cœurs obtenus par `clip-path` sur DEUX copies de la même
@@ -280,23 +330,23 @@
     .vie.c2 .moitie { position: absolute; inset: 0; }
     .vie.c2 .moitie.g { clip-path: polygon(0 0, 52% 0, 46% 100%, 0 100%); }
     .vie.c2 .moitie.d { clip-path: polygon(52% 0, 100% 0, 100% 100%, 46% 100%); }
-    .vie.casse.c2 .moitie.g { animation: chute-g .8s cubic-bezier(.4,0,.8,.6) forwards; }
-    .vie.casse.c2 .moitie.d { animation: chute-d .8s cubic-bezier(.4,0,.8,.6) forwards; }
+    .vie.casse.c2 .moitie.g { animation: chute-g .62s cubic-bezier(.1,.85,.3,1) forwards; }
+    .vie.casse.c2 .moitie.d { animation: chute-d .62s cubic-bezier(.1,.85,.3,1) forwards; }
     @keyframes chute-g {
         0%   { transform: none; opacity: 1; }
-        20%  { transform: translateX(-6%) rotate(-5deg); }
-        100% { transform: translate(-58%, 85%) rotate(-62deg); opacity: 0; }
+        14%  { transform: translate(-34%, -22%) rotate(-24deg) scale(1.2); }
+        100% { transform: translate(-140%, 130%) rotate(-150deg) scale(.7); opacity: 0; }
     }
     @keyframes chute-d {
         0%   { transform: none; opacity: 1; }
-        20%  { transform: translateX(6%) rotate(5deg); }
-        100% { transform: translate(58%, 85%) rotate(62deg); opacity: 0; }
+        14%  { transform: translate(34%, -22%) rotate(24deg) scale(1.2); }
+        100% { transform: translate(140%, 130%) rotate(150deg) scale(.7); opacity: 0; }
     }
     .vie.c2 .forme { display: none; }
 
     /* ── c3. Braises ── il se consume par le bas, les braises montent ──
        La seule qui parle le langage de la bombe. */
-    .vie.casse.c3 .forme { animation: braise-consume .85s ease-in forwards; }
+    .vie.casse.c3 .forme { animation: braise-consume .42s cubic-bezier(.4,0,.9,.5) forwards; }
     @keyframes braise-consume {
         0%   { clip-path: inset(0 0 0 0);    filter: none; }
         30%  { clip-path: inset(0 0 22% 0);  filter: brightness(1.7) hue-rotate(-18deg); }
@@ -308,7 +358,7 @@
         width: calc(var(--t) * .13); height: calc(var(--t) * .13);
         background: #ffb547;
     }
-    .vie.casse.c3 .eclat { animation: braise-monte .95s ease-out forwards; }
+    .vie.casse.c3 .eclat { animation: braise-monte .7s cubic-bezier(.1,.9,.3,1) forwards; }
     @keyframes braise-monte {
         0%   { opacity: 0; transform: translate(-50%,-50%); }
         18%  { opacity: 1; }
@@ -318,16 +368,17 @@
     }
 
     /* ── c4. Poussière ── il s effrite, la poussière retombe ── */
-    .vie.casse.c4 .forme { animation: effrite .7s ease-in forwards; }
+    .vie.casse.c4 .forme { animation: effrite .4s cubic-bezier(.5,0,.9,.4) forwards; }
     @keyframes effrite {
         0%   { opacity: 1; filter: blur(0); transform: scale(1); }
+        22%  { opacity: 1; filter: blur(0); transform: scale(1.3); }
         100% { opacity: 0; filter: blur(3px); transform: scale(.88); }
     }
     .c4 .eclat {
         width: calc(var(--t) * .1); height: calc(var(--t) * .1);
         border-radius: 1px;
     }
-    .vie.casse.c4 .eclat { animation: poussiere 1s cubic-bezier(.3,.1,.7,1) forwards; }
+    .vie.casse.c4 .eclat { animation: poussiere .78s cubic-bezier(.08,.9,.3,1) forwards; }
     @keyframes poussiere {
         0%   { opacity: .95; transform: translate(-50%,-50%); }
         100% { opacity: 0;
@@ -341,8 +392,8 @@
     .vie.casse.c5 .forme { animation: encaisse .55s cubic-bezier(.3,1.6,.6,1) forwards; }
     @keyframes encaisse {
         0%   { transform: scale(1); }
-        22%  { transform: scale(1.45); }
-        45%  { transform: scale(.82); }
+        16%  { transform: scale(1.95); }
+        38%  { transform: scale(.62); }
         100% { transform: scale(1); }
     }
     .vie.casse.c5::after {
@@ -357,8 +408,8 @@
     .vie.casse.c6 .forme { animation: glitch .5s steps(6) forwards; }
     @keyframes glitch {
         0%   { transform: none; filter: none; opacity: 1; }
-        20%  { transform: translateX(-12%) skewX(-14deg); filter: hue-rotate(90deg); }
-        40%  { transform: translateX(10%) skewX(12deg);   filter: hue-rotate(-70deg); }
+        20%  { transform: translateX(-38%) skewX(-34deg) scaleY(1.5); filter: hue-rotate(120deg) brightness(2.4); }
+        40%  { transform: translateX(34%) skewX(30deg) scaleY(.5);  filter: hue-rotate(-110deg) brightness(2.4); }
         60%  { transform: translateX(-6%) skewX(-6deg); }
         100% { transform: none; opacity: 0; }
     }
@@ -489,7 +540,9 @@ const PISTES = [
     },
 ];
 
-const N_ECLATS = 8;
+// ⚠️ QUATORZE et non huit. A huit on comptait les morceaux ; le souffle
+// commence quand l oeil renonce a les suivre un par un.
+const N_ECLATS = 14;
 const $ = id => document.getElementById(id);
 
 let taille = 20, nbVies = 3, surHex = true;
@@ -498,9 +551,12 @@ function uneVie(p, i) {
     const eclats = Array.from({ length: N_ECLATS }, (_, k) => {
         // Angle réparti tout autour, avec assez de désordre pour que deux
         // éclats voisins ne partent pas en parallèle.
-        const a = (k / N_ECLATS) * 360 + (Math.random() * 26 - 13);
-        const d = 0.9 + Math.random() * 0.8;   // en multiples de la taille
-        const r = Math.round(Math.random() * 300 - 150);
+        const a = (k / N_ECLATS) * 360 + (Math.random() * 30 - 15);
+        // ⚠️ Deux a quatre fois la taille de la vie, contre une a deux avant.
+        // C est la portee qui fait la difference entre « ca se casse » et
+        // « ca explose » — plus que la vitesse.
+        const d = 2.0 + Math.random() * 2.0;
+        const r = Math.round(Math.random() * 760 - 380);
         return '<i class="eclat" style="--a:' + a.toFixed(1) + 'deg;'
              + '--d:calc(var(--t) * ' + d.toFixed(2) + ');--r:' + r + 'deg"></i>';
     }).join('');
@@ -551,7 +607,20 @@ function dessiner() {
 function casser(el) {
     if (el.classList.contains('casse')) return;
     el.classList.add('casse');
-    setTimeout(() => el.classList.add('morte'), 260);
+
+    // ⚠️ LE CHOC SUR LA RANGEE. Une explosion qui ne secoue rien n en est pas
+    // une : les vies voisines doivent bouger aussi, sinon l oeil le lit comme
+    // une animation locale et pas comme un impact.
+    const rangee = el.closest('.pe-vies');
+    if (rangee) {
+        rangee.classList.remove('choc');
+        // Un reflow force, sinon la classe reposee dans la foulee ne relance
+        // pas l animation — le cas ou l on casse deux vies coup sur coup.
+        void rangee.offsetWidth;
+        rangee.classList.add('choc');
+    }
+
+    setTimeout(() => el.classList.add('morte'), 220);
 }
 
 function remettre() { dessiner(); }
