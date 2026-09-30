@@ -1739,11 +1739,22 @@
 }
 
 /* Grille hexagones */
+/* ⚠️ FLEX ET NON GRID, depuis que le nombre de lettres varie.
+   Il valait vingt-six, puis vingt et une — trois colonnes tombaient juste
+   dans les deux cas, et la rangée Y-Z avait sa règle à elle pour se
+   centrer. Maintenant il dépend de la série : vingt-quatre pour les riches,
+   vingt pour Demon Slayer, vingt-deux pour Gintama. Une grille aurait collé
+   les orphelines à gauche. En flex, la dernière ligne se centre toute
+   seule, quel que soit le reste.
+   La largeur maximale reproduit exactement les trois colonnes d avant. */
 .alphabet-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.7rem 0.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-content: center;
+    gap: 0.7rem 0.4rem;
+    max-width: calc(46px * 3 + 0.4rem * 2);
+    margin-inline: auto;
 }
 
 .alphabet-letter {
@@ -2977,14 +2988,19 @@
     margin: 0 auto 2rem;
 }
 
+/* Même raison qu au-dessus : six colonnes, mais un nombre de lettres qui
+   dépend de la série, donc une dernière ligne à centrer. */
 .alphabet-grid-mobile {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 0.6rem;
 }
 
 .alphabet-grid-mobile .alphabet-letter {
-    width: 100%;
+    /* Six par ligne, gaps déduits — la largeur d avant, au pixel près. */
+    flex: 0 0 calc((100% - 5 * 0.6rem) / 6);
+    width: auto;
     aspect-ratio: 1;
     font-size: 1rem;
 }

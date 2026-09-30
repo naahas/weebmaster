@@ -166,10 +166,18 @@ const BOMBANIME_CONFIG = {
     MIN_TIMER: 5,
     MAX_TIMER: 10,
     ALPHABET_BONUS_LIVES: 1,
-    // Combien de lettres sont demandées par manche, tirées sur les vingt-six.
-    // Vingt et une, et pas un chiffre rond : la grille fait trois colonnes,
-    // donc sept lignes pleines et aucune rangée orpheline.
-    LETTRES_ALPHABET: 21,
+    // Combien de lettres sont demandées — LE MÊME NOMBRE POUR TOUTES LES
+    // SÉRIES. C est la plus pauvre qui fixe le chiffre : Demon Slayer ne
+    // fournit que vingt lettres dans au moins trois de ses cent cinquante-cinq
+    // noms. Sa vingt et unième serait un F présent dans UN SEUL nom.
+    //
+    // ⚠️ Vingt est donc un maximum, pas un choix : monter à vingt et un
+    // rendrait l alphabet de Demon Slayer suspendu à un nom précis, et à
+    // vingt-deux il redeviendrait carrément impossible.
+    LETTRES_ALPHABET: 20,
+    // Et une lettre ne compte que si la série la fournit dans au moins tant
+    // de noms : à un seul nom, elle est atteignable en théorie et pas en jeu.
+    LETTRES_MIN_NOMS: 3,
 
     // ── Mèche CONTINUE ──
     // Une seule mèche pour toute la manche, tirée au sort au départ.
@@ -5760,32 +5768,75 @@ function lettresDeLaManche(gameState) {
     return (l && l.length) ? l : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 }
 
-// ⚠️ Q, X ET W NE SONT JAMAIS DEMANDÉES.
+// ⚠️ LES LETTRES DEMANDÉES DÉPENDENT DE LA SÉRIE, et il le faut absolument.
 //
-// Les tirer au hasard parmi les vingt-six n allégeait presque rien : chaque
-// lettre avait 21/26 de rester, donc sur 200 000 tirages il restait 3,23 des
-// quatre lettres rares en moyenne, et 0,03 % seulement des manches n en
-// demandaient aucune. On écarte donc les trois qui bloquent vraiment.
+// Une liste fixe — même amputée de Q, X et W — rendait l alphabet IMPOSSIBLE
+// dans trois filtres, mesure faite sur bombdata.json :
+//   • Demon Slayer ne contient ni L, ni P, ni V dans aucun de ses 155 noms.
+//     Le tirage ne jetant que deux lettres, son alphabet ne pouvait JAMAIS
+//     se compléter. Cent pour cent des manches.
+//   • Naruto (468 noms) et Gintama (207) n ont aucun V : 91 % des manches.
+// La récompense existait donc sans qu aucun joueur de ces filtres ne puisse
+// jamais la toucher, et rien à l écran ne le disait.
 //
-// Mesuré sur les 8 833 noms de bombdata.json — part des noms qui contiennent
-// la lettre : Q 0,92 %, X 1,87 %, W 4,64 %. Les suivantes décrochent nettement
-// (V 5,79 %, Z 6,86 %) et Y, qu on croirait rare, est à 15,54 % : les noms
-// japonais en sont pleins. D où ces trois-là et pas quatre.
+// On part donc des noms de LA SÉRIE JOUÉE : les lettres présentes dans au
+// moins LETTRES_MIN_NOMS d entre eux, les plus fréquentes d abord, au plus
+// LETTRES_ALPHABET.
 //
-// Les deux dernières écartées restent tirées au sort : c est ce qui fait que
-// deux manches ne demandent pas la même chose.
-const LETTRES_ECARTEES = ['Q', 'X', 'W'];
-
-function tirerLettresAlphabet() {
-    const l = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-        .filter(x => !LETTRES_ECARTEES.includes(x));
-    for (let i = l.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [l[i], l[j]] = [l[j], l[i]];
+// ⚠️ Le seuil de trois noms n est pas de la coquetterie. Une lettre présente
+// dans UN seul nom est théoriquement atteignable et concrètement non : il
+// faudrait tomber sur ce nom précis. Death Note a un F unique, Demon Slayer
+// aussi — les laisser aurait juste déplacé l impossibilité au lieu de la
+// lever.
+//
+// ⚠️ LE NOMBRE, LUI, EST LE MÊME PARTOUT — vingt. Ce sont les LETTRES qui
+// changent d une série à l autre, pas leur compte : un joueur de Demon Slayer
+// et un joueur de Pokémon ont la même grille à remplir, avec des lettres que
+// chacun peut trouver chez lui. Laisser le nombre varier aurait rendu la
+// récompense plus facile dans les séries riches, ce qui est l inverse du but.
+//
+// Conséquence assumée : le tirage n est plus aléatoire, c est le classement
+// par fréquence. Deux manches de la même série demandent les mêmes lettres.
+const LETTRES_PAR_SERIE = {};
+{
+    const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    for (const [serie, noms] of Object.entries(BOMBANIME_CHARACTERS)) {
+        if (!Array.isArray(noms)) continue;
+        const compte = {};
+        L.forEach(x => { compte[x] = 0; });
+        for (const nom of noms) {
+            // Un nom ne compte qu UNE fois par lettre : « NARUTO UZUMAKI »
+            // ne rend pas le U trois fois plus facile à trouver.
+            new Set(String(nom).toUpperCase().replace(/[^A-Z]/g, ''))
+                .forEach(x => { if (compte[x] !== undefined) compte[x]++; });
+        }
+        LETTRES_PAR_SERIE[serie] = L
+            .filter(x => compte[x] >= BOMBANIME_CONFIG.LETTRES_MIN_NOMS)
+            .sort((a, b) => compte[b] - compte[a])
+            .slice(0, BOMBANIME_CONFIG.LETTRES_ALPHABET)
+            // Remises dans l ordre : la grille se lit de A à Z, pas par
+            // fréquence — sinon on cherche ses lettres au lieu de les voir.
+            .sort();
     }
-    // Remises dans l ordre : la grille se lit de A à Z, pas dans l ordre du
-    // tirage — sinon on cherche ses lettres au lieu de les voir.
-    return l.slice(0, BOMBANIME_CONFIG.LETTRES_ALPHABET).sort();
+    // ⚠️ On DIT tout haut si une série n atteint pas le compte. Le jour où
+    // une série est ajoutée avec trop peu de noms, son alphabet redeviendrait
+    // incomplétable — exactement le défaut qu on vient de corriger, et que
+    // rien à l écran ne signale. Il faudrait alors baisser LETTRES_ALPHABET.
+    const pauvres = Object.entries(LETTRES_PAR_SERIE)
+        .filter(([, l]) => l.length < BOMBANIME_CONFIG.LETTRES_ALPHABET);
+    if (pauvres.length) {
+        console.warn('⚠️ BombAnime : ' + pauvres.length + ' série(s) ne fournissent pas '
+            + BOMBANIME_CONFIG.LETTRES_ALPHABET + ' lettres — '
+            + pauvres.map(([s, l]) => s + ' (' + l.length + ')').join(', ')
+            + '. Leur alphabet ne pourra PAS se compléter : baisser LETTRES_ALPHABET.');
+    }
+}
+
+function tirerLettresAlphabet(serie) {
+    const l = LETTRES_PAR_SERIE[serie];
+    // Série inconnue : on retombe sur les vingt-six. Jamais bloquant pour le
+    // jeu — seule la récompense devient hors d atteinte, comme avant.
+    return (l && l.length) ? l.slice() : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 }
 
 function checkAlphabetComplete(gameState, playerId) {
@@ -6530,7 +6581,7 @@ async function startBombanimeGame(gameState) {
     gameState.bombanime.playerAlphabets = new Map();
     // Les lettres demandées, tirées à CHAQUE manche : deux parties d affilée
     // dans le même salon n en donnent pas les mêmes.
-    gameState.bombanime.lettresAlphabet = tirerLettresAlphabet();
+    gameState.bombanime.lettresAlphabet = tirerLettresAlphabet(gameState.bombanime.serie);
     gameState.bombanime.playerLastAnswers = new Map();
     gameState.bombanime.eliminatedPlayers = [];
     gameState.bombanime.bombDirection = 1;

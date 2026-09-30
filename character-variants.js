@@ -13,7 +13,26 @@ const CHARACTER_VARIANTS = {
     // DRAGON BALL
     // ============================================
     "Dbz": [
-        ["GOKU", "SON GOKU", "SONGOKU", "KAKAROT", "BLACK GOKU"],
+        // « BLACK GOKU » sort d ici, mais par pure hygiène : la règle du MOT
+        // ENTIER le reliait déjà à GOKU, l entrée ne servait à rien.
+        ["GOKU", "SON GOKU", "SONGOKU", "KAKAROT"],
+
+        // Goku Black, dans les deux ordres, plus « BLACK » tout court.
+        //
+        // ⚠️ CE GROUPE EST NÉCESSAIRE, et c est un cas rare. La règle du mot
+        // entier ne relie PAS « GOKU BLACK » à « BLACK GOKU » : ni l un ni
+        // l autre n apparaît en entier dans son jumeau, seuls leurs deux mots
+        // se retrouvent, et le moteur compare des expressions complètes. Les
+        // deux ordres étaient donc citables l un après l autre.
+        //
+        // ⚠️ Deux choses que ce groupe NE peut PAS faire, et qu il ne faut pas
+        // espérer de lui :
+        //   • séparer Goku de Goku Black. « GOKU » est un mot entier dans
+        //     « GOKU BLACK » : le moteur les lie, groupe ou pas. Mesuré.
+        //   • épargner « COLONEL BLACK ». « BLACK » y est aussi un mot entier,
+        //     donc le citer le bloque. Seul un renommage de l entrée le
+        //     règlerait.
+        ["GOKU BLACK", "BLACK GOKU", "BLACK"],
         ["TORTUE GENIAL", "MUTEN ROSHI", "ROSHI"],
         ["GOHAN", "SON GOHAN", "SONGOHAN"],
         ["GOTEN", "SON GOTEN", "SONGOTEN"],
