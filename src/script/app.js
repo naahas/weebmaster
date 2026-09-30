@@ -8773,6 +8773,29 @@ createApp({
             });
         },
         
+        // 📱 Le champ ne doit JAMAIS garder le focus hors de son tour.
+        //
+        // ⚠️ Un champ en lecture seule PREND le focus sans ouvrir le clavier —
+        // c est meme a ca que sert habituellement cette astuce, empecher un
+        // clavier d apparaitre. Toucher le champ pendant le tour d un autre le
+        // laissait donc focalise, allume, et sans clavier. Quand la bombe
+        // revenait, le `focus()` du debut de tour ne faisait plus rien :
+        // l element etait DEJA focalise, donc aucun evenement, donc aucun
+        // clavier. Il fallait rafraichir la page pour s en sortir.
+        //
+        // On rend donc le focus aussitot. Le tour venu, toucher le champ est
+        // alors un vrai geste sur un champ inscriptible, et le clavier monte.
+        //
+        // ⚠️ Cela ne defait PAS le clavier qui reste d un tour a l autre :
+        // ce focus-la est CONSERVE depuis ton propre tour, il ne declenche
+        // aucun nouvel evenement `focus`, donc on ne passe pas ici. Seule la
+        // touche volontaire hors tour y passe — exactement le cas a annuler.
+        focusHorsTour(e) {
+            if (!this.bombanime.isMyTurn || this.bombanime.introPhase) {
+                if (e && e.target) e.target.blur();
+            }
+        },
+
         submitBombanimeName() {
             if (!this.bombanime.isMyTurn) return;
             // ⚠️ Pendant l intro, le champ n est plus DESACTIVE mais en lecture

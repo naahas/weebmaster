@@ -2066,6 +2066,7 @@
                                 v-model="bombanime.inputValue"
                                 @keydown.enter.prevent="submitBombanimeName"
                                 @input="emitTyping"
+                                @focus="focusHorsTour"
                                 @paste.prevent
                                 @drop.prevent
                                 :placeholder="getFormattedSerieName()"
