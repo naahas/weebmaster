@@ -166,6 +166,10 @@ const BOMBANIME_CONFIG = {
     MIN_TIMER: 5,
     MAX_TIMER: 10,
     ALPHABET_BONUS_LIVES: 1,
+    // Combien de lettres sont demandées par manche, tirées sur les vingt-six.
+    // Vingt et une, et pas un chiffre rond : la grille fait trois colonnes,
+    // donc sept lignes pleines et aucune rangée orpheline.
+    LETTRES_ALPHABET: 21,
 
     // ── Mèche CONTINUE ──
     // Une seule mèche pour toute la manche, tirée au sort au départ.
@@ -1281,6 +1285,9 @@ function etatNeuf() {
         currentPlayerId: null,// PlayerId du joueur qui doit jouer
         usedNames: new Set(),       // Noms déjà utilisés dans la partie
         playerAlphabets: new Map(), // Map<playerId, Set<lettre>> - Lettres collectées par joueur
+        // Les lettres DEMANDÉES cette manche : vingt et une tirées sur les
+        // vingt-six, renouvelées à chaque départ. Vide hors partie.
+        lettresAlphabet: [],
         playerLastAnswers: new Map(), // Map<playerId, string> - Dernière réponse de chaque joueur
         turnTimeout: null,          // Timeout du tour actuel
         turnId: 0,                  // Identifiant unique du tour (pour éviter race conditions)
@@ -5734,10 +5741,40 @@ function getAllLetters(name) {
 }
 
 // Vérifier si un joueur a complété l'alphabet
+// ⚠️ L ALPHABET NE FAIT PLUS VINGT-SIX LETTRES, MAIS VINGT ET UNE.
+//
+// Il fallait les vingt-six, et il ne se complétait donc presque jamais : la
+// récompense existait sans que personne ne la voie. Vingt et une lettres sont
+// tirées au sort à chaque manche — et ce sont CES lettres-là qu il faut, pas
+// un compte.
+//
+// ⚠️ D où un test par APPARTENANCE et non par taille. Un joueur collecte
+// toutes les lettres qu il emploie, y compris les cinq écartées ; compter
+// `alphabet.size >= 21` aurait donc pu se déclencher sans qu une seule des
+// lettres demandées soit trouvée.
+//
+// ℹ️ Vingt et une tombe juste : la grille fait trois colonnes, donc sept
+// lignes pleines, et la rangée orpheline du bas (Y-Z) disparaît.
+function lettresDeLaManche(gameState) {
+    const l = gameState.bombanime.lettresAlphabet;
+    return (l && l.length) ? l : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+}
+
+function tirerLettresAlphabet() {
+    const l = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    for (let i = l.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [l[i], l[j]] = [l[j], l[i]];
+    }
+    // Remises dans l ordre : la grille se lit de A à Z, pas dans l ordre du
+    // tirage — sinon on cherche ses lettres au lieu de les voir.
+    return l.slice(0, BOMBANIME_CONFIG.LETTRES_ALPHABET).sort();
+}
+
 function checkAlphabetComplete(gameState, playerId) {
     const alphabet = gameState.bombanime.playerAlphabets.get(playerId);
     if (!alphabet) return false;
-    return alphabet.size >= 26;
+    return lettresDeLaManche(gameState).every(l => alphabet.has(l));
 }
 
 // ============================================
@@ -6331,9 +6368,9 @@ function submitBombanimeName(gameState, socketId, name) {
         allLetters.forEach(letter => playerAlphabet.add(letter));
         
         if (newLetters.length > 0) {
-            console.log(`✅ ${player.username}: "${normalizedName}" - Nouvelles lettres: ${newLetters.join(', ')} (Total: ${playerAlphabet.size}/26)`);
+            console.log(`✅ ${player.username}: "${normalizedName}" - Nouvelles lettres: ${newLetters.join(', ')} (Total: ${playerAlphabet.size}/${lettresDeLaManche(gameState).length} demandées)`);
         } else {
-            console.log(`✅ ${player.username}: "${normalizedName}" - Aucune nouvelle lettre (Total: ${playerAlphabet.size}/26)`);
+            console.log(`✅ ${player.username}: "${normalizedName}" - Aucune nouvelle lettre (Total: ${playerAlphabet.size}/${lettresDeLaManche(gameState).length} demandées)`);
         }
         
         // Vérifier si l'alphabet est complet
@@ -6474,6 +6511,9 @@ async function startBombanimeGame(gameState) {
     gameState.bombanime.active = true;
     gameState.bombanime.usedNames = new Set();
     gameState.bombanime.playerAlphabets = new Map();
+    // Les lettres demandées, tirées à CHAQUE manche : deux parties d affilée
+    // dans le même salon n en donnent pas les mêmes.
+    gameState.bombanime.lettresAlphabet = tirerLettresAlphabet();
     gameState.bombanime.playerLastAnswers = new Map();
     gameState.bombanime.eliminatedPlayers = [];
     gameState.bombanime.bombDirection = 1;
@@ -6534,6 +6574,9 @@ async function startBombanimeGame(gameState) {
         mecheTotal: gameState.bombanime.mecheTotal,
         playersOrder: gameState.bombanime.playersOrder,
         playersData: getBombanimePlayersData(gameState),
+        // Les lettres demandées cette manche. Le client dessinait un alphabet
+        // écrit en dur dans le gabarit : il ne pouvait pas savoir.
+        lettresAlphabet: lettresDeLaManche(gameState),
         totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0,
         // 🎯 Défis BombAnime
         challenges: gameState.bombanime.challenges.map(c => ({
@@ -8029,6 +8072,10 @@ io.on('connection', (socket) => {
             playersOrder: gameState.bombanime.playersOrder,
             playersData: getBombanimePlayersData(gameState),
             myAlphabet: myAlphabet,
+            // ⚠️ À la reprise aussi : sans elles, un joueur qui rafraîchit
+            // retrouverait la grille de vingt-six, donc des lettres qu on ne
+            // lui demande pas.
+            lettresAlphabet: lettresDeLaManche(gameState),
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,

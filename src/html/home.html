@@ -2132,42 +2132,28 @@
                     <div class="alphabet-panel" v-if="bombanime.playersData.length > 0 && !isMobile" :class="{ 
                         'intro-offscreen': bombanime.introPhase === 'players'
                     }">
-                        <!-- Gros cœur qui se remplit -->
-                        <div class="alphabet-heart-main" id="alphabetHeartMain" :class="{ 'completing': bombanime.heartCompleting, 'letter-added': bombanime.heartPulse }">
-                            <svg class="heart-bg" viewBox="0 0 24 24">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                            <svg class="heart-fill" viewBox="0 0 24 24" :style="{ clipPath: 'inset(' + (100 - getAlphabetHeartFill()) + '% 0 0 0)' }">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
-                            <!-- Sparkles pour l'animation -->
-                            <div class="sparkle-container">
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                                <div class="sparkle"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Grille des lettres -->
+                        <!-- ⚠️ Le gros cœur qui se remplissait au-dessus de la grille
+                             a été retiré : la grille dit déjà où l on en est, lettre
+                             par lettre, et le cœur redisait la même chose en moins
+                             précis. Ses états (`heartCompleting`, `heartPulse`) et
+                             `getAlphabetHeartFill()` restent en place — ils servent
+                             encore à l animation de gain de vie sur l hexagone. -->
+
+                        <!-- Grille des lettres
+                             ⚠️ Elles viennent du SERVEUR : vingt et une tirées sur
+                             les vingt-six à chaque manche. Écrites en dur ici, elles
+                             ne pouvaient pas suivre. Vingt et une tombe juste sur
+                             trois colonnes — sept lignes pleines, et la rangée
+                             orpheline Y-Z n a plus lieu d être. -->
                         <div class="alphabet-grid">
-                            <div 
-                                v-for="letter in 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('')" 
+                            <div
+                                v-for="letter in lettresAlphabet()"
                                 :key="letter"
                                 class="alphabet-letter"
                                 :id="'letter-' + letter"
                                 :class="{ 'used': hasLetter(letter), 'just-added': bombanime.justAddedLetters.includes(letter) }"
                             >
                                 {{ letter }}
-                            </div>
-                            <!-- Dernière ligne Y-Z centrée -->
-                            <div class="alphabet-last-row">
-                                <div class="alphabet-letter" :id="'letter-Y'" :class="{ 'used': hasLetter('Y'), 'just-added': bombanime.justAddedLetters.includes('Y') }">Y</div>
-                                <div class="alphabet-letter" :id="'letter-Z'" :class="{ 'used': hasLetter('Z'), 'just-added': bombanime.justAddedLetters.includes('Z') }">Z</div>
                             </div>
                         </div>
                     </div>
@@ -2321,30 +2307,19 @@
                             </button>
                             
                             <!-- Cœur progress -->
-                            <div class="alphabet-heart-main" :class="{ 'completing': bombanime.heartCompleting, 'letter-added': bombanime.heartPulse }">
-                                <svg class="heart-bg" viewBox="0 0 24 24">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                                <svg class="heart-fill" viewBox="0 0 24 24" :style="{ clipPath: 'inset(' + (100 - getAlphabetHeartFill()) + '% 0 0 0)' }">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                </svg>
-                            </div>
-                            
-                            <!-- Grille des lettres (A-X) -->
+                            <!-- Le gros cœur est retiré ici aussi, voir la version
+                                 ordinateur plus haut. -->
+
+                            <!-- Grille des lettres — les vingt et une de la manche -->
                             <div class="alphabet-grid-mobile">
-                                <div 
-                                    v-for="letter in 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('')" 
+                                <div
+                                    v-for="letter in lettresAlphabet()"
                                     :key="letter"
                                     class="alphabet-letter"
                                     :class="{ 'used': hasLetter(letter), 'just-added': bombanime.justAddedLetters.includes(letter) }"
                                 >
                                     {{ letter }}
                                 </div>
-                            </div>
-                            <!-- Dernière ligne Y-Z centrée -->
-                            <div class="alphabet-last-row-mobile">
-                                <div class="alphabet-letter" :class="{ 'used': hasLetter('Y'), 'just-added': bombanime.justAddedLetters.includes('Y') }">Y</div>
-                                <div class="alphabet-letter" :class="{ 'used': hasLetter('Z'), 'just-added': bombanime.justAddedLetters.includes('Z') }">Z</div>
                             </div>
                         </div>
                     </div>

@@ -1606,6 +1606,14 @@
     color: rgba(255, 250, 235, 0.15);
 }
 
+/* ⚠️ LE CHAMP GARDE LE FOCUS QUAND CE N EST PLUS SON TOUR, et c est voulu :
+   c est ce qui empêche le clavier mobile de se refermer entre deux tours
+   (voir le gabarit). Mais il gardait AUSSI l apparence d un champ actif —
+   le trait doré restait plein après une bonne réponse, et il fallait
+   cliquer ailleurs pour le voir se griser. On tape donc sur l apparence
+   seule : la classe `.disabled` doit battre `:focus`. */
+.game-input.disabled:focus + .input-underline::after { width: 0%; }
+
 .input-underline {
     width: 60%;
     height: 2px;

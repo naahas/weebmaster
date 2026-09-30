@@ -581,6 +581,8 @@ createApp({
                 usedNamesCount: 0,
                 // Alphabet personnel
                 myAlphabet: [],
+                // Les lettres DEMANDEES cette manche, envoyees par le serveur.
+                lettresAlphabet: [],
                 // Animations
                 justAddedLetters: [],
                 heartCompleting: false,
@@ -6219,7 +6221,13 @@ createApp({
             
             this.socket.on('bombanime-game-started', (data) => {
                 console.log('💣 BombAnime démarré:', data);
-                
+
+                // 🔤 Les vingt et une lettres de la manche, tirées par le serveur.
+                // Posées AVANT tout le reste : la grille se dessine dans la foulée.
+                if (data.lettresAlphabet && data.lettresAlphabet.length) {
+                    this.bombanime.lettresAlphabet = data.lettresAlphabet;
+                }
+
                 // 🆕 Marquer que la partie a démarré sur le serveur (pour le panneau spectateur)
                 this.gameStartedOnServer = true;
                 
@@ -7350,6 +7358,11 @@ createApp({
                     this.bombanime.playersOrder = [...data.playersOrder];
                     this.bombanime.playersData = [...data.playersData];
                     this.bombanime.myAlphabet = data.myAlphabet || [];
+                    // 🔤 Et les lettres demandées : sans elles, un joueur qui
+                    // rafraîchit retrouverait la grille de vingt-six.
+                    if (data.lettresAlphabet && data.lettresAlphabet.length) {
+                        this.bombanime.lettresAlphabet = data.lettresAlphabet;
+                    }
                     this.bombanime.usedNamesCount = data.usedNamesCount || 0;
                     this.bombanime.isMyTurn = data.currentPlayerId === this.playerId;
                     
@@ -8870,6 +8883,16 @@ createApp({
             // Sept secondes : de quoi lire une phrase longue sans avoir le
             // temps de la relire, ce qui donnerait l'impression que ça bloque.
             this.astuceTimer = setInterval(() => { this.astuceNo++; }, 7000);
+        },
+
+        // 🔤 Les lettres demandées cette manche. Elles viennent du serveur —
+        // vingt et une tirées sur les vingt-six — et le repli sur les vingt-six
+        // ne sert qu au tout premier rendu, avant que « bombanime-game-started »
+        // n arrive : sans lui la grille clignoterait vide une fraction de
+        // seconde au départ.
+        lettresAlphabet() {
+            const l = this.bombanime.lettresAlphabet;
+            return (l && l.length) ? l : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
         },
 
         // 📱 Le champ ne doit JAMAIS garder le focus hors de son tour.
