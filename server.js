@@ -179,6 +179,16 @@ const BOMBANIME_CONFIG = {
     // de noms : à un seul nom, elle est atteignable en théorie et pas en jeu.
     LETTRES_MIN_NOMS: 3,
 
+    // ── Les défis ──
+    DEFI_SERIE: 10,      // bonnes réponses d affilée
+    DEFI_LONGUEUR: 7,    // « plus de sept lettres » — mesuré, toutes les séries suivent
+    // Le perso caché : bornes de longueur, et le rythme des indices.
+    CACHE_MIN: 4,
+    CACHE_MAX: 12,
+    // ⚠️ Une lettre de plus toutes les N réponses DE LA TABLE, pas du joueur :
+    // l indice est commun, il doit avancer au même rythme pour tout le monde.
+    CACHE_INDICE_TOUS_LES: 30,
+
     // ── Mèche CONTINUE ──
     // Une seule mèche pour toute la manche, tirée au sort au départ.
     //
@@ -1296,6 +1306,13 @@ function etatNeuf() {
         // Les lettres DEMANDÉES cette manche : vingt et une tirées sur les
         // vingt-six, renouvelées à chaque départ. Vide hors partie.
         lettresAlphabet: [],
+        // ── Le perso caché ──
+        // ⚠️ `persoCache` porte le NOM EN CLAIR et ne doit jamais partir tel
+        // quel : tout ce qui sort passe par `persoCachePublic()`.
+        persoCache: null,
+        persoCacheRevelees: 0,      // combien de lettres du début sont dévoilées
+        persoCacheReponses: 0,      // réponses de la table depuis le départ
+        persoCacheTrouvePar: null,  // playerId, une fois trouvé
         playerLastAnswers: new Map(), // Map<playerId, string> - Dernière réponse de chaque joueur
         turnTimeout: null,          // Timeout du tour actuel
         turnId: 0,                  // Identifiant unique du tour (pour éviter race conditions)
@@ -5940,9 +5957,88 @@ function generateBombanimeChallenges(serie) {
         name: `1 perso en "${letter1}"`,
         description: `Donnez 1 personnage commençant par "${letter1}"`
     });
-    
-    console.log(`🎯 Défis BombAnime générés pour ${serie}: "${letter3}" (x3) et "${letter1}" (x1)`);
+
+    // Défi 3 : dix bonnes réponses d affilée.
+    //
+    // ⚠️ D AFFILÉE, donc remis à zéro dès qu on rate — c est ce qui le
+    // distingue d un simple compteur. La remise à zéro se fait là où un tour
+    // se perd, pas ici.
+    challenges.push({
+        id: 'streak',
+        type: 'streak',
+        letter: null,
+        target: BOMBANIME_CONFIG.DEFI_SERIE,
+        reward: 'freeCharacter',
+        name: `${BOMBANIME_CONFIG.DEFI_SERIE} bonnes réponses d'affilée`,
+        description: `Donnez ${BOMBANIME_CONFIG.DEFI_SERIE} personnages de suite sans vous tromper`
+    });
+
+    // Défi 4 : un nom long.
+    //
+    // ⚠️ On compte les LETTRES, pas les caractères : « SON GOKU » fait sept
+    // lettres et huit signes. Compter les espaces rendrait les noms composés
+    // artificiellement plus longs, alors qu ils sont plus faciles à trouver.
+    //
+    // Mesuré : au seuil de sept, la série la plus pauvre (Fma) offre encore
+    // trente-deux noms. Aucune série n est en difficulté.
+    challenges.push({
+        id: 'long_name',
+        type: 'long_name',
+        letter: null,
+        target: 1,
+        min: BOMBANIME_CONFIG.DEFI_LONGUEUR,
+        reward: 'freeCharacter',
+        name: `1 perso de plus de ${BOMBANIME_CONFIG.DEFI_LONGUEUR} lettres`,
+        description: `Donnez un personnage dont le nom fait plus de ${BOMBANIME_CONFIG.DEFI_LONGUEUR} lettres`
+    });
+
+    console.log(`🎯 Défis BombAnime générés pour ${serie}: "${letter3}" (x3), "${letter1}" (x1), `
+        + `série de ${BOMBANIME_CONFIG.DEFI_SERIE}, nom de +${BOMBANIME_CONFIG.DEFI_LONGUEUR} lettres`);
     return challenges;
+}
+
+// ⚠️ LE PERSO CACHÉ — un seul pour toute la manche, le même pour tout le monde.
+//
+// Il se choisit parmi les noms d UN SEUL MOT : « BARBE BLANCHE » ou
+// « SON GOKU » se devineraient à l espace, et surtout le masque à étoiles
+// trahirait la coupure. « GOKU » convient, « SON GOKU » non.
+//
+// La longueur est bornée : en dessous de quatre lettres le masque se devine
+// trop vite, au-delà de douze on ne le trouve jamais. Mesuré sur
+// bombdata.json — la série la plus pauvre (Death Note) offre quand même
+// quarante-huit candidats, la plus riche plus de mille.
+function choisirPersoCache(serie) {
+    const noms = BOMBANIME_CHARACTERS[serie] || [];
+    const candidats = noms.filter(n => {
+        const s = String(n).trim();
+        return /^[A-Za-z]+$/.test(s)
+            && s.length >= BOMBANIME_CONFIG.CACHE_MIN
+            && s.length <= BOMBANIME_CONFIG.CACHE_MAX;
+    });
+    if (!candidats.length) return null;
+    return String(candidats[Math.floor(Math.random() * candidats.length)]).toUpperCase();
+}
+
+// Ce que le client a le droit de savoir du perso caché : sa longueur, et les
+// lettres déjà révélées.
+//
+// ⚠️ LE NOM ENTIER NE SORT JAMAIS D ICI. Le mettre dans l état et le masquer
+// à l affichage l aurait laissé lisible dans l onglet réseau — c est
+// exactement la fuite qu on a corrigée sur le lien de preuve du quiz.
+function persoCachePublic(gameState) {
+    const b = gameState.bombanime;
+    if (!b.persoCache) return null;
+    const revelees = b.persoCacheRevelees || 0;
+    return {
+        longueur: b.persoCache.length,
+        // Les lettres révélées sont celles du DÉBUT : une lettre prise au
+        // hasard au milieu n aide pas à reconnaître un nom.
+        indice: b.persoCache.slice(0, revelees),
+        revelees,
+        trouvePar: b.persoCacheTrouvePar || null,
+        // Une fois trouvé, plus de secret à garder.
+        nom: b.persoCacheTrouvePar ? b.persoCache : null,
+    };
 }
 
 // Initialiser la progression des défis pour un joueur BombAnime
@@ -5980,39 +6076,109 @@ function checkBombanimeChallenges(gameState, playerId, characterName) {
     
     const completedChallenges = [];
     const firstLetter = characterName.charAt(0).toUpperCase();
-    
+    // Les LETTRES du nom, espaces et ponctuation retirés. « SON GOKU » en
+    // fait sept, pas huit — voir le défi du nom long.
+    const nbLettres = characterName.toUpperCase().replace(/[^A-Z]/g, '').length;
+
     // Mettre à jour le compteur de lettres
     const currentCount = playerProgress.lettersGiven.get(firstLetter) || 0;
     playerProgress.lettersGiven.set(firstLetter, currentCount + 1);
-    
+
+    // La série en cours avance ici, et se remet à zéro ailleurs — voir
+    // « casserSerieBombanime ».
+    playerProgress.serie = (playerProgress.serie || 0) + 1;
+
     // Vérifier chaque défi actif
     gameState.bombanime.challenges.forEach(challenge => {
         const cp = playerProgress.challenges[challenge.id];
         if (!cp || cp.completed) return;
-        
-        // Vérifier si la première lettre correspond au défi
-        if (firstLetter === challenge.letter) {
-            cp.progress = playerProgress.lettersGiven.get(challenge.letter) || 0;
-            
-            // Vérifier si défi complété
-            if (cp.progress >= cp.target && !cp.completed) {
-                cp.completed = true;
-                completedChallenges.push({
-                    challengeId: challenge.id,
-                    reward: challenge.reward
-                });
-                
-                // Ajouter le bonus à l'inventaire du joueur
-                const bonuses = gameState.bombanime.playerBonuses.get(playerId);
-                if (bonuses) {
-                    bonuses[challenge.reward]++;
-                    console.log(`🏆 Défi BombAnime "${challenge.name}" complété par ${playerId} ! Bonus: ${challenge.reward} (total: ${bonuses[challenge.reward]})`);
-                }
+
+        // ⚠️ Chaque type a sa façon de progresser. Avant, la fonction ne
+        // savait faire QUE la première lettre : ajouter un défi d une autre
+        // nature demandait de la rouvrir. Elle aiguille désormais.
+        switch (challenge.type) {
+            case 'three_letters':
+            case 'one_letter':
+                if (firstLetter !== challenge.letter) return;
+                cp.progress = playerProgress.lettersGiven.get(challenge.letter) || 0;
+                break;
+
+            case 'streak':
+                // ⚠️ On LIT la série, on ne l incrémente pas ici : elle a déjà
+                // avancé plus haut, et deux défis de série la feraient monter
+                // deux fois.
+                cp.progress = playerProgress.serie;
+                break;
+
+            case 'long_name':
+                if (nbLettres <= (challenge.min || 0)) return;
+                cp.progress = 1;
+                break;
+
+            default:
+                return;
+        }
+
+        // Vérifier si défi complété
+        if (cp.progress >= cp.target && !cp.completed) {
+            cp.completed = true;
+            completedChallenges.push({
+                challengeId: challenge.id,
+                reward: challenge.reward
+            });
+
+            // Ajouter le bonus à l'inventaire du joueur
+            const bonuses = gameState.bombanime.playerBonuses.get(playerId);
+            if (bonuses) {
+                bonuses[challenge.reward]++;
+                console.log(`🏆 Défi BombAnime "${challenge.name}" complété par ${playerId} ! Bonus: ${challenge.reward} (total: ${bonuses[challenge.reward]})`);
             }
         }
     });
-    
+
     return completedChallenges;
+}
+
+// ⚠️ LA SÉRIE SE CASSE, et il faut l appeler à CHAQUE façon de rater — sinon
+// « d affilée » ne veut plus rien dire et le défi devient un simple compteur
+// de bonnes réponses, atteignable par tout le monde en une manche.
+function casserSerieBombanime(gameState, playerId) {
+    const p = gameState.bombanime.playerChallenges.get(playerId);
+    if (p) p.serie = 0;
+}
+
+// ⚠️ LE PERSO CACHÉ, une fois trouvé. Le nom exact suffit — le moteur de
+// variantes ne s en mêle pas : on veut LE nom, pas un alias, sinon l indice
+// à étoiles ne correspondrait plus à ce qu il faut taper.
+function verifierPersoCache(gameState, playerId, characterName) {
+    const b = gameState.bombanime;
+    if (!b.persoCache || b.persoCacheTrouvePar) return false;
+    if (characterName.toUpperCase().replace(/[^A-Z]/g, '') !== b.persoCache) return false;
+
+    b.persoCacheTrouvePar = playerId;
+    const bonuses = b.playerBonuses.get(playerId);
+    if (bonuses) bonuses.extraLife++;
+    console.log(`🔎 Perso caché « ${b.persoCache} » trouvé par ${playerId} ! Bonus: extraLife`);
+    return true;
+}
+
+// Une réponse de plus à la table : c est ce qui fait avancer l indice.
+// ⚠️ Compté sur TOUTE la table et pas par joueur : l indice est commun, il
+// doit avancer au même rythme pour chacun.
+function avancerIndicePersoCache(gameState) {
+    const b = gameState.bombanime;
+    if (!b.persoCache || b.persoCacheTrouvePar) return false;
+    b.persoCacheReponses = (b.persoCacheReponses || 0) + 1;
+    const du = Math.floor(b.persoCacheReponses / BOMBANIME_CONFIG.CACHE_INDICE_TOUS_LES);
+    // On ne révèle jamais la dernière lettre : un nom entièrement dévoilé ne
+    // serait plus un défi, juste une recopie.
+    const max = Math.max(0, b.persoCache.length - 1);
+    const vise = Math.min(du, max);
+    if (vise > (b.persoCacheRevelees || 0)) {
+        b.persoCacheRevelees = vise;
+        return true;
+    }
+    return false;
 }
 
 // Obtenir l'état des défis BombAnime pour un joueur (pour envoi au client)
@@ -6335,7 +6501,11 @@ function bombExplode(gameState, playerId) {
     
     // Retirer une vie
     player.lives--;
-    
+
+    // ⚠️ Et casser sa série : la bombe lui a explosé dessus, « d affilée »
+    // s arrête là. C est l autre moitié du garde-fou, avec le nom refusé.
+    casserSerieBombanime(gameState, player.playerId);
+
     const isEliminated = player.lives <= 0;
     
     if (isEliminated) {
@@ -6454,13 +6624,18 @@ function submitBombanimeName(gameState, socketId, name) {
     
     if (!validation.valid) {
         console.log(`❌ Nom invalide: "${name}" - ${validation.reason}`);
-        
+
+        // ⚠️ La série « d affilée » se casse ICI aussi, pas seulement quand la
+        // bombe explose. Un joueur qui tente dix noms au hasard et en place un
+        // bon de temps en temps ne fait PAS une série de dix.
+        casserSerieBombanime(gameState, player.playerId);
+
         diffuser(gameState, 'bombanime-name-rejected', {
             playerId: player.playerId,
             name: name,
             reason: validation.reason
         });
-        
+
         return { success: false, reason: validation.reason };
     }
     
@@ -6539,6 +6714,21 @@ function submitBombanimeName(gameState, socketId, name) {
     
     // 🎯 Vérifier les défis BombAnime
     const completedChallenges = checkBombanimeChallenges(gameState, player.playerId, normalizedName);
+
+    // 🔎 Le perso caché : est-ce lui ? et l indice avance-t-il ?
+    // ⚠️ Dans cet ordre. L avancée de l indice se compte sur la réponse
+    // courante, donc après l avoir prise en compte pour la trouvaille —
+    // sinon celui qui trouve pile au trentième coup dévoilerait une lettre
+    // d un nom déjà tombé.
+    const cacheTrouve = verifierPersoCache(gameState, player.playerId, normalizedName);
+    const indiceAvance = cacheTrouve ? false : avancerIndicePersoCache(gameState);
+    if (cacheTrouve || indiceAvance) {
+        diffuser(gameState, 'bombanime-cache', {
+            cache: persoCachePublic(gameState),
+            trouveParUsername: cacheTrouve ? player.username : null,
+        });
+    }
+
     const playerChallengesState = getBombanimePlayerChallengesState(gameState, player.playerId);
     const playerBonuses = getBombanimePlayerBonuses(gameState, player.playerId);
     
@@ -6637,6 +6827,14 @@ async function startBombanimeGame(gameState) {
     // Les lettres demandées, tirées à CHAQUE manche : deux parties d affilée
     // dans le même salon n en donnent pas les mêmes.
     gameState.bombanime.lettresAlphabet = tirerLettresAlphabet(gameState.bombanime.serie);
+    // Le perso caché, un par manche. ⚠️ Remis à zéro même quand les bonus
+    // sont coupés : un reliquat de la manche précédente resurgirait au
+    // rallumage du réglage.
+    gameState.bombanime.persoCache = gameState.bonusEnabled
+        ? choisirPersoCache(gameState.bombanime.serie) : null;
+    gameState.bombanime.persoCacheRevelees = 0;
+    gameState.bombanime.persoCacheReponses = 0;
+    gameState.bombanime.persoCacheTrouvePar = null;
     gameState.bombanime.playerLastAnswers = new Map();
     gameState.bombanime.eliminatedPlayers = [];
     gameState.bombanime.bombDirection = 1;
@@ -6661,7 +6859,13 @@ async function startBombanimeGame(gameState) {
     });
     
     // 🎯 Générer les défis BombAnime
-    gameState.bombanime.challenges = generateBombanimeChallenges(gameState.bombanime.serie);
+    // ⚠️ Réglage « Bonus » éteint : aucun défi n est généré. Le tableau vide
+    // suffit — tout ce qui suit boucle dessus, côté serveur comme côté
+    // client, donc rien ne s affiche et rien ne se gagne. Le perso caché est
+    // écarté au même endroit, plus haut.
+    gameState.bombanime.challenges = gameState.bonusEnabled
+        ? generateBombanimeChallenges(gameState.bombanime.serie)
+        : [];
     gameState.bombanime.playerChallenges = new Map();
     gameState.bombanime.playerBonuses = new Map();
     
@@ -6700,6 +6904,10 @@ async function startBombanimeGame(gameState) {
         // Les lettres demandées cette manche. Le client dessinait un alphabet
         // écrit en dur dans le gabarit : il ne pouvait pas savoir.
         lettresAlphabet: lettresDeLaManche(gameState),
+        // 🔎 Le perso caché, en version publique — longueur et lettres
+        // révélées, jamais le nom.
+        cache: persoCachePublic(gameState),
+        bonusEnabled: gameState.bonusEnabled,
         totalCharacters: BOMBANIME_CHARACTERS[gameState.bombanime.serie]?.length || 0,
         // 🎯 Défis BombAnime
         challenges: gameState.bombanime.challenges.map(c => ({
@@ -8199,6 +8407,11 @@ io.on('connection', (socket) => {
             // retrouverait la grille de vingt-six, donc des lettres qu on ne
             // lui demande pas.
             lettresAlphabet: lettresDeLaManche(gameState),
+            // ⚠️ Et le perso caché, indice compris. Sans lui, rafraîchir
+            // remettait le masque à zéro : les lettres déjà gagnées par la
+            // table disparaissaient de l écran de celui qui recharge.
+            cache: persoCachePublic(gameState),
+            bonusEnabled: gameState.bonusEnabled,
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,

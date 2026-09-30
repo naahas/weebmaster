@@ -583,6 +583,10 @@ createApp({
                 myAlphabet: [],
                 // Les lettres DEMANDEES cette manche, envoyees par le serveur.
                 lettresAlphabet: [],
+                // 🔎 Le perso cache, version publique : longueur, debut revele,
+                // et le nom SEULEMENT une fois trouve.
+                cache: null,
+                cacheTrouveTexte: null,
                 // Animations
                 justAddedLetters: [],
                 heartCompleting: false,
@@ -6219,14 +6223,35 @@ createApp({
             // 💣 BOMBANIME - Socket Handlers
             // ============================================
             
+            // 🔎 Le perso caché bouge : soit une lettre de plus est révélée,
+            // soit quelqu un vient de le trouver.
+            this.socket.on('bombanime-cache', (data) => {
+                if (!data) return;
+                this.bombanime.cache = data.cache || null;
+                if (data.trouveParUsername) {
+                    this.bombanime.cacheTrouveTexte = data.trouveParUsername;
+                    // On laisse le nom à l écran un moment, puis la ligne
+                    // s efface : la manche continue sans lui.
+                    clearTimeout(this._cacheTimer);
+                    this._cacheTimer = setTimeout(() => {
+                        this.bombanime.cacheTrouveTexte = null;
+                    }, 6000);
+                }
+            });
+
             this.socket.on('bombanime-game-started', (data) => {
                 console.log('💣 BombAnime démarré:', data);
 
-                // 🔤 Les vingt et une lettres de la manche, tirées par le serveur.
+                // 🔤 Les lettres de la manche, tirées par le serveur.
                 // Posées AVANT tout le reste : la grille se dessine dans la foulée.
                 if (data.lettresAlphabet && data.lettresAlphabet.length) {
                     this.bombanime.lettresAlphabet = data.lettresAlphabet;
                 }
+                // 🔎 Le perso caché de la manche. `null` quand les bonus sont
+                // coupés : le gabarit n affiche alors rien du tout.
+                this.bombanime.cache = data.cache || null;
+                this.bombanime.cacheTrouveTexte = null;
+                if (typeof data.bonusEnabled === 'boolean') this.bonusEnabled = data.bonusEnabled;
 
                 // 🆕 Marquer que la partie a démarré sur le serveur (pour le panneau spectateur)
                 this.gameStartedOnServer = true;
@@ -7363,6 +7388,11 @@ createApp({
                     if (data.lettresAlphabet && data.lettresAlphabet.length) {
                         this.bombanime.lettresAlphabet = data.lettresAlphabet;
                     }
+                    // 🔎 Le perso caché et son indice. ⚠️ Sans cette ligne,
+                    // rafraîchir remettait le masque à zéro : les lettres que
+                    // la table avait gagnées disparaissaient de l écran.
+                    this.bombanime.cache = data.cache || null;
+                    if (typeof data.bonusEnabled === 'boolean') this.bonusEnabled = data.bonusEnabled;
                     this.bombanime.usedNamesCount = data.usedNamesCount || 0;
                     this.bombanime.isMyTurn = data.currentPlayerId === this.playerId;
                     
@@ -8883,6 +8913,26 @@ createApp({
             // Sept secondes : de quoi lire une phrase longue sans avoir le
             // temps de la relire, ce qui donnerait l'impression que ça bloque.
             this.astuceTimer = setInterval(() => { this.astuceNo++; }, 7000);
+        },
+
+        // 🔎 LE PERSO CACHÉ, en masque.
+        //
+        // ⚠️ Des CASES, pas un nombre. « 7 lettres » se lit et s oublie ; une
+        // rangée de cases se compte d un coup d œil et donne au nom une forme
+        // qu on reconnaît quand les premières lettres tombent. C est la même
+        // raison qui a écarté le compteur de la mèche.
+        //
+        // Le serveur n envoie que la longueur et le début révélé : le nom
+        // entier n arrive qu une fois trouvé.
+        cacheCases() {
+            const c = this.bombanime.cache;
+            if (!c || !c.longueur) return [];
+            const connu = (c.nom || c.indice || '');
+            const cases = [];
+            for (let i = 0; i < c.longueur; i++) {
+                cases.push({ i, l: connu[i] || '', vide: !connu[i] });
+            }
+            return cases;
         },
 
         // 🔤 Les lettres demandées cette manche. Elles viennent du serveur —

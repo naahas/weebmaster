@@ -867,6 +867,18 @@
                                 </div>
 
 
+                                <!-- 🎁 Les bonus : défis et perso caché.
+                                     ⚠️ C est la MÊME route et le MÊME champ que le quiz
+                                     (`bonusEnabled`, `/admin/set-bonus-enabled`). Un second
+                                     réglage portant le même nom aurait fini par diverger, et
+                                     l hôte n aurait pas su lequel il venait de toucher. -->
+                                <div class="v2-set static">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M13 2L4.1 12.9a1 1 0 0 0 .8 1.6H11l-1 7.5 8.9-10.9a1 1 0 0 0-.8-1.6H12z"/></svg>
+                                    <span class="v2-set-label">Bonus</span>
+                                    <button class="v2-switch" :class="{ on: bonusEnabled }"
+                                            @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
+                                </div>
+
                                 <!-- 🤖 Le partenaire. Un seul, et il joue pour de bon :
                                      il répond en 300 ms, donc il ne perd jamais. Il sert
                                      à faire tourner la bombe quand on est seul ou à deux,
@@ -2138,6 +2150,23 @@
                              précis. Ses états (`heartCompleting`, `heartPulse`) et
                              `getAlphabetHeartFill()` restent en place — ils servent
                              encore à l animation de gain de vie sur l hexagone. -->
+
+                        <!-- 🔎 LE PERSO CACHÉ.
+                             Des cases, pas un nombre : « 7 lettres » se lit et s oublie,
+                             une rangée de cases se compte d un coup d œil et donne au nom
+                             une forme qu on reconnaît dès que les premières tombent.
+                             C est la même raison qui a écarté le compteur de la mèche. -->
+                        <div class="bomb-cache" v-if="bombanime.cache && bombanime.cache.longueur"
+                             :class="{ trouve: !!bombanime.cache.nom }">
+                            <div class="bomb-cache-titre">Perso caché</div>
+                            <div class="bomb-cache-cases">
+                                <span v-for="c in cacheCases()" :key="c.i"
+                                      class="bomb-cache-case" :class="{ vide: c.vide }">{{ c.l }}</span>
+                            </div>
+                            <div class="bomb-cache-note" v-if="bombanime.cacheTrouveTexte">
+                                trouvé par {{ bombanime.cacheTrouveTexte }}
+                            </div>
+                        </div>
 
                         <!-- Grille des lettres
                              ⚠️ Elles viennent du SERVEUR : vingt et une tirées sur

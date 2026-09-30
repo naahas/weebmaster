@@ -3516,3 +3516,71 @@
 @media (max-width: 768px) {
     .character-flash img { width: 4.5rem; height: 4.5rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   🔎 LE PERSO CACHÉ
+   Au-dessus de la grille des lettres, là où vivait le gros cœur.
+   ═══════════════════════════════════════════════════════════════════ */
+.bomb-cache {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.9rem;
+}
+
+.bomb-cache-titre {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(240, 192, 64, 0.5);
+}
+
+.bomb-cache-cases {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.22rem;
+}
+
+/* ⚠️ Une LARGEUR FIXE, jamais `ch` ni `auto` : les cases doivent rester
+   identiques qu elles soient vides ou remplies, sinon la rangée change de
+   longueur à chaque lettre révélée et l on perd le repère visuel qui fait
+   tout l intérêt du masque. */
+.bomb-cache-case {
+    width: 1.05rem;
+    height: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #f0c040;
+    background: rgba(240, 192, 64, 0.1);
+    border-bottom: 2px solid rgba(240, 192, 64, 0.45);
+    border-radius: 3px 3px 0 0;
+}
+
+.bomb-cache-case.vide {
+    color: transparent;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Trouvé : tout s allume, et le nom complet est déjà dans les cases. */
+.bomb-cache.trouve .bomb-cache-case {
+    background: rgba(240, 192, 64, 0.2);
+    border-bottom-color: #f0c040;
+    box-shadow: 0 0 0.5rem rgba(240, 192, 64, 0.25);
+}
+
+.bomb-cache-note {
+    font-size: 0.62rem;
+    color: rgba(240, 192, 64, 0.75);
+}
+
+@media (max-width: 780px) {
+    .bomb-cache { margin-bottom: 0.6rem; gap: 0.25rem; }
+    .bomb-cache-case { width: 0.9rem; height: 1.15rem; font-size: 0.7rem; }
+    .bomb-cache-titre { font-size: 0.55rem; }
+}
