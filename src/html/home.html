@@ -2033,8 +2033,34 @@
                         'intro-hidden': bombanime.introPhase === 'players'
                     }">
                         <div class="game-input-container">
-                            <input 
-                                type="text" 
+                            <!-- ⚠️ `readonly` ET NON `disabled`, et c est tout le confort du
+                                 mode sur telephone.
+
+                                 Un champ DESACTIVE perd le focus, et perdre le focus REFERME
+                                 le clavier mobile. La bombe passait a quelqu un d autre, le
+                                 clavier retombait, et il fallait retoucher le champ pour le
+                                 faire remonter — a huit secondes par tour, une a deux
+                                 secondes perdues a chaque passage, toute la partie. C est
+                                 le gros des « c est chiant sur telephone ».
+
+                                 Un champ EN LECTURE SEULE garde le focus — donc le clavier —
+                                 mais refuse la saisie : on ne peut toujours pas preparer sa
+                                 reponse pendant le tour des autres, la regle ne change pas.
+
+                                 ⚠️ Rien ne s ouvre cote triche : `submitBombanimeName()`
+                                 rend la main si ce n est pas votre tour, et le serveur
+                                 refuse de son cote (`not_your_turn`). Le `disabled` n etait
+                                 qu un confort visuel — et le gris vient de la CLASSE
+                                 `.disabled`, pas du pseudo-selecteur, donc rien ne bouge a
+                                 l ecran.
+
+                                 ⚠️ `autocorrect` et `spellcheck` : `autocomplete="off"` ne
+                                 suffit pas. iOS « corrigeait » les noms de personnages, qu il
+                                 ne connait pas — on tape Zoro, il valide Zorro, le serveur
+                                 refuse et le joueur ne comprend pas. Rien a faire en revanche
+                                 pour la casse : le serveur normalise deja en majuscules. -->
+                            <input
+                                type="text"
                                 class="game-input"
                                 id="bombanimeInput"
                                 v-model="bombanime.inputValue"
@@ -2044,8 +2070,10 @@
                                 @drop.prevent
                                 :placeholder="getFormattedSerieName()"
                                 autocomplete="off"
+                                autocorrect="off"
+                                spellcheck="false"
                                 :class="{ 'error': bombanime.lastError, 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"
-                                :disabled="!bombanime.isMyTurn || bombanime.introPhase"
+                                :readonly="!bombanime.isMyTurn || bombanime.introPhase"
                             >
                             <div class="input-underline" :class="{ 'disabled': !bombanime.isMyTurn || bombanime.introPhase }"></div>
 

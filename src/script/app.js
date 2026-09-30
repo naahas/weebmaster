@@ -8768,6 +8768,11 @@ createApp({
         
         submitBombanimeName() {
             if (!this.bombanime.isMyTurn) return;
+            // ⚠️ Pendant l intro, le champ n est plus DESACTIVE mais en lecture
+            // seule (voir le gabarit) : il laisse donc passer la touche Entree.
+            // Sans cette ligne, un reste de saisie du tour precedent partirait
+            // avant que la manche ait commence.
+            if (this.bombanime.introPhase) return;
             if (!this.bombanime.inputValue.trim()) return;
             
             // DEBUG: Afficher le temps local restant au moment de la soumission
