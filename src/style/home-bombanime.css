@@ -718,8 +718,11 @@
 }
 
 .player-life {
-    width: 14px;
-    height: 14px;
+    /* ⏳ En attendant l arbitrage du prototype /prototypes/coeurs-eclats :
+       on garde le cœur, un cran plus gros. À 14 px il se lisait mal une fois
+       le regard pris par la bombe et le champ de saisie. */
+    width: 17px;
+    height: 17px;
     fill: #ef4444;
     transition: all 0.2s ease;
     transform-origin: center;

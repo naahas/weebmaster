@@ -256,6 +256,115 @@
                                     calc(-50% - var(--d))) scale(.3); }
     }
 
+    /* ═══════════════════════════════════════════════════════════════
+       LE CŒUR QUI EXPLOSE — six traitements sur LA MÊME forme.
+       C est la section qui décide aujourd hui : on garde le cœur, seule
+       sa casse est en jeu. Les formes, au-dessus, sont pour plus tard.
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* ── c1. Verre brisé ── un éclair blanc, puis des éclats nets ── */
+    .vie.casse.c1 .forme { animation: verre-flash .5s ease-out forwards; }
+    @keyframes verre-flash {
+        0%   { filter: brightness(1); transform: scale(1); }
+        12%  { filter: brightness(3.4); transform: scale(1.3); }
+        26%  { filter: brightness(1); transform: scale(1.06); }
+        100% { filter: brightness(1); transform: scale(1); }
+    }
+    .c1 .eclat { clip-path: polygon(50% 0, 100% 78%, 8% 100%); }
+    .vie.casse.c1 .eclat { animation: eclat-part .55s cubic-bezier(.1,.8,.3,1) forwards; }
+
+    /* ── c2. Fêlure puis chute ── il se fend en deux, les moitiés tombent ──
+       ⚠️ Deux demi-cœurs obtenus par `clip-path` sur DEUX copies de la même
+       forme : découper un vrai chemin SVG en deux aurait demandé deux
+       tracés à maintenir, et ils auraient divergé au premier retouche. */
+    .vie.c2 .moitie { position: absolute; inset: 0; }
+    .vie.c2 .moitie.g { clip-path: polygon(0 0, 52% 0, 46% 100%, 0 100%); }
+    .vie.c2 .moitie.d { clip-path: polygon(52% 0, 100% 0, 100% 100%, 46% 100%); }
+    .vie.casse.c2 .moitie.g { animation: chute-g .8s cubic-bezier(.4,0,.8,.6) forwards; }
+    .vie.casse.c2 .moitie.d { animation: chute-d .8s cubic-bezier(.4,0,.8,.6) forwards; }
+    @keyframes chute-g {
+        0%   { transform: none; opacity: 1; }
+        20%  { transform: translateX(-6%) rotate(-5deg); }
+        100% { transform: translate(-58%, 85%) rotate(-62deg); opacity: 0; }
+    }
+    @keyframes chute-d {
+        0%   { transform: none; opacity: 1; }
+        20%  { transform: translateX(6%) rotate(5deg); }
+        100% { transform: translate(58%, 85%) rotate(62deg); opacity: 0; }
+    }
+    .vie.c2 .forme { display: none; }
+
+    /* ── c3. Braises ── il se consume par le bas, les braises montent ──
+       La seule qui parle le langage de la bombe. */
+    .vie.casse.c3 .forme { animation: braise-consume .85s ease-in forwards; }
+    @keyframes braise-consume {
+        0%   { clip-path: inset(0 0 0 0);    filter: none; }
+        30%  { clip-path: inset(0 0 22% 0);  filter: brightness(1.7) hue-rotate(-18deg); }
+        70%  { clip-path: inset(0 0 66% 0);  filter: brightness(2.1) hue-rotate(-28deg); }
+        100% { clip-path: inset(0 0 100% 0); filter: brightness(2.4); }
+    }
+    .c3 .eclat {
+        border-radius: 50%;
+        width: calc(var(--t) * .13); height: calc(var(--t) * .13);
+        background: #ffb547;
+    }
+    .vie.casse.c3 .eclat { animation: braise-monte .95s ease-out forwards; }
+    @keyframes braise-monte {
+        0%   { opacity: 0; transform: translate(-50%,-50%); }
+        18%  { opacity: 1; }
+        100% { opacity: 0;
+               transform: translate(calc(-50% + cos(var(--a)) * calc(var(--d) * .4)),
+                                    calc(-50% - var(--d) * 1.2)) scale(.4); }
+    }
+
+    /* ── c4. Poussière ── il s effrite, la poussière retombe ── */
+    .vie.casse.c4 .forme { animation: effrite .7s ease-in forwards; }
+    @keyframes effrite {
+        0%   { opacity: 1; filter: blur(0); transform: scale(1); }
+        100% { opacity: 0; filter: blur(3px); transform: scale(.88); }
+    }
+    .c4 .eclat {
+        width: calc(var(--t) * .1); height: calc(var(--t) * .1);
+        border-radius: 1px;
+    }
+    .vie.casse.c4 .eclat { animation: poussiere 1s cubic-bezier(.3,.1,.7,1) forwards; }
+    @keyframes poussiere {
+        0%   { opacity: .95; transform: translate(-50%,-50%); }
+        100% { opacity: 0;
+               transform: translate(calc(-50% + cos(var(--a)) * calc(var(--d) * .55)),
+                                    calc(-50% + var(--d) * 1.1)) scale(.5); }
+    }
+
+    /* ── c5. Onde de choc ── il encaisse, un anneau part, il s éteint ──
+       La plus sobre : rien ne quitte la boîte, donc rien ne déborde sur le
+       pseudo du voisin. */
+    .vie.casse.c5 .forme { animation: encaisse .55s cubic-bezier(.3,1.6,.6,1) forwards; }
+    @keyframes encaisse {
+        0%   { transform: scale(1); }
+        22%  { transform: scale(1.45); }
+        45%  { transform: scale(.82); }
+        100% { transform: scale(1); }
+    }
+    .vie.casse.c5::after {
+        content: ''; position: absolute; inset: 0;
+        border-radius: 50%;
+        border: 2px solid var(--c, #ef4444);
+        animation: onde .6s ease-out forwards;
+    }
+
+    /* ── c6. Glitch ── il se décompose en blocs qui partent de travers ──
+       Le plus voyant, et le moins « anime » : à juger sur ce point. */
+    .vie.casse.c6 .forme { animation: glitch .5s steps(6) forwards; }
+    @keyframes glitch {
+        0%   { transform: none; filter: none; opacity: 1; }
+        20%  { transform: translateX(-12%) skewX(-14deg); filter: hue-rotate(90deg); }
+        40%  { transform: translateX(10%) skewX(12deg);   filter: hue-rotate(-70deg); }
+        60%  { transform: translateX(-6%) skewX(-6deg); }
+        100% { transform: none; opacity: 0; }
+    }
+    .c6 .eclat { border-radius: 0; width: calc(var(--t) * .22); height: calc(var(--t) * .22); }
+    .vie.casse.c6 .eclat { animation: eclat-part .5s steps(7) forwards; }
+
     /* ── 6. Shuriken · rotation-explosion ── */
     .vie.casse.p6 .forme { animation: shuriken .72s cubic-bezier(.3,0,.7,1) forwards; }
     @keyframes shuriken {
@@ -265,6 +374,22 @@
     }
     .p6 .eclat { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
     .vie.casse.p6 .eclat { animation: eclat-part .7s ease-out forwards; }
+
+    .pe-section {
+        max-width: 1500px;
+        margin: 1.4rem auto -0.2rem;
+        padding: 0 1.25rem;
+        font-size: .92rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+    .pe-section em {
+        font-style: normal;
+        font-size: .68rem;
+        font-weight: 400;
+        color: #6d648a;
+        margin-left: .35rem;
+    }
 
     .pe-pied {
         max-width: 1500px; margin: 0 auto; padding: 0 1.1rem 2.5rem;
@@ -284,7 +409,11 @@
     <button class="pe-bouton" id="b-remettre">remettre</button>
 </div>
 
+<h2 class="pe-section">Le cœur qui explose <em>— on garde le cœur, seule sa casse est en jeu</em></h2>
 <div class="pe-grille" id="grille"></div>
+
+<h2 class="pe-section">Et si on changeait de forme <em>— pour plus tard</em></h2>
+<div class="pe-grille" id="grille-formes"></div>
 
 <div class="pe-pied">
     <p><b>Comment juger.</b> La <b>forme</b> se regarde à l'arrêt, à la taille réelle,
@@ -302,6 +431,25 @@
    qu en CSS : une forme se lit mieux par ses points que par un
    `clip-path` de trente caractères.
    ═══════════════════════════════════════════════════════════════════ */
+const COEUR = '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>';
+
+/* ⚠️ LA SECTION QUI DÉCIDE AUJOURD HUI. On garde le cœur — seule sa casse
+   est en jeu. Les six formes, plus bas, sont pour plus tard. */
+const CASSES = [
+    { id: 'c1', nom: 'Verre brisé', couleur: '#ef4444',
+      note: 'Un éclair blanc d un douzième de seconde, puis des éclats nets. L éclair fait qu on la voit même sans regarder — c est ce qu on demande à une perte de vie.' },
+    { id: 'c2', nom: 'Fêlure puis chute', couleur: '#ef4444', moities: true,
+      note: 'Il se fend en deux et les moitiés tombent. La plus lisible en grand, la plus confuse en petit : à juger au curseur.' },
+    { id: 'c3', nom: 'Braises', couleur: '#ef4444',
+      note: 'Il se consume par le bas, les braises montent. La seule qui parle le langage de la bombe et de la mèche.' },
+    { id: 'c4', nom: 'Poussière', couleur: '#ef4444',
+      note: 'Il s effrite et retombe. La plus douce — peut-être trop : une vie perdue doit se remarquer.' },
+    { id: 'c5', nom: 'Onde de choc', couleur: '#ef4444',
+      note: 'Il encaisse, un anneau part, il s éteint. Rien ne quitte la boîte, donc rien ne déborde sur le pseudo du voisin.' },
+    { id: 'c6', nom: 'Glitch', couleur: '#ef4444',
+      note: 'Il se décompose en blocs de travers. Le plus voyant, et le moins « anime » : c est là-dessus qu il se juge.' },
+];
+
 const PISTES = [
     {
         id: 'p1', nom: 'Cœur', casse: 'éclats',
@@ -356,17 +504,24 @@ function uneVie(p, i) {
         return '<i class="eclat" style="--a:' + a.toFixed(1) + 'deg;'
              + '--d:calc(var(--t) * ' + d.toFixed(2) + ');--r:' + r + 'deg"></i>';
     }).join('');
+    const svg = p.svg || COEUR;
+    // La fêlure a besoin de DEUX copies de la forme, découpées par
+    // `clip-path` — voir le CSS.
+    const corps = p.moities
+        ? '<div class="moitie g"><svg viewBox="0 0 24 24">' + svg + '</svg></div>'
+        + '<div class="moitie d"><svg viewBox="0 0 24 24">' + svg + '</svg></div>'
+        : '';
     return '<div class="vie ' + p.id + '" data-piste="' + p.id + '" data-i="' + i + '"'
          + ' style="--c:' + p.couleur + '">'
-         + '<div class="forme"><svg viewBox="0 0 24 24">' + p.svg + '</svg></div>'
+         + '<div class="forme"><svg viewBox="0 0 24 24">' + svg + '</svg></div>'
+         + corps
          + '<div class="eclats">' + eclats + '</div>'
          + '</div>';
 }
 
-function dessiner() {
-    $('grille').innerHTML = PISTES.map(p =>
-        '<div class="pe-piste">'
-      +   '<h2>' + p.nom + ' <em>· ' + p.casse + '</em></h2>'
+function bloc(p, titre, sousTitre) {
+    return '<div class="pe-piste">'
+      +   '<h2>' + titre + (sousTitre ? ' <em>· ' + sousTitre + '</em>' : '') + '</h2>'
       +   '<div class="pe-scene' + (surHex ? '' : ' nu') + '">'
       +     '<div class="pe-hex">'
       +       '<svg class="cadre" viewBox="0 0 100 100"><polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/></svg>'
@@ -377,9 +532,14 @@ function dessiner() {
       +     '</div>'
       +   '</div>'
       +   '<p class="pe-note">' + p.note + '</p>'
-      + '</div>').join('');
+      + '</div>';
+}
 
-    $('grille').querySelectorAll('.vie').forEach(el => {
+function dessiner() {
+    $('grille').innerHTML = CASSES.map(p => bloc(p, p.nom)).join('');
+    $('grille-formes').innerHTML = PISTES.map(p => bloc(p, p.nom, p.casse)).join('');
+
+    document.querySelectorAll('.vie').forEach(el => {
         el.addEventListener('click', () => casser(el));
     });
 }
