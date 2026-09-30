@@ -718,32 +718,56 @@
 }
 
 .player-life {
-    /* ⏳ En attendant l arbitrage du prototype /prototypes/coeurs-eclats :
-       on garde le cœur, un cran plus gros. À 14 px il se lisait mal une fois
-       le regard pris par la bombe et le champ de saisie. */
-    width: 17px;
-    height: 17px;
+    /* 14 px à l origine : le cœur se lisait mal une fois le regard pris par
+       la bombe et le champ de saisie. */
+    width: 18px;
+    height: 18px;
     fill: #ef4444;
     transition: all 0.2s ease;
     transform-origin: center;
 }
 
+/* ⚠️ LE CŒUR PART EN GLITCH — retenu au prototype /prototypes/coeurs-eclats
+   contre cinq autres traitements.
+   Deux choses le font marcher, et ce n est ni la durée ni la couleur :
+   • `steps(8)` — le mouvement SACCADE. En interpolation continue le même
+     tracé donnait un cœur qui ondule, ce qui est joli et ne dit rien.
+   • le retour au GRIS à la fin, et pas la disparition. Une case vide ne se
+     compte pas : il faut voir combien il en manque. */
 .player-life.lost {
     fill: rgba(255,255,255,0.15);
-    animation: heart-break 0.3s ease-out forwards;
+    animation: heart-glitch 0.5s steps(8) forwards;
 }
 
-@keyframes heart-break {
+@keyframes heart-glitch {
     0% {
         fill: #ef4444;
-        transform: scale(1);
+        transform: none;
+        filter: none;
+        opacity: 1;
     }
-    40% {
+    16% {
         fill: #ef4444;
-        transform: scale(1.2);
+        transform: translateX(-38%) skewX(-34deg) scaleY(1.5);
+        filter: hue-rotate(120deg) brightness(2.4);
+    }
+    34% {
+        fill: #ef4444;
+        transform: translateX(34%) skewX(30deg) scaleY(0.5);
+        filter: hue-rotate(-110deg) brightness(2.4);
+    }
+    50% {
+        fill: #ef4444;
+        transform: translateX(-14%) skewX(-10deg);
+        filter: brightness(3);
+    }
+    64% {
+        opacity: 0;
+        transform: scale(1.3);
     }
     100% {
         fill: rgba(255,255,255,0.15);
+        opacity: 1;
         transform: scale(1);
     }
 }
@@ -3597,4 +3621,20 @@
     .bomb-cache { margin-bottom: 1rem; gap: 0.45rem; }
     .bomb-cache-case { width: 1.05rem; height: 1.35rem; font-size: 0.8rem; }
     .bomb-cache-titre { font-size: 0.55rem; }
+}
+
+/* ⚠️ LE CHOC DE LA RANGÉE DE VIES.
+   C est ce qui manquait le plus au prototype : une explosion qui ne secoue
+   rien n en est pas une. La rangée ENTIÈRE encaisse, donc les cœurs qui
+   restent bougent aussi — l œil le lit comme un impact et non comme une
+   animation locale sur un seul cœur.
+   Posée par le gestionnaire d explosion, retirée seule après 260 ms. */
+.player-lives.choc { animation: vies-choc 0.24s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+@keyframes vies-choc {
+    0%, 100% { transform: translate(0, 0); }
+    18% { transform: translate(-3px, 2px); }
+    38% { transform: translate(3px, -2px); }
+    58% { transform: translate(-2px, -1px); }
+    78% { transform: translate(2px, 1px); }
 }

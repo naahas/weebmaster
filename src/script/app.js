@@ -769,6 +769,21 @@ createApp({
 
     computed: {
 
+        // 💀 Éliminé de la manche en cours.
+        //
+        // ⚠️ Sert à GRISER les bonus, pas à les cacher. Un joueur sorti garde
+        // ses cartes gagnées sous les yeux — il voit ce qu il avait, il ne
+        // peut simplement plus s en servir. Les faire disparaître donnerait
+        // l impression qu on les lui a repris.
+        //
+        // Le serveur refuse de son côté (« eliminated ») : ceci n est que
+        // l affichage, jamais le garde-fou.
+        estElimine() {
+            return this.lobbyMode === 'bombanime'
+                && this.bombanime.active
+                && this.playerLives <= 0;
+        },
+
         // Le nombre de modes annoncé sur l'accueil se DÉDUIT de la liste, il
         // ne s'écrit pas à la main : un mode ajouté se compte tout seul, et
         // un mode « bientôt » ne se compte pas — on n'annonce que ce qui se joue.
@@ -6645,6 +6660,26 @@ createApp({
             
             this.socket.on('bombanime-explosion', (data) => {
                 console.log('💥 Explosion sur:', data.playerUsername);
+
+                // 💥 Le choc de la rangée de vies. Le cœur part en glitch tout
+                // seul (CSS, sur la classe `lost`), mais la SECOUSSE demande un
+                // déclencheur : elle porte sur le conteneur, qui ne change pas
+                // d état quand une vie tombe.
+                //
+                // ⚠️ On vise le slot par son `data-player-id` : la rangée n a
+                // pas d identifiant à elle, et il y en a une par joueur.
+                try {
+                    const slot = document.querySelector('[data-player-id="' + data.playerId + '"]');
+                    const rangee = slot && slot.querySelector('.player-lives');
+                    if (rangee) {
+                        rangee.classList.remove('choc');
+                        // Reflow forcé : sans lui, deux pertes coup sur coup ne
+                        // rejouent pas la seconde animation.
+                        void rangee.offsetWidth;
+                        rangee.classList.add('choc');
+                        setTimeout(() => rangee.classList.remove('choc'), 260);
+                    }
+                } catch (e) { /* le DOM n est pas encore là : sans importance */ }
 
                 // ⚠️ La jauge de la serie doit RETOMBER a l ecran. Le serveur
                 // vient de la casser, mais le client ne recevait cet etat qu a

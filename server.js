@@ -7944,22 +7944,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('dev-add-bots', (data) => {
-        // ⏳ MESURE TEMPORAIRE — les bots de mise au point sont ouverts en
-        // production POUR BOMBANIME SEUL, le temps d éprouver les défis et le
-        // perso caché, qui demandent une longue manche à plusieurs.
-        //
-        // ⚠️ Les trois autres gardes tiennent et ne doivent pas bouger : le
-        // JETON D HÔTE (donc seul le créateur du salon peut le faire, et
-        // seulement dans le sien), le salon pas encore lancé, et le plafond du
-        // mode. Le pire qu on puisse en faire est de remplir son propre salon.
-        //
-        // Pour refermer : remettre le refus inconditionnel ci-dessous, et
-        // retirer « lobbyMode === 'bombanime' » de la condition du réglage
-        // « Test » dans home.html. Les deux, sinon le bouton reste et ne fait
-        // plus rien.
+        // ⚠️ Jamais en production. L ouverture temporaire faite pour éprouver
+        // les défis et le perso caché est REFERMÉE — elle l a été des deux
+        // côtés, ici et sur la condition du réglage « Test » dans home.html.
+        if (process.env.NODE_ENV === 'production') return;
         const gameState = roomDeSocket(socket);
-        if (process.env.NODE_ENV === 'production'
-            && (!gameState || gameState.lobbyMode !== 'bombanime')) return;
         if (!gameState || gameState.inProgress) return;
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
 
