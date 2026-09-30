@@ -293,6 +293,7 @@ const AVATARS_AUTORISES = new Set([
     // Bleach
     'ichigo.webp',
     'aizen.webp',
+    'yoruichi.webp',
     // My Hero Academia
     'deku.webp',
     'bakugo.webp',
@@ -311,6 +312,7 @@ const AVATARS_AUTORISES = new Set([
     'light.webp',
     // Hunter x Hunter
     'killua.webp',
+    'kurapika.webp',
     // Jujutsu Kaisen
     'sukuna.webp',
     'gojo.webp',
@@ -337,6 +339,14 @@ const AVATARS_AUTORISES = new Set([
     'denji.webp',
     // The Quintessential Quintuplets
     'nino.webp',
+    // Fullmetal Alchemist
+    'edward.webp',
+    // Blue Lock
+    'nagi.webp',
+    // GTO
+    'onizuka.webp',
+    // Vinland Saga
+    'thorfinn.webp',
 ]);
 
 // ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
