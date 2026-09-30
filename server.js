@@ -293,7 +293,6 @@ const AVATARS_AUTORISES = new Set([
     // Bleach
     'ichigo.webp',
     'aizen.webp',
-    'yoruichi.webp',
     // My Hero Academia
     'deku.webp',
     'bakugo.webp',
@@ -342,7 +341,11 @@ const AVATARS_AUTORISES = new Set([
     // Fullmetal Alchemist
     'edward.webp',
     // Blue Lock
-    'nagi.webp',
+    // ⚠️ « nagi2 » et non « nagi » : src/img porte deja un nagi.webp, et ce
+    //    dossier est servi a la racine AVANT avatarpic. Express rend le
+    //    premier trouve — l avatar affichait donc l image du mode, sans que
+    //    rien ne le signale. Voir le garde-fou au demarrage.
+    'nagi2.webp',
     // GTO
     'onizuka.webp',
     // Vinland Saga
@@ -359,6 +362,25 @@ const AVATARS_AUTORISES = new Set([
     if (absents.length) {
         console.warn('⚠️ Avatars : ' + absents.length + ' fichier(s) manquant(s) — '
             + absents.join(', ') + '. Listés mais absents de src/img/avatarpic.');
+    }
+
+    // ⚠️ ET LE CAS INVERSE : un avatar bien présent, mais MASQUÉ.
+    //
+    // `src/img` est servi à la racine AVANT `src/img/avatarpic`, et Express
+    // rend le premier fichier trouvé. Un avatar qui porte le nom d'une image
+    // de `src/img` n'est donc jamais servi : c'est l'autre qui sort, à la
+    // bonne adresse, avec le bon code HTTP, sans un mot.
+    //
+    // C'est arrivé avec `nagi.webp` — l'avatar montrait l'image du mode. Rien
+    // ne pouvait le dire : le fichier existe, la liste est juste, la requête
+    // réussit. Seul le contenu est faux, et il faut le voir à l'œil.
+    const masques = [...AVATARS_AUTORISES].filter(f =>
+        fs.existsSync(__dirname + '/src/img/' + f)
+        || fs.existsSync(__dirname + '/src/img/questionpic/' + f));
+    if (masques.length) {
+        console.warn('⚠️ Avatars MASQUÉS : ' + masques.join(', ')
+            + ' — un fichier du même nom vit dans src/img (ou questionpic), servi'
+            + ' avant avatarpic. C est lui qui sort. Renommer l avatar.');
     }
 }
 
