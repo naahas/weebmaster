@@ -13090,7 +13090,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     height: 2.6rem;
     margin-top: 0.8rem;
     /* Le décollement du bord bas de la fenêtre. */
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
     text-align: center;
     /* Elle ne doit jamais capter un clic : ce n'est pas un bouton, et
        elle couvre toute la largeur. */
@@ -13157,7 +13157,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-astuces {
         height: 4.4rem;
         margin-top: 0.5rem;
-        margin-bottom: 1.1rem;
+        margin-bottom: 0.8rem;
     }
     .v2-astuce-ligne { gap: 0.45rem; padding: 0 0.7rem; }
     .v2-astuce-txt { font-size: 0.74rem; }
