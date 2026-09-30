@@ -2214,7 +2214,7 @@
                                     <div class="challenge-title">
                                         <template v-if="challenge.letter">{{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="challenge-letter">{{ challenge.letter }}</span></template>
                                         <template v-else-if="challenge.type === 'streak'">{{ challenge.target }} persos <span class="challenge-letter">d'affilée</span></template>
-                                        <template v-else-if="challenge.type === 'long_name'">1 nom de <span class="challenge-letter">+{{ challenge.min }}</span> lettres</template>
+                                        <template v-else-if="challenge.type === 'long_name'">1 perso avec <span class="challenge-letter">+{{ challenge.min }}</span> lettres</template>
                                         <template v-else>{{ challenge.name }}</template>
                                     </div>
                                     <div class="challenge-progress-bar">
@@ -2316,8 +2316,14 @@
                                     </div>
                                     <div class="modal-challenge-content">
                                         <div class="modal-challenge-title">
-                                            <span v-if="!challenge.completed">{{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="letter">{{ challenge.letter }}</span></span>
-                                            <span v-else>{{ challenge.reward === 'extraLife' ? '+1 Vie' : 'Perso gratuit' }}</span>
+                                            <!-- ⚠️ Même correctif que sur ordinateur : le titre
+                                                 supposait une lettre, les deux nouveaux défis
+                                                 n en ont pas. -->
+                                            <span v-if="challenge.completed">{{ challenge.reward === 'extraLife' ? '+1 Vie' : 'Perso gratuit' }}</span>
+                                            <span v-else-if="challenge.letter">{{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="letter">{{ challenge.letter }}</span></span>
+                                            <span v-else-if="challenge.type === 'streak'">{{ challenge.target }} persos <span class="letter">d'affilée</span></span>
+                                            <span v-else-if="challenge.type === 'long_name'">1 perso avec <span class="letter">+{{ challenge.min }}</span> lettres</span>
+                                            <span v-else>{{ challenge.name }}</span>
                                         </div>
                                         <div class="modal-challenge-progress">
                                             <div class="progress-bar">

@@ -1934,6 +1934,10 @@
 .challenges-list {
     display: flex;
     flex-direction: column;
+    /* Les quatre cartes se touchaient, séparées d un simple trait : à deux
+       défis c était une liste, à quatre c était un pavé. L écart les rend
+       lisibles une par une sans les agrandir. */
+    gap: 0.3rem;
 }
 
 .challenge-item {
@@ -3538,6 +3542,9 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(240, 192, 64, 0.5);
+    /* En plus du `gap` du parent : le titre a besoin de plus d air sous lui
+       que les cases n en ont sous elles. */
+    margin-bottom: 0.3rem;
 }
 
 .bomb-cache-cases {
