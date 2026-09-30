@@ -6194,6 +6194,10 @@ function getBombanimePlayerChallengesState(gameState, playerId) {
             description: challenge.description,
             reward: challenge.reward,
             letter: challenge.letter,
+            // Le type et le seuil voyagent aussi ici : c est cet état-là que
+            // le joueur reçoit à chaque réponse et à la reprise.
+            type: challenge.type,
+            min: challenge.min || null,
             progress: cp ? cp.progress : 0,
             target: challenge.target,
             completed: cp ? cp.completed : false
@@ -6625,10 +6629,13 @@ function submitBombanimeName(gameState, socketId, name) {
     if (!validation.valid) {
         console.log(`❌ Nom invalide: "${name}" - ${validation.reason}`);
 
-        // ⚠️ La série « d affilée » se casse ICI aussi, pas seulement quand la
-        // bombe explose. Un joueur qui tente dix noms au hasard et en place un
-        // bon de temps en temps ne fait PAS une série de dix.
-        casserSerieBombanime(gameState, player.playerId);
+        // ⚠️ LA SÉRIE NE SE CASSE PAS ICI, et c est voulu. Un nom refusé est
+        // une frappe pour rien, pas une faute : on tâtonne, on se trompe
+        // d orthographe, on retente. Ce qui coûte, c est la vie perdue — et
+        // c est là seulement que « d affilée » s arrête. Voir l explosion.
+        //
+        // La casser sur un refus rendait le compteur incompréhensible : il
+        // redescendait sans qu il se passe rien à l écran.
 
         diffuser(gameState, 'bombanime-name-rejected', {
             playerId: player.playerId,
@@ -6916,6 +6923,11 @@ async function startBombanimeGame(gameState) {
             description: c.description,
             reward: c.reward,
             letter: c.letter,
+            // ⚠️ Le TYPE et le seuil. Sans eux, le gabarit ne peut pas écrire
+            // la phrase d un défi qui n a pas de lettre — il affichait
+            // « 10 persos en » suivi du vide.
+            type: c.type,
+            min: c.min || null,
             target: c.target
         }))
     });

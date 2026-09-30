@@ -2158,7 +2158,7 @@
                              C est la même raison qui a écarté le compteur de la mèche. -->
                         <div class="bomb-cache" v-if="bombanime.cache && bombanime.cache.longueur"
                              :class="{ trouve: !!bombanime.cache.nom }">
-                            <div class="bomb-cache-titre">Perso caché</div>
+                            <div class="bomb-cache-titre">Secret guess</div>
                             <div class="bomb-cache-cases">
                                 <span v-for="c in cacheCases()" :key="c.i"
                                       class="bomb-cache-case" :class="{ vide: c.vide }">{{ c.l }}</span>
@@ -2207,8 +2207,15 @@
                                 }"
                             >
                                 <div class="challenge-content">
+                                    <!-- ⚠️ Le titre se fabriquait ici, en supposant que TOUT défi
+                                         porte une lettre. Les deux nouveaux n en ont pas : ils
+                                         s affichaient « 10 persos en » suivi du vide. Chaque type
+                                         a désormais sa phrase. -->
                                     <div class="challenge-title">
-                                        {{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="challenge-letter">{{ challenge.letter }}</span>
+                                        <template v-if="challenge.letter">{{ challenge.target }} perso{{ challenge.target > 1 ? 's' : '' }} en <span class="challenge-letter">{{ challenge.letter }}</span></template>
+                                        <template v-else-if="challenge.type === 'streak'">{{ challenge.target }} persos <span class="challenge-letter">d'affilée</span></template>
+                                        <template v-else-if="challenge.type === 'long_name'">1 nom de <span class="challenge-letter">+{{ challenge.min }}</span> lettres</template>
+                                        <template v-else>{{ challenge.name }}</template>
                                     </div>
                                     <div class="challenge-progress-bar">
                                         <div class="progress-fill" :style="{ width: Math.min(100, (challenge.progress / challenge.target) * 100) + '%' }"></div>
