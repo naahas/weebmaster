@@ -41,6 +41,53 @@ createApp({
             // « maintenant() ». Zéro tant qu'il n'est pas mesuré : c'est le
             // comportement d'avant, jamais pire.
             decalageHorloge: 0,
+
+            // 💡 LES ASTUCES DU SALON — elles défilent en bas de l'écran
+            // pendant qu'on attend le lancement.
+            //
+            // ⚠️ Un nom de mode s'écrit « {bombanime} », jamais en clair :
+            // « astuceHtml() » le remplace par sa pastille, et c'est le CSS
+            // qui tient la couleur. L'écrire en dur ici obligerait à revenir
+            // dans ce fichier le jour où une teinte change.
+            //
+            // ⚠️ Toute phrase ajoutée ici est LUE PAR DES JOUEURS : elle doit
+            // être vraie. Celles qui citent un nombre (15 joueurs, 8 épreuves,
+            // 5 joueurs minimum) ont été relevées dans le code, pas estimées.
+            astuces: [
+                'Après avoir créé un salon, vous pouvez partager le lien en cliquant sur le code en haut de l\'écran.',
+                'Vous pouvez choisir un avatar sur l\'écran d\'accueil, il apparaîtra dans tous les modes de jeu.',
+                'Une partie en mode {bombanime} ne peut accueillir que 15 joueurs au maximum.',
+                'Dragon Ball est actuellement la série avec le plus de questions disponibles en mode {classic}.',
+                'De nouveaux événements inter-communautaires seront bientôt disponibles.',
+                'En mode {bombanime}, vous pouvez regagner des vies en complétant les défis et l\'alphabet affiché à l\'écran.',
+                'En mode {classic}, vous pouvez gagner des bonus en complétant des défis et en répondant juste.',
+                'Seules les parties avec au minimum 5 joueurs sont affichées sur l\'écran d\'accueil du site.',
+                'En mode {bombanime} sur mobile, vous avez deux façons de valider une réponse : l\'icône envoyer à côté du champ de texte, ou la touche Entrée du clavier.',
+                'Un réglage multiplicateur est disponible en mode {rush}, il permet de booster votre score après une longue série de bonnes réponses.',
+                'Manganime et Protagoniste sont deux filtres non exhaustifs en mode {bombanime}, n\'hésitez pas à faire des suggestions après une partie.',
+                'Il est possible de proposer des personnages manquants en mode {bombanime} après une partie.',
+                'Beaucoup de paramètres sont disponibles en mode {classic} : format solo ou par équipe, mode vies ou points, difficulté, séries, et bien d\'autres encore.',
+                'Une série de bonnes réponses peut rapporter des bonus en mode {classic}.',
+                'Vous pouvez masquer le classement en temps réel en mode {rush} en cliquant simplement dessus.',
+                'Il existe actuellement 8 types de mini-jeux différents en mode {ascension}.',
+                'Vous avez la possibilité de jouer par équipe en mode {classic}.',
+                'Il est possible de jouer contre un bot pour s\'entraîner en mode {bombanime}.',
+                'Actuellement, {bombanime} est le seul mode pouvant se jouer en solo contre un bot.',
+                'En mode {collect}, l\'objectif est de réunir des cartes du même anime avant vos adversaires.',
+                'Si vous avez des suggestions à faire sur le site, n\'hésitez surtout pas à me contacter sur TikTok via le lien en page d\'accueil.',
+                'En mode {collect}, les 3 classes de cartes (orange, turquoise et violet) ne sont utiles que pendant un vol de carte.',
+                'Le mode {classic} est temporairement réservé, mais reste jouable.',
+                'Plus de 2000 questions sont disponibles sur ShonenMaster.',
+                'Sur ordinateur, vous pouvez fermer un salon plus rapidement avec la touche Échap.',
+            ],
+            // L'ordre est mélangé une fois au démarrage : sans cela tout le
+            // monde lirait toujours la même phrase en entrant dans un salon,
+            // et les dernières de la liste ne seraient jamais vues d'une
+            // attente courte.
+            astucesOrdre: [],
+            astuceNo: 0,
+            astuceTimer: null,
+
             // Authentification
             isAuthenticated: false,
             showBonusArcMobile: false,
@@ -598,6 +645,9 @@ createApp({
     },
 
     async mounted() {
+        // 💡 Les astuces du salon : l'ordre est mélangé et la rotation part.
+        this.demarrerAstuces();
+
         // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
         this.loadHomeStats();
         this.homeStatsTimer = setInterval(() => {
@@ -8773,6 +8823,55 @@ createApp({
             });
         },
         
+        // 💡 L'astuce affichée, en HTML : « {bombanime} » devient une pastille
+        // colorée. Le nom lisible et la couleur vivent ailleurs — ici on ne
+        // fait que poser la classe, le CSS tient les teintes.
+        //
+        // ⚠️ Le texte vient de « astuces », écrit dans ce fichier et par
+        // personne d'autre : rien de ce qu'un joueur saisit ne passe par là.
+        // C'est ce qui rend « v-html » acceptable ici, et il ne le resterait
+        // pas si ces phrases venaient un jour de la base.
+        astuceHtml(texte) {
+            if (!texte) return '';
+            const noms = {
+                classic: 'Classique', rivalry: 'Classique', bombanime: 'BombAnime',
+                rush: 'Rush', collect: 'Collect', ascension: 'Ascension',
+            };
+            return texte.replace(/\{(\w+)\}/g, (tout, mode) => {
+                const nom = noms[mode];
+                if (!nom) return tout;
+                return '<b class="v2-astuce-mode mode-' + mode + '">' + nom + '</b>';
+            });
+        },
+
+        // La phrase du moment. L'ordre est mélangé une fois, puis on tourne.
+        astuceCourante() {
+            const l = this.astucesOrdre.length;
+            if (!l) return '';
+            return this.astucesOrdre[this.astuceNo % l];
+        },
+
+        // ⚠️ Un SEUL minuteur, posé au démarrage et jamais rejoué. Le lancer à
+        // l'entrée du salon et l'arrêter à la sortie demandait de surveiller
+        // quatre conditions (hôte ou invité, salon ouvert, partie lancée,
+        // partie finie) : un oubli laissait un minuteur derrière lui à chaque
+        // manche. Ici il n'y en a jamais qu'un, et il ne fait qu'incrémenter
+        // un nombre — la bande n'est rendue que dans le salon de toute façon.
+        demarrerAstuces() {
+            const n = this.astuces.length;
+            if (!n) return;
+            const melange = this.astuces.slice();
+            for (let i = melange.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [melange[i], melange[j]] = [melange[j], melange[i]];
+            }
+            this.astucesOrdre = melange;
+            clearInterval(this.astuceTimer);
+            // Sept secondes : de quoi lire une phrase longue sans avoir le
+            // temps de la relire, ce qui donnerait l'impression que ça bloque.
+            this.astuceTimer = setInterval(() => { this.astuceNo++; }, 7000);
+        },
+
         // 📱 Le champ ne doit JAMAIS garder le focus hors de son tour.
         //
         // ⚠️ Un champ en lecture seule PREND le focus sans ouvrir le clavier —

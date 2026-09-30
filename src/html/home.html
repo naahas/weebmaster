@@ -913,6 +913,30 @@
 
                 </div>
 
+                <!-- 💡 LES ASTUCES, pendant qu'on attend le lancement.
+                     EN BAS, et c'est un choix : le haut porte déjà le logo à
+                     gauche et le code du salon à droite — une troisième chose
+                     au milieu aurait concurrencé le code, qui est l'information
+                     utile de cet écran. Et l'ordre de lecture veut qu'on lise
+                     « vous êtes dans la partie » AVANT de s'occuper l'attente.
+                     `.v2-room` étant une colonne flex dont la grille prend
+                     `flex: 1`, cette bande tombe en bas toute seule.
+
+                     ⚠️ `v-html` : les phrases sont écrites dans `app.js` et
+                     nulle part ailleurs — rien de ce qu'un joueur saisit ne
+                     passe par là. Ça ne resterait pas vrai si elles venaient
+                     un jour de la base. -->
+                <div class="v2-astuces" v-if="astucesOrdre.length">
+                    <svg class="v2-astuce-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 18h6M10 22h4"/>
+                        <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+                    </svg>
+                    <Transition name="astuce" mode="out-in">
+                        <p class="v2-astuce-txt" :key="astuceNo" v-html="astuceHtml(astuceCourante())"></p>
+                    </Transition>
+                </div>
+
                 <!-- Les « ! » d'aide vivent hors du panneau et hors de la grille, et hors de leur ligne :
                      enfants de la ligne, ils la marquaient « survolée » en les
                      approchant — le survol se propage dans le DOM, pas à l'écran.

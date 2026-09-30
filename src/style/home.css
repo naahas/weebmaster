@@ -13069,3 +13069,86 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         flex: 0 0 auto;
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   💡 LES ASTUCES DU SALON
+   Une bande en bas de l'écran d'attente, qui tourne toutes les sept
+   secondes. `.v2-room` est une colonne flex dont la grille prend
+   `flex: 1` : cette bande n'a rien à faire pour tomber en bas.
+   ═══════════════════════════════════════════════════════════════════ */
+.v2-astuces {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    /* ⚠️ Une HAUTEUR FIXE, et c'est ce qui rend la rotation supportable.
+       Sans elle, une phrase de deux lignes succédant à une phrase d'une
+       ligne faisait sauter toute la page à chaque changement — le seul
+       défaut qu'on remarque vraiment sur un élément qui tourne. */
+    min-height: 2.6rem;
+    padding: 0 1rem;
+    margin-top: 0.8rem;
+    text-align: center;
+    /* Elle ne doit jamais capter un clic : ce n'est pas un bouton, et
+       elle couvre toute la largeur. */
+    pointer-events: none;
+}
+
+.v2-astuce-ic {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex: 0 0 auto;
+    color: rgba(255, 210, 74, 0.55);
+}
+
+.v2-astuce-txt {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: rgba(232, 227, 245, 0.62);
+    max-width: 52rem;
+}
+
+/* Le nom du mode, à sa couleur. Les teintes sont celles des vignettes
+   de l'accueil : un joueur qui a choisi « BombAnime » en vert doit
+   retrouver le même vert ici. */
+.v2-astuce-mode { font-weight: 700; }
+.v2-astuce-mode.mode-classic   { color: #ffd24a; }
+.v2-astuce-mode.mode-rivalry   { color: #ffd24a; }
+.v2-astuce-mode.mode-bombanime { color: #22c55e; }
+.v2-astuce-mode.mode-rush      { color: #ffffff; }
+.v2-astuce-mode.mode-ascension { color: #7fb4ff; }
+.v2-astuce-mode.mode-collect   { color: #c3c9d4; }
+
+/* ⚠️ La transition, en `mode="out-in"` : l'ancienne phrase s'efface
+   AVANT que la nouvelle entre. Un fondu croisé aurait demandé de les
+   superposer en absolu, donc de renoncer à la hauteur automatique —
+   et deux textes lisibles l'un sur l'autre pendant 200 ms se lisent
+   comme un bug d'affichage.
+   La sortie est deux fois plus rapide que l'entrée : c'est ce qui fait
+   qu'on ne sent pas le temps mort entre les deux. */
+.astuce-enter-active { transition: opacity 0.42s ease, transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.astuce-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.astuce-enter-from { opacity: 0; transform: translateY(0.5rem); }
+.astuce-leave-to   { opacity: 0; transform: translateY(-0.35rem); }
+
+@media (max-width: 780px) {
+    .v2-astuces {
+        min-height: 3.2rem;
+        margin-top: 0.5rem;
+        padding: 0 0.7rem;
+        gap: 0.45rem;
+    }
+    .v2-astuce-txt { font-size: 0.74rem; }
+    .v2-astuce-ic { width: 0.9rem; height: 0.9rem; }
+}
+
+/* ⚠️ Respecter « je préfère moins d'animations » : le fondu disparaît,
+   la rotation reste. Supprimer la rotation entière priverait ces
+   joueurs de l'information, ce qui serait pire que de la montrer sans
+   transition. */
+@media (prefers-reduced-motion: reduce) {
+    .astuce-enter-active, .astuce-leave-active { transition: opacity 0.15s linear; }
+    .astuce-enter-from, .astuce-leave-to { transform: none; }
+}
