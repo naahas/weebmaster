@@ -5760,8 +5760,25 @@ function lettresDeLaManche(gameState) {
     return (l && l.length) ? l : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 }
 
+// ⚠️ Q, X ET W NE SONT JAMAIS DEMANDÉES.
+//
+// Les tirer au hasard parmi les vingt-six n allégeait presque rien : chaque
+// lettre avait 21/26 de rester, donc sur 200 000 tirages il restait 3,23 des
+// quatre lettres rares en moyenne, et 0,03 % seulement des manches n en
+// demandaient aucune. On écarte donc les trois qui bloquent vraiment.
+//
+// Mesuré sur les 8 833 noms de bombdata.json — part des noms qui contiennent
+// la lettre : Q 0,92 %, X 1,87 %, W 4,64 %. Les suivantes décrochent nettement
+// (V 5,79 %, Z 6,86 %) et Y, qu on croirait rare, est à 15,54 % : les noms
+// japonais en sont pleins. D où ces trois-là et pas quatre.
+//
+// Les deux dernières écartées restent tirées au sort : c est ce qui fait que
+// deux manches ne demandent pas la même chose.
+const LETTRES_ECARTEES = ['Q', 'X', 'W'];
+
 function tirerLettresAlphabet() {
-    const l = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const l = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+        .filter(x => !LETTRES_ECARTEES.includes(x));
     for (let i = l.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [l[i], l[j]] = [l[j], l[i]];
