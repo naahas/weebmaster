@@ -1845,6 +1845,57 @@ app.get('/prototypes/parametres', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-parametres.html');
 });
 
+// 🧪 Les avatars a l essai, dans le vrai cercle de BombAnime.
+app.get('/prototypes/avatars', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-avatars.html');
+});
+
+// Les avatars tels qu ils sont SUR LE DISQUE, et non tels qu AVATARS_AUTORISES
+// les connait.
+//
+// ⚠️ C est tout l objet de la page, et la raison pour laquelle /api/avatars ne
+// pouvait pas servir : on juge un portrait AVANT de decider s il entre en jeu,
+// donc avant qu il figure dans la liste blanche. Un fichier tout juste depose
+// n y est pas encore — c est justement celui qu on veut voir.
+//
+// Le drapeau « autorise » dit de quel cote du seuil chacun se trouve, et le
+// poids signale les PNG oublies : a 225x350 de trait manga le format pese dix
+// fois son equivalent WebP, et rien d autre ne le dit.
+app.get('/prototypes/avatars/liste', (req, res) => {
+    const lire = (dossier, bot) => {
+        try {
+            return fs.readdirSync(__dirname + dossier)
+                .filter(f => /\.(webp|png|jpe?g|gif)$/i.test(f))
+                .map(f => {
+                    let poids = 0;
+                    try { poids = fs.statSync(__dirname + dossier + f).size; } catch (e) {}
+                    return {
+                        f,
+                        bot,
+                        poids,
+                        // ⚠️ L adresse est fabriquee ICI. Le dossier des
+                        // avatars est servi a la racine, donc les portraits de
+                        // bot sortent sous « /bot/… » : la page ne doit pas
+                        // avoir a le deviner. Et elle est ABSOLUE — servie sous
+                        // /prototypes/, elle chercherait sinon
+                        // /prototypes/naruto.webp, qui n existe pas.
+                        url: '/' + (bot ? 'bot/' : '') + f,
+                        // Prefixe « _ » : le fichier est servi mais mis de cote
+                        // au tirage (voir le dossier des portraits de bot).
+                        ecarte: f.startsWith('_'),
+                        autorise: AVATARS_AUTORISES.has(f),
+                        v: AVATARS_VERSIONS.get(f) || null,
+                    };
+                });
+        } catch (e) { return []; }
+    };
+    res.set('Cache-Control', 'no-cache');
+    res.json({
+        defaut: AVATAR_DEFAUT,
+        avatars: lire('/src/img/avatarpic/', false).concat(lire('/src/img/avatarpic/bot/', true)),
+    });
+});
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les avatars à l'essai — ShonenMaster</title>
+
+<!--
+  🧪 LES AVATARS À L'ESSAI, dans le vrai cercle de BombAnime.
+
+  ⚠️ Cette page ne redessine rien : elle CHARGE les feuilles du jeu et reprend
+     ses classes (`bombanime-circle`, `player-hex`, `player-avatar`…). Un
+     hexagone recopié à la main aurait dérivé du vrai au premier réglage de
+     liseré, et l'on aurait jugé les portraits sur un cadre qui n'existe plus.
+     Les chemins sont ABSOLUS : servie sous /prototypes/, la page chercherait
+     sinon /prototypes/home.css.
+
+  ⚠️ Et le cadre compte plus que la taille. L'avatar épouse un HEXAGONE par
+     `clip-path`, pas un disque : un portrait cadré large perd ses six coins,
+     un visage décentré sort du pan oblique. C'est invisible sur une vignette
+     carrée dans l'explorateur de fichiers, et c'est tout l'objet de la page.
+
+  ⚠️ La liste vient de `/prototypes/avatars/liste`, qui lit LE DOSSIER — pas
+     `AVATARS_AUTORISES`. Un fichier tout juste déposé n'est pas encore dans la
+     liste blanche ; c'est justement celui qu'on veut voir.
+-->
+
+<link rel="stylesheet" href="/home.css">
+<link rel="stylesheet" href="/home-bombanime.css">
+
+<style>
+    /* ═══ Le châssis de la page de travail ═══
+       Elle ne défile pas : le cercle à gauche, le tiroir à droite, et c'est
+       le seul tiroir qui défile. Tout mettre à la suite obligerait à faire
+       l'aller-retour entre l'image et son rendu — or c'est la comparaison qui
+       se juge ici. */
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+    body {
+        background: radial-gradient(circle at 50% 0%, #161029, #0a0714 60%, #06040d);
+        color: #e8e3f5;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pa-tete {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        flex-wrap: wrap;
+        padding: .6rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, .08);
+        background: rgba(10, 7, 20, .8);
+    }
+    .pa-titre {
+        font-size: .95rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+        margin-right: auto;
+    }
+    .pa-titre span { color: #f0c040; }
+
+    .pa-reglage {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .76rem;
+        color: #a79ec4;
+    }
+    .pa-reglage input[type=range] { width: 108px; accent-color: #f0c040; }
+    .pa-reglage b {
+        color: #e8e3f5;
+        min-width: 1.6rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pa-bouton {
+        border: 1px solid rgba(240, 192, 64, .3);
+        background: rgba(240, 192, 64, .08);
+        color: #f0c040;
+        font: inherit;
+        font-size: .74rem;
+        padding: .34rem .7rem;
+        border-radius: 7px;
+        cursor: pointer;
+    }
+    .pa-bouton:hover { background: rgba(240, 192, 64, .18); }
+    .pa-bouton.actif {
+        background: rgba(240, 192, 64, .28);
+        color: #fff;
+    }
+
+    .pa-corps {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+    }
+
+    /* ═══ La scène : le cercle du jeu ═══ */
+    .pa-scene {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    /* Le mode « téléphone » : un cadre de 390 px de large. Les hexagones y
+       tombent à 44 px, et c'est LE cas qui décide — un portrait qui ne se lit
+       pas à 44 px ne se lira pas à quinze joueurs. */
+    .pa-scene.tel .pa-cadre {
+        width: 390px;
+        height: 100%;
+        max-height: 720px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 22px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, .012);
+    }
+    .pa-cadre {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Le siège sélectionné : c'est lui qui reçoit l'image cliquée. */
+    .bombanime-player-slot.pa-vise .player-hex { outline: 2px dashed #f0c040; outline-offset: 5px; }
+
+    .pa-vide {
+        color: #6d648a;
+        font-size: .8rem;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    /* ═══ Les autres cadrages ═══
+       Le même portrait aux quatre autres tailles du jeu. Le classement du Rush
+       le montre à 1,2 rem : un visage qui n'y est plus qu'une tache ne sert à
+       rien, et ça ne se voit qu'en le mettant à côté de l'hexagone. */
+    .pa-cadrages {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: .7rem 1rem;
+        background: linear-gradient(to top, rgba(6, 4, 13, .92), transparent);
+        pointer-events: none;
+    }
+    .pa-cadrage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .3rem;
+    }
+    .pa-cadrage em {
+        font-size: .62rem;
+        color: #6d648a;
+        font-style: normal;
+        letter-spacing: .03em;
+    }
+    /* Les trois ronds du jeu, à leur taille réelle. */
+    .pa-rond {
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        background: #1a1428;
+    }
+    .pa-rond.clt { width: 1.2rem; height: 1.2rem; }
+    .pa-rond.quiz { width: 1.35rem; height: 1.35rem; }
+    .pa-rond.gagnant {
+        width: 4rem;
+        height: 4rem;
+        border: 2px solid rgba(240, 192, 64, .5);
+        box-shadow: 0 0 20px rgba(240, 192, 64, .25);
+    }
+
+    /* ═══ Le tiroir des portraits ═══ */
+    .pa-tiroir {
+        flex: 0 0 300px;
+        min-height: 0;
+        overflow-y: auto;
+        border-left: 1px solid rgba(255, 255, 255, .08);
+        background: rgba(10, 7, 20, .55);
+        padding: .7rem;
+    }
+    .pa-groupe {
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: #8d84ab;
+        margin: .8rem .2rem .45rem;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+    .pa-groupe:first-child { margin-top: 0; }
+    .pa-groupe i {
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, .08);
+    }
+    .pa-grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: .4rem;
+    }
+    .pa-item {
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        background: #14102260;
+        aspect-ratio: 1;
+    }
+    .pa-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .pa-item:hover { border-color: rgba(240, 192, 64, .55); }
+    .pa-item.porte { border-color: #f0c040; box-shadow: 0 0 0 1px #f0c040 inset; }
+    .pa-item b {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        font-size: .54rem;
+        font-weight: 600;
+        text-align: center;
+        padding: .1rem .1rem;
+        background: rgba(6, 4, 13, .82);
+        color: #cfc7e6;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    /* Le PNG oublié : à 225×350 de trait manga il pèse dix fois son WebP, et
+       rien d'autre sur le site ne le signale. */
+    .pa-item s {
+        position: absolute;
+        top: .16rem;
+        right: .16rem;
+        font-size: .5rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: .06rem .22rem;
+        border-radius: 4px;
+        background: #b03a3a;
+        color: #fff;
+    }
+    .pa-item.pa-ecarte img { opacity: .35; }
+
+    .pa-note {
+        font-size: .66rem;
+        color: #6d648a;
+        line-height: 1.45;
+        margin: .9rem .2rem 0;
+    }
+    .pa-note kbd {
+        background: rgba(255, 255, 255, .08);
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 4px;
+        padding: 0 .25rem;
+        font-size: .64rem;
+    }
+
+    @media (max-width: 900px) {
+        .pa-corps { flex-direction: column; }
+        .pa-tiroir { flex: 0 0 46%; border-left: none; border-top: 1px solid rgba(255, 255, 255, .08); }
+    }
+</style>
+</head>
+<body>
+
+<div class="pa-tete">
+    <div class="pa-titre">Les avatars à l'essai <span>·</span> le vrai cercle de BombAnime</div>
+
+    <label class="pa-reglage">joueurs <input type="range" id="r-joueurs" min="2" max="15" value="6"><b id="v-joueurs">6</b></label>
+    <button class="pa-bouton" id="b-tel">téléphone</button>
+    <button class="pa-bouton" id="b-melanger">remplir au hasard</button>
+    <button class="pa-bouton" id="b-partout">mettre partout</button>
+</div>
+
+<div class="pa-corps">
+    <div class="pa-scene" id="scene">
+        <div class="pa-cadre" id="cadre">
+            <div class="bombanime-circle" id="cercle"></div>
+        </div>
+        <div class="pa-cadrages" id="cadrages"></div>
+    </div>
+
+    <div class="pa-tiroir" id="tiroir">
+        <div class="pa-vide">chargement…</div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════
+   LA GÉOMÉTRIE DU CERCLE
+
+   ⚠️ Recopiée de `app.js` — `getBombanimeCircleSize`, `getBombanimeHexSize`,
+      `getBombSize`, `margeDuCercle` et `getBombanimePlayerStyle`. La taille
+      de l'hexagone dépend du NOMBRE DE JOUEURS et de la largeur d'écran :
+      120 px à deux sur ordinateur, 44 px sur téléphone. Approximer d'une
+      taille unique aurait fait juger les portraits dans un cadre que
+      personne ne voit.
+
+   ⚠️ `largeur()` remplace `window.innerWidth` : le bouton « téléphone »
+      doit pouvoir imposer 390 px sans qu'on redimensionne la fenêtre.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+let TEL = false;
+const largeur = () => TEL ? 390 : window.innerWidth;
+const hauteur = () => TEL ? Math.min(720, window.innerHeight) : window.innerHeight;
+
+function tailleCercle(n) {
+    const w = largeur(), h = hauteur();
+    if (w <= 480) {
+        const base = n <= 3 ? 250 : 280;
+        return Math.min(w - 40, base + (n * 18));
+    }
+    if (w <= 768 || h <= 500) {
+        const base = n <= 2 ? 230 : 320;
+        return Math.min(w - 60, base + (n * 20));
+    }
+    if (w <= 1024) return 420 + (n * 18);
+    let size = 500 + (n * 22);
+    if (w >= 2560) size = Math.round(size * 1.3);
+    return Math.min(size, Math.max(380, h - 20));
+}
+
+function marge(hexSize) {
+    return largeur() <= 768 ? (hexSize / 2) + 8 : hexSize + 20;
+}
+
+function tailleBombe(n) {
+    const w = largeur();
+    if (w <= 480) return Math.min(44, Math.max(32, 27 + n));
+    if (w <= 768) return Math.min(58, Math.max(46, 38 + (n * 1.3)));
+    const size = Math.min(78, Math.max(65, 54 + (n * 1.9)));
+    return w >= 2560 ? Math.round(size * 1.25) : size;
+}
+
+function tailleHex(n) {
+    const w = largeur();
+    let size;
+    if (w <= 480) size = Math.max(44, 62 - (n * 1.2));
+    else if (w <= 768) size = Math.max(56, 84 - (n * 2.2));
+    else {
+        size = Math.max(66, 120 - (n * 4.0));
+        if (w >= 2560) size = Math.round(size * 1.25);
+    }
+    if (!n) return size;
+    const rayon = (tailleCercle(n) / 2) - marge(size);
+    if (rayon <= 0) return size;
+    const place = (2 * Math.PI * rayon) / n / 1.25;
+    return Math.max(30, Math.min(size, place));
+}
+
+function placer(index, n) {
+    const circleSize = tailleCercle(n);
+    const hexSize = tailleHex(n);
+    const centre = circleSize / 2;
+    const bombSize = tailleBombe(n);
+    const w = largeur();
+    let ecart = Math.max(35, 60 + (13 - n) * 5);
+    if (w <= 768 && n <= 2) ecart = 65;
+    const baseRadius = (circleSize / 2) - marge(hexSize);
+    let radius = Math.max(baseRadius, (bombSize / 2) + hexSize + ecart);
+    if (w <= 768) {
+        const demiPlace = Math.min(circleSize, w - 24) / 2;
+        radius = Math.min(radius, demiPlace - (hexSize / 2) - 6);
+    }
+    const angle = ((index / n) * 2 * Math.PI) - (Math.PI / 2) + (Math.PI / n);
+    return {
+        left: (centre + radius * Math.cos(angle)) + 'px',
+        top: (centre + radius * Math.sin(angle)) + 'px',
+    };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   L'ÉTAT
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const PSEUDOS = ['Adem', 'Senpai', 'Kuro', 'Yuna', 'Ryo', 'Mina', 'Kaito', 'Hana',
+                 'Tora', 'Sora', 'Rei', 'Aki', 'Nao', 'Yuki', 'Ken'];
+
+let LISTE = [];          // tous les fichiers du dossier
+let sieges = [];         // le portrait de chaque siège
+let vise = 0;            // le siège qui reçoit l'image cliquée
+let nb = 6;
+
+const $ = id => document.getElementById(id);
+
+// ⚠️ Déclaré AVANT la fonction qui s'en sert. Un `const` cité plus haut que sa
+//    ligne est une syntaxe valide et une ReferenceError à l'exécution, qui tue
+//    tout le script — c'est ce qui avait rendu le panneau /admin inutilisable.
+const DEMARRAGE = Date.now().toString(36);
+
+// ⚠️ Le jeton de version, comme `srcAvatar()` côté jeu : sans lui un fichier
+//    remplacé resterait en cache un an, le dossier étant servi en « immutable ».
+//    C'est le piège exact de cette page — on remplace une image et l'on juge
+//    l'ancienne. Un fichier hors liste blanche n'a pas de jeton : il prend
+//    l'heure du chargement de la page, ce qui suffit ici.
+function src(a) {
+    if (!a) return '/novice.png';
+    return a.v ? a.url + '?v=' + a.v : a.url + '?t=' + DEMARRAGE;
+}
+
+function unAuHasard() {
+    const jouables = LISTE.filter(a => !a.bot && !a.ecarte);
+    if (!jouables.length) return null;
+    return jouables[Math.floor(Math.random() * jouables.length)];
+}
+
+/* ═══ Le cercle ═══ */
+function dessiner() {
+    const cercle = $('cercle');
+    const taille = tailleCercle(nb);
+    const hex = tailleHex(nb);
+    const bombe = tailleBombe(nb);
+
+    cercle.style.setProperty('--circle-size', taille + 'px');
+    cercle.style.width = taille + 'px';
+    cercle.style.height = taille + 'px';
+    cercle.innerHTML = '';
+
+    // La bombe au centre, à sa vraie taille : c'est elle qui décide de la place
+    // qui reste aux hexagones.
+    const b = document.createElement('div');
+    b.className = 'bombanime-bomb-center';
+    b.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+        + 'width:' + bombe + 'px;height:' + bombe + 'px;border-radius:50%;'
+        + 'background:radial-gradient(circle at 34% 28%,#4a4458,#181422 70%);'
+        + 'border:1px solid rgba(255,255,255,.14);box-shadow:0 0 18px rgba(0,0,0,.6);';
+    cercle.appendChild(b);
+
+    for (let i = 0; i < nb; i++) {
+        const pos = placer(i, nb);
+        const slot = document.createElement('div');
+        // Les vraies classes du jeu : « active » est le porteur de la bombe,
+        // qui porte le liseré doré vif — un portrait s'y lit autrement.
+        slot.className = 'bombanime-player-slot' + (i === 0 ? ' active' : '')
+            + (i === vise ? ' pa-vise' : '');
+        slot.dataset.playerCount = nb;
+        slot.style.left = pos.left;
+        slot.style.top = pos.top;
+
+        const a = sieges[i];
+        slot.innerHTML =
+            '<div class="player-name">' + (PSEUDOS[i] || ('J' + (i + 1))) + '</div>'
+          + '<div class="player-hex-container">'
+          +   '<div class="player-hex" style="width:' + hex + 'px;height:' + hex + 'px">'
+          +     '<svg class="hex-anneau" viewBox="0 0 100 100" aria-hidden="true">'
+          +       '<polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/></svg>'
+          +     '<svg viewBox="0 0 100 100">'
+          +       '<polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/></svg>'
+          +     '<img class="player-avatar" src="' + src(a) + '" alt="">'
+          +   '</div>'
+          + '</div>';
+
+        slot.addEventListener('click', () => { vise = i; dessiner(); tiroir(); });
+        cercle.appendChild(slot);
+    }
+
+    cadrages();
+}
+
+/* ═══ Les autres cadrages du portrait visé ═══ */
+function cadrages() {
+    const a = sieges[vise];
+    const u = src(a);
+    $('cadrages').innerHTML =
+        '<div class="pa-cadrage"><img class="pa-rond clt" src="' + u + '" alt=""><em>Rush 1.2rem</em></div>'
+      + '<div class="pa-cadrage"><img class="pa-rond quiz" src="' + u + '" alt=""><em>Quiz 1.35rem</em></div>'
+      + '<div class="pa-cadrage"><img class="pa-rond gagnant" src="' + u + '" alt=""><em>Gagnant 4rem</em></div>';
+}
+
+/* ═══ Le tiroir ═══ */
+function tiroir() {
+    const nouveaux = LISTE.filter(a => !a.bot && !a.autorise);
+    const enJeu    = LISTE.filter(a => !a.bot && a.autorise);
+    const bots     = LISTE.filter(a => a.bot);
+    const porte    = sieges[vise] ? sieges[vise].f : null;
+
+    const vignette = a => {
+        const png = /\.png$/i.test(a.f);
+        const ko = Math.round(a.poids / 1024);
+        return '<div class="pa-item' + (a.f === porte ? ' porte' : '')
+             + (a.ecarte ? ' pa-ecarte' : '') + '" data-f="' + a.f + '"'
+             + ' title="' + a.f + ' — ' + ko + ' Ko">'
+             + '<img src="' + src(a) + '" alt="" loading="lazy">'
+             + (png ? '<s>' + ko + 'k</s>' : '')
+             + '<b>' + a.f.replace(/\.(webp|png|jpe?g|gif)$/i, '') + '</b></div>';
+    };
+
+    const bloc = (titre, tab) => !tab.length ? '' :
+        '<div class="pa-groupe">' + titre + ' · ' + tab.length + '<i></i></div>'
+      + '<div class="pa-grille">' + tab.map(vignette).join('') + '</div>';
+
+    $('tiroir').innerHTML =
+        bloc('à l\'essai — pas encore en jeu', nouveaux)
+      + bloc('déjà en jeu', enJeu)
+      + bloc('portraits de bot', bots)
+      + '<div class="pa-note">Clique un siège pour le viser, puis un portrait '
+      + 'pour l\'y poser. <kbd>←</kbd> <kbd>→</kbd> font défiler les portraits '
+      + 'sur le siège visé. La pastille rouge marque un PNG : à cette taille il '
+      + 'pèse dix fois son WebP, <code>npm run avatars:convertir</code> le règle.</div>';
+
+    $('tiroir').querySelectorAll('.pa-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const a = LISTE.find(x => x.f === el.dataset.f);
+            if (a) { sieges[vise] = a; dessiner(); tiroir(); }
+        });
+    });
+}
+
+/* ═══ Le défilement au clavier — c'est ça, « changer facilement » ═══ */
+document.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const jouables = LISTE.filter(a => !a.bot);
+    if (!jouables.length) return;
+    const actuel = sieges[vise] ? jouables.findIndex(a => a.f === sieges[vise].f) : -1;
+    const pas = e.key === 'ArrowRight' ? 1 : -1;
+    const i = (actuel + pas + jouables.length) % jouables.length;
+    sieges[vise] = jouables[i];
+    dessiner();
+    tiroir();
+    e.preventDefault();
+});
+
+/* ═══ Les réglages ═══ */
+$('r-joueurs').addEventListener('input', e => {
+    nb = +e.target.value;
+    $('v-joueurs').textContent = nb;
+    while (sieges.length < nb) sieges.push(unAuHasard());
+    if (vise >= nb) vise = nb - 1;
+    dessiner();
+    tiroir();
+});
+
+$('b-tel').addEventListener('click', () => {
+    TEL = !TEL;
+    $('b-tel').classList.toggle('actif', TEL);
+    $('scene').classList.toggle('tel', TEL);
+    dessiner();
+});
+
+$('b-melanger').addEventListener('click', () => {
+    sieges = Array.from({ length: Math.max(nb, sieges.length) }, unAuHasard);
+    dessiner();
+    tiroir();
+});
+
+$('b-partout').addEventListener('click', () => {
+    const a = sieges[vise];
+    if (a) { sieges = sieges.map(() => a); dessiner(); tiroir(); }
+});
+
+window.addEventListener('resize', () => { if (!TEL) dessiner(); });
+
+/* ═══ Le chargement ═══ */
+fetch('/prototypes/avatars/liste')
+    .then(r => r.json())
+    .then(d => {
+        LISTE = d.avatars || [];
+        if (!LISTE.length) {
+            $('tiroir').innerHTML = '<div class="pa-vide">Aucune image dans '
+                + 'src/img/avatarpic.</div>';
+            return;
+        }
+        // Les nouveaux d'abord sur les sièges : ce sont eux qu'on vient voir.
+        const nouveaux = LISTE.filter(a => !a.bot && !a.autorise);
+        sieges = Array.from({ length: nb }, (_, i) =>
+            nouveaux[i] || unAuHasard());
+        dessiner();
+        tiroir();
+    })
+    .catch(() => {
+        $('tiroir').innerHTML = '<div class="pa-vide">La liste n\'a pas '
+            + 'répondu. Le serveur tourne-t-il ?</div>';
+    });
+</script>
+</body>
+</html>
