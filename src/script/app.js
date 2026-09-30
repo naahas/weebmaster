@@ -6577,12 +6577,19 @@ createApp({
                 }
                 
                 // 🆕 Désactiver immédiatement l'input si c'est mon tour qui explose
+                //
+                // ⚠️ ON NE DEFOCUSE PLUS. `isMyTurn = false` suffit a refuser la
+                // saisie — le champ passe en lecture seule. Le `blur()` ne
+                // chassait que le CLAVIER, et sur telephone il ne revient pas
+                // tout seul : un navigateur refuse d ouvrir le clavier depuis du
+                // code sans geste de l utilisateur, donc le `focus()` du tour
+                // suivant reussit sans rien montrer. Il fallait retoucher le
+                // champ — juste apres avoir perdu une vie, la bombe repartie,
+                // au moment ou l on est le moins pret. Mesure faite sur
+                // telephone : le clavier ne revenait pas.
                 if (data.playerId === this.playerId) {
                     this.bombanime.isMyTurn = false;
                     this.bombanime.inputValue = '';
-                    // Défocuser l'input
-                    const input = document.getElementById('bombanimeInput');
-                    if (input) input.blur();
                 }
                 
                 // DEBUG: Afficher l'explosion avec timing
@@ -8640,11 +8647,11 @@ createApp({
                     // sensation d un bug : le texte disparaît, la touche Entrée ne
                     // fait rien, et rien n explique pourquoi. Le champ se grise,
                     // le texte reste, et le tour suivant le remplacera.
+                    //
+                    // ⚠️ Et on ne DEFOCUSE plus non plus : le champ passe en
+                    // lecture seule, ce qui suffit. Voir l explosion, plus bas.
                     if (this.bombanime.isMyTurn) {
                         this.bombanime.isMyTurn = false;
-                        // Défocuser l'input
-                        const input = document.getElementById('bombanimeInput');
-                        if (input) input.blur();
                     }
                 }
             }, 1000);
