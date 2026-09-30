@@ -2200,10 +2200,7 @@
                                     'completed': challenge.completed,
                                     'in-progress': !challenge.completed && challenge.progress > 0,
                                     'just-completed': bombanime.challengeJustCompleted === challenge.id,
-                                    'used': challenge.completed && (
-                                        (challenge.reward === 'freeCharacter' && !bombanime.bonuses.freeCharacter) ||
-                                        (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
-                                    )
+                                    'used': challenge.used
                                 }"
                             >
                                 <div class="challenge-content">
@@ -2224,25 +2221,20 @@
                                 <button 
                                     class="challenge-bonus-btn"
                                     :class="{ 
-                                        'available': challenge.completed && (
-                                            (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
-                                            (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
-                                        ),
+                                        'available': challenge.completed && !challenge.used,
                                         'type-gift': challenge.reward === 'freeCharacter',
                                         'not-my-turn': challenge.reward === 'freeCharacter' && !bombanime.isMyTurn
                                     }"
-                                    :disabled="!challenge.completed || (
-                                        (challenge.reward === 'freeCharacter' && (!bombanime.bonuses.freeCharacter || !bombanime.isMyTurn)) ||
-                                        (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
-                                    )"
-                                    @click.stop="challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter() : useBombanimeExtraLife()"
+                                    :disabled="!challenge.completed || challenge.used || (challenge.reward === 'freeCharacter' && !bombanime.isMyTurn)"
+                                    @click.stop="challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter(challenge.id) : useBombanimeExtraLife(challenge.id)"
                                 >
                                     <svg v-if="challenge.reward === 'extraLife'" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                     <svg v-else viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2z"/></svg>
-                                    <span class="bonus-count" v-if="challenge.completed && (
-                                        (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
-                                        (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
-                                    )">{{ challenge.reward === 'extraLife' ? bombanime.bonuses.extraLife : bombanime.bonuses.freeCharacter }}</span>
+                                    <!-- ⚠️ PLUS DE CHIFFRE. Il affichait le compteur PARTAGÉ du
+                                         type : trois défis gagnés montraient « 3 » sur les trois
+                                         boutons, et l on ne voyait pas lequel restait à dépenser.
+                                         Chaque bouton ne parle plus que de SON défi — allumé tant
+                                         qu il n est pas dépensé, éteint après. -->
                                 </button>
                             </div>
                         </div>
@@ -2293,21 +2285,12 @@
                                     :class="{ 
                                         'completed': challenge.completed, 
                                         'in-progress': !challenge.completed && challenge.progress > 0,
-                                        'bonus-available': challenge.completed && (
-                                            (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0) ||
-                                            (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
-                                        ),
+                                        'bonus-available': challenge.completed && !challenge.used,
                                         'type-gift': challenge.reward === 'freeCharacter',
-                                        'used': challenge.completed && (
-                                            (challenge.reward === 'freeCharacter' && !bombanime.bonuses.freeCharacter) ||
-                                            (challenge.reward === 'extraLife' && !bombanime.bonuses.extraLife)
-                                        ),
-                                        'not-my-turn': challenge.reward === 'freeCharacter' && challenge.completed && bombanime.bonuses.freeCharacter > 0 && !bombanime.isMyTurn
+                                        'used': challenge.used,
+                                        'not-my-turn': challenge.reward === 'freeCharacter' && challenge.completed && !challenge.used && !bombanime.isMyTurn
                                     }"
-                                    @click="challenge.completed && (
-                                        (challenge.reward === 'freeCharacter' && bombanime.bonuses.freeCharacter > 0 && bombanime.isMyTurn) ||
-                                        (challenge.reward === 'extraLife' && bombanime.bonuses.extraLife > 0)
-                                    ) ? (challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter() : useBombanimeExtraLife(), toggleBombanimeChallengesModal()) : null"
+                                    @click="challenge.completed && !challenge.used && (challenge.reward !== 'freeCharacter' || bombanime.isMyTurn) ? (challenge.reward === 'freeCharacter' ? useBombanimeFreeCharacter(challenge.id) : useBombanimeExtraLife(challenge.id), toggleBombanimeChallengesModal()) : null"
                                 >
                                     <div class="modal-challenge-icon">
                                         <svg v-if="!challenge.completed" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>

@@ -6645,6 +6645,14 @@ createApp({
             
             this.socket.on('bombanime-explosion', (data) => {
                 console.log('💥 Explosion sur:', data.playerUsername);
+
+                // ⚠️ La jauge de la serie doit RETOMBER a l ecran. Le serveur
+                // vient de la casser, mais le client ne recevait cet etat qu a
+                // la prochaine bonne reponse : la jauge restait pleine alors
+                // que le compte etait deja reparti de zero.
+                if (data.playerId === this.playerId && data.challengesDuJoueur) {
+                    this.bombanime.challenges = data.challengesDuJoueur;
+                }
                 
                 // 🔊 Son d'explosion
                 this.stopBombTicking();
@@ -7450,6 +7458,11 @@ createApp({
             // 🎯 BONUS BOMBANIME - Perso gratuit reçu
             this.socket.on('bombanime-free-character', (data) => {
                 console.log('🎁 Perso gratuit reçu:', data.character);
+
+                // ⚠️ L etat des defis revient avec : c est lui qui porte le
+                // « used » du defi depense, donc le seul moyen de griser LE
+                // bon bouton plutot que de baisser un compteur partage.
+                if (data.challenges) this.bombanime.challenges = data.challenges;
                 
                 // Mettre le personnage dans l'input
                 this.bombanime.inputValue = data.character;
@@ -7471,6 +7484,8 @@ createApp({
             // 🎯 BONUS BOMBANIME - Vie extra utilisée
             this.socket.on('bombanime-extra-life-used', (data) => {
                 console.log('❤️ Vie extra utilisée:', data);
+
+                if (data.challenges) this.bombanime.challenges = data.challenges;
                 
                 // Mettre à jour les vies
                 this.playerLives = data.newLives;
@@ -8988,20 +9003,24 @@ createApp({
         },
         
         // 🎯 Utiliser le bonus "Perso Gratuit"
-        useBombanimeFreeCharacter() {
+        // ⚠️ L IDENTIFIANT DU DÉFI voyage avec. Sans lui le serveur ne savait
+        // que « un bonus de ce type a été dépensé » : il ne pouvait griser
+        // aucun bouton en particulier, et trois défis gagnés se vidaient tous
+        // les trois en cliquant trois fois le même.
+        useBombanimeFreeCharacter(challengeId) {
             if (!this.bombanime.isMyTurn) return;
             if (!this.bombanime.bonuses || this.bombanime.bonuses.freeCharacter <= 0) return;
-            
-            console.log('🎁 Utilisation bonus Perso Gratuit');
-            this.socket.emit('bombanime-use-free-character');
+
+            console.log('🎁 Utilisation bonus Perso Gratuit', challengeId || '');
+            this.socket.emit('bombanime-use-free-character', { challengeId: challengeId || null });
         },
-        
+
         // 🎯 Utiliser le bonus "Vie Extra"
-        useBombanimeExtraLife() {
+        useBombanimeExtraLife(challengeId) {
             if (!this.bombanime.bonuses || this.bombanime.bonuses.extraLife <= 0) return;
-            
-            console.log('❤️ Utilisation bonus Vie Extra');
-            this.socket.emit('bombanime-use-extra-life');
+
+            console.log('❤️ Utilisation bonus Vie Extra', challengeId || '');
+            this.socket.emit('bombanime-use-extra-life', { challengeId: challengeId || null });
         },
         
         // 🎯 Toggle modal défis (mobile)

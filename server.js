@@ -1615,7 +1615,10 @@ function getPlayerChallengesState(gameState, socketId) {
             reward: challenge.reward,
             progress: cp ? cp.progress : 0,
             target: challenge.target,
-            completed: cp ? cp.completed : false
+            completed: cp ? cp.completed : false,
+            // C est ce drapeau-là qui grise le bouton, et lui seul : le
+            // compteur partagé ne disait pas QUEL défi avait été dépensé.
+            used: cp ? !!cp.used : false
         };
     });
 }
@@ -6054,6 +6057,11 @@ function initBombanimePlayerChallenges(gameState, playerId) {
             progress: 0,
             target: challenge.target,
             completed: false,
+            // ⚠️ CHAQUE DÉFI PORTE SON BONUS. Il n y avait qu un compteur
+            // partagé par type : trois défis gagnés affichaient « 3 » sur les
+            // trois boutons, et cliquer trois fois le MÊME consommait les
+            // trois. On ne pouvait pas voir lequel restait.
+            used: false,
             letter: challenge.letter
         };
     });
@@ -6139,6 +6147,31 @@ function checkBombanimeChallenges(gameState, playerId, characterName) {
     return completedChallenges;
 }
 
+// ⚠️ DÉPENSER LE BONUS D UN DÉFI PRÉCIS.
+//
+// Le client dit LEQUEL il vient de cliquer. Sans cet identifiant on ne savait
+// que « un bonus de type X a été dépensé », et l on ne pouvait donc griser
+// aucun bouton en particulier : les trois affichaient le même compteur et
+// cliquer trois fois le même les vidait tous les trois.
+//
+// Rend le défi marqué, ou `null` si rien ne correspond — un identifiant
+// inconnu, un défi pas encore gagné, ou déjà dépensé.
+function depenserDefi(gameState, playerId, challengeId, reward) {
+    const p = gameState.bombanime.playerChallenges.get(playerId);
+    if (!p) return null;
+    const candidats = gameState.bombanime.challenges.filter(c => {
+        const cp = p.challenges[c.id];
+        return c.reward === reward && cp && cp.completed && !cp.used;
+    });
+    if (!candidats.length) return null;
+    // L identifiant donné d abord ; à défaut le premier disponible du même
+    // type, pour qu un client resté sur l ancienne version fonctionne quand
+    // même.
+    const choisi = candidats.find(c => c.id === challengeId) || candidats[0];
+    p.challenges[choisi.id].used = true;
+    return choisi.id;
+}
+
 // ⚠️ LA SÉRIE SE CASSE, et il faut l appeler à CHAQUE façon de rater — sinon
 // « d affilée » ne veut plus rien dire et le défi devient un simple compteur
 // de bonnes réponses, atteignable par tout le monde en une manche.
@@ -6200,7 +6233,10 @@ function getBombanimePlayerChallengesState(gameState, playerId) {
             min: challenge.min || null,
             progress: cp ? cp.progress : 0,
             target: challenge.target,
-            completed: cp ? cp.completed : false
+            completed: cp ? cp.completed : false,
+            // C est ce drapeau-là qui grise le bouton, et lui seul : le
+            // compteur partagé ne disait pas QUEL défi avait été dépensé.
+            used: cp ? !!cp.used : false
         };
     });
 }
@@ -6528,6 +6564,11 @@ function bombExplode(gameState, playerId) {
         livesRemaining: player.lives,
         isEliminated: isEliminated,
         playersData: getBombanimePlayersData(gameState),
+        // ⚠️ L état des défis de CELUI QUI EXPLOSE. Sa série vient d être
+        // cassée côté serveur, mais le client ne recevait cet état qu à la
+        // prochaine bonne réponse : la jauge restait pleine à l écran alors
+        // que le compte était déjà reparti de zéro.
+        challengesDuJoueur: getBombanimePlayerChallengesState(gameState, playerId),
         // Debug
         debugElapsedMs: elapsedMs,
         debugTurnId: gameState.bombanime.turnId
@@ -6928,7 +6969,12 @@ async function startBombanimeGame(gameState) {
             // « 10 persos en » suivi du vide.
             type: c.type,
             min: c.min || null,
-            target: c.target
+            target: c.target,
+            // Au départ rien n est gagné, donc rien n est dépensé. Explicite
+            // plutôt qu absent : le gabarit lit ce champ, et `undefined` y
+            // marchait par chance.
+            completed: false,
+            used: false
         }))
     });
     
@@ -8236,7 +8282,7 @@ io.on('connection', (socket) => {
     });
     
     // 🎯 Utiliser le bonus "Perso Gratuit" - donne un personnage aléatoire non utilisé
-    socket.on('bombanime-use-free-character', () => {
+    socket.on('bombanime-use-free-character', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
         if (!gameState) return;
@@ -8265,6 +8311,10 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // ⚠️ Marquer le défi PRÉCIS que le joueur vient de cliquer. Sans
+        // cette ligne, le compteur baissait mais aucun bouton ne se grisait.
+        depenserDefi(gameState, player.playerId, data && data.challengeId, 'freeCharacter');
+
         // Décrémenter le bonus
         bonuses.freeCharacter--;
         
@@ -8273,12 +8323,16 @@ io.on('connection', (socket) => {
         // Envoyer le personnage au joueur (il n'a plus qu'à appuyer sur Entrée)
         socket.emit('bombanime-free-character', {
             character: freeChar,
-            bonusesRemaining: bonuses
+            bonusesRemaining: bonuses,
+            // ⚠️ L état des défis repart avec : c est lui qui porte le
+            // « used » du défi dépensé, donc le seul moyen pour le client de
+            // savoir QUEL bouton griser.
+            challenges: getBombanimePlayerChallengesState(gameState, player.playerId)
         });
     });
     
     // 🎯 Utiliser le bonus "Vie Extra" - ajoute une vie (max 2)
-    socket.on('bombanime-use-extra-life', () => {
+    socket.on('bombanime-use-extra-life', (data) => {
         // La socket dit sa room : sans elle, cet événement ne concerne personne
         const gameState = roomDeSocket(socket);
         if (!gameState) return;
@@ -8294,6 +8348,8 @@ io.on('connection', (socket) => {
             return;
         }
         
+        depenserDefi(gameState, player.playerId, data && data.challengeId, 'extraLife');
+
         // Décrémenter le bonus
         bonuses.extraLife--;
         
@@ -8320,7 +8376,10 @@ io.on('connection', (socket) => {
         socket.emit('bombanime-extra-life-used', {
             newLives: player.lives,
             wasWasted: oldLives >= maxLives,
-            bonusesRemaining: bonuses
+            bonusesRemaining: bonuses,
+            // Même raison que pour le perso gratuit : c est cet état qui dit
+            // quel bouton se grise.
+            challenges: getBombanimePlayerChallengesState(gameState, player.playerId)
         });
     });
     
