@@ -13078,31 +13078,37 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ═══════════════════════════════════════════════════════════════════ */
 .v2-astuces {
     flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* ⚠️ Une HAUTEUR FIXE, et c'est ce qui rend la rotation supportable.
-       Sans elle, une phrase de deux lignes succédant à une phrase d'une
-       ligne faisait sauter toute la page à chaque changement — le seul
-       défaut qu'on remarque vraiment sur un élément qui tourne. */
-    min-height: 2.6rem;
-    /* Elle collait au bord bas de la fenêtre. Le creux la décolle sans
-       la remonter dans la page : c'est la bande qui garde sa place, seul
-       son contenu s'éloigne du bord. */
-    padding: 0 1rem 1.6rem;
+    position: relative;
+    /* ⚠️ Une hauteur FIXE, pas un `min-height`, et c'est tout ce qui rend
+       la rotation regardable.
+       Avec un minimum, la bande grandissait sur une phrase de deux lignes
+       puis retombait quand elle s'effaçait — et comme `.v2-room` est une
+       colonne, TOUT l'écran remontait et redescendait à chaque rotation.
+       Le pire moment étant le creux de `mode="out-in"`, où plus rien
+       n'occupe la bande.
+       Elle ne dépend donc plus du tout de ce qu'elle contient. */
+    height: 2.6rem;
     margin-top: 0.8rem;
+    /* Le décollement du bord bas de la fenêtre. */
+    margin-bottom: 1.5rem;
     text-align: center;
     /* Elle ne doit jamais capter un clic : ce n'est pas un bouton, et
        elle couvre toute la largeur. */
     pointer-events: none;
 }
 
-/* La ligne entière — ampoule ET texte — est ce qui entre et sort. */
+/* La ligne entière — ampoule ET texte — est ce qui entre et sort.
+   ⚠️ HORS DU FLUX : c'est le pendant de la hauteur fixe. Tant qu'elle
+   participait à la mise en page, son entrée et sa sortie déplaçaient ce
+   qu'il y avait au-dessus, quelle que soit la hauteur du parent. */
 .v2-astuce-ligne {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    padding: 0 1rem;
 }
 
 .v2-astuce-ic {
@@ -13144,12 +13150,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .astuce-leave-to   { opacity: 0; transform: translateY(-0.35rem); }
 
 @media (max-width: 780px) {
+    /* ⚠️ Plus haute sur téléphone, et de loin : la ligne étant hors du flux,
+       ce qui dépasse ne pousse plus rien — ça se CHEVAUCHE. À 0,74 rem sur
+       un écran étroit, la plus longue des phrases tient sur quatre lignes.
+       On dimensionne donc pour elle, pas pour la moyenne. */
     .v2-astuces {
-        min-height: 3.2rem;
+        height: 4.4rem;
         margin-top: 0.5rem;
-        padding: 0 0.7rem 1.2rem;
+        margin-bottom: 1.1rem;
     }
-    .v2-astuce-ligne { gap: 0.45rem; }
+    .v2-astuce-ligne { gap: 0.45rem; padding: 0 0.7rem; }
     .v2-astuce-txt { font-size: 0.74rem; }
     .v2-astuce-ic { width: 0.9rem; height: 0.9rem; }
 }
