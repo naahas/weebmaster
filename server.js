@@ -5853,12 +5853,60 @@ function checkAlphabetComplete(gameState, playerId) {
 const COMMON_LETTERS = 'ABCDEFGHIJKLMNOPRSTUY'.split('');
 const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+// ⚠️ LES LETTRES DE DÉFI DÉPENDENT DE LA SÉRIE, exactement comme l alphabet.
+//
+// Elles étaient tirées dans deux listes FIXES — COMMON_LETTERS et ALL_LETTERS —
+// sans jamais regarder ce que la série jouée contient. Et c est plus sévère
+// que pour l alphabet : un défi porte sur la PREMIÈRE lettre d un nom, pas sur
+// une lettre contenue dedans. Beaucoup moins de noms répondent.
+//
+// Mesure sur bombdata.json, part des manches où AU MOINS UN des deux défis est
+// impossible : Death Note 69 %, ChainsawMan 64 %, Demon Slayer 58 %, et 19 %
+// en moyenne sur les vingt et une séries. Un joueur voyait donc régulièrement
+// une consigne qu aucun nom de la série ne pouvait satisfaire, sans rien pour
+// le lui dire.
+//
+// ⚠️ La règle : la lettre doit offrir au moins CIBLE noms — trois pour le défi
+// des trois persos, un pour l autre. C est le strict nécessaire pour que la
+// consigne soit tenable.
+//
+// ℹ️ La marge est à zéro, donc un défi peut tomber sur une lettre qui n a
+// QUE ses trois noms : possible, mais il faut les trouver tous les trois. La
+// monter à 2 adoucirait sans coûter grand-chose — la série la plus pauvre
+// offrirait encore huit lettres au lieu de neuf. Le bouton est ici si le défi
+// se révèle trop sec en jeu.
+const DEFI_MARGE = 0;
+
+function debutsDeSerie(serie) {
+    const noms = BOMBANIME_CHARACTERS[serie] || [];
+    const compte = {};
+    ALL_LETTERS.forEach(x => { compte[x] = 0; });
+    for (const nom of noms) {
+        const p = String(nom).toUpperCase().replace(/[^A-Z]/g, '').charAt(0);
+        if (compte[p] !== undefined) compte[p]++;
+    }
+    return compte;
+}
+
+// Les lettres par lesquelles la série fait commencer assez de noms.
+// `repli` sert si la série est inconnue ou trop pauvre : on ne renvoie jamais
+// de liste vide, sans quoi le tirage rendrait `undefined` et la consigne
+// afficherait « 3 persos en undefined ».
+function lettresPourDefi(serie, cible, repli) {
+    const c = debutsDeSerie(serie);
+    const ok = ALL_LETTERS.filter(x => c[x] >= cible + DEFI_MARGE);
+    if (ok.length) return ok;
+    const large = ALL_LETTERS.filter(x => c[x] >= cible);
+    return large.length ? large : repli;
+}
+
 // Générer les 2 défis BombAnime pour une partie
-function generateBombanimeChallenges() {
+function generateBombanimeChallenges(serie) {
     const challenges = [];
-    
-    // Défi 1: 3 personnages commençant par lettre X (lettres communes uniquement)
-    const letter3 = COMMON_LETTERS[Math.floor(Math.random() * COMMON_LETTERS.length)];
+
+    // Défi 1: 3 personnages commençant par lettre X
+    const pool3 = lettresPourDefi(serie, 3, COMMON_LETTERS);
+    const letter3 = pool3[Math.floor(Math.random() * pool3.length)];
     challenges.push({
         id: 'three_letters',
         type: 'three_letters',
@@ -5869,13 +5917,20 @@ function generateBombanimeChallenges() {
         description: `Donnez 3 personnages commençant par "${letter3}"`
     });
     
-    // Défi 2: 1 personnage commençant par lettre Y (toutes lettres)
-    // On évite la même lettre que le défi 1 si possible
-    let letter1;
-    do {
-        letter1 = ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
-    } while (letter1 === letter3 && ALL_LETTERS.length > 1);
-    
+    // Défi 2: 1 personnage commençant par lettre Y
+    //
+    // ⚠️ La lettre du défi 1 est RETIRÉE du tirage, elle n est pas re-tirée en
+    // boucle. L ancienne version bouclait tant qu elle retombait dessus : sur
+    // les listes fixes de vingt-six lettres ça finissait toujours, sur un
+    // vivier réduit à quelques lettres ça pouvait tourner longtemps — et sur
+    // un vivier d une seule lettre, indéfiniment.
+    const pool1brut = lettresPourDefi(serie, 1, ALL_LETTERS);
+    const pool1 = pool1brut.filter(x => x !== letter3);
+    // Une série qui n offrirait qu une lettre : on garde la même plutôt que
+    // de ne pas poser de second défi.
+    const source1 = pool1.length ? pool1 : pool1brut;
+    const letter1 = source1[Math.floor(Math.random() * source1.length)];
+
     challenges.push({
         id: 'one_letter',
         type: 'one_letter',
@@ -5886,7 +5941,7 @@ function generateBombanimeChallenges() {
         description: `Donnez 1 personnage commençant par "${letter1}"`
     });
     
-    console.log(`🎯 Défis BombAnime générés: "${letter3}" (x3) et "${letter1}" (x1)`);
+    console.log(`🎯 Défis BombAnime générés pour ${serie}: "${letter3}" (x3) et "${letter1}" (x1)`);
     return challenges;
 }
 
@@ -6606,7 +6661,7 @@ async function startBombanimeGame(gameState) {
     });
     
     // 🎯 Générer les défis BombAnime
-    gameState.bombanime.challenges = generateBombanimeChallenges();
+    gameState.bombanime.challenges = generateBombanimeChallenges(gameState.bombanime.serie);
     gameState.bombanime.playerChallenges = new Map();
     gameState.bombanime.playerBonuses = new Map();
     
