@@ -7274,6 +7274,20 @@ createApp({
                     this.bombanime.suggestionUsed = sessionStorage.getItem('bombanimeSuggestionUsed') === 'true';
                     this.bombanime.timer = data.timer;
                     this.bombanime.timeRemaining = data.timeRemaining || data.timer;
+
+                    // ⚠️ LA MÈCHE, à la reprise. Le serveur l'envoie depuis toujours,
+                    // le client ne la lisait pas ici : `mecheDepart` restait à zéro,
+                    // donc `mechePart()` rendait 0 et l'on revenait sur une mèche
+                    // dessinée ENTIÈREMENT consumée — et immobile, faute de clef
+                    // neuve pour relancer l'animation. Le minuteur, lui, était juste :
+                    // la bombe explosait à l'heure, ce qui rendait le défaut purement
+                    // visuel et d'autant plus déroutant.
+                    if (data.meche) this.bombanime.meche = data.meche;
+                    if (data.mecheTotal) this.bombanime.mecheTotal = data.mecheTotal;
+                    // Elle repart d'ici, pour exactement le temps qu'il reste.
+                    this.bombanime.mecheDepart = this.bombanime.timeRemaining;
+                    this.bombanime.mecheCle++;
+
                     this.bombanime.currentPlayerId = data.currentPlayerId;
                     this.bombanime.bombPointingUp = false; // 🆕 Partie en cours, bombe vers le joueur
                     this.bombanime.playersOrder = [...data.playersOrder];
