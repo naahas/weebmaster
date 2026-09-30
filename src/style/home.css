@@ -13081,18 +13081,28 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
     /* ⚠️ Une HAUTEUR FIXE, et c'est ce qui rend la rotation supportable.
        Sans elle, une phrase de deux lignes succédant à une phrase d'une
        ligne faisait sauter toute la page à chaque changement — le seul
        défaut qu'on remarque vraiment sur un élément qui tourne. */
     min-height: 2.6rem;
-    padding: 0 1rem;
+    /* Elle collait au bord bas de la fenêtre. Le creux la décolle sans
+       la remonter dans la page : c'est la bande qui garde sa place, seul
+       son contenu s'éloigne du bord. */
+    padding: 0 1rem 1.6rem;
     margin-top: 0.8rem;
     text-align: center;
     /* Elle ne doit jamais capter un clic : ce n'est pas un bouton, et
        elle couvre toute la largeur. */
     pointer-events: none;
+}
+
+/* La ligne entière — ampoule ET texte — est ce qui entre et sort. */
+.v2-astuce-ligne {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
 }
 
 .v2-astuce-ic {
@@ -13137,9 +13147,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-astuces {
         min-height: 3.2rem;
         margin-top: 0.5rem;
-        padding: 0 0.7rem;
-        gap: 0.45rem;
+        padding: 0 0.7rem 1.2rem;
     }
+    .v2-astuce-ligne { gap: 0.45rem; }
     .v2-astuce-txt { font-size: 0.74rem; }
     .v2-astuce-ic { width: 0.9rem; height: 0.9rem; }
 }

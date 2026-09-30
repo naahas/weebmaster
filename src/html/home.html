@@ -927,13 +927,19 @@
                      passe par là. Ça ne resterait pas vrai si elles venaient
                      un jour de la base. -->
                 <div class="v2-astuces" v-if="astucesOrdre.length">
-                    <svg class="v2-astuce-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M9 18h6M10 22h4"/>
-                        <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
-                    </svg>
+                    <!-- ⚠️ L ampoule est DANS la transition, avec le texte : laissée
+                         dehors elle restait seule à l écran pendant que la phrase
+                         s effaçait, et signalait une astuce qui n était plus là. Les
+                         deux forment une seule ligne, qui part et revient ensemble. -->
                     <Transition name="astuce" mode="out-in">
-                        <p class="v2-astuce-txt" :key="astuceNo" v-html="astuceHtml(astuceCourante())"></p>
+                        <div class="v2-astuce-ligne" :key="astuceNo">
+                            <svg class="v2-astuce-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 18h6M10 22h4"/>
+                                <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+                            </svg>
+                            <p class="v2-astuce-txt" v-html="astuceHtml(astuceCourante())"></p>
+                        </div>
                     </Transition>
                 </div>
 
