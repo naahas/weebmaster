@@ -715,9 +715,13 @@
                                     <span class="v2-set-label">Filtre</span>
                                     <span class="v2-set-value">{{ nomFiltreRush(rush.filtre) }}</span>
                                     <span class="v2-set-opts">
+                                        <!-- ⚠️ Pas de `title` ici. La bulle native du navigateur
+                                             s ouvrait au survol sous le curseur, par-dessus les
+                                             deux autres filtres, et l on ne pouvait plus viser
+                                             celui qu on voulait sans attendre qu elle parte.
+                                             Le nombre de personnages ne valait pas ce prix. -->
                                         <button v-for="f in rush.filtres" :key="f.id"
                                                 class="v2-set-opt" :class="{ on: rush.filtre === f.id }"
-                                                :title="f.compte + ' personnages'"
                                                 @click="applySetting('/admin/rush/set-filtre', { filtre: f.id }, () => rush.filtre = f.id)">{{ f.label }}</button>
                                     </span>
                                 </div>
