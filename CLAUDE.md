@@ -194,6 +194,13 @@ premier joueur de la manche, désigné directement — et il aurait pu être rep
 Et `tourJoues` repart vide à chaque manche, sinon la seconde hériterait des passages de la
 première.
 
+⚠️ **La bombe PEUT repasser sur quelqu'un avec un seul joueur entre les deux, et c'est ACCEPTÉ.**
+Le dernier d'un tour est écarté de la *première* place du suivant, pas de la deuxième : `A` ferme
+un tour, `B` ouvre, `A` repasse. Mesuré sur 20 000 tirages — 33 % des passages à trois joueurs,
+6,6 % à six, 1,5 % à douze. Ça se remarque, et c'est voulu : élargir l'exclusion aux deux derniers
+contraindrait tellement le tirage qu'à trois ou quatre joueurs l'ordre redeviendrait presque fixe,
+donc prévisible — exactement ce que le réglage veut éviter. **Ne pas « corriger ».**
+
 ℹ️ **Le réglage ne se voit qu'à partir de trois joueurs** : à deux, « passer une fois sur chacun »
 impose l'alternance, qui EST le sens horaire. Il reste proposé quand même — le cacher selon le
 nombre de joueurs le ferait apparaître et disparaître pendant qu'on remplit le salon.
