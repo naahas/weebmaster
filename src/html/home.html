@@ -805,6 +805,28 @@
                                     </span>
                                 </div>
 
+                                <!-- 🎯 L ordre de passage. « Horaire » est l ordre de toujours :
+                                     la bombe tourne dans le cercle, chacun voit son tour venir
+                                     et prépare. « Aléatoire » la fait désigner au hasard parmi
+                                     ceux qui ne sont pas encore passés — tant qu on n a pas
+                                     joué, ça peut être pour soi à chaque instant.
+                                     ⚠️ Il ne se voit qu à partir de TROIS joueurs : à deux,
+                                     passer une fois sur chacun impose l alternance, qui EST le
+                                     sens horaire. Il reste proposé quand même — le cacher selon
+                                     le nombre de joueurs le ferait apparaître et disparaître
+                                     pendant qu on remplit le salon. -->
+                                <div class="v2-set" data-info="bomb-ordre">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M21 12h-3M12 21v-3M3 12h3"/><circle cx="12" cy="12" r="2"/></svg>
+                                    <span class="v2-set-label">Ordre</span>
+                                    <span class="v2-set-value">{{ bombanime.ordre === 'aleatoire' ? 'Aléatoire' : 'Horaire' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: bombanime.ordre !== 'aleatoire' }"
+                                                @click="applySetting('/admin/bombanime/set-ordre', { ordre: 'horaire' }, () => bombanime.ordre = 'horaire')">Horaire</button>
+                                        <button class="v2-set-opt" :class="{ on: bombanime.ordre === 'aleatoire' }"
+                                                @click="applySetting('/admin/bombanime/set-ordre', { ordre: 'aleatoire' }, () => bombanime.ordre = 'aleatoire')">Aléatoire</button>
+                                    </span>
+                                </div>
+
                                 <!-- 🧨 La mèche. « Par tour » est le mode de toujours : le
                                      minuteur repart à zéro dès qu on répond. « Continue »
                                      laisse UNE mèche brûler pour toute la manche et exploser
@@ -865,7 +887,12 @@
                                  en mouvement, le feutre ne montre ses limites qu'à cinq.
                                  Ces bots-là sont PASSIFS — ils ne jouent pas leur tour.
                                  BombAnime a désormais son propre partenaire, qui joue. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect')">
+                            <!-- ⚠️ BombAnime compris depuis qu'il a un réglage d'ordre : le
+                                 tester demande cinq ou six joueurs, et ces bots-là JOUENT —
+                                 « armerTour » fait répondre tout joueur marqué `estBot`. La
+                                 route les plafonnait déjà au maximum du mode, seul l'affichage
+                                 les cachait ici. Hors production uniquement. -->
+                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect' || lobbyMode === 'bombanime')">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
@@ -899,6 +926,12 @@
                         <span class="v2-set-bulle"><b>Par tour</b> : la bombe se restaure à chaque
                             bonne réponse.<br><b>Continue</b> : elle se consume en continu jusqu à
                             l explosion.</span>
+                    </span>
+                    <span class="v2-set-info" data-pour="bomb-ordre" tabindex="0">!
+                        <span class="v2-set-bulle"><b>Horaire</b> : la bombe tourne dans le
+                            cercle, on voit son tour venir.<br><b>Aléatoire</b> : elle désigne au
+                            hasard parmi ceux qui ne sont pas encore passés. Chacun la reçoit une
+                            fois par tour, jamais deux d affilée. Sans effet à deux joueurs.</span>
                     </span>
                 </template>
 

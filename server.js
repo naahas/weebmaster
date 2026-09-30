@@ -929,6 +929,7 @@ app.get('/game/state', (req, res) => {
             playersData: gameState.bombanime.active ? getBombanimePlayersData(gameState) : [],
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
+            ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,
             mecheTotal: gameState.bombanime.mecheTotal,
             // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit
@@ -1237,6 +1238,8 @@ function etatNeuf() {
                                     // l être — c est tout l intérêt du mode
         lives: 2,                   // Vies par joueur
         playersOrder: [],           // Ordre des joueurs (playerIds) dans le cercle
+        ordre: 'horaire',           // 'horaire' ou 'aleatoire' — voir prochainAuHasard()
+        tourJoues: [],              // qui a déjà reçu la bombe dans le tour en cours
         currentPlayerIndex: 0,      // Index du joueur actuel dans playersOrder
         currentPlayerId: null,// PlayerId du joueur qui doit jouer
         usedNames: new Set(),       // Noms déjà utilisés dans la partie
@@ -2124,6 +2127,38 @@ app.post('/admin/bombanime/set-timer', (req, res) => {
 //
 // Une seule route pour les deux : ils ne veulent rien dire l un sans l autre,
 // et l hôte les règle dans le même geste.
+// L'ORDRE de passage de la bombe.
+//
+// En « horaire » (le défaut, l'ordre de toujours) elle tourne dans le cercle :
+// chacun sait quand son tour vient, et prépare. En « aléatoire » elle désigne
+// au hasard parmi ceux qui n'ont pas encore joué le tour en cours — tant qu'on
+// n'est pas passé, ça peut être pour soi à chaque instant.
+//
+// ⚠️ Il ne se voit qu'à partir de TROIS joueurs : à deux, « passer une fois sur
+// chacun » impose l'alternance, qui EST le sens horaire. Le réglage reste
+// proposé quand même — le cacher selon le nombre de joueurs le ferait
+// apparaître et disparaître pendant qu'on remplit le salon.
+app.post('/admin/bombanime/set-ordre', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const o = req.body && req.body.ordre;
+    if (o !== 'horaire' && o !== 'aleatoire') {
+        return res.status(400).json({ error: 'Ordre invalide' });
+    }
+
+    gameState.bombanime.ordre = o;
+    console.log(`🎯 Ordre BombAnime : ${o}`);
+    diffuser(gameState, 'bombanime-config-updated', {
+        timer: gameState.bombanime.timer,
+        lives: gameState.bombanime.lives,
+        meche: gameState.bombanime.meche,
+        mecheB: gameState.bombanime.mecheB,
+        ordre: gameState.bombanime.ordre,
+    });
+    res.json({ success: true, ordre: o });
+});
+
 app.post('/admin/bombanime/set-meche', (req, res) => {
     const gameState = req.room;
     if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
@@ -2156,7 +2191,8 @@ app.post('/admin/bombanime/set-meche', (req, res) => {
         timer: gameState.bombanime.timer,
         lives: gameState.bombanime.lives,
         meche: gameState.bombanime.meche,
-        mecheB: gameState.bombanime.mecheB
+        mecheB: gameState.bombanime.mecheB,
+        ordre: gameState.bombanime.ordre,
     });
     res.json({ success: true, meche: gameState.bombanime.meche, mecheB: gameState.bombanime.mecheB });
 });
@@ -5777,11 +5813,40 @@ function getAliveBombanimePlayers(gameState) {
     return Array.from(gameState.players.values()).filter(p => p.lives > 0);
 }
 
+// Le prochain porteur, quand l'ordre est ALÉATOIRE.
+//
+// La bombe passe par tout le monde avant de repasser sur quelqu'un : on tire
+// parmi ceux qui n'ont PAS encore joué ce tour-ci. Sans cette règle, un joueur
+// pourrait la prendre trois fois pendant qu'un autre ne l'a jamais eue.
+//
+// ⚠️ Et au changement de tour, on écarte celui qui vient de jouer : c'est le
+// SEUL moyen d'en recevoir deux d'affilée — dernier d'un tour, premier du
+// suivant. À deux joueurs vivants la règle s'annule d'elle-même et l'on
+// retombe sur l'alternance, qui est le seul ordre possible.
+function prochainAuHasard(gameState, vivants) {
+    const b = gameState.bombanime;
+    const ids = vivants.map(p => p.playerId);
+    // Un joueur éliminé en cours de tour ne doit plus compter comme « déjà passé ».
+    b.tourJoues = (b.tourJoues || []).filter(id => ids.includes(id));
+
+    let restants = ids.filter(id => !b.tourJoues.includes(id));
+    if (!restants.length) {
+        b.tourJoues = [];
+        restants = ids.filter(id => id !== b.currentPlayerId);
+        if (!restants.length) restants = ids;
+    }
+    return restants[Math.floor(Math.random() * restants.length)];
+}
+
 // Passer au joueur suivant dans le cercle
 function getNextBombanimePlayer(gameState) {
     const alivePlayers = getAliveBombanimePlayers(gameState);
     if (alivePlayers.length <= 1) return null;
-    
+
+    if (gameState.bombanime.ordre === 'aleatoire') {
+        return prochainAuHasard(gameState, alivePlayers);
+    }
+
     const currentPlayerId = gameState.bombanime.currentPlayerId;
     const playersOrder = gameState.bombanime.playersOrder;
     const direction = gameState.bombanime.bombDirection;
@@ -5899,7 +5964,18 @@ function mecheRestante(gameState) {
 // Démarrer le tour d'un joueur BombAnime
 function startBombanimeTurn(gameState, playerId) {
     if (!gameState.bombanime.active) return;
-    
+
+    // ⚠️ On note le passage ICI et nulle part ailleurs : c'est le seul endroit
+    // où quelqu'un devient vraiment le porteur. Le marquer dans le tirage
+    // laisserait de côté le tout premier joueur de la manche, désigné
+    // directement — et il aurait pu être repris aussitôt après.
+    if (gameState.bombanime.ordre === 'aleatoire') {
+        if (!Array.isArray(gameState.bombanime.tourJoues)) gameState.bombanime.tourJoues = [];
+        if (!gameState.bombanime.tourJoues.includes(playerId)) {
+            gameState.bombanime.tourJoues.push(playerId);
+        }
+    }
+
     // Annuler le timeout précédent
     if (gameState.bombanime.turnTimeout) {
         clearTimeout(gameState.bombanime.turnTimeout);
@@ -6290,7 +6366,12 @@ function getBombanimePlayersData(gameState) {
 // Démarrer une partie BombAnime
 async function startBombanimeGame(gameState) {
     const players = Array.from(gameState.players.values());
-    
+
+    // ⚠️ Le tour repart vierge à chaque manche. Sans ça, une seconde manche
+    // hériterait des passages de la première : la moitié du cercle serait déjà
+    // « déjà joué » et la bombe se concentrerait sur les autres.
+    gameState.bombanime.tourJoues = [];
+
     if (players.length < BOMBANIME_CONFIG.MIN_PLAYERS) {
         return { success: false, error: `Minimum ${BOMBANIME_CONFIG.MIN_PLAYERS} joueurs requis` };
     }
@@ -7862,6 +7943,7 @@ io.on('connection', (socket) => {
             myAlphabet: myAlphabet,
             usedNamesCount: gameState.bombanime.usedNames.size,
             direction: gameState.bombanime.bombDirection,
+            ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,
             mecheTotal: gameState.bombanime.mecheTotal,
             // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit

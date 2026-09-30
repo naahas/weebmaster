@@ -79,6 +79,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   reponses SURVIVENT),
   suppression avec son second mot de passe. Il nettoie derriere lui. Trois codes dans
   l environnement : `PANEL_ADMIN_CODE`, `QUESTION_ADMIN_CODE`, `QUESTION_DELETE_CODE`),
+  `npm run test:ordre` (l ordre de passage, sur une VRAIE manche a six : chacun recoit la
+  bombe une fois par tour, et jamais deux fois d affilee — charniere entre deux tours
+  comprise. Il se sert des bots de mise au point, qui repondent comme des joueurs),
   `npm run test:bot-fantome` (un salon ou il ne reste que le bot se referme, et un salon
   ou reste un humain NON — a lancer avec `GRACE_SALON_VIDE=2000 GRACE_LOBBY_MS=2000` des
   deux cotes, sinon il faut dix minutes ; il lui faut aussi `PANEL_ADMIN_CODE`),
@@ -173,7 +176,28 @@ src/img/               avatars, questionpic
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment) et **mèche** (*Par tour* par défaut, ou *Continue* — voir plus bas) ; quinze joueurs au plus |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
+
+⚠️ **L'ORDRE de passage.** *Horaire* (le défaut) est l'ordre de toujours : la bombe tourne dans
+le cercle, chacun voit son tour venir et prépare. *Aléatoire* la fait désigner au hasard **parmi
+ceux qui ne sont pas encore passés** dans le tour en cours (`prochainAuHasard`, `server.js`).
+
+Deux garanties, et il faut les deux :
+- chacun la reçoit **une fois par tour** — sans quoi un joueur pourrait la prendre trois fois
+  pendant qu'un autre ne l'a jamais eue ;
+- et **jamais deux fois d'affilée**, y compris à la charnière entre deux tours. C'est le seul cas
+  possible — dernier d'un tour puis premier du suivant — et on l'écarte explicitement.
+
+⚠️ Le passage se note dans **`startBombanimeTurn`** et nulle part ailleurs : c'est le seul endroit
+où quelqu'un devient vraiment le porteur. Le noter dans le tirage laisserait de côté le tout
+premier joueur de la manche, désigné directement — et il aurait pu être repris aussitôt après.
+Et `tourJoues` repart vide à chaque manche, sinon la seconde hériterait des passages de la
+première.
+
+ℹ️ **Le réglage ne se voit qu'à partir de trois joueurs** : à deux, « passer une fois sur chacun »
+impose l'alternance, qui EST le sens horaire. Il reste proposé quand même — le cacher selon le
+nombre de joueurs le ferait apparaître et disparaître pendant qu'on remplit le salon.
+`npm run test:ordre` l'observe sur une vraie manche à six.
 
 ⚠️ **La mèche *Continue* de BombAnime ne garantit PAS un tour complet, et c'est voulu.**
 En *Par tour* (le défaut, le mode de toujours) le minuteur repart à zéro dès qu'on répond :

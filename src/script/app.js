@@ -513,6 +513,7 @@ createApp({
                 timeRemaining: 8,
                 // La mèche : 'tour' (le minuteur repart à chaque réponse) ou
                 // 'continue' (une seule mèche pour toute la manche).
+                ordre: 'horaire',     // 'horaire' ou 'aleatoire' — l ordre de passage
                 meche: 'tour',
                 mecheB: 3.5,          // secondes de mèche par joueur — plus réglable
                                       // depuis l interface, gardé pour les suites
