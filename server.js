@@ -279,15 +279,16 @@ const AVATARS_AUTORISES = new Set([
     'naruto.webp',
     'sasuke.webp',
     'hinata.webp',
+    'sakura.webp',
     // One Piece
     'luffy.webp',
     'zoro.webp',
     'sanji.webp',
     'nami.webp',
+    'robin.webp',
     // Dragon Ball
     'goku.webp',
     'vegeta.webp',
-    'gohan.webp',
     'trunks.webp',
     // Bleach
     'ichigo.webp',
@@ -332,6 +333,10 @@ const AVATARS_AUTORISES = new Set([
     'bocchi.webp',
     // A Sign of Affection
     'yuki.webp',
+    // Chainsaw Man
+    'denji.webp',
+    // The Quintessential Quintuplets
+    'nino.webp',
 ]);
 
 // ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
