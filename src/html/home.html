@@ -2170,9 +2170,10 @@
                                 <span v-for="c in cacheCases()" :key="c.i"
                                       class="bomb-cache-case" :class="{ vide: c.vide }">{{ c.l }}</span>
                             </div>
-                            <div class="bomb-cache-note" v-if="bombanime.cacheTrouveTexte">
-                                trouvé par {{ bombanime.cacheTrouveTexte }}
-                            </div>
+                            <!-- ⚠️ Pas de « trouvé par … » : les cases qui s allument
+                                 le disent déjà, et une ligne de texte de plus dans une
+                                 colonne étroite se lit comme une erreur. -->
+
                         </div>
 
                         <!-- Grille des lettres

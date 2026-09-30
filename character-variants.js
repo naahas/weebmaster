@@ -84,6 +84,11 @@ const CHARACTER_VARIANTS = {
     // NARUTO
     // ============================================
     "Naruto": [
+        // Tobi EST Obito : deux noms pour un personnage, et la règle du mot
+        // entier ne les relie pas — aucun n apparaît dans l autre.
+        // ⚠️ « TOBIRAMA » et « SARUTOBI » contiennent bien TOBI, mais pas en
+        // MOT ENTIER : le moteur ne les attrape pas, et ils restent citables.
+        ["TOBI", "OBITO", "OBITO UCHIHA", "OBITO UCHIWA"],
         ["JIRAYA", "JIRAIA", "JIRAIYA"],
         ["ICHIBI", "SHUKAKU"],
         ["KILLER B", "KILLER BEE" , "BEE"],

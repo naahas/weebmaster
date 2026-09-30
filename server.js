@@ -1310,7 +1310,9 @@ function etatNeuf() {
         // ⚠️ `persoCache` porte le NOM EN CLAIR et ne doit jamais partir tel
         // quel : tout ce qui sort passe par `persoCachePublic()`.
         persoCache: null,
-        persoCacheRevelees: 0,      // combien de lettres du début sont dévoilées
+        // Les POSITIONS revelees, dans l ordre ou elles sont tombees.
+        // Un simple compte ne suffit plus : les lettres sortent au hasard.
+        persoCacheRevelees: [],
         persoCacheReponses: 0,      // réponses de la table depuis le départ
         persoCacheTrouvePar: null,  // playerId, une fois trouvé
         playerLastAnswers: new Map(), // Map<playerId, string> - Dernière réponse de chaque joueur
@@ -5995,6 +5997,27 @@ function generateBombanimeChallenges(serie) {
         description: `Donnez un personnage dont le nom fait plus de ${BOMBANIME_CONFIG.DEFI_LONGUEUR} lettres`
     });
 
+    // Défi 5 : le perso caché.
+    //
+    // ⚠️ Il ne se valide PAS dans `checkBombanimeChallenges` — son type n y
+    // est pas traité, donc il y est ignoré. C est `verifierPersoCache` qui le
+    // marque, et lui seul.
+    //
+    // ⚠️ Et il lui fallait une carte, sinon la vie gagnée était INDÉPENSABLE :
+    // elle entrait bien dans l inventaire, mais les boutons appartiennent aux
+    // défis — sans défi, aucun bouton, donc un bonus qu on ne pouvait pas
+    // utiliser. C est la différence avec l alphabet, qui ajoute une vie
+    // directement et la gâche quand on est au maximum.
+    challenges.push({
+        id: 'secret',
+        type: 'secret',
+        letter: null,
+        target: 1,
+        reward: 'extraLife',
+        name: 'Secret guess',
+        description: 'Trouvez le personnage caché de la manche'
+    });
+
     console.log(`🎯 Défis BombAnime générés pour ${serie}: "${letter3}" (x3), "${letter1}" (x1), `
         + `série de ${BOMBANIME_CONFIG.DEFI_SERIE}, nom de +${BOMBANIME_CONFIG.DEFI_LONGUEUR} lettres`);
     return challenges;
@@ -6031,16 +6054,22 @@ function choisirPersoCache(serie) {
 function persoCachePublic(gameState) {
     const b = gameState.bombanime;
     if (!b.persoCache) return null;
-    const revelees = b.persoCacheRevelees || 0;
+    const pos = b.persoCacheRevelees || [];
+    const trouve = !!b.persoCacheTrouvePar;
     return {
         longueur: b.persoCache.length,
-        // Les lettres révélées sont celles du DÉBUT : une lettre prise au
-        // hasard au milieu n aide pas à reconnaître un nom.
-        indice: b.persoCache.slice(0, revelees),
-        revelees,
+        // ⚠️ UN MASQUE, PAS UN PRÉFIXE. Les lettres tombent dans un ordre
+        // ALÉATOIRE : envoyer « les n premières » ne pouvait plus les
+        // décrire. Le tableau porte la lettre à sa place, ou `null`.
+        //
+        // ⚠️ Et il ne contient QUE les lettres révélées : composer le nom
+        // entier ici en laissant le client masquer le reste l aurait rendu
+        // lisible dans l onglet réseau — la fuite qu on évite depuis le début.
+        masque: b.persoCache.split('').map((l, i) => (trouve || pos.includes(i)) ? l : null),
+        revelees: pos.length,
         trouvePar: b.persoCacheTrouvePar || null,
         // Une fois trouvé, plus de secret à garder.
-        nom: b.persoCacheTrouvePar ? b.persoCache : null,
+        nom: trouve ? b.persoCache : null,
     };
 }
 
@@ -6200,14 +6229,42 @@ function casserSerieBombanime(gameState, playerId) {
 // ⚠️ LE PERSO CACHÉ, une fois trouvé. Le nom exact suffit — le moteur de
 // variantes ne s en mêle pas : on veut LE nom, pas un alias, sinon l indice
 // à étoiles ne correspondrait plus à ce qu il faut taper.
-function verifierPersoCache(gameState, playerId, characterName) {
+function verifierPersoCache(gameState, playerId, characterName, nomsBloques) {
     const b = gameState.bombanime;
     if (!b.persoCache || b.persoCacheTrouvePar) return false;
-    if (characterName.toUpperCase().replace(/[^A-Z]/g, '') !== b.persoCache) return false;
+
+    const nu = n => String(n).toUpperCase().replace(/[^A-Z]/g, '');
+    const dit = nu(characterName) === b.persoCache;
+
+    // ⚠️ ET LE CAS QUI L AVAIT RENDU INTROUVABLE : une VARIANTE du nom caché.
+    //
+    // Citer « JEICE » bloque « JEECE » — donc si le caché était JEECE,
+    // personne ne pouvait plus le dire, et il n était jamais trouvé. Vu en
+    // production : un bot avait pris la variante, et le secret est resté
+    // ouvert jusqu à la fin de la manche sans que rien ne soit possible.
+    //
+    // On regarde donc ce que la réponse BLOQUE : si le nom caché en fait
+    // partie, c est qu il vient d être consommé, et celui qui l a consommé
+    // l a trouvé. Le mérite est le même — il a bien cité ce personnage.
+    const consomme = Array.isArray(nomsBloques)
+        && nomsBloques.some(n => nu(n) === b.persoCache);
+
+    if (!dit && !consomme) return false;
 
     b.persoCacheTrouvePar = playerId;
     const bonuses = b.playerBonuses.get(playerId);
     if (bonuses) bonuses.extraLife++;
+
+    // ⚠️ Marquer la CARTE du défi, pour CE joueur seulement : c est elle qui
+    // porte le bouton, donc le seul moyen de dépenser la vie gagnée. Les
+    // autres joueurs gardent une carte éteinte — ils voient qu il existait,
+    // pas qu ils l ont eu.
+    const p = b.playerChallenges.get(playerId);
+    const carte = b.challenges.find(c => c.type === 'secret');
+    if (p && carte && p.challenges[carte.id]) {
+        p.challenges[carte.id].completed = true;
+        p.challenges[carte.id].progress = 1;
+    }
     console.log(`🔎 Perso caché « ${b.persoCache} » trouvé par ${playerId} ! Bonus: extraLife`);
     return true;
 }
@@ -6220,15 +6277,23 @@ function avancerIndicePersoCache(gameState) {
     if (!b.persoCache || b.persoCacheTrouvePar) return false;
     b.persoCacheReponses = (b.persoCacheReponses || 0) + 1;
     const du = Math.floor(b.persoCacheReponses / BOMBANIME_CONFIG.CACHE_INDICE_TOUS_LES);
-    // On ne révèle jamais la dernière lettre : un nom entièrement dévoilé ne
+    // On ne révèle jamais TOUTES les lettres : un nom entièrement dévoilé ne
     // serait plus un défi, juste une recopie.
     const max = Math.max(0, b.persoCache.length - 1);
     const vise = Math.min(du, max);
-    if (vise > (b.persoCacheRevelees || 0)) {
-        b.persoCacheRevelees = vise;
-        return true;
+
+    const pos = b.persoCacheRevelees || (b.persoCacheRevelees = []);
+    if (vise <= pos.length) return false;
+
+    // ⚠️ AU HASARD, et non de gauche à droite. Le préfixe donnait le nom
+    // presque d un coup : les premières lettres d un nom propre suffisent
+    // souvent à le reconnaître. Des lettres dispersées font chercher.
+    const libres = [];
+    for (let i = 0; i < b.persoCache.length; i++) if (!pos.includes(i)) libres.push(i);
+    while (pos.length < vise && libres.length) {
+        pos.push(libres.splice(Math.floor(Math.random() * libres.length), 1)[0]);
     }
-    return false;
+    return true;
 }
 
 // Obtenir l'état des défis BombAnime pour un joueur (pour envoi au client)
@@ -6785,7 +6850,9 @@ function submitBombanimeName(gameState, socketId, name) {
     // courante, donc après l avoir prise en compte pour la trouvaille —
     // sinon celui qui trouve pile au trentième coup dévoilerait une lettre
     // d un nom déjà tombé.
-    const cacheTrouve = verifierPersoCache(gameState, player.playerId, normalizedName);
+    // ⚠️ On passe `allVariants` : citer une variante du nom caché le bloque,
+    // donc le consomme. Sans cet argument il devenait introuvable.
+    const cacheTrouve = verifierPersoCache(gameState, player.playerId, normalizedName, allVariants);
     const indiceAvance = cacheTrouve ? false : avancerIndicePersoCache(gameState);
     if (cacheTrouve || indiceAvance) {
         diffuser(gameState, 'bombanime-cache', {
@@ -6897,7 +6964,7 @@ async function startBombanimeGame(gameState) {
     // rallumage du réglage.
     gameState.bombanime.persoCache = gameState.bonusEnabled
         ? choisirPersoCache(gameState.bombanime.serie) : null;
-    gameState.bombanime.persoCacheRevelees = 0;
+    gameState.bombanime.persoCacheRevelees = [];
     gameState.bombanime.persoCacheReponses = 0;
     gameState.bombanime.persoCacheTrouvePar = null;
     gameState.bombanime.playerLastAnswers = new Map();
@@ -8371,7 +8438,16 @@ io.on('connection', (socket) => {
         
         const player = gameState.players.get(socket.id);
         if (!player) return;
-        
+
+        // ⚠️ UN JOUEUR ÉLIMINÉ NE REVIENT PAS. Le bonus de vie ne regardait
+        // que son inventaire : à zéro vie, on pouvait le dépenser et rejouer
+        // alors que la manche vous avait déjà sorti. Le cœur ne sert qu à
+        // éviter l élimination, jamais à la défaire.
+        if (player.lives <= 0) {
+            socket.emit('bombanime-bonus-error', { error: 'eliminated' });
+            return;
+        }
+
         // Vérifier que le joueur a ce bonus
         const bonuses = gameState.bombanime.playerBonuses.get(player.playerId);
         if (!bonuses || bonuses.extraLife <= 0) {

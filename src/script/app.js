@@ -8939,13 +8939,17 @@ createApp({
         //
         // Le serveur n envoie que la longueur et le début révélé : le nom
         // entier n arrive qu une fois trouvé.
+        // ⚠️ Le serveur envoie un MASQUE — un tableau où chaque place porte sa
+        // lettre ou `null`. Il envoyait avant le préfixe révélé, ce qui ne
+        // pouvait plus décrire des lettres tombant dans le désordre.
         cacheCases() {
             const c = this.bombanime.cache;
             if (!c || !c.longueur) return [];
-            const connu = (c.nom || c.indice || '');
+            const m = c.masque || [];
             const cases = [];
             for (let i = 0; i < c.longueur; i++) {
-                cases.push({ i, l: connu[i] || '', vide: !connu[i] });
+                const l = m[i] || '';
+                cases.push({ i, l, vide: !l });
             }
             return cases;
         },
