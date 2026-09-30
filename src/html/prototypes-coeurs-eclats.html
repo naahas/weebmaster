@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShonenMaster — Formes de vies & éclats</title>
+
+<!--
+  🧪 LES VIES : leur FORME, et la façon dont elles se BRISENT.
+
+  ⚠️ Deux choses se jugent ici, et elles ne se jugent pas pareil.
+     La FORME se juge à l arrêt, petite, et à côté des autres : c est un
+     coup d œil de 14 px pendant qu on cherche un nom.
+     La CASSE se juge en mouvement, une fois, au moment où l on vient de
+     perdre — donc elle doit se lire même quand on ne la regardait pas.
+
+  ⚠️ Chaque piste est une PAIRE forme + casse, pas deux réglages
+     indépendants. Une forme facettée appelle des éclats nets ; une goutte
+     appelle une dissolution. Les croiser donnerait trente-six combinaisons
+     dont trente ne veulent rien dire.
+
+  ⚠️ Et tout se regarde SUR L HEXAGONE : les vies vivent collées au portrait
+     d un joueur, sur fond sombre, à côté d un pseudo. Jugées sur fond neutre
+     et en grand, elles ont toutes l air bien.
+-->
+
+<link rel="stylesheet" href="/home.css">
+<link rel="stylesheet" href="/home-bombanime.css">
+
+<style>
+    html, body { height: 100%; margin: 0; }
+    body {
+        background: radial-gradient(circle at 50% 0%, #161029, #0a0714 60%, #06040d);
+        color: #e8e3f5;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        overflow-y: auto;
+    }
+
+    .pe-tete {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        flex-wrap: wrap;
+        padding: .65rem 1.1rem;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+        background: rgba(10,7,20,.92);
+        backdrop-filter: blur(6px);
+    }
+    .pe-titre { font-size: .95rem; font-weight: 700; margin-right: auto; }
+    .pe-titre span { color: #ef4444; }
+
+    .pe-reglage { display: flex; align-items: center; gap: .45rem; font-size: .76rem; color: #a79ec4; }
+    .pe-reglage input[type=range] { width: 104px; accent-color: #ef4444; }
+    .pe-reglage b { color: #e8e3f5; min-width: 2.4rem; font-variant-numeric: tabular-nums; }
+
+    .pe-bouton {
+        border: 1px solid rgba(239,68,68,.32);
+        background: rgba(239,68,68,.1);
+        color: #ff8f8f;
+        font: inherit; font-size: .74rem;
+        padding: .34rem .72rem; border-radius: 7px; cursor: pointer;
+    }
+    .pe-bouton:hover { background: rgba(239,68,68,.2); }
+    .pe-bouton.actif { background: rgba(239,68,68,.3); color: #fff; }
+
+    /* ═══ La grille des pistes ═══ */
+    .pe-grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 1rem;
+        padding: 1.1rem;
+        max-width: 1500px;
+        margin: 0 auto;
+    }
+    .pe-piste {
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 12px;
+        background: rgba(255,255,255,.015);
+        padding: .85rem .9rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .55rem;
+    }
+    .pe-piste h2 {
+        margin: 0;
+        font-size: .82rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+        display: flex;
+        align-items: baseline;
+        gap: .45rem;
+    }
+    .pe-piste h2 em {
+        font-style: normal;
+        font-size: .64rem;
+        color: #8d84ab;
+        font-weight: 400;
+    }
+    .pe-note { font-size: .66rem; color: #6d648a; line-height: 1.45; margin: 0; }
+
+    /* La scène : hexagone du jeu, ou fond nu */
+    .pe-scene {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 118px;
+        padding: .5rem 0;
+    }
+    .pe-hex {
+        position: relative;
+        width: 96px; height: 96px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .pe-hex svg.cadre { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .pe-hex svg.cadre polygon {
+        fill: rgba(255,255,255,.04);
+        stroke: rgba(240,192,64,.55);
+        stroke-width: 2;
+    }
+    .pe-hex .pe-av {
+        width: 100%; height: 100%;
+        clip-path: polygon(50% 6%, 94% 28%, 94% 72%, 50% 94%, 6% 72%, 6% 28%);
+        background: radial-gradient(circle at 36% 30%, #3a3450, #16101f 72%);
+    }
+
+    /* ⚠️ La rangée de vies est posée EXACTEMENT comme dans le jeu : collée
+       en bas à droite de l hexagone, débordant un peu. C est là qu elle se
+       juge — pas centrée sous un titre. */
+    .pe-vies {
+        position: absolute;
+        right: -6px; bottom: -4px;
+        display: flex;
+        gap: 2px;
+        padding: 2px 4px;
+        border-radius: 8px;
+        background: rgba(6,4,13,.72);
+    }
+    .pe-scene.nu .pe-hex { width: auto; height: auto; }
+    .pe-scene.nu .pe-hex .cadre, .pe-scene.nu .pe-hex .pe-av { display: none; }
+    .pe-scene.nu .pe-vies { position: static; background: none; gap: 5px; padding: 0; }
+
+    /* ═══ UNE VIE ═══
+       `--t` porte la taille : tout le reste en dépend, donc le curseur
+       change la piste entière sans toucher à une seule règle. */
+    .vie {
+        position: relative;
+        width: var(--t); height: var(--t);
+        flex: 0 0 auto;
+        cursor: pointer;
+    }
+    .vie .forme {
+        position: absolute; inset: 0;
+        transition: transform .18s ease;
+    }
+    .vie:hover .forme { transform: scale(1.12); }
+
+    /* Les formes, en SVG plein */
+    .vie svg { width: 100%; height: 100%; display: block; }
+    .vie svg path, .vie svg polygon { fill: var(--c, #ef4444); transition: fill .25s ease; }
+
+    /* Éteinte : la forme reste, la couleur part. On garde le contour pour
+       qu on VOIE combien il en manque — une case vide ne se compte pas. */
+    .vie.morte svg path, .vie.morte svg polygon { fill: rgba(255,255,255,.13); }
+
+    /* ═══ LES ÉCLATS ═══
+       Huit fragments par vie, générés une fois et réutilisés. Chacun porte
+       son angle et sa distance en variables : une seule keyframe suffit. */
+    .eclats { position: absolute; inset: 0; pointer-events: none; }
+    .eclat {
+        position: absolute;
+        left: 50%; top: 50%;
+        width: calc(var(--t) * .3);
+        height: calc(var(--t) * .3);
+        background: var(--c, #ef4444);
+        opacity: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    /* ── 1. Cœur · éclats ── */
+    .p1 .eclat { clip-path: polygon(50% 0%, 100% 62%, 22% 100%); }
+    .vie.casse.p1 .eclat { animation: eclat-part .62s cubic-bezier(.2,.7,.3,1) forwards; }
+    @keyframes eclat-part {
+        0%   { opacity: 1; transform: translate(-50%,-50%) rotate(0deg) scale(1); }
+        100% { opacity: 0;
+               transform: translate(calc(-50% + cos(var(--a)) * var(--d)),
+                                    calc(-50% + sin(var(--a)) * var(--d)))
+                          rotate(var(--r)) scale(.35); }
+    }
+    .vie.casse.p1 .forme { animation: forme-pop .32s ease-out forwards; }
+    @keyframes forme-pop {
+        0% { transform: scale(1); }
+        35% { transform: scale(1.35); }
+        100% { transform: scale(1); }
+    }
+
+    /* ── 2. Hexagone · fissure ──
+       Il reprend la forme du siège : la vie devient un petit frère du
+       portrait, ce qui fait tenir le tout ensemble. */
+    .vie.casse.p2 .forme { animation: hex-fissure .7s ease-out forwards; }
+    @keyframes hex-fissure {
+        0%   { transform: none; }
+        18%  { transform: translateX(-8%) rotate(-7deg); }
+        34%  { transform: translateX(7%) rotate(6deg); }
+        48%  { transform: none; }
+        100% { transform: translateY(24%) rotate(-14deg); opacity: .55; }
+    }
+    .p2 .eclat { clip-path: polygon(0 0, 100% 24%, 62% 100%); }
+    .vie.casse.p2 .eclat { animation: eclat-part .55s ease-out forwards; }
+
+    /* ── 3. Losange · implosion ── */
+    .vie.casse.p3 .forme { animation: implosion .5s cubic-bezier(.6,0,.9,.4) forwards; }
+    @keyframes implosion {
+        0%   { transform: scale(1) rotate(0); }
+        55%  { transform: scale(1.25) rotate(45deg); }
+        100% { transform: scale(0) rotate(180deg); }
+    }
+    .vie.casse.p3::after {
+        content: ''; position: absolute; inset: 0;
+        border-radius: 50%;
+        border: 2px solid var(--c, #ef4444);
+        animation: onde .55s ease-out forwards;
+    }
+    @keyframes onde {
+        0%   { opacity: .85; transform: scale(.4); }
+        100% { opacity: 0;   transform: scale(2.6); }
+    }
+
+    /* ── 4. Cristal · éclats irréguliers ──
+       La forme est facettée : la casse en éclats y est LISIBLE, là où elle
+       reste décorative sur un cœur arrondi. */
+    .p4 .eclat:nth-child(odd)  { clip-path: polygon(0 0, 100% 40%, 30% 100%); }
+    .p4 .eclat:nth-child(even) { clip-path: polygon(20% 0, 100% 70%, 0 100%); }
+    .vie.casse.p4 .eclat { animation: eclat-part .8s cubic-bezier(.15,.8,.3,1) forwards; }
+    .vie.casse.p4 .forme { animation: cristal-eteint .28s ease-in forwards; }
+    @keyframes cristal-eteint {
+        0% { transform: scale(1); }
+        100% { transform: scale(.82); }
+    }
+
+    /* ── 5. Goutte · évaporation ── */
+    .vie.casse.p5 .forme { animation: evapore .75s ease-in forwards; }
+    @keyframes evapore {
+        0%   { transform: translateY(0) scaleY(1); opacity: 1; }
+        45%  { transform: translateY(-14%) scaleY(1.18) scaleX(.86); }
+        100% { transform: translateY(-58%) scaleY(1.5) scaleX(.3); opacity: 0; }
+    }
+    .p5 .eclat { border-radius: 50%; width: calc(var(--t) * .16); height: calc(var(--t) * .16); }
+    .vie.casse.p5 .eclat { animation: monte .8s ease-out forwards; }
+    @keyframes monte {
+        0%   { opacity: .9; transform: translate(-50%,-50%); }
+        100% { opacity: 0;
+               transform: translate(calc(-50% + cos(var(--a)) * calc(var(--d) * .45)),
+                                    calc(-50% - var(--d))) scale(.3); }
+    }
+
+    /* ── 6. Shuriken · rotation-explosion ── */
+    .vie.casse.p6 .forme { animation: shuriken .72s cubic-bezier(.3,0,.7,1) forwards; }
+    @keyframes shuriken {
+        0%   { transform: rotate(0) scale(1); }
+        60%  { transform: rotate(540deg) scale(1.25); }
+        100% { transform: rotate(900deg) scale(0); }
+    }
+    .p6 .eclat { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .vie.casse.p6 .eclat { animation: eclat-part .7s ease-out forwards; }
+
+    .pe-pied {
+        max-width: 1500px; margin: 0 auto; padding: 0 1.1rem 2.5rem;
+        font-size: .68rem; color: #6d648a; line-height: 1.6;
+    }
+    .pe-pied b { color: #a79ec4; }
+</style>
+</head>
+<body>
+
+<div class="pe-tete">
+    <div class="pe-titre">Formes de vies <span>&amp;</span> éclats</div>
+    <label class="pe-reglage">taille <input type="range" id="r-taille" min="12" max="34" value="20"><b id="v-taille">20px</b></label>
+    <label class="pe-reglage">vies <input type="range" id="r-vies" min="1" max="4" value="3"><b id="v-vies">3</b></label>
+    <button class="pe-bouton actif" id="b-hex">sur l'hexagone</button>
+    <button class="pe-bouton" id="b-casser">tout casser</button>
+    <button class="pe-bouton" id="b-remettre">remettre</button>
+</div>
+
+<div class="pe-grille" id="grille"></div>
+
+<div class="pe-pied">
+    <p><b>Comment juger.</b> La <b>forme</b> se regarde à l'arrêt, à la taille réelle,
+    sur l'hexagone : c'est un coup d'œil pendant qu'on cherche un nom. La <b>casse</b>
+    se regarde en mouvement, une seule fois — elle doit se lire même quand on ne la
+    regardait pas, parce qu'on vient justement de perdre.</p>
+    <p><b>Clique une vie</b> pour la casser seule. Le curseur de taille va de 12 px
+    (la taille actuelle du jeu est 14) à 34.</p>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   LES SIX PISTES
+   Chacune est une PAIRE forme + casse. Le SVG est écrit ici plutôt
+   qu en CSS : une forme se lit mieux par ses points que par un
+   `clip-path` de trente caractères.
+   ═══════════════════════════════════════════════════════════════════ */
+const PISTES = [
+    {
+        id: 'p1', nom: 'Cœur', casse: 'éclats',
+        couleur: '#ef4444',
+        note: 'La forme d aujourd hui, en plus gros. Sert de référence : toute autre piste doit faire mieux qu elle, pas seulement différemment.',
+        svg: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'
+    },
+    {
+        id: 'p2', nom: 'Hexagone', casse: 'fissure',
+        couleur: '#ef4444',
+        note: 'Reprend la forme du siège : la vie devient un petit frère du portrait. C est la seule piste qui appartienne déjà au jeu.',
+        svg: '<polygon points="12,2 21.5,7 21.5,17 12,22 2.5,17 2.5,7"/>'
+    },
+    {
+        id: 'p3', nom: 'Losange', casse: 'implosion',
+        couleur: '#ff5c8a',
+        note: 'Le plus lisible en tout petit — quatre côtés, aucun détail à perdre. L onde de choc remplace les éclats.',
+        svg: '<polygon points="12,1.5 22.5,12 12,22.5 1.5,12"/>'
+    },
+    {
+        id: 'p4', nom: 'Cristal', casse: 'éclats irréguliers',
+        couleur: '#f0c040',
+        note: 'Facetté, donc la casse en éclats y est LISIBLE — sur un cœur arrondi elle reste décorative.',
+        svg: '<polygon points="12,1.5 20,7 17,21 7,21 4,7"/>'
+    },
+    {
+        id: 'p5', nom: 'Goutte', casse: 'évaporation',
+        couleur: '#ff7a3c',
+        note: 'Parle le langage de la mèche et de la flamme. Ne se brise pas : monte et disparaît.',
+        svg: '<path d="M12 2C12 2 4.5 11 4.5 15.5a7.5 7.5 0 0 0 15 0C19.5 11 12 2 12 2z"/>'
+    },
+    {
+        id: 'p6', nom: 'Shuriken', casse: 'rotation',
+        couleur: '#7fb4ff',
+        note: 'Le plus marqué anime, et le plus risqué : quatre pointes à 14 px deviennent une tache. À juger surtout en petit.',
+        svg: '<path d="M12 1.5l3 7.5 7.5 3-7.5 3-3 7.5-3-7.5L1.5 12l7.5-3z"/>'
+    },
+];
+
+const N_ECLATS = 8;
+const $ = id => document.getElementById(id);
+
+let taille = 20, nbVies = 3, surHex = true;
+
+function uneVie(p, i) {
+    const eclats = Array.from({ length: N_ECLATS }, (_, k) => {
+        // Angle réparti tout autour, avec assez de désordre pour que deux
+        // éclats voisins ne partent pas en parallèle.
+        const a = (k / N_ECLATS) * 360 + (Math.random() * 26 - 13);
+        const d = 0.9 + Math.random() * 0.8;   // en multiples de la taille
+        const r = Math.round(Math.random() * 300 - 150);
+        return '<i class="eclat" style="--a:' + a.toFixed(1) + 'deg;'
+             + '--d:calc(var(--t) * ' + d.toFixed(2) + ');--r:' + r + 'deg"></i>';
+    }).join('');
+    return '<div class="vie ' + p.id + '" data-piste="' + p.id + '" data-i="' + i + '"'
+         + ' style="--c:' + p.couleur + '">'
+         + '<div class="forme"><svg viewBox="0 0 24 24">' + p.svg + '</svg></div>'
+         + '<div class="eclats">' + eclats + '</div>'
+         + '</div>';
+}
+
+function dessiner() {
+    $('grille').innerHTML = PISTES.map(p =>
+        '<div class="pe-piste">'
+      +   '<h2>' + p.nom + ' <em>· ' + p.casse + '</em></h2>'
+      +   '<div class="pe-scene' + (surHex ? '' : ' nu') + '">'
+      +     '<div class="pe-hex">'
+      +       '<svg class="cadre" viewBox="0 0 100 100"><polygon points="50,3 97,25 97,75 50,97 3,75 3,25"/></svg>'
+      +       '<div class="pe-av"></div>'
+      +       '<div class="pe-vies" style="--t:' + taille + 'px">'
+      +         Array.from({ length: nbVies }, (_, i) => uneVie(p, i)).join('')
+      +       '</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<p class="pe-note">' + p.note + '</p>'
+      + '</div>').join('');
+
+    $('grille').querySelectorAll('.vie').forEach(el => {
+        el.addEventListener('click', () => casser(el));
+    });
+}
+
+// ⚠️ On REFABRIQUE les éclats à chaque casse plutôt que de rejouer
+// l animation : une animation CSS déjà jouée ne repart pas sans un
+// reflow forcé, et le faire proprement demandait plus de code que de
+// remplacer le nœud.
+function casser(el) {
+    if (el.classList.contains('casse')) return;
+    el.classList.add('casse');
+    setTimeout(() => el.classList.add('morte'), 260);
+}
+
+function remettre() { dessiner(); }
+
+$('r-taille').addEventListener('input', e => {
+    taille = +e.target.value;
+    $('v-taille').textContent = taille + 'px';
+    dessiner();
+});
+$('r-vies').addEventListener('input', e => {
+    nbVies = +e.target.value;
+    $('v-vies').textContent = nbVies;
+    dessiner();
+});
+$('b-hex').addEventListener('click', () => {
+    surHex = !surHex;
+    $('b-hex').classList.toggle('actif', surHex);
+    dessiner();
+});
+$('b-casser').addEventListener('click', () => {
+    // Une par une, légèrement décalées : toutes ensemble, on ne voit rien.
+    $('grille').querySelectorAll('.vie:not(.casse)').forEach((el, i) => {
+        setTimeout(() => casser(el), i * 55);
+    });
+});
+$('b-remettre').addEventListener('click', remettre);
+
+dessiner();
+</script>
+</body>
+</html>
