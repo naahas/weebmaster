@@ -6177,7 +6177,24 @@ function depenserDefi(gameState, playerId, challengeId, reward) {
 // de bonnes réponses, atteignable par tout le monde en une manche.
 function casserSerieBombanime(gameState, playerId) {
     const p = gameState.bombanime.playerChallenges.get(playerId);
-    if (p) p.serie = 0;
+    if (!p) return;
+    p.serie = 0;
+
+    // ⚠️ ET LA PROGRESSION DU DÉFI AVEC, sans quoi la jauge ne bouge pas.
+    //
+    // Le compteur interne (`p.serie`) et ce qu on AFFICHE (`cp.progress`) sont
+    // deux choses : `cp.progress` n est recalculé que dans
+    // `checkBombanimeChallenges`, donc à la prochaine bonne réponse. Remettre
+    // le seul compteur laissait la jauge pleine après la perte de vie, puis
+    // la faisait retomber d un coup à 1 — ce qui donnait l impression qu elle
+    // ne se remettait pas à zéro du tout.
+    //
+    // Un défi DÉJÀ GAGNÉ n est pas touché : on ne reprend pas un bonus acquis.
+    for (const c of gameState.bombanime.challenges) {
+        if (c.type !== 'streak') continue;
+        const cp = p.challenges[c.id];
+        if (cp && !cp.completed) cp.progress = 0;
+    }
 }
 
 // ⚠️ LE PERSO CACHÉ, une fois trouvé. Le nom exact suffit — le moteur de
@@ -7855,8 +7872,22 @@ io.on('connection', (socket) => {
     });
 
     socket.on('dev-add-bots', (data) => {
-        if (process.env.NODE_ENV === 'production') return;
+        // ⏳ MESURE TEMPORAIRE — les bots de mise au point sont ouverts en
+        // production POUR BOMBANIME SEUL, le temps d éprouver les défis et le
+        // perso caché, qui demandent une longue manche à plusieurs.
+        //
+        // ⚠️ Les trois autres gardes tiennent et ne doivent pas bouger : le
+        // JETON D HÔTE (donc seul le créateur du salon peut le faire, et
+        // seulement dans le sien), le salon pas encore lancé, et le plafond du
+        // mode. Le pire qu on puisse en faire est de remplir son propre salon.
+        //
+        // Pour refermer : remettre le refus inconditionnel ci-dessous, et
+        // retirer « lobbyMode === 'bombanime' » de la condition du réglage
+        // « Test » dans home.html. Les deux, sinon le bouton reste et ne fait
+        // plus rien.
         const gameState = roomDeSocket(socket);
+        if (process.env.NODE_ENV === 'production'
+            && (!gameState || gameState.lobbyMode !== 'bombanime')) return;
         if (!gameState || gameState.inProgress) return;
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
 

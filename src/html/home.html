@@ -908,7 +908,14 @@
                                  « armerTour » fait répondre tout joueur marqué `estBot`. La
                                  route les plafonnait déjà au maximum du mode, seul l'affichage
                                  les cachait ici. Hors production uniquement. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect' || lobbyMode === 'bombanime')">
+                            <!-- ⏳ MESURE TEMPORAIRE — le « ou BombAnime » ouvre ce réglage
+                                 EN PRODUCTION, le temps d'éprouver les défis et le perso
+                                 caché, qui demandent une longue manche à plusieurs.
+                                 Le panneau entier est réservé à l'hôte, donc personne
+                                 d'autre ne le voit. Pour refermer : retirer ce dernier
+                                 terme ici ET le refus dans « dev-add-bots » côté serveur.
+                                 Les deux, sinon le bouton reste et ne fait plus rien. -->
+                            <div class="v2-set" v-if="(estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect')) || lobbyMode === 'bombanime'">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
