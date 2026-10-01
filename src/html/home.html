@@ -510,11 +510,24 @@
                                 </span>
                                 <!-- Le mélange a déménagé dans les réglages, sous Format :
                                      il n avait rien à faire au-dessus de la liste, loin du
-                                     réglage dont il dépend. -->
+                                     réglage dont il dépend.
+
+                                     ⚠️ Le tri, lui, reste ICI : il ne change rien à la partie,
+                                     seulement l ordre où l hôte voit les vignettes. Un réglage
+                                     laisserait croire qu il compte pour le jeu. -->
+                                <button class="v2-room-trier" v-if="isHost && lobbyMode === 'rivalry' && playerCount > 1"
+                                        :class="{ on: triParCamp }"
+                                        @click="triParCamp = !triParCamp"
+                                        :title="triParCamp ? 'Revenir à l\'ordre d\'arrivée' : 'Grouper par camp'">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 7h11M4 12h7M4 17h4"/><path d="M17 10l3-3 3 3"/><path d="M20 7v11"/>
+                                    </svg>
+                                    Trier
+                                </button>
 
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
-                                <span class="v2-room-player-wrap" v-for="p in lobbyPlayers" :key="p.playerId">
+                                <span class="v2-room-player-wrap" v-for="p in joueursAffiches" :key="p.playerId">
                                 <button class="v2-room-player"
                                      :class="['team-' + (p.team || 0), { me: p.playerId === playerId, kickable: isHost && p.playerId !== playerId }]"
                                      :title="isHost && p.playerId !== playerId ? 'Exclure ' + p.username : null"
@@ -536,7 +549,7 @@
                                         </svg>
                                     </button>
                                     <span class="v2-team-menu" v-if="campMenu === p.playerId" @click.stop>
-                                        <button v-for="c in campsOffertsPour(p)" :key="c"
+                                        <button v-for="c in campsOffertsPour()" :key="c"
                                                 class="v2-team-opt" :class="['team-' + c, { on: p.team === c }]"
                                                 @click.stop="setPlayerTeam(p.playerId, c); campMenu = null"
                                                 :title="teamNames[c]">{{ lettreCamp(c) }}</button>

@@ -13397,3 +13397,32 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (prefers-reduced-motion: reduce) {
     .v2-melange-n { animation: none; }
 }
+
+/* ── Trier les vignettes par camp ──
+   Au-dessus de la liste, là où vivait le mélange. Il ne change rien à la
+   partie : seulement l'ordre où l'hôte voit les joueurs. */
+.v2-room-trier {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    margin-left: auto;
+    padding: 0.3rem 0.62rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.55);
+    font-family: inherit;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.v2-room-trier svg { width: 0.8rem; height: 0.8rem; }
+.v2-room-trier:hover { color: var(--neon-primary); border-color: rgba(255, 215, 0, 0.45); background: rgba(255, 215, 0, 0.07); }
+.v2-room-trier.on { color: var(--neon-primary); border-color: rgba(255, 215, 0, 0.55); background: rgba(255, 215, 0, 0.1); }
+
+
+@media (max-width: 780px) {
+    .v2-room-trier { font-size: 0.58rem; padding: 0.26rem 0.5rem; }
+}

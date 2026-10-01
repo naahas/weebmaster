@@ -512,6 +512,8 @@ createApp({
             // Le choix du nombre de camps est-il deplie ? « Melanger » ne fait
             // qu ouvrir ; seul un chiffre repartit.
             melangeOuvert: false,
+            // Grouper les vignettes par camp. Affichage seul : rien ne part au serveur.
+            triParCamp: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
@@ -854,6 +856,21 @@ createApp({
         campsEnJeu() {
             const c = this.campsRemplis;
             return [1, 2, 3, 4, 5].filter(t => c[t] > 0);
+        },
+
+        // 🔤 Les vignettes, dans l ordre où l hôte veut les voir.
+        //
+        // ⚠️ Un tri d AFFICHAGE, et rien d autre : il ne touche ni aux camps,
+        // ni au serveur, ni à la partie. L ordre d arrivée reste la source —
+        // on ne fait que le relire autrement.
+        //
+        // Les joueurs sans camp passent en dernier plutôt qu en premier : ils
+        // sont l exception, et les voir en tête donnerait l impression que la
+        // répartition a échoué.
+        joueursAffiches() {
+            const l = this.lobbyPlayers || [];
+            if (!this.triParCamp || this.lobbyMode !== 'rivalry') return l;
+            return l.slice().sort((a, b) => (a.team || 99) - (b.team || 99));
         },
 
         // Les camps du salon, pour que l'hôte voie l'équilibre avant de lancer
@@ -4754,21 +4771,21 @@ createApp({
             return 'ABCDE'.charAt((n || 1) - 1) || '?';
         },
 
-        // ⚠️ Les camps proposés dans le menu d un joueur : ceux EN JEU, plus
-        // UN seul libre pour en créer un nouveau.
+        // ⚠️ AUTANT DE CAMPS QUE LE SALON PEUT EN PEUPLER, et pas un de plus.
         //
-        // Dérouler les cinq en permanence montrerait des camps qui n existent
-        // pas ; n offrir que ceux en jeu empêcherait d en créer. Celui du
-        // joueur est toujours inclus, sans quoi il disparaîtrait de son propre
-        // menu dès qu il est seul dans son camp.
-        campsOffertsPour(p) {
-            const enJeu = this.campsEnJeu;
-            const ouverts = new Set(enJeu);
-            if (p && p.team) ouverts.add(p.team);
-            // Le premier camp libre, s il en reste un.
-            const libre = [1, 2, 3, 4, 5].find(c => !ouverts.has(c));
-            if (libre) ouverts.add(libre);
-            return [1, 2, 3, 4, 5].filter(c => ouverts.has(c));
+        // Trois étapes dans la réflexion, et c est la troisième qui est juste :
+        //   • n offrir que les camps EN JEU plus un libre obligeait l hôte à
+        //     les créer un par un, sans jamais voir ce qui l attendait ;
+        //   • les montrer tous les cinq, dont deux éteints, affichait des
+        //     camps qui ne mèneront nulle part ;
+        //   • on montre donc exactement ceux qu on peut atteindre.
+        //
+        // La borne est le nombre de JOUEURS : un camp vide n existe pas, donc
+        // à trois joueurs il ne peut y avoir que trois camps. Jamais moins de
+        // deux, sinon le format Équipe n aurait plus de sens.
+        campsOffertsPour() {
+            const max = Math.min(5, Math.max(2, this.playerCount || 0));
+            return [1, 2, 3, 4, 5].filter(c => c <= max);
         },
 
         async shuffleTeams(camps) {
