@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShonenMaster — Choisir un camp</title>
+
+<!--
+  🧪 LE CHOIX D'UN CAMP, cinq façons de le présenter.
+
+  ⚠️ Ce qui se juge ici n'est pas « laquelle est jolie » mais TROIS choses
+     que seul l'écran peut dire :
+       • on reconnaît le camp d'un joueur SANS ouvrir quoi que ce soit ;
+       • on change son camp en UN geste, pas deux ;
+       • et à cinq camps, l'ouverture ne couvre pas ses voisins.
+
+  ⚠️ Chaque piste est posée sur de VRAIES vignettes de joueur, dans une
+     grille qui enveloppe comme celle du salon. Une pastille jugée seule sur
+     fond nu a toujours l'air bien — c'est à six joueurs serrés qu'on voit
+     laquelle tient.
+
+  ⚠️ Et les cinq couleurs sont celles du jeu, pas des couleurs d'essai :
+     A et B sont exactement celles d'aujourd'hui.
+-->
+
+<link rel="stylesheet" href="/home.css">
+
+<style>
+    html, body { height: 100%; margin: 0; }
+    body {
+        background: radial-gradient(circle at 50% 0%, #161029, #0a0714 60%, #06040d);
+        color: #e8e3f5;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        overflow-y: auto;
+    }
+
+    /* Les cinq camps, repris du jeu */
+    :root {
+        --c1: #3b82f6;  /* bleu — le camp 1 d'aujourd'hui */
+        --c2: #f0c040;  /* doré — le camp 2 d'aujourd'hui */
+        --c3: #a78bfa;  /* violet */
+        --c4: #22c55e;  /* vert */
+        --c5: #ef4444;  /* rouge */
+    }
+
+    .pc-tete {
+        position: sticky; top: 0; z-index: 40;
+        display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+        padding: .65rem 1.1rem;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+        background: rgba(10,7,20,.93);
+        backdrop-filter: blur(6px);
+    }
+    .pc-titre { font-size: .95rem; font-weight: 700; margin-right: auto; }
+    .pc-titre span { color: #f0c040; }
+
+    .pc-reglage { display: flex; align-items: center; gap: .45rem; font-size: .76rem; color: #a79ec4; }
+    .pc-reglage input[type=range] { width: 100px; accent-color: #f0c040; }
+    .pc-reglage b { color: #e8e3f5; min-width: 1.6rem; font-variant-numeric: tabular-nums; }
+
+    .pc-bouton {
+        border: 1px solid rgba(240,192,64,.3);
+        background: rgba(240,192,64,.08); color: #f0c040;
+        font: inherit; font-size: .74rem; padding: .34rem .72rem;
+        border-radius: 7px; cursor: pointer;
+    }
+    .pc-bouton:hover { background: rgba(240,192,64,.18); }
+
+    .pc-liste { max-width: 1180px; margin: 0 auto; padding: 1.3rem 1.2rem 5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+
+    .pc-piste {
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 13px;
+        background: rgba(255,255,255,.015);
+        padding: 1rem 1.1rem 1.3rem;
+    }
+    .pc-piste h2 {
+        margin: 0 0 .2rem; font-size: .88rem; font-weight: 700;
+        display: flex; align-items: baseline; gap: .5rem;
+    }
+    .pc-piste h2 em { font-style: normal; font-size: .64rem; color: #8d84ab; font-weight: 400; }
+    .pc-note { margin: 0 0 1rem; font-size: .68rem; color: #6d648a; line-height: 1.5; max-width: 62ch; }
+
+    /* ⚠️ La grille reprend celle du salon : enveloppante, gaps identiques,
+       et la même réserve de place en bas pour que le menu ne fasse pas
+       défiler la page — le défaut mesuré en vrai. */
+    .pc-grille {
+        display: flex; flex-wrap: wrap; gap: .9rem;
+        padding: .6rem .6rem 2rem 0;
+        position: relative;
+    }
+
+    .pc-wrap { position: relative; display: inline-flex; align-items: center; }
+
+    .pc-joueur {
+        display: inline-flex; align-items: center;
+        padding: .55rem 1rem; border-radius: 2rem;
+        border: 1px solid rgba(255,255,255,.1);
+        background: rgba(255,255,255,.04);
+        font-size: .82rem; font-weight: 600; color: #cfc7e6;
+        white-space: nowrap;
+    }
+    .pc-joueur.t1 { border-color: color-mix(in srgb, var(--c1) 45%, transparent); background: color-mix(in srgb, var(--c1) 15%, transparent); color: #dbeafe; }
+    .pc-joueur.t2 { border-color: color-mix(in srgb, var(--c2) 45%, transparent); background: color-mix(in srgb, var(--c2) 15%, transparent); color: #fdf3d6; }
+    .pc-joueur.t3 { border-color: color-mix(in srgb, var(--c3) 45%, transparent); background: color-mix(in srgb, var(--c3) 15%, transparent); color: #e4dbff; }
+    .pc-joueur.t4 { border-color: color-mix(in srgb, var(--c4) 45%, transparent); background: color-mix(in srgb, var(--c4) 15%, transparent); color: #d6f5e2; }
+    .pc-joueur.t5 { border-color: color-mix(in srgb, var(--c5) 45%, transparent); background: color-mix(in srgb, var(--c5) 15%, transparent); color: #ffdcdc; }
+
+    /* ═══ 1. La pastille et son menu ═══ (ce qui est en place) */
+    .pc-flag {
+        position: absolute; top: -.42rem; right: -.42rem; z-index: 2;
+        width: 1.65rem; height: 1.65rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: .14rem solid #0b0b0d; border-radius: 50%;
+        cursor: pointer; padding: 0;
+        font: inherit; font-size: .7rem; font-weight: 800; color: #0b0b0d;
+        transition: transform .2s cubic-bezier(.2,.9,.25,1);
+    }
+    .pc-flag:hover, .pc-flag.ouvert { transform: scale(1.14); }
+    .pc-flag.t1 { background: var(--c1); }
+    .pc-flag.t2 { background: var(--c2); }
+    .pc-flag.t3 { background: var(--c3); }
+    .pc-flag.t4 { background: var(--c4); }
+    .pc-flag.t5 { background: var(--c5); }
+
+    .pc-menu {
+        position: absolute; z-index: 30;
+        display: flex; gap: .2rem; padding: .28rem;
+        border-radius: .6rem;
+        background: rgba(8,8,12,.97);
+        border: 1px solid rgba(255,255,255,.1);
+        box-shadow: 0 .6rem 1.6rem rgba(0,0,0,.65);
+        animation: pcEntre .16s cubic-bezier(.2,.9,.25,1) both;
+    }
+    @keyframes pcEntre { from { opacity: 0; transform: translateY(-.25rem) scale(.94); } }
+
+    .pc-menu.sous  { top: 1.5rem; right: -.42rem; }
+    .pc-menu.cote  { top: -.42rem; right: 1.45rem; }
+
+    .pc-opt {
+        width: 1.5rem; height: 1.5rem; padding: 0;
+        border: 1px solid transparent; border-radius: .4rem;
+        font: inherit; font-size: .72rem; font-weight: 800; color: #0b0b0d;
+        cursor: pointer; transition: transform .15s ease;
+    }
+    .pc-opt:hover { transform: translateY(-.1rem); }
+    .pc-opt.on { border-color: rgba(255,255,255,.9); box-shadow: 0 0 .5rem rgba(255,255,255,.25); }
+    .pc-opt.t1 { background: var(--c1); }
+    .pc-opt.t2 { background: var(--c2); }
+    .pc-opt.t3 { background: var(--c3); }
+    .pc-opt.t4 { background: var(--c4); }
+    .pc-opt.t5 { background: var(--c5); }
+
+    /* ═══ 2. Le cycle ═══ un clic avance d'un camp, pas de menu */
+    .pc-cycle .pc-flag { font-size: .74rem; }
+
+    /* ═══ 3. Le liseré ═══ pas de pastille : la vignette EST la couleur */
+    .pc-bande .pc-joueur { padding-left: 1.3rem; position: relative; }
+    .pc-bande .pc-joueur::before {
+        content: ''; position: absolute; left: .42rem; top: 22%; bottom: 22%;
+        width: .22rem; border-radius: .2rem; background: var(--bande, transparent);
+    }
+    .pc-bande .pc-joueur.t1 { --bande: var(--c1); }
+    .pc-bande .pc-joueur.t2 { --bande: var(--c2); }
+    .pc-bande .pc-joueur.t3 { --bande: var(--c3); }
+    .pc-bande .pc-joueur.t4 { --bande: var(--c4); }
+    .pc-bande .pc-joueur.t5 { --bande: var(--c5); }
+
+    /* ═══ 4. Les colonnes ═══ un bloc par camp, on glisse les joueurs */
+    .pc-cols { display: flex; gap: .7rem; flex-wrap: wrap; padding: .4rem 0 .6rem; }
+    .pc-col {
+        flex: 1 1 8.5rem; min-width: 8.5rem;
+        border: 1px solid rgba(255,255,255,.08);
+        border-top: .18rem solid var(--col, #555);
+        border-radius: .1rem .1rem .7rem .7rem;
+        background: rgba(255,255,255,.02);
+        padding: .55rem .5rem .7rem;
+        display: flex; flex-direction: column; gap: .4rem;
+        min-height: 5.5rem;
+    }
+    .pc-col.t1 { --col: var(--c1); } .pc-col.t2 { --col: var(--c2); }
+    .pc-col.t3 { --col: var(--c3); } .pc-col.t4 { --col: var(--c4); }
+    .pc-col.t5 { --col: var(--c5); }
+    .pc-col-tete {
+        font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+        color: var(--col); display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .pc-col-tete b { color: #6d648a; font-weight: 400; font-variant-numeric: tabular-nums; }
+    .pc-col .pc-mini {
+        font-size: .74rem; padding: .3rem .55rem; border-radius: .4rem;
+        background: rgba(255,255,255,.05); color: #cfc7e6; cursor: pointer;
+        border: 1px solid transparent; text-align: left;
+        font-family: inherit;
+    }
+    .pc-col .pc-mini:hover { border-color: var(--col); }
+    .pc-col-vide { font-size: .64rem; color: #4a4360; font-style: italic; }
+
+    /* ═══ 5. La rangée de lettres ═══ toujours visible sous la vignette */
+    .pc-sous { display: inline-flex; flex-direction: column; align-items: center; gap: .3rem; }
+    .pc-lettres { display: flex; gap: .16rem; }
+    .pc-let {
+        width: 1.15rem; height: 1.15rem; padding: 0;
+        border-radius: .3rem; border: 1px solid rgba(255,255,255,.1);
+        background: rgba(255,255,255,.05); color: rgba(255,255,255,.4);
+        font: inherit; font-size: .6rem; font-weight: 800; cursor: pointer;
+        transition: transform .15s ease;
+    }
+    .pc-let:hover { transform: translateY(-.1rem); }
+    .pc-let.on { color: #0b0b0d; border-color: transparent; }
+    .pc-let.on.t1 { background: var(--c1); } .pc-let.on.t2 { background: var(--c2); }
+    .pc-let.on.t3 { background: var(--c3); } .pc-let.on.t4 { background: var(--c4); }
+    .pc-let.on.t5 { background: var(--c5); }
+
+    .pc-pied { max-width: 1180px; margin: 0 auto; padding: 0 1.2rem 3rem; font-size: .68rem; color: #6d648a; line-height: 1.6; }
+    .pc-pied b { color: #a79ec4; }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="pc-tete">
+    <div class="pc-titre">Choisir un camp <span>·</span> cinq façons</div>
+    <label class="pc-reglage">joueurs <input type="range" id="r-j" min="2" max="12" value="6"><b id="v-j">6</b></label>
+    <label class="pc-reglage">camps <input type="range" id="r-c" min="2" max="5" value="3"><b id="v-c">3</b></label>
+    <button class="pc-bouton" id="b-mel">répartir</button>
+</div>
+
+<div class="pc-liste" id="liste"></div>
+
+<div class="pc-pied">
+    <p><b>Ce qui se juge.</b> Pas « laquelle est jolie », mais : reconnaît-on le camp d'un joueur
+    <b>sans rien ouvrir</b> ; change-t-on un camp en <b>un seul geste</b> ; et à cinq camps,
+    l'ouverture <b>couvre-t-elle les voisins</b> ?</p>
+    <p>Pousse le curseur à douze joueurs et cinq camps : c'est là que les pistes se séparent.</p>
+</div>
+
+<script>
+/* Les cinq camps du jeu. A et B sont exactement ceux d'aujourd'hui. */
+const PSEUDOS = ['Adem', 'Kuro', 'Senpai', 'Yuna', 'Ryo', 'Mina', 'Kaito', 'Hana', 'Tora', 'Sora', 'Rei', 'Aki'];
+const LETTRE = n => 'ABCDE'.charAt(n - 1);
+
+const PISTES = [
+    { id: 'menu-sous', nom: 'Pastille + menu dessous', sous: 'en place aujourd hui',
+      note: "La pastille ouvre un menu sous elle. Deux gestes pour changer de camp, et le menu déborde vers le bas — c est ce qui faisait apparaître une barre de défilement avant qu on lui réserve la place." },
+    { id: 'menu-cote', nom: 'Pastille + menu à côté', sous: 'même geste, autre sortie',
+      note: "Le même menu, mais il sort à GAUCHE au lieu de dessous. Il recouvre la vignette au lieu d allonger la page — rien à réserver, aucun défilement possible." },
+    { id: 'cycle', nom: 'Le cycle', sous: 'un seul geste',
+      note: "Pas de menu du tout : un clic avance d un camp, et après le dernier on revient au premier. Le plus rapide à deux ou trois camps, pénible à cinq — il faut parfois quatre clics pour atteindre le bon." },
+    { id: 'bande', nom: 'Le liseré', sous: 'pas de pastille',
+      note: "La vignette elle-même porte la couleur, et un clic ouvre le menu. On lit le camp de six joueurs d un coup d œil sans aucune pastille qui déborde — mais on perd le repère rond auquel l hôte est habitué." },
+    { id: 'lettres', nom: 'Les lettres sous le joueur', sous: 'tout est visible',
+      note: "Les cinq lettres sont là en permanence, celle du joueur allumée. Zéro ouverture, donc zéro recouvrement — au prix d une grille deux fois plus haute." },
+    { id: 'colonnes', nom: 'Les colonnes', sous: 'une par camp',
+      note: "Un bloc par camp, et l on déplace les joueurs d un bloc à l autre. C est la seule piste qui montre l ÉQUILIBRE des effectifs d un coup d œil — ce qui compte pour un événement inter-communautés." },
+];
+
+let nbJ = 6, nbC = 3, menuOuvert = null;
+let joueurs = [];
+
+const $ = id => document.getElementById(id);
+
+function repartir() {
+    joueurs = Array.from({ length: nbJ }, (_, i) => ({
+        id: i, nom: PSEUDOS[i % PSEUDOS.length], camp: (i % nbC) + 1
+    }));
+}
+
+/* ⚠️ Chaque piste a SA copie des joueurs : changer un camp dans l une ne doit
+   pas déplacer les autres, sinon on ne peut plus comparer. */
+const parPiste = {};
+function etat(id) {
+    if (!parPiste[id]) parPiste[id] = joueurs.map(j => ({ ...j }));
+    return parPiste[id];
+}
+
+function optionsPour(j, id) {
+    const e = etat(id);
+    const ouverts = new Set(e.map(x => x.camp));
+    ouverts.add(j.camp);
+    const libre = [1, 2, 3, 4, 5].find(c => !ouverts.has(c));
+    if (libre) ouverts.add(libre);
+    return [1, 2, 3, 4, 5].filter(c => ouverts.has(c));
+}
+
+function vignette(j, id, piste) {
+    const cle = id + '-' + j.id;
+    const classeJ = 'pc-joueur t' + j.camp;
+
+    if (piste === 'bande') {
+        return '<span class="pc-wrap">'
+             + '<button class="' + classeJ + '" data-menu="' + cle + '">' + j.nom + '</button>'
+             + (menuOuvert === cle ? menu(j, id, 'sous') : '')
+             + '</span>';
+    }
+
+    if (piste === 'lettres') {
+        return '<span class="pc-sous">'
+             + '<span class="' + classeJ + '">' + j.nom + '</span>'
+             + '<span class="pc-lettres">'
+             + [1,2,3,4,5].map(c => '<button class="pc-let t' + c + (j.camp === c ? ' on' : '')
+                 + '" data-set="' + id + '|' + j.id + '|' + c + '">' + LETTRE(c) + '</button>').join('')
+             + '</span></span>';
+    }
+
+    if (piste === 'cycle') {
+        const suivant = (j.camp % nbC) + 1;
+        return '<span class="pc-wrap">'
+             + '<span class="' + classeJ + '">' + j.nom + '</span>'
+             + '<button class="pc-flag t' + j.camp + '" data-set="' + id + '|' + j.id + '|' + suivant
+             + '" title="Vers ' + LETTRE(suivant) + '">' + LETTRE(j.camp) + '</button>'
+             + '</span>';
+    }
+
+    const sortie = piste === 'menu-cote' ? 'cote' : 'sous';
+    return '<span class="pc-wrap">'
+         + '<span class="' + classeJ + '">' + j.nom + '</span>'
+         + '<button class="pc-flag t' + j.camp + (menuOuvert === cle ? ' ouvert' : '')
+         + '" data-menu="' + cle + '">' + LETTRE(j.camp) + '</button>'
+         + (menuOuvert === cle ? menu(j, id, sortie) : '')
+         + '</span>';
+}
+
+function menu(j, id, sortie) {
+    return '<span class="pc-menu ' + sortie + '">'
+         + optionsPour(j, id).map(c => '<button class="pc-opt t' + c + (j.camp === c ? ' on' : '')
+             + '" data-set="' + id + '|' + j.id + '|' + c + '">' + LETTRE(c) + '</button>').join('')
+         + '</span>';
+}
+
+function colonnes(id) {
+    const e = etat(id);
+    const ouverts = [1, 2, 3, 4, 5].filter(c => e.some(j => j.camp === c));
+    const libre = [1, 2, 3, 4, 5].find(c => !ouverts.includes(c));
+    const liste = libre ? ouverts.concat(libre) : ouverts;
+    return '<div class="pc-cols">' + liste.map(c => {
+        const dedans = e.filter(j => j.camp === c);
+        return '<div class="pc-col t' + c + '">'
+             + '<div class="pc-col-tete">' + LETTRE(c) + '<b>' + dedans.length + '</b></div>'
+             + (dedans.length
+                 ? dedans.map(j => '<button class="pc-mini" data-set="' + id + '|' + j.id + '|'
+                     + ((c % 5) + 1) + '">' + j.nom + '</button>').join('')
+                 : '<span class="pc-col-vide">vide</span>')
+             + '</div>';
+    }).join('') + '</div>';
+}
+
+function dessiner() {
+    $('liste').innerHTML = PISTES.map(p => {
+        const e = etat(p.id);
+        const corps = p.id === 'colonnes'
+            ? colonnes(p.id)
+            : '<div class="pc-grille ' + (p.id === 'bande' ? 'pc-bande' : p.id === 'cycle' ? 'pc-cycle' : '') + '">'
+              + e.map(j => vignette(j, p.id, p.id)).join('') + '</div>';
+        return '<div class="pc-piste">'
+             + '<h2>' + p.nom + ' <em>· ' + p.sous + '</em></h2>'
+             + '<p class="pc-note">' + p.note + '</p>'
+             + corps + '</div>';
+    }).join('');
+
+    document.querySelectorAll('[data-menu]').forEach(el => {
+        el.addEventListener('click', ev => {
+            ev.stopPropagation();
+            const c = el.dataset.menu;
+            menuOuvert = (menuOuvert === c ? null : c);
+            dessiner();
+        });
+    });
+    document.querySelectorAll('[data-set]').forEach(el => {
+        el.addEventListener('click', ev => {
+            ev.stopPropagation();
+            const [id, jid, camp] = el.dataset.set.split('|');
+            const j = etat(id).find(x => String(x.id) === jid);
+            if (j) j.camp = +camp;
+            menuOuvert = null;
+            dessiner();
+        });
+    });
+}
+
+document.addEventListener('click', () => { if (menuOuvert) { menuOuvert = null; dessiner(); } });
+
+function tout() {
+    repartir();
+    for (const k of Object.keys(parPiste)) delete parPiste[k];
+    menuOuvert = null;
+    dessiner();
+}
+
+$('r-j').addEventListener('input', e => { nbJ = +e.target.value; $('v-j').textContent = nbJ; tout(); });
+$('r-c').addEventListener('input', e => { nbC = +e.target.value; $('v-c').textContent = nbC; tout(); });
+$('b-mel').addEventListener('click', tout);
+
+tout();
+</script>
+</body>
+</html>

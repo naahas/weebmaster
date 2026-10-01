@@ -8380,8 +8380,12 @@ body.game-active:has(.poll-game-container) #particles-js {
     flex-wrap: wrap;
     gap: 0.9rem;
     /* La pastille de camp déborde en haut : sans cette marge elle se ferait
-       rogner par le défilement. */
-    padding: 0.5rem 0.6rem 0.2rem 0;
+       rogner par le défilement.
+       ⚠️ Et le MENU de camp déborde en bas. `.v2-room` défile, donc un menu
+       ouvert sous la dernière vignette allongeait la zone et faisait
+       apparaître une barre de défilement à chaque clic. La place lui est
+       réservée en permanence : 1,6 rem de creux, soit la hauteur du menu. */
+    padding: 0.5rem 0.6rem 1.6rem 0;
     max-height: clamp(21rem, 56vh, 33rem);
     overflow-x: hidden;
     overflow-y: auto;

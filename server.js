@@ -2065,6 +2065,11 @@ app.get('/prototypes/parametres', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-parametres.html');
 });
 
+// 🧪 Choisir un camp : cinq facons de presenter les cinq camps.
+app.get('/prototypes/camps', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-camps.html');
+});
+
 // 🧪 La FORME des vies, et la facon dont elles se BRISENT.
 app.get('/prototypes/coeurs-eclats', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-coeurs-eclats.html');
