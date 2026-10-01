@@ -2766,6 +2766,15 @@
                     Tu termines <b>{{ myEndRank.rank }}<sup>e</sup></b>
                 </div>
 
+                <!-- ⚠️ En camps, le classement s arrête à trois : une ligne de camp
+                     porte son équipage en dessous, donc cinq camps débordent la page.
+                     Celui qui n y est pas doit quand même savoir où il a fini — on le
+                     lui dit ici, plutôt que d allonger la liste pour tout le monde. -->
+                <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="monRangCamp">
+                    <span class="v2-end-me-camp" :class="'team-' + monRangCamp.team">{{ monRangCamp.nom }}</span>
+                    termine <b>{{ monRangCamp.rang }}<sup>e</sup></b> sur {{ monRangCamp.total }}
+                </div>
+
                 <div class="v2-end-actions" :class="{ vu: endStep >= 4 }">
                     <button class="v2-end-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouer">Rejouer</button>
@@ -3143,9 +3152,10 @@
                     <em>{{ fastestTime }}<small>s</small></em>
                 </div>
 
-                <!-- En camps, l'hôte compare les deux côtés d'un coup d'oeil -->
+                <!-- En camps, l'hôte compare les camps d'un coup d'oeil —
+                     et lit l'effectif de chacun juste en dessous. -->
                 <div class="v2q-camps-bars" v-if="lobbyMode === 'rivalry'">
-                    <div class="v2q-camp-bar" v-for="c in campsClasses" :key="c.team"
+                    <div class="v2q-camp-bar" v-for="c in campsRoster" :key="c.team"
                          :class="['team-' + c.team, { tete: c.tete }]">
                         <span class="hd">
                             <span class="nm">{{ c.nom }}</span>
@@ -3154,6 +3164,26 @@
                             <span class="sc" v-else>{{ c.score }}<em>en vie</em></span>
                         </span>
                         <span class="rail"><i :style="{ width: c.part + '%' }"></i></span>
+
+                        <!-- ⚠️ `v-for` sur l'effectif COMPLET, éliminés compris :
+                             la classe « mort » les grise, elle ne les retire pas. -->
+                        <div class="v2q-crew">
+                            <div class="v2q-crew-row" v-for="m in c.joueurs" :key="m.playerId || m.username"
+                                 :class="{ mort: gameMode === 'lives' && m.lives <= 0,
+                                           ouvert: repVue === (m.playerId || m.username) }">
+                                <span class="nm" @click.stop="basculerRep(m)">{{ m.username }}</span>
+                                <span class="v2q-crew-rep" :class="tagClass(m)">
+                                    <i>{{ tagSymbol(m) }}</i>{{ repTexte(m) }}
+                                </span>
+                                <span class="sc" v-if="gameMode === 'points'">{{ formatScore(m.points) }}</span>
+                                <span class="v2q-crew-hp" v-else>
+                                    <i v-for="n in gameLives" :key="n" :class="{ off: n > m.lives }">
+                                        <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                                    </i>
+                                </span>
+                            </div>
+                            <div class="v2q-crew-vide" v-if="!c.joueurs.length">Personne</div>
+                        </div>
                     </div>
                 </div>
 

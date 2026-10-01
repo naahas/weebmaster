@@ -425,6 +425,11 @@ createApp({
             campsAvant: { 1: 0, 2: 0 }, // score des camps avant la question qui vient de tomber
             campsProg: 1,               // avancement du remplissage des barres (0 → 1)
             campDetail: null,           // camp dont on regarde le détail au classement final
+            // ⚠️ La réponse d'un joueur se lit au survol de son pseudo, mais
+            // l'hôte peut piloter depuis un téléphone, où il n'y a pas de
+            // survol. Un clic la fixe donc aussi : le CSS gère le survol, ce
+            // champ gère le doigt. Il porte un playerId, ou null.
+            repVue: null,
             rangDelta: 0,               // places gagnées (+) ou perdues (-) à la dernière question
             
             // 💣 BombAnime - Lobby plein
@@ -667,6 +672,9 @@ createApp({
         // n arrivent jamais ici, donc ouvrir ne referme pas aussitôt.
         document.addEventListener('click', () => {
             if (this.campMenu) this.campMenu = null;
+            // Même raison pour la réponse fixée au doigt : le pseudo porte
+            // `@click.stop`, donc l ouvrir ne la referme pas.
+            if (this.repVue) this.repVue = null;
         });
 
         // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
@@ -1255,6 +1263,26 @@ createApp({
             return this.campsClasses.filter(c => c.team === this.monCamp);
         },
 
+        // L'effectif de chaque camp, pour l'hôte seul : il arbitre, il peut
+        // tout voir. ⚠️ Les ÉLIMINÉS restent dans la liste — à cinq camps,
+        // savoir qui a sauté vaut autant que le score du camp, et une liste
+        // qui se vide ne dit plus rien de ce qui s'est passé. Le serveur les
+        // envoie déjà : `playersDetails` parcourt `gameState.players` en
+        // entier, un joueur à zéro vie y figure encore.
+        campsRoster() {
+            if (!this.isHost || this.lobbyMode !== 'rivalry') return [];
+            const tous = this.questionResults.players || [];
+            const parPoints = this.gameMode === 'points';
+            return this.campsClasses.map(c => ({
+                ...c,
+                joueurs: tous
+                    .filter(p => (p.team || 0) === c.team)
+                    .sort((a, b) => parPoints
+                        ? (b.points || 0) - (a.points || 0)
+                        : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0))
+            }));
+        },
+
         // Fin de partie en camps : les trois meilleurs de chaque côté
         campsPodium() {
             if (!this.gameEndData || !this.estFinEnCamps) return [];
@@ -1329,8 +1357,29 @@ createApp({
         },
 
         // Six places au plus : au-delà, la liste déborderait en vertical
+        //
+        // ⚠️ TROIS seulement en camps. Une ligne de camp porte son équipage
+        // en dessous — trois ou quatre noms chacune — donc cinq camps font
+        // une page qui déborde. Les camps suivants ne disparaissent pas pour
+        // autant : celui du joueur lui est annoncé à part, juste en dessous.
+        // ⚠️ Le classement final s'arrête à TROIS camps. Une ligne de camp
+        // n'est pas une ligne de joueur : elle porte son équipage déplié en
+        // dessous, donc cinq camps débordaient l'écran. En solo le serveur
+        // ne renvoie déjà que trois lignes, rien ne change de ce côté.
         endRows() {
-            return this.podiumPlayers.slice(0, 6);
+            return this.estFinEnCamps ? this.podiumPlayers.slice(0, 3) : this.podiumPlayers;
+        },
+
+        // 🏳️ Le rang de MON camp, quand il n est pas sur le podium.
+        // Même rôle que « myEndRank » en solo : on ne montre pas une place
+        // qu on a déjà sous les yeux.
+        monRangCamp() {
+            if (!this.estFinEnCamps) return null;
+            const moi = this.monCamp;
+            if (!moi) return null;
+            const r = this.podiumPlayers.find(p => p.team === moi);
+            if (!r || r.rank <= 3) return null;
+            return { rang: r.rank, nom: r.username, team: moi, total: this.podiumPlayers.length };
         },
 
         // ── La tour ──
@@ -4307,11 +4356,15 @@ createApp({
         },
 
         // Cœurs et jetons rejoignent le panel au lieu de le précéder.
-        // Le retard reprend le délai de .v2q-enter-active : les deux vont de pair.
+        // ⚠️ Le retard se cale sur la FIN de .v2q-enter-active, pas sur son début :
+        // l animation attend 0,3 s puis court 0,62 s, le panel n est donc posé qu à
+        // 920 ms. À 800 ms les jetons partaient pendant que la question bougeait
+        // encore — ils avaient l air d arriver avant elle. 1 100 ms les fait entrer
+        // juste après, panel immobile.
         revealQuestionChrome() {
             if (this.questionShown) return;
             clearTimeout(this._chromeTimer);
-            this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 800);
+            this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 1100);
         },
 
         // L'anneau se trace d'un trait à l'ouverture de la feuille
@@ -4364,6 +4417,18 @@ createApp({
             const i = this.answerIndexOf(p);
             if (i === -1) return 'afk';
             return ['m' + i, this.questionResults.correctAnswer === i + 1 ? 'juste' : ''];
+        },
+
+        // Ce qu'un joueur a répondu, en clair. « Sans réponse » plutôt qu'un
+        // blanc : à l'hôte, le silence d'un joueur est une information.
+        repTexte(p) {
+            return (p && p.selectedAnswer) || 'Sans réponse';
+        },
+
+        // Le doigt remplace le survol : on fixe la bulle, on la referme.
+        basculerRep(p) {
+            const id = p && (p.playerId || p.username);
+            this.repVue = this.repVue === id ? null : id;
         },
 
 
@@ -5996,6 +6061,9 @@ createApp({
                 this.showQuestionStats = false;
                 this.showTopSheet = false;
                 this.showReport = false;
+                // La bulle fixée au doigt porte la réponse de la question
+                // PRÉCÉDENTE : la laisser ouverte afficherait un vieux choix.
+                this.repVue = null;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {

@@ -11931,17 +11931,149 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2q-camp-bar .sc { font-size: 1.5rem; }
 .v2q-camp-bar:not(.tete) .sc { opacity: 0.72; }
 
+/* ── L'effectif d'un camp, chez l'hôte ──
+   Même langage que l'équipage du classement final (`.v2-end-crew`) : un
+   filet à gauche dans la couleur du camp, le pseudo qui s'élide, la vie
+   ou le score à droite. Le camp est déjà nommé juste au-dessus, donc
+   aucune couleur de plus ici — le filet suffit. */
+.v2q-crew { margin-top: 0.7rem; }
+
+.v2q-crew-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.22rem 0 0.22rem 0.6rem;
+    border-left: 0.09rem solid rgba(255, 255, 255, 0.12);
+}
+
+.v2q-camp-bar.team-1 .v2q-crew-row { border-left-color: rgba(59, 130, 246, 0.32); }
+.v2q-camp-bar.team-2 .v2q-crew-row { border-left-color: rgba(240, 192, 64, 0.32); }
+.v2q-camp-bar.team-3 .v2q-crew-row { border-left-color: rgba(255, 45, 149, 0.32); }
+.v2q-camp-bar.team-4 .v2q-crew-row { border-left-color: rgba(34, 197, 94, 0.32); }
+.v2q-camp-bar.team-5 .v2q-crew-row { border-left-color: rgba(239, 68, 68, 0.32); }
+
+/* ⚠️ Écrase `.v2q-camp-bar .nm`, qui met le nom du CAMP en capitales
+   espacées : un pseudo traité comme un titre devenait illisible. Même
+   spécificité, donc c'est l'ordre qui tranche — cette règle doit rester
+   APRÈS celle du camp. */
+.v2q-crew-row .nm {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: rgba(255, 255, 255, 0.72);
+    cursor: default;
+}
+
+.v2q-crew-row .sc { flex: none; font-size: 0.86rem; }
+
+/* ⚠️ `.v2q-camp-bar:not(.tete) .sc` pèse une classe de plus que
+   `.v2q-crew-row .sc` : sans ce rappel, le score de CHAQUE joueur des camps
+   qui ne mènent pas héritait du 0,72 d'opacité du score de camp. L'estompe
+   doit rester sur le gros chiffre du camp, pas sur l'effectif. */
+.v2q-camp-bar:not(.tete) .v2q-crew-row .sc { opacity: 1; }
+
+.v2q-crew-hp { display: inline-flex; flex: none; gap: 0.16rem; }
+.v2q-crew-hp i { display: block; width: 0.62rem; height: 0.62rem; color: #ff5a6e; }
+.v2q-crew-hp i svg { display: block; width: 100%; height: 100%; fill: currentColor; stroke: currentColor; stroke-width: 1.6; }
+.v2q-crew-hp i.off { color: rgba(255, 255, 255, 0.2); }
+.v2q-crew-hp i.off svg { fill: transparent; }
+
+/* Éliminé : on le GRISE, on ne le retire pas. Savoir qui a sauté fait
+   partie de ce que l'hôte vient lire. */
+.v2q-crew-row.mort { opacity: 0.42; }
+.v2q-crew-row.mort .nm { text-decoration: line-through; text-decoration-thickness: 0.05rem; }
+
+/* ── La réponse, au survol du pseudo ──
+   ⚠️ En bulle ABSOLUE, pas sur une seconde ligne : une ligne qui se
+   déplie au survol pousse toutes celles d'en dessous, et à cinq camps le
+   bloc entier sautait sous le curseur. Posée par-dessus, elle ne déplace
+   rien. */
+.v2q-crew-rep {
+    position: absolute;
+    left: 0.6rem;
+    top: calc(100% - 0.12rem);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 14rem;
+    padding: 0.34rem 0.55rem;
+    border-radius: 0.45rem;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(10, 10, 13, 0.97);
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.1), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    transform: translateY(-0.2rem);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+/* Le repère de la réponse reprend la couleur de son rang, comme les
+   pastilles des résultats — l'hôte lit la même couleur aux deux endroits. */
+.v2q-crew-rep i {
+    flex: none;
+    font-style: normal;
+    font-size: 0.6rem;
+}
+.v2q-crew-rep.m0 i { color: #ffd24a; }
+.v2q-crew-rep.m1 i { color: #7fb4ff; }
+.v2q-crew-rep.m2 i { color: #6ee7b7; }
+.v2q-crew-rep.m3 i { color: #d8b4fe; }
+.v2q-crew-rep.m4 i { color: #fca5a5; }
+.v2q-crew-rep.m5 i { color: #fdba74; }
+.v2q-crew-rep.afk { color: rgba(255, 255, 255, 0.4); }
+.v2q-crew-rep.afk i { color: rgba(255, 255, 255, 0.28); }
+.v2q-crew-rep.juste { box-shadow: inset 0 0 0 0.06rem rgba(110, 231, 183, 0.45), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.55); }
+
+/* Le survol pour la souris, la classe pour le doigt : l'hôte peut piloter
+   depuis un téléphone, où `:hover` ne se déclenche jamais. */
+.v2q-crew-row .nm:hover ~ .v2q-crew-rep,
+.v2q-crew-row.ouvert .v2q-crew-rep {
+    opacity: 1;
+    transform: none;
+}
+
+.v2q-crew-row .nm:hover { color: #fff; }
+.v2q-crew-row.ouvert .nm { color: #fff; }
+
+.v2q-crew-vide {
+    padding-left: 0.6rem;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
 @media (max-width: 768px) {
     .v2-hud-team { margin-right: 0.85rem; padding: 0.26rem 0.55rem; font-size: 0.58rem; }
     .v2q-camp .sc { font-size: 1.55rem; }
 
     /* Les deux camps l'un sous l'autre : à deux colonnes, les noms se coupent */
-    .v2q-camps-bars { grid-template-columns: 1fr; gap: 0.9rem; padding: 0.85rem 0.9rem; }
+    /* L'écart est passé de 0,9 à 1,5 rem : en colonne unique, chaque barre
+       porte maintenant son effectif, et deux camps se touchaient. */
+    .v2q-camps-bars { grid-template-columns: 1fr; gap: 1.5rem; padding: 0.85rem 0.9rem; }
     .v2q-camp-bar .sc { font-size: 1.3rem; }
 
     .v2-end-crew { padding: 0.15rem 0 0.5rem 1.9rem; }
     .v2-end-crew-row { font-size: 0.68rem; }
     .v2-end-crew-row .sc { font-size: 0.8rem; }
+
+    /* La feuille est étroite sur téléphone : la bulle de réponse se cale
+       sur la largeur disponible plutôt que sur une valeur fixe.
+       ⚠️ Le `.sc` est repris ici parce que `.v2q-camp-bar .sc` descend à
+       1,3 rem quelques lignes plus haut, à spécificité égale et donc
+       gagnante par l'ordre : sans ce rappel les scores de l'effectif
+       prenaient la taille du score de camp. */
+    .v2q-crew-row .nm { font-size: 0.7rem; }
+    .v2q-crew-row .sc { font-size: 0.8rem; }
+    .v2q-crew-rep { max-width: calc(100% - 1.2rem); }
 }
 
 
@@ -13296,6 +13428,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    gagne ». */
 .v2-end-row.team { position: relative; }
 
+/* ⚠️ La ligne pousse son contenu vers la droite, sinon le liseré colle au
+   numéro de rang et l ensemble se lit « |1 » — un trait et un chiffre
+   soudés. Le liseré doit se lire comme une marque de camp, pas comme une
+   barre devant le nombre. */
+.v2-end-row.team { padding-left: 0.95rem; }
+
 .v2-end-row.team::before {
     content: '';
     position: absolute;
@@ -13306,6 +13444,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     border-radius: 0.2rem;
     background: var(--camp-ligne, transparent);
 }
+
+/* « <Camp> termine 4e sur 5 », pour qui n'est pas dans les trois lignes.
+   ⚠️ Le nom du camp n'est PAS un `<b>` : `.v2-end-me b` le passerait en
+   Bebas doré 1,2 rem, et la phrase se lirait comme deux titres collés. Il
+   garde sa graisse de texte et prend la couleur de son camp — seul le rang
+   reste en or, comme en solo. */
+.v2-end-me-camp { font-weight: 600; color: var(--camp-ligne, #fff); }
+.v2-end-me-camp.team-1 { --camp-ligne: var(--camp-1); }
+.v2-end-me-camp.team-2 { --camp-ligne: var(--camp-2); }
+.v2-end-me-camp.team-3 { --camp-ligne: var(--camp-3); }
+.v2-end-me-camp.team-4 { --camp-ligne: var(--camp-4); }
+.v2-end-me-camp.team-5 { --camp-ligne: var(--camp-5); }
 
 .v2-end-row.team-1 { --camp-ligne: var(--camp-1); }
 .v2-end-row.team-2 { --camp-ligne: var(--camp-2); }
