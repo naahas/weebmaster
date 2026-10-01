@@ -5190,11 +5190,24 @@ async function endGameRivalry(gameState, winningTeam) {
             avatarUrl: p.avatarUrl || null
         }));
         
+        // ⚠️ LE CLASSEMENT DES CAMPS, qui manquait ici.
+        //
+        // Le mode Vies par camps n envoyait aucun podium : le client le
+        // refabriquait en triant les scores. Or en mode Vies le score d un
+        // camp éliminé vaut ZÉRO — tous les éliminés étaient donc à égalité,
+        // et l ORDRE D ÉLIMINATION, qui EST le classement, se perdait.
+        const podium = classementCamps(gameState).map((c, i) => ({
+            rank: i + 1,
+            teamName: gameState.teamNames[c],
+            points: gameState.teamScores[c] || 0,
+            team: c
+        }));
+
         // 🔥 Sauvegarder avant reset (copie)
         const savedTeamScores = { ...gameState.teamScores };
         const savedTeamNames = { ...gameState.teamNames };
         const savedInitialPlayerCount = gameState.initialPlayerCount;
-        
+
         // 🔥 FIX: Récupérer topPlayers AVANT l'émission (comme en mode classique)
         let topPlayers = [];
         try {
@@ -5214,6 +5227,8 @@ async function endGameRivalry(gameState, winningTeam) {
             duration,
             totalQuestions: gameState.currentQuestionIndex,
             gameMode: 'rivalry-lives',
+            // Le classement des camps, dans l ordre d élimination inversé.
+            podium,
             playersData: playersData,
             topPlayers,
             lastQuestionPlayers

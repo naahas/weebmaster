@@ -928,23 +928,44 @@ createApp({
             
             // 🆕 Mode Rivalité
             if (this.gameEndData.gameMode === 'rivalry-lives' || this.gameEndData.gameMode === 'rivalry-points') {
-                // En mode rivalité, on affiche les équipes au lieu des joueurs
-                const teamScores = this.gameEndData.teamScores || { 1: 0, 2: 0 };
-                const teamNames = this.gameEndData.teamNames || { 1: 'Team A', 2: 'Team B' };
-                
-                const teams = [
-                    { team: 1, teamName: teamNames[1], score: teamScores[1] },
-                    { team: 2, teamName: teamNames[2], score: teamScores[2] }
-                ].sort((a, b) => b.score - a.score);
-                
-                return teams.map((t, index) => ({
-                    username: t.teamName,
-                    isTeam: true,
-                    team: t.team,
-                    points: this.gameEndData.gameMode === 'rivalry-points' ? t.score : undefined,
-                    lives: this.gameEndData.gameMode === 'rivalry-lives' ? t.score : undefined,
-                    rank: index + 1
-                }));
+                // ⚠️ ON PREND LE CLASSEMENT DU SERVEUR, on ne le refabrique plus.
+                //
+                // Il était reconstruit ici en triant deux scores. Deux défauts :
+                // il ne connaissait que les camps 1 et 2, et surtout un tri sur
+                // le score ne peut pas porter les deux règles de départage —
+                // l ORDRE D ÉLIMINATION en mode Vies (où tous les éliminés sont
+                // à zéro, donc indiscernables) et le MEILLEUR JOUEUR en mode
+                // Points. Seul le serveur les connaît.
+                const vies = this.gameEndData.gameMode === 'rivalry-lives';
+                const classement = this.gameEndData.podium;
+
+                if (Array.isArray(classement) && classement.length) {
+                    return classement.map(t => ({
+                        username: t.teamName,
+                        isTeam: true,
+                        team: t.team,
+                        points: vies ? undefined : t.points,
+                        lives: vies ? t.points : undefined,
+                        rank: t.rank
+                    }));
+                }
+
+                // Repli pour un serveur resté sur l ancienne version : on trie
+                // ce qu on a. Le classement sera grossier, jamais vide.
+                const teamScores = this.gameEndData.teamScores || {};
+                const teamNames = this.gameEndData.teamNames || {};
+                return [1, 2, 3, 4, 5]
+                    .filter(t => teamNames[t] !== undefined && teamScores[t] !== undefined)
+                    .map(t => ({ team: t, teamName: teamNames[t], score: teamScores[t] || 0 }))
+                    .sort((a, b) => b.score - a.score)
+                    .map((t, i) => ({
+                        username: t.teamName,
+                        isTeam: true,
+                        team: t.team,
+                        points: vies ? undefined : t.score,
+                        lives: vies ? t.score : undefined,
+                        rank: i + 1
+                    }));
             }
             
             if (this.gameEndData.gameMode === 'points' && this.gameEndData.podium) {

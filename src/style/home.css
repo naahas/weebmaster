@@ -13289,3 +13289,33 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-shuffle-n { width: 1.2rem; height: 1.2rem; font-size: 0.58rem; }
     .v2-team-opt { width: 1.35rem; height: 1.35rem; font-size: 0.66rem; }
 }
+
+/* ── L'écran de fin, à N camps ──
+   ⚠️ Un liseré sur la tranche, pas une ligne repeinte : la mise en valeur
+   du vainqueur appartient à l'or, et deux signaux de couleur sur la même
+   ligne se concurrenceraient. Le liseré dit « quel camp », l'or dit « qui
+   gagne ». */
+.v2-end-row.team { position: relative; }
+
+.v2-end-row.team::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 18%;
+    bottom: 18%;
+    width: 0.2rem;
+    border-radius: 0.2rem;
+    background: var(--camp-ligne, transparent);
+}
+
+.v2-end-row.team-1 { --camp-ligne: var(--camp-1); }
+.v2-end-row.team-2 { --camp-ligne: var(--camp-2); }
+.v2-end-row.team-3 { --camp-ligne: var(--camp-3); }
+.v2-end-row.team-4 { --camp-ligne: var(--camp-4); }
+.v2-end-row.team-5 { --camp-ligne: var(--camp-5); }
+
+/* Le détail d'un camp : son titre prend sa couleur. Les deux premiers
+   gardent leurs règles d'origine, plus haut. */
+.v2-camp-sheet.team-3 .ttl { color: var(--camp-3); }
+.v2-camp-sheet.team-4 .ttl { color: var(--camp-4); }
+.v2-camp-sheet.team-5 .ttl { color: var(--camp-5); }

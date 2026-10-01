@@ -2689,8 +2689,12 @@
                      change : le titre et la mise en page ne bougent donc jamais. -->
                 <div class="v2-end-list">
                     <template v-for="p in endRows" :key="p.rank">
+                    <!-- ⚠️ La ligne porte la COULEUR de son camp. À deux camps,
+                         l or du vainqueur et le gris du perdant suffisaient à les
+                         distinguer ; à cinq, il faut pouvoir reconnaître le sien
+                         dans la liste sans lire le nom. -->
                     <div class="v2-end-row"
-                         :class="{ or: p.rank === 1, vu: endStep >= endSlot(p.rank), team: p.isTeam }">
+                         :class="[p.isTeam ? 'team-' + p.team : '', { or: p.rank === 1, vu: endStep >= endSlot(p.rank), team: p.isTeam }]">
                         <span class="v2-end-sweep"></span>
                         <span class="rk">{{ p.rank }}</span>
                         <span class="nm">{{ p.username }}</span>
