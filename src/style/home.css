@@ -13319,3 +13319,79 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-camp-sheet.team-3 .ttl { color: var(--camp-3); }
 .v2-camp-sheet.team-4 .ttl { color: var(--camp-4); }
 .v2-camp-sheet.team-5 .ttl { color: var(--camp-5); }
+
+/* ════════════════════════════════════════════════════════════════════
+   🆕 CAMPS 3 À 5, PENDANT LA PARTIE
+   ⚠️ On AJOUTE, on ne refait pas. Les règles des camps 1 et 2 vivent
+   plus haut et ne sont pas touchées : c'est ce qui garantit qu'une
+   partie à deux camps reste identique au pixel près.
+   Chaque famille reprend la forme exacte de son aînée — seule la
+   couleur change.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Badge de camp dans le HUD ── */
+.hud-team-badge.team-3 {
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.3), rgba(167, 139, 250, 0.1));
+    border: 1px solid var(--camp-3);
+    color: #c4b0ff;
+}
+.hud-team-badge.team-4 {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+    border: 1px solid var(--camp-4);
+    color: #5ee08c;
+}
+.hud-team-badge.team-5 {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1));
+    border: 1px solid var(--camp-5);
+    color: #ff8282;
+}
+
+/* ── Le score de mon camp, sous les réponses ── */
+.my-team-score.team-3 { background: rgba(167, 139, 250, 0.1); box-shadow: 0 0 15px rgba(167, 139, 250, 0.15); }
+.my-team-score.team-3 .team-name { color: var(--camp-3); }
+.my-team-score.team-3 .team-separator { background: var(--camp-3); }
+
+.my-team-score.team-4 { background: rgba(34, 197, 94, 0.1); box-shadow: 0 0 15px rgba(34, 197, 94, 0.15); }
+.my-team-score.team-4 .team-name { color: var(--camp-4); }
+.my-team-score.team-4 .team-separator { background: var(--camp-4); }
+
+.my-team-score.team-5 { background: rgba(239, 68, 68, 0.1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
+.my-team-score.team-5 .team-name { color: var(--camp-5); }
+.my-team-score.team-5 .team-separator { background: var(--camp-5); }
+
+/* ── Les barres de camp du quiz ── */
+.v2q-camp.team-3 .sc,
+.v2q-camp-bar.team-3 .sc,
+.v2q-camp-bar.team-3 .nm { color: var(--camp-3); }
+.v2q-camp.team-3 .jauge i,
+.v2q-camp-bar.team-3 .rail i { background: linear-gradient(90deg, rgba(167, 139, 250, 0.45), var(--camp-3)); }
+
+.v2q-camp.team-4 .sc,
+.v2q-camp-bar.team-4 .sc,
+.v2q-camp-bar.team-4 .nm { color: var(--camp-4); }
+.v2q-camp.team-4 .jauge i,
+.v2q-camp-bar.team-4 .rail i { background: linear-gradient(90deg, rgba(34, 197, 94, 0.45), var(--camp-4)); }
+
+.v2q-camp.team-5 .sc,
+.v2q-camp-bar.team-5 .sc,
+.v2q-camp-bar.team-5 .nm { color: var(--camp-5); }
+.v2q-camp.team-5 .jauge i,
+.v2q-camp-bar.team-5 .rail i { background: linear-gradient(90deg, rgba(239, 68, 68, 0.45), var(--camp-5)); }
+
+/* ── Le camp dans le HUD compact ── */
+.v2-hud-team.team-3 { color: var(--camp-3); background: rgba(167, 139, 250, 0.1); box-shadow: inset 0 0 0 0.06rem rgba(167, 139, 250, 0.32); }
+.v2-hud-team.team-4 { color: var(--camp-4); background: rgba(34, 197, 94, 0.1);  box-shadow: inset 0 0 0 0.06rem rgba(34, 197, 94, 0.32); }
+.v2-hud-team.team-5 { color: var(--camp-5); background: rgba(239, 68, 68, 0.1);  box-shadow: inset 0 0 0 0.06rem rgba(239, 68, 68, 0.32); }
+
+/* ── La vignette d'un joueur dans le salon ── */
+.v2-room-player.team-3 { border-color: rgba(167, 139, 250, 0.45); background: rgba(167, 139, 250, 0.15); color: #e4dbff; }
+.v2-room-player.team-4 { border-color: rgba(34, 197, 94, 0.45);  background: rgba(34, 197, 94, 0.15);  color: #d6f5e2; }
+.v2-room-player.team-5 { border-color: rgba(239, 68, 68, 0.45);  background: rgba(239, 68, 68, 0.15);  color: #ffdcdc; }
+
+/* ── L'équipage d'un camp, à l'écran de fin ── */
+.v2-end-crew.team-3 .v2-end-crew-row { border-left-color: rgba(167, 139, 250, 0.3); }
+.v2-end-crew.team-4 .v2-end-crew-row { border-left-color: rgba(34, 197, 94, 0.3); }
+.v2-end-crew.team-5 .v2-end-crew-row { border-left-color: rgba(239, 68, 68, 0.3); }
+.v2-end-crew.team-3 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-3); }
+.v2-end-crew.team-4 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-4); }
+.v2-end-crew.team-5 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-5); }

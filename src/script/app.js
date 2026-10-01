@@ -1185,11 +1185,18 @@ createApp({
         // Les deux camps, du mieux placé au moins bien, avec leur part relative
         campsClasses() {
             const s = (this.questionResults && this.questionResults.teamScores) || this.teamScores || {};
-            const total = (s[1] || 0) + (s[2] || 0);
+            // ⚠️ Les camps EN JEU, et non [1, 2]. En partie la liste du salon
+            // peut dater : on prend tout camp qui a un score ou des joueurs,
+            // sans quoi un troisième camp disparaîtrait des barres en cours
+            // de manche.
+            const enJeu = [1, 2, 3, 4, 5].filter(t =>
+                (s[t] !== undefined && s[t] !== null) || (this.campsRemplis || {})[t] > 0);
+            const liste = enJeu.length ? enJeu : [1, 2];
+            const total = liste.reduce((n, t) => n + (s[t] || 0), 0);
             const p = this.campsProg;
-            // Le classement suit le score final : sans ça les deux camps
+            // Le classement suit le score final : sans ça les camps
             // permuteraient en plein milieu du remplissage.
-            const camps = [1, 2].map(t => {
+            const camps = liste.map(t => {
                 const cible = s[t] || 0;
                 const avant = this.campsAvant[t] || 0;
                 return {
@@ -1197,10 +1204,19 @@ createApp({
                     nom: this.teamNames[t],
                     fin: cible,
                     score: Math.round(avant + (cible - avant) * p),
-                    part: (total ? (cible / total * 100) : 50) * p,
+                    // ⚠️ La part se répartit sur TOUS les camps. À deux, un
+                    // score nul partout donnait 50 % chacun ; à N il faut
+                    // diviser, sinon trois camps à zéro rempliraient 150 %.
+                    part: (total ? (cible / total * 100) : (100 / liste.length)) * p,
                 };
             }).sort((a, b) => b.fin - a.fin);
-            camps.forEach((c, i) => { c.tete = i === 0 && camps[0].fin !== camps[1].fin; });
+            // ⚠️ « En tête » ne vaut que si personne n est à égalité avec lui.
+            // Le test comparait les deux premiers ; à N il faut s assurer que
+            // le second ne l égale pas — sinon deux camps à égalité seraient
+            // tous deux couronnés.
+            camps.forEach((c, i) => {
+                c.tete = i === 0 && camps.length > 1 && camps[0].fin !== camps[1].fin;
+            });
             return camps;
         },
 
@@ -1219,7 +1235,15 @@ createApp({
             const scores = this.gameEndData.teamScores || {};
             const noms = this.gameEndData.teamNames || this.teamNames;
 
-            return [1, 2].map(t => ({
+            // ⚠️ Les camps du CLASSEMENT du serveur, dans son ordre — c est
+            // lui qui porte l ordre d élimination et le départage par
+            // meilleur joueur. Un `[1, 2]` écrit ici ne voyait pas les autres,
+            // et le tri par score qui suivait ne pouvait pas les départager.
+            const classes = Array.isArray(this.gameEndData.podium) && this.gameEndData.podium.length
+                ? this.gameEndData.podium.map(p => p.team)
+                : [1, 2, 3, 4, 5].filter(t => scores[t] !== undefined && noms[t] !== undefined);
+
+            return classes.map(t => ({
                 team: t,
                 nom: noms[t],
                 score: scores[t] || 0,
@@ -1235,7 +1259,10 @@ createApp({
                         playerId: p.playerId,
                         valeur: parPoints ? this.formatScore(p.points || 0) : (p.lives || 0),
                     })),
-            })).sort((a, b) => b.score - a.score);
+            }));
+            // ⚠️ Plus de tri par score ici : l ordre vient du serveur. Trier
+            // à nouveau écraserait l ordre d élimination, où tous les camps
+            // tombés valent zéro et seraient donc mélangés.
         },
 
         // Aux points on affiche le score, aux vies le nombre de coeurs restants
