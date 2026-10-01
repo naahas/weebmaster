@@ -1258,7 +1258,11 @@ function etatNeuf() {
     // d aujourd hui : une partie à deux camps ne bouge pas d un pixel.
     teamNames: { 1: 'Team A', 2: 'Team B', 3: 'Team C', 4: 'Team D', 5: 'Team E' },
     teamCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-    teamScores: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, // Vies restantes ou points totaux par équipe
+    // ⚠️ VIDE au départ, et non les cinq à zéro : `updateTeamScores` n y met
+    // que les camps qui participent. Un salon neuf ne doit annoncer aucun
+    // camp, sinon cinq lignes à zéro apparaissent avant que quiconque ait
+    // choisi quoi que ce soit.
+    teamScores: {}, // Vies restantes ou points totaux par camp EN JEU
     // L ordre dans lequel les camps sont tombés, en mode Vies. Le premier
     // éliminé est dernier au classement. Voir `campEliminé()`.
     campsElimines: [],
@@ -1398,8 +1402,14 @@ function campLeMoinsFourni(gameState) {
 }
 
 function updateTeamScores(gameState) {
+    // ⚠️ SEULS LES CAMPS QUI PARTICIPENT. Les cinq étaient initialisés d
+    // office, si bien qu une partie à quatre camps affichait « Team E — 0 en
+    // vie » : un camp qui n a jamais existé, présenté comme un perdant.
+    //
+    // Un camp existe dès qu il a un joueur, même éliminé — il garde donc sa
+    // ligne à zéro jusqu à la fin, ce qui est juste : il a joué.
     gameState.teamScores = {};
-    for (const n of TOUS_LES_CAMPS) gameState.teamScores[n] = 0;
+    for (const n of campsEnJeu(gameState)) gameState.teamScores[n] = 0;
 
     for (const player of gameState.players.values()) {
         if (!player.team) continue;
