@@ -594,22 +594,21 @@
                                      gestes voisins, deux effets différents, rien ne le disait.
                                      Maintenant le mot ne fait qu ouvrir, et seul un chiffre
                                      répartit. -->
+                                <!-- ⚠️ Les chiffres sont DIRECTEMENT dans le tiroir : il
+                                     s ouvre déjà au survol, comme toutes les lignes de réglage.
+                                     Passer par un bouton « Mélanger » à cliquer d abord
+                                     ajoutait un geste sans rien apprendre — le survol montre
+                                     déjà en combien on peut répartir. -->
                                 <div class="v2-set" v-if="lobbyMode === 'rivalry'">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
-                                    <span class="v2-set-label">Équipes</span>
+                                    <span class="v2-set-label">Mélanger</span>
                                     <span class="v2-set-value">{{ campsEnJeu.length }}</span>
                                     <span class="v2-set-opts">
-                                        <button v-if="!melangeOuvert" class="v2-set-opt"
-                                                @click="melangeOuvert = true"
-                                                :disabled="playerCount < 2"
-                                                :title="playerCount < 2 ? 'Il faut au moins deux joueurs' : 'Répartir au hasard'">Mélanger</button>
-                                        <template v-else>
-                                            <button v-for="n in [2, 3, 4, 5]" :key="n"
-                                                    class="v2-set-opt v2-melange-n" :class="{ on: campsEnJeu.length === n }"
-                                                    @click="shuffleTeams(n); melangeOuvert = false"
-                                                    :disabled="shuffleBusy || playerCount < n"
-                                                    :title="playerCount < n ? ('Il faut ' + n + ' joueurs') : ('Répartir en ' + n + ' camps')">{{ n }}</button>
-                                        </template>
+                                        <button v-for="n in [2, 3, 4, 5]" :key="n"
+                                                class="v2-set-opt" :class="{ on: campsEnJeu.length === n }"
+                                                @click="shuffleTeams(n)"
+                                                :disabled="shuffleBusy || playerCount < n"
+                                                :title="playerCount < n ? ('Il faut ' + n + ' joueurs') : ('Répartir en ' + n + ' camps')">{{ n }}</button>
                                     </span>
                                 </div>
 

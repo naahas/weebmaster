@@ -8385,7 +8385,11 @@ body.game-active:has(.poll-game-container) #particles-js {
        ouvert sous la dernière vignette allongeait la zone et faisait
        apparaître une barre de défilement à chaque clic. La place lui est
        réservée en permanence : 1,6 rem de creux, soit la hauteur du menu. */
-    padding: 0.5rem 0.6rem 1.6rem 0;
+    /* ⚠️ Et il déborde A GAUCHE aussi. Le menu part de la pastille vers la
+       gauche : sur la PREMIÈRE vignette d une rangée il sortait du cadre et
+       `overflow-x: hidden` lui coupait la lettre A. Deux rem de creux à
+       gauche, soit ce qui manquait. */
+    padding: 0.5rem 0.6rem 1.6rem 2rem;
     max-height: clamp(21rem, 56vh, 33rem);
     overflow-x: hidden;
     overflow-y: auto;
@@ -8456,7 +8460,14 @@ body.game-active:has(.poll-game-container) #particles-js {
     align-self: stretch;
     display: flex;
     flex-direction: column;
-    max-height: 82vh;
+    /* ⚠️ 82vh seul faisait défiler LA PAGE. Le panneau n est pas seul dans sa
+       colonne : au-dessus il y a le creux de `.v2-room-layout` (jusqu à
+       4 rem), en dessous la bande d astuces, et `.v2-room` ajoute son propre
+       creux. Mis bout à bout on dépassait la fenêtre d un cheveu, et une
+       seconde barre apparaissait à côté de celle du panneau.
+       Le second terme réserve ces 11 rem : le panneau rend la place qu il
+       faut, et c est lui qui défile — une seule barre, la sienne. */
+    max-height: min(82vh, calc(100vh - 11rem));
     background: rgba(255, 255, 255, 0.022);
     border: 0.09rem solid rgba(255, 255, 255, 0.08);
     border-radius: 0.9rem;
@@ -13260,7 +13271,6 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-room-player.team-5 { border-color: rgba(239, 68, 68, 0.5); }
 
 @media (max-width: 780px) {
-    .v2-melange-n { min-width: 1.4rem; font-size: 0.58rem; }
     .v2-team-opt { width: 1.35rem; height: 1.35rem; font-size: 0.66rem; }
 }
 
@@ -13370,33 +13380,6 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-end-crew.team-4 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-4); }
 .v2-end-crew.team-5 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-5); }
 
-/* ── Le dépli du mélange ──
-   ⚠️ Les chiffres ENTRENT en cascade, de la gauche vers la droite. Les
-   faire apparaître d'un bloc donne l'impression que le bouton a été
-   remplacé ; échelonnés, on comprend qu'il s'est ouvert. */
-.v2-melange-n {
-    min-width: 1.6rem;
-    font-variant-numeric: tabular-nums;
-    animation: v2MelangeEntre 0.2s cubic-bezier(0.2, 0.9, 0.25, 1) both;
-}
-.v2-melange-n:nth-child(1) { animation-delay: 0s; }
-.v2-melange-n:nth-child(2) { animation-delay: 0.035s; }
-.v2-melange-n:nth-child(3) { animation-delay: 0.07s; }
-.v2-melange-n:nth-child(4) { animation-delay: 0.105s; }
-
-@keyframes v2MelangeEntre {
-    from { opacity: 0; transform: translateX(-0.35rem) scale(0.9); }
-    to   { opacity: 1; transform: none; }
-}
-
-/* ⚠️ Grisé, jamais caché. Des boutons qui apparaissent pendant qu'on
-   remplit le salon se remarquent plus qu'ils n'aident ; éteints, ils
-   disent qu'il suffit d'attendre du monde. */
-.v2-melange-n:disabled { opacity: 0.3; cursor: default; }
-
-@media (prefers-reduced-motion: reduce) {
-    .v2-melange-n { animation: none; }
-}
 
 /* ── Trier les vignettes par camp ──
    Au-dessus de la liste, là où vivait le mélange. Il ne change rien à la

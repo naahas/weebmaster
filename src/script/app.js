@@ -509,9 +509,6 @@ createApp({
             shuffleBusy: false,
             // Le menu de camp ouvert, s il y en a un : le playerId du joueur visé.
             campMenu: null,
-            // Le choix du nombre de camps est-il deplie ? « Melanger » ne fait
-            // qu ouvrir ; seul un chiffre repartit.
-            melangeOuvert: false,
             // Grouper les vignettes par camp. Affichage seul : rien ne part au serveur.
             triParCamp: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
@@ -660,6 +657,17 @@ createApp({
     async mounted() {
         // 💡 Les astuces du salon : l'ordre est mélangé et la rotation part.
         this.demarrerAstuces();
+
+        // ⚠️ Un clic AILLEURS referme le menu de camp. Sans ça il restait
+        // ouvert jusqu au prochain clic sur une pastille, et l on se
+        // retrouvait avec un menu posé sur la liste sans savoir comment s en
+        // débarrasser.
+        //
+        // La pastille et le menu portent `@click.stop` : leurs propres clics
+        // n arrivent jamais ici, donc ouvrir ne referme pas aussitôt.
+        document.addEventListener('click', () => {
+            if (this.campMenu) this.campMenu = null;
+        });
 
         // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
         this.loadHomeStats();
