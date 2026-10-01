@@ -959,7 +959,15 @@
                                  « armerTour » fait répondre tout joueur marqué `estBot`. La
                                  route les plafonnait déjà au maximum du mode, seul l'affichage
                                  les cachait ici. Hors production uniquement. -->
-                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect' || lobbyMode === 'bombanime')">
+                            <!-- ⚠️ Le Classique y est ajouté : éprouver les camps multiples
+                                 demande cinq ou six joueurs, et ouvrir six onglets à chaque
+                                 essai est intenable. Le serveur savait déjà leur donner un
+                                 camp — `campLeMoinsFourni` est appelé à leur création — il ne
+                                 manquait que ce réglage.
+                                 Ces bots-là sont PASSIFS : ils remplissent le salon, ils ne
+                                 répondent pas. C est exactement ce qu il faut pour régler une
+                                 répartition. Hors production uniquement. -->
+                            <div class="v2-set" v-if="estDev && (lobbyMode === 'ascension' || lobbyMode === 'collect' || lobbyMode === 'bombanime' || lobbyMode === 'classic' || lobbyMode === 'rivalry')">
                                 <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
                                 <span class="v2-set-label">Test</span>
                                 <span class="v2-set-value">{{ playerCount }}</span>
