@@ -509,6 +509,9 @@ createApp({
             shuffleBusy: false,
             // Le menu de camp ouvert, s il y en a un : le playerId du joueur visé.
             campMenu: null,
+            // Le choix du nombre de camps est-il deplie ? « Melanger » ne fait
+            // qu ouvrir ; seul un chiffre repartit.
+            melangeOuvert: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
