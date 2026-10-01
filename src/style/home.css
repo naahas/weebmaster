@@ -8253,6 +8253,14 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-room-layout {
     flex: 1;
+    /* ⚠️ SANS CECI, LA PAGE DÉFILE. Un enfant en `flex: 1` ne rétrécit jamais
+       sous la hauteur de son contenu tant que `min-height` vaut `auto` — le
+       défaut. Le panneau de réglages maintenait donc toute la colonne ouverte
+       et poussait la bande d astuces hors de l écran, d où une barre sur la
+       page entière en plus de celle du panneau.
+       Avec `0`, la colonne rend la place : le panneau se réduit et c est LUI
+       qui défile, ce pour quoi il a sa propre barre. */
+    min-height: 0;
     display: grid;
     grid-template-columns: clamp(16rem, 22vw, 20rem) minmax(0, 1fr);
     align-items: start;
@@ -8458,6 +8466,8 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* ── Panneau de réglages ── */
 .v2-settings {
     align-self: stretch;
+    /* Meme raison que pour la colonne : sans cela il ne rend pas la place. */
+    min-height: 0;
     display: flex;
     flex-direction: column;
     /* ⚠️ 82vh seul faisait défiler LA PAGE. Le panneau n est pas seul dans sa
