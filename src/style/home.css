@@ -13174,3 +13174,118 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .astuce-enter-active, .astuce-leave-active { transition: opacity 0.15s linear; }
     .astuce-enter-from, .astuce-leave-to { transform: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   🆕 CAMPS MULTIPLES — jusqu'à cinq
+   ⚠️ Les cinq couleurs existent toutes déjà dans le site. A et B sont
+   exactement celles d'hier : une partie à deux camps ne bouge pas.
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+    --camp-1: #3b82f6;   /* bleu — l'ancien camp 1 */
+    --camp-2: #f0c040;   /* doré — l'ancien camp 2 */
+    --camp-3: #a78bfa;   /* violet — celui du format Équipe */
+    --camp-4: #22c55e;   /* vert — celui de BombAnime */
+    --camp-5: #ef4444;   /* rouge — celui des cœurs */
+}
+
+/* Les trois nouvelles pastilles. Les deux premières gardent leurs
+   règles d'origine, plus haut, pour que rien ne bouge à deux camps. */
+.v2-team-flag.team-3 { background: var(--camp-3); color: #140d26; box-shadow: 0 0 0.7rem rgba(167, 139, 250, 0.5); }
+.v2-team-flag.team-4 { background: var(--camp-4); color: #04170c; box-shadow: 0 0 0.7rem rgba(34, 197, 94, 0.5); }
+.v2-team-flag.team-5 { background: var(--camp-5); color: #1c0606; box-shadow: 0 0 0.7rem rgba(239, 68, 68, 0.5); }
+
+/* ── Le menu de camp ──
+   La pastille ne bascule plus, elle ouvre. Le menu se pose SOUS elle et
+   par-dessus tout le reste : la grille des joueurs défile, il ne doit pas
+   être coupé par le bord d'une vignette. */
+.v2-team-pick { position: static; }
+
+.v2-team-flag.ouvert { transform: scale(1.14); }
+
+.v2-team-menu {
+    position: absolute;
+    top: 1.5rem;
+    right: -0.42rem;
+    z-index: 30;
+    display: flex;
+    gap: 0.2rem;
+    padding: 0.28rem;
+    border-radius: 0.6rem;
+    background: rgba(8, 8, 12, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.6);
+    animation: campMenuEntre 0.16s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes campMenuEntre {
+    from { opacity: 0; transform: translateY(-0.25rem) scale(0.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+.v2-team-opt {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 0.4rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    color: #0b0b0d;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.v2-team-opt:hover { transform: translateY(-0.1rem); }
+/* Le camp actuel du joueur : un liseré, pas une couleur de plus. */
+.v2-team-opt.on { border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 0 0.5rem rgba(255, 255, 255, 0.25); }
+
+.v2-team-opt.team-1 { background: var(--camp-1); }
+.v2-team-opt.team-2 { background: var(--camp-2); }
+.v2-team-opt.team-3 { background: var(--camp-3); }
+.v2-team-opt.team-4 { background: var(--camp-4); }
+.v2-team-opt.team-5 { background: var(--camp-5); }
+
+/* ── Les boutons « en combien » ── */
+.v2-shuffle-grp { display: inline-flex; align-items: center; gap: 0.22rem; }
+
+.v2-shuffle-n {
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.35rem;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.55);
+    font-family: inherit;
+    font-size: 0.64rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.v2-shuffle-n:hover:not(:disabled) {
+    color: var(--neon-primary);
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.07);
+}
+/* Le nombre de camps en cours : marqué, parce que l'hôte perd vite le fil
+   de ce qu'il a réparti. */
+.v2-shuffle-n.on { color: var(--neon-primary); border-color: rgba(255, 215, 0, 0.55); }
+/* ⚠️ Grisé, jamais caché : des boutons qui apparaissent pendant qu'on
+   remplit le salon se remarquent plus qu'ils n'aident. */
+.v2-shuffle-n:disabled { opacity: 0.3; cursor: default; }
+
+/* ── Les camps au-delà de deux, partout ailleurs ── */
+.v2-camps-compte .team-3 i { background: var(--camp-3); }
+.v2-camps-compte .team-4 i { background: var(--camp-4); }
+.v2-camps-compte .team-5 i { background: var(--camp-5); }
+
+.v2-room-player.team-3 { border-color: rgba(167, 139, 250, 0.5); }
+.v2-room-player.team-4 { border-color: rgba(34, 197, 94, 0.5); }
+.v2-room-player.team-5 { border-color: rgba(239, 68, 68, 0.5); }
+
+@media (max-width: 780px) {
+    .v2-shuffle-n { width: 1.2rem; height: 1.2rem; font-size: 0.58rem; }
+    .v2-team-opt { width: 1.35rem; height: 1.35rem; font-size: 0.66rem; }
+}

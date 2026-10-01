@@ -508,13 +508,27 @@
                                         <i></i><b>{{ c.n }}</b>
                                     </span>
                                 </span>
-                                <button class="v2-shuffle" v-if="lobbyMode === 'rivalry' && playerCount > 1"
-                                        @click="shuffleTeams" :disabled="shuffleBusy" title="Répartir au hasard">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/>
-                                    </svg>
-                                    Mélanger
-                                </button>
+                                <!-- ⚠️ « En combien ? » est un paramètre du GESTE, pas un
+                                     réglage : le salon n en retient rien. C est le seul endroit
+                                     où un nombre de camps est écrit quelque part.
+                                     Un bouton est GRISÉ, jamais caché, tant qu il manque des
+                                     joueurs : des boutons qui apparaissent pendant qu on remplit
+                                     le salon se remarquent plus qu ils n aident, et éteints ils
+                                     disent qu il suffit d attendre du monde. -->
+                                <span class="v2-shuffle-grp" v-if="lobbyMode === 'rivalry' && playerCount > 1">
+                                    <button class="v2-shuffle" @click="shuffleTeams(2)"
+                                            :disabled="shuffleBusy" title="Répartir au hasard">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/>
+                                        </svg>
+                                        Mélanger
+                                    </button>
+                                    <button v-for="n in [2, 3, 4, 5]" :key="n"
+                                            class="v2-shuffle-n" :class="{ on: campsEnJeu.length === n }"
+                                            @click="shuffleTeams(n)"
+                                            :disabled="shuffleBusy || playerCount < n"
+                                            :title="playerCount < n ? ('Il faut ' + n + ' joueurs') : ('Répartir en ' + n + ' camps')">{{ n }}</button>
+                                </span>
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
                                 <span class="v2-room-player-wrap" v-for="p in lobbyPlayers" :key="p.playerId">
@@ -524,15 +538,27 @@
                                      @click="isHost && p.playerId !== playerId ? hostKick(p.playerId) : null">
                                     <span class="v2-room-player-name">{{ p.username }}</span>
                                 </button>
-                                <!-- Un seul geste : la pastille bascule le joueur d'un camp à l'autre -->
-                                <button class="v2-team-flag" v-if="isHost && lobbyMode === 'rivalry'"
-                                        :class="'team-' + (p.team || 0)"
-                                        @click.stop="setPlayerTeam(p.playerId, p.team === 1 ? 2 : 1)"
-                                        :title="'Basculer vers ' + teamNames[p.team === 1 ? 2 : 1]">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-1.8a4 4 0 0 0-3-3.9M16 3.3a4 4 0 0 1 0 7.6"/>
-                                    </svg>
-                                </button>
+                                <!-- ⚠️ La pastille BASCULAIT entre deux camps. Avec cinq, une
+                                     bascule n a plus de sens : elle ouvre un choix.
+                                     Le menu ne montre que les camps OUVERTS — ceux en jeu, plus
+                                     un de libre pour en créer un. On ne déroule jamais cinq
+                                     entrées dans une partie qui en a deux. -->
+                                <span class="v2-team-pick" v-if="isHost && lobbyMode === 'rivalry'">
+                                    <button class="v2-team-flag"
+                                            :class="['team-' + (p.team || 0), { ouvert: campMenu === p.playerId }]"
+                                            @click.stop="campMenu = (campMenu === p.playerId ? null : p.playerId)"
+                                            :title="'Camp de ' + p.username">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-1.8a4 4 0 0 0-3-3.9M16 3.3a4 4 0 0 1 0 7.6"/>
+                                        </svg>
+                                    </button>
+                                    <span class="v2-team-menu" v-if="campMenu === p.playerId" @click.stop>
+                                        <button v-for="c in campsOffertsPour(p)" :key="c"
+                                                class="v2-team-opt" :class="['team-' + c, { on: p.team === c }]"
+                                                @click.stop="setPlayerTeam(p.playerId, c); campMenu = null"
+                                                :title="teamNames[c]">{{ lettreCamp(c) }}</button>
+                                    </span>
+                                </span>
                                 </span>
                             </div>
                             <div class="v2-room-empty" v-else>

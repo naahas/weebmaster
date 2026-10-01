@@ -507,6 +507,8 @@ createApp({
             notifs: [],           // messages passagers, en haut de l'écran
             teamsBusy: false,     // bascule solo / équipes en cours
             shuffleBusy: false,
+            // Le menu de camp ouvert, s il y en a un : le playerId du joueur visé.
+            campMenu: null,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
@@ -830,31 +832,41 @@ createApp({
         // Le serveur refuse en dessous de 2 joueurs : on grise plutot que d avertir
         canStart() {
             if (this.playerCount < 2) return false;
-            // En camps, un côté vide fait échouer le démarrage côté serveur
-            if (this.lobbyMode === 'rivalry') {
-                const c = this.campsRemplis;
-                if (!c[1] || !c[2]) return false;
-            }
+            // En camps, le serveur refuse de lancer s il n y a qu un camp
+            // peuplé. Le bouton le dit avant, plutôt que de laisser l hôte
+            // cliquer dans le vide.
+            if (this.lobbyMode === 'rivalry' && this.campsEnJeu.length < 2) return false;
             return true;
         },
 
         campsRemplis() {
-            const c = { 1: 0, 2: 0 };
-            (this.lobbyPlayers || []).forEach(p => { if (p.team === 1 || p.team === 2) c[p.team]++; });
+            const c = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            (this.lobbyPlayers || []).forEach(p => { if (c[p.team] !== undefined) c[p.team]++; });
             return c;
         },
 
-        // Les deux camps du salon, pour que l'hôte voie l'équilibre avant de lancer
+        // ⚠️ Les camps QUI EXISTENT, c est-à-dire ceux qui ont quelqu un. Il
+        // n y a pas de liste de camps déclarés : le nombre de camps d une
+        // partie EST le nombre de camps peuplés.
+        campsEnJeu() {
+            const c = this.campsRemplis;
+            return [1, 2, 3, 4, 5].filter(t => c[t] > 0);
+        },
+
+        // Les camps du salon, pour que l'hôte voie l'équilibre avant de lancer
         campsDuSalon() {
             const c = this.campsRemplis;
-            return [1, 2].map(t => ({ team: t, nom: this.teamNames[t], n: c[t] }));
+            return this.campsEnJeu.map(t => ({ team: t, nom: this.teamNames[t], n: c[t] }));
         },
 
         startTitle() {
             if (this.playerCount < 2) return 'Il faut au moins 2 joueurs';
-            if (this.lobbyMode === 'rivalry') {
-                const c = this.campsRemplis;
-                if (!c[1] || !c[2]) return 'Chaque camp doit avoir au moins un joueur';
+            // ⚠️ Le garde a changé de nature : il exigeait que les camps 1 ET
+            // 2 soient remplis. Un camp n existant plus que s il a du monde,
+            // la seule chose à refuser est qu il n y en ait qu UN — on ne joue
+            // pas un affrontement tout seul.
+            if (this.lobbyMode === 'rivalry' && this.campsEnJeu.length < 2) {
+                return 'Il faut au moins deux camps avec des joueurs';
             }
             return 'Démarrer la partie';
         },
@@ -4684,12 +4696,45 @@ createApp({
         },
 
         // Répartition au hasard, à un joueur près
-        async shuffleTeams() {
+        // 🔤 La lettre d un camp : 1 → A, 5 → E. Le joueur ne voit jamais le
+        // nombre, et les noms « Team A » du serveur ne tiennent pas dans une
+        // pastille de deux centimètres.
+        lettreCamp(n) {
+            return 'ABCDE'.charAt((n || 1) - 1) || '?';
+        },
+
+        // ⚠️ Les camps proposés dans le menu d un joueur : ceux EN JEU, plus
+        // UN seul libre pour en créer un nouveau.
+        //
+        // Dérouler les cinq en permanence montrerait des camps qui n existent
+        // pas ; n offrir que ceux en jeu empêcherait d en créer. Celui du
+        // joueur est toujours inclus, sans quoi il disparaîtrait de son propre
+        // menu dès qu il est seul dans son camp.
+        campsOffertsPour(p) {
+            const enJeu = this.campsEnJeu;
+            const ouverts = new Set(enJeu);
+            if (p && p.team) ouverts.add(p.team);
+            // Le premier camp libre, s il en reste un.
+            const libre = [1, 2, 3, 4, 5].find(c => !ouverts.has(c));
+            if (libre) ouverts.add(libre);
+            return [1, 2, 3, 4, 5].filter(c => ouverts.has(c));
+        },
+
+        async shuffleTeams(camps) {
             if (this.shuffleBusy) return;
             this.shuffleBusy = true;
             this.hostError = '';
             try {
-                const res = await this.hostFetch('/admin/shuffle-teams', { method: 'POST' });
+                // ⚠️ En combien. Le serveur borne au nombre de joueurs, donc
+                // un chiffre trop grand ne fabrique pas de camp vide.
+                // ⚠️ Le `Content-Type` est obligatoire : `hostFetch` ne le pose
+                // pas, et sans lui Express ne lit pas le corps — `camps`
+                // serait ignoré EN SILENCE et le mélange retomberait sur deux.
+                const res = await this.hostFetch('/admin/shuffle-teams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ camps: camps || 2 })
+                });
                 const data = await res.json();
                 if (data.error) this.hostError = data.error;
                 else this.appliquerCamps(data.teams);
