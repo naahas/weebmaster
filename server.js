@@ -1249,9 +1249,19 @@ function etatNeuf() {
     // résout dans `players` au moment de l afficher — un pseudo peut avoir
     // changé, et l hôte peut être parti.
     hostPlayerId: null,
-    teamNames: { 1: 'Team A', 2: 'Team B' },
-    teamCounts: { 1: 0, 2: 0 },
-    teamScores: { 1: 0, 2: 0 }, // Vies restantes ou points totaux par équipe
+    // ⚠️ CINQ CAMPS AU PLUS, et le nombre n est PAS un réglage : il émerge de
+    // ce que l hôte assigne. Un camp « configuré mais vide » ne peut donc pas
+    // exister, ni un joueur sans camp — deux cas qu il aurait fallu traiter
+    // avec un curseur « nombre d équipes ».
+    //
+    // Les cinq couleurs vivent dans le CSS. A et B sont exactement celles
+    // d aujourd hui : une partie à deux camps ne bouge pas d un pixel.
+    teamNames: { 1: 'Team A', 2: 'Team B', 3: 'Team C', 4: 'Team D', 5: 'Team E' },
+    teamCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    teamScores: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, // Vies restantes ou points totaux par équipe
+    // L ordre dans lequel les camps sont tombés, en mode Vies. Le premier
+    // éliminé est dernier au classement. Voir `campEliminé()`.
+    campsElimines: [],
     
     // 🆕 Système de défis
     activeChallenges: [],           // Les 3 défis de la partie actuelle
@@ -1335,31 +1345,62 @@ function etatNeuf() {
 // 🆕 HELPER - BROADCAST LOBBY UPDATE
 // ============================================
 
-function updateTeamCounts(gameState) {
-    gameState.teamCounts = { 1: 0, 2: 0 };
-    for (const player of gameState.players.values()) {
-        if (player.team === 1) gameState.teamCounts[1]++;
-        else if (player.team === 2) gameState.teamCounts[2]++;
+// ⚠️ CINQ CAMPS AU PLUS. Au-delà, un camp n a plus assez de monde pour
+// vouloir dire quelque chose, et le menu de choix devient illisible.
+const CAMPS_MAX = 5;
+const TOUS_LES_CAMPS = [1, 2, 3, 4, 5];
+
+// Les camps qui ont AU MOINS UN joueur. C est la seule définition d un camp
+// qui existe : il n y a pas de liste de camps déclarés quelque part.
+function campsEnJeu(gameState) {
+    const vus = new Set();
+    for (const p of gameState.players.values()) {
+        if (p.team) vus.add(p.team);
     }
+    return TOUS_LES_CAMPS.filter(c => vus.has(c));
+}
+
+function updateTeamCounts(gameState) {
+    const c = {};
+    for (const n of TOUS_LES_CAMPS) c[n] = 0;
+    for (const player of gameState.players.values()) {
+        if (c[player.team] !== undefined) c[player.team]++;
+    }
+    gameState.teamCounts = c;
 }
 
 // 🆕 Calculer les scores d'équipe (vies restantes ou points totaux)
 // Camp le moins peuplé, tiré au sort en cas d'égalité pour ne pas
 // remplir toujours le même en premier.
+//
+// ⚠️ On choisit parmi les camps DÉJÀ EN JEU, jamais parmi les cinq. Un
+// arrivant ne doit pas créer un camp C dans une partie qui en a deux : le
+// nombre de camps appartient à l hôte, pas au hasard des arrivées.
 function campLeMoinsFourni(gameState) {
-    let a = 0, b = 0;
-    for (const p of gameState.players.values()) {
-        if (p.team === 1) a++;
-        else if (p.team === 2) b++;
-    }
-    if (a < b) return 1;
-    if (b < a) return 2;
-    return Math.random() < 0.5 ? 1 : 2;
+    updateTeamCounts(gameState);
+
+    // ⚠️ TOUJOURS A ET B, plus les camps que l hôte a créés.
+    //
+    // Se limiter aux camps « en jeu » se mordait la queue : le premier
+    // arrivant crée un camp, qui devient aussitôt le seul candidat, et tout
+    // le monde s y entasse. Mesuré — six joueurs dans le même camp.
+    //
+    // Les deux premiers sont donc toujours offerts, ce qui fait que le salon
+    // se remplit en deux camps comme avant. Les suivants n apparaissent que
+    // si l hôte y a mis quelqu un : un arrivant ne crée jamais un camp C.
+    const ouverts = new Set([1, 2]);
+    for (const c of campsEnJeu(gameState)) ouverts.add(c);
+    const candidats = TOUS_LES_CAMPS.filter(c => ouverts.has(c));
+    let mini = Infinity;
+    for (const c of candidats) mini = Math.min(mini, gameState.teamCounts[c] || 0);
+    const exaequo = candidats.filter(c => (gameState.teamCounts[c] || 0) === mini);
+    return exaequo[Math.floor(Math.random() * exaequo.length)];
 }
 
 function updateTeamScores(gameState) {
-    gameState.teamScores = { 1: 0, 2: 0 };
-    
+    gameState.teamScores = {};
+    for (const n of TOUS_LES_CAMPS) gameState.teamScores[n] = 0;
+
     for (const player of gameState.players.values()) {
         if (!player.team) continue;
         
@@ -1382,17 +1423,122 @@ function checkRivalryWinner(gameState) {
     updateTeamScores(gameState);
     
     if (gameState.mode === 'lives') {
-        // En mode vie : une équipe gagne si l'autre a 0 vies
-        const team1Alive = gameState.teamScores[1] > 0;
-        const team2Alive = gameState.teamScores[2] > 0;
-        
-        if (!team1Alive && team2Alive) return 2;
-        if (!team2Alive && team1Alive) return 1;
-        if (!team1Alive && !team2Alive) return 'draw'; // Égalité (rare)
+        // ⚠️ LE DERNIER CAMP DEBOUT, et plus « l autre est à zéro ».
+        //
+        // À deux camps la règle d avant disait la même chose ; à trois elle
+        // n avait plus de sens — un camp qui tombe laisse deux adversaires
+        // qui doivent continuer à s affronter.
+        const enJeu = campsEnJeu(gameState);
+        const debout = enJeu.filter(c => gameState.teamScores[c] > 0);
+
+        // On note les camps qui viennent de tomber, dans l ordre : c est ce
+        // qui fera le classement final.
+        noterCampsTombes(gameState, enJeu, debout);
+
+        if (debout.length === 1) return debout[0];
+        // ⚠️ Zéro camp debout ne devrait pas arriver : quand tous les joueurs
+        // vivants ont une seule vie et que personne ne répond juste, la règle
+        // `allWillLose` leur épargne à tous la perte. On garde le cas par
+        // sécurité, il rend l égalité générale d avant.
+        if (debout.length === 0 && enJeu.length > 0) return 'draw';
     }
     // En mode points : pas de victoire anticipée, on continue jusqu'à la fin
-    
+
     return null;
+}
+
+// ⚠️ L ORDRE D ÉLIMINATION, qui EST le classement en mode Vies. Le premier
+// camp tombé est dernier.
+//
+// Plusieurs camps peuvent tomber sur LA MÊME question. On les départage
+// alors sur ce qu ils avaient AVANT elle — total de vies d abord, puis
+// nombre de joueurs vivants, puis au hasard. Les comparer après n aurait
+// rien donné : ils sont tous à zéro.
+function noterCampsTombes(gameState, enJeu, debout) {
+    const dejaNotes = new Set(gameState.campsElimines.map(e => e.camp));
+    const tombes = enJeu.filter(c => !debout.includes(c) && !dejaNotes.has(c));
+    if (!tombes.length) return;
+
+    const avant = gameState.campsAvantQuestion || {};
+    tombes.sort((a, b) => {
+        const va = avant[a] || { vies: 0, joueurs: 0 };
+        const vb = avant[b] || { vies: 0, joueurs: 0 };
+        if (vb.vies !== va.vies) return vb.vies - va.vies;
+        if (vb.joueurs !== va.joueurs) return vb.joueurs - va.joueurs;
+        return Math.random() < 0.5 ? -1 : 1;
+    });
+    // Le mieux placé des tombés est noté EN DERNIER : `campsElimines` se lit
+    // du premier tombé au dernier, et le classement final le renverse.
+    for (const c of tombes.reverse()) {
+        gameState.campsElimines.push({ camp: c, quand: Date.now() });
+    }
+}
+
+// Photographie de chaque camp AVANT qu une question ne soit corrigée.
+// ⚠️ À appeler avant d entamer les pertes de vies, sinon la photo est prise
+// après le coup et ne sert plus à départager.
+function photographierCamps(gameState) {
+    const photo = {};
+    for (const c of TOUS_LES_CAMPS) photo[c] = { vies: 0, joueurs: 0 };
+    for (const p of gameState.players.values()) {
+        if (!p.team || !photo[p.team]) continue;
+        if ((p.lives || 0) > 0) {
+            photo[p.team].vies += p.lives;
+            photo[p.team].joueurs++;
+        }
+    }
+    gameState.campsAvantQuestion = photo;
+}
+
+// Le classement des camps en mode Vies : le survivant d abord, puis les
+// éliminés du plus récent au plus ancien.
+function classementCampsVies(gameState) {
+    const tombes = gameState.campsElimines.map(e => e.camp);
+    const debout = campsEnJeu(gameState).filter(c => !tombes.includes(c));
+    return debout.concat(tombes.slice().reverse());
+}
+
+// ⚠️ LE CLASSEMENT DES CAMPS EN MODE POINTS, et sa règle de départage.
+//
+// Deux camps à égalité AILLEURS QU EN TÊTE ne déclenchent pas de question :
+// on tranche sur ce qui s est déjà passé. Le camp dont le MEILLEUR joueur a
+// le plus de points passe devant ; à égalité on descend au deuxième joueur,
+// puis au troisième, et ainsi de suite.
+//
+// Une égalité en TÊTE, elle, se joue — voir le départage.
+function classementCampsPoints(gameState) {
+    const parCamp = {};
+    for (const c of TOUS_LES_CAMPS) parCamp[c] = [];
+    for (const p of gameState.players.values()) {
+        if (parCamp[p.team]) parCamp[p.team].push(p.points || 0);
+    }
+    // Chaque camp présente ses joueurs du meilleur au moins bon : c est dans
+    // cet ordre qu on les compare un à un.
+    for (const c of TOUS_LES_CAMPS) parCamp[c].sort((a, b) => b - a);
+
+    return campsEnJeu(gameState).slice().sort((a, b) => {
+        const sa = gameState.teamScores[a] || 0;
+        const sb = gameState.teamScores[b] || 0;
+        if (sb !== sa) return sb - sa;
+
+        const ja = parCamp[a], jb = parCamp[b];
+        const n = Math.max(ja.length, jb.length);
+        for (let i = 0; i < n; i++) {
+            const va = ja[i] || 0, vb = jb[i] || 0;
+            if (vb !== va) return vb - va;
+        }
+        // Rigoureusement identiques jusqu au dernier joueur : ex æquo, et
+        // l ordre des lettres tranche plutôt que le hasard — au moins il est
+        // stable d un affichage à l autre.
+        return a - b;
+    });
+}
+
+// Le classement, quel que soit le mode. C est ce que l écran de fin affiche.
+function classementCamps(gameState) {
+    return gameState.mode === 'lives'
+        ? classementCampsVies(gameState)
+        : classementCampsPoints(gameState);
 }
 
 function broadcastLobbyUpdate(gameState) {
@@ -2606,23 +2752,22 @@ app.post('/admin/start-game', async (req, res) => {
     }
 
 
-    // 🆕 Vérifier que les deux équipes ont des joueurs en mode Rivalité
+    // 🆕 Il faut au moins DEUX camps peuplés pour lancer en format Équipe.
+    //
+    // ⚠️ Le garde a changé de nature. Il vérifiait que les camps 1 ET 2
+    // étaient remplis ; avec des camps qui n existent que s ils ont du monde,
+    // la seule chose à refuser est qu il n y en ait qu un — on ne joue pas un
+    // affrontement tout seul. Un camp « vide » ne peut plus exister.
     if (gameState.lobbyMode === 'rivalry') {
-        let team1Count = 0;
-        let team2Count = 0;
-        
-        gameState.players.forEach(player => {
-            if (player.team === 1) team1Count++;
-            else if (player.team === 2) team2Count++;
-        });
-        
-        console.log(`🔍 Vérification équipes: Team A = ${team1Count}, Team B = ${team2Count}`);
-        
-        if (team1Count === 0 || team2Count === 0) {
-            const emptyTeam = team1Count === 0 ? gameState.teamNames[1] : gameState.teamNames[2];
+        updateTeamCounts(gameState);
+        const enJeu = campsEnJeu(gameState);
+        console.log(`🔍 Vérification équipes : ${enJeu.length} camp(s) — `
+            + enJeu.map(c => gameState.teamNames[c] + '=' + gameState.teamCounts[c]).join(', '));
+
+        if (enJeu.length < 2) {
             return res.status(400).json({
                 success: false,
-                error: `Impossible de démarrer : l'équipe "${emptyTeam}" n'a aucun joueur`,
+                error: "Impossible de démarrer : il faut au moins deux équipes avec des joueurs",
                 errorType: 'empty_team'
             });
         }
@@ -2635,6 +2780,11 @@ app.post('/admin/start-game', async (req, res) => {
 
         gameState.inProgress = true;
         gameState.currentGameId = null;
+        // ⚠️ L ordre d élimination repart VIDE, sinon la seconde manche
+        // hériterait du classement de la première et déclarerait des camps
+        // morts avant d avoir commencé.
+        gameState.campsElimines = [];
+        gameState.campsAvantQuestion = {};
         gameState.initialPlayerCount = totalPlayers; // 🆕 Stocker le nombre initial
         gameState.currentQuestionIndex = 0;
         gameState.gameStartTime = Date.now();
@@ -2961,7 +3111,10 @@ app.post('/admin/set-player-team', (req, res) => {
     const { playerId, team } = req.body || {};
     if (!playerId) return res.status(400).json({ error: 'Joueur manquant' });
 
-    const camp = team === 1 || team === 2 ? team : null;
+    // ⚠️ Un à CINQ. Le null reste accepté — il ne sert plus au jeu (tout le
+    // monde a toujours un camp) mais la route le prenait déjà, et le refuser
+    // casserait un client resté sur l ancienne version.
+    const camp = TOUS_LES_CAMPS.includes(team) ? team : null;
     let trouve = null;
     for (const [socketId, p] of gameState.players.entries()) {
         if (p.playerId === playerId) { p.team = camp; trouve = { socketId, p }; break; }
@@ -2985,6 +3138,19 @@ app.post('/admin/shuffle-teams', (req, res) => {
     if (gameState.lobbyMode !== 'rivalry') return res.status(400).json({ error: "Le salon n'est pas en équipes" });
 
     const entrees = Array.from(gameState.players.entries());
+
+    // ⚠️ EN COMBIEN ? Le client le dit, le salon ne le retient pas : c est un
+    // geste, pas un réglage. Deux par défaut, comme avant.
+    //
+    // Borné par le nombre de joueurs : on ne fabrique jamais un camp vide,
+    // et c est ce qui fait que « un camp vide » n existe pas dans le modèle.
+    const demande = parseInt((req.body || {}).camps, 10);
+    const n = Math.max(1, Math.min(
+        CAMPS_MAX,
+        Number.isFinite(demande) ? demande : 2,
+        entrees.length || 1
+    ));
+
     // Mélange de Fisher-Yates : un tri au hasard biaiserait la répartition
     for (let i = entrees.length - 1; i > 0; i--) {
         const k = Math.floor(Math.random() * (i + 1));
@@ -2992,7 +3158,7 @@ app.post('/admin/shuffle-teams', (req, res) => {
     }
     // Une distribution en alternance garantit l'écart minimal entre les camps
     entrees.forEach(([socketId, p], i) => {
-        p.team = (i % 2) + 1;
+        p.team = (i % n) + 1;
         const sock = io.sockets.sockets.get(socketId);
         if (sock) sock.emit('team-changed', { newTeam: p.team });
     });
@@ -3000,7 +3166,7 @@ app.post('/admin/shuffle-teams', (req, res) => {
     updateTeamCounts(gameState);
     broadcastLobbyUpdate(gameState);
 
-    console.log(`🔀 Camps mélangés : ${gameState.teamCounts[1]} contre ${gameState.teamCounts[2]}`);
+    console.log(`🔀 Camps mélangés en ${n} : ${campsEnJeu(gameState).map(c => gameState.teamNames[c] + "=" + gameState.teamCounts[c]).join(", ")}`);
     res.json({
         success: true,
         teamCounts: gameState.teamCounts,
@@ -3652,6 +3818,13 @@ function revealAnswers(gameState, correctAnswer) {
         });
     } else {
         // Mode Vie - Logique originale
+
+        // ⚠️ LA PHOTO DES CAMPS, prise AVANT la moindre perte de vie. Quand
+        // plusieurs camps tombent sur la même question, c est elle qui les
+        // départage — après coup ils sont tous à zéro et plus rien ne les
+        // distingue. Prise ici, et nulle part ailleurs.
+        photographierCamps(gameState);
+
         const alivePlayers = getAlivePlayers(gameState);
         const allHaveOneLife = alivePlayers.every(p => p.lives === 1);
         let allWillLose = false;
@@ -4626,7 +4799,7 @@ async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
         isRivalryTiebreaker: true
     });
 
-    console.log(`⚔️ Scores après tiebreaker: Team A = ${gameState.teamScores[1]}, Team B = ${gameState.teamScores[2]}`);
+    console.log(`⚔️ Scores après départage : ${campsEnJeu(gameState).map(c => gameState.teamNames[c] + "=" + gameState.teamScores[c]).join(", ")}`);
 
     // Vérifier si on a un gagnant
     await checkRivalryTiebreakerWinner(gameState);
@@ -4634,15 +4807,24 @@ async function revealRivalryTiebreakerAnswers(gameState, correctAnswer) {
 
 // 🆕 RIVALRY TIEBREAKER: Vérifier si une équipe a pris l'avantage
 async function checkRivalryTiebreakerWinner(gameState) {
-    const team1Score = gameState.teamScores[1];
-    const team2Score = gameState.teamScores[2];
+    // ⚠️ LE DÉPARTAGE SE JOUE À N, et TOUT LE MONDE y participe — pas
+    // seulement les camps à égalité. Deux raisons : personne ne reste à
+    // regarder, et un camp qui n était pas dans la course peut doubler tout
+    // le monde sur la dernière question. C est le meilleur moment possible.
+    //
+    // Il s arrête dès qu UN SEUL camp est en tête. S ils sont encore
+    // plusieurs, on relance.
+    const enJeu = campsEnJeu(gameState);
+    const scores = enJeu.map(c => gameState.teamScores[c] || 0);
+    const meilleur = scores.length ? Math.max(...scores) : 0;
+    const enTete = enJeu.filter(c => (gameState.teamScores[c] || 0) === meilleur);
 
-    console.log(`🔍 Vérification gagnant tiebreaker Rivalry: ${team1Score} vs ${team2Score}`);
+    console.log(`🔍 Départage : ${enJeu.map(c => 'Team ' + c + '=' + (gameState.teamScores[c] || 0)).join(', ')}`);
     console.log(`🔍 État: inProgress=${gameState.inProgress}, isRivalryTiebreaker=${gameState.isRivalryTiebreaker}`);
 
-    if (team1Score !== team2Score) {
+    if (enTete.length === 1) {
         // 🎉 UNE ÉQUIPE GAGNE !
-        const winningTeam = team1Score > team2Score ? 1 : 2;
+        const winningTeam = enTete[0];
         console.log(`🏆 Tiebreaker Rivalry terminé: ${gameState.teamNames[winningTeam]} gagne avec ${gameState.teamScores[winningTeam]} points !`);
 
         // 🆕 Annuler TOUS les timeouts
@@ -4688,10 +4870,14 @@ async function checkRivalryTiebreakerWinner(gameState) {
             avatarUrl: p.avatarUrl || null
         }));
 
-        const podium = [
-            { rank: 1, teamName: gameState.teamNames[1], points: team1Score, team: 1 },
-            { rank: 2, teamName: gameState.teamNames[2], points: team2Score, team: 2 }
-        ].sort((a, b) => b.points - a.points);
+        // Le classement complet : c est lui qui porte le départage par
+        // meilleur joueur, qu un simple tri sur les points ne ferait pas.
+        const podium = classementCamps(gameState).map((c, i) => ({
+            rank: i + 1,
+            teamName: gameState.teamNames[c],
+            points: gameState.teamScores[c] || 0,
+            team: c
+        }));
 
         // 🔥 Sauvegarder avant reset (copie)
         const savedTeamScores = { ...gameState.teamScores };
@@ -4761,11 +4947,11 @@ async function endRivalryWithTie(gameState) {
     const teamData = {
         team: null,
         teamName: 'Égalité',
-        points: gameState.teamScores[1],
+        points: gameState.teamScores[campsEnJeu(gameState)[0]] || 0,
         isDraw: true
     };
 
-    console.log(`🏆 Mode Rivalité terminé en ÉGALITÉ: ${gameState.teamScores[1]} - ${gameState.teamScores[2]}`);
+    console.log(`🏆 Mode Rivalité terminé en ÉGALITÉ : ${campsEnJeu(gameState).map(c => gameState.teamNames[c] + "=" + gameState.teamScores[c]).join(", ")}`);
 
     const playersData = Array.from(gameState.players.values()).map(p => ({
         playerId: p.playerId,
@@ -4778,10 +4964,15 @@ async function endRivalryWithTie(gameState) {
         avatarUrl: p.avatarUrl || null
     }));
 
-    const podium = [
-        { rank: 1, teamName: gameState.teamNames[1], points: gameState.teamScores[1], team: 1 },
-        { rank: 1, teamName: gameState.teamNames[2], points: gameState.teamScores[2], team: 2 }
-    ];
+    // ⚠️ Une ÉGALITÉ : tous les camps en jeu partagent le rang 1. Le cas ne
+    // devrait plus arriver en mode Points — le départage le résout — mais il
+    // reste atteignable en mode Vies si tout tombe ensemble.
+    const podium = campsEnJeu(gameState).map(c => ({
+        rank: 1,
+        teamName: gameState.teamNames[c],
+        points: gameState.teamScores[c] || 0,
+        team: c
+    }));
 
     // 🔥 Sauvegarder avant reset (copie)
     const savedTeamScores = { ...gameState.teamScores };
@@ -5051,13 +5242,24 @@ async function endGameRivalryPoints(gameState) {
     try {
         updateTeamScores(gameState);
         
+        // ⚠️ L égalité se cherche EN TÊTE, et entre N camps. Comparer deux
+        // scores ne disait plus rien à trois : l égalité peut porter sur deux
+        // camps sur trois, et c est quand même un départage.
+        const enJeuFin = campsEnJeu(gameState);
+        const meilleurFin = enJeuFin.length
+            ? Math.max(...enJeuFin.map(c => gameState.teamScores[c] || 0)) : 0;
+        const enTeteFin = enJeuFin.filter(c => (gameState.teamScores[c] || 0) === meilleurFin);
+        // ⚠️ Gardés pour l annonce « tiebreaker-announced », que d anciens
+        // clients lisent encore en `team1Score` / `team2Score`. Le nouveau
+        // champ `scores` porte les N camps ; ces deux-là ne servent plus à
+        // décider quoi que ce soit.
         const team1Points = gameState.teamScores[1];
         const team2Points = gameState.teamScores[2];
-        
-        // 🆕 TIEBREAKER: Si égalité, lancer une question de départage
-        if (team1Points === team2Points) {
-            console.log(`⚖️ ÉGALITÉ RIVALRY: ${team1Points} - ${team2Points} → Question de départage !`);
-            
+
+        // 🆕 TIEBREAKER: Si égalité en tête, lancer une question de départage
+        if (enTeteFin.length > 1) {
+            console.log(`⚖️ ÉGALITÉ EN TÊTE : ${enTeteFin.map(c => gameState.teamNames[c]).join(', ')} à ${meilleurFin} → départage !`);
+
             gameState.isRivalryTiebreaker = true;
             // La partie se prolonge au lieu de se terminer : sans ça l'hôte
             // se heurtait à « Partie en cours de finalisation » et le départage
@@ -5069,6 +5271,9 @@ async function endGameRivalryPoints(gameState) {
                 mode: 'rivalry',
                 team1Score: team1Points,
                 team2Score: team2Points,
+                // Les N camps à égalité, et tous les scores.
+                scores: gameState.teamScores,
+                campsEnTete: enTeteFin,
                 teamNames: gameState.teamNames,
                 message: '⚖️ Égalité ! Question de départage...'
             });
@@ -5091,13 +5296,10 @@ async function endGameRivalryPoints(gameState) {
             return; // Ne pas terminer la partie
         }
         
-        let winningTeam;
-        if (team1Points > team2Points) {
-            winningTeam = 1;
-        } else {
-            winningTeam = 2;
-        }
-        
+        // Un seul camp en tête à ce stade : c est la condition qui a fait
+        // tomber le départage juste au-dessus.
+        const winningTeam = enTeteFin[0] || 1;
+
         const teamData = {
             team: winningTeam,
             teamName: gameState.teamNames[winningTeam],
@@ -5121,10 +5323,17 @@ async function endGameRivalryPoints(gameState) {
         }));
         
         // Créer le podium par équipe
-        const podium = [
-            { rank: 1, teamName: gameState.teamNames[1], points: team1Points, team: 1 },
-            { rank: 2, teamName: gameState.teamNames[2], points: team2Points, team: 2 }
-        ].sort((a, b) => b.points - a.points);
+        //
+        // ⚠️ Il tenait deux lignes écrites à la main puis triées par points.
+        // À N camps, c est le classement complet qui le fabrique — et c est
+        // lui qui porte le départage par meilleur joueur, qu un simple tri
+        // sur les points ne pouvait pas faire.
+        const podium = classementCamps(gameState).map((c, i) => ({
+            rank: i + 1,
+            teamName: gameState.teamNames[c],
+            points: gameState.teamScores[c] || 0,
+            team: c
+        }));
         
         // 🔥 Sauvegarder teamScores/teamNames avant reset (copie)
         const savedTeamScores = { ...gameState.teamScores };
