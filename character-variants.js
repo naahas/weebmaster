@@ -93,6 +93,7 @@ const CHARACTER_VARIANTS = {
         ["ICHIBI", "SHUKAKU"],
         ["KILLER B", "KILLER BEE" , "BEE"],
         ["NIBI", "MATATABI"],
+        ["SHI", "C"],
         ["SANBI", "ISOBU"],
         ["ADA", "EIDA"],
         ["SON GOKU", "YONBI"],
