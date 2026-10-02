@@ -314,6 +314,20 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
 ## Fichiers de données
 
 - `bombdata.json` / `bombimages.json` — persos BombAnime par série + images
+- `bombcounts.json` — **produit**, ne pas éditer à la main : combien de PERSONNAGES par série,
+  et non combien de noms. ⚠️ Les deux diffèrent de **28 %** : une série liste ses alias comme
+  autant d'entrées (« GOKU », « SON GOKU », « KAKAROT »), et citer l'un condamne les autres —
+  One Piece annonçait 927 là où l'on ne peut en citer que 689. Et le regroupement ne vient
+  **pas que de `character-variants.js`** : la règle du MOT ENTIER relie « Mihawk » à « Dracule
+  Mihawk » sans qu'aucune entrée ne le dise, et c'est de là que vient le gros de l'écart.
+  Le compte se fait donc avec `getAllNamesToBlock`, la vraie fonction du jeu — un compte fondé
+  sur une autre règle serait faux autrement, ce qui est pire que faux pareil.
+  `npm run bomb:compter` le régénère, **à relancer après chaque ajout dans `bombdata.json`**.
+  ⚠️ Pas de calcul au démarrage : il prend **25 s** (O(n²) par série, deux expressions
+  régulières par paire, sur 8 854 noms) en bloquant la boucle du processus, où vivent TOUS les
+  salons. Le fichier vieillit, donc le serveur ne lui fait pas confiance les yeux fermés : il
+  compare le nombre de noms vu à celui qu'il a, et **toute série qui a bougé retombe sur son
+  compte brut**, nommée au démarrage. Jamais de chiffre faux, au pire un chiffre trop généreux.
 - `collectdata.json` — les cartes de Collect : 385 cartes sur 21 animes, chacune avec son
   portrait, son anime et sa classe. Genere depuis `collect-cards.json` (la source v1, gardee
   comme reference) ; portraits dans `src/img/collectpic/`, en WebP.

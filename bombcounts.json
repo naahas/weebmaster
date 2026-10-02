@@ -1,0 +1,89 @@
+{
+  "_": "Produit par npm run bomb:compter — ne pas éditer à la main",
+  "series": {
+    "Naruto": {
+      "noms": 470,
+      "persos": 336
+    },
+    "Dbz": {
+      "noms": 400,
+      "persos": 296
+    },
+    "OnePiece": {
+      "noms": 927,
+      "persos": 689
+    },
+    "Hxh": {
+      "noms": 346,
+      "persos": 232
+    },
+    "Snk": {
+      "noms": 222,
+      "persos": 109
+    },
+    "BlackClover": {
+      "noms": 246,
+      "persos": 147
+    },
+    "Pokemon": {
+      "noms": 1244,
+      "persos": 1234
+    },
+    "Bleach": {
+      "noms": 450,
+      "persos": 246
+    },
+    "DemonSlayer": {
+      "noms": 155,
+      "persos": 92
+    },
+    "Reborn": {
+      "noms": 224,
+      "persos": 172
+    },
+    "DeathNote": {
+      "noms": 88,
+      "persos": 46
+    },
+    "FairyTail": {
+      "noms": 369,
+      "persos": 250
+    },
+    "JujutsuKaisen": {
+      "noms": 186,
+      "persos": 108
+    },
+    "ChainsawMan": {
+      "noms": 105,
+      "persos": 75
+    },
+    "Gintama": {
+      "noms": 207,
+      "persos": 126
+    },
+    "Manganime": {
+      "noms": 1274,
+      "persos": 907
+    },
+    "Studio": {
+      "noms": 232,
+      "persos": 171
+    },
+    "Prota": {
+      "noms": 490,
+      "persos": 424
+    },
+    "Fma": {
+      "noms": 96,
+      "persos": 60
+    },
+    "Mha": {
+      "noms": 711,
+      "persos": 386
+    },
+    "Jojo": {
+      "noms": 412,
+      "persos": 263
+    }
+  }
+}

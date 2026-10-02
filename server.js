@@ -64,13 +64,57 @@ try {
     const bombData = JSON.parse(fs.readFileSync(bombDataPath, 'utf8'));
     BOMBANIME_CHARACTERS = bombData.Character || {};
     console.log('✅ BombAnime: Données chargées -', Object.keys(BOMBANIME_CHARACTERS).length, 'séries');
-    
+
     // Log du nombre de personnages par série
     for (const [serie, chars] of Object.entries(BOMBANIME_CHARACTERS)) {
         console.log(`   📌 ${serie}: ${chars.length} personnages`);
     }
 } catch (error) {
     console.error('❌ Erreur chargement bombdata.json:', error.message);
+}
+
+// 🔢 Combien de PERSONNAGES par série — ce que le tiroir du salon annonce.
+//
+// ⚠️ Ce n est PAS `chars.length`. Une série liste ses alias comme autant
+// d entrées (« GOKU », « SON GOKU », « KAKAROT »), et citer l un condamne les
+// autres : il y a donc moins de personnages citables que de noms. 28 % de moins
+// sur l ensemble de la banque — One Piece annonçait 927 là où l on peut en
+// citer 689.
+//
+// ⚠️ Et le regroupement ne vient pas que de `character-variants.js` : la règle
+// du MOT ENTIER relie « Mihawk » à « Dracule Mihawk » sans qu aucune entrée ne
+// le dise. C est pour ça que le compte se fait avec la VRAIE fonction du jeu,
+// dans `npm run bomb:compter`, et pas avec une approximation.
+//
+// ⚠️ Pourquoi un fichier et pas un calcul ici : 25 secondes, en bloquant la
+// boucle du processus, où vivent TOUS les salons.
+//
+// Le fichier vieillit dès qu on ajoute un nom. On ne lui fait donc pas
+// confiance les yeux fermés : on compare le nombre de noms qu il a vu à celui
+// qu on a, et toute série qui a bougé retombe sur son compte brut — jamais de
+// chiffre faux, au pire un chiffre trop généreux, et le démarrage le dit.
+let BOMBANIME_VOLUMES = {};
+{
+    let comptes = {};
+    try {
+        comptes = (JSON.parse(fs.readFileSync(path.join(__dirname, 'bombcounts.json'), 'utf8')).series) || {};
+    } catch (e) {
+        console.warn('⚠️  bombcounts.json illisible — le tiroir comptera les noms. `npm run bomb:compter`');
+    }
+    const perimees = [];
+    for (const [serie, noms] of Object.entries(BOMBANIME_CHARACTERS)) {
+        const c = comptes[serie];
+        if (c && c.noms === noms.length) {
+            BOMBANIME_VOLUMES[serie] = c.persos;
+        } else {
+            BOMBANIME_VOLUMES[serie] = noms.length;
+            if (Object.keys(comptes).length) perimees.push(serie);
+        }
+    }
+    if (perimees.length) {
+        console.warn(`⚠️  bombcounts.json a vieilli sur ${perimees.length} série(s) : ${perimees.join(', ')}`
+            + ' — elles comptent leurs noms. `npm run bomb:compter`');
+    }
 }
 
 // 🖼️ Charger les images des personnages BombAnime
@@ -501,8 +545,9 @@ function avatarDeBot() {
 // des nombres ecrits en dur, qui deriveraient au premier ajout.
 app.get('/api/bombanime-series', (req, res) => {
     res.set('Cache-Control', 'no-cache');
-    res.json(Object.entries(BOMBANIME_CHARACTERS)
-        .map(([id, noms]) => ({ id, n: noms.length })));
+    // Des PERSONNAGES, pas des noms : voir BOMBANIME_VOLUMES plus haut.
+    res.json(Object.keys(BOMBANIME_CHARACTERS)
+        .map(id => ({ id, n: BOMBANIME_VOLUMES[id] })));
 });
 
 app.get('/api/avatars', (req, res) => {
@@ -986,7 +1031,7 @@ app.get('/game/state', (req, res) => {
             currentPlayerId: gameState.bombanime.currentPlayerId,
             playersOrder: gameState.bombanime.playersOrder,
             playersData: gameState.bombanime.active ? getBombanimePlayersData(gameState) : [],
-            usedNamesCount: gameState.bombanime.usedNames.size,
+            usedNamesCount: gameState.bombanime.persosTrouves,
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,
@@ -1316,6 +1361,17 @@ function etatNeuf() {
         currentPlayerIndex: 0,      // Index du joueur actuel dans playersOrder
         currentPlayerId: null,// PlayerId du joueur qui doit jouer
         usedNames: new Set(),       // Noms déjà utilisés dans la partie
+        // ⚠️ COMBIEN DE PERSONNAGES, et surtout pas « usedNames.size ».
+        // Citer « Goku » bloque aussi Son Goku, Songoku et Kakarot : le Set
+        // en gagne quatre d un coup, et l écran de fin annonçait quatre
+        // personnages pour un. Le surcompte vaut 28 % sur l ensemble de la
+        // banque, et il ne vient pas que des groupes d alias — la règle du
+        // MOT ENTIER relie « Mihawk » à « Dracule Mihawk » sans qu aucune
+        // entrée ne le dise. Ici on compte les noms ACCEPTÉS : un nom n est
+        // accepté que s il n était pas déjà bloqué, donc chaque acceptation
+        // vaut exactement un personnage neuf. Exact par construction, et
+        // sans rien à tenir à jour quand la banque change.
+        persosTrouves: 0,
         playerAlphabets: new Map(), // Map<playerId, Set<lettre>> - Lettres collectées par joueur
         // Les lettres DEMANDÉES cette manche : vingt et une tirées sur les
         // vingt-six, renouvelées à chaque départ. Vide hors partie.
@@ -7037,7 +7093,12 @@ function submitBombanimeName(gameState, socketId, name) {
     for (const variant of allVariants) {
         gameState.bombanime.usedNames.add(variant.toUpperCase());
     }
-    
+
+    // Un personnage de plus — UN, quel que soit le nombre d alias qu il vient
+    // de condamner. On est passé par le garde de `usedNames` plus haut : ce nom
+    // n était pas encore pris, donc ce personnage est neuf.
+    gameState.bombanime.persosTrouves++;
+
     console.log(`🔒 Noms bloqués: ${allVariants.join(', ')}`);
     
     gameState.bombanime.lastValidName = normalizedName;
@@ -7213,6 +7274,7 @@ async function startBombanimeGame(gameState) {
     // Reset état BombAnime
     gameState.bombanime.active = true;
     gameState.bombanime.usedNames = new Set();
+    gameState.bombanime.persosTrouves = 0;
     gameState.bombanime.playerAlphabets = new Map();
     // Les lettres demandées, tirées à CHAQUE manche : deux parties d affilée
     // dans le même salon n en donnent pas les mêmes.
@@ -7412,7 +7474,7 @@ async function endBombanimeGame(gameState, winner) {
         duration: duration,
         gameMode: 'bombanime',
         serie: gameState.bombanime.serie,
-        namesUsed: gameState.bombanime.usedNames.size
+        namesUsed: gameState.bombanime.persosTrouves
     };
 
     // Émettre le vainqueur immédiatement : l affichage ne doit rien attendre
@@ -7426,7 +7488,7 @@ async function endBombanimeGame(gameState, winner) {
         ranking: ranking,
         duration: duration,
         serie: gameState.bombanime.serie,
-        namesUsed: gameState.bombanime.usedNames.size,
+        namesUsed: gameState.bombanime.persosTrouves,
     });
 
     // Le salon reste ouvert, comme au quiz : c'est lui qui porte le classement
@@ -7761,6 +7823,7 @@ function resetBombanimeState(gameState) {
     gameState.bombanime.currentPlayerIndex = 0;
     gameState.bombanime.currentPlayerId = null;
     gameState.bombanime.usedNames = new Set();
+    gameState.bombanime.persosTrouves = 0;
     gameState.bombanime.playerAlphabets = new Map();
     gameState.bombanime.playerLastAnswers = new Map();
     gameState.bombanime.turnTimeout = null;
@@ -8837,7 +8900,7 @@ io.on('connection', (socket) => {
             // table disparaissaient de l écran de celui qui recharge.
             cache: persoCachePublic(gameState),
             bonusEnabled: gameState.bonusEnabled,
-            usedNamesCount: gameState.bombanime.usedNames.size,
+            usedNamesCount: gameState.bombanime.persosTrouves,
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,

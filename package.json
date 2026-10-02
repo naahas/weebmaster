@@ -51,7 +51,8 @@
     "test:banque": "node scripts/test-banque.js",
     "check:panneau": "node scripts/verif-panneau.js",
     "test:bot-fantome": "node scripts/test-bot-fantome.js",
-    "test:ordre": "node scripts/test-ordre.js"
+    "test:ordre": "node scripts/test-ordre.js",
+    "bomb:compter": "node scripts/compter-persos.js"
   },
   "keywords": [
     "quiz",
