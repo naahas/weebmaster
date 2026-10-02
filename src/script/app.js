@@ -143,12 +143,18 @@ createApp({
                 reglesVues: false,
                 // réglages du salon, avant la partie
                 // ⚠️ Ces deux-là ne sont qu'un décor le temps que le serveur réponde :
-                // c'est lui qui tient le vrai réglage, et « chargerReglagesCollect »
-                // les écrase dès que le salon a un code. Ils étaient une SECONDE
-                // écriture du défaut, et les deux ont divergé — le serveur est passé
-                // à douze animes, l'écran est resté sur dix.
+                // c'est lui qui tient le vrai réglage. `appliquerReglagesSalon` les
+                // écrase dès l'ouverture, et `chargerReglagesCollect` ensuite.
+                //
+                // ⚠️ Ils restent une SECONDE écriture du défaut, et ils avaient
+                // DÉJÀ divergé — deux fois, dans les deux sens. L'écran annonçait
+                // douze animes quand `ANIMES_DEFAUT` en vaut dix. C'est la même
+                // maladie que la série de BombAnime figée après un retour, et
+                // c'est pour ça que le salon dit désormais ses réglages lui-même :
+                // ces valeurs-ci ne sont plus qu'un décor de quelques
+                // millisecondes. Les garder alignées reste la moindre des choses.
                 regleMain: 4,
-                regleAnimes: 12,
+                regleAnimes: 10,
             },
 
             asc: {
@@ -3845,6 +3851,14 @@ createApp({
 
                 this.demandeMdp = false;
 
+                // ⚠️ Le salon est NEUF : on affiche SES réglages, pas ceux
+                // qu'on avait en mémoire. Un hôte qui revenait à l'accueil
+                // après une partie puis rouvrait un salon gardait à l'écran
+                // la série de la session précédente, alors que le serveur
+                // venait de repartir de ses défauts — le tiroir annonçait
+                // « Bleach » et la manche se jouait en Naruto.
+                this.appliquerReglagesSalon(data.reglages);
+
                 this.hostToken = data.hostToken || '';
                 localStorage.setItem('hostToken', this.hostToken);
                 this.isHost = true;
@@ -4054,6 +4068,56 @@ createApp({
         hostFetch(url, options = {}) {
             const entetes = Object.assign({}, options.headers, { 'X-Host-Token': this.hostToken });
             return fetch(url, Object.assign({}, options, { headers: entetes }));
+        },
+
+        // Les réglages que le SALON annonce, appliqués à l'écran. Un seul
+        // endroit les définit — `etatNeuf()` sur le serveur — et c'est ce qui
+        // empêche l'affichage de dériver de ce qui se jouera vraiment.
+        //
+        // ⚠️ Chaque champ est testé pour `undefined` et non pour sa vérité :
+        // `noSpoil`, `speedBonus`, `multiplicateur` et `sequencePartagee` sont
+        // des booléens, et un `r.noSpoil || this.noSpoil` aurait ignoré un
+        // `false` venu du serveur — le réglage serait resté coché.
+        appliquerReglagesSalon(r) {
+            if (!r) return;
+            const poser = (cible, clef, valeur) => {
+                if (valeur !== undefined && valeur !== null) cible[clef] = valeur;
+            };
+
+            poser(this, 'gameMode', r.mode);
+            poser(this, 'gameLives', r.lives);
+            poser(this, 'gameTime', r.questionTime);
+            poser(this, 'answersCount', r.answersCount);
+            poser(this, 'questionsCount', r.questionsCount);
+            poser(this, 'difficultyMode', r.difficultyMode);
+            poser(this, 'serieFilter', r.serieFilter);
+            poser(this, 'noSpoil', r.noSpoil);
+            poser(this, 'speedBonus', r.speedBonus);
+            poser(this, 'bonusEnabled', r.bonusEnabled);
+            poser(this, 'teamNames', r.teamNames);
+
+            if (r.bombanime) {
+                poser(this.bombanime, 'serie', r.bombanime.serie);
+                poser(this.bombanime, 'timer', r.bombanime.timer);
+                poser(this.bombanime, 'lives', r.bombanime.lives);
+                poser(this.bombanime, 'meche', r.bombanime.meche);
+                poser(this.bombanime, 'ordre', r.bombanime.ordre);
+            }
+            if (r.rush) {
+                poser(this.rush, 'duree', r.rush.duree);
+                poser(this.rush, 'limite', r.rush.limite);
+                poser(this.rush, 'filtre', r.rush.filtre);
+                poser(this.rush, 'multiplicateur', r.rush.multiplicateur);
+                poser(this.rush, 'sequencePartagee', r.rush.sequencePartagee);
+            }
+            if (r.collect) {
+                poser(this.col, 'regleMain', r.collect.main);
+                poser(this.col, 'regleAnimes', r.collect.animes);
+            }
+            if (r.ascension) {
+                poser(this.asc, 'etages', r.ascension.etages);
+                poser(this.asc, 'timer', r.ascension.timer);
+            }
         },
 
         async applySetting(url, payload, apply) {

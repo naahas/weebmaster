@@ -577,6 +577,59 @@ const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'Bo
 // ⚠️ Rien de sensible ici, mais rien d inutile non plus : seulement ce qui
 // change la partie. Le libellé lisible est fabriqué côté panneau, on ne stocke
 // que les valeurs brutes — un libellé figé en base vieillirait mal.
+// 🎛️ TOUS les réglages d'un salon, pour que le client AFFICHE ce qui est,
+// au lieu de garder ce qu'il avait.
+//
+// ⚠️ Ce n'est pas `reglagesDeLaPartie` (juste en dessous), qui résume une
+// partie FINIE pour le panneau, en libellés. Celui-ci rend des valeurs brutes,
+// à l'ouverture du salon, et il doit couvrir CHAQUE réglage du tiroir — un
+// oublié ici est un réglage qui restera figé sur l'écran de l'hôte.
+//
+// ⚠️ Et surtout : il n'y a qu'UN endroit où les défauts sont écrits, c'est
+// `etatNeuf()`. Les redonner côté client les aurait fait diverger — c'est
+// exactement ce qui causait le bug : le client gardait « Bleach » à l'écran
+// pendant que le serveur jouait son défaut « Naruto ».
+function reglagesDuSalon(gameState) {
+    return {
+        // Le quiz, et ce que les autres modes partagent
+        lobbyMode: gameState.lobbyMode,
+        mode: gameState.mode,
+        lives: gameState.lives,
+        questionTime: gameState.questionTime,
+        answersCount: gameState.answersCount,
+        questionsCount: gameState.questionsCount,
+        difficultyMode: gameState.difficultyMode,
+        serieFilter: gameState.serieFilter,
+        noSpoil: gameState.noSpoil,
+        speedBonus: gameState.speedBonus,
+        bonusEnabled: gameState.bonusEnabled,
+        teamNames: gameState.teamNames,
+
+        bombanime: {
+            serie: gameState.bombanime.serie,
+            timer: gameState.bombanime.timer,
+            lives: gameState.bombanime.lives,
+            meche: gameState.bombanime.meche,
+            ordre: gameState.bombanime.ordre,
+        },
+        rush: {
+            duree: gameState.rush.duree,
+            limite: gameState.rush.tempsParPerso,
+            filtre: gameState.rush.filtre,
+            multiplicateur: gameState.rush.multiplicateur,
+            sequencePartagee: gameState.rush.sequencePartagee,
+        },
+        collect: {
+            main: gameState.collect.main,
+            animes: gameState.collect.nbAnimes,
+        },
+        ascension: {
+            etages: gameState.ascension.floors,
+            timer: gameState.ascension.timer,
+        },
+    };
+}
+
 function reglagesDeLaPartie(gameState) {
     if (!gameState) return null;
     const g = gameState;
@@ -2342,7 +2395,18 @@ app.post('/admin/toggle-game', async (req, res) => {
     gameState.hostPlayerId = (req.body && typeof req.body.playerId === 'string')
         ? req.body.playerId : null;
 
-    res.json({ isActive: true, roomCode: gameState.roomCode, hostToken: gameState.hostToken });
+    res.json({
+        isActive: true,
+        roomCode: gameState.roomCode,
+        hostToken: gameState.hostToken,
+        // ⚠️ LE SALON DIT SES RÉGLAGES, le client ne les devine pas.
+        // Sans ça, l hôte qui revenait à l accueil puis rouvrait un salon
+        // gardait À L ÉCRAN les réglages de la session précédente, alors que
+        // le serveur venait d en fabriquer un neuf avec ses défauts : le
+        // tiroir annonçait « Bleach » et la manche se jouait en Naruto.
+        // Voir `reglagesDuSalon`.
+        reglages: reglagesDuSalon(gameState),
+    });
 });
 
 // ============================================

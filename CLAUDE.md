@@ -60,6 +60,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   (les routes /admin sont-elles fermées aux visiteurs), `npm run test:rooms` (deux salons
   simultanés, plafond), `npm run test:mixte` (quiz et BombAnime en parallèle),
   `npm run test:rejouer` (deux manches d affilée sans répétition de question),
+  `npm run test:reglages` (un salon NEUF affiche ses propres réglages, dans tous les
+  modes — voir plus bas, c est la maladie des défauts écrits deux fois),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
   `npm run test:mdp` (le mot de passe du mode Classique : la porte d entree, les modes
@@ -682,6 +684,17 @@ Pour lever la mesure, **quatre** endroits : le garde dans `/admin/toggle-game`, 
   paramètre**, toujours nommé `gameState`.
 - Toute diffusion passe par `diffuser(gameState, evt, payload)` → `io.to(roomCode)`. **Ne jamais
   appeler `io.emit` directement** : le message partirait à tous les salons.
+- ⚠️ **Les valeurs par défaut d'un réglage s'écrivent À UN SEUL ENDROIT : `etatNeuf()`.**
+  `/admin/toggle-game` renvoie `reglagesDuSalon(gameState)` à l'ouverture, et le client les
+  applique par `appliquerReglagesSalon` — il n'affiche jamais ce qu'il croit savoir.
+  Sans ça, l'hôte qui revenait à l'accueil après une partie puis rouvrait un salon gardait
+  **à l'écran** la série BombAnime de la session d'avant pendant que le serveur repartait de
+  son défaut : le tiroir annonçait « Bleach », la manche se jouait en Naruto. Le même défaut
+  dormait dans Collect — l'écran annonçait douze animes quand `ANIMES_DEFAUT` en vaut dix.
+  ⚠️ Un réglage ajouté au tiroir **doit** être ajouté à `reglagesDuSalon`, sans quoi il restera
+  figé entre deux salons, en silence. `npm run test:reglages` tient les deux bouts.
+  ⚠️ Et côté client, tester `undefined`, jamais la vérité de la valeur : un
+  `r.speedBonus || this.speedBonus` ignore un `false` venu du serveur.
 - ⚠️ **Le bot de BombAnime ne compte pas comme quelqu un** dans les deux menages de salons
   (`humainsDuSalon`). Il siege dans `players` comme un joueur, mais il n a pas de socket —
   donc jamais de `disconnectedAt` — et il ne part jamais de lui-meme. Les deux tests le

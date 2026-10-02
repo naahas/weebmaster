@@ -52,7 +52,8 @@
     "check:panneau": "node scripts/verif-panneau.js",
     "test:bot-fantome": "node scripts/test-bot-fantome.js",
     "test:ordre": "node scripts/test-ordre.js",
-    "bomb:compter": "node scripts/compter-persos.js"
+    "bomb:compter": "node scripts/compter-persos.js",
+    "test:reglages": "node scripts/test-reglages.js"
   },
   "keywords": [
     "quiz",
