@@ -430,6 +430,7 @@ createApp({
             // survol. Un clic le fixe donc aussi : le CSS gère le survol, ce
             // champ gère le doigt. Il porte un numéro de camp, ou null.
             crewVu: null,
+            crewCote: 'droite',         // de quel côté le cadre d'effectif s'ouvre
             rangDelta: 0,               // places gagnées (+) ou perdues (-) à la dernière question
             
             // 💣 BombAnime - Lobby plein
@@ -520,6 +521,12 @@ createApp({
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
             booting: true,        // tant que l'état serveur n'est pas connu, on n'affiche aucun écran
             questionShown: false, // passe à vrai quand le premier panel de question est visible
+            // ⚠️ À VRAI au départ, contrairement à `questionShown`. Il ne sert
+            // qu'à retenir les jetons le temps que le panel d'une NOUVELLE
+            // question se pose ; un joueur qui rafraîchit en pleine question
+            // n'a rien à attendre, et un faux initial lui aurait caché la
+            // barre jusqu'à la question suivante.
+            bonusShown: true,
 
             // Game Over
             gameEndData: {
@@ -4337,12 +4344,16 @@ createApp({
             document.body.classList.toggle('v2-sheet-open', !!ouvert);
         },
 
-        // Cœurs et jetons rejoignent le panel au lieu de le précéder.
+        // Les cœurs rejoignent le panel au lieu de le précéder.
         // ⚠️ Le retard se cale sur la FIN de .v2q-enter-active, pas sur son début :
         // l animation attend 0,3 s puis court 0,62 s, le panel n est donc posé qu à
-        // 920 ms. À 800 ms les jetons partaient pendant que la question bougeait
-        // encore — ils avaient l air d arriver avant elle. 1 100 ms les fait entrer
-        // juste après, panel immobile.
+        // 920 ms. À 800 ms ça partait pendant que la question bougeait encore.
+        //
+        // ⚠️ Et ce retard-là ne vaut QUE pour la PREMIÈRE question : le garde
+        // ci-dessous coupe court ensuite, à dessein — les cœurs ne doivent pas
+        // clignoter à chaque question. Les jetons de bonus, eux, se démontent
+        // vraiment entre deux (sur `showResults`) : leur retard est séparé, il
+        // vit dans le gestionnaire de `new-question`.
         revealQuestionChrome() {
             if (this.questionShown) return;
             clearTimeout(this._chromeTimer);
@@ -4422,9 +4433,30 @@ createApp({
                     : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0));
         },
 
-        // Le doigt remplace le survol : on fixe le cadre, on le referme.
+        // ⚠️ Le clic ne sert QUE là où il n'y a pas de survol. Sur ordinateur
+        // le cadre s'ouvre déjà au survol et reste tant que la souris est
+        // dessus : y ajouter une bascule au clic donnait deux états pour un
+        // seul geste — on cliquait sans le vouloir en visant l'icône, et le
+        // cadre restait accroché après le départ de la souris.
         basculerCrew(team) {
+            if (window.matchMedia && window.matchMedia('(hover: hover)').matches) return;
             this.crewVu = this.crewVu === team ? null : team;
+        },
+
+        // ⚠️ De quel côté s'ouvre le cadre. À droite par défaut — c'est là
+        // qu'on regarde après avoir visé l'icône — mais le panneau est collé
+        // au bord droit de l'écran : sur un écran juste assez large, le cadre
+        // sortirait. On MESURE la place au moment d'y entrer, et on bascule à
+        // gauche s'il n'y en a pas. Une largeur fixe ne pouvait pas décider,
+        // le panneau se déplace avec la fenêtre.
+        placerCrew(evt) {
+            const pick = evt && evt.currentTarget;
+            const cadre = pick && pick.querySelector('.v2q-crew');
+            if (!cadre) return;
+            const i = pick.getBoundingClientRect();
+            const large = cadre.getBoundingClientRect().width || 0;
+            const marge = 12;
+            this.crewCote = (i.right + 10 + large + marge <= window.innerWidth) ? 'droite' : 'gauche';
         },
 
 
@@ -6104,6 +6136,21 @@ createApp({
                     console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
                     return;
                 }
+
+                // ⚠️ C'EST ICI que les jetons remontaient trop tôt, et le délai
+                // de `revealQuestionChrome` n'y pouvait rien : entre deux
+                // questions `questionShown` ne retombe JAMAIS — il ne bascule
+                // qu'au début et à la fin d'une partie, pour que les cœurs ne
+                // clignotent pas à chaque question. Ce qui démonte puis remonte
+                // la barre de jetons, c'est `showResults`, et il retombe sur le
+                // champ : les jetons repartaient à l'instant du clic sur
+                // « Suivant », pendant que le panel de question s'animait encore.
+                // Les jetons ont donc leur propre retard, à côté de celui des
+                // cœurs. Le panel est posé à 920 ms (0,3 s d'attente puis
+                // 0,62 s d'animation) ; ils entrent après.
+                this.bonusShown = false;
+                clearTimeout(this._bonusTimer);
+                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 1400);
 
                 this.showResults = false;
                 this.currentQuestion = question;

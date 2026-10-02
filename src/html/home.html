@@ -2558,7 +2558,7 @@
                                 <!-- 🆕 L'effectif du camp, pour l'hôte seul : il arbitre, il
                                      peut tout voir. Au survol de l'icône, un cadre s'ouvre à
                                      gauche du panneau. Un clic le fixe, pour le doigt. -->
-                                <span class="v2q-crew-pick" v-if="isHost">
+                                <span class="v2q-crew-pick" v-if="isHost" @mouseenter="placerCrew($event)">
                                     <button class="v2q-crew-btn" :class="{ ouvert: crewVu === c.team }"
                                             @click.stop="basculerCrew(c.team)"
                                             :title="'Joueurs de ' + c.nom" :aria-label="'Joueurs de ' + c.nom">
@@ -2569,20 +2569,25 @@
 
                                     <!-- ⚠️ `v-for` sur l'effectif COMPLET, éliminés compris :
                                          la classe « mort » les grise, elle ne les retire pas. -->
-                                    <span class="v2q-crew" :class="'team-' + c.team">
-                                        <span class="v2q-crew-t">{{ c.nom }}</span>
-                                        <span class="v2q-crew-row" v-for="m in crewDuCamp(c.team)" :key="m.playerId || m.username"
-                                              :class="{ mort: gameMode === 'lives' && m.lives <= 0 }">
-                                            <span class="nm">{{ m.username }}</span>
-                                            <span class="rep" :class="tagClass(m)"><i>{{ tagSymbol(m) }}</i>{{ repTexte(m) }}</span>
-                                            <span class="sc" v-if="gameMode === 'points'">{{ formatScore(m.points) }}</span>
-                                            <span class="v2q-crew-hp" v-else>
-                                                <i v-for="n in gameLives" :key="n" :class="{ off: n > m.lives }">
-                                                    <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
-                                                </i>
+                                    <span class="v2q-crew" :class="['team-' + c.team, crewCote]">
+                                        <span class="v2q-crew-t">{{ c.nom }}<em>{{ crewDuCamp(c.team).length }}</em></span>
+                                        <!-- ⚠️ La liste défile dans son propre cadre : à vingt
+                                             joueurs elle sortait du bas de l'écran et se faisait
+                                             rogner, sans qu'on puisse l'atteindre. -->
+                                        <span class="v2q-crew-list">
+                                            <span class="v2q-crew-row" v-for="m in crewDuCamp(c.team)" :key="m.playerId || m.username"
+                                                  :class="{ mort: gameMode === 'lives' && m.lives <= 0 }">
+                                                <span class="nm">{{ m.username }}</span>
+                                                <span class="rep" :class="tagClass(m)"><i>{{ tagSymbol(m) }}</i>{{ repTexte(m) }}</span>
+                                                <span class="sc" v-if="gameMode === 'points'">{{ formatScore(m.points) }}</span>
+                                                <span class="v2q-crew-hp" v-else>
+                                                    <i v-for="n in gameLives" :key="n" :class="{ off: n > m.lives }">
+                                                        <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
+                                                    </i>
+                                                </span>
                                             </span>
+                                            <span class="v2q-crew-vide" v-if="!crewDuCamp(c.team).length">Personne</span>
                                         </span>
-                                        <span class="v2q-crew-vide" v-if="!crewDuCamp(c.team).length">Personne</span>
                                     </span>
                                 </span>
                             </div>
@@ -3234,7 +3239,7 @@
              retombe entre deux. Sans transition les jetons disparaissaient et
              resurgissaient d un coup au passage a la question suivante. -->
         <transition name="v2-bonus-f">
-        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && !showResults && lobbyMode !== 'bombanime' && bonusEnabled && !estSpectateur">
+        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && bonusShown && !showResults && lobbyMode !== 'bombanime' && bonusEnabled && !estSpectateur">
             <button class="v2-token"
                     :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus(), refus: jetonRefuse === '5050' }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"

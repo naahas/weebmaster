@@ -293,12 +293,20 @@ Avec les 500 points du bonus, le plus rapide passerait devant alors que les deux
 départage se conclurait sur un **temps de réaction** dès la première question. Le mode Points
 récompense la vitesse pendant la partie ; le départage, lui, tranche sur la connaissance.
 
-⚠️ **Cinq camps, cinq couleurs, et la cinquième a changé.** `--camp-5` est **cyan** (`#22d3ee`) et
-non plus rouge : rouge (0°) et rose vif (330°, le camp C) ne sont séparés que de 30° de teinte à
-saturation et clarté voisines — sur une pastille de 1,5 rem, C et E se confondaient. Le violet
-serait le plus grand creux restant (entre le bleu 217° et le rose 330°) mais il appartient au
-**badge du mode Équipe** (`#a78bfa`). Reste le cyan : 45° du vert, 30° du bleu, mais beaucoup plus
-clair et plus froid que lui — ce que le rouge et le rose n'avaient pas pour se séparer.
+⚠️ **Cinq camps, cinq couleurs, et la cinquième a demandé trois essais.** `--camp-5` est **violet**
+(`#a855f7`). Les deux premiers essais disent pourquoi, et la leçon vaut pour toute couleur ajoutée
+ici : **sur une pastille de 1,5 rem, seule la TEINTE sépare — la clarté ne rattrape pas.**
+
+- *Rouge* `#ef4444` (0°) se confondait avec le **rose vif du camp C** (330°) : 30° d'écart.
+- *Cyan* `#22d3ee` (187°) corrigeait ça mais tombait **entre le bleu de A** (217°, 30°) **et le
+  vert de D** (142°, 45°). Le pari était que sa clarté le détacherait du bleu. Il n'a pas tenu, et
+  les deux voisins ont été signalés à l'œil nu.
+
+Palette finale, et le plus petit écart de teinte passe de 30° à **54°** : bleu 217° (A), doré 44°
+(B), rose 330° (C), vert 142° (D), violet 271° (E). Le violet est le seul vrai creux qui restait.
+⚠️ Son seul défaut, assumé : le **badge du mode Équipe** est un lavande voisin (`#a78bfa`) — mais
+il vit dans l'en-tête et ne côtoie jamais une pastille de camp. Deux camps qu'on ne distingue pas
+coûtent plus cher.
 
 Modes retirés en v2 (code en git sur le tag `v1-final`) : Trace (survie), Collect, Poll, Ascension.
 Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `archive/ascension`.
