@@ -997,7 +997,11 @@
                      nulle part ailleurs — rien de ce qu'un joueur saisit ne
                      passe par là. Ça ne resterait pas vrai si elles venaient
                      un jour de la base. -->
-                <div class="v2-astuces" v-if="astucesOrdre.length">
+                <!-- ⚠️ Chez le JOUEUR seulement. L hôte n attend pas, il règle :
+                     son écran porte déjà le code, les réglages et la liste, et une
+                     bande qui défile en bas tirait l œil pendant qu il travaillait.
+                     Les astuces s adressent à ceux qui patientent. -->
+                <div class="v2-astuces" v-if="astucesOrdre.length && !isHost">
                     <!-- ⚠️ L ampoule est DANS la transition, avec le texte : laissée
                          dehors elle restait seule à l écran pendant que la phrase
                          s effaçait, et signalait une astuce qui n était plus là. Les

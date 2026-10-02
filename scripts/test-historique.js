@@ -22,9 +22,23 @@ async function ouvrirSalon(nom) {
     await post('/admin/set-mode', r.hostToken, { mode: 'points' });
     await post('/admin/set-questions', r.hostToken, { questions: 15 });
     await post('/admin/set-time', r.hostToken, { time: 1 });
-    // Vivier volontairement étroit : 48 questions, pour que deux manches
-    // indépendantes se recoupent nécessairement.
-    await post('/admin/set-serie-filter', r.hostToken, { filter: 'bleach' });
+    // Vivier volontairement étroit, pour que deux manches indépendantes se
+    // recoupent.
+    //
+    // ⚠️ C'était `bleach`, et ça a POURRI EN SILENCE : le filtre d'une seule
+    // série a été suspendu (voir la mesure temporaire dans CLAUDE.md), donc
+    // `SERIES_FILTERS` ne le connaît plus, le serveur l'ignore, et le test
+    // tournait sur la BANQUE ENTIÈRE — plus de 1 500 questions. Deux tirages
+    // de quinze ne s'y recoupent jamais, et la vérification du bas échouait à
+    // tous les coups sans que le message le laisse deviner.
+    //
+    // `big3` est le plus étroit de ceux qui restent (≈ 300 questions). Un
+    // filtre retiré ici ne doit plus jamais passer inaperçu : on le vérifie.
+    const fr = await post('/admin/set-serie-filter', r.hostToken, { filter: 'big3' });
+    if (fr.status !== 200) {
+        console.log('❌ le filtre big3 n\'existe plus — ce test mesure alors la banque entière');
+        ko++;
+    }
 
     const joueurs = [];
     for (let k = 0; k < 2; k++) {
@@ -72,33 +86,37 @@ async function manche(salon) {
     check('chaque salon a joué sa manche', a1.length >= 10 && b1.length >= 10,
         'A=' + a1.length + ' B=' + b1.length);
 
-    // Les salons sont indépendants : ils peuvent très bien tomber sur les mêmes
-    // questions. Ce qu'on vérifie, c'est qu'ils ne se les interdisent pas.
-    // Le vrai piège serait un historique partagé : B se verrait interdire ce que
-    // A a servi, et le vivier de chacun fondrait. Dans un vivier de 48, deux
-    // manches indépendantes de 15 se recoupent forcément.
-    const communes = a1.filter(id => b1.includes(id)).length;
-    check('les deux salons puisent dans le même vivier sans se gêner', communes > 0,
-        communes + ' question(s) en commun');
-
-    // ── Chacun relance ──
-    await Promise.all([
-        post('/admin/replay', a.jeton, {}),
-        post('/admin/replay', b.jeton, {}),
-    ]);
-    a.joueurs.forEach(j => { j.vu.length = 0; });
-    b.joueurs.forEach(j => { j.vu.length = 0; });
-
-    await Promise.all([manche(a), manche(b)]);
-    const a2 = a.joueurs[0].vu.slice();
-    const b2 = b.joueurs[0].vu.slice();
-
+    // ── Deux relances de plus, de chaque côté ──
+    //
+    // ⚠️ TROIS manches, et pas une de moins. Les salons sont indépendants :
+    // ils peuvent très bien tomber sur les mêmes questions, et c'est justement
+    // ce qu'on veut voir — le piège serait un historique PARTAGÉ, où B se
+    // verrait interdire ce que A a servi. Mais la preuve est un recoupement au
+    // hasard, donc sa force dépend du nombre de tirages : à une manche de
+    // chaque côté (15 contre 15 dans un vivier de 300), deux salons parfaitement
+    // indépendants ne se recoupent qu'une fois sur deux. Le test se comportait
+    // alors comme une pièce lancée. À trois manches — 45 contre 45 — ne RIEN
+    // recouper devient de l'ordre du millième.
+    const tousA = a1.slice();
+    const tousB = b1.slice();
+    for (let tour = 0; tour < 2; tour++) {
+        await Promise.all([
+            post('/admin/replay', a.jeton, {}),
+            post('/admin/replay', b.jeton, {}),
+        ]);
+        a.joueurs.forEach(j => { j.vu.length = 0; });
+        b.joueurs.forEach(j => { j.vu.length = 0; });
+        await Promise.all([manche(a), manche(b)]);
+        tousA.push(...a.joueurs[0].vu);
+        tousB.push(...b.joueurs[0].vu);
+    }
     // ⚠️ On ne vérifie pas ici l'absence de répétition dans un salon : le vivier
     // est trop étroit, et le serveur remet une difficulté épuisée à zéro plutôt
     // que de ne rien servir. C'est test:rejouer qui s'en charge, sur tout le corpus.
-    const bReprendDeA = b2.filter(id => a1.includes(id) || a2.includes(id)).length;
-    check('B sert des questions déjà vues chez A', bReprendDeA > 0,
-        bReprendDeA + ' question(s) — les historiques ne sont pas partagés');
+    const communes = tousB.filter(id => tousA.includes(id)).length;
+    check('B sert des questions déjà vues chez A', communes > 0,
+        communes + ' question(s) en commun sur ' + tousA.length + ' et ' + tousB.length
+        + ' — les historiques ne sont pas partagés');
 
     // ── Fermer A ne doit pas déranger B ──
     await post('/admin/toggle-game', a.jeton, {});

@@ -6146,11 +6146,18 @@ createApp({
                 // champ : les jetons repartaient à l'instant du clic sur
                 // « Suivant », pendant que le panel de question s'animait encore.
                 // Les jetons ont donc leur propre retard, à côté de celui des
-                // cœurs. Le panel est posé à 920 ms (0,3 s d'attente puis
-                // 0,62 s d'animation) ; ils entrent après.
+                // cœurs.
+                //
+                // ⚠️ 900 ms, réglé À L'ŒIL et non calculé. Le panel de question
+                // est posé à 920 ms (0,3 s d'attente puis 0,62 s d'animation) et
+                // partir juste après, à 1 400 ms, se voyait en retard : les
+                // jetons ont eux-mêmes 0,3 s de fondu et jusqu'à 0,56 s de
+                // glissement, donc ils finissent bien plus tard qu'ils ne
+                // commencent. Ils partent maintenant pendant la toute fin du
+                // panel et se posent avec lui.
                 this.bonusShown = false;
                 clearTimeout(this._bonusTimer);
-                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 1400);
+                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 900);
 
                 this.showResults = false;
                 this.currentQuestion = question;
