@@ -324,7 +324,7 @@ button { font-family: inherit; color: inherit; }
 }
 /* ⚠️ C'est le SEUL endroit qui défile de la page. */
 .defile { flex: 1; min-height: 0; overflow-y: auto; }
-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
 thead th {
     position: sticky; top: 0; z-index: 2; background: var(--carte-haut);
     text-align: left; color: var(--tres-doux); font-weight: 600; font-size: .7rem;
@@ -370,12 +370,17 @@ tbody tr.cochee:hover { background: rgba(109,92,255,.15); }
 .mini.danger:hover { background: rgba(251,113,133,.15); }
 .mini:disabled { opacity: .5; cursor: default; }
 thead th:last-child { text-align: right; }
-td { padding: .78rem .9rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+/* ⚠️ Les lignes respirent : le tableau est la vue qu on PARCOURT, pas celle
+   qu on remplit. Serrees, les parties se lisaient comme un journal — on
+   perdait sa ligne en revenant de la case a cocher au bouton de suppression,
+   qui sont aux deux bouts. L en-tete reste collant, donc rien ne se perd a
+   les ecarter.  */
+td { padding: 1.05rem .9rem; border-bottom: 1px solid rgba(255,255,255,.045); }
 tbody tr { transition: background .12s; }
 tbody tr:hover { background: rgba(255,255,255,.028); }
 tbody tr.part { opacity: 0; transition: opacity .2s; }
 .etiq {
-    font-size: .74rem; font-weight: 600; padding: .16rem .5rem;
+    font-size: .78rem; font-weight: 600; padding: .22rem .58rem;
     border-radius: 6px; white-space: nowrap;
     background: rgba(109,92,255,.15); color: var(--accent-clair);
 }
