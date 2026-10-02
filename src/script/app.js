@@ -304,7 +304,11 @@ createApp({
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
-            estDev: false,        // vrai hors production : débloque l'outil de remplissage
+            // Vrai hors production. Il ne commande plus rien à l'écran depuis
+            // le retrait du réglage « Test », mais il est renseigné par
+            // `/api/home-stats` et sert à chaque chantier qui a besoin de
+            // remplir un salon — le garder évite de refaire l'aller-retour.
+            estDev: false,
             seriesBombOuvertes: false,
             seriesBombPos: { top: 0, left: 0, width: 0 },
             // Les volumes de chaque serie, charges une fois depuis le serveur.
@@ -3900,12 +3904,6 @@ createApp({
             this.modes.forEach(m => { const i = new Image(); i.src = m.img; });
         },
 
-        // Tous les réglages passent par la même route POST, avec application
-        // optimiste côté client et retour arrière si le serveur refuse.
-        ajouterBots(n) {
-            if (this.socket) this.socket.emit('dev-add-bots', { count: n, hostToken: this.hostToken });
-        },
-
         // 🤖 Le partenaire de BombAnime. L'état affiché n'est PAS tenu ici :
         // il se déduit de la liste des joueurs à chaque lobby-update, donc
         // un refus du serveur (salon plein, partie lancée) se voit tout seul.
@@ -3913,10 +3911,6 @@ createApp({
             if (this.socket) {
                 this.socket.emit('bombanime-toggle-bot', { actif, hostToken: this.hostToken });
             }
-        },
-
-        viderBots() {
-            if (this.socket) this.socket.emit('dev-clear-bots', { hostToken: this.hostToken });
         },
 
         // Le panneau vit à la racine : sa place se calcule depuis la ligne cliquée
@@ -6148,16 +6142,18 @@ createApp({
                 // Les jetons ont donc leur propre retard, à côté de celui des
                 // cœurs.
                 //
-                // ⚠️ 900 ms, réglé À L'ŒIL et non calculé. Le panel de question
-                // est posé à 920 ms (0,3 s d'attente puis 0,62 s d'animation) et
-                // partir juste après, à 1 400 ms, se voyait en retard : les
-                // jetons ont eux-mêmes 0,3 s de fondu et jusqu'à 0,56 s de
-                // glissement, donc ils finissent bien plus tard qu'ils ne
-                // commencent. Ils partent maintenant pendant la toute fin du
-                // panel et se posent avec lui.
+                // ⚠️ 800 ms, réglé À L'ŒIL et non calculé — et c'est le bon
+                // ordre des choses ici. Le panel de question est posé à 920 ms
+                // (0,3 s d'attente puis 0,62 s d'animation), mais partir juste
+                // après se voyait en retard : les jetons ont eux-mêmes 0,3 s de
+                // fondu et jusqu'à 0,56 s de glissement, donc ils FINISSENT bien
+                // plus tard qu'ils ne commencent. C'est la fin des deux
+                // mouvements qu'il faut faire coïncider, pas leur départ.
+                // Chemin parcouru : 800 (trop tôt) → 1 100 → 1 400 (trop tard)
+                // → 900 → 800. Ne pas recalculer depuis les 920 ms du panel.
                 this.bonusShown = false;
                 clearTimeout(this._bonusTimer);
-                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 900);
+                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 800);
 
                 this.showResults = false;
                 this.currentQuestion = question;
