@@ -284,6 +284,22 @@ affiche « Classique » dans les deux cas. C'est l'hôte qui attribue les camps 
 joueur, ou *Mélanger*) ; un joueur ne choisit jamais le sien, et un nouvel arrivant tombe dans le
 camp le moins fourni.
 
+⚠️ **Le départage du mode Points n'a PAS de bonus de rapidité**, et il ne faut pas l'y ajouter.
+`revealTiebreakerAnswers` (`server.js`) donne un forfait de 3 000 points à toute bonne réponse et
+ne regarde ni `speedBonus` ni le plus rapide : deux joueurs qui trouvent restent **à égalité**, et
+`checkTiebreakerWinner` relance une question. Le duel dure donc tant que les deux savent.
+
+Avec les 500 points du bonus, le plus rapide passerait devant alors que les deux ont trouvé : le
+départage se conclurait sur un **temps de réaction** dès la première question. Le mode Points
+récompense la vitesse pendant la partie ; le départage, lui, tranche sur la connaissance.
+
+⚠️ **Cinq camps, cinq couleurs, et la cinquième a changé.** `--camp-5` est **cyan** (`#22d3ee`) et
+non plus rouge : rouge (0°) et rose vif (330°, le camp C) ne sont séparés que de 30° de teinte à
+saturation et clarté voisines — sur une pastille de 1,5 rem, C et E se confondaient. Le violet
+serait le plus grand creux restant (entre le bleu 217° et le rose 330°) mais il appartient au
+**badge du mode Équipe** (`#a78bfa`). Reste le cyan : 45° du vert, 30° du bleu, mais beaucoup plus
+clair et plus froid que lui — ce que le rouge et le rose n'avaient pas pour se séparer.
+
 Modes retirés en v2 (code en git sur le tag `v1-final`) : Trace (survie), Collect, Poll, Ascension.
 Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `archive/ascension`.
 

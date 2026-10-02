@@ -4281,6 +4281,20 @@ function getPointsForDifficulty(difficulty) {
 }
 
 // 🔥 FIX TIEBREAKER: Fonction dédiée pour révéler les résultats du tiebreaker
+// ⚠️ LE DÉPARTAGE N'A PAS DE BONUS DE RAPIDITÉ, et c'est voulu.
+//
+// Cette fonction donne un forfait de 3 000 points à toute bonne réponse et
+// ne regarde ni `speedBonus` ni le plus rapide. Conséquence : deux joueurs
+// qui répondent juste restent À ÉGALITÉ, et `checkTiebreakerWinner` relance
+// une question. Le duel dure donc tant que les deux savent.
+//
+// Avec les 500 points du bonus, le plus rapide des deux passerait devant
+// alors qu'ils ont tous les deux trouvé : le départage se conclurait sur un
+// temps de réaction dès la première question, et non sur ce que les joueurs
+// savent. Le mode Points récompense la vitesse pendant la partie ; le
+// départage, lui, tranche sur la connaissance.
+//
+// Ne pas « harmoniser » avec `revealAnswers`.
 function revealTiebreakerAnswers(gameState, correctAnswer) {
     console.log('⚔️ Révélation résultats tiebreaker');
 

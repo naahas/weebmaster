@@ -425,11 +425,11 @@ createApp({
             campsAvant: { 1: 0, 2: 0 }, // score des camps avant la question qui vient de tomber
             campsProg: 1,               // avancement du remplissage des barres (0 → 1)
             campDetail: null,           // camp dont on regarde le détail au classement final
-            // ⚠️ La réponse d'un joueur se lit au survol de son pseudo, mais
+            // ⚠️ L'effectif d'un camp se lit au survol de son icône, mais
             // l'hôte peut piloter depuis un téléphone, où il n'y a pas de
-            // survol. Un clic la fixe donc aussi : le CSS gère le survol, ce
-            // champ gère le doigt. Il porte un playerId, ou null.
-            repVue: null,
+            // survol. Un clic le fixe donc aussi : le CSS gère le survol, ce
+            // champ gère le doigt. Il porte un numéro de camp, ou null.
+            crewVu: null,
             rangDelta: 0,               // places gagnées (+) ou perdues (-) à la dernière question
             
             // 💣 BombAnime - Lobby plein
@@ -514,6 +514,7 @@ createApp({
             shuffleBusy: false,
             // Le menu de camp ouvert, s il y en a un : le playerId du joueur visé.
             campMenu: null,
+            campMenuDecal: 0,           // recalage du menu de camp quand il sort de la grille
             // Grouper les vignettes par camp. Affichage seul : rien ne part au serveur.
             triParCamp: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
@@ -672,9 +673,9 @@ createApp({
         // n arrivent jamais ici, donc ouvrir ne referme pas aussitôt.
         document.addEventListener('click', () => {
             if (this.campMenu) this.campMenu = null;
-            // Même raison pour la réponse fixée au doigt : le pseudo porte
-            // `@click.stop`, donc l ouvrir ne la referme pas.
-            if (this.repVue) this.repVue = null;
+            // Même raison pour l effectif fixé au doigt : l icône porte
+            // `@click.stop`, donc l ouvrir ne le referme pas.
+            if (this.crewVu) this.crewVu = null;
         });
 
         // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
@@ -1263,25 +1264,6 @@ createApp({
             return this.campsClasses.filter(c => c.team === this.monCamp);
         },
 
-        // L'effectif de chaque camp, pour l'hôte seul : il arbitre, il peut
-        // tout voir. ⚠️ Les ÉLIMINÉS restent dans la liste — à cinq camps,
-        // savoir qui a sauté vaut autant que le score du camp, et une liste
-        // qui se vide ne dit plus rien de ce qui s'est passé. Le serveur les
-        // envoie déjà : `playersDetails` parcourt `gameState.players` en
-        // entier, un joueur à zéro vie y figure encore.
-        campsRoster() {
-            if (!this.isHost || this.lobbyMode !== 'rivalry') return [];
-            const tous = this.questionResults.players || [];
-            const parPoints = this.gameMode === 'points';
-            return this.campsClasses.map(c => ({
-                ...c,
-                joueurs: tous
-                    .filter(p => (p.team || 0) === c.team)
-                    .sort((a, b) => parPoints
-                        ? (b.points || 0) - (a.points || 0)
-                        : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0))
-            }));
-        },
 
         // Fin de partie en camps : les trois meilleurs de chaque côté
         campsPodium() {
@@ -4425,10 +4407,24 @@ createApp({
             return (p && p.selectedAnswer) || 'Sans réponse';
         },
 
-        // Le doigt remplace le survol : on fixe la bulle, on la referme.
-        basculerRep(p) {
-            const id = p && (p.playerId || p.username);
-            this.repVue = this.repVue === id ? null : id;
+        // L'effectif d'un camp, pour l'hôte seul : il arbitre, il peut tout
+        // voir. ⚠️ Les ÉLIMINÉS restent dans la liste — à cinq camps, savoir
+        // qui a sauté vaut autant que le score du camp, et une liste qui se
+        // vide ne dit plus rien de ce qui s'est passé. Le serveur les envoie
+        // déjà : `playersDetails` parcourt `gameState.players` en entier, un
+        // joueur à zéro vie y figure encore.
+        crewDuCamp(team) {
+            const parPoints = this.gameMode === 'points';
+            return (this.questionResults.players || [])
+                .filter(p => (p.team || 0) === team)
+                .sort((a, b) => parPoints
+                    ? (b.points || 0) - (a.points || 0)
+                    : (b.lives || 0) - (a.lives || 0) || (b.correctAnswers || 0) - (a.correctAnswers || 0));
+        },
+
+        // Le doigt remplace le survol : on fixe le cadre, on le referme.
+        basculerCrew(team) {
+            this.crewVu = this.crewVu === team ? null : team;
         },
 
 
@@ -4859,6 +4855,37 @@ createApp({
         campsOffertsPour() {
             const max = Math.min(5, Math.max(2, this.playerCount || 0));
             return [1, 2, 3, 4, 5].filter(c => c <= max);
+        },
+
+        // ⚠️ Le menu part de la pastille VERS LA GAUCHE : sur la première
+        // vignette d'une rangée il sort de la grille, qui le rogne
+        // (`overflow-x: hidden`). Un creux fixe à gauche ne pouvait pas
+        // marcher — la largeur du menu dépend du nombre de camps offerts, et
+        // le creux décalait la grille entière pour une seule vignette sur
+        // cinq. On le MESURE après l'avoir posé et on le recale de ce qu'il
+        // manque, en pixels, par `--decal`.
+        //
+        // Pourquoi `--decal` et pas un `transform` en ligne : le menu entre
+        // avec une animation en `both`, dont la dernière image impose
+        // `transform: none` pour toujours. Un transform en ligne n'aurait
+        // jamais rien fait.
+        ouvrirCampMenu(playerId) {
+            if (this.campMenu === playerId) { this.campMenu = null; return; }
+            this.campMenu = playerId;
+            this.campMenuDecal = 0;
+            this.$nextTick(() => {
+                const menu = document.querySelector('.v2-team-menu');
+                const grille = document.querySelector('.v2-room-players-grid');
+                if (!menu || !grille) return;
+                const m = menu.getBoundingClientRect();
+                const g = grille.getBoundingClientRect();
+                const marge = 4;
+                if (m.left < g.left + marge) {
+                    this.campMenuDecal = Math.ceil(g.left + marge - m.left);
+                } else if (m.right > g.right - marge) {
+                    this.campMenuDecal = -Math.ceil(m.right - (g.right - marge));
+                }
+            });
         },
 
         async shuffleTeams(camps) {
@@ -5983,12 +6010,19 @@ createApp({
                     this.questionShown = false;
                     clearTimeout(this._chromeTimer);
 
-                    // 🆕 Initialiser selon le mode
-                    if (this.gameMode === 'lives') {
-                        this.playerLives = this.gameLives;
-                    } else {
-                        this.playerPoints = 0;
-                    }
+                    // 🆕 Initialiser selon le mode.
+                    // ⚠️ `playerLives` se remet A NEUF DANS LES DEUX CAS, et
+                    // c'est tout sauf cosmétique : le mode Points ne le
+                    // touchait pas, si bien qu'un joueur éliminé d'une partie
+                    // en Vies gardait son zéro. En relançant en Points, les
+                    // boutons de réponse restaient DÉSACTIVÉS toute la partie
+                    // (`playerLives === 0` les verrouille) — sans rien à
+                    // l'écran pour le dire, et seul un rafraîchissement en
+                    // sortait. Vu en vrai : l'hôte mort en Vies, relance en
+                    // Points, ne pouvait plus cliquer alors que les joueurs
+                    // survivants le pouvaient.
+                    this.playerLives = this.gameLives;
+                    if (this.gameMode !== 'lives') this.playerPoints = 0;
 
                     // 🆕 Initialiser les défis
                     if (data.challenges) {
@@ -6061,9 +6095,9 @@ createApp({
                 this.showQuestionStats = false;
                 this.showTopSheet = false;
                 this.showReport = false;
-                // La bulle fixée au doigt porte la réponse de la question
-                // PRÉCÉDENTE : la laisser ouverte afficherait un vieux choix.
-                this.repVue = null;
+                // Le cadre fixé au doigt porte les réponses de la question
+                // PRÉCÉDENTE : le laisser ouvert afficherait de vieux choix.
+                this.crewVu = null;
                 this.clearSeal();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {
@@ -7804,7 +7838,11 @@ createApp({
 
         // ========== Question ==========
         selectAnswer(answerIndex, event) {
-            if (this.hasAnswered || this.playerLives === 0) return;
+            // ⚠️ Le compte de vies ne vaut QU EN mode Vies, ici comme sur le
+            // « disabled » du gabarit : sinon un zéro hérité d une partie
+            // précédente ravalait chaque clic d une partie en Points.
+            if (this.hasAnswered) return;
+            if (this.gameMode === 'lives' && this.playerLives <= 0) return;
 
             this.selectedAnswer = answerIndex;
             this._lastClickTime = Date.now();

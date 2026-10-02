@@ -8393,11 +8393,12 @@ body.game-active:has(.poll-game-container) #particles-js {
        ouvert sous la dernière vignette allongeait la zone et faisait
        apparaître une barre de défilement à chaque clic. La place lui est
        réservée en permanence : 1,6 rem de creux, soit la hauteur du menu. */
-    /* ⚠️ Et il déborde A GAUCHE aussi. Le menu part de la pastille vers la
-       gauche : sur la PREMIÈRE vignette d une rangée il sortait du cadre et
-       `overflow-x: hidden` lui coupait la lettre A. Deux rem de creux à
-       gauche, soit ce qui manquait. */
-    padding: 0.5rem 0.6rem 1.6rem 2rem;
+    /* ⚠️ Il débordait A GAUCHE aussi, sur la première vignette d une rangée.
+       C était rattrapé par deux rem de creux à gauche — trop peu selon le
+       nombre de camps offerts, et surtout la grille entière s en trouvait
+       décentrée pour une vignette sur cinq. Le menu se recale désormais tout
+       seul (`ouvrirCampMenu`), les creux redeviennent symétriques. */
+    padding: 0.5rem 0.6rem 1.6rem;
     max-height: clamp(21rem, 56vh, 33rem);
     overflow-x: hidden;
     overflow-y: auto;
@@ -11931,55 +11932,170 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2q-camp-bar .sc { font-size: 1.5rem; }
 .v2q-camp-bar:not(.tete) .sc { opacity: 0.72; }
 
-/* ── L'effectif d'un camp, chez l'hôte ──
-   Même langage que l'équipage du classement final (`.v2-end-crew`) : un
-   filet à gauche dans la couleur du camp, le pseudo qui s'élide, la vie
-   ou le score à droite. Le camp est déjà nommé juste au-dessus, donc
-   aucune couleur de plus ici — le filet suffit. */
-.v2q-crew { margin-top: 0.7rem; }
+/* ════════════════════════════════════════════════════════════════════
+   🆕 L'EFFECTIF D'UN CAMP, CHEZ L'HÔTE
+   Une icône à droite du score du camp, dans le panneau latéral ; au
+   survol, un cadre s'ouvre à gauche avec les joueurs, leurs vies ou
+   leurs points, et ce qu'ils ont répondu.
+   ⚠️ Ça a d'abord été posé À PLAT sous les barres de la feuille
+   « Détail de la question » : la feuille devenait longue, il fallait la
+   faire défiler pour atteindre le reste, et la lecture d'un coup d'oeil
+   était perdue. L'information ne se montre que quand on la demande.
+   ════════════════════════════════════════════════════════════════════ */
+.v2q-camp { position: relative; }
 
-.v2q-crew-row {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.22rem 0 0.22rem 0.6rem;
-    border-left: 0.09rem solid rgba(255, 255, 255, 0.12);
+.v2q-crew-pick { position: absolute; top: 0.6rem; right: 0; }
+
+.v2q-crew-btn {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.045);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.v2q-camp-bar.team-1 .v2q-crew-row { border-left-color: rgba(59, 130, 246, 0.32); }
-.v2q-camp-bar.team-2 .v2q-crew-row { border-left-color: rgba(240, 192, 64, 0.32); }
-.v2q-camp-bar.team-3 .v2q-crew-row { border-left-color: rgba(255, 45, 149, 0.32); }
-.v2q-camp-bar.team-4 .v2q-crew-row { border-left-color: rgba(34, 197, 94, 0.32); }
-.v2q-camp-bar.team-5 .v2q-crew-row { border-left-color: rgba(239, 68, 68, 0.32); }
+.v2q-crew-btn svg { width: 0.8rem; height: 0.8rem; }
 
-/* ⚠️ Écrase `.v2q-camp-bar .nm`, qui met le nom du CAMP en capitales
-   espacées : un pseudo traité comme un titre devenait illisible. Même
+.v2q-crew-pick:hover .v2q-crew-btn,
+.v2q-crew-btn.ouvert {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+/* Le cadre. Il s'ouvre À GAUCHE : le panneau est déjà collé au bord droit
+   de l'écran, il n'y a de la place que de ce côté. */
+.v2q-crew {
+    position: absolute;
+    right: calc(100% + 0.45rem);
+    top: -0.5rem;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    width: 17rem;
+    padding: 0.7rem 0.75rem 0.6rem;
+    border-radius: 0.7rem;
+    background: rgba(10, 10, 13, 0.98);
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.09), 0 0.8rem 2rem rgba(0, 0, 0, 0.65);
+    opacity: 0;
+    transform: translateX(0.4rem);
+    pointer-events: none;
+    transition: opacity 0.17s ease, transform 0.17s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+/* ⚠️ Un pont transparent par-dessus le creux de 0,45 rem : sans lui, le
+   curseur qui quitte l'icône pour aller lire le cadre traverse du vide, le
+   survol retombe et le cadre se referme sous le doigt. */
+.v2q-crew::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 0.55rem;
+    height: 100%;
+}
+
+.v2q-crew-pick:hover .v2q-crew,
+.v2q-crew-btn.ouvert + .v2q-crew {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+.v2q-crew-t {
+    margin-bottom: 0.4rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.54rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.v2q-crew.team-1 .v2q-crew-t { color: var(--camp-1); }
+.v2q-crew.team-2 .v2q-crew-t { color: var(--camp-2); }
+.v2q-crew.team-3 .v2q-crew-t { color: var(--camp-3); }
+.v2q-crew.team-4 .v2q-crew-t { color: var(--camp-4); }
+.v2q-crew.team-5 .v2q-crew-t { color: var(--camp-5); }
+
+.v2q-crew-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 0.5rem;
+    padding: 0.26rem 0;
+}
+
+.v2q-crew-row + .v2q-crew-row { border-top: 0.06rem solid rgba(255, 255, 255, 0.045); }
+
+/* ⚠️ Écrase `.v2q-camp .nm`, qui met le nom du CAMP en 0,8 rem : même
    spécificité, donc c'est l'ordre qui tranche — cette règle doit rester
    APRÈS celle du camp. */
 .v2q-crew-row .nm {
-    flex: 1;
+    display: block;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.74rem;
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
-    color: rgba(255, 255, 255, 0.72);
-    cursor: default;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.82);
 }
 
-.v2q-crew-row .sc { flex: none; font-size: 0.86rem; }
+/* La réponse, sous le pseudo : c'est la ligne qu'on vient lire, elle n'a
+   pas à se mériter un second survol. */
+.v2q-crew-row .rep {
+    grid-column: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    min-width: 0;
+    margin-top: 0.08rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.46);
+}
 
-/* ⚠️ `.v2q-camp-bar:not(.tete) .sc` pèse une classe de plus que
-   `.v2q-crew-row .sc` : sans ce rappel, le score de CHAQUE joueur des camps
-   qui ne mènent pas héritait du 0,72 d'opacité du score de camp. L'estompe
-   doit rester sur le gros chiffre du camp, pas sur l'effectif. */
-.v2q-camp-bar:not(.tete) .v2q-crew-row .sc { opacity: 1; }
+.v2q-crew-row .rep i { flex: none; font-style: normal; font-size: 0.55rem; }
+.v2q-crew-row .rep.m0 i { color: #ffd24a; }
+.v2q-crew-row .rep.m1 i { color: #7fb4ff; }
+.v2q-crew-row .rep.m2 i { color: #6ee7b7; }
+.v2q-crew-row .rep.m3 i { color: #d8b4fe; }
+.v2q-crew-row .rep.m4 i { color: #fca5a5; }
+.v2q-crew-row .rep.m5 i { color: #fdba74; }
+.v2q-crew-row .rep.juste { color: #6ee7b7; }
+.v2q-crew-row .rep.afk { font-style: italic; color: rgba(255, 255, 255, 0.28); }
+.v2q-crew-row .rep.afk i { color: rgba(255, 255, 255, 0.22); }
 
-.v2q-crew-hp { display: inline-flex; flex: none; gap: 0.16rem; }
+/* ⚠️ `.v2q-camp .sc` passe le score du camp en 1,85 rem et
+   `.v2q-camp:not(.tete) .sc` l'estompe à 0,72 — cette dernière pèse une
+   classe de plus, d'où le rappel explicite : sans lui, le score de chaque
+   joueur d'un camp qui ne mène pas héritait de l'estompe du gros chiffre. */
+.v2q-crew-row .sc,
+.v2q-camp:not(.tete) .v2q-crew-row .sc {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: block;
+    margin: 0;
+    font-size: 0.86rem;
+    opacity: 1;
+}
+
+.v2q-crew-hp {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: inline-flex;
+    gap: 0.16rem;
+}
 .v2q-crew-hp i { display: block; width: 0.62rem; height: 0.62rem; color: #ff5a6e; }
 .v2q-crew-hp i svg { display: block; width: 100%; height: 100%; fill: currentColor; stroke: currentColor; stroke-width: 1.6; }
 .v2q-crew-hp i.off { color: rgba(255, 255, 255, 0.2); }
@@ -11987,93 +12103,37 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 /* Éliminé : on le GRISE, on ne le retire pas. Savoir qui a sauté fait
    partie de ce que l'hôte vient lire. */
-.v2q-crew-row.mort { opacity: 0.42; }
+.v2q-crew-row.mort { opacity: 0.44; }
 .v2q-crew-row.mort .nm { text-decoration: line-through; text-decoration-thickness: 0.05rem; }
 
-/* ── La réponse, au survol du pseudo ──
-   ⚠️ En bulle ABSOLUE, pas sur une seconde ligne : une ligne qui se
-   déplie au survol pousse toutes celles d'en dessous, et à cinq camps le
-   bloc entier sautait sous le curseur. Posée par-dessus, elle ne déplace
-   rien. */
-.v2q-crew-rep {
-    position: absolute;
-    left: 0.6rem;
-    top: calc(100% - 0.12rem);
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    max-width: 14rem;
-    padding: 0.34rem 0.55rem;
-    border-radius: 0.45rem;
-    font-size: 0.68rem;
-    line-height: 1.25;
-    color: rgba(255, 255, 255, 0.82);
-    background: rgba(10, 10, 13, 0.97);
-    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.1), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.55);
-    opacity: 0;
-    transform: translateY(-0.2rem);
-    pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.9, 0.25, 1);
+.v2q-crew-vide { padding: 0.3rem 0; font-size: 0.68rem; color: rgba(255, 255, 255, 0.3); }
+
+/* Sous 1200 px le panneau devient une carte centrée : il n'y a plus de
+   place à sa gauche. Le cadre s'ouvre alors SOUS la ligne, sur toute la
+   largeur. */
+@media (max-width: 1200px) {
+    .v2q-crew {
+        right: 0;
+        left: 0;
+        top: 2.2rem;
+        width: auto;
+        transform: translateY(-0.35rem);
+    }
+    .v2q-crew::after { left: 0; top: -0.7rem; width: 100%; height: 0.8rem; }
 }
 
-/* Le repère de la réponse reprend la couleur de son rang, comme les
-   pastilles des résultats — l'hôte lit la même couleur aux deux endroits. */
-.v2q-crew-rep i {
-    flex: none;
-    font-style: normal;
-    font-size: 0.6rem;
-}
-.v2q-crew-rep.m0 i { color: #ffd24a; }
-.v2q-crew-rep.m1 i { color: #7fb4ff; }
-.v2q-crew-rep.m2 i { color: #6ee7b7; }
-.v2q-crew-rep.m3 i { color: #d8b4fe; }
-.v2q-crew-rep.m4 i { color: #fca5a5; }
-.v2q-crew-rep.m5 i { color: #fdba74; }
-.v2q-crew-rep.afk { color: rgba(255, 255, 255, 0.4); }
-.v2q-crew-rep.afk i { color: rgba(255, 255, 255, 0.28); }
-.v2q-crew-rep.juste { box-shadow: inset 0 0 0 0.06rem rgba(110, 231, 183, 0.45), 0 0.5rem 1.2rem rgba(0, 0, 0, 0.55); }
-
-/* Le survol pour la souris, la classe pour le doigt : l'hôte peut piloter
-   depuis un téléphone, où `:hover` ne se déclenche jamais. */
-.v2q-crew-row .nm:hover ~ .v2q-crew-rep,
-.v2q-crew-row.ouvert .v2q-crew-rep {
-    opacity: 1;
-    transform: none;
-}
-
-.v2q-crew-row .nm:hover { color: #fff; }
-.v2q-crew-row.ouvert .nm { color: #fff; }
-
-.v2q-crew-vide {
-    padding-left: 0.6rem;
-    font-size: 0.68rem;
-    color: rgba(255, 255, 255, 0.3);
-}
 
 @media (max-width: 768px) {
     .v2-hud-team { margin-right: 0.85rem; padding: 0.26rem 0.55rem; font-size: 0.58rem; }
     .v2q-camp .sc { font-size: 1.55rem; }
 
     /* Les deux camps l'un sous l'autre : à deux colonnes, les noms se coupent */
-    /* L'écart est passé de 0,9 à 1,5 rem : en colonne unique, chaque barre
-       porte maintenant son effectif, et deux camps se touchaient. */
-    .v2q-camps-bars { grid-template-columns: 1fr; gap: 1.5rem; padding: 0.85rem 0.9rem; }
+    .v2q-camps-bars { grid-template-columns: 1fr; gap: 0.9rem; padding: 0.85rem 0.9rem; }
     .v2q-camp-bar .sc { font-size: 1.3rem; }
 
     .v2-end-crew { padding: 0.15rem 0 0.5rem 1.9rem; }
     .v2-end-crew-row { font-size: 0.68rem; }
     .v2-end-crew-row .sc { font-size: 0.8rem; }
-
-    /* La feuille est étroite sur téléphone : la bulle de réponse se cale
-       sur la largeur disponible plutôt que sur une valeur fixe.
-       ⚠️ Le `.sc` est repris ici parce que `.v2q-camp-bar .sc` descend à
-       1,3 rem quelques lignes plus haut, à spécificité égale et donc
-       gagnante par l'ordre : sans ce rappel les scores de l'effectif
-       prenaient la taille du score de camp. */
-    .v2q-crew-row .nm { font-size: 0.7rem; }
-    .v2q-crew-row .sc { font-size: 0.8rem; }
-    .v2q-crew-rep { max-width: calc(100% - 1.2rem); }
 }
 
 
@@ -13347,14 +13407,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        pas bougé de ces endroits-là. */
     --camp-3: #ff2d95;   /* rose vif */
     --camp-4: #22c55e;   /* vert — celui de BombAnime */
-    --camp-5: #ef4444;   /* rouge — celui des cœurs */
+    /* ⚠️ Cyan, et non le rouge du premier jet. Rouge (0°) et rose vif (330°)
+       ne sont séparés que de 30° de teinte, à saturation et clarté voisines :
+       sur une pastille de 1,5 rem les camps C et E se confondaient.
+       Le violet serait le plus grand creux restant (217° → 330°), mais il
+       appartient au badge du mode Équipe. Restait le cyan : 45° du vert,
+       30° du bleu — mais BEAUCOUP plus clair et plus froid que lui, ce que
+       le rouge et le rose n'avaient pas pour les séparer. */
+    --camp-5: #22d3ee;   /* cyan */
 }
 
 /* Les trois nouvelles pastilles. Les deux premières gardent leurs
    règles d'origine, plus haut, pour que rien ne bouge à deux camps. */
 .v2-team-flag.team-3 { background: var(--camp-3); color: #2b0616; box-shadow: 0 0 0.7rem rgba(255, 45, 149, 0.5); }
 .v2-team-flag.team-4 { background: var(--camp-4); color: #04170c; box-shadow: 0 0 0.7rem rgba(34, 197, 94, 0.5); }
-.v2-team-flag.team-5 { background: var(--camp-5); color: #1c0606; box-shadow: 0 0 0.7rem rgba(239, 68, 68, 0.5); }
+.v2-team-flag.team-5 { background: var(--camp-5); color: #04171c; box-shadow: 0 0 0.7rem rgba(34, 211, 238, 0.5); }
 
 /* ── Le menu de camp ──
    La pastille ne bascule plus, elle ouvre. Le menu se pose SOUS elle et
@@ -13367,7 +13434,10 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-team-menu {
     position: absolute;
     top: 1.5rem;
-    right: -0.42rem;
+    /* `--decal` est posé en ligne par `ouvrirCampMenu` : c'est ce qui manque
+       au menu pour tenir dans la grille. Un `right` plus PETIT le pousse
+       vers la droite, d'où le moins. */
+    right: calc(-0.42rem - var(--decal, 0px));
     z-index: 30;
     display: flex;
     gap: 0.2rem;
@@ -13415,7 +13485,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 .v2-room-player.team-3 { border-color: rgba(255, 45, 149, 0.5); }
 .v2-room-player.team-4 { border-color: rgba(34, 197, 94, 0.5); }
-.v2-room-player.team-5 { border-color: rgba(239, 68, 68, 0.5); }
+.v2-room-player.team-5 { border-color: rgba(34, 211, 238, 0.5); }
 
 @media (max-width: 780px) {
     .v2-team-opt { width: 1.35rem; height: 1.35rem; font-size: 0.66rem; }
@@ -13490,9 +13560,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     color: #5ee08c;
 }
 .hud-team-badge.team-5 {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1));
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.1));
     border: 1px solid var(--camp-5);
-    color: #ff8282;
+    color: #7fe6f7;
 }
 
 /* ── Le score de mon camp, sous les réponses ── */
@@ -13504,7 +13574,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .my-team-score.team-4 .team-name { color: var(--camp-4); }
 .my-team-score.team-4 .team-separator { background: var(--camp-4); }
 
-.my-team-score.team-5 { background: rgba(239, 68, 68, 0.1); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
+.my-team-score.team-5 { background: rgba(34, 211, 238, 0.1); box-shadow: 0 0 15px rgba(34, 211, 238, 0.15); }
 .my-team-score.team-5 .team-name { color: var(--camp-5); }
 .my-team-score.team-5 .team-separator { background: var(--camp-5); }
 
@@ -13525,22 +13595,22 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2q-camp-bar.team-5 .sc,
 .v2q-camp-bar.team-5 .nm { color: var(--camp-5); }
 .v2q-camp.team-5 .jauge i,
-.v2q-camp-bar.team-5 .rail i { background: linear-gradient(90deg, rgba(239, 68, 68, 0.45), var(--camp-5)); }
+.v2q-camp-bar.team-5 .rail i { background: linear-gradient(90deg, rgba(34, 211, 238, 0.45), var(--camp-5)); }
 
 /* ── Le camp dans le HUD compact ── */
 .v2-hud-team.team-3 { color: var(--camp-3); background: rgba(255, 45, 149, 0.1); box-shadow: inset 0 0 0 0.06rem rgba(255, 45, 149, 0.32); }
 .v2-hud-team.team-4 { color: var(--camp-4); background: rgba(34, 197, 94, 0.1);  box-shadow: inset 0 0 0 0.06rem rgba(34, 197, 94, 0.32); }
-.v2-hud-team.team-5 { color: var(--camp-5); background: rgba(239, 68, 68, 0.1);  box-shadow: inset 0 0 0 0.06rem rgba(239, 68, 68, 0.32); }
+.v2-hud-team.team-5 { color: var(--camp-5); background: rgba(34, 211, 238, 0.1);  box-shadow: inset 0 0 0 0.06rem rgba(34, 211, 238, 0.32); }
 
 /* ── La vignette d'un joueur dans le salon ── */
 .v2-room-player.team-3 { border-color: rgba(255, 45, 149, 0.45); background: rgba(255, 45, 149, 0.15); color: #ffd9ea; }
 .v2-room-player.team-4 { border-color: rgba(34, 197, 94, 0.45);  background: rgba(34, 197, 94, 0.15);  color: #d6f5e2; }
-.v2-room-player.team-5 { border-color: rgba(239, 68, 68, 0.45);  background: rgba(239, 68, 68, 0.15);  color: #ffdcdc; }
+.v2-room-player.team-5 { border-color: rgba(34, 211, 238, 0.45);  background: rgba(34, 211, 238, 0.15);  color: #d2f6fd; }
 
 /* ── L'équipage d'un camp, à l'écran de fin ── */
 .v2-end-crew.team-3 .v2-end-crew-row { border-left-color: rgba(255, 45, 149, 0.3); }
 .v2-end-crew.team-4 .v2-end-crew-row { border-left-color: rgba(34, 197, 94, 0.3); }
-.v2-end-crew.team-5 .v2-end-crew-row { border-left-color: rgba(239, 68, 68, 0.3); }
+.v2-end-crew.team-5 .v2-end-crew-row { border-left-color: rgba(34, 211, 238, 0.3); }
 .v2-end-crew.team-3 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-3); }
 .v2-end-crew.team-4 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-4); }
 .v2-end-crew.team-5 .v2-end-crew-row:first-of-type { border-left-color: var(--camp-5); }
