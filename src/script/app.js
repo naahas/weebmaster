@@ -536,6 +536,7 @@ createApp({
             // Le menu de camp ouvert, s il y en a un : le playerId du joueur visé.
             campMenu: null,
             campMenuDecal: 0,           // recalage du menu de camp quand il sort de la grille
+            kickArme: null,             // la vignette qui attend son second clic pour exclure
             // Grouper les vignettes par camp. Affichage seul : rien ne part au serveur.
             triParCamp: false,
             tabConflict: false,   // un autre onglet du même navigateur tient déjà la partie
@@ -690,6 +691,13 @@ createApp({
             // Même raison pour l effectif fixé au doigt : l icône porte
             // `@click.stop`, donc l ouvrir ne le referme pas.
             if (this.crewVu) this.crewVu = null;
+            // Et la vignette armée : cliquer AILLEURS doit la désarmer, c est
+            // le geste naturel pour annuler. La vignette porte `@click.stop`,
+            // donc l armer ne la désarme pas aussitôt.
+            if (this.kickArme) {
+                this.kickArme = null;
+                clearTimeout(this._kickTimer);
+            }
         });
 
         // 🆕 v2 : les stats en premier — elles ne doivent dépendre de rien d'autre
@@ -4643,6 +4651,29 @@ createApp({
             if (!this.socket) return;
             const cible = this.lobbyPlayers.find(p => p.playerId === playerId);
             this.socket.emit('kick-player', { playerId, username: cible ? cible.username : undefined, hostToken: this.hostToken });
+        },
+
+        // Premier clic : on arme. Second : on exclut.
+        //
+        // ⚠️ Deux clics plutôt qu une modale. La pastille de camp est POSÉE SUR
+        // la vignette : en la visant un peu court, l hôte cliquait la vignette
+        // et excluait quelqu un qu il voulait seulement changer d équipe. Mais
+        // une fenêtre de confirmation déplace le regard et le geste ailleurs à
+        // l écran, pour un salon qu on remplit vite — l armement se fait sur
+        // place, là où le doigt est déjà.
+        //
+        // ⚠️ Et elle se DÉSARME seule au bout de trois secondes. Une vignette
+        // qui resterait rouge indéfiniment deviendrait un piège de plus : on
+        // la croirait simplement en surbrillance et le clic suivant tuerait.
+        armerKick(playerId) {
+            clearTimeout(this._kickTimer);
+            if (this.kickArme === playerId) {
+                this.kickArme = null;
+                this.hostKick(playerId);
+                return;
+            }
+            this.kickArme = playerId;
+            this._kickTimer = setTimeout(() => { this.kickArme = null; }, 3000);
         },
 
         lockMode(id) {

@@ -487,11 +487,28 @@
                             </div>
                             <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
                                 <span class="v2-room-player-wrap" v-for="p in joueursAffiches" :key="p.playerId">
+                                <!-- ⚠️ L exclusion demande DEUX clics, et pas une modale.
+                                     D un seul clic on excluait sans le vouloir en visant la
+                                     pastille de camp, qui est posée sur la vignette. Mais une
+                                     fenêtre de confirmation coûte un aller-retour du regard et
+                                     un second geste ailleurs à l écran : le premier clic ARME
+                                     la vignette sur place, le second exclut. Elle se désarme
+                                     seule, et au premier clic ailleurs. -->
                                 <button class="v2-room-player"
-                                     :class="['team-' + (p.team || 0), { me: p.playerId === playerId, kickable: isHost && p.playerId !== playerId }]"
-                                     :title="isHost && p.playerId !== playerId ? 'Exclure ' + p.username : null"
-                                     @click="isHost && p.playerId !== playerId ? hostKick(p.playerId) : null">
+                                     :class="['team-' + (p.team || 0), { me: p.playerId === playerId,
+                                              kickable: isHost && p.playerId !== playerId,
+                                              arme: kickArme === p.playerId }]"
+                                     :title="isHost && p.playerId !== playerId
+                                             ? (kickArme === p.playerId ? 'Clique encore pour exclure ' + p.username : 'Exclure ' + p.username)
+                                             : null"
+                                     @click.stop="isHost && p.playerId !== playerId ? armerKick(p.playerId) : null">
                                     <span class="v2-room-player-name">{{ p.username }}</span>
+                                    <span class="v2-room-player-x" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                                            <path d="M6 6l12 12M18 6L6 18"/>
+                                        </svg>
+                                    </span>
+                                    <span class="v2-room-player-meche" aria-hidden="true"></span>
                                 </button>
                                 <!-- ⚠️ La pastille BASCULAIT entre deux camps. Avec cinq, une
                                      bascule n a plus de sens : elle ouvre un choix.

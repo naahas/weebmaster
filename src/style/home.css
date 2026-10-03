@@ -8407,6 +8407,8 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 .v2-room-player {
+    /* La mèche de l'exclusion se pose dessus */
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.55rem;
@@ -8419,7 +8421,14 @@ body.game-active:has(.poll-game-container) #particles-js {
     border-radius: 2rem;
     font-family: inherit;
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-    animation: v2PlayerIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    /* ⚠️ « backwards » et non « both ». Une animation remplie en « both » garde
+       sa DERNIÈRE image appliquée pour toujours, et celle-ci finit sur
+       « transform: none » — or les animations l'emportent sur les déclarations
+       normales. Le `translateY` du survol ne s'appliquait donc jamais : la
+       vignette ne se soulevait pas, en silence. « backwards » ne garde que
+       l'état d'AVANT le départ, qui est tout ce dont l'entrée a besoin.
+       Même piège que le `--decal` du menu de camp. */
+    animation: v2PlayerIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) backwards;
 }
 
 @keyframes v2PlayerIn {
@@ -8443,14 +8452,93 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* L'hôte exclut un joueur en cliquant son pseudo */
 .v2-room-player.kickable { cursor: pointer; }
 
+/* ⚠️ Le SURVOL ne promet plus l'exclusion, il la propose. Il annonçait le
+   rouge plein et le texte barré — l'état de quelque chose de déjà décidé —
+   pour un simple passage de souris, et l'hôte cliquait en confiance. Il
+   reste une teinte rouge, assez pour dire « ça se clique et c'est dangereux »,
+   pas assez pour dire « c'est fait ». */
 .v2-room-player.kickable:hover {
-    color: #fff;
-    background: rgba(239, 68, 68, 0.9);
-    border-color: rgba(239, 68, 68, 0.9);
+    color: #ffd9d9;
+    background: rgba(239, 68, 68, 0.26);
+    border-color: rgba(239, 68, 68, 0.6);
     transform: translateY(-0.1rem);
 }
 
-.v2-room-player.kickable:hover .v2-room-player-name { text-decoration: line-through; }
+/* ── Armée : le premier clic est passé, le second exclut ──
+   C'est ICI que le rouge devient plein et le nom barré. L'écart avec le
+   survol doit se voir d'un coup d'œil, sans quoi les deux états se
+   confondent et le second clic part tout seul. */
+.v2-room-player.kickable.arme {
+    color: #fff;
+    background: rgba(239, 68, 68, 0.94);
+    border-color: #ef4444;
+    transform: translateY(-0.1rem) scale(1.04);
+    box-shadow: 0 0 0 0.12rem rgba(239, 68, 68, 0.28), 0 0.4rem 1rem rgba(239, 68, 68, 0.3);
+    /* Un seul battement à l'armement, pas une pulsation sans fin : elle
+       attirerait l'œil pendant trois secondes pour ne rien dire de plus. */
+    animation: v2KickArme 0.26s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes v2KickArme {
+    0%   { transform: translateY(-0.1rem) scale(1); }
+    55%  { transform: translateY(-0.1rem) scale(1.09); }
+    100% { transform: translateY(-0.1rem) scale(1.04); }
+}
+
+.v2-room-player.kickable.arme .v2-room-player-name { text-decoration: line-through; }
+
+/* La croix pousse le nom d'un cran vers la gauche, sans changer la largeur
+   de la vignette : la grille ne doit pas se réagencer sous le curseur. */
+.v2-room-player-x {
+    display: grid;
+    place-items: center;
+    width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: width 0.18s cubic-bezier(0.2, 0.9, 0.25, 1), margin-left 0.18s, opacity 0.14s ease;
+}
+.v2-room-player-x svg { width: 0.72rem; height: 0.72rem; }
+
+.v2-room-player.kickable.arme .v2-room-player-x {
+    width: 0.72rem;
+    margin-left: 0.4rem;
+    opacity: 1;
+}
+
+/* ⚠️ La mèche dit le temps qu'il reste pour confirmer. Sans elle, l'hôte ne
+   peut pas savoir que la vignette va se désarmer toute seule : il reviendrait
+   cliquer une seconde fois sur une vignette redevenue inoffensive, et ne
+   comprendrait pas pourquoi il ne se passe rien.
+   Sa durée est écrite ici ET dans `armerKick` : les deux doivent bouger
+   ensemble, 3 s. */
+.v2-room-player-meche {
+    position: absolute;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.26rem;
+    height: 0.1rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.55);
+    transform-origin: left center;
+    transform: scaleX(0);
+    opacity: 0;
+}
+
+.v2-room-player.kickable.arme .v2-room-player-meche {
+    opacity: 1;
+    animation: v2KickMeche 3s linear forwards;
+}
+
+@keyframes v2KickMeche {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .v2-room-player.kickable.arme { animation: none; }
+    .v2-room-player.kickable.arme .v2-room-player-meche { animation-timing-function: step-end; }
+}
 
 .v2-room-empty {
     padding: 1.1rem 1.2rem;
@@ -12349,8 +12437,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.5);
 }
 
-/* Le survol d'exclusion ne doit pas repeindre la pastille */
-.v2-room-player-wrap:has(.v2-room-player.kickable:hover) .v2-team-flag { opacity: 0.35; }
+/* ⚠️ La pastille ne s'estompe PLUS au simple survol, seulement une fois la
+   vignette ARMÉE. Elle est posée SUR la vignette : la viser un peu court
+   survolait la vignette, la pastille s'effaçait sous le curseur, et l'on
+   cliquait là où il n'y avait plus rien à viser — c'est précisément ce qui
+   faisait exclure des joueurs qu'on voulait changer d'équipe. */
+.v2-room-player-wrap:has(.v2-room-player.kickable.arme) .v2-team-flag { opacity: 0.35; }
 
 /* ============================================
    🆕 v2 — DÉTAIL D'UN CAMP AU CLASSEMENT FINAL
