@@ -46,14 +46,14 @@
     "stop": "node scripts/stop.js",
     "restart": "node scripts/stop.js && npm start",
     "test:rejointure": "node scripts/test-rejointure.js",
-    "test:mdp": "node scripts/test-mdp.js",
     "test:panneau": "node scripts/test-panneau.js",
     "test:banque": "node scripts/test-banque.js",
     "check:panneau": "node scripts/verif-panneau.js",
     "test:bot-fantome": "node scripts/test-bot-fantome.js",
     "test:ordre": "node scripts/test-ordre.js",
     "bomb:compter": "node scripts/compter-persos.js",
-    "test:reglages": "node scripts/test-reglages.js"
+    "test:reglages": "node scripts/test-reglages.js",
+    "test:portes": "node scripts/test-portes.js"
   },
   "keywords": [
     "quiz",

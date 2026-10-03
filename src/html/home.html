@@ -294,59 +294,18 @@
                                 <span class="v2-mode-preview-name">{{ currentMode.name }}</span>
                                 <span class="v2-mode-rule"></span>
                                 <p class="v2-mode-preview-desc" v-if="currentMode.desc">{{ currentMode.desc }}</p>
-                                <!-- MESURE TEMPORAIRE — le bouton et le champ de mot de passe
-                                     occupent la MEME case. Le second pousse a la place du
-                                     premier au lieu de s ouvrir en modale : pas de voile, donc
-                                     pas de « backdrop-filter » plein ecran a animer.
-
-                                     ⚠️ Aucun « v-if » ni « v-show » sur ces deux-la : un element
-                                     qui passe de « display: none » a visible dans la meme image
-                                     que son changement de classe n a pas d etat de depart, donc
-                                     RIEN NE S ANIME — on verrait le champ apparaitre d un coup.
-                                     C est la classe « mdp » posee sur la case qui decide, et le
-                                     CSS seul qui fait passer l un devant l autre. Le bouton reste
-                                     donc toujours dans le flux : c est lui qui donne sa hauteur a
-                                     la case, et la carte ne saute jamais.
-
-                                     Pour lever la mesure : ne garder que le bouton. -->
-                                <div class="v2-cta-case" :class="{ mdp: mdpOuvert }">
+                                <!-- Le mode Classique s ouvrait sous mot de passe, et un champ
+                                     partageait cette case avec le bouton. La mesure est levée :
+                                     il s ouvre à tout le monde et se garde désormais par un
+                                     plancher de dix joueurs au lancement (« MIN_CLASSIQUE »
+                                     dans app.js). Il ne reste que le bouton. -->
+                                <div class="v2-cta-case">
                                     <button class="v2-cta" @click="createRoom"
-                                            :disabled="creatingRoom || currentMode.soon"
-                                            :tabindex="mdpOuvert ? -1 : 0">
+                                            :disabled="creatingRoom || currentMode.soon">
                                         <span class="v2-cta-label">{{ creatingRoom ? 'Création…' : (currentMode.soon ? 'Bientôt disponible' : 'Créer un salon') }}</span>
                                         <span class="v2-cta-shine"></span>
                                     </button>
-
-                                    <div class="v2-mdp-champ" :class="{ ko: mdpShake }">
-                                        <svg class="v2-mdp-cadenas" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <rect x="4" y="10.5" width="16" height="10.5" rx="2"/>
-                                            <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
-                                        </svg>
-                                        <input
-                                            :type="mdpMasqueCss ? 'text' : 'password'"
-                                            class="v2-mdp-input"
-                                            ref="mdpInput"
-                                            v-model="mdpSalon"
-                                            :disabled="creatingRoom"
-                                            @keyup.enter="validerMdp"
-                                            @keyup.esc="annulerMdp"
-                                            placeholder="Réservé…"
-                                            autocomplete="off"
-                                            spellcheck="false">
-                                        <button class="v2-mdp-ok" @click="validerMdp" :disabled="creatingRoom"
-                                                title="Ouvrir le salon" aria-label="Ouvrir le salon">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
-                                                 stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M5 12h13"/><path d="M12 5l7 7-7 7"/>
-                                            </svg>
-                                        </button>
-                                    </div>
                                 </div>
-                                <!-- Pas de ligne d erreur sous le champ : un refus se dit par la
-                                     secousse rouge, et rien de plus. Une ligne de texte aurait
-                                     rallonge la carte pour une information que le tremblement
-                                     donne deja — voir « .v2-mdp-champ.ko ». -->
                                 <div class="v2-action-error" v-if="createError">{{ createError }}</div>
                             </div>
                         </div>
@@ -2831,14 +2790,6 @@
             <span>EN LIVE</span>
         </div>
 
-
-        <!-- ============================================
-             MESURE TEMPORAIRE — mot de passe du mode Classique
-             Posé à la racine : un ancêtre porteur d'un « transform » créerait
-             un bloc conteneur et casserait le « position: fixed » du voile.
-             Pour lever la mesure : supprimer ce bloc, le garde dans
-             /admin/toggle-game et « demandeMdp » dans app.js.
-             ============================================ -->
 
         <!-- L ancien bouton Instagram vivait ici, seul et seulement avant la
              saisie du pseudo. Les deux reseaux sont maintenant dans « v2-reseaux »,

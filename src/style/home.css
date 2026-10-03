@@ -12774,198 +12774,20 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 .v2-set-porte:hover .v2-set-fleche { transform: translateX(0.15rem); color: var(--neon-primary); }
 
-/* ════════════════════════════════════════════════════════════
-   MESURE TEMPORAIRE — mot de passe du mode Classique
-   Tout est regroupé ici pour qu'un seul bloc parte le jour où
-   la mesure est levée.
-
-   ⚠️ C'était une modale, et elle saccadait. Le voile portait un
-   « backdrop-filter: blur » PLEIN ÉCRAN dont on animait l'opacité,
-   et la boîte posée dessus en portait un SECOND, imbriqué : à
-   chaque image le navigateur refloutait toute l'illustration du
-   mode et ses particules, puis refloutait le résultat sous la
-   boîte. Animer l'opacité d'un flou plein écran est le pire cas
-   qu'on puisse demander au compositeur.
-
-   Le champ pousse maintenant À LA PLACE du bouton, dans la même
-   case. Rien ne se floute, rien ne se réagence : seules l'opacité
-   et une découpe bougent, et le compositeur les tient sans toucher
-   à la mise en page.
-   ════════════════════════════════════════════════════════════ */
-
 /* ⚠️ La carte du mode est une colonne « align-items: flex-start » :
    le bouton y est CALÉ À GAUCHE et large comme son texte. La case
    prend donc toute la largeur — invisible, elle ne déplace rien — et
-   remet ses enfants à gauche, sinon le bouton se recentrerait. */
+   remet ses enfants à gauche, sinon le bouton se recentrerait.
+
+   Elle partageait sa place avec le champ de mot de passe du mode
+   Classique ; la mesure est levée et le champ est parti avec elle.
+   La case reste : c'est elle qui tient l'alignement du bouton. */
 .v2-cta-case {
     position: relative;
     display: grid;
     justify-items: start;
     width: 100%;
 }
-
-/* Le bouton reste le SEUL enfant dans le flux : c'est sa hauteur qui
-   devient celle de la case, même quand il est effacé. La carte ne peut
-   donc pas sauter au moment de l'échange. */
-.v2-cta-case .v2-cta {
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.7, 0.2),
-                opacity 0.15s ease,
-                visibility 0s linear 0s,
-                box-shadow 0.3s ease,
-                filter 0.25s ease;
-}
-
-.v2-cta-case.mdp .v2-cta {
-    transform: scale(0.9);
-    opacity: 0;
-    /* « visibility » plutôt que « display » : elle se retarde le temps de
-       l'effacement, et sort le bouton du parcours au clavier une fois
-       caché — ce que l'opacité seule ne fait pas. */
-    visibility: hidden;
-    transition-delay: 0s, 0s, 0.15s, 0s, 0s;
-    box-shadow: none;
-}
-
-/* Le champ est HORS DU FLUX, calé sur le bord gauche du bouton, et se
-   découvre vers la droite. Une découpe et une opacité : ni largeur ni
-   hauteur ne changent, donc aucun recalcul de mise en page. */
-.v2-mdp-champ {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    width: min(12rem, 100%);
-    padding: 0.8rem 0.5rem 0.8rem 0.9rem;
-    background: rgba(14, 12, 8, 0.82);
-    border: 0.09rem solid rgba(255, 215, 0, 0.5);
-    border-radius: 0.5rem;
-    box-shadow: 0 0.4rem 1.5rem rgba(255, 175, 0, 0.16),
-                inset 0 0 1.4rem rgba(255, 190, 40, 0.06);
-    transform: translateY(-50%);
-    /* Fermé : entièrement rogné par la droite. Le « round » suit le rayon
-       de la boîte, sinon les coins se carreraient pendant l'ouverture. */
-    clip-path: inset(0 100% 0 0 round 0.5rem);
-    opacity: 0;
-    visibility: hidden;
-    transition: clip-path 0.38s cubic-bezier(0.22, 1, 0.32, 1),
-                opacity 0.18s ease,
-                visibility 0s linear 0.38s,
-                border-color 0.25s ease,
-                box-shadow 0.3s ease;
-}
-
-.v2-cta-case.mdp .v2-mdp-champ {
-    clip-path: inset(0 0 0 0 round 0.5rem);
-    opacity: 1;
-    visibility: visible;
-    transition-delay: 0.04s, 0.04s, 0s, 0s, 0s;
-}
-
-.v2-cta-case.mdp .v2-mdp-champ:focus-within {
-    border-color: rgba(255, 215, 0, 0.82);
-    box-shadow: 0 0.4rem 1.6rem rgba(255, 175, 0, 0.26),
-                inset 0 0 1.4rem rgba(255, 190, 40, 0.1);
-}
-
-/* Le cadenas dit de quoi il s'agit sans ajouter de ligne de texte :
-   la carte garde exactement la hauteur qu'elle avait avec le bouton. */
-.v2-mdp-cadenas {
-    flex: none;
-    width: 0.95rem;
-    height: 0.95rem;
-    /* Un ecart a lui seul, plus large que celui qui le separe de la fleche :
-       colle au premier caractere, le cadenas se lisait comme une lettre. */
-    margin-right: 0.45rem;
-    color: rgba(255, 215, 0, 0.55);
-}
-
-.v2-mdp-input {
-    flex: 1;
-    min-width: 0;
-    padding: 0.5rem 0;
-    font-family: 'Space Grotesk', monospace;
-    font-size: 0.88rem;
-    letter-spacing: 0.12em;
-    color: rgba(255, 250, 235, 0.96);
-    background: transparent;
-    border: none;
-    outline: none;
-    /* ⚠️ Le champ est un « text » et non un « password » — voir created() :
-       c est ce qui rend le copier-coller entier. C est donc CETTE ligne qui
-       masque la saisie, et elle ne doit jamais partir. */
-    -webkit-text-security: disc;
-    text-security: disc;
-}
-
-/* Le gabarit est en chasse fixe et très espacé ; la consigne, elle, doit
-   se lire d'un coup, donc elle reprend la police du site. */
-.v2-mdp-input::placeholder {
-    font-family: inherit;
-    /* ⚠️ C est la consigne qui fixe la largeur minimale du champ : « Temporairement
-       réservé… » se coupait, d où « Réservé… ». La raccourcir est donc ce qu il faut
-       faire avant de vouloir un champ plus court. */
-    font-size: 0.82rem;
-    letter-spacing: 0.02em;
-    color: rgba(255, 255, 255, 0.32);
-}
-
-/* La fleche ne porte PAS de pastille pleine : le champ a deja sa bordure
-   doree, et un second aplat jaune a l interieur alourdissait la carte. Reste
-   le seul trait, qui s eclaire au survol. */
-.v2-mdp-ok {
-    display: grid;
-    place-items: center;
-    flex: none;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    color: rgba(255, 215, 0, 0.7);
-    background: transparent;
-    border: none;
-    border-radius: 0.35rem;
-    cursor: pointer;
-    transition: transform 0.15s ease, color 0.2s ease, background 0.2s ease;
-}
-
-.v2-mdp-ok svg { width: 1.05rem; height: 1.05rem; }
-
-.v2-mdp-ok:hover:not(:disabled) {
-    color: var(--neon-primary);
-    background: rgba(255, 215, 0, 0.1);
-}
-
-.v2-mdp-ok:active:not(:disabled) { transform: scale(0.88); }
-.v2-mdp-ok:disabled { cursor: default; opacity: 0.35; }
-
-/* Un refus ne se dit QUE par là : pas de ligne de texte sous le champ, qui
-   rallongerait la carte pour une information que le tremblement donne déjà.
-   D'où une secousse courte et de faible amplitude — elle doit se remarquer
-   sans faire sursauter.
-
-   ⚠️ Elle écrase « transform », qui porte déjà le « translateY(-50%) » du
-   centrage : chaque image doit le reposer, sinon le champ sauterait d'une
-   demi-hauteur le temps de l'animation. */
-.v2-cta-case.mdp .v2-mdp-champ.ko {
-    border-color: rgba(255, 95, 115, 0.75);
-    box-shadow: 0 0.3rem 1.2rem rgba(255, 60, 85, 0.2),
-                inset 0 0 1.4rem rgba(255, 60, 85, 0.07);
-    animation: v2MdpSecoue 0.34s ease;
-}
-
-@keyframes v2MdpSecoue {
-    0%, 100% { transform: translate(0, -50%); }
-    22%      { transform: translate(-0.2rem, -50%); }
-    50%      { transform: translate(0.17rem, -50%); }
-    78%      { transform: translate(-0.08rem, -50%); }
-}
-
-/* Au doigt, la carte occupe toute la largeur : le champ la prend aussi. */
-@media (max-width: 768px) {
-    .v2-mdp-champ { width: 100%; }
-}
-
 
 
 /* ── Le « ! » d'aide, posé hors du panneau ──

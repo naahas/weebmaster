@@ -1,11 +1,17 @@
-// ── Mesure temporaire ──
-// Le mode Classique ne s'ouvre qu'avec le mot de passe de l'ancien panneau
-// d'administration. Les suites ouvrent des salons Classique : il leur faut donc
-// ce mot de passe. Les scripts de test ne chargent pas `.env` (seul le serveur
-// le fait), on le lit donc à la main.
+// ── Vestige de la mesure temporaire, levée le 3 octobre 2026 ──
 //
-// Le jour où la mesure est levée : supprimer ce fichier, le garde dans
-// /admin/toggle-game et « demandeMdp » dans app.js.
+// Le mode Classique ne s'ouvrait qu'avec le mot de passe de l'ancien panneau
+// d'administration. Il s'ouvre désormais à tout le monde, et se garde par un
+// plancher de dix joueurs au lancement (`MIN_CLASSIQUE` dans app.js).
+//
+// ⚠️ CE FICHIER SURVIT, et ce n'est pas un oubli : DIX-NEUF suites l'importent
+// et envoient encore `motDePasse` à `/admin/toggle-game`. Le serveur ignore
+// désormais ce champ, donc elles marchent telles quelles — les toucher toutes
+// pour retirer un champ inerte, c'est dix-neuf occasions de casser le filet
+// qui garde le reste. Il rend `''` si la variable n'existe plus, et ça suffit.
+//
+// À nettoyer un jour, hors d'un chantier : retirer `motDePasse` des suites,
+// puis ce fichier.
 const fs = require('fs');
 const path = require('path');
 

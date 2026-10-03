@@ -4,6 +4,24 @@
 
 const { createApp } = Vue;
 
+// 🎯 Le plancher du mode Classique. Il a remplacé le mot de passe qui fermait
+// le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'à
+// dix. Le quiz est le mode qui demande du monde — à deux ou trois il se joue
+// en quelques questions et donne de lui une idée bien plus pauvre que ce
+// qu'il est à quinze.
+//
+// ⚠️ Écrit UNE fois. La carte du mode sur l'accueil et le bouton Démarrer
+// lisent cette constante, sans quoi la pastille annoncerait un chiffre et le
+// bouton en exigerait un autre — exactement la maladie qui figeait les
+// réglages d'un salon à l'autre.
+//
+// ⚠️ Et il vit dans l'INTERFACE, pas dans le serveur, comme le plancher de
+// deux joueurs qu'il remplace pour ce mode : le serveur accepterait une partie
+// à deux. C'est délibéré — c'est un garde-fou de produit, pas de sécurité, et
+// le poser côté serveur mettrait toutes les suites à genoux, qui jouent le
+// quiz à deux joueurs.
+const MIN_CLASSIQUE = 10;
+
 // 🎴 Les séries de Collect sont écrites d'un seul tenant dans les données
 // (« FairyTail ») : c'est une CLÉ, pas un titre. On ne la découpe pas aux
 // majuscules — « JoJo » donnerait « Jo Jo », « HunterXHunter » un X esseulé.
@@ -257,7 +275,7 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', min: '2', max: '∞',  img: 'kenshin2.webp',
+                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', min: String(MIN_CLASSIQUE), max: '∞',  img: 'kenshin2.webp',
                   desc: "Quiz anime/manga général. La même question s'affiche pour tout le monde, avec un temps limité pour répondre. Mode vie ou point disponible, seul ou en deux équipes." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   min: '1', max: '15', img: 'lambo3.webp',
                   desc: "Le jeu de la bombe, version anime. Chaque joueur cite un personnage d'une série donnée avant qu'elle n'explose sur lui. Le dernier survivant l'emporte." },
@@ -283,14 +301,6 @@ createApp({
             // s'y inscrit et on ne la redemande plus de la manche.
             visuelsManquants: {},
 
-            // Mesure temporaire : le mode Classique demande un mot de passe.
-            // Gardé en mémoire seulement — un rechargement le redemande.
-            demandeMdp: false,
-            // Le champ peut-il masquer sa saisie en restant un champ texte ?
-            // Repondu une fois a l ouverture, voir created().
-            mdpMasqueCss: false,
-            mdpSalon: '',
-            mdpShake: false,
             selectedMode: localStorage.getItem('lastMode') || 'classic',
             hoverMode: null,   // survol temporaire ; le clic verrouille selectedMode
             showSettings: true,
@@ -657,19 +667,6 @@ createApp({
         this._notifSeq = 0;
 
 
-        // ⚠️ Un « type=password » interdit de COPIER sa valeur : c est le
-        // navigateur qui le decide, et aucun code ne peut le lever. Un champ
-        // TEXTE masque par « -webkit-text-security » rend le copier-coller
-        // entier. On ne peut pas changer le type d un champ depuis une feuille
-        // de style : la question se pose donc ICI, et l on retombe sur
-        // « password » si la propriete manque — mieux vaut perdre le copier
-        // que montrer un mot de passe en clair a un stream.
-        try {
-            this.mdpMasqueCss = !!(window.CSS && CSS.supports &&
-                (CSS.supports('-webkit-text-security', 'disc') ||
-                 CSS.supports('text-security', 'disc')));
-        } catch (e) { this.mdpMasqueCss = false; }
-
         // 🔗 Le code peut venir de l adresse. On le lit ICI et pas plus tard :
         // restoreGameState() peut nous remettre dans une partie en cours, et il
         // faut alors l ignorer — on ne deplace pas quelqu un qui joue deja.
@@ -870,12 +867,29 @@ createApp({
 
         // Le serveur refuse en dessous de 2 joueurs : on grise plutot que d avertir
         canStart() {
-            if (this.playerCount < 2) return false;
+            if (this.playerCount < this.minPourDemarrer) return false;
             // En camps, le serveur refuse de lancer s il n y a qu un camp
             // peuplé. Le bouton le dit avant, plutôt que de laisser l hôte
             // cliquer dans le vide.
             if (this.lobbyMode === 'rivalry' && this.campsEnJeu.length < 2) return false;
             return true;
+        },
+
+        // Combien de joueurs il faut pour lancer CE salon.
+        //
+        // ⚠️ Deux au plancher pour tout le monde — « de base shonenmaster est
+        // conçu pour jouer à plusieurs » —, dix pour le quiz. BombAnime y
+        // échappe par le bot, qui compte comme joueur : un humain plus le
+        // partenaire font deux.
+        minPourDemarrer() {
+            return (this.lobbyMode === 'classic' || this.lobbyMode === 'rivalry')
+                ? MIN_CLASSIQUE : 2;
+        },
+
+        // Ce qu il manque pour démarrer, pour le dire à l hôte plutôt que de
+        // lui laisser un bouton gris sans explication.
+        joueursManquants() {
+            return Math.max(0, this.minPourDemarrer - this.playerCount);
         },
 
         campsRemplis() {
@@ -914,7 +928,10 @@ createApp({
         },
 
         startTitle() {
-            if (this.playerCount < 2) return 'Il faut au moins 2 joueurs';
+            if (this.playerCount < this.minPourDemarrer) {
+                return 'Il faut au moins ' + this.minPourDemarrer + ' joueurs'
+                    + (this.joueursManquants ? ' — il en manque ' + this.joueursManquants : '');
+            }
             // ⚠️ Le garde a changé de nature : il exigeait que les camps 1 ET
             // 2 soient remplis. Un camp n existant plus que s il a du monde,
             // la seule chose à refuser est qu il n y en ait qu UN — on ne joue
@@ -1730,20 +1747,6 @@ createApp({
 
         // Mesure temporaire : seul le quiz est fermé. « rivalry » ne s'ouvre
         // jamais directement — c'est un réglage pris depuis un salon Classique.
-        modeSousMotDePasse() {
-            return this.currentMode.id === 'classic';
-        },
-
-        // Le champ n'est ouvert que si la carte MONTRE le mode qui en demande
-        // un. Survoler un autre mode change la carte sans changer le mode
-        // CHOISI : sans cette condition le champ restait affiché sous
-        // BombAnime ou Rush, et laissait croire qu'ils étaient réservés aussi.
-        // Le bouton reprend sa place le temps du survol et le champ revient
-        // intact — « demandeMdp » et la saisie ne bougent pas.
-        mdpOuvert() {
-            return this.demandeMdp && this.modeSousMotDePasse;
-        },
-
         // Rush : le classement peut compter trente joueurs, on n'en montre que cinq
         rushPlaces() {
             if (!this.gameEndData || this.gameEndData.gameMode !== 'rush') return [];
@@ -3774,32 +3777,9 @@ createApp({
             document.body.classList.remove('game-active');
         },
 
-        // ── Mesure temporaire : le mot de passe du mode Classique ──
-        validerMdp() {
-            if (!this.mdpSalon.trim()) return;
-            this.demandeMdp = false;
-            this.createRoom();
-        },
-
-        annulerMdp() {
-            this.demandeMdp = false;
-            this.mdpSalon = '';
-        },
-
         async createRoom() {
             if (this.currentMode.soon) {
                 this.createError = 'Ce mode arrive bientôt';
-                return;
-            }
-
-            // Mesure temporaire : sans le mot de passe, le serveur refuserait.
-            // Autant le demander ici plutôt que d'aller chercher un 403.
-            if (this.modeSousMotDePasse && !this.mdpSalon) {
-                this.demandeMdp = true;
-                this.$nextTick(() => {
-                    const c = this.$refs.mdpInput;
-                    if (c) c.focus();
-                });
                 return;
             }
 
@@ -3820,7 +3800,6 @@ createApp({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         lobbyMode: this.selectedMode,
-                        motDePasse: this.mdpSalon || undefined,
                         // Pour que le panneau puisse NOMMER l'hôte d'un salon :
                         // le jeton dit qu'on est l'hôte, il ne dit pas qui.
                         playerId: this.playerId || undefined,
@@ -3828,28 +3807,10 @@ createApp({
                 });
                 const data = await res.json();
 
-                // Refus du mot de passe : le champ se vide et tremble en rouge.
-                // Pas de message — le serveur dit « Ouverture refusée », ce que
-                // la secousse dit déjà, et une ligne de texte rallongerait la
-                // carte à chaque essai raté.
-                if (res.status === 403 || (res.status === 503 && this.modeSousMotDePasse)) {
-                    this.mdpSalon = '';
-                    this.demandeMdp = true;
-                    this.mdpShake = true;
-                    setTimeout(() => { this.mdpShake = false; }, 380);
-                    this.$nextTick(() => {
-                        const c = this.$refs.mdpInput;
-                        if (c) c.focus();
-                    });
-                    return;
-                }
-
                 if (!data.isActive) {
                     this.createError = "Le salon n'a pas pu être ouvert.";
                     return;
                 }
-
-                this.demandeMdp = false;
 
                 // ⚠️ Le salon est NEUF : on affiche SES réglages, pas ceux
                 // qu'on avait en mémoire. Un hôte qui revenait à l'accueil
@@ -4675,9 +4636,6 @@ createApp({
             this.selectedMode = id;
             this.hoverMode = null;
             localStorage.setItem('lastMode', id);
-            // Le champ de mot de passe vit DANS la carte du mode : changer de
-            // mode doit le ranger, sinon il resterait ouvert sous un Rush.
-            if (this.demandeMdp) this.annulerMdp();
         },
 
         // Un appui sur l'un des deux choix : une onde part du point touché et le
@@ -5019,7 +4977,6 @@ createApp({
                 ['showReport', false],
                 ['showQuestionStats', false],
                 ['showTopSheet', false],
-                ['demandeMdp', false],
             ];
             for (const [champ, ferme] of calques) {
                 if (this[champ]) {

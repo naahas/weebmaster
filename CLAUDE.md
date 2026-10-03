@@ -64,9 +64,9 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   modes — voir plus bas, c est la maladie des défauts écrits deux fois),
   `npm run test:historique` (chaque salon a sa propre mémoire),
   `npm run test:backoffice` (les routes /api/*question* exigent `QUESTION_ADMIN_CODE`),
-  `npm run test:mdp` (le mot de passe du mode Classique : la porte d entree, les modes
-  inventes, et surtout les PORTES DE SERVICE — un salon Rush, Collect ou Ascension
-  peut-il etre converti en Classique ? Voir la mesure temporaire plus bas),
+  `npm run test:portes` (les PORTES DE SERVICE du mode Classique : les modes inventes,
+  et surtout — un salon Rush, Collect ou Ascension peut-il etre converti en Classique ?
+  Voir plus bas. Anciennement `test:mdp`, du temps ou le mode etait sous mot de passe),
   `npm run openings` liste les vignettes d openings a produire, serie par serie, avec
   le nom exact du fichier attendu — il ne verifie rien, il inventorie.
   `npm run openings:convertir` passe en WebP 400 px tout ce qui traine dans
@@ -394,8 +394,7 @@ git push origin v2:main   # avance main, ce qui déclenche le déploiement
 Le second push est refusé si `main` a divergé — c’est le garde-fou : il ne
 réécrit jamais rien. Dans ce cas seulement, il faut fusionner à la main.
 
-Sur Heroku, vérifier que `ADMIN_PASSWORD` et `NODE_ENV=production` sont posées :
-sans la première, ouvrir un salon Classique est refusé ; sans la seconde, les bots
+Sur Heroku, vérifier que `NODE_ENV=production` est posée : sans elle, les bots
 de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
 ## Accès
@@ -627,8 +626,9 @@ partagée par tous les salons. Un seau à jetons posé en `socket.use()` laisse 
 de 2× puis jette en silence ; au-delà de 300 refus la socket est fermée. Le client le plus
 bavard est celui du Rush, qui se limite lui-même à seize envois par seconde.
 
-`ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait : voir la mesure temporaire
-ci-dessous. Les variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD` ne servent plus.
+`ADMIN_PASSWORD` (l'ancien panneau d'administration) resservait à fermer le mode Classique :
+cette mesure est levée depuis le 3 octobre 2026 et **la variable ne sert plus**. Comme les
+variables Twitch, `SESSION_SECRET` et `MASTER_ADMIN_PASSWORD`.
 
 ## ⏳ Mesure temporaire — quatre filtres de serie sont suspendus
 
@@ -642,34 +642,41 @@ d extreme, et Bleach n en a AUCUNE — son barème est donc impossible a honorer
 quatre, Naruto et Dragon Ball trois : epuises en une ou deux parties. « Big 3 » reste, il
 reunit 218 questions et sept extreme.
 
-## ⏳ Mesure temporaire — le mode Classique est sous mot de passe
+## Le mode Classique et son plancher de dix joueurs
 
-Ouvrir un salon **Classique** exige `ADMIN_PASSWORD` ; Rush et BombAnime restent libres. Le
-contrôle est dans `/admin/toggle-game`, **avant `creerRoom()`** — un refus ne doit pas laisser
-de salon fantôme. Sans la variable, l'ouverture est refusée plutôt qu'autorisée : une variable
-oubliée au déploiement annulerait sinon la mesure en silence.
+Le Classique **s'ouvre librement**. Le mot de passe (`ADMIN_PASSWORD`) qui le fermait a été
+retiré le **3 octobre 2026** et remplacé par un **plancher de dix joueurs au lancement** :
+`MIN_CLASSIQUE` dans `app.js`. Le quiz est le mode qui demande du monde — à deux ou trois il se
+joue en quelques questions et donne de lui une idée bien plus pauvre que ce qu'il est à quinze.
 
-Les suites ouvrent des salons Classique : elles lisent le mot de passe via `scripts/mdp-hote.js`.
-`test:hote` ouvre en Rush, son objet étant le jeton d'hôte et non cette mesure.
+⚠️ **Le plancher vit dans l'INTERFACE, pas dans le serveur**, comme celui de deux joueurs qu'il
+remplace pour ce mode (`canStart` / `minPourDemarrer`). Le serveur accepterait une partie à deux.
+C'est délibéré : c'est un garde-fou de produit, pas de sécurité, et le poser côté serveur mettrait
+à genoux toutes les suites, qui jouent le quiz à deux joueurs.
 
-⚠️ **Le garde tient par LISTE BLANCHE, et il en faut DEUX.** Deux contournements avaient été
-mesurés, tous deux ouvrant un vrai Classique sans mot de passe :
+⚠️ **`MIN_CLASSIQUE` s'écrit UNE fois.** La carte du mode sur l'accueil (`modes[].min`) et le
+bouton Démarrer lisent la même constante — sinon la pastille annonce un chiffre et le bouton en
+exige un autre, exactement la maladie qui figeait les réglages d'un salon à l'autre.
 
-- Le garde testait « si le mode demandé vaut `classic` ». Un mode **inconnu** y échappait, et
-  `/admin/start-game` — qui aiguille sur les modes qu'il connaît et **retombe SINON sur le
-  quiz** — lançait un Classique. Envoyer `lobbyMode: "Classic"` suffisait.
-- `/admin/set-teams` (le réglage *Format*) **écrit `lobbyMode`** et ne refusait que BombAnime :
-  ouvrir en Rush, Collect ou Ascension — tous libres — puis appeler la route donnait un salon
-  Classique. L'hôte a un jeton valable sur **toutes** les routes `/admin` de son salon.
+⚠️ **Deux gardes survivent à la mesure, et il faut les garder tous les deux** — ils ne
+protégeaient pas le mot de passe mais le fait qu'un salon puisse devenir un Classique par la
+bande :
 
-La leçon vaut au-delà de cette mesure : une liste noire ne couvre que les modes qui existaient
-le jour où on l'a écrite. `npm run test:mdp` tient les deux portes ; il ouvre en Rush, Collect et
-Ascension et tente la conversion.
+- **La liste blanche des modes** dans `/admin/toggle-game`. `/admin/start-game` aiguille sur les
+  modes qu'il connaît et **retombe SINON sur le quiz** : un salon ouvert avec
+  `lobbyMode: "pizza"` démarrait donc un vrai Classique. Le contrôle vient **avant `creerRoom()`**,
+  un refus ne doit pas laisser de salon fantôme.
+- **`/admin/set-teams`** (le réglage *Format*) **écrit `lobbyMode`** et ne refusait que BombAnime :
+  ouvrir en Rush, Collect ou Ascension puis appeler la route donnait un salon Classique. L'hôte a
+  un jeton valable sur **toutes** les routes `/admin` de son salon, donc une seule route qui écrit
+  `lobbyMode` suffit à tout défaire.
 
-Pour lever la mesure, **quatre** endroits : le garde dans `/admin/toggle-game`, celui de
-`/admin/set-teams` (à garder, lui : ce réglage n'a rien à faire hors du quiz), `demandeMdp` dans
-`app.js` (+ le voile `v2-mdp-*` dans `home.html` et `home.css`), et `scripts/mdp-hote.js`
-(+ `scripts/test-mdp.js`).
+La leçon vaut au-delà : une liste noire ne couvre que les modes qui existaient le jour où on l'a
+écrite. `npm run test:portes` tient les deux (anciennement `test:mdp`).
+
+ℹ️ `scripts/mdp-hote.js` **survit** : dix-neuf suites l'importent et envoient encore `motDePasse`,
+que le serveur ignore désormais. Les toucher toutes pour retirer un champ inerte, c'est dix-neuf
+occasions de casser le filet. À nettoyer un jour, hors d'un chantier.
 
 ## Conventions du code
 

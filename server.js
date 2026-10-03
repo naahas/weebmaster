@@ -2335,37 +2335,24 @@ app.post('/admin/toggle-game', async (req, res) => {
         return res.json({ isActive: false });
     }
 
-    // ── Mesure temporaire ──
-    // Le mode Classique ne s'ouvre qu'avec le mot de passe de l'ancien panneau
-    // d'administration. Le contrôle vient AVANT creerRoom : un refus ne doit
-    // pas laisser derrière lui un salon fantôme que personne ne viendrait
-    // fermer. Pour lever la mesure, supprimer ce bloc et la demande côté
-    // client (« demandeMdp » dans app.js).
-    // Le contrôle se fait par LISTE BLANCHE, et non en testant « si le mode
-    // demandé vaut classic ». Un mode inconnu — « Classic » avec une majuscule,
-    // ou n'importe quelle chaîne — ne déclenchait aucun contrôle, et
-    // /admin/start-game, qui aiguille sur les modes qu'il connaît et retombe
-    // SINON sur le quiz, lançait un Classique. Un salon s'ouvrait donc en
-    // Classique sans mot de passe en envoyant « lobbyMode: "pizza" ».
+    // ⚠️ LISTE BLANCHE DES MODES, et surtout pas « si le mode vaut X ».
+    //
+    // Elle a été écrite pour la mesure temporaire du mot de passe — levée
+    // depuis, le Classique s'ouvre librement et se garde par un plancher de
+    // dix joueurs — mais elle RESTE, parce qu'elle protège autre chose :
+    // `/admin/start-game` aiguille sur les modes qu'il connaît et retombe
+    // SINON sur le quiz. Un mode inconnu — « Classic » avec une majuscule, ou
+    // « pizza » — ouvrait donc un salon qui démarrait en Classique, en
+    // contournant tout contrôle posé sur le nom du mode. Refuser ici est le
+    // seul endroit qui ferme cette porte pour de bon.
+    //
+    // Le contrôle vient AVANT creerRoom : un refus ne doit pas laisser
+    // derrière lui un salon fantôme que personne ne viendrait fermer.
     const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension'];
-    const MODES_LIBRES = ['rush', 'bombanime', 'collect', 'ascension'];
     const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
 
     if (!MODES_CONNUS.includes(modeDemande)) {
         return res.status(400).json({ error: 'Mode de jeu inconnu.' });
-    }
-
-    if (!MODES_LIBRES.includes(modeDemande)) {
-        const attendu = process.env.ADMIN_PASSWORD;
-        if (!attendu) {
-            // Faute de mot de passe configuré, on ferme plutôt que d'ouvrir :
-            // une variable oubliée au déploiement annulerait sinon la mesure
-            // sans que rien ne le signale.
-            return res.status(503).json({ error: 'Le mode Classique est momentanément fermé.' });
-        }
-        if (String((req.body && req.body.motDePasse) || '') !== attendu) {
-            return res.status(403).json({ error: 'Mot de passe incorrect.' });
-        }
     }
 
     const gameState = creerRoom();
