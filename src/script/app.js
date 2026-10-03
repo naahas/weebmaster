@@ -601,6 +601,7 @@ createApp({
                 ordre: 'horaire',     // 'horaire' ou 'aleatoire' — l ordre de passage
                 meche: 'tour',
                 mecheB: 3.5,          // secondes de mèche par joueur — plus réglable
+                mecheVisuelle: true,  // la mèche se consume-t-elle À L ÉCRAN
                                       // depuis l interface, gardé pour les suites
                 mecheTotal: 0,        // ce que le serveur a tiré, pour dessiner
                 // ⚠️ Fixés AU DÉBUT DU TOUR et pas retouchés ensuite : l animation
@@ -4096,6 +4097,7 @@ createApp({
                 poser(this.bombanime, 'timer', r.bombanime.timer);
                 poser(this.bombanime, 'lives', r.bombanime.lives);
                 poser(this.bombanime, 'meche', r.bombanime.meche);
+                poser(this.bombanime, 'mecheVisuelle', r.bombanime.mecheVisuelle);
                 poser(this.bombanime, 'ordre', r.bombanime.ordre);
             }
             if (r.rush) {
@@ -5973,6 +5975,12 @@ createApp({
             this.socket.on('bombanime-config-updated', (data) => {
                 if (data.timer) this.bombanime.timer = data.timer;
                 if (data.lives) this.bombanime.lives = data.lives;
+                if (data.meche) this.bombanime.meche = data.meche;
+                if (data.ordre) this.bombanime.ordre = data.ordre;
+                // ⚠️ On teste « undefined », jamais la vérité de la valeur : un
+                // « data.mecheVisuelle || … » aurait ignoré un FAUX venu du
+                // serveur, et la mèche serait restée visible malgré le réglage.
+                if (data.mecheVisuelle !== undefined) this.bombanime.mecheVisuelle = data.mecheVisuelle;
             });
 
             this.socket.on('game-deactivated', () => {
@@ -6646,6 +6654,7 @@ createApp({
                 sessionStorage.removeItem('bombanimeSuggestionUsed');
                 this.bombanime.timer = data.timer;
                 this.bombanime.meche = data.meche || 'tour';
+                if (data.mecheVisuelle !== undefined) this.bombanime.mecheVisuelle = data.mecheVisuelle;
                 this.bombanime.mecheTotal = data.mecheTotal || 0;
                 // ⚠️ En continue le temps de départ est celui de la MÈCHE, pas
                 // du tour : recopier « timer » ferait démarrer la bombe à 8 s
@@ -6749,6 +6758,7 @@ createApp({
                 // n existe pas dans les anciennes annonces, d où le repli.
                 if (data.meche) this.bombanime.meche = data.meche;
                 if (data.mecheTotal) this.bombanime.mecheTotal = data.mecheTotal;
+                if (data.mecheVisuelle !== undefined) this.bombanime.mecheVisuelle = data.mecheVisuelle;
                 this.bombanime.timeRemaining = (data.timeRemaining !== undefined && data.timeRemaining !== null)
                     ? data.timeRemaining
                     : data.timer;
@@ -7768,6 +7778,7 @@ createApp({
                     // visuel et d'autant plus déroutant.
                     if (data.meche) this.bombanime.meche = data.meche;
                     if (data.mecheTotal) this.bombanime.mecheTotal = data.mecheTotal;
+                    if (data.mecheVisuelle !== undefined) this.bombanime.mecheVisuelle = data.mecheVisuelle;
                     // Elle repart d'ici, pour exactement le temps qu'il reste.
                     this.bombanime.mecheDepart = this.bombanime.timeRemaining;
                     this.bombanime.mecheCle++;

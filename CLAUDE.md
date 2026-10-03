@@ -120,7 +120,8 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:tour-grilles` (les épreuves à portraits : guess, target, intruder — ~2 min.
   Longtemps intermittente : elle rejouait 700 ms après une erreur, alors que celle-ci
   ferme la grille une seconde — le second clic tombait dans le vide une fois sur trois.
-  Six passages d'affilée depuis), `npm run test:meche` (la mèche continue : le réglage, et surtout qu'elle NE REPART PAS
+  Six passages d'affilée depuis), `npm run test:meche-vue` (le reglage « Meche visible » : le defaut, le voyage jusqu au joueur, et surtout qu il ne touche QUE le dessin),
+  `npm run test:meche` (la mèche continue : le réglage, et surtout qu'elle NE REPART PAS
   après une bonne réponse — mesuré, pas supposé),
   `npm run test:rush` (le mode Rush de bout en bout),
   `npm run test:rush-mult` (le barème du multiplicateur : le palier se compte en
@@ -178,7 +179,7 @@ src/img/               avatars, questionpic
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*), **mèche visible** (oui par défaut) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
 
 ⚠️ **L'ORDRE de passage.** *Horaire* (le défaut) est l'ordre de toujours : la bombe tourne dans
 le cercle, chacun voit son tour venir et prépare. *Aléatoire* la fait désigner au hasard **parmi
@@ -236,6 +237,16 @@ casserait le mode sans qu'aucun test ne le voie :
 ⚠️ Et **aucun chiffre à l'écran** : c'est ce qui a écarté les autres visuels de la bombe
 (`/prototypes/bomb-visuel`). La mèche dit « bientôt » sans dire « dans 4,2 s » ; une jauge
 ou un compteur suffiraient à résoudre la manche de tête.
+
+**Réglage *Mèche visible* (Oui par défaut).** Le dernier cran de cette même échelle : éteint,
+la mèche reste **pleine du début à la fin** et la bombe part sans prévenir. ⚠️ Il ne touche
+**que le dessin** — `armerMeche()` tire la même durée et le minuteur ne bouge pas d'un pouce.
+Côté client il faut **les deux** : `--meche-part` figé à 1 **et** `animation: none` sur
+`.fuse-wave-wrap.figee`. La part seule donnerait une mèche qui repart pleine puis se consume
+quand même ; l'animation seule la figerait là où le tour précédent l'avait laissée. Et surtout
+pas une durée d'animation à zéro : à 0 s elle se joue instantanément et sa dernière image,
+remplie en `forwards`, réduirait la mèche à 4 px pour toujours — l'inverse exact du but.
+`npm run test:meche-vue` tient le tout.
 
 Côté code : `armerMeche()` et `mecheRestante()` dans `server.js`, et un garde-fou à
 connaître — **`mecheTimeout` est SÉPARÉ de `turnTimeout`**, parce que ce dernier est annulé

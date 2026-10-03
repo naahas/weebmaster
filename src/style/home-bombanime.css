@@ -1338,6 +1338,16 @@
     to { width: 4px; }
 }
 
+/* ⚠️ Réglage « Mèche visible : Non ». Elle reste pleine du début à la fin,
+   et la bombe part sans prévenir.
+   « animation: none » et non une durée à zéro : à 0 s l animation se joue
+   quand même, instantanément, et sa dernière image — remplie en « forwards » —
+   réduirait la mèche à 4 px pour toujours. C est exactement l inverse de ce
+   qu on veut, et ça se verrait comme une mèche déjà consumée.
+   Le minuteur du serveur, lui, ne change pas d un pouce : ce réglage ne
+   touche QUE le dessin. */
+.fuse-wave-wrap.figee { animation: none; }
+
 .fuse-wave-svg {
     width: 52px;
     height: 12px;

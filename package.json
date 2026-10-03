@@ -53,7 +53,8 @@
     "test:ordre": "node scripts/test-ordre.js",
     "bomb:compter": "node scripts/compter-persos.js",
     "test:reglages": "node scripts/test-reglages.js",
-    "test:portes": "node scripts/test-portes.js"
+    "test:portes": "node scripts/test-portes.js",
+    "test:meche-vue": "node scripts/test-meche-visuelle.js"
   },
   "keywords": [
     "quiz",

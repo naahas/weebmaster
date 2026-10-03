@@ -878,6 +878,26 @@
                                     </span>
                                 </div>
 
+                                <!-- ⚠️ Ce réglage ne touche PAS la durée de la mèche, seulement
+                                     ce qu on en voit. Éteint, elle reste pleine du début à la
+                                     fin : la bombe part sans prévenir.
+                                     C est le dernier cran d une échelle que le mode suit depuis
+                                     le début — aucun CHIFFRE à l écran, parce qu un compteur
+                                     permet de résoudre la manche de tête ; une mèche qui
+                                     raccourcit, qui dit « bientôt » sans dire « dans 4,2 s » ;
+                                     et maintenant plus rien, pour qui veut la surprise entière. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <span class="v2-set-label">Mèche visible</span>
+                                    <span class="v2-set-value">{{ bombanime.mecheVisuelle ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: bombanime.mecheVisuelle }"
+                                                @click="applySetting('/admin/bombanime/set-meche-visuelle', { visuelle: true }, () => bombanime.mecheVisuelle = true)">Oui</button>
+                                        <button class="v2-set-opt" :class="{ on: !bombanime.mecheVisuelle }"
+                                                @click="applySetting('/admin/bombanime/set-meche-visuelle', { visuelle: false }, () => bombanime.mecheVisuelle = false)">Non</button>
+                                    </span>
+                                </div>
+
                                 <!-- ⚠️ Pas de réglage de durée en « continue » : elle se calcule
                                      sur le nombre de joueurs, avec sa part de hasard. Un curseur
                                      y avait été posé, en secondes PAR JOUEUR — mais à deux ou
@@ -2103,9 +2123,17 @@
                                                  Et comme les trois elements sont en ligne, la
                                                  flamme suit toute seule : elle descend vers la
                                                  bombe sans qu on ait a la placer. -->
+                                            <!-- ⚠️ Mèche figée : la part reste à 1 ET l animation
+                                                 est coupée. Il faut les deux — la part seule
+                                                 donnerait une mèche qui repart pleine puis se
+                                                 consume quand même, l animation seule la
+                                                 figerait là où le tour précédent l avait
+                                                 laissée. La bombe, elle, part à la même heure :
+                                                 le réglage ne touche que ce qu on voit. -->
                                             <div class="fuse-wave-wrap" :key="bombanime.mecheCle"
-                                                 :style="{ '--meche-part': mechePart().toFixed(3),
-                                                           animationDuration: mecheDuree() }">
+                                                 :class="{ figee: !bombanime.mecheVisuelle }"
+                                                 :style="{ '--meche-part': bombanime.mecheVisuelle ? mechePart().toFixed(3) : '1',
+                                                           animationDuration: bombanime.mecheVisuelle ? mecheDuree() : '0s' }">
                                                 <svg class="fuse-wave-svg" viewBox="0 0 52 12">
                                                     <path d="M0,6 Q13,2.5 26,6 Q39,9.5 52,6"/>
                                                 </svg>

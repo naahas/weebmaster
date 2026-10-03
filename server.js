@@ -610,6 +610,7 @@ function reglagesDuSalon(gameState) {
             timer: gameState.bombanime.timer,
             lives: gameState.bombanime.lives,
             meche: gameState.bombanime.meche,
+            mecheVisuelle: gameState.bombanime.mecheVisuelle,
             ordre: gameState.bombanime.ordre,
         },
         rush: {
@@ -1088,6 +1089,7 @@ app.get('/game/state', (req, res) => {
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,
+            mecheVisuelle: gameState.bombanime.mecheVisuelle,
             mecheTotal: gameState.bombanime.mecheTotal,
             // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit
             // pas du début du tour, la mèche ne repart pas avec lui.
@@ -1401,6 +1403,9 @@ function etatNeuf() {
         // se fait depuis toujours), 'continue' laisse UNE mèche brûler pour
         // toute la manche et exploser sur celui qui la tient.
         meche: 'tour',
+        // La meche se consume-t-elle A L ECRAN ? Oui par defaut, comme depuis
+        // toujours. Non, elle reste pleine : la bombe part sans prevenir.
+        mecheVisuelle: true,
         mecheB: 3.5,                // secondes de mèche par joueur, en continue
         mecheFin: null,             // quand elle part (timestamp)
         mecheTotal: 0,              // ce qui a été tiré, pour dessiner la mèche
@@ -2593,6 +2598,34 @@ app.post('/admin/bombanime/set-meche', (req, res) => {
         ordre: gameState.bombanime.ordre,
     });
     res.json({ success: true, meche: gameState.bombanime.meche, mecheB: gameState.bombanime.mecheB });
+});
+
+// 💣 La mèche se consume-t-elle À L ÉCRAN ?
+//
+// ⚠️ Ce réglage ne touche PAS la durée de la mèche, seulement ce qu on en voit.
+// Éteint, elle reste pleine du début à la fin : la bombe part sans prévenir.
+//
+// C est le dernier cran d une échelle que le mode suit depuis le début — aucun
+// CHIFFRE à l écran, parce qu un compteur permet de résoudre la manche de tête ;
+// une mèche qui raccourcit, qui dit « bientôt » sans dire « dans 4,2 s » ; et
+// maintenant plus rien du tout, pour qui veut la surprise entière.
+app.post('/admin/bombanime/set-meche-visuelle', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const on = req.body && req.body.visuelle === true;
+    gameState.bombanime.mecheVisuelle = on;
+
+    console.log(`🧨 Mèche visible à l'écran : ${on ? 'oui' : 'non'}`);
+    diffuser(gameState, 'bombanime-config-updated', {
+        timer: gameState.bombanime.timer,
+        lives: gameState.bombanime.lives,
+        meche: gameState.bombanime.meche,
+        mecheB: gameState.bombanime.mecheB,
+        mecheVisuelle: gameState.bombanime.mecheVisuelle,
+        ordre: gameState.bombanime.ordre,
+    });
+    res.json({ success: true, mecheVisuelle: gameState.bombanime.mecheVisuelle });
 });
 
 // 💣 Une ou deux vies
@@ -6942,6 +6975,7 @@ function startBombanimeTurn(gameState, playerId) {
         // La mèche : le client en a besoin pour dessiner ce qui reste, et
         // « restant » n est PAS « timer » en continue — il ne repart pas.
         meche: gameState.bombanime.meche,
+        mecheVisuelle: gameState.bombanime.mecheVisuelle,
         mecheTotal: gameState.bombanime.mecheTotal,
         timeRemaining: restant
     });
@@ -7401,6 +7435,7 @@ async function startBombanimeGame(gameState) {
         serie: gameState.bombanime.serie,
         timer: gameState.bombanime.timer,
         meche: gameState.bombanime.meche,
+        mecheVisuelle: gameState.bombanime.mecheVisuelle,
         mecheTotal: gameState.bombanime.mecheTotal,
         playersOrder: gameState.bombanime.playersOrder,
         playersData: getBombanimePlayersData(gameState),
@@ -8955,6 +8990,7 @@ io.on('connection', (socket) => {
             direction: gameState.bombanime.bombDirection,
             ordre: gameState.bombanime.ordre,
             meche: gameState.bombanime.meche,
+            mecheVisuelle: gameState.bombanime.mecheVisuelle,
             mecheTotal: gameState.bombanime.mecheTotal,
             // ⚠️ Passe par mecheRestante() : en continue le temps ne se déduit
             // pas du début du tour, la mèche ne repart pas avec lui.
