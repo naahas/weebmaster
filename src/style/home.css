@@ -9389,14 +9389,22 @@ body.game-active:has(.poll-game-container) #particles-js {
    une rangée sous le pouce, qu on veut atteindre tout de suite. Les retards
    entre jetons suivent la même division. */
 @media (max-width: 768px) {
-    .v2-bonus-f-enter-from .v2-token { transform: translateY(1.2rem); }
+    .v2-bonus-f-enter-from .v2-token { transform: translateY(1.1rem); }
     .v2-bonus-f-leave-to .v2-token   { transform: translateY(0.7rem); }
 
+    /* ⚠️ Le FONDU du conteneur est repris ici aussi, et pas seulement le
+       mouvement des jetons. Il valait 0,3 s — réglé pour la colonne
+       d ordinateur — et c est lui qui tenait la rangée du téléphone : raccourcir
+       le seul `transform` ne servait à rien, les jetons finissaient leur
+       glissade bien avant d être opaques, et l entrée paraissait traîner.
+       Les deux descendent ensemble, décalage entre jetons compris. */
+    .v2-bonus-f-enter-active { transition: opacity 0.17s ease; }
+
     .v2-bonus-f-enter-active .v2-token {
-        transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.25, 1);
+        transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.25, 1);
     }
-    .v2-bonus-f-enter-active .v2-token:nth-child(2) { transition-delay: 0.04s; }
-    .v2-bonus-f-enter-active .v2-token:nth-child(3) { transition-delay: 0.08s; }
+    .v2-bonus-f-enter-active .v2-token:nth-child(2) { transition-delay: 0.03s; }
+    .v2-bonus-f-enter-active .v2-token:nth-child(3) { transition-delay: 0.06s; }
 }
 
 .v2-token {
@@ -11860,9 +11868,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        allant les chercher. À gauche ils sont au repos de la main, et le coin
        est libre : la sortie n y est plus pendant la question. */
     .v2-bonus {
-        left: clamp(0.8rem, 2vw, 1.6rem);
+        /* ⚠️ Les deux « + » sont des corrections OPTIQUES, pas des erreurs
+           d alignement : géométriquement les jetons et l icône des défis sont
+           déjà au même `bottom` et à la même distance de leur bord.
+
+           En hauteur, le compte accroché sous chaque jeton (`.v2-token-n`,
+           posé à -0,15 rem) tire le groupe vers le bas pour l oeil, alors que
+           le badge des défis, lui, est accroché en HAUT. Deux pixels suffisent
+           à annuler l illusion.
+
+           En largeur, le halo du jeton disponible déborde du cercle : le
+           premier jeton paraît coller au bord quand l étoile, elle, n a pas de
+           halo. */
+        left: calc(clamp(0.8rem, 2vw, 1.6rem) + 0.25rem);
         right: auto;
-        bottom: clamp(0.8rem, 2vw, 1.6rem);
+        bottom: calc(clamp(0.8rem, 2vw, 1.6rem) + 0.13rem);
         transform: none;
         gap: 0.5rem;
     }
