@@ -2,12 +2,12 @@
   "_": "Produit par npm run bomb:compter — ne pas éditer à la main",
   "series": {
     "Naruto": {
-      "noms": 470,
-      "persos": 336
+      "noms": 471,
+      "persos": 337
     },
     "Dbz": {
-      "noms": 400,
-      "persos": 296
+      "noms": 403,
+      "persos": 298
     },
     "OnePiece": {
       "noms": 927,

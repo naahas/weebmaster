@@ -78,6 +78,24 @@ const CHARACTER_VARIANTS = {
         ["THALES", "TURLES"],
         ["JANEMBA", "JANENBA"],
         ["JEECE", "JEICE", "JEESE"],
+
+        // ── Les dieux de la destruction ──
+        // Leurs noms voyagent mal d une traduction a l autre : chaque groupe
+        // reunit l orthographe de la banque et celles qu on tape vraiment.
+        ["MOSCO", "MOSCOW"],
+        ["ARAK", "ARACK"],
+        // ⚠️ C est SIDRA qui est dans la banque, pas CIDRA. Le groupe accepte
+        // les deux ; la carte jouable reste celle de la banque.
+        ["SIDRA", "CIDRA"],
+        // ⚠️ JEREZ etait une ENTREE A PART dans bombdata : c est le meme dieu
+        // qu HELLES, sous son nom francais. Les reunir retire donc un doublon
+        // de la banque — Dbz perd un personnage, et c est voulu.
+        ["HELLES", "HELES", "JEREZ"],
+        ["IWAN", "IWNE"],
+        ["RHUMUSH", "RYMUSH", "RUMSSHI", "RUMUSH"],
+        ["LIQUIR", "LIQUIIR"],
+        ["VERMOUD", "VERMOUDH", "BELMOD"],
+        ["GIN", "JIN", "GEENE"],
     ],
 
     // ============================================
