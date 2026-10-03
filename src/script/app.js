@@ -320,10 +320,10 @@ createApp({
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
-            // Vrai hors production. Il ne commande plus rien à l'écran depuis
-            // le retrait du réglage « Test », mais il est renseigné par
-            // `/api/home-stats` et sert à chaque chantier qui a besoin de
-            // remplir un salon — le garder évite de refaire l'aller-retour.
+            // Vrai hors production, d'après `/api/home-stats`. Il n'ouvre que
+            // le réglage « Test » du salon ; le serveur refuse de toute façon
+            // `dev-add-bots` en production, donc le cacher ici est un confort,
+            // pas une barrière.
             estDev: false,
             seriesBombOuvertes: false,
             seriesBombPos: { top: 0, left: 0, width: 0 },
@@ -3877,6 +3877,19 @@ createApp({
         // Les illustrations sont lourdes : on les met en cache avant le premier survol
         preloadModeArt() {
             this.modes.forEach(m => { const i = new Image(); i.src = m.img; });
+        },
+
+        // 🧪 Remplir le salon de bots PASSIFS, hors production. Ils occupent
+        // une place et ne répondent pas : de quoi régler une répartition de
+        // camps ou atteindre le plancher de dix du Classique sans ouvrir dix
+        // onglets. Le serveur refuse l'événement si `NODE_ENV=production`, et
+        // il exige le jeton d'hôte.
+        ajouterBots(n) {
+            if (this.socket) this.socket.emit('dev-add-bots', { count: n, hostToken: this.hostToken });
+        },
+
+        viderBots() {
+            if (this.socket) this.socket.emit('dev-clear-bots', { hostToken: this.hostToken });
         },
 
         // 🤖 Le partenaire de BombAnime. L'état affiché n'est PAS tenu ici :

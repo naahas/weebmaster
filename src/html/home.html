@@ -918,16 +918,30 @@
                                  « armerTour » fait répondre tout joueur marqué `estBot`. La
                                  route les plafonnait déjà au maximum du mode, seul l'affichage
                                  les cachait ici. Hors production uniquement. -->
-                            <!-- ⚠️ Le réglage « Test », qui remplissait le salon de bots
-                                 passifs, a été RETIRÉ de tous les modes — comme la fois
-                                 précédente, où il avait servi à éprouver les défis et le
-                                 perso caché. Il revient à chaque gros chantier (ici les
-                                 camps multiples : cinq joueurs, cinq onglets) et doit
-                                 repartir avec lui.
-                                 Les événements `dev-add-bots` / `dev-clear-bots` RESTENT
-                                 côté serveur, fermés en production : `test:ordre`,
-                                 `test:plafond` et `test:tour-reprise` s en servent par
-                                 socket, sans passer par l écran. -->
+                            <!-- 🧪 HORS PRODUCTION UNIQUEMENT — remplir le salon de bots.
+                                 ⚠️ Ces bots-là sont PASSIFS : ils occupent une place, ils
+                                 ne répondent pas. C est exactement ce qu il faut pour
+                                 régler une répartition ou atteindre un plancher, et rien
+                                 d autre — le partenaire de BombAnime, lui, joue vraiment
+                                 et se règle depuis « Bot », plus haut.
+                                 ⚠️ Le réglage va et vient au fil des chantiers (les défis
+                                 et le perso caché, puis les camps multiples, puis le
+                                 plancher de dix du Classique). Les événements
+                                 `dev-add-bots` / `dev-clear-bots` ne bougent pas, eux :
+                                 ils vivent côté serveur, fermés en production, et
+                                 `test:ordre`, `test:plafond` et `test:tour-reprise` s en
+                                 servent par socket sans passer par cet écran.
+                                 `estDev` vient de `/api/home-stats`. -->
+                            <div class="v2-set" v-if="estDev">
+                                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>
+                                <span class="v2-set-label">Test</span>
+                                <span class="v2-set-value">{{ playerCount }}</span>
+                                <span class="v2-set-opts">
+                                    <button v-for="n in [1, 3, 5, 10]" :key="n" class="v2-set-opt"
+                                            @click="ajouterBots(n)">+{{ n }}</button>
+                                    <button class="v2-set-opt" @click="viderBots">vider</button>
+                                </span>
+                            </div>
 
                         </div>
 
