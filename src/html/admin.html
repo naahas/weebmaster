@@ -167,6 +167,33 @@ button { font-family: inherit; color: inherit; }
 }
 .carte-tete svg { color: var(--doux); }
 .carte-tete small { color: var(--tres-doux); font-weight: 400; font-size: .78rem; }
+
+/* ── Le compte de la banque ───────────────── */
+/* Les deux nombres sont ce qu'on vient lire dans cet onglet : ils ne se
+   fondent plus dans la ligne de titre. Chiffres tabulaires, sinon le compte
+   filtré saute d'un ou deux pixels à chaque frappe dans la recherche. */
+.q-note {
+    display: inline-flex; align-items: baseline; gap: .3rem;
+    margin-left: .35rem;
+    font-variant-numeric: tabular-nums;
+}
+.q-note b {
+    font-size: 1.15rem; font-weight: 700; line-height: 1;
+    color: var(--texte);
+    transition: color .15s;
+}
+/* Un filtre est posé : le compte devient la chose qui a bougé. */
+.q-note b.filtre { color: var(--accent-clair); }
+.q-note i { font-style: normal; font-size: .95rem; color: var(--tres-doux); }
+.q-note .tot { font-size: .95rem; font-weight: 600; color: var(--doux); }
+/* Les spoils ne concourent pas avec les deux autres : ils gardent leur place
+   de note de bas de ligne, mais derrière un séparateur qui les détache. */
+.q-note em {
+    font-style: normal; font-size: .78rem; font-weight: 500;
+    color: var(--or); opacity: .85;
+    padding-left: .55rem; margin-left: .2rem;
+    border-left: 1px solid var(--bord);
+}
 .carte-corps { padding: 1.15rem; }
 
 /* ── Le bandeau du direct ────────────────── */
@@ -946,7 +973,7 @@ body:not(.entre) { overflow: hidden; }
         <div class="carte">
             <div class="carte-tete">
                 <svg width="16" height="16"><use href="#i-crayon"/></svg>
-                La banque <small id="q-note"></small>
+                La banque <span id="q-note" class="q-note"></span>
                 <span class="tete-actions">
                     <button class="mini vif" id="q-ajouter">
                         <svg width="14" height="14"><use href="#i-plus"/></svg> Ajouter
@@ -1795,8 +1822,18 @@ function filtrerQuestions() {
     });
 
     const spoils = QUESTIONS.filter(q => q.is_spoil === true).length;
-    $('q-note').textContent = '· ' + vues.length + ' / ' + QUESTIONS.length +
-        (spoils ? ' · ' + spoils + ' spoil' + (spoils > 1 ? 's' : '') : '');
+
+    // ⚠️ Les deux nombres sont ce qu'on vient lire : ils portent leur propre
+    // forme au lieu de se fondre dans la ligne de titre. Le FILTRÉ est mis en
+    // avant — c'est lui qui bouge quand on touche aux filtres, donc celui
+    // qu'on surveille ; le total reste là, plus discret, pour donner l'échelle.
+    // Il change de couleur quand un filtre est actif : sinon « 1524 / 1524 »
+    // et « 25 / 1524 » se lisaient pareil au premier coup d'oeil.
+    const filtre = vues.length !== QUESTIONS.length;
+    $('q-note').innerHTML =
+        '<b class="' + (filtre ? 'filtre' : '') + '">' + vues.length + '</b>'
+        + '<i>/</i><span class="tot">' + QUESTIONS.length + '</span>'
+        + (spoils ? '<em>' + spoils + ' spoil' + (spoils > 1 ? 's' : '') + '</em>' : '');
     $('compte-questions').textContent = QUESTIONS.length;
     rendreQuestions(vues);
 }
