@@ -6247,7 +6247,7 @@ createApp({
                 // → 900 → 800. Ne pas recalculer depuis les 920 ms du panel.
                 this.bonusShown = false;
                 clearTimeout(this._bonusTimer);
-                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 650);
+                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 500);
 
                 this.showResults = false;
                 this.currentQuestion = question;

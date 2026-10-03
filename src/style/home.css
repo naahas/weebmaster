@@ -11918,12 +11918,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.25, 1),
                     visibility 0s linear 0s;
     }
+    /* ⚠️ La SORTIE de ce bouton est plus courte que son retour, et c est
+       voulu : c est elle qui ouvre le coin aux jetons. Tant qu elle dure, le
+       coin est occupé et l attente avant les jetons paraît d autant plus
+       longue. Son retour, lui, n attend personne. */
     .v2-hoststop.rangee {
         opacity: 0;
         transform: translateY(0.6rem) scale(0.9);
         visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+        transition: opacity 0.13s ease, transform 0.13s ease, visibility 0s linear 0.13s;
     }
 }
 
