@@ -1074,7 +1074,13 @@
             </div>
 
             <!-- L'invité sort de la partie comme l'hôte l'arrête -->
-            <button class="v2-hoststop" v-if="!isHost && gameInProgress && !gameEnded"
+            <!-- ⚠️ « rangee » : sur TELEPHONE ce bouton occupe exactement la place
+                 que prend la barre de jetons, en bas a gauche. Les deux s echangent
+                 au lieu de se superposer — jetons pendant la question, sortie des
+                 que la reponse est dite. Une meme condition pour les deux, lue dans
+                 « barreBonusVisible ». Sur ordinateur la classe ne fait rien : la
+                 barre y est une colonne, a droite du panneau. -->
+            <button class="v2-hoststop" :class="{ rangee: barreBonusVisible }" v-if="!isHost && gameInProgress && !gameEnded"
                     @click="askLeaveRoom" title="Quitter la partie" aria-label="Quitter la partie">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
@@ -1082,7 +1088,7 @@
                 </svg>
             </button>
 
-            <button class="v2-hoststop" v-if="isHost && gameInProgress && !gameEnded"
+            <button class="v2-hoststop" :class="{ rangee: barreBonusVisible }" v-if="isHost && gameInProgress && !gameEnded"
                     @click="askCloseRoom" title="Arrêter la partie" aria-label="Arrêter la partie">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
@@ -3220,7 +3226,7 @@
              retombe entre deux. Sans transition les jetons disparaissaient et
              resurgissaient d un coup au passage a la question suivante. -->
         <transition name="v2-bonus-f">
-        <div class="v2-bonus" v-if="gameInProgress && !gameEnded && questionShown && bonusShown && !showResults && lobbyMode !== 'bombanime' && bonusEnabled && !estSpectateur">
+        <div class="v2-bonus" v-if="barreBonusVisible">
             <button class="v2-token"
                     :class="[getBonusState('5050'), { vide: !bonusInventory['5050'], off: !canUseBonus(), refus: jetonRefuse === '5050' }]"
                     :disabled="!bonusInventory['5050'] || !canUseBonus()"

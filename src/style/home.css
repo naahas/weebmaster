@@ -9379,6 +9379,26 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-bonus-f-enter-active .v2-token::before,
 .v2-bonus-f-leave-active .v2-token::before { animation: none; }
 
+/* ── Sur TÉLÉPHONE, les jetons montent du bas, et vite ──
+   Ils glissaient depuis la droite, ce qui venait de la colonne d ordinateur.
+   Mais au téléphone la barre est une RANGÉE posée en bas de l écran : un
+   mouvement latéral n a plus de source, les jetons semblaient dériver. Du bas
+   vers le haut, ils ont l air de sortir du bord, qui est juste en dessous.
+
+   Et plus court — 0,42 s convient à une colonne qu on regarde de loin, pas à
+   une rangée sous le pouce, qu on veut atteindre tout de suite. Les retards
+   entre jetons suivent la même division. */
+@media (max-width: 768px) {
+    .v2-bonus-f-enter-from .v2-token { transform: translateY(1.2rem); }
+    .v2-bonus-f-leave-to .v2-token   { transform: translateY(0.7rem); }
+
+    .v2-bonus-f-enter-active .v2-token {
+        transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.25, 1);
+    }
+    .v2-bonus-f-enter-active .v2-token:nth-child(2) { transition-delay: 0.04s; }
+    .v2-bonus-f-enter-active .v2-token:nth-child(3) { transition-delay: 0.08s; }
+}
+
 .v2-token {
     position: relative;
     display: grid;
@@ -9503,7 +9523,13 @@ body.game-active:has(.poll-game-container) #particles-js {
    ============================================ */
 .v2q-seal {
     position: fixed;
-    z-index: 9998;
+    /* ⚠️ 800, et surtout pas 9998 comme avant. Le sceau est posé en « fixed »
+       sur la réponse choisie : à 9998 il passait PAR-DESSUS les modales —
+       on ouvrait les défis et le petit cachet doré restait planté sur le
+       voile. Il doit dominer le jeu (l icône des défis est à 600) mais
+       s effacer devant tout ce qui s ouvre par-dessus (voiles à 900,
+       modale des défis à 1000). */
+    z-index: 800;
     display: grid;
     place-items: center;
     width: 2.5rem;
@@ -11820,6 +11846,56 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     left: auto !important;
     right: clamp(0.8rem, 2vw, 1.6rem) !important;
     bottom: clamp(0.8rem, 2vw, 1.6rem) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   📱 LA RANGÉE DU BAS, SUR TÉLÉPHONE
+   Un seul coin, deux occupants qui s échangent : les JETONS pendant la
+   question, la SORTIE une fois la réponse dite. Ils ne se croisent
+   jamais — c est `barreBonusVisible` qui commande les deux.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    /* ⚠️ Les jetons quittent le CENTRE. Au milieu du bord bas, ils tombaient
+       sous le pouce qui vise une réponse, et le doigt masquait la question en
+       allant les chercher. À gauche ils sont au repos de la main, et le coin
+       est libre : la sortie n y est plus pendant la question. */
+    .v2-bonus {
+        left: clamp(0.8rem, 2vw, 1.6rem);
+        right: auto;
+        bottom: clamp(0.8rem, 2vw, 1.6rem);
+        transform: none;
+        gap: 0.5rem;
+    }
+
+    /* ⚠️ Même taille et même ligne que l icône des défis, à l autre bout de
+       la rangée : 2,5 rem, et le même `bottom`. Les jetons faisaient 3,2 rem
+       — la taille de la colonne d ordinateur — et dépassaient d un demi-cran
+       en hauteur, ce qui se voyait d autant plus que les deux bouts sont
+       alignés sur rien d autre. */
+    .v2-token { width: 2.5rem; height: 2.5rem; }
+    .v2-token img { width: 1.15rem; height: 1.15rem; }
+
+    /* La sortie cède la place aux jetons, et la reprend aux résultats.
+       ⚠️ `visibility` et non `display` : il faut que la transition ait un
+       état de départ, sinon l échange se fait d un coup sec.
+       ⚠️ Et elle se recale sur les MÊMES ancres que les jetons et que l icône
+       des défis : elle était à 0,9 rem quand les deux autres sont sur un
+       `clamp`. Les trois ne se voient jamais ensemble, mais la sortie
+       remplace les jetons EN PLACE — un décalage se verrait au moment de
+       l échange, qui est précisément le moment qu on regarde. */
+    .v2-hoststop {
+        left: clamp(0.8rem, 2vw, 1.6rem);
+        bottom: clamp(0.8rem, 2vw, 1.6rem);
+        transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.25, 1),
+                    visibility 0s linear 0s;
+    }
+    .v2-hoststop.rangee {
+        opacity: 0;
+        transform: translateY(0.6rem) scale(0.9);
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+    }
 }
 
 /* Points x2 en cours : un marqueur qui bat à côté du score */

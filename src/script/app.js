@@ -883,6 +883,19 @@ createApp({
             return true;
         },
 
+        // La barre de jetons est-elle à l'écran ?
+        //
+        // ⚠️ Écrite UNE fois, et lue à deux endroits : par la barre elle-même,
+        // et par le bouton « quitter » du téléphone, qui occupe exactement la
+        // même place en bas à gauche. Les deux s'échangent, donc leur condition
+        // doit être la MÊME expression — deux copies auraient fini par diverger
+        // et laissé soit un trou, soit les deux l'un sur l'autre.
+        barreBonusVisible() {
+            return this.gameInProgress && !this.gameEnded && this.questionShown
+                && this.bonusShown && !this.showResults
+                && this.lobbyMode !== 'bombanime' && this.bonusEnabled && !this.estSpectateur;
+        },
+
         // Combien de joueurs il faut pour lancer CE salon.
         //
         // ⚠️ Deux au plancher pour tout le monde — « de base shonenmaster est
@@ -4397,7 +4410,7 @@ createApp({
         revealQuestionChrome() {
             if (this.questionShown) return;
             clearTimeout(this._chromeTimer);
-            this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 1100);
+            this._chromeTimer = setTimeout(() => { this.questionShown = true; }, 950);
         },
 
         // L'anneau se trace d'un trait à l'ouverture de la feuille
@@ -6218,7 +6231,7 @@ createApp({
                 // → 900 → 800. Ne pas recalculer depuis les 920 ms du panel.
                 this.bonusShown = false;
                 clearTimeout(this._bonusTimer);
-                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 800);
+                this._bonusTimer = setTimeout(() => { this.bonusShown = true; }, 650);
 
                 this.showResults = false;
                 this.currentQuestion = question;
