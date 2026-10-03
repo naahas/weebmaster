@@ -20,11 +20,7 @@ const { createApp } = Vue;
 // à deux. C'est délibéré — c'est un garde-fou de produit, pas de sécurité, et
 // le poser côté serveur mettrait toutes les suites à genoux, qui jouent le
 // quiz à deux joueurs.
-//
-// ⏳ ABAISSE A 2 TEMPORAIREMENT, le 3 octobre 2026, pour pouvoir eprouver le
-// mode a deux sur telephone. Remettre 10 ensuite : il n y a que ce chiffre a
-// changer, la carte du mode et le bouton Demarrer le lisent tous les deux.
-const MIN_CLASSIQUE = 2;
+const MIN_CLASSIQUE = 10;
 
 // 🎴 Les séries de Collect sont écrites d'un seul tenant dans les données
 // (« FairyTail ») : c'est une CLÉ, pas un titre. On ne la découpe pas aux
