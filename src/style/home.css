@@ -8512,7 +8512,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -0.42rem;
+    /* Remontée de 0,42 à 0,28 rem sous le nom : elle se lit comme un
+       soulignement du pseudo plutôt que comme un trait posé dans le bas de la
+       vignette. Rien ne bouge en la déplaçant — elle est hors du flux. */
+    bottom: -0.28rem;
     height: 0.1rem;
     border-radius: 2rem;
     background: rgba(255, 255, 255, 0.55);
