@@ -8487,24 +8487,11 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-room-player.kickable.arme .v2-room-player-name { text-decoration: line-through; }
 
-/* La croix pousse le nom d'un cran vers la gauche, sans changer la largeur
-   de la vignette : la grille ne doit pas se réagencer sous le curseur. */
-.v2-room-player-x {
-    display: grid;
-    place-items: center;
-    width: 0;
-    margin-left: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: width 0.18s cubic-bezier(0.2, 0.9, 0.25, 1), margin-left 0.18s, opacity 0.14s ease;
-}
-.v2-room-player-x svg { width: 0.72rem; height: 0.72rem; }
-
-.v2-room-player.kickable.arme .v2-room-player-x {
-    width: 0.72rem;
-    margin-left: 0.4rem;
-    opacity: 1;
-}
+/* ⚠️ Il y avait ici une croix qui poussait à côté du nom. Elle ÉLARGISSAIT la
+   vignette en apparaissant, et toute la rangée glissait d'un cran au moment
+   précis où il faut viser — l'inverse de ce que l'armement cherche à obtenir.
+   Rien ne la remplace : le rouge plein, le nom barré et la mèche disent déjà
+   tout, et aucun des trois ne déplace quoi que ce soit. */
 
 /* ⚠️ La mèche dit le temps qu'il reste pour confirmer. Sans elle, l'hôte ne
    peut pas savoir que la vignette va se désarmer toute seule : il reviendrait
