@@ -12780,13 +12780,19 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     padding: 0.55rem 0.7rem;
     /* Bebas et 1,05 rem, comme dans le prototype : une colonne rend toute la
        largeur au nom, autant s en servir. En Inter a 0,78 on retombait sur la
-       taille qu on voulait justement quitter. */
+       taille qu on voulait justement quitter.
+       ⚠️ Mais Bebas est une CAPITALE CONDENSEE, et une capitale condensee se
+       lit mal serree : les jambages se touchent, et « HUNTER X HUNTER » devient
+       un mur. Trois reglages la rattrapent, et il faut les trois — l interlettrage
+       d abord, qui fait le gros du travail, puis un cran de taille, puis du
+       contraste. Changer de police aurait ete le quatrieme choix : celle-ci a
+       ete retenue pour de bonnes raisons, autant la faire fonctionner. */
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.05rem;
+    font-size: 1.12rem;
     font-weight: 400;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.085em;
     text-align: left;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.84);
     background: transparent;
     border: none;
     border-radius: 0.4rem;
@@ -12801,9 +12807,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    change une soirée. */
 .v2-bserie-opt .n {
     font-family: inherit;
-    font-size: 0.64rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.22);
+    /* Il doit rester EN RETRAIT du nom — c est une indication, pas une
+       colonne de tableau — mais a 0,22 d opacite il ne separait plus rien du
+       tout, ce qui est sa seule raison d exister. */
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.34);
 }
 
 .v2-bserie-opt:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
