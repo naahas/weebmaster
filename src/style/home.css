@@ -9388,23 +9388,32 @@ body.game-active:has(.poll-game-container) #particles-js {
    Et plus court — 0,42 s convient à une colonne qu on regarde de loin, pas à
    une rangée sous le pouce, qu on veut atteindre tout de suite. Les retards
    entre jetons suivent la même division. */
+/* ── Sur TÉLÉPHONE : un fondu, et rien d autre ──
+   ⚠️ AUCUN mouvement, et c est le correctif. Les jetons glissaient — depuis la
+   droite d abord, puis depuis le bas — et ça saccadait : trois `transform`
+   décalés de quelques centièmes, chacun sur son propre élément, par-dessus le
+   fondu du conteneur. Quatre animations simultanées sur un téléphone, pour un
+   trajet d un centimètre que personne ne regarde.
+
+   Le fondu seul est plus court, plus net, et ne peut pas saccader — une
+   opacité n a pas d étapes intermédiaires à rater. Le décalage entre jetons
+   part aussi : il servait à faire sentir l arrivée l une après l autre, ce qui
+   n a plus d objet sans mouvement.
+
+   ⚠️ `transform: none` est nécessaire : sans lui les règles d ordinateur
+   (`translateX`) continuent de s appliquer. */
 @media (max-width: 768px) {
-    .v2-bonus-f-enter-from .v2-token { transform: translateY(1.1rem); }
-    .v2-bonus-f-leave-to .v2-token   { transform: translateY(0.7rem); }
+    .v2-bonus-f-enter-from .v2-token,
+    .v2-bonus-f-leave-to .v2-token { transform: none; }
 
-    /* ⚠️ Le FONDU du conteneur est repris ici aussi, et pas seulement le
-       mouvement des jetons. Il valait 0,3 s — réglé pour la colonne
-       d ordinateur — et c est lui qui tenait la rangée du téléphone : raccourcir
-       le seul `transform` ne servait à rien, les jetons finissaient leur
-       glissade bien avant d être opaques, et l entrée paraissait traîner.
-       Les deux descendent ensemble, décalage entre jetons compris. */
-    .v2-bonus-f-enter-active { transition: opacity 0.17s ease; }
+    .v2-bonus-f-enter-active { transition: opacity 0.16s ease-out; }
+    .v2-bonus-f-leave-active { transition: opacity 0.12s ease-in; }
 
-    .v2-bonus-f-enter-active .v2-token {
-        transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.25, 1);
+    .v2-bonus-f-enter-active .v2-token,
+    .v2-bonus-f-leave-active .v2-token {
+        transition: none;
+        transition-delay: 0s;
     }
-    .v2-bonus-f-enter-active .v2-token:nth-child(2) { transition-delay: 0.03s; }
-    .v2-bonus-f-enter-active .v2-token:nth-child(3) { transition-delay: 0.06s; }
 }
 
 .v2-token {
