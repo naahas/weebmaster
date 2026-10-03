@@ -96,6 +96,11 @@ const CHARACTER_VARIANTS = {
         ["LIQUIR", "LIQUIIR"],
         ["VERMOUD", "VERMOUDH", "BELMOD"],
         ["GIN", "JIN", "GEENE"],
+
+        // Le Grand Prêtre, père des anges. « GRAND PRETRE » et « LE GRAND
+        // PRETRE » étaient déjà liés par la règle du mot entier ; c est son nom
+        // japonais qui vivait à part.
+        ["DAISHINKAN", "LE GRAND PRETRE", "GRAND PRETRE"],
     ],
 
     // ============================================
