@@ -960,6 +960,52 @@ const THEME_MAPPING = {
     "Reborn": "Reborn",
 };
 
+// ============================================
+// ⚠️ LES FAUX LIENS DE LA RÈGLE DU MOT ENTIER
+// ============================================
+//
+// La règle du mot entier relie deux noms dès que l'un apparaît ENTIER dans
+// l'autre. Elle rend le bon service presque toujours — « MIHAWK » et
+// « DRACULE MIHAWK » sont la même personne, et aucun groupe n'a besoin de le
+// dire. Mais elle se trompe quand deux PERSONNAGES DIFFÉRENTS partagent un
+// mot : « GOKU » est un mot entier dans « GOKU BLACK », alors que Goku Black
+// est Zamasu dans le corps de Goku, pas Goku.
+//
+// Citer Goku condamnait donc Goku Black, et l'inverse. Un groupe ne pouvait
+// rien y faire : les groupes AJOUTENT des liens, ils n'en retirent pas. Cette
+// table-ci en retire.
+//
+// ⚠️ Elle ne vaut QUE pour la règle du mot entier. Deux noms déclarés dans un
+// même groupe restent liés quoi qu'il arrive — l'exception est ignorée pour
+// eux. Sans quoi on pourrait écrire une contradiction et ne jamais le voir.
+//
+// ⚠️ Et elle est SYMÉTRIQUE : si A ne doit pas condamner B, B ne doit pas
+// condamner A. Un sens seulement donnerait un jeu où l'ordre des réponses
+// change ce qui reste à trouver.
+//
+// À n'utiliser que pour de vrais homonymes. Ce n'est pas un moyen de rattraper
+// une entrée mal nommée : là, c'est l'entrée qu'il faut renommer.
+const NE_PAS_LIER = {
+    "Dbz": [
+        // Goku Black s'écrit dans les deux ordres, et les deux contiennent
+        // « GOKU » comme mot entier : il faut donc les deux paires.
+        ["GOKU", "GOKU BLACK"],
+        ["GOKU", "BLACK GOKU"],
+    ],
+};
+
+// Les noms que `nom` ne doit PAS condamner par la règle du mot entier.
+function liensInterdits(nom, theme) {
+    const variantKey = THEME_MAPPING[theme] || theme;
+    const paires = NE_PAS_LIER[variantKey] || [];
+    const interdits = [];
+    for (const paire of paires) {
+        if (!paire.includes(nom)) continue;
+        for (const autre of paire) if (autre !== nom) interdits.push(autre);
+    }
+    return interdits;
+}
+
 /**
  * Récupère toutes les variantes à bloquer pour un nom donné
  * @param {string} name - Le nom du personnage (en majuscules)
@@ -1012,22 +1058,31 @@ function areVariants(name1, name2, theme) {
  */
 function getAllNamesToBlock(name, availableNames, theme) {
     const normalizedName = name.toUpperCase().trim();
-    const toBlock = new Set(getVariantsToBlock(normalizedName, theme));
-    
+    const groupe = getVariantsToBlock(normalizedName, theme);
+    const toBlock = new Set(groupe);
+
     // 🎬 Mode Manganime : exact match uniquement (pas de word boundary)
     // Sinon "YUGIOH" bloquerait "YUGIOH GX", "DRAGON BALL" bloquerait "DRAGON BALL Z", etc.
     const variantKey = THEME_MAPPING[theme] || theme;
     if (variantKey === 'Manganime') {
         return Array.from(toBlock);
     }
-    
+
+    // Les homonymes qu'on ne doit pas condamner au passage : voir NE_PAS_LIER.
+    const interdits = liensInterdits(normalizedName, theme);
+
     // Ajouter les noms qui contiennent le nom cité comme MOT COMPLET
     // (ex: "MONKEY D LUFFY" contient "LUFFY" comme mot → OK)
     // (ex: "GOTENKS" contient "GOTEN" mais PAS comme mot complet → IGNORÉ)
     for (const availableName of availableNames) {
         const upperAvailable = availableName.toUpperCase();
         if (upperAvailable === normalizedName) continue;
-        
+
+        // ⚠️ L'exception ne vaut que pour la règle du mot entier, jamais contre
+        // un groupe : le `groupe.includes` garantit qu'un alias déclaré reste
+        // bloqué même si quelqu'un l'inscrit par erreur dans NE_PAS_LIER.
+        if (interdits.includes(upperAvailable) && !groupe.includes(upperAvailable)) continue;
+
         // Vérifier si le nom cité est un mot complet dans le nom disponible
         // Ex: "GOTEN" dans "SON GOTEN" → match (séparé par espace)
         // Ex: "GOTEN" dans "GOTENKS" → pas match (pas de frontière de mot)
