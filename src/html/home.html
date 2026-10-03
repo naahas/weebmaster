@@ -502,13 +502,16 @@
                                              ? (kickArme === p.playerId ? 'Clique encore pour exclure ' + p.username : 'Exclure ' + p.username)
                                              : null"
                                      @click.stop="isHost && p.playerId !== playerId ? armerKick(p.playerId) : null">
-                                    <span class="v2-room-player-name">{{ p.username }}</span>
-                                    <!-- ⚠️ Pas de croix à côté du nom : elle élargissait la
+                                    <!-- ⚠️ La mèche est un « ::after » DU NOM, pas un élément
+                                         de la vignette : elle fait ainsi exactement la largeur
+                                         du pseudo, sans toucher les bords. Posée sur la
+                                         vignette, elle courait d un bord à l autre et il
+                                         fallait lui écrire en dur le creux de la vignette —
+                                         un chiffre de plus à tenir à jour.
+                                         ⚠️ Et pas de croix à côté du nom : elle élargissait la
                                          vignette en apparaissant, et toute la rangée glissait
-                                         sous le curseur au moment précis où il faut viser.
-                                         Le rouge plein, le nom barré et la mèche disent déjà
-                                         tout, sans bouger d un pixel. -->
-                                    <span class="v2-room-player-meche" aria-hidden="true"></span>
+                                         au moment précis où il faut viser. -->
+                                    <span class="v2-room-player-name">{{ p.username }}</span>
                                 </button>
                                 <!-- ⚠️ La pastille BASCULAIT entre deux camps. Avec cinq, une
                                      bascule n a plus de sens : elle ouvre un choix.

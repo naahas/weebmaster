@@ -8497,13 +8497,22 @@ body.game-active:has(.poll-game-container) #particles-js {
    peut pas savoir que la vignette va se désarmer toute seule : il reviendrait
    cliquer une seconde fois sur une vignette redevenue inoffensive, et ne
    comprendrait pas pourquoi il ne se passe rien.
+
+   ⚠️ Elle est accrochée AU NOM et non à la vignette : elle fait ainsi tout
+   juste la largeur du pseudo, et ne touche jamais les bords. Posée sur la
+   vignette, il fallait lui écrire en dur le creux de celle-ci — un chiffre de
+   plus à tenir à jour le jour où le creux change.
+
    Sa durée est écrite ici ET dans `armerKick` : les deux doivent bouger
    ensemble, 3 s. */
-.v2-room-player-meche {
+.v2-room-player-name { position: relative; }
+
+.v2-room-player-name::after {
+    content: '';
     position: absolute;
-    left: 0.6rem;
-    right: 0.6rem;
-    bottom: 0.26rem;
+    left: 0;
+    right: 0;
+    bottom: -0.42rem;
     height: 0.1rem;
     border-radius: 2rem;
     background: rgba(255, 255, 255, 0.55);
@@ -8512,7 +8521,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     opacity: 0;
 }
 
-.v2-room-player.kickable.arme .v2-room-player-meche {
+.v2-room-player.kickable.arme .v2-room-player-name::after {
     opacity: 1;
     animation: v2KickMeche 3s linear forwards;
 }
@@ -8524,7 +8533,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 @media (prefers-reduced-motion: reduce) {
     .v2-room-player.kickable.arme { animation: none; }
-    .v2-room-player.kickable.arme .v2-room-player-meche { animation-timing-function: step-end; }
+    .v2-room-player.kickable.arme .v2-room-player-name::after { animation-timing-function: step-end; }
 }
 
 .v2-room-empty {
