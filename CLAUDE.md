@@ -179,7 +179,7 @@ src/img/               avatars, questionpic
   Un ECHANGE, lui, se fait SUR PLACE : chacune prend la place de l autre et rien d autre ne bouge
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
-| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*), **mèche visible** (oui par défaut) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
+| `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*), **mouvement** (oui par défaut — la mèche se consume-t-elle à l écran) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
 
 ⚠️ **L'ORDRE de passage.** *Horaire* (le défaut) est l'ordre de toujours : la bombe tourne dans
 le cercle, chacun voit son tour venir et prépare. *Aléatoire* la fait désigner au hasard **parmi
@@ -238,7 +238,7 @@ casserait le mode sans qu'aucun test ne le voie :
 (`/prototypes/bomb-visuel`). La mèche dit « bientôt » sans dire « dans 4,2 s » ; une jauge
 ou un compteur suffiraient à résoudre la manche de tête.
 
-**Réglage *Mèche visible* (Oui par défaut).** Le dernier cran de cette même échelle : éteint,
+**Réglage *Mouvement* (Oui par défaut).** Le dernier cran de cette même échelle : éteint,
 la mèche reste **pleine du début à la fin** et la bombe part sans prévenir. ⚠️ Il ne touche
 **que le dessin** — `armerMeche()` tire la même durée et le minuteur ne bouge pas d'un pouce.
 Côté client il faut **les deux** : `--meche-part` figé à 1 **et** `animation: none` sur

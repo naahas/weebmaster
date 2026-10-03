@@ -886,9 +886,9 @@
                                      permet de résoudre la manche de tête ; une mèche qui
                                      raccourcit, qui dit « bientôt » sans dire « dans 4,2 s » ;
                                      et maintenant plus rien, pour qui veut la surprise entière. -->
-                                <div class="v2-set">
+                                <div class="v2-set" data-info="bomb-mouvement">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <span class="v2-set-label">Mèche visible</span>
+                                    <span class="v2-set-label">Mouvement</span>
                                     <span class="v2-set-value">{{ bombanime.mecheVisuelle ? 'Oui' : 'Non' }}</span>
                                     <span class="v2-set-opts">
                                         <button class="v2-set-opt" :class="{ on: bombanime.mecheVisuelle }"
@@ -1041,6 +1041,17 @@
                             bonne réponse.<br><b>Continue</b> : elle se consume en continu jusqu à
                             l explosion.</span>
                     </span>
+
+                    <!-- ⚠️ « pas plus tard » n est pas une coquetterie : c est la seule chose
+                         qui ne se devine pas. Sans elle on comprend « Non » comme « la bombe
+                         dure plus longtemps », alors que la durée est exactement la même —
+                         le réglage ne touche que ce qu on voit. Dit dans la phrase plutôt
+                         qu en troisième ligne, pour tenir la règle d une phrase par option. -->
+                    <span class="v2-set-info" data-pour="bomb-mouvement" tabindex="0">!
+                        <span class="v2-set-bulle"><b>Oui</b> : la mèche raccourcit à l écran et
+                            montre le temps qui reste.<br><b>Non</b> : elle reste pleine — la bombe
+                            part sans prévenir, pas plus tard.</span>
+                    </span>
                     <!-- ⚠️ Une phrase chacune, pas plus. La première version disait aussi
                          la règle du tour et la limite à deux joueurs : la bulle débordait
                          sur le salon, et on ne lit pas un paragraphe pour un réglage. -->
@@ -1097,10 +1108,16 @@
             <!-- ⚠️ « rangee » : sur TELEPHONE ce bouton occupe exactement la place
                  que prend la barre de jetons, en bas a gauche. Les deux s echangent
                  au lieu de se superposer — jetons pendant la question, sortie des
-                 que la reponse est dite. Une meme condition pour les deux, lue dans
-                 « barreBonusVisible ». Sur ordinateur la classe ne fait rien : la
-                 barre y est une colonne, a droite du panneau. -->
-            <button class="v2-hoststop" :class="{ rangee: barreBonusVisible }" v-if="!isHost && gameInProgress && !gameEnded"
+                 que la reponse est dite. Sur ordinateur la classe ne fait rien :
+                 la barre y est une colonne, a droite du panneau.
+
+                 ⚠️ Il lit « questionEnCours » et NON « barreBonusVisible ». Les
+                 deux ne different que par les retards d entree des jetons, mais
+                 c est tout le sujet : pendant ces 650 ms le bouton revenait, puis
+                 repartait aussitot. Il clignotait a chaque question, et les jetons
+                 semblaient attendre qu il ait fini de sortir. Le coin reste
+                 simplement vide le temps que le panel se pose. -->
+            <button class="v2-hoststop" :class="{ rangee: questionEnCours }" v-if="!isHost && gameInProgress && !gameEnded"
                     @click="askLeaveRoom" title="Quitter la partie" aria-label="Quitter la partie">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>
@@ -1108,7 +1125,7 @@
                 </svg>
             </button>
 
-            <button class="v2-hoststop" :class="{ rangee: barreBonusVisible }" v-if="isHost && gameInProgress && !gameEnded"
+            <button class="v2-hoststop" :class="{ rangee: questionEnCours }" v-if="isHost && gameInProgress && !gameEnded"
                     @click="askCloseRoom" title="Arrêter la partie" aria-label="Arrêter la partie">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h4"/>

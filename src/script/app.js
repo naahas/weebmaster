@@ -884,17 +884,25 @@ createApp({
             return true;
         },
 
-        // La barre de jetons est-elle à l'écran ?
+        // Une question est-elle en cours ? C'est ce qui décide, sur téléphone,
+        // que le coin bas-gauche appartient aux jetons et pas à la sortie.
         //
-        // ⚠️ Écrite UNE fois, et lue à deux endroits : par la barre elle-même,
-        // et par le bouton « quitter » du téléphone, qui occupe exactement la
-        // même place en bas à gauche. Les deux s'échangent, donc leur condition
-        // doit être la MÊME expression — deux copies auraient fini par diverger
-        // et laissé soit un trou, soit les deux l'un sur l'autre.
-        barreBonusVisible() {
-            return this.gameInProgress && !this.gameEnded && this.questionShown
-                && this.bonusShown && !this.showResults
+        // ⚠️ Sans `questionShown` ni `bonusShown`, à dessein. Ces deux-là ne
+        // disent pas « il n'y a pas de question », ils disent « les jetons ne
+        // sont pas ENCORE arrivés » — ils tiennent un retard de 650 ms entre
+        // deux questions, le temps que le panel se pose. Le bouton quitter
+        // revenait donc pendant ce creux, puis repartait aussitôt : il
+        // clignotait à chaque question, et les jetons semblaient attendre
+        // qu'il ait fini de sortir. Le coin reste simplement vide.
+        questionEnCours() {
+            return this.gameInProgress && !this.gameEnded && !this.showResults
                 && this.lobbyMode !== 'bombanime' && this.bonusEnabled && !this.estSpectateur;
+        },
+
+        // La barre de jetons est-elle à l'écran ? Même chose, plus les deux
+        // retards d'entrée.
+        barreBonusVisible() {
+            return this.questionEnCours && this.questionShown && this.bonusShown;
         },
 
         // Combien de joueurs il faut pour lancer CE salon.
