@@ -747,6 +747,81 @@ body:not(.entre) { overflow: hidden; }
     .salons { max-width: 100%; margin-left: 0; }
     .direct { flex-wrap: wrap; }
 }
+
+/* ════════════════════════════════════════════
+   📱 LE TÉLÉPHONE
+   ⚠️ La règle du bureau — « la page ne défile pas » — est déjà levée à
+   1000 px : le rail s'y couche et la scène reprend sa hauteur naturelle.
+   Ce bloc-ci ne traite donc que ce qui reste trop LARGE, et rien d'autre.
+   ════════════════════════════════════════════ */
+@media (max-width: 600px) {
+    .scene { padding: .8rem .7rem 1.4rem; gap: .8rem; }
+
+    /* Le titre et son sous-titre étaient alignés sur la même ligne de base :
+       à 390 px ils se chevauchaient. Ils s'empilent, et « relu à » passe
+       dessous plutôt que de pousser le titre hors de l'écran. */
+    .scene-tete { flex-wrap: wrap; gap: .2rem .6rem; }
+    .scene-tete h1 { font-size: 1.15rem; width: 100%; }
+    .scene-tete p { font-size: .78rem; }
+    .scene-tete .relu { margin-left: 0; }
+
+    /* Deux colonnes de compteurs tiennent à 390 px, trois non : le libellé
+       se coupait au milieu d'un mot. On abaisse le minimum au lieu de figer
+       deux colonnes — sur un écran de 320 px, deux cartes de 130 px auraient
+       été plus serrées que lisibles, et `auto-fit` retombe alors sur une. */
+    .chiffres { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .6rem; }
+    .chiffre { padding: .75rem .8rem; }
+
+    /* Le bandeau du direct : les vignettes de salon défilent déjà toutes
+       seules, il ne manquait que de leur rendre la largeur entière. */
+    .direct { padding: .7rem .8rem; gap: .7rem; }
+    .salons { width: 100%; max-width: 100%; }
+
+    /* En-têtes de carte : le bouton d'action tombait hors du cadre. */
+    .carte-tete { flex-wrap: wrap; row-gap: .5rem; }
+    .carte-tete .tete-actions { margin-left: auto; }
+    .carte-corps { padding: .85rem; }
+
+    /* Les filtres prennent toute la largeur au lieu d'être repoussés à
+       droite, où il ne restait plus de place. */
+    .filtres { margin-left: 0; width: 100%; }
+    .filtres-ligne { padding: .6rem .8rem; }
+    .filtres-ligne select, .filtres-ligne input { font-size: .8rem; }
+    .filtres-ligne input[type="search"] { min-width: 0; width: 100%; }
+
+    /* ⚠️ Le tableau des parties garde SES SEPT COLONNES et défile
+       horizontalement, au lieu d'en cacher. Masquer « Vainqueur » ou
+       « Durée » aurait rendu la vue inutilisable pour ce qu'on vient y
+       faire — relire une partie et décider si on la garde. Le creux des
+       lignes redescend, lui : celui du bureau donnait des lignes de deux
+       centimètres de haut. */
+    .defile { overflow-x: auto; }
+    .defile > table { min-width: 34rem; }
+    td { padding: .7rem .5rem; }
+    thead th { padding: .55rem .5rem; font-size: .64rem; }
+    table { font-size: .86rem; }
+
+    /* La barre de sélection : les deux boutons passaient sous le bord. */
+    .selection { flex-wrap: wrap; row-gap: .5rem; padding: .6rem .8rem; }
+    .selection .a-droite { margin-left: 0; width: 100%; }
+    .selection .a-droite .mini { flex: 1; justify-content: center; }
+
+    /* Les modales touchaient les bords de l'écran. */
+    .voile { padding: .8rem; }
+    .modale { padding: 1.1rem; border-radius: 14px; }
+    .modale-actions { flex-wrap: wrap; }
+    .modale-actions .bouton { flex: 1; justify-content: center; }
+    .modale-corps { max-height: 72vh; }
+
+    /* Une question de la banque : ses champs étaient en deux colonnes. */
+    .q { padding: .9rem .8rem; }
+
+    /* Le rail : à 390 px, « ShonenMaster » sous le logo mangeait la place
+       des trois onglets, qui se mettaient alors à défiler. */
+    .marque img { width: 28px; height: 28px; }
+    .marque b { font-size: .92rem; }
+    .onglet, .rail-lien { padding: .4rem .55rem; font-size: .84rem; }
+}
 </style>
 </head>
 <body>
