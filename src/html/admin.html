@@ -438,7 +438,8 @@ tbody tr.part { opacity: 0; transition: opacity .2s; }
     opacity: 0; visibility: hidden; transition: opacity .13s;
     z-index: 5; pointer-events: none;
 }
-.info:hover > span { opacity: 1; visibility: visible; }
+.info:hover > span, .info:focus > span { opacity: 1; visibility: visible; }
+.info:focus { outline: none; border-color: var(--accent); color: var(--accent-clair); }
 .info b { font-weight: 600; color: var(--doux); }
 /* ⚠️ Les premières lignes du tableau n'ont pas de place au-dessus : leur
    bulle passe dessous. */
@@ -726,7 +727,16 @@ body:not(.entre) { overflow: hidden; }
 
 /* ── Écrans étroits ──────────────────────── */
 @media (max-width: 1000px) {
-    body { overflow: auto; }
+    /* ⚠️ `body` est un flex EN LIGNE (rail | scène). Coucher le rail ne
+       suffit donc pas : il faut RETOURNER LE CONTENEUR, sinon le rail
+       large de 100 % reste la PREMIÈRE COLONNE et la scène se retrouve
+       écrasée dans ce qu'il en reste — mesuré à 180 px sur un écran de
+       390, chaque mot sur sa ligne et la page partie de travers.
+       `height: auto` rend le défilement au DOCUMENT : avec `html, body`
+       bloqués à 100 %, c'était le corps qui défilait, et le rail collant
+       n'avait alors plus rien contre quoi coller. */
+    html, body { height: auto; }
+    body { flex-direction: column; overflow: visible; }
     .rail {
         position: sticky; top: 0; width: 100%; flex-direction: row;
         align-items: center; padding: .6rem .8rem; gap: .3rem;
@@ -743,6 +753,22 @@ body:not(.entre) { overflow: hidden; }
     }
     .onglet[aria-selected="true"] { border-left: 0; border-bottom-color: var(--accent); }
     .scene { height: auto; min-height: calc(100dvh - 56px); padding: 1rem; }
+
+    /* ⚠️ `min-width: auto` est le défaut d'un élément de grille COMME d'un
+       élément flex : le tableau des parties, large de 34 rem, poussait donc
+       sa colonne, puis sa carte, puis la scène — et c'est la PAGE ENTIÈRE
+       qui partait à droite au lieu du seul tableau. Un `overflow-x` plus bas
+       ne sert à rien tant que la chaîne au-dessus peut grandir avec lui. */
+    .vue, .duo > .carte, .vue-pleine > .carte, .carte-corps { min-width: 0; }
+
+    /* La scène ayant repris sa hauteur naturelle, les listes n'avaient plus
+       de quoi se borner : les 94 parties se déroulaient d'affilée et la page
+       faisait 6 400 px — cocher une ligne du bas obligeait à tout remonter
+       pour atteindre « Supprimer ». Elles gardent donc leur propre
+       défilement. Aucune ne piège le doigt : chacune est le DERNIER bloc de
+       sa vue, il n'y a rien dessous qu'on pourrait ne plus atteindre. */
+    .defile { max-height: 68dvh; }
+
     .duo { grid-template-columns: 1fr; }
     .salons { max-width: 100%; margin-left: 0; }
     .direct { flex-wrap: wrap; }
@@ -821,6 +847,24 @@ body:not(.entre) { overflow: hidden; }
     .marque img { width: 28px; height: 28px; }
     .marque b { font-size: .92rem; }
     .onglet, .rail-lien { padding: .4rem .55rem; font-size: .84rem; }
+
+    /* La bulle des réglages tenait sur UNE ligne (`nowrap`) : large de
+       300 px, elle sortait du cadre défilant qui la coupe. */
+    .info > span { white-space: normal; width: max-content; max-width: 62vw; }
+}
+
+/* ════════════════════════════════════════════
+   👆 LES APPAREILS SANS SURVOL
+   ⚠️ Trois commandes ne se montraient qu'au `:hover` — la corbeille d'une
+   partie, les actions d'une question, et le point info. Au doigt il n'y a
+   PAS de survol : elles étaient simplement introuvables, et la page avait
+   l'air de ne rien savoir faire. Ce n'est pas une question de largeur mais
+   de pointeur, d'où `hover: none` plutôt qu'un seuil en pixels.
+   ════════════════════════════════════════════ */
+@media (hover: none) {
+    .jeter, .q-actions { opacity: 1; }
+    /* Discrètes quand même : visibles, mais elles ne crient pas. */
+    .jeter { color: var(--tres-doux); }
 }
 </style>
 </head>
@@ -1650,7 +1694,10 @@ function bulleReglages(p) {
     // ⚠️ Rien pour les parties d'avant la colonne « reglages » : on n'affiche
     // pas un point info vide, il ferait croire à une panne.
     if (!L) return '';
-    return '<span class="info" aria-label="Réglages">i<span>' +
+    // ⚠️ `tabindex` : la bulle ne s'ouvrait qu'au SURVOL, donc jamais au
+    // doigt — les réglages d'une partie étaient illisibles sur téléphone.
+    // Rendu focusable, un appui l'ouvre et un appui à côté la referme.
+    return '<span class="info" tabindex="0" role="button" aria-label="Réglages">i<span>' +
         L.map(x => '<b>' + ech(x[0]) + '</b> ' + ech(x[1])).join('<br>') +
         '</span></span>';
 }
