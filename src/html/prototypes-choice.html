@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choice — le salon et l'arène</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Poppins:wght@600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   CHOICE — l'interface, et rien d'autre
+
+   Il ne se passe RIEN ici : aucune règle, aucun serveur, aucune
+   banque. On regarde deux côtés et des joueurs au milieu, et on
+   juge le MOUVEMENT — c'est lui qui porte le mode, pas la pose.
+   D'où les commandes en bas : la séquence se rejoue au clic.
+
+   ⚠️ CE QUI N'EST PAS ENCORE TRANCHÉ, et pourquoi la page n'en
+   décide pas : d'où vient « le camp qui perd ». Soit la minorité
+   survit (aucune banque, l'énoncé est un prétexte), soit il y a une
+   bonne réponse. Les deux donnent EXACTEMENT le même écran — un
+   camp s'éteint et éclate — donc la commande « camp perdant » le
+   laisse ouvert au lieu de figer un choix qui n'est pas fait.
+
+   ── Les couleurs ──
+   Cramoisi (350°) contre azur (210°) : 140° d'écart, le maximum
+   utile. Les camps du Classique (bleu, doré, rose, vert, violet)
+   sont écartés exprès — ils disent « équipe », et ici il n'y a pas
+   d'équipe, il y a un BORD qu'on choisit. L'or reste au chrome
+   (chrono, libellés) : les camps sont immenses, le chrome est fin,
+   ils ne se disputent jamais la même surface.
+
+   ── Ce que les animations doivent dire ──
+   1. partir du milieu  : personne n'est encore engagé
+   2. glisser, pas sauter : on voit QUI part, et quand — c'est
+      l'information que les autres achètent en attendant
+   3. se verrouiller    : le clic ne se reprend pas (il a tranché :
+      « on ne peut pas changer d'avis, on choisit qu'une fois »)
+   4. éclater           : la sanction doit être violente et courte
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+    --or: #ffd700;
+    --or-clair: #ffe066;
+
+    /* Les deux bords. Chaque camp porte sa teinte, sa lueur et son
+       verre : tout ce qui le concerne descend de ces trois-là. */
+    --gauche: #ff3b5c;
+    --gauche-vif: #ff7a8f;
+    --droite: #2f9bff;
+    --droite-vif: #7ac2ff;
+
+    --fond: #07070a;
+    --texte: #ffffff;
+    --doux: rgba(255, 255, 255, 0.46);
+    --tres-doux: rgba(255, 255, 255, 0.26);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--texte);
+    background: radial-gradient(75% 55% at 50% 0%, #141017, #07070a 70%);
+    min-height: 100vh;
+}
+
+h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.1rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.25rem;
+}
+h1 span { color: var(--or); }
+
+.sous {
+    max-width: 56rem;
+    margin-bottom: 1.1rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--doux);
+}
+.sous b { color: rgba(255, 255, 255, 0.78); font-weight: 600; }
+
+.note {
+    max-width: 56rem;
+    margin-bottom: 1.6rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--doux);
+    border-left: 0.14rem solid rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.04);
+}
+.note b { color: var(--or); font-weight: 600; }
+
+/* ══ La bascule salon / arène ══════════════════════════════════ */
+.bascule {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    padding: 0.28rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.6rem;
+}
+.bascule button {
+    padding: 0.5rem 1.3rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--doux);
+    background: none;
+    border: none;
+    border-radius: 0.42rem;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease;
+}
+.bascule button:hover { color: var(--texte); }
+.bascule button.on {
+    color: #14100a;
+    background: linear-gradient(135deg, var(--or-clair), var(--or));
+}
+
+.ecran { display: none; }
+.ecran.on { display: block; }
+
+/* ════════════════════════════════════════════════════════════════
+   1. LE SALON
+   Repris du jeu à l'identique — mêmes lignes `v2-set`, même tiroir
+   d'options au survol, même or. Un réglage qui ne ressemble pas
+   aux autres se remarque, et on ne juge alors plus que ça.
+   ════════════════════════════════════════════════════════════════ */
+.salon {
+    max-width: 30rem;
+    padding: 1.4rem;
+    background: rgba(255, 255, 255, 0.022);
+    border: 0.06rem solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.9rem;
+}
+
+.salon-tete {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
+}
+.salon-badge {
+    padding: 0.3rem 0.7rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+    color: #14100a;
+    background: linear-gradient(135deg, var(--or-clair), var(--or));
+    border-radius: 0.35rem;
+}
+.salon-tete p { font-size: 0.78rem; color: var(--doux); }
+
+.reglages { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.v2-set {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 4rem;
+    padding: 0 1rem;
+    background: rgba(255, 255, 255, 0.028);
+    border: 0.06rem solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.5rem;
+}
+.v2-set-ic {
+    flex: 0 0 auto;
+    width: 1rem; height: 1rem;
+    stroke: var(--or); fill: none;
+    stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+    opacity: 0.85;
+}
+.v2-set-label {
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--doux); white-space: nowrap;
+}
+.v2-set-value {
+    margin-left: auto;
+    font-size: 0.92rem; font-weight: 700;
+    color: var(--or); white-space: nowrap;
+}
+.v2-set-opts {
+    position: absolute;
+    left: 0.25rem; right: 0.25rem; top: 50%;
+    z-index: 6;
+    display: flex; gap: 0.22rem;
+    padding: 0.28rem;
+    background: #17150f;
+    border: 0.06rem solid rgba(255, 215, 0, 0.45);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.7rem 1.8rem rgba(0, 0, 0, 0.6);
+    opacity: 0; pointer-events: none;
+    transform: translateY(-50%) scale(0.97);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.v2-set:hover .v2-set-opts,
+.v2-set.ouvert .v2-set-opts {
+    opacity: 1; pointer-events: auto;
+    transform: translateY(-50%) scale(1);
+}
+/* ⚠️ Au doigt il n'y a pas de survol : sans `.ouvert`, le tiroir ne
+   s'ouvrait jamais sur téléphone et les réglages avaient l'air morts.
+   C'est un appui qui l'ouvre. */
+.v2-set-opt {
+    flex: 1 1 auto; min-width: 1.9rem;
+    padding: 0.66rem 0.6rem;
+    font-family: inherit; font-size: 0.79rem; font-weight: 600;
+    color: var(--doux);
+    background: rgba(255, 255, 255, 0.05);
+    border: none; border-radius: 0.32rem;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease;
+}
+.v2-set-opt:hover { color: var(--texte); background: rgba(255, 255, 255, 0.13); }
+.v2-set-opt.on {
+    color: #14100a;
+    background: linear-gradient(135deg, var(--or-clair), var(--or));
+}
+
+.salon-note {
+    margin-top: 1rem;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--tres-doux);
+}
+.salon-note b { color: var(--doux); font-weight: 600; }
+
+/* ════════════════════════════════════════════════════════════════
+   2. L'ARÈNE
+   ════════════════════════════════════════════════════════════════ */
+.arene {
+    position: relative;
+    display: flex;
+    max-width: 68rem;
+    height: 36rem;
+    overflow: hidden;
+    background: #060609;
+    border-radius: 1rem;
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.06);
+    /* ⚠️ Les éclats sortent du cadre : `overflow: hidden` les coupe
+       proprement au bord au lieu d'allonger la page. */
+}
+
+/* ── Le rail des vivants, à gauche ─────────────────────────────
+   Il est COLLÉ au bord et presque noir : sans ça il se lisait
+   comme un troisième camp, et l'œil cherchait un troisième choix. */
+.rail {
+    position: relative;
+    z-index: 4;
+    flex: 0 0 5.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.9rem 0.5rem;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.55);
+    border-right: 0.06rem solid rgba(255, 255, 255, 0.06);
+}
+.rail-titre {
+    margin-bottom: 0.2rem;
+    font-size: 0.56rem; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    text-align: center;
+    color: var(--tres-doux);
+}
+.rail-j {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.22rem;
+    border-radius: 0.4rem;
+    transition: opacity 0.4s ease, filter 0.4s ease;
+}
+.rail-j img {
+    width: 1.6rem; height: 1.6rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 0.08rem solid rgba(255, 255, 255, 0.14);
+}
+.rail-j b {
+    font-size: 0.56rem; font-weight: 600;
+    color: var(--doux);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rail-j.mort { opacity: 0.22; filter: grayscale(1); }
+
+/* ── La scène : deux bords et un couloir ───────────────────────
+   Les camps sont posés en ABSOLU et non en flex : un avatar doit
+   pouvoir glisser du milieu vers un camp en traversant la frontière,
+   ce qu'un enfant de flex ne peut pas faire. */
+.scene { position: relative; flex: 1; }
+
+.camp {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 42%;
+    transition: filter 0.5s ease, opacity 0.5s ease;
+}
+.camp.g { left: 0; }
+.camp.d { right: 0; }
+
+/* Le fond d'un camp : une lueur qui monte du bord extérieur. La
+   teinte est la plus dense AU BORD et s'éteint vers le centre —
+   c'est ce qui creuse le couloir sans y poser la moindre ligne. */
+.camp-fond {
+    position: absolute; inset: 0;
+    transition: opacity 0.45s ease;
+}
+.camp.g .camp-fond {
+    background:
+        linear-gradient(90deg, rgba(255, 59, 92, 0.26), rgba(255, 59, 92, 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 0% 50%, rgba(255, 59, 92, 0.3), transparent 70%);
+}
+.camp.d .camp-fond {
+    background:
+        linear-gradient(270deg, rgba(47, 155, 255, 0.26), rgba(47, 155, 255, 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 100% 50%, rgba(47, 155, 255, 0.32), transparent 70%);
+}
+
+/* Le liseré du bord extérieur : fin, net, et il PULSE quand
+   quelqu'un arrive. C'est le seul accusé de réception du camp. */
+.camp-bord {
+    position: absolute;
+    top: 8%; bottom: 8%;
+    width: 0.14rem;
+    border-radius: 0.14rem;
+    opacity: 0.75;
+}
+.camp.g .camp-bord { left: 0; background: linear-gradient(transparent, var(--gauche), transparent); }
+.camp.d .camp-bord { right: 0; background: linear-gradient(transparent, var(--droite), transparent); }
+.camp.frappe .camp-bord { animation: bord-pulse 0.5s ease; }
+@keyframes bord-pulse {
+    0%   { opacity: 0.75; transform: scaleX(1); }
+    30%  { opacity: 1;    transform: scaleX(3.4); }
+    100% { opacity: 0.75; transform: scaleX(1); }
+}
+
+/* Le nom du camp, couché contre son bord. Vertical : horizontal, il
+   mangeait la place des avatars, qui sont le vrai sujet. */
+.camp-nom {
+    position: absolute;
+    top: 50%;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.6rem;
+    line-height: 0.9;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    opacity: 0.5;
+    transition: opacity 0.4s ease, letter-spacing 0.4s ease;
+}
+.camp.g .camp-nom {
+    left: 0.9rem;
+    color: var(--gauche-vif);
+    transform: translateY(-50%) rotate(180deg);
+    writing-mode: vertical-rl;
+}
+.camp.d .camp-nom {
+    right: 0.9rem;
+    color: var(--droite-vif);
+    transform: translateY(-50%);
+    writing-mode: vertical-rl;
+}
+.camp.peuple .camp-nom { opacity: 0.95; letter-spacing: 0.18em; }
+
+/* Le compteur du camp : gros, en haut, et il encaisse chaque arrivée. */
+.camp-n {
+    position: absolute;
+    top: 1.1rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.4rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.9);
+    transition: transform 0.25s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.camp.g .camp-n { left: 1.6rem; }
+.camp.d .camp-n { right: 1.6rem; }
+.camp.frappe .camp-n { transform: scale(1.22); }
+
+/* ── Le couloir du milieu ──────────────────────────────────────
+   Pas de trait : deux dégradés qui se rejoignent laissent une
+   bande sombre. Une ligne pleine aurait fait « frontière à ne pas
+   franchir », alors que tout le jeu consiste à la franchir. */
+.couloir {
+    position: absolute;
+    left: 42%; right: 42%;
+    top: 0; bottom: 0;
+    display: grid;
+    place-items: center;
+}
+.couloir::before {
+    content: '';
+    position: absolute;
+    top: 12%; bottom: 12%;
+    left: 50%;
+    width: 0.06rem;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+/* ── L'énoncé, en haut, à cheval sur la frontière ──────────────── */
+.enonce {
+    position: absolute;
+    top: 1.4rem; left: 50%;
+    z-index: 5;
+    width: 20rem;
+    padding: 0.7rem 1rem;
+    text-align: center;
+    background: rgba(8, 8, 12, 0.88);
+    border: 0.06rem solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.6rem;
+    transform: translateX(-50%);
+    backdrop-filter: blur(6px);
+}
+.enonce small {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--tres-doux);
+}
+.enonce-duo {
+    display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem; font-weight: 700;
+}
+.enonce-duo i { font-style: normal; font-size: 0.7rem; color: var(--tres-doux); }
+.enonce-g { color: var(--gauche-vif); }
+.enonce-d { color: var(--droite-vif); }
+
+/* ── Le chrono ─────────────────────────────────────────────────
+   Un anneau, aucun chiffre : la même échelle que la mèche de
+   BombAnime. Un compteur dit « dans 4,2 s » et on attend le
+   dernier dixième ; un arc dit « bientôt » et on bouge. */
+.chrono {
+    position: absolute;
+    bottom: 1.5rem; left: 50%;
+    z-index: 5;
+    width: 4.4rem; height: 4.4rem;
+    transform: translateX(-50%);
+}
+.chrono svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.chrono circle { fill: none; stroke-width: 3.4; }
+.chrono .piste { stroke: rgba(255, 255, 255, 0.07); }
+.chrono .arc {
+    stroke: var(--or);
+    stroke-linecap: round;
+    stroke-dasharray: 138.2;
+    transition: stroke 0.3s ease;
+}
+.chrono.fini .arc { stroke: var(--gauche); }
+.chrono-mot {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 0.56rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--tres-doux);
+}
+
+/* ── Les joueurs ───────────────────────────────────────────────
+   Posés en absolu dans la scène, déplacés par `transform` : c'est
+   la seule propriété qui glisse sans faire recalculer la page, et
+   à seize avatars ça se voit.  */
+.j {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3.4rem;
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    transform: translate(-50%, -50%);
+    transition: transform 0.72s cubic-bezier(0.22, 1.2, 0.3, 1);
+    will-change: transform;
+}
+.j-rond {
+    position: relative;
+    width: 2.9rem; height: 2.9rem;
+    border-radius: 50%;
+    transition: box-shadow 0.4s ease, transform 0.3s ease;
+}
+.j-rond img {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 0.11rem solid rgba(255, 255, 255, 0.16);
+    transition: border-color 0.4s ease;
+}
+.j b {
+    max-width: 100%;
+    font-size: 0.58rem; font-weight: 600;
+    color: var(--doux);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+/* Engagé : l'avatar prend la couleur de son bord. C'est ce halo qui
+   rend le camp lisible d'un coup d'œil, bien avant le compteur. */
+.j.vers-g .j-rond { box-shadow: 0 0 0 0.14rem var(--gauche), 0 0 1.4rem rgba(255, 59, 92, 0.5); }
+.j.vers-d .j-rond { box-shadow: 0 0 0 0.14rem var(--droite), 0 0 1.4rem rgba(47, 155, 255, 0.5); }
+.j.vers-g b { color: var(--gauche-vif); }
+.j.vers-d b { color: var(--droite-vif); }
+
+/* La traînée : elle ne dure que le temps du glissement et dit d'où
+   l'on vient. Sans elle, à seize joueurs, on ne voit plus qui bouge. */
+.j-trainee {
+    position: absolute; top: 50%; left: 50%;
+    width: 0.5rem; height: 0.5rem;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+.j.bouge .j-trainee { animation: trainee 0.72s ease-out; }
+.j.vers-g .j-trainee { background: var(--gauche); }
+.j.vers-d .j-trainee { background: var(--droite); }
+@keyframes trainee {
+    0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(9); }
+}
+
+/* L'arrivée : un à-coup court. L'avatar ne « se pose » pas, il
+   s'ancre — le geste doit avoir l'air irréversible. */
+.j.pose .j-rond { animation: ancrage 0.42s cubic-bezier(0.2, 1.8, 0.35, 1); }
+@keyframes ancrage {
+    0%   { transform: scale(1.18); }
+    60%  { transform: scale(0.94); }
+    100% { transform: scale(1); }
+}
+
+/* Caché : « Voir les autres » éteint. L'avatar reste là — on compte
+   toujours les corps — mais on ne sait plus QUI. Masquer le joueur
+   entier retirerait l'information que le mode vend : combien sont
+   déjà partis. */
+.j.masque img { filter: blur(0.42rem) grayscale(1) brightness(0.5); }
+.j.masque b { color: transparent; text-shadow: 0 0 0.5rem rgba(255, 255, 255, 0.35); }
+
+/* Le verrouillage : tout se fige d'un coup, et un éclair balaie
+   l'écran. C'est le seul moment où les deux camps disent la même
+   chose en même temps. */
+.scene.verrou .j { transition: none; }
+.eclair {
+    position: absolute; inset: 0;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+}
+.eclair.joue { animation: balayage 0.45s ease-out; }
+@keyframes balayage {
+    0%   { opacity: 0;   transform: translateX(-60%) skewX(-14deg); }
+    35%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translateX(60%) skewX(-14deg); }
+}
+
+/* ── La sanction ───────────────────────────────────────────────
+   Le camp perdant : il tremble, blanchit une fois, puis se vide.
+   Le gagnant, lui, ne fait RIEN de plus que rester allumé — deux
+   récompenses simultanées s'annulent. */
+.camp.perdu { animation: secousse 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes secousse {
+    10%, 90% { transform: translateX(-0.12rem); }
+    20%, 80% { transform: translateX(0.22rem); }
+    30%, 50%, 70% { transform: translateX(-0.4rem); }
+    40%, 60% { transform: translateX(0.4rem); }
+}
+.camp.eteint { filter: grayscale(0.85) brightness(0.45); opacity: 0.5; }
+.camp.eteint .camp-nom { opacity: 0.2; }
+
+.camp.gagne .camp-fond { animation: respire 1.4s ease-in-out; }
+@keyframes respire {
+    0%, 100% { opacity: 1; }
+    40%      { opacity: 1.6; }
+}
+
+/* Les fissures : tracées en SVG par-dessus le camp, elles se
+   dessinent depuis le centre. Elles ne servent qu'une demi-seconde,
+   mais c'est elles qui font « casser » plutôt que « s'éteindre ». */
+.fissures {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0;
+}
+.fissures path {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.85);
+    stroke-width: 1.4;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+}
+.camp.perdu .fissures { opacity: 1; }
+.camp.perdu .fissures path { animation: fissure 0.55s ease-out forwards; }
+@keyframes fissure {
+    0%   { stroke-dashoffset: 400; opacity: 1; }
+    70%  { stroke-dashoffset: 0;   opacity: 1; }
+    100% { stroke-dashoffset: 0;   opacity: 0; }
+}
+
+/* L'éclat d'un avatar : une part du portrait, découpée et jetée.
+   Chaque éclat porte la MÊME image, calée au même endroit — c'est
+   ce qui donne l'impression que le visage se brise, et non qu'il
+   est remplacé par des triangles.
+   ⚠️ Aucun `border-radius` ici : le `clip-path` découpe déjà la
+   part, et arrondir par-dessus la rognait une seconde fois — il ne
+   restait qu'un éclat trop petit pour qu'on y reconnaisse un
+   visage, ce qui est exactement ce qu'on veut voir se briser. */
+.eclat {
+    position: absolute;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+/* Le flash de la casse : un blanc très court sur le camp qui tombe.
+   C'est lui qui fait encaisser le coup — la secousse seule se lit
+   comme une erreur de saisie, pas comme une sanction. */
+.camp-flash {
+    position: absolute; inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+.camp.perdu .camp-flash { animation: flash 0.42s ease-out; }
+@keyframes flash {
+    0%   { opacity: 0; }
+    12%  { opacity: 0.85; }
+    100% { opacity: 0; }
+}
+
+/* ── Commandes ─────────────────────────────────────────────────── */
+.commandes {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.4rem;
+    max-width: 68rem;
+    margin-top: 1.2rem;
+    padding: 0.9rem 1rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 0.06rem solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.7rem;
+}
+.cmd { display: flex; align-items: center; gap: 0.45rem; }
+.cmd > span {
+    font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--tres-doux);
+}
+.cmd button, .lancer {
+    padding: 0.42rem 0.8rem;
+    font-family: inherit; font-size: 0.76rem; font-weight: 600;
+    color: var(--doux);
+    background: rgba(255, 255, 255, 0.06);
+    border: none; border-radius: 0.35rem;
+    cursor: pointer;
+    transition: color 0.16s ease, background 0.16s ease;
+}
+.cmd button:hover, .lancer:hover { color: var(--texte); background: rgba(255, 255, 255, 0.14); }
+.cmd button.on { color: #14100a; background: linear-gradient(135deg, var(--or-clair), var(--or)); }
+.lancer {
+    margin-left: auto;
+    padding: 0.5rem 1.5rem;
+    color: #14100a;
+    background: linear-gradient(135deg, var(--or-clair), var(--or));
+    font-weight: 700;
+}
+.lancer:hover { filter: brightness(1.1); background: linear-gradient(135deg, var(--or-clair), var(--or)); color: #14100a; }
+.lancer:disabled { opacity: 0.4; cursor: default; filter: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@media (max-width: 760px) {
+    /* Plus HAUTE que sur ordinateur, et non plus basse : l'écran est en
+       portrait, et c'est la largeur qui manque. À seize joueurs, 28 rem
+       ne laissaient pas de quoi empiler les rangées sans toucher l'énoncé. */
+    .arene { height: 34rem; }
+    /* Le nom du camp passe DERRIÈRE : sur un camp de six centimètres il
+       croisait forcément les avatars, et c'est eux qu'on regarde. */
+    .camp-nom { font-size: 1.5rem; opacity: 0.22; }
+    .camp.peuple .camp-nom { opacity: 0.4; }
+    .camp-n { font-size: 2.2rem; }
+    .enonce { width: 15rem; }
+    .rail { flex-basis: 3.2rem; }
+    .rail-j b { display: none; }
+    .rail-j { justify-content: center; }
+
+    /* Des avatars plus petits : le pas de la grille en descend d'autant,
+       et deux colonnes tiennent dans un camp au lieu d'une et demie. */
+    .j { width: 2.5rem; }
+    .j-rond { width: 2.2rem; height: 2.2rem; }
+    .j b { font-size: 0.5rem; }
+
+    /* Le couloir s'élargit : un avatar indécis y tenait tout juste et
+       mordait sur les deux camps à la fois. */
+    .camp { width: 38%; }
+    .couloir { left: 38%; right: 38%; }
+}
+</style>
+</head>
+<body>
+
+<h1>Choice — <span>le salon et l'arène</span></h1>
+<p class="sous">
+    L'interface seule : <b>deux bords, des joueurs au milieu</b>. Aucune règle n'est câblée, aucun
+    serveur derrière. Ce qui se juge ici est le <b>mouvement</b> — s'engager doit se voir, et la
+    sanction doit faire mal une demi-seconde.
+</p>
+<div class="note">
+    ⚠️ <b>Ce qui n'est pas tranché</b> : d'où vient le camp qui perd. Que ce soit <b>la minorité</b>
+    (aucune banque à écrire, l'énoncé n'est qu'un prétexte) ou <b>une bonne réponse</b>, l'écran est
+    exactement le même — d'où la commande « camp perdant », qui laisse le choix ouvert.
+</div>
+
+<div class="bascule">
+    <button class="on" data-ecran="arene">L'arène</button>
+    <button data-ecran="salon">Le salon</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+     L'ARÈNE
+     ════════════════════════════════════════════ -->
+<section class="ecran on" id="ecran-arene">
+    <div class="arene">
+        <aside class="rail" id="rail">
+            <div class="rail-titre">En vie</div>
+        </aside>
+
+        <div class="scene" id="scene">
+            <div class="camp g" id="camp-g">
+                <div class="camp-fond"></div>
+                <div class="camp-flash"></div>
+                <svg class="fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
+                    <path d="M300 250 L210 210 L150 250 L70 190 L0 215"/>
+                    <path d="M210 210 L190 90 L140 0"/>
+                    <path d="M150 250 L130 360 L160 500"/>
+                    <path d="M70 190 L40 110"/>
+                </svg>
+                <div class="camp-bord"></div>
+                <div class="camp-nom">Naruto</div>
+                <div class="camp-n" id="n-g">0</div>
+            </div>
+
+            <div class="camp d" id="camp-d">
+                <div class="camp-fond"></div>
+                <div class="camp-flash"></div>
+                <svg class="fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
+                    <path d="M0 250 L90 210 L150 250 L230 190 L300 215"/>
+                    <path d="M90 210 L110 90 L160 0"/>
+                    <path d="M150 250 L170 360 L140 500"/>
+                    <path d="M230 190 L260 110"/>
+                </svg>
+                <div class="camp-bord"></div>
+                <div class="camp-nom">Sasuke</div>
+                <div class="camp-n" id="n-d">0</div>
+            </div>
+
+            <div class="couloir"></div>
+
+            <div class="enonce">
+                <small id="enonce-titre">Choisis ton camp</small>
+                <div class="enonce-duo">
+                    <span class="enonce-g">Naruto</span>
+                    <i>OU</i>
+                    <span class="enonce-d">Sasuke</span>
+                </div>
+            </div>
+
+            <div class="chrono" id="chrono">
+                <svg viewBox="0 0 50 50">
+                    <circle class="piste" cx="25" cy="25" r="22"/>
+                    <circle class="arc" id="arc" cx="25" cy="25" r="22"/>
+                </svg>
+                <div class="chrono-mot" id="chrono-mot"></div>
+            </div>
+
+            <div class="eclair" id="eclair"></div>
+        </div>
+    </div>
+
+    <div class="commandes">
+        <div class="cmd">
+            <span>Joueurs</span>
+            <button data-n="6">6</button>
+            <button data-n="10" class="on">10</button>
+            <button data-n="16">16</button>
+        </div>
+        <div class="cmd">
+            <span>Voir les autres</span>
+            <button data-voir="1" class="on">Oui</button>
+            <button data-voir="0">Non</button>
+        </div>
+        <div class="cmd">
+            <span>Camp perdant</span>
+            <button data-perd="g">Gauche</button>
+            <button data-perd="d">Droite</button>
+            <button data-perd="majo" class="on">La majorité</button>
+        </div>
+        <button class="lancer" id="lancer">Jouer la manche</button>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════
+     LE SALON
+     ════════════════════════════════════════════ -->
+<section class="ecran" id="ecran-salon">
+    <div class="salon">
+        <div class="salon-tete">
+            <span class="salon-badge">Choice</span>
+            <p>Un bord, une fois. On ne se reprend pas.</p>
+        </div>
+
+        <div class="reglages">
+            <!-- Une vie par défaut : le mode vit de l'élimination, et deux
+                 vies repoussent la première vraie tension d'une manche. -->
+            <div class="v2-set">
+                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.3A4 4 0 0112 8a4 4 0 017 2.7c0 4.9-7 9.3-7 9.3z"/></svg>
+                <span class="v2-set-label">Vies</span>
+                <span class="v2-set-value" data-val="vies">1</span>
+                <span class="v2-set-opts" data-cle="vies">
+                    <button class="v2-set-opt on">1</button>
+                    <button class="v2-set-opt">2</button>
+                </span>
+            </div>
+
+            <!-- Huit secondes : assez pour hésiter, trop court pour compter
+                 les autres jusqu'au bout. C'est le réglage qui décide si le
+                 mode se joue à l'instinct ou à la lecture. -->
+            <div class="v2-set">
+                <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                <span class="v2-set-label">Temps du choix</span>
+                <span class="v2-set-value" data-val="temps">8s</span>
+                <span class="v2-set-opts" data-cle="temps">
+                    <button class="v2-set-opt">5s</button>
+                    <button class="v2-set-opt on">8s</button>
+                    <button class="v2-set-opt">12s</button>
+                </span>
+            </div>
+
+            <!-- ⚠️ « Oui » par défaut, et c'est le sens de son idée : voir les
+                 autres bouger EST le jeu. Le réglage existe pour les salons où
+                 l'on se plaint de ceux qui suivent toujours le même joueur. -->
+            <div class="v2-set">
+                <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="v2-set-label">Voir les autres</span>
+                <span class="v2-set-value" data-val="voir">Oui</span>
+                <span class="v2-set-opts" data-cle="voir">
+                    <button class="v2-set-opt on">Oui</button>
+                    <button class="v2-set-opt">Non</button>
+                </span>
+            </div>
+        </div>
+
+        <p class="salon-note">
+            ⚠️ Pas de <b>filtre de série</b> dans ce tiroir, et ce n'est pas un oubli : il n'a de
+            sens que si le mode pose des questions. Tant que la règle n'est pas tranchée, l'ajouter
+            reviendrait à trancher en douce.
+        </p>
+    </div>
+</section>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Aucun moteur ici : on rejoue une manche pour regarder les gestes.
+   Les positions sont calculées en PIXELS au moment de placer, puis
+   posées en `transform` — le navigateur n'a alors rien à remettre
+   en page, ce qui compte à seize avatars qui glissent ensemble.
+   ════════════════════════════════════════════════════════════════ */
+
+const AVATARS = ['goku', 'luffy', 'naruto', 'gojo', 'levi', 'eren', 'killua', 'zoro',
+                 'ichigo', 'deku', 'denji', 'erza', 'dio', 'aizen', 'kurapika', 'fern'];
+const NOMS = ['Ryu', 'Mina', 'Kaze', 'Jin', 'Hana', 'Toma', 'Yuki', 'Sora',
+              'Rei', 'Kenji', 'Aya', 'Shin', 'Nao', 'Taro', 'Emi', 'Haru'];
+
+const scene = document.getElementById('scene');
+const rail = document.getElementById('rail');
+const campG = document.getElementById('camp-g');
+const campD = document.getElementById('camp-d');
+const arc = document.getElementById('arc');
+const chrono = document.getElementById('chrono');
+const chronoMot = document.getElementById('chrono-mot');
+const eclair = document.getElementById('eclair');
+const lancer = document.getElementById('lancer');
+
+let joueurs = [];
+let voirLesAutres = true;
+let campPerdant = 'majo';
+let enCours = false;
+let minuteur = null;
+
+/* ── Fabriquer la table ───────────────────────────────────────── */
+function poser(n) {
+    scene.querySelectorAll('.j').forEach(e => e.remove());
+    rail.querySelectorAll('.rail-j').forEach(e => e.remove());
+
+    joueurs = [];
+    for (let i = 0; i < n; i++) {
+        const el = document.createElement('div');
+        el.className = 'j';
+        el.innerHTML = '<div class="j-rond"><span class="j-trainee"></span>'
+            + '<img src="/' + AVATARS[i % AVATARS.length] + '.webp" alt="">'
+            + '</div><b>' + NOMS[i % NOMS.length] + '</b>';
+        scene.appendChild(el);
+
+        const r = document.createElement('div');
+        r.className = 'rail-j';
+        r.innerHTML = '<img src="/' + AVATARS[i % AVATARS.length] + '.webp" alt="">'
+            + '<b>' + NOMS[i % NOMS.length] + '</b>';
+        rail.appendChild(r);
+
+        joueurs.push({ el, rail: r, camp: null, vivant: true });
+    }
+    placer(false);
+}
+
+/* ── Où va chacun ─────────────────────────────────────────────
+   Trois grilles : le couloir, le camp gauche, le camp droit. On
+   recalcule TOUT à chaque mouvement — à seize joueurs c'est
+   gratuit, et ça évite de garder un plan de table à jour. */
+function placer(anime) {
+    const b = scene.getBoundingClientRect();
+    const groupes = { null: [], g: [], d: [] };
+    joueurs.forEach(j => { if (j.vivant) groupes[j.camp === null ? 'null' : j.camp].push(j); });
+
+    // ⚠️ Le PAS vient de la taille d'un avatar, jamais de la largeur du
+    // camp divisée par le nombre de colonnes. Avec la seconde formule, un
+    // camp étroit — un téléphone — serrait les avatars jusqu'à les faire
+    // se chevaucher et déborder chez le voisin. Ici la largeur disponible
+    // ne décide que du NOMBRE de colonnes ; l'écart, lui, est constant.
+    const demi = (joueurs[0] ? joueurs[0].el.offsetWidth : 54) / 2;
+    const demiH = (joueurs[0] ? joueurs[0].el.offsetHeight : 62) / 2;
+    const pas = demi * 2 + 8;
+
+    // La bande réellement libre : l'énoncé mange le haut, le chrono le bas.
+    // ⚠️ Les deux réserves se MESURENT, elles ne s'écrivent pas. Avec deux
+    // nombres en dur elles tombaient juste sur l'écran où on les avait
+    // relevées et faux partout ailleurs : l'énoncé se replie en deux lignes
+    // sur un téléphone, et grandit de ce qu'on ne lui avait pas donné.
+    const bEn = document.querySelector('.enonce').getBoundingClientRect();
+    const bCh = document.getElementById('chrono').getBoundingClientRect();
+    const hautReserve = bEn.bottom - b.top + 12;
+    const basReserve = b.bottom - bCh.top + 12;
+    const bandeY = Math.max(80, b.height - hautReserve - basReserve);
+    const centreY = hautReserve + bandeY / 2;
+
+    // Rend la DEMI-LARGEUR occupée : c'est elle qui dit aux camps où ils
+    // peuvent commencer.
+    const grille = (liste, xCentre, large) => {
+        if (!liste.length) return 0;
+        const colMax = Math.max(1, Math.floor(large / pas));
+        // Au plus quatre : au-delà, un camp plein cesse d'être comptable
+        // à l'œil, et c'est tout ce qu'on lui demande.
+        let parRangee = Math.min(4, colMax, Math.ceil(Math.sqrt(liste.length * 1.3)));
+        // ⚠️ Si la pile est trop haute pour la bande, on ÉLARGIT au lieu de
+        // serrer : resserrer en dessous d'une hauteur d'avatar les fait se
+        // recouvrir, et deux visages l'un sur l'autre ne se comptent plus.
+        const minPasY = demiH * 2 + 4;
+        const rangeesMax = Math.max(1, Math.floor((bandeY - demiH * 2) / minPasY) + 1);
+        parRangee = Math.min(colMax, Math.max(parRangee, Math.ceil(liste.length / rangeesMax)));
+        const rangees = Math.ceil(liste.length / parRangee);
+        // Le pas vertical se resserre plutôt que de déborder : mieux vaut
+        // des avatars un peu tassés qu'un avatar sous le chrono.
+        // ⚠️ La bande borne les CENTRES, pas les bords : il faut lui retirer
+        // une demi-hauteur d'avatar de chaque côté, sinon la première rangée
+        // dépasse par le haut de tout juste ce qu'elle mesure.
+        const span = Math.max(0, bandeY - demiH * 2);
+        const pasY = Math.max(minPasY,
+            Math.min(pas * 0.78 + 16, rangees > 1 ? span / (rangees - 1) : span));
+        liste.forEach((j, i) => {
+            const r = Math.floor(i / parRangee);
+            const c = i % parRangee;
+            const dansLaRangee = Math.min(parRangee, liste.length - r * parRangee);
+            const x = xCentre + (c - (dansLaRangee - 1) / 2) * pas;
+            const y = centreY + (r - (rangees - 1) / 2) * pasY;
+            j.el.style.transform = 'translate(' + (x - demi) + 'px, ' + (y - demiH) + 'px)';
+        });
+        return parRangee * pas / 2;
+    };
+
+    if (!anime) joueurs.forEach(j => { j.el.style.transition = 'none'; });
+
+    // ⚠️ L'ORDRE compte, et c'est tout l'intérêt : le MILIEU se dessine en
+    // premier, puis les camps prennent ce qu'il laisse. Deux versions l'ont
+    // précédé et toutes deux se chevauchaient quelque part — bornés au
+    // couloir, les seize indécis du départ s'empilaient en une colonne sur
+    // un téléphone ; libres de mordre sur les camps, ils marchaient sur
+    // ceux qui avaient déjà choisi. Ici les trois zones ne peuvent pas se
+    // croiser : la place des camps DÉCOULE de celle du milieu, et le milieu
+    // rétrécit exactement au rythme où les camps se remplissent.
+    const demiMilieu = grille(groupes.null, b.width / 2, b.width * 0.7);
+    const libre = Math.max(pas, b.width / 2 - demiMilieu - 10);
+    grille(groupes.g, libre / 2, libre);
+    grille(groupes.d, b.width - libre / 2, libre);
+    if (!anime) {
+        // Forcer un calcul avant de rendre la transition : sinon le
+        // navigateur fond les deux et le placement initial s'anime.
+        void scene.offsetWidth;
+        joueurs.forEach(j => { j.el.style.transition = ''; });
+    }
+}
+
+/* ── Un joueur s'engage ───────────────────────────────────────── */
+function engager(j, camp) {
+    j.camp = camp;
+    j.el.classList.add('vers-' + camp, 'bouge');
+    if (!voirLesAutres) j.el.classList.add('masque');
+    setTimeout(() => j.el.classList.remove('bouge'), 740);
+    setTimeout(() => {
+        j.el.classList.add('pose');
+        setTimeout(() => j.el.classList.remove('pose'), 440);
+    }, 620);
+
+    const c = camp === 'g' ? campG : campD;
+    c.classList.add('frappe', 'peuple');
+    setTimeout(() => c.classList.remove('frappe'), 500);
+
+    placer(true);
+    compter();
+}
+
+function compter() {
+    const g = joueurs.filter(j => j.vivant && j.camp === 'g').length;
+    const d = joueurs.filter(j => j.vivant && j.camp === 'd').length;
+    document.getElementById('n-g').textContent = g;
+    document.getElementById('n-d').textContent = d;
+    return { g, d };
+}
+
+/* ── Briser un avatar ─────────────────────────────────────────
+   Chaque éclat porte la même image, calée au même endroit : c'est
+   ce qui fait un visage qui se BRISE, et non un visage remplacé
+   par des triangles. */
+function eclater(el) {
+    const rond = el.querySelector('.j-rond');
+    const img = el.querySelector('img');
+    const b = rond.getBoundingClientRect();
+    const bs = scene.getBoundingClientRect();
+    const src = img.getAttribute('src');
+    const N = 9;
+
+    for (let i = 0; i < N; i++) {
+        const a1 = (i / N) * 360, a2 = ((i + 1) / N) * 360;
+        const p = (a) => (50 + 75 * Math.cos(a * Math.PI / 180)) + '% '
+                       + (50 + 75 * Math.sin(a * Math.PI / 180)) + '%';
+        const frag = document.createElement('div');
+        frag.className = 'eclat';
+        frag.style.cssText = 'left:' + (b.left - bs.left) + 'px;top:' + (b.top - bs.top) + 'px;'
+            + 'width:' + b.width + 'px;height:' + b.height + 'px;'
+            + 'background-image:url(' + src + ');'
+            + 'clip-path:polygon(50% 50%,' + p(a1) + ',' + p((a1 + a2) / 2) + ',' + p(a2) + ')';
+        scene.appendChild(frag);
+
+        const dir = (a1 + a2) / 2 * Math.PI / 180;
+        const d = 90 + Math.random() * 110;
+        frag.animate([
+            { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1, offset: 0 },
+            // Un temps d'arrêt à l'écartement : la part s'ouvre d'abord,
+            // et c'est là qu'on voit que c'est un visage qui se fend.
+            { transform: 'translate(' + Math.cos(dir) * 10 + 'px,' + Math.sin(dir) * 10 + 'px) '
+                       + 'rotate(' + (Math.random() * 18 - 9) + 'deg) scale(1)', opacity: 1, offset: 0.18 },
+            { transform: 'translate(' + Math.cos(dir) * d + 'px,' + (Math.sin(dir) * d + 70) + 'px) '
+                       + 'rotate(' + (Math.random() * 220 - 110) + 'deg) scale(0.7)', opacity: 0, offset: 1 },
+        ], { duration: 820 + Math.random() * 280, easing: 'cubic-bezier(0.2,0.7,0.3,1)', fill: 'forwards' });
+        setTimeout(() => frag.remove(), 1180);
+    }
+    el.style.opacity = '0';
+}
+
+/* ── La manche ────────────────────────────────────────────────── */
+function jouer() {
+    if (enCours) return;
+    enCours = true;
+    lancer.disabled = true;
+
+    // Remise à zéro : tout le monde revient au milieu, debout.
+    joueurs.forEach(j => {
+        j.camp = null;
+        j.vivant = true;
+        j.el.className = 'j';
+        j.el.style.opacity = '';
+        j.rail.classList.remove('mort');
+    });
+    [campG, campD].forEach(c => c.classList.remove('perdu', 'eteint', 'gagne', 'peuple'));
+    scene.classList.remove('verrou');
+    chrono.classList.remove('fini');
+    compter();
+    placer(false);
+
+    const DUREE = 8000;
+    chronoMot.textContent = 'Choisis';
+    arc.style.transition = 'none';
+    arc.style.strokeDashoffset = '0';
+    void arc.offsetWidth;
+    arc.style.transition = 'stroke-dashoffset ' + DUREE + 'ms linear';
+    arc.style.strokeDashoffset = '138.2';
+
+    // Chacun part à son heure. Les premiers tôt, les indécis tard :
+    // c'est cette dispersion qui donne au mode son suspense.
+    joueurs.forEach((j, i) => {
+        const quand = 700 + Math.random() * (DUREE - 1600);
+        setTimeout(() => {
+            if (!enCours) return;
+            engager(j, Math.random() < 0.5 ? 'g' : 'd');
+        }, quand);
+    });
+
+    minuteur = setTimeout(verrouiller, DUREE);
+}
+
+function verrouiller() {
+    scene.classList.add('verrou');
+    chrono.classList.add('fini');
+    chronoMot.textContent = 'Verrouillé';
+    eclair.classList.add('joue');
+    setTimeout(() => eclair.classList.remove('joue'), 500);
+
+    // Les indécis : personne ne reste au milieu. Ils tombent avec le
+    // camp perdant — ne rien choisir n'est pas une protection.
+    setTimeout(reveler, 900);
+}
+
+function reveler() {
+    const { g, d } = compter();
+    let perd = campPerdant;
+    if (perd === 'majo') perd = g === d ? (Math.random() < 0.5 ? 'g' : 'd') : (g > d ? 'g' : 'd');
+
+    const elPerd = perd === 'g' ? campG : campD;
+    const elGagne = perd === 'g' ? campD : campG;
+    elPerd.classList.add('perdu');
+    elGagne.classList.add('gagne');
+    chronoMot.textContent = perd === 'g' ? 'Gauche tombe' : 'Droite tombe';
+
+    setTimeout(() => {
+        elPerd.classList.add('eteint');
+        joueurs.forEach(j => {
+            if (!j.vivant) return;
+            if (j.camp === perd || j.camp === null) {
+                j.vivant = false;
+                eclater(j.el);
+                j.rail.classList.add('mort');
+            }
+        });
+        setTimeout(() => { placer(true); compter(); }, 420);
+        enCours = false;
+        lancer.disabled = false;
+    }, 520);
+}
+
+/* ── Les commandes ────────────────────────────────────────────── */
+document.querySelectorAll('.bascule button').forEach(b => {
+    b.onclick = () => {
+        document.querySelectorAll('.bascule button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        document.querySelectorAll('.ecran').forEach(e => e.classList.remove('on'));
+        document.getElementById('ecran-' + b.dataset.ecran).classList.add('on');
+        if (b.dataset.ecran === 'arene') placer(false);
+    };
+});
+
+document.querySelectorAll('[data-n]').forEach(b => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-n]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        poser(Number(b.dataset.n));
+        compter();
+    };
+});
+
+document.querySelectorAll('[data-voir]').forEach(b => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-voir]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        voirLesAutres = b.dataset.voir === '1';
+        joueurs.forEach(j => j.el.classList.toggle('masque', !voirLesAutres && j.camp !== null));
+    };
+});
+
+document.querySelectorAll('[data-perd]').forEach(b => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-perd]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        campPerdant = b.dataset.perd;
+    };
+});
+
+lancer.onclick = jouer;
+
+/* ── Le tiroir du salon ───────────────────────────────────────── */
+document.querySelectorAll('.v2-set-opts').forEach(opts => {
+    const cle = opts.dataset.cle;
+    opts.querySelectorAll('.v2-set-opt').forEach(b => {
+        b.onclick = (e) => {
+            e.stopPropagation();
+            opts.querySelectorAll('.v2-set-opt').forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelector('[data-val="' + cle + '"]').textContent = b.textContent;
+            opts.closest('.v2-set').classList.remove('ouvert');
+        };
+    });
+});
+
+// Sur un appareil sans survol, c'est l'appui qui ouvre le tiroir. Un seul
+// à la fois : deux tiroirs ouverts se chevauchent, ils sont posés par-dessus.
+document.querySelectorAll('.v2-set').forEach(ligne => {
+    ligne.onclick = () => {
+        if (matchMedia('(hover: hover)').matches) return;
+        const etait = ligne.classList.contains('ouvert');
+        document.querySelectorAll('.v2-set').forEach(x => x.classList.remove('ouvert'));
+        if (!etait) ligne.classList.add('ouvert');
+    };
+});
+
+window.addEventListener('resize', () => placer(false));
+poser(10);
+</script>
+</body>
+</html>

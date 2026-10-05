@@ -2057,6 +2057,14 @@ app.get('/prototypes/collect-regles', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-regles.html');
 });
 
+// Choice : le salon et l arene du mode a deux bords. Aucune regle n y est
+// cablee — la page ne sert qu a juger le MOUVEMENT (s engager se voit, la
+// sanction doit faire mal une demi-seconde). Le mode n existe pas encore
+// cote serveur, et c est pour ca qu il vit ici et pas dans le jeu.
+app.get('/prototypes/choice', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-choice.html');
+});
+
 app.get('/prototypes/collect-duel', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-duel.html');
 });
