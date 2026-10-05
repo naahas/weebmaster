@@ -565,6 +565,13 @@ h1 span { color: var(--or); }
     100% { transform: scale(1); }
 }
 
+/* Effacé sans éclats : au-delà du budget de parts, un éliminé se retire
+   d'un fondu. Mesuré — voir `ECLATS_MAX`. */
+.j.efface { animation: efface 0.5s ease-out forwards; }
+@keyframes efface {
+    to { opacity: 0; filter: grayscale(1); }
+}
+
 /* Caché : « Voir les autres » éteint. L'avatar reste là — on compte
    toujours les corps — mais on ne sait plus QUI. Masquer le joueur
    entier retirerait l'information que le mode vend : combien sont
@@ -965,20 +972,49 @@ function poser(n) {
 
         joueurs.push({ el, rail: r, camp: null, vivant: true });
     }
+    // La densité vient de changer, donc la taille d'un avatar aussi.
+    oublierCadres();
     placer(false);
 }
 
 /* ── Où va chacun ─────────────────────────────────────────────
-   Trois grilles : le couloir, le camp gauche, le camp droit. On
-   recalcule TOUT à chaque mouvement — à seize joueurs c'est
-   gratuit, et ça évite de garder un plan de table à jour. */
+   On recalcule TOUT le placement à chaque mouvement : le tas se
+   repaquette quand quelqu'un le quitte, donc tout le monde bouge.
+   Il n'y a pas de plan de table à tenir à jour. */
+/* ⚠️ LES CADRES SE MESURENT UNE FOIS. `placer` lit la scène, l'énoncé, le
+   chrono et la taille d'un avatar : quatre lectures de mise en page, mais
+   posées APRÈS les écritures du tour précédent, donc quatre recalculs
+   FORCÉS d'un arbre de 1 700 nœuds. Mesuré à deux cents joueurs : 1 007 ms
+   de `placer` sur les huit secondes d'une manche, soit un bon dixième du
+   temps, pour des valeurs qui n'avaient pas bougé d'un pixel.
+   Rien de tout cela ne change pendant une manche — seulement au
+   redimensionnement et quand la densité change, c'est-à-dire quand on
+   repose la table. `oublierCadres()` est appelé à ces deux endroits, et à
+   nul autre. ⚠️ Le défilement de la page, lui, ne compte pas : on
+   n'utilise que des DIFFÉRENCES entre ces cadres, qui lui survivent. */
+let cadres = null;
+function oublierCadres() { cadres = null; }
+function lesCadres() {
+    if (!cadres) {
+        cadres = {
+            b: scene.getBoundingClientRect(),
+            en: document.querySelector('.enonce').getBoundingClientRect(),
+            ch: document.getElementById('chrono').getBoundingClientRect(),
+            demi: (joueurs[0] ? joueurs[0].el.offsetWidth : 54) / 2,
+            demiH: (joueurs[0] ? joueurs[0].el.offsetHeight : 62) / 2,
+        };
+    }
+    return cadres;
+}
+
 function placer(anime) {
-    const b = scene.getBoundingClientRect();
+    const cadre = lesCadres();
+    const b = cadre.b;
     const groupes = { null: [], g: [], d: [] };
     joueurs.forEach(j => { if (j.vivant) groupes[j.camp === null ? 'null' : j.camp].push(j); });
 
-    const demi = (joueurs[0] ? joueurs[0].el.offsetWidth : 54) / 2;
-    const demiH = (joueurs[0] ? joueurs[0].el.offsetHeight : 62) / 2;
+    const demi = cadre.demi;
+    const demiH = cadre.demiH;
     const taille = demi * 2;
 
     // La bande réellement libre : l'énoncé mange le haut, le chrono le bas.
@@ -986,10 +1022,8 @@ function placer(anime) {
     // nombres en dur elles tombaient juste sur l'écran où on les avait
     // relevées et faux partout ailleurs : l'énoncé se replie en deux lignes
     // sur un téléphone, et grandit de ce qu'on ne lui avait pas donné.
-    const bEn = document.querySelector('.enonce').getBoundingClientRect();
-    const bCh = document.getElementById('chrono').getBoundingClientRect();
-    const hautReserve = bEn.bottom - b.top + 12;
-    const basReserve = b.bottom - bCh.top + 12;
+    const hautReserve = cadre.en.bottom - b.top + 12;
+    const basReserve = b.bottom - cadre.ch.top + 12;
     const bandeY = Math.max(80, b.height - hautReserve - basReserve);
     const centreY = hautReserve + bandeY / 2;
 
@@ -1066,6 +1100,20 @@ function placer(anime) {
     }
 }
 
+/* ⚠️ Replacer coûte un parcours de TOUS les joueurs. Appelé à chaque
+   engagement, c'était donc n² : à deux cents joueurs, quarante mille
+   écritures en huit secondes, et les glissements tombaient à 30 images
+   par seconde (p95 à 33 ms, mesuré). Les engagements qui tombent dans la
+   même image sont maintenant servis par UN seul replacement — ce qui ne
+   change rien au rendu, puisqu'ils n'auraient de toute façon été peints
+   qu'une fois. */
+let placementDemande = false;
+function placerBientot() {
+    if (placementDemande) return;
+    placementDemande = true;
+    requestAnimationFrame(() => { placementDemande = false; placer(true); });
+}
+
 /* ── Un joueur s'engage ───────────────────────────────────────── */
 function engager(j, camp) {
     j.camp = camp;
@@ -1081,7 +1129,7 @@ function engager(j, camp) {
     c.classList.add('frappe', 'peuple');
     setTimeout(() => c.classList.remove('frappe'), 500);
 
-    placer(true);
+    placerBientot();
     compter();
 }
 
@@ -1097,16 +1145,27 @@ function compter() {
    Chaque éclat porte la même image, calée au même endroit : c'est
    ce qui fait un visage qui se BRISE, et non un visage remplacé
    par des triangles. */
+/* ⚠️ UN BUDGET DE PARTS, et pas une part par visage. Mesuré : à cent
+   joueurs, cinquante éliminés faisaient 250 éléments animés d'un coup —
+   p95 à 50 ms, pire image à 83 ms ; à deux cents, p95 à 200 ms et pire
+   image à 283, soit une seconde de gel en plein moment fort. Au-delà du
+   budget, l'éliminé s'efface d'un fondu au lieu de se briser. On ne voit
+   pas la différence : à cette densité les visages se recouvrent déjà, et
+   ce qu'on lit est le camp qui se vide, pas le portrait qui éclate. */
+const ECLATS_MAX = 180;
+let eclatsPoses = 0;
+
 function eclater(el) {
     const rond = el.querySelector('.j-rond');
     const img = el.querySelector('img');
     const b = rond.getBoundingClientRect();
-    const bs = scene.getBoundingClientRect();
+    const bs = lesCadres().b;
     const src = img.getAttribute('src');
     // Moins de parts dans une grande foule : à cinquante éliminés, neuf
     // parts chacun font 450 éléments animés d'un coup, et le dyno d'en
     // face n'y est pour rien — c'est le navigateur du viewer qui tombe.
     const N = joueurs.length > 30 ? 5 : joueurs.length > 16 ? 7 : 9;
+    eclatsPoses += N;
 
     for (let i = 0; i < N; i++) {
         const a1 = (i / N) * 360, a2 = ((i + 1) / N) * 360;
@@ -1202,11 +1261,16 @@ function reveler() {
 
     setTimeout(() => {
         elPerd.classList.add('eteint');
+        eclatsPoses = 0;
         joueurs.forEach(j => {
             if (!j.vivant) return;
             if (j.camp === perd || j.camp === null) {
                 j.vivant = false;
-                eclater(j.el);
+                // Le budget se dépense dans l'ordre du tas, donc du centre
+                // vers l'extérieur : ceux qui se brisent vraiment sont ceux
+                // qu'on voyait le mieux.
+                if (eclatsPoses < ECLATS_MAX) eclater(j.el);
+                else j.el.classList.add('efface');
                 j.rail.classList.add('mort');
             }
         });
@@ -1223,7 +1287,9 @@ document.querySelectorAll('.bascule button').forEach(b => {
         b.classList.add('on');
         document.querySelectorAll('.ecran').forEach(e => e.classList.remove('on'));
         document.getElementById('ecran-' + b.dataset.ecran).classList.add('on');
-        if (b.dataset.ecran === 'arene') placer(false);
+        // L'arène était masquée : ses cadres valaient zéro, il faut les
+        // reprendre maintenant qu'elle occupe de la place.
+        if (b.dataset.ecran === 'arene') { oublierCadres(); placer(false); }
     };
 });
 
@@ -1280,7 +1346,7 @@ document.querySelectorAll('.v2-set').forEach(ligne => {
     };
 });
 
-window.addEventListener('resize', () => placer(false));
+window.addEventListener('resize', () => { oublierCadres(); placer(false); });
 poser(16);
 </script>
 </body>
