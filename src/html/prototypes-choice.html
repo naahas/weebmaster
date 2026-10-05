@@ -290,6 +290,16 @@ h1 span { color: var(--or); }
 }
 .rail-j.mort { opacity: 0.22; filter: grayscale(1); }
 
+/* Au-delà de seize, le rail devient une MOSAÏQUE : une liste de cinquante
+   lignes se défile sans qu'on y voie rien, alors qu'une grille de pastilles
+   se saisit d'un coup — et c'est tout ce qu'on lui demande, savoir combien
+   il en reste. */
+.rail.serre { flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 0.25rem; }
+.rail.serre .rail-titre { width: 100%; }
+.rail.serre .rail-j { padding: 0; }
+.rail.serre .rail-j b { display: none; }
+.rail.serre .rail-j img { width: 1.35rem; height: 1.35rem; }
+
 /* ── La scène : deux bords et un couloir ───────────────────────
    Les camps sont posés en ABSOLU et non en flex : un avatar doit
    pouvoir glisser du milieu vers un camp en traversant la frontière,
@@ -464,7 +474,18 @@ h1 span { color: var(--or); }
 /* ── Les joueurs ───────────────────────────────────────────────
    Posés en absolu dans la scène, déplacés par `transform` : c'est
    la seule propriété qui glisse sans faire recalculer la page, et
-   à seize avatars ça se voit.  */
+   à cinquante avatars ça ne se discute plus.
+
+   ⚠️ LA FOULE. Tout le monde part d'UN SEUL POINT, empilé — pas
+   d'une grille rangée. Une grille demande à chacun sa case, donc
+   sa place : à cinquante elle déborde, et bien avant ça elle fait
+   « liste de participants » au lieu de « la salle ». Un tas, lui,
+   grandit sans rien demander, et le départ d'un joueur s'en
+   détache au lieu de vider une case.
+   Trois densités, parce qu'un avatar de 46 px × 50 ne tient nulle
+   part : au-delà de seize les noms tombent, au-delà de trente les
+   portraits rétrécissent. On ne lit plus un pseudo, on lit une
+   MASSE — et c'est exactement ce qu'on doit lire. */
 .j {
     position: absolute;
     top: 0; left: 0;
@@ -494,6 +515,21 @@ h1 span { color: var(--or); }
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     transition: color 0.3s ease;
 }
+
+/* Foule moyenne : les noms tombent. À dix-sept avatars empilés ils se
+   recouvrent de toute façon, et on les lit d'autant moins qu'ils sont là. */
+.scene.foule-2 .j b, .scene.foule-3 .j b { display: none; }
+.scene.foule-2 .j { width: 2.4rem; }
+.scene.foule-2 .j-rond { width: 2.2rem; height: 2.2rem; }
+/* Grande foule : le portrait rétrécit, mais PAS tant que ça. Le tas se
+   resserre tout seul quand la place manque — c'est le rôle du serrage —,
+   donc rapetisser les avatars par précaution ne faisait que produire une
+   tache de 160 px perdue au milieu d'une arène de 1 100. Le liseré de
+   camp, lui, garde son épaisseur : c'est la seule chose qui doit rester
+   lisible quand on ne distingue plus les visages. */
+.scene.foule-3 .j { width: 2.1rem; }
+.scene.foule-3 .j-rond { width: 2rem; height: 2rem; }
+.scene.foule-3 .j-rond img { border-width: 0.08rem; }
 
 /* Engagé : l'avatar prend la couleur de son bord. C'est ce halo qui
    rend le camp lisible d'un coup d'œil, bien avant le compteur. */
@@ -783,8 +819,9 @@ h1 span { color: var(--or); }
         <div class="cmd">
             <span>Joueurs</span>
             <button data-n="6">6</button>
-            <button data-n="10" class="on">10</button>
-            <button data-n="16">16</button>
+            <button data-n="16" class="on">16</button>
+            <button data-n="30">30</button>
+            <button data-n="50">50</button>
         </div>
         <div class="cmd">
             <span>Voir les autres</span>
@@ -868,10 +905,20 @@ h1 span { color: var(--or); }
    en page, ce qui compte à seize avatars qui glissent ensemble.
    ════════════════════════════════════════════════════════════════ */
 
+// Quarante-cinq portraits et quarante pseudos : à cinquante joueurs il y a
+// quelques doublons, et c'est sans importance — passé seize, les noms ne
+// s'affichent plus et on ne lit qu'une masse.
 const AVATARS = ['goku', 'luffy', 'naruto', 'gojo', 'levi', 'eren', 'killua', 'zoro',
-                 'ichigo', 'deku', 'denji', 'erza', 'dio', 'aizen', 'kurapika', 'fern'];
+                 'ichigo', 'deku', 'denji', 'erza', 'dio', 'aizen', 'kurapika', 'fern',
+                 'sasuke', 'sakura', 'nami', 'robin', 'sanji', 'vegeta', 'trunks', 'tanjiro',
+                 'mitsuri', 'shoto', 'bakugo', 'light', 'mikasa', 'thorfinn', 'natsu', 'nino',
+                 'rin', 'makise', 'bocchi', 'giorno', 'joker', 'onizuka', 'sukuna', 'tsuna',
+                 'yuki', 'hinata', 'edward', 'nagi2', 'cc'];
 const NOMS = ['Ryu', 'Mina', 'Kaze', 'Jin', 'Hana', 'Toma', 'Yuki', 'Sora',
-              'Rei', 'Kenji', 'Aya', 'Shin', 'Nao', 'Taro', 'Emi', 'Haru'];
+              'Rei', 'Kenji', 'Aya', 'Shin', 'Nao', 'Taro', 'Emi', 'Haru',
+              'Kai', 'Noa', 'Riku', 'Mei', 'Saki', 'Yuto', 'Ren', 'Aki',
+              'Hiro', 'Mio', 'Daichi', 'Yuna', 'Sota', 'Rina', 'Kenta', 'Ami',
+              'Tatsu', 'Kyo', 'Fuka', 'Jiro', 'Masa', 'Nozomi', 'Goro', 'Chika'];
 
 const scene = document.getElementById('scene');
 const rail = document.getElementById('rail');
@@ -893,6 +940,13 @@ let minuteur = null;
 function poser(n) {
     scene.querySelectorAll('.j').forEach(e => e.remove());
     rail.querySelectorAll('.rail-j').forEach(e => e.remove());
+
+    // Trois densités. Le seuil est le NOMBRE DE JOUEURS et non la place
+    // restante : un salon ne change pas de densité parce qu'un camp s'est
+    // vidé, sans quoi les avatars grossiraient en pleine manche.
+    scene.classList.toggle('foule-2', n > 16 && n <= 30);
+    scene.classList.toggle('foule-3', n > 30);
+    rail.classList.toggle('serre', n > 16);
 
     joueurs = [];
     for (let i = 0; i < n; i++) {
@@ -923,14 +977,9 @@ function placer(anime) {
     const groupes = { null: [], g: [], d: [] };
     joueurs.forEach(j => { if (j.vivant) groupes[j.camp === null ? 'null' : j.camp].push(j); });
 
-    // ⚠️ Le PAS vient de la taille d'un avatar, jamais de la largeur du
-    // camp divisée par le nombre de colonnes. Avec la seconde formule, un
-    // camp étroit — un téléphone — serrait les avatars jusqu'à les faire
-    // se chevaucher et déborder chez le voisin. Ici la largeur disponible
-    // ne décide que du NOMBRE de colonnes ; l'écart, lui, est constant.
     const demi = (joueurs[0] ? joueurs[0].el.offsetWidth : 54) / 2;
     const demiH = (joueurs[0] ? joueurs[0].el.offsetHeight : 62) / 2;
-    const pas = demi * 2 + 8;
+    const taille = demi * 2;
 
     // La bande réellement libre : l'énoncé mange le haut, le chrono le bas.
     // ⚠️ Les deux réserves se MESURENT, elles ne s'écrivent pas. Avec deux
@@ -944,54 +993,71 @@ function placer(anime) {
     const bandeY = Math.max(80, b.height - hautReserve - basReserve);
     const centreY = hautReserve + bandeY / 2;
 
-    // Rend la DEMI-LARGEUR occupée : c'est elle qui dit aux camps où ils
-    // peuvent commencer.
-    const grille = (liste, xCentre, large) => {
+    // Combien d'anneaux pour n avatars. Un anneau k porte environ 6k places :
+    // c'est l'empilement hexagonal, le plus dense qui existe à disques égaux.
+    const places = (k) => (k === 0 ? 1 : Math.floor(6.28 * k * 0.92));
+    const anneauxPour = (n) => {
+        let total = 0, k = 0;
+        while (total < n) { total += places(k); k++; }
+        return Math.max(1, k - 1);
+    };
+
+    /* UN TAS, pas une grille. Les avatars se posent en anneaux concentriques
+       autour d'un point unique, du centre vers l'extérieur.
+       - `serrage` décide de la densité : 0,62 pour le milieu, où l'on VEUT
+         qu'ils se recouvrent — c'est ce qui en fait une foule et non une
+         liste —, 0,92 pour un camp, où ils se touchent sans se cacher.
+         ⚠️ Pas moins de 0,6 : à 0,42 le tas devenait une tache, on n'y
+         distinguait plus un seul visage, et une foule dont on ne lit
+         personne ne donne plus envie d'y chercher quelqu'un.
+       - Le rayon est borné par la place disponible : au-delà, le tas se
+         tasse au lieu de déborder. Il n'y a donc aucun nombre de joueurs
+         qui le casse, seulement un nombre à partir duquel il se serre.
+       Rend le rayon occupé, dont les camps se servent pour se tenir à
+       l'écart du milieu. */
+    const tas = (liste, cx, rayonMax, serrage) => {
         if (!liste.length) return 0;
-        const colMax = Math.max(1, Math.floor(large / pas));
-        // Au plus quatre : au-delà, un camp plein cesse d'être comptable
-        // à l'œil, et c'est tout ce qu'on lui demande.
-        let parRangee = Math.min(4, colMax, Math.ceil(Math.sqrt(liste.length * 1.3)));
-        // ⚠️ Si la pile est trop haute pour la bande, on ÉLARGIT au lieu de
-        // serrer : resserrer en dessous d'une hauteur d'avatar les fait se
-        // recouvrir, et deux visages l'un sur l'autre ne se comptent plus.
-        const minPasY = demiH * 2 + 4;
-        const rangeesMax = Math.max(1, Math.floor((bandeY - demiH * 2) / minPasY) + 1);
-        parRangee = Math.min(colMax, Math.max(parRangee, Math.ceil(liste.length / rangeesMax)));
-        const rangees = Math.ceil(liste.length / parRangee);
-        // Le pas vertical se resserre plutôt que de déborder : mieux vaut
-        // des avatars un peu tassés qu'un avatar sous le chrono.
-        // ⚠️ La bande borne les CENTRES, pas les bords : il faut lui retirer
-        // une demi-hauteur d'avatar de chaque côté, sinon la première rangée
-        // dépasse par le haut de tout juste ce qu'elle mesure.
-        const span = Math.max(0, bandeY - demiH * 2);
-        const pasY = Math.max(minPasY,
-            Math.min(pas * 0.78 + 16, rangees > 1 ? span / (rangees - 1) : span));
-        liste.forEach((j, i) => {
-            const r = Math.floor(i / parRangee);
-            const c = i % parRangee;
-            const dansLaRangee = Math.min(parRangee, liste.length - r * parRangee);
-            const x = xCentre + (c - (dansLaRangee - 1) / 2) * pas;
-            const y = centreY + (r - (rangees - 1) / 2) * pasY;
-            j.el.style.transform = 'translate(' + (x - demi) + 'px, ' + (y - demiH) + 'px)';
-        });
-        return parRangee * pas / 2;
+        const anneaux = anneauxPour(liste.length);
+        const pas = Math.min(taille * serrage, rayonMax / Math.max(1, anneaux));
+        let i = 0;
+        for (let k = 0; i < liste.length; k++) {
+            const n = Math.min(places(k), liste.length - i);
+            for (let p = 0; p < n; p++, i++) {
+                // Le décalage par anneau évite les rayons alignés, qui
+                // donnaient une rosace — on veut un tas, pas un motif.
+                const a = (p / n) * 6.283 + k * 0.7;
+                const x = cx + (k === 0 ? 0 : Math.cos(a) * pas * k);
+                // Aplati : l'arène est large et basse, un tas rond y
+                // monterait sous l'énoncé bien avant d'être plein.
+                const y = centreY + (k === 0 ? 0 : Math.sin(a) * pas * k * 0.66);
+                const j = liste[i];
+                j.el.style.transform = 'translate(' + (x - demi) + 'px, ' + (y - demiH) + 'px)';
+                // Plus bas à l'écran = devant. C'est la profondeur qu'on lit
+                // sans y penser sur une foule vue de trois quarts.
+                j.el.style.zIndex = String(Math.round(y));
+            }
+        }
+        return pas * anneaux + demi;
     };
 
     if (!anime) joueurs.forEach(j => { j.el.style.transition = 'none'; });
 
-    // ⚠️ L'ORDRE compte, et c'est tout l'intérêt : le MILIEU se dessine en
-    // premier, puis les camps prennent ce qu'il laisse. Deux versions l'ont
-    // précédé et toutes deux se chevauchaient quelque part — bornés au
-    // couloir, les seize indécis du départ s'empilaient en une colonne sur
-    // un téléphone ; libres de mordre sur les camps, ils marchaient sur
-    // ceux qui avaient déjà choisi. Ici les trois zones ne peuvent pas se
-    // croiser : la place des camps DÉCOULE de celle du milieu, et le milieu
-    // rétrécit exactement au rythme où les camps se remplissent.
-    const demiMilieu = grille(groupes.null, b.width / 2, b.width * 0.7);
-    const libre = Math.max(pas, b.width / 2 - demiMilieu - 10);
-    grille(groupes.g, libre / 2, libre);
-    grille(groupes.d, b.width - libre / 2, libre);
+    // ⚠️ L'ORDRE compte : le MILIEU se pose en premier, les camps prennent
+    // ce qu'il laisse. Le tas du milieu rétrécit exactement au rythme où les
+    // camps se remplissent, donc les trois zones ne peuvent pas se croiser —
+    // sans avoir à les borner chacune par un pourcentage recopié.
+    // ⚠️ Le rayon qu'on donne borne les CENTRES : il faut lui retirer une
+    // demi-largeur d'avatar, sinon le tas dépasse par les bords de tout
+    // juste ce que mesure un portrait — quatre sortaient du cadre à
+    // cinquante joueurs sur téléphone, et aucun sur ordinateur, où la
+    // place masquait l'erreur.
+    const rayonY = Math.max(40, bandeY / 2 - demiH);
+    const rMilieu = tas(groupes.null, b.width / 2,
+        Math.max(1, Math.min(b.width * 0.3, rayonY / 0.66) - demi), 0.62);
+    const libre = Math.max(taille, b.width / 2 - rMilieu - 14);
+    const rCamp = Math.max(1, Math.min(libre / 2, rayonY / 0.66) - demi);
+    tas(groupes.g, libre / 2, rCamp, 0.92);
+    tas(groupes.d, b.width - libre / 2, rCamp, 0.92);
     if (!anime) {
         // Forcer un calcul avant de rendre la transition : sinon le
         // navigateur fond les deux et le placement initial s'anime.
@@ -1037,7 +1103,10 @@ function eclater(el) {
     const b = rond.getBoundingClientRect();
     const bs = scene.getBoundingClientRect();
     const src = img.getAttribute('src');
-    const N = 9;
+    // Moins de parts dans une grande foule : à cinquante éliminés, neuf
+    // parts chacun font 450 éléments animés d'un coup, et le dyno d'en
+    // face n'y est pour rien — c'est le navigateur du viewer qui tombe.
+    const N = joueurs.length > 30 ? 5 : joueurs.length > 16 ? 7 : 9;
 
     for (let i = 0; i < N; i++) {
         const a1 = (i / N) * 360, a2 = ((i + 1) / N) * 360;
@@ -1212,7 +1281,7 @@ document.querySelectorAll('.v2-set').forEach(ligne => {
 });
 
 window.addEventListener('resize', () => placer(false));
-poser(10);
+poser(16);
 </script>
 </body>
 </html>
