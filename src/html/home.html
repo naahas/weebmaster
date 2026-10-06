@@ -2092,7 +2092,14 @@
                              puisque l'énoncé y est. -->
                         <div class="chx-jauge" :class="{ urgence: ch.reste <= 2500 }"
                              v-if="!ch.verrou && !ch.revelation">
-                            <i :style="{ transform: 'scaleX(' + chPartChrono + ')' }"></i>
+                            <!-- ⚠️ Le fil se vide d'un SEUL GESTE, par une
+                                 animation CSS. Piloté en JavaScript il
+                                 avançait par pas de 100 ms, et ça se voyait :
+                                 dix saccades par seconde. Le `key` sur la
+                                 manche relance l'animation à chaque question,
+                                 et le délai négatif la place au bon endroit
+                                 si l'on arrive en cours de manche. -->
+                            <i :key="ch.manche" :style="ch.styleJauge"></i>
                         </div>
 
                         <!-- ⚠️ LES ZONES DE CLIC NE SONT PAS LES BORDS. Le
@@ -2124,11 +2131,14 @@
                              qu'on lit une fois. On montre la réponse, et rien
                              d'autre — personne n'étant tombé, il n'y a rien à
                              annoncer à personne. -->
-                        <div class="chx-verdict" v-if="ch.revelation">
-                            <b :class="ch.revelation.bonne ? 'v' : 'f'">
-                                {{ ch.revelation.bonne ? 'VRAI' : 'FAUX' }}
-                            </b>
-                            <template v-if="!ch.revelation.nulle">
+                        <!-- ⚠️ Plus de « VRAI » ni de « FAUX » ici : la
+                             réponse se LIT SUR L'ÉCRAN — un bord se fissure
+                             et s'éteint, l'autre reste allumé. Le mot ne
+                             faisait que redire ce que toute l'arène vient de
+                             montrer. Ne reste que ce qui me concerne, moi,
+                             et qu'aucune animation ne dit. -->
+                        <div class="chx-verdict" v-if="ch.revelation && !ch.revelation.nulle">
+                            <template>
                                 <span v-if="chAiJuste === true">tu restes</span>
                                 <span v-else-if="chAiJuste === false">tu tombes</span>
                                 <span v-else-if="jeSuisVivantChoice">tu n'as pas choisi</span>

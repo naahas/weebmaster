@@ -196,6 +196,9 @@ createApp({
                 finA: 0,             // échéance fabriquée sur MA montre
                 reste: 0,
                 _tic: null,
+                // Calé UNE FOIS par manche : la jauge coule en CSS, pas au
+                // rythme d'un minuteur JavaScript.
+                styleJauge: {},
 
                 monCamp: null,       // 'v' | 'f' — une seule fois
                 survol: null,        // le bord que la souris vise, pour l effet
@@ -959,14 +962,12 @@ createApp({
         chTasFaux() {
             return this.chVivants.filter(j => j.camp === 'f');
         },
-        // La part du chrono qui reste, de 1 à 0. Sert à la jauge, qui ne
-        // porte AUCUN chiffre : la même échelle que la mèche de BombAnime —
-        // un compteur permettrait de résoudre la manche de tête.
-        chPartChrono() {
-            const total = (this.ch.duree || 8) * 1000;
-            if (!total) return 0;
-            return Math.max(0, Math.min(1, this.ch.reste / total));
-        },
+        // ⚠️ Plus de part de chrono calculée ici : la jauge coule par une
+        // ANIMATION CSS, calée une fois par manche dans `lancerChronoChoice`.
+        // Recalculer sa largeur à chaque tic la faisait avancer par paliers
+        // de 100 ms — dix saccades par seconde, et ça se voyait. Elle ne
+        // porte toujours AUCUN chiffre : même échelle que la mèche de
+        // BombAnime, un compteur permettrait de résoudre la manche de tête.
         // Le camp qui tombe, une fois la révélation arrivée. 'v' ou 'f', ou
         // null si la manche est nulle (personne n'avait trouvé).
         chCampPerdant() {
@@ -5414,14 +5415,25 @@ createApp({
         lancerChronoChoice(reste) {
             clearInterval(this.ch._tic);
             this.ch.finA = this.maintenant() + (reste || 0);
+
+            // ⚠️ La JAUGE ne dépend plus de ce minuteur : elle coule par une
+            // animation CSS, calée une fois ici. Le délai NÉGATIF la place au
+            // bon endroit si l'on arrive en cours de manche — après un
+            // rafraîchissement, par exemple. Le minuteur ne sert plus qu'à
+            // savoir quand passer en urgence, donc un pas grossier suffit.
+            const total = (this.ch.duree || 8) * 1000;
+            this.ch.styleJauge = {
+                animationDuration: total + 'ms',
+                animationDelay: -(total - (reste || 0)) + 'ms',
+            };
+
             const tic = () => {
                 const r = Math.max(0, this.ch.finA - this.maintenant());
                 this.ch.reste = r;
                 if (r <= 0) { clearInterval(this.ch._tic); this.ch._tic = null; }
             };
             tic();
-            // 100 ms : la jauge doit couler, pas sauter de seconde en seconde.
-            this.ch._tic = setInterval(tic, 100);
+            this.ch._tic = setInterval(tic, 250);
         },
 
         arreterChronoChoice() {

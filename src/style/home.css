@@ -14040,13 +14040,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        égal), et AÉRER L'INTERLIGNE (sans jambages, deux lignes se
        touchent). */
     text-transform: uppercase;
-    font-size: clamp(0.92rem, 1.6vw, 1.12rem);
+    font-size: clamp(0.84rem, 1.35vw, 0.98rem);
     font-weight: 400;
-    letter-spacing: 0.045em;
+    letter-spacing: 0.05em;
     line-height: 1.5;
     padding-bottom: 0.2rem;
     color: #fff;
-    text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
+    /* ⚠️ Un CONTOUR, et un contour sombre et FIN. `-webkit-text-stroke`
+       rogne l'intérieur de la lettre — à 0,04 rem sur une graisse 400 il
+       l'amincit juste assez pour durcir le trait, au-delà il la mange.
+       Et il est noir, jamais coloré : une teinte sur l'énoncé
+       suggérerait une réponse. C'est lui qui détache le texte du dégradé
+       sans l'ombre épaisse d'avant, qui le tamponnait. */
+    -webkit-text-stroke: 0.04rem rgba(0, 0, 0, 0.55);
+    paint-order: stroke fill;
+    text-shadow: 0 0.1rem 1.2rem rgba(0, 0, 0, 0.85), 0 0 2.4rem rgba(0, 0, 0, 0.6);
 }
 
 /* ── Les trois tas ─────────────────────────────────────────────────
@@ -14208,6 +14216,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     background: rgba(255, 255, 255, 0.05);
     pointer-events: none;
 }
+/* ⚠️ Le fil se vide par une ANIMATION, pas par une transition rejouée
+   tous les dixièmes. Piloté en JavaScript il avançait par pas de 100 ms,
+   et ça se voyait — dix saccades par seconde. Une animation est remise au
+   compositeur : elle coule. C'est exactement ce que fait la jauge
+   d'Ascension, et pour la même raison. */
 .chx-jauge i {
     display: block;
     width: 100%;
@@ -14215,8 +14228,14 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     background: linear-gradient(90deg, var(--neon-secondary), var(--neon-primary));
     box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.4);
     transform-origin: left center;
-    /* Le pas du client est de 100 ms : la transition lisse entre deux. */
-    transition: transform 0.1s linear, background 0.4s ease;
+    animation-name: chxCoule;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+@keyframes chxCoule {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
 }
 /* Les deux dernières secondes : il rougit. Aucun chiffre pour autant —
    un compteur permettrait de résoudre la manche de tête. */
