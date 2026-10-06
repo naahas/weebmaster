@@ -813,6 +813,80 @@
                                 </div>
                             </template>
 
+                            <!-- ✅❌ Choice -->
+                            <template v-else-if="lobbyMode === 'choice'">
+                                <!-- Une vie par défaut : le mode VIT de l'élimination, et
+                                     deux vies repoussent la première vraie tension d'une
+                                     manche entière. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.3A4 4 0 0112 8a4 4 0 017 2.7c0 4.9-7 9.3-7 9.3z"/></svg>
+                                    <span class="v2-set-label">Vies</span>
+                                    <span class="v2-set-value">{{ ch.vies }}</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="n in [1, 2]" :key="n"
+                                                class="v2-set-opt" :class="{ on: ch.vies === n }"
+                                                @click="applySetting('/admin/choice/set-vies', { vies: n }, () => ch.vies = n)">{{ n }}</button>
+                                    </span>
+                                </div>
+
+                                <!-- Huit secondes : assez pour hésiter, trop court pour
+                                     compter les autres jusqu'au bout. C'est ce réglage qui
+                                     décide si le mode se joue à l'instinct ou à la lecture
+                                     de la salle. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                                    <span class="v2-set-label">Temps</span>
+                                    <span class="v2-set-value">{{ ch.duree }}s</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="n in ch.barDurees" :key="n"
+                                                class="v2-set-opt" :class="{ on: ch.duree === n }"
+                                                @click="applySetting('/admin/choice/set-duree', { duree: n }, () => ch.duree = n)">{{ n }}s</button>
+                                    </span>
+                                </div>
+
+                                <!-- ⚠️ « Oui » par défaut : voir les autres bouger EST le
+                                     jeu. Le réglage existe pour les salons où l'on se
+                                     plaint de ceux qui suivent toujours le même joueur. -->
+                                <div class="v2-set" data-info="choice-voir">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <span class="v2-set-label">Voir les autres</span>
+                                    <span class="v2-set-value">{{ ch.voirLesAutres ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: ch.voirLesAutres }"
+                                                @click="applySetting('/admin/choice/set-voir', { voir: true }, () => ch.voirLesAutres = true)">Oui</button>
+                                        <button class="v2-set-opt" :class="{ on: !ch.voirLesAutres }"
+                                                @click="applySetting('/admin/choice/set-voir', { voir: false }, () => ch.voirLesAutres = false)">Non</button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                                    <span class="v2-set-label">Série</span>
+                                    <span class="v2-set-value">{{ ch.serieFiltre === 'overall' ? 'Toutes' : ch.serieFiltre }}</span>
+                                    <span class="v2-set-opts grille">
+                                        <button class="v2-set-opt" :class="{ on: ch.serieFiltre === 'overall' }"
+                                                @click="applySetting('/admin/choice/set-serie', { serie: 'overall' }, () => ch.serieFiltre = 'overall')">
+                                            Toutes <em>{{ ch.totalBanque }}</em></button>
+                                        <button v-for="s in ch.series" :key="s.nom"
+                                                class="v2-set-opt" :class="{ on: ch.serieFiltre === s.nom }"
+                                                @click="applySetting('/admin/choice/set-serie', { serie: s.nom }, () => ch.serieFiltre = s.nom)">
+                                            {{ s.nom }} <em>{{ s.n }}</em></button>
+                                    </span>
+                                </div>
+
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+                                    <span class="v2-set-label">Spoils</span>
+                                    <span class="v2-set-value">{{ ch.noSpoil ? 'Écartés' : 'Autorisés' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: !ch.noSpoil }"
+                                                @click="applySetting('/admin/choice/set-spoil', { noSpoil: false }, () => ch.noSpoil = false)">Autorisés</button>
+                                        <button class="v2-set-opt" :class="{ on: ch.noSpoil }"
+                                                @click="applySetting('/admin/choice/set-spoil', { noSpoil: true }, () => ch.noSpoil = true)">Écartés</button>
+                                    </span>
+                                </div>
+                            </template>
+
                             <!-- BombAnime -->
                             <template v-else>
                                 <!-- Vingt et une séries. Le panneau s ouvre DANS la colonne,
@@ -1906,6 +1980,111 @@
                             </span>
                         </aside>
                         </template>
+                    </div>
+                </template>
+
+                <!-- ════════════════════════════════════════════
+                     ✅❌ CHOICE — l'arène
+                     ════════════════════════════════════════════
+                     Deux bords et un tas au milieu. ⚠️ BLEU À GAUCHE = VRAI,
+                     rouge à droite = FAUX, et cet ordre est le même partout —
+                     dans le back-office comme ici. On finit par aller du bon
+                     côté à la couleur sans lire le mot ; l'inverser un jour
+                     retournerait des réflexes acquis en dix parties. -->
+                <template v-if="lobbyMode === 'choice' && !gameEnded">
+                    <div class="chx" v-if="ch.enCours">
+
+                        <!-- Les deux bords. Ils sont CLIQUABLES en entier : au
+                             doigt, viser un petit bouton pendant que le compte
+                             descend est une façon de perdre sans se tromper. -->
+                        <button class="chx-bord g"
+                                :class="{ choisi: ch.monCamp === 'v',
+                                          perdu: chCampPerdant === 'v',
+                                          gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'v',
+                                          fige: ch.verrou || ch.monCamp !== null }"
+                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
+                                @click="choisirCamp('v')">
+                            <span class="chx-mot">VRAI</span>
+                            <span class="chx-n">{{ ch.comptes.v }}</span>
+                        </button>
+
+                        <button class="chx-bord d"
+                                :class="{ choisi: ch.monCamp === 'f',
+                                          perdu: chCampPerdant === 'f',
+                                          gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'f',
+                                          fige: ch.verrou || ch.monCamp !== null }"
+                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
+                                @click="choisirCamp('f')">
+                            <span class="chx-mot">FAUX</span>
+                            <span class="chx-n">{{ ch.comptes.f }}</span>
+                        </button>
+
+                        <!-- L'énoncé. ⚠️ En BLANC, dans aucune des deux
+                             couleurs : une seule teinte posée dessus
+                             suggérerait une réponse, et à ce jeu-là une
+                             couleur suffit à faire pencher la moitié de la
+                             salle. -->
+                        <div class="chx-enonce">
+                            <small>{{ ch.question ? ch.question.serie : '' }} · manche {{ ch.manche }}</small>
+                            <p>{{ ch.question ? ch.question.question : '' }}</p>
+                        </div>
+
+                        <!-- Les joueurs : un tas au milieu, deux tas aux bords.
+                             Les avatars glissent d'un tas à l'autre. -->
+                        <div class="chx-scene">
+                            <div class="chx-tas milieu">
+                                <span v-for="j in chTasMilieu" :key="j.playerId" class="chx-j"
+                                      :title="j.username">
+                                    <img :src="srcAvatar(j.avatar)" alt="">
+                                </span>
+                            </div>
+                            <div class="chx-tas vrai">
+                                <span v-for="j in chTasVrai" :key="j.playerId" class="chx-j v"
+                                      :title="j.username">
+                                    <img :src="srcAvatar(j.avatar)" alt="">
+                                </span>
+                            </div>
+                            <div class="chx-tas faux">
+                                <span v-for="j in chTasFaux" :key="j.playerId" class="chx-j f"
+                                      :title="j.username">
+                                    <img :src="srcAvatar(j.avatar)" alt="">
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- La jauge. AUCUN CHIFFRE : la même échelle que la
+                             mèche de BombAnime. Un compteur dit « dans 4,2 s »
+                             et l'on attend le dernier dixième ; un arc dit
+                             « bientôt » et l'on bouge. -->
+                        <div class="chx-jauge" v-if="!ch.verrou && !ch.revelation">
+                            <i :style="{ transform: 'scaleX(' + chPartChrono + ')' }"></i>
+                        </div>
+
+                        <!-- Le verdict, une fois la manche jouée -->
+                        <div class="chx-verdict" v-if="ch.revelation">
+                            <template v-if="ch.revelation.nulle">
+                                <b class="nulle">Personne n'a trouvé</b>
+                                <span>manche annulée, personne ne perd de vie</span>
+                            </template>
+                            <template v-else>
+                                <b :class="ch.revelation.bonne ? 'v' : 'f'">
+                                    {{ ch.revelation.bonne ? 'VRAI' : 'FAUX' }}
+                                </b>
+                                <span v-if="chAiJuste === true">tu restes</span>
+                                <span v-else-if="chAiJuste === false">tu tombes</span>
+                                <span v-else-if="jeSuisVivantChoice">tu n'as pas choisi</span>
+                                <span v-else>{{ ch.revelation.restants }} encore debout</span>
+                            </template>
+                            <!-- Le lien de preuve n'arrive qu'ICI, avec la
+                                 révélation — jamais avec la question : son URL
+                                 nomme très souvent la réponse. -->
+                            <a v-if="ch.revelation.proof_url && isHost" class="chx-preuve"
+                               :href="ch.revelation.proof_url" target="_blank" rel="noopener">preuve</a>
+                        </div>
+
+                        <div class="chx-spectateur" v-if="!jeSuisVivantChoice">
+                            Éliminé — tu regardes la fin
+                        </div>
                     </div>
                 </template>
 

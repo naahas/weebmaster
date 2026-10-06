@@ -13722,3 +13722,275 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (max-width: 780px) {
     .v2-room-trier { font-size: 0.58rem; padding: 0.26rem 0.5rem; }
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   ✅❌ CHOICE — l'arène à deux bords
+   ════════════════════════════════════════════════════════════
+   ⚠️ BLEU À GAUCHE = VRAI, ROUGE À DROITE = FAUX. Cet ordre est le même
+   partout — ici, dans le back-office, sur la page de saisie. On finit par
+   aller du bon côté à la couleur sans lire le mot ; l'inverser un jour
+   retournerait des réflexes acquis en dix parties.
+
+   Les deux teintes sont à 140° l'une de l'autre, le maximum utile. Les
+   cinq couleurs de camp du Classique sont écartées exprès : elles disent
+   « équipe », et ici il n'y a pas d'équipe, il y a un BORD qu'on choisit.
+   L'or reste au chrome — les bords sont immenses, le chrome est fin, ils
+   ne se disputent jamais la même surface. */
+.chx {
+    --vrai: #2f9bff;
+    --faux: #ff3b5c;
+    --vrai-rgb: 47, 155, 255;
+    --faux-rgb: 255, 59, 92;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 60vh;
+    overflow: hidden;
+}
+
+/* ── Les deux bords ────────────────────────────────────────────────
+   Des BOUTONS, et pleine hauteur : au doigt, viser une petite cible
+   pendant que le compte descend est une façon de perdre sans s'être
+   trompé. La moitié de l'écran est la zone de clic. */
+.chx-bord {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 42%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.45s ease, opacity 0.45s ease;
+}
+.chx-bord:disabled { cursor: default; }
+.chx-bord.g {
+    left: 0;
+    background:
+        linear-gradient(90deg, rgba(var(--vrai-rgb), 0.26), rgba(var(--vrai-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 0% 50%, rgba(var(--vrai-rgb), 0.3), transparent 70%);
+}
+.chx-bord.d {
+    right: 0;
+    background:
+        linear-gradient(270deg, rgba(var(--faux-rgb), 0.26), rgba(var(--faux-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 100% 50%, rgba(var(--faux-rgb), 0.32), transparent 70%);
+}
+.chx-bord:not(:disabled):hover { filter: brightness(1.35); }
+
+/* Le mot, ÉNORME et à peine visible. C'est ce couple-là qui le rend
+   sobre : à cette taille il se lit du coin de l'œil à 7 % d'opacité,
+   alors qu'à 40 % il écraserait les visages, qui sont le sujet. */
+.chx-mot {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: 'Bebas Neue', 'Poppins', sans-serif;
+    font-size: clamp(3.5rem, 12vw, 10rem);
+    line-height: 1;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.07;
+    transition: opacity 0.5s ease;
+}
+.chx-bord.g .chx-mot { color: #7ac2ff; }
+.chx-bord.d .chx-mot { color: #ff7a8f; }
+.chx-bord.choisi .chx-mot { opacity: 0.16; }
+
+/* Le compteur du bord : gros, en haut, et c'est lui qu'on lit. */
+.chx-n {
+    position: absolute;
+    top: 1rem;
+    font-family: 'Bebas Neue', 'Poppins', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 3.2rem);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+}
+.chx-bord.g .chx-n { left: 1.2rem; }
+.chx-bord.d .chx-n { right: 1.2rem; }
+
+/* Mon bord : un liseré plein sur le bord extérieur. C'est l'accusé de
+   réception du geste — on ne se reprend pas, il faut que ça se voie. */
+.chx-bord.choisi::after {
+    content: '';
+    position: absolute;
+    top: 6%; bottom: 6%;
+    width: 0.22rem;
+    border-radius: 0.22rem;
+}
+.chx-bord.g.choisi::after { left: 0; background: var(--vrai); box-shadow: 0 0 1.4rem var(--vrai); }
+.chx-bord.d.choisi::after { right: 0; background: var(--faux); box-shadow: 0 0 1.4rem var(--faux); }
+
+/* La sanction : le bord qui tombe tremble puis s'éteint. Le gagnant ne
+   fait RIEN de plus que rester allumé — deux récompenses simultanées
+   s'annulent. */
+.chx-bord.perdu {
+    animation: chx-secousse 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    filter: grayscale(0.85) brightness(0.45);
+    opacity: 0.5;
+}
+@keyframes chx-secousse {
+    10%, 90% { transform: translateX(-0.12rem); }
+    20%, 80% { transform: translateX(0.22rem); }
+    30%, 50%, 70% { transform: translateX(-0.4rem); }
+    40%, 60% { transform: translateX(0.4rem); }
+}
+.chx-bord.gagne { filter: brightness(1.25); }
+
+/* ── L'énoncé ──────────────────────────────────────────────────────
+   ⚠️ En BLANC, dans aucune des deux couleurs : une seule teinte posée
+   dessus suggérerait une réponse, et une couleur suffit à faire pencher
+   la moitié de la salle. */
+.chx-enonce {
+    position: absolute;
+    top: 1.2rem; left: 50%;
+    z-index: 5;
+    width: min(26rem, 84%);
+    padding: 0.8rem 1rem;
+    text-align: center;
+    background: rgba(8, 8, 12, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.7rem;
+    transform: translateX(-50%);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+}
+.chx-enonce small {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+}
+.chx-enonce p {
+    font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+    font-weight: 600;
+    line-height: 1.4;
+    color: #fff;
+}
+
+/* ── Les trois tas ─────────────────────────────────────────────────
+   Tout le monde part d'UN SEUL point, empilé. Une grille demande à
+   chacun sa case, donc sa place : à cinquante elle déborde, et bien
+   avant ça elle fait « liste de participants » au lieu de « la salle ».
+   Les avatars se recouvrent, et c'est ce qui en fait une foule. */
+.chx-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+}
+.chx-tas {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    padding: 0 0.4rem;
+}
+.chx-tas.vrai { width: 34%; }
+.chx-tas.milieu { width: 32%; }
+.chx-tas.faux { width: 34%; }
+.chx-j {
+    display: block;
+    /* Le recouvrement : c'est lui qui fait le tas, pas une grille. */
+    margin: -0.35rem;
+    transition: transform 0.4s cubic-bezier(0.22, 1.2, 0.3, 1);
+}
+.chx-j img {
+    width: clamp(1.6rem, 4vw, 2.6rem);
+    height: clamp(1.6rem, 4vw, 2.6rem);
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    display: block;
+}
+.chx-j.v img { border-color: var(--vrai); box-shadow: 0 0 0.9rem rgba(var(--vrai-rgb), 0.5); }
+.chx-j.f img { border-color: var(--faux); box-shadow: 0 0 0.9rem rgba(var(--faux-rgb), 0.5); }
+
+/* ── La jauge ──────────────────────────────────────────────────────
+   ⚠️ AUCUN CHIFFRE, et c'est la même échelle que la mèche de BombAnime :
+   un compteur dit « dans 4,2 s » et l'on attend le dernier dixième ; une
+   jauge dit « bientôt » et l'on bouge. */
+.chx-jauge {
+    position: absolute;
+    left: 50%; bottom: 1.6rem;
+    z-index: 5;
+    width: min(20rem, 70%);
+    height: 0.3rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+.chx-jauge i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-secondary), var(--neon-primary));
+    transform-origin: left center;
+    /* Le pas du client est de 100 ms : la transition lisse entre deux. */
+    transition: transform 0.1s linear;
+}
+
+/* ── Le verdict ────────────────────────────────────────────────────── */
+.chx-verdict {
+    position: absolute;
+    left: 50%; bottom: 1.2rem;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.1rem;
+    background: rgba(8, 8, 12, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.6rem;
+    transform: translateX(-50%);
+    animation: chx-verdict 0.3s ease both;
+}
+@keyframes chx-verdict {
+    from { opacity: 0; transform: translateX(-50%) translateY(0.6rem); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.chx-verdict b {
+    font-family: 'Bebas Neue', 'Poppins', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+}
+.chx-verdict b.v { color: var(--vrai); }
+.chx-verdict b.f { color: var(--faux); }
+.chx-verdict b.nulle { color: var(--neon-primary); font-size: 1.05rem; }
+.chx-verdict span { font-size: 0.82rem; color: var(--text-secondary); }
+.chx-preuve {
+    font-size: 0.72rem;
+    color: #7aa7ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(122, 167, 255, 0.4);
+}
+
+.chx-spectateur {
+    position: absolute;
+    top: 50%; left: 50%;
+    z-index: 7;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(8, 8, 12, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    transform: translate(-50%, 7rem);
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chx-bord.perdu { animation: none; }
+}

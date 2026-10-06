@@ -381,5 +381,50 @@ function getFallbackDifficulties(difficulty) {
     return fallback;
 };
 
+// ════════════════════════════════════════════════════════════
+// ✅❌ LA BANQUE DES VRAI / FAUX — le mode Choice
+// ════════════════════════════════════════════════════════════
+// ⚠️ EN MÉMOIRE, comme celle du quiz, et pour la même raison : une
+// requête par question et par salon ne tenait pas à plusieurs parties.
+// Ici c'est pire — une manche de Choice dure huit secondes, et toute la
+// salle attend la question suivante.
+//
+// ⚠️ La table peut ne pas exister (docs/choice-questions.sql s'exécute à
+// la main). On rend alors une banque VIDE et on le dit une fois : le
+// serveur doit démarrer même si personne n'a encore lancé le SQL.
+let banqueVF = null;
+let banqueVFChargeeA = 0;
+let chargementVF = null;
+let banqueVFAbsente = false;
+
+async function chargerBanqueVF(supabase) {
+    try {
+        banqueVF = await toutesLesLignes(() => supabase.from('choice_questions').select('*'));
+        banqueVFAbsente = false;
+        console.log(`✅❌ Banque vrai/faux chargée : ${banqueVF.length} énoncés`);
+    } catch (e) {
+        banqueVF = [];
+        if (!banqueVFAbsente) {
+            banqueVFAbsente = true;
+            console.log('✅❌ Banque vrai/faux indisponible (' + (e.message || e)
+                + ') — le mode Choice refusera de démarrer.');
+        }
+    }
+    banqueVFChargeeA = Date.now();
+    return banqueVF;
+}
+
+async function assurerBanqueVF(supabase) {
+    if (banqueVF && Date.now() - banqueVFChargeeA < BANQUE_TTL) return banqueVF;
+    if (!chargementVF) {
+        chargementVF = chargerBanqueVF(supabase).finally(() => { chargementVF = null; });
+    }
+    return chargementVF;
+}
+
+// Le back-office vient d'ajouter ou de retirer un énoncé.
+function invaliderBanqueVF() { banqueVFChargeeA = 0; }
+
 module.exports = {
-    toutesLesLignes, supabase, db, SERIES_FILTERS, getFilterSeries, invaliderBanque };
+    toutesLesLignes, supabase, db, SERIES_FILTERS, getFilterSeries, invaliderBanque,
+    assurerBanqueVF, invaliderBanqueVF };

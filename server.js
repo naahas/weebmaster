@@ -7,7 +7,8 @@ const express = require('express');
 const compression = require('compression');
 const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
-const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque, toutesLesLignes } = require('./dbs');
+const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque, toutesLesLignes,
+        assurerBanqueVF, invaliderBanqueVF } = require('./dbs');
 
 const app = express();
 
@@ -167,6 +168,7 @@ function getCharacterImage(name, serie) {
 // Supabase ni les autres modes, et prend l'état du salon en paramètre.
 const ascension = require('./server-ascension.js');
 const collect = require('./server-collect.js');
+const choixVF = require('./server-choice.js');
 const jetons = require('./jetons-images.js');
 const interdits = require('./pseudos-interdits.js');
 jetons.recenser('rushpic');
@@ -569,7 +571,7 @@ function avatarPropre(brut) {
     return AVATARS_AUTORISES.has(brut) ? brut : AVATAR_DEFAUT;
 }
 
-const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect' };
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect', choice: 'Choice' };
 
 // Les réglages d une partie, résumés pour le panneau. On les prend À LA FIN :
 // l hôte peut les avoir changés entre l ouverture du salon et le départ.
@@ -627,6 +629,16 @@ function reglagesDuSalon(gameState) {
         ascension: {
             etages: gameState.ascension.floors,
             timer: gameState.ascension.timer,
+        },
+        // ⚠️ Un réglage ajouté au tiroir DOIT être ajouté ici, sans quoi il
+        // reste figé d'un salon à l'autre, en silence. C'est la maladie des
+        // défauts écrits deux fois — npm run test:reglages la guette.
+        choice: {
+            vies: gameState.choice.vies,
+            duree: gameState.choice.duree,
+            voirLesAutres: gameState.choice.voirLesAutres,
+            serieFiltre: gameState.choice.serieFiltre,
+            noSpoil: gameState.choice.noSpoil,
         },
     };
 }
@@ -1077,6 +1089,20 @@ app.get('/game/state', (req, res) => {
                 id, label: f.label, compte: f.compte,
             })),
         } : null,
+        // ✅❌ Choice. ⚠️ On y met les RÉGLAGES et l'état de la manche, mais
+        // JAMAIS l'énoncé en cours ni sa réponse : `/game/state` s'ouvre avec
+        // le seul code du salon, pendant que la question est posée. Le quiz a
+        // déjà vécu ça avec `proof_url`, qui nommait la réponse. Celui qui
+        // veut l'énoncé le reçoit par la socket, comme tout le monde.
+        choice: gameState.lobbyMode === 'choice' ? {
+            active: gameState.choice.active,
+            vies: gameState.choice.vies,
+            duree: gameState.choice.duree,
+            voirLesAutres: gameState.choice.voirLesAutres,
+            serieFiltre: gameState.choice.serieFiltre,
+            noSpoil: gameState.choice.noSpoil,
+            manche: gameState.choice.manche,
+        } : null,
         bombanime: gameState.lobbyMode === 'bombanime' ? {
             active: gameState.bombanime.active,
             serie: gameState.bombanime.serie,
@@ -1140,6 +1166,17 @@ function diffuser(gameState, evt, payload) {
     if (payload === undefined) io.to(gameState.roomCode).emit(evt);
     else io.to(gameState.roomCode).emit(evt, payload);
 }
+
+// ✅❌ Le moteur de Choice, raccordé une fois. Il ne connaît du serveur que
+// ce qu'on lui passe ici — c'est ce qui permet d'éprouver son moteur sans
+// lancer quoi que ce soit (voir npm run test:choice).
+const choice = choixVF.creerModule({
+    diffuser,
+    assurerBanqueVF,
+    supabase,
+    recordFinishedGame: (args) => recordFinishedGame(args),
+    MIN_JOUEURS: 2,
+});
 
 // ============================================
 // Les salons
@@ -1379,6 +1416,9 @@ function etatNeuf() {
 
     // 🎴 Collect : même principe, un jeu de cartes par salon
     collect: collect.etatNeuf(),
+
+    // ✅❌ Choice : les vrai/faux à deux bords
+    choice: choixVF.etatNeuf(),
 
     rush: {
         active: false,
@@ -2361,7 +2401,7 @@ app.post('/admin/toggle-game', async (req, res) => {
     //
     // Le contrôle vient AVANT creerRoom : un refus ne doit pas laisser
     // derrière lui un salon fantôme que personne ne viendrait fermer.
-    const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension'];
+    const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension', 'choice'];
     const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
 
     if (!MODES_CONNUS.includes(modeDemande)) {
@@ -2636,6 +2676,99 @@ app.post('/admin/bombanime/set-meche-visuelle', (req, res) => {
     res.json({ success: true, mecheVisuelle: gameState.bombanime.mecheVisuelle });
 });
 
+// ════════════════════════════════════════════
+// ✅❌ LES RÉGLAGES DE CHOICE
+// ════════════════════════════════════════════
+// Toutes sous le garde-fou d'hôte (monté sur /admin) et toutes refusées
+// en pleine partie : changer les vies à la troisième manche ferait vivre
+// ou mourir quelqu'un sans qu'il l'ait vu venir.
+function diffuserReglagesChoice(gameState) {
+    diffuser(gameState, 'choice-config', {
+        vies: gameState.choice.vies,
+        duree: gameState.choice.duree,
+        voirLesAutres: gameState.choice.voirLesAutres,
+        serieFiltre: gameState.choice.serieFiltre,
+        noSpoil: gameState.choice.noSpoil,
+    });
+}
+
+app.post('/admin/choice/set-vies', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const v = parseInt(req.body && req.body.vies, 10);
+    if (v !== 1 && v !== 2) return res.status(400).json({ error: 'Nombre de vies invalide' });
+    gameState.choice.vies = v;
+    diffuserReglagesChoice(gameState);
+    res.json({ success: true, vies: v });
+});
+
+app.post('/admin/choice/set-duree', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const d = parseInt(req.body && req.body.duree, 10);
+    if (!choixVF.DUREES.includes(d)) return res.status(400).json({ error: 'Durée invalide' });
+    gameState.choice.duree = d;
+    diffuserReglagesChoice(gameState);
+    res.json({ success: true, duree: d });
+});
+
+app.post('/admin/choice/set-voir', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    // ⚠️ `=== true` : une valeur molle ferait d'un `"false"` un oui, et le
+    // réglage promet justement le contraire.
+    gameState.choice.voirLesAutres = req.body && req.body.voir === true;
+    diffuserReglagesChoice(gameState);
+    res.json({ success: true, voirLesAutres: gameState.choice.voirLesAutres });
+});
+
+app.post('/admin/choice/set-spoil', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    gameState.choice.noSpoil = req.body && req.body.noSpoil === true;
+    diffuserReglagesChoice(gameState);
+    res.json({ success: true, noSpoil: gameState.choice.noSpoil });
+});
+
+// Le filtre de série. ⚠️ On valide contre ce que la BANQUE contient
+// vraiment, et pas contre une liste écrite à côté : les séries sortent de
+// la saisie à la main, elles changent à chaque lot, et une liste figée
+// aurait refusé la série ajoutée la veille.
+app.post('/admin/choice/set-serie', async (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const s = (req.body && typeof req.body.serie === 'string') ? req.body.serie : 'overall';
+    if (s !== 'overall') {
+        const banque = await assurerBanqueVF(supabase);
+        if (!(banque || []).some(q => q.serie === s)) {
+            return res.status(400).json({ error: 'Série inconnue de la banque' });
+        }
+    }
+    gameState.choice.serieFiltre = s;
+    diffuserReglagesChoice(gameState);
+    res.json({ success: true, serieFiltre: s });
+});
+
+// Ce que le tiroir du salon propose : les séries présentes en banque et
+// leur compte. Il faut au moins trois énoncés pour tenir une partie, donc
+// une série qui n'en a qu'un n'est pas proposée — on ne met pas dans le
+// tiroir un choix qui fera refuser le démarrage.
+app.get('/choice/series', async (req, res) => {
+    try {
+        const banque = await assurerBanqueVF(supabase);
+        const parSerie = new Map();
+        (banque || []).forEach(q => parSerie.set(q.serie, (parSerie.get(q.serie) || 0) + 1));
+        const series = [...parSerie.entries()]
+            .filter(([, n]) => n >= 3)
+            .map(([nom, n]) => ({ nom, n }))
+            .sort((a, b) => b.n - a.n || a.nom.localeCompare(b.nom));
+        res.json({ success: true, total: (banque || []).length, series });
+    } catch (e) {
+        res.json({ success: true, total: 0, series: [] });
+    }
+});
+
 // 💣 Une ou deux vies
 app.post('/admin/bombanime/set-lives', (req, res) => {
     const gameState = req.room;
@@ -2855,6 +2988,16 @@ app.post('/admin/start-game', async (req, res) => {
         });
         if (!r.success) return res.status(400).json({ success: false, error: r.error });
         return res.json({ success: true, mode: 'collect', main: gameState.collect.main });
+    }
+
+    // ✅❌ MODE CHOICE — les vrai/faux à deux bords. Le moteur refuse
+    // lui-même si la banque est vide ou si le filtre ne laisse pas de quoi
+    // tenir trois manches : mieux vaut un refus à l'ouverture qu'un salon
+    // qui s'arrête au milieu de la troisième.
+    if (gameState.lobbyMode === 'choice') {
+        const r = await choice.demarrer(gameState);
+        if (!r.success) return res.status(400).json({ success: false, error: r.error });
+        return res.json({ success: true, mode: 'choice', vies: gameState.choice.vies });
     }
 
     // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul
@@ -6156,6 +6299,12 @@ app.post('/api/add-choice-question', async (req, res) => {
         return res.status(400).json({ error: 'Il faut un énoncé et une série.' });
     }
 
+    // ⚠️ APRÈS la porte, jamais avant. Le quiz a payé cette erreur :
+    // `invaliderBanque()` siégeait en tête de route, si bien qu'un appel
+    // non authentifié suffisait à vider le cache et à forcer une relecture
+    // complète de Supabase — un déni de service à une requête.
+    invaliderBanqueVF();
+
     try {
         const { error } = await supabase.from('choice_questions').insert([q]);
         if (error) throw error;
@@ -6183,6 +6332,8 @@ app.post('/api/update-choice-question', async (req, res) => {
         return res.status(400).json({ error: 'Il faut un identifiant, un énoncé et une série.' });
     }
 
+    invaliderBanqueVF();   // après la porte, comme à l'ajout
+
     try {
         const { error } = await supabase.from('choice_questions').update(q).eq('id', id);
         if (error) throw error;
@@ -6203,6 +6354,8 @@ app.post('/api/delete-choice-question', async (req, res) => {
 
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    invaliderBanqueVF();   // après LES DEUX portes
 
     try {
         const { error } = await supabase.from('choice_questions').delete().eq('id', id);
@@ -8425,6 +8578,13 @@ io.on('connection', (socket) => {
                 collect.quitterCollect(gameState, io, player.playerId);
             }
 
+            // Choice : un joueur parti est traite comme un indecis definitif.
+            // Il reste dans la table du mode — le classement final doit
+            // pouvoir le nommer — mais il ne bloque plus la manche.
+            if (gameState.lobbyMode === 'choice' && gameState.inProgress) {
+                choice.quitter(gameState, player.playerId);
+            }
+
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
 
@@ -8589,6 +8749,9 @@ io.on('connection', (socket) => {
             }
             if (gameState.lobbyMode === 'collect' && gameState.inProgress) {
                 collect.quitterCollect(gameState, io, targetPlayer.playerId);
+            }
+            if (gameState.lobbyMode === 'choice' && gameState.inProgress) {
+                choice.quitter(gameState, targetPlayer.playerId);
             }
 
             // Supprimer le joueur
@@ -8836,6 +8999,27 @@ io.on('connection', (socket) => {
     // 💣 BOMBANIME - Socket Handlers
     // ============================================
     
+    // ✅❌ CHOICE — le joueur va d'un bord. UNE SEULE FOIS : le moteur
+    // refuse un second envoi, et le client grise déjà les deux côtés. Le
+    // serveur reste l'autorité — un client bricolé qui renverrait trois
+    // camps n'en placerait qu'un, le premier.
+    socket.on('choice-choisir', (data) => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.choice.active) return;
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+        choice.choisir(gameState, joueur.playerId, data && data.camp);
+    });
+
+    // La reprise après une coupure : l'écran se refait sans attendre la
+    // manche suivante. ⚠️ Il passe par `etatPourLeClient`, qui ne porte
+    // PAS la réponse — se reconnecter ne doit pas être une façon de la lire.
+    socket.on('choice-get-state', () => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.choice.active) return;
+        socket.emit('choice-etat', choice.etatPourLeClient(gameState));
+    });
+
     // ⚡ RUSH — la saisie se valide sans touche Entrée : le client envoie ce
     // qui est tapé, le serveur ne répond que si ça correspond. Il n'y a donc
     // jamais de « mauvaise réponse », seulement des portraits passés.

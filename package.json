@@ -35,6 +35,8 @@
     "test:fuites": "node scripts/test-fuites.js",
     "test:debit": "node scripts/test-debit.js",
     "test:collect": "node scripts/test-collect.js",
+    "test:choice": "node scripts/test-choice.js",
+    "test:choice-salon": "node scripts/test-choice-salon.js",
     "test:collect-salon": "node scripts/test-collect-salon.js",
     "check:vue": "node scripts/verif-calculees.js && node scripts/verif-appels.js && node scripts/verif-panneau.js",
     "test:rush-mult": "node scripts/test-rush-multiplicateur.js",

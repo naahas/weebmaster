@@ -175,6 +175,39 @@ createApp({
                 regleAnimes: 10,
             },
 
+            // ✅❌ CHOICE — les vrai/faux à deux bords
+            // Les valeurs ci-dessous ne sont qu'un décor de quelques
+            // millisecondes : `appliquerReglagesSalon` les écrase dès
+            // l'ouverture du salon, parce que c'est le SERVEUR qui tient le
+            // vrai réglage (`etatNeuf`). Les garder alignées reste la moindre
+            // des choses — voir la maladie des défauts écrits deux fois.
+            ch: {
+                vies: 1,
+                duree: 8,
+                voirLesAutres: true,
+                serieFiltre: 'overall',
+                noSpoil: false,
+                barDurees: [5, 8, 12],
+                series: [],          // ce que la banque contient, pour le tiroir
+                totalBanque: 0,
+
+                enCours: false,
+                manche: 0,
+                question: null,      // { question, serie, difficulty } — jamais la réponse
+                finA: 0,             // échéance fabriquée sur MA montre
+                reste: 0,
+                _tic: null,
+
+                monCamp: null,       // 'v' | 'f' — une seule fois
+                verrou: false,
+                joueurs: [],         // ce qu'on dessine dans l'arène
+                comptes: { v: 0, f: 0, indecis: 0 },
+
+                revelation: null,    // { bonne, nulle, perdants, proof_url }
+                classement: null,    // à la fin
+                manchesJouees: 0,
+            },
+
             asc: {
                 etages: 15,          // réglage du salon
                 timer: 30,           // secondes par étage
@@ -291,9 +324,8 @@ createApp({
                 // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
                 // en quatre lignes exactement — soit la hauteur déjà réservée plus
                 // haut pour que le titre ne bouge pas d'un mode à l'autre.
-                { id: 'chase',     name: 'Chase',     kind: 'Équipe', players: '∞', img: 'sebastian.webp',
-                  soon: true,
-                  desc: "Et j'gère mes affaires\nDu sucre dans ma bouche amère\nLa mif sous un soleil plein\nTu touches, on touche le salaire" },
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'sebastian.webp',
+                  desc: "Une affirmation s'affiche. Tout le monde part du milieu et choisit un bord : VRAI à gauche, FAUX à droite. On ne se reprend pas. Le mauvais côté éclate, le dernier debout l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
@@ -897,6 +929,49 @@ createApp({
         questionEnCours() {
             return this.gameInProgress && !this.gameEnded && !this.showResults
                 && this.lobbyMode !== 'bombanime' && this.bonusEnabled && !this.estSpectateur;
+        },
+
+        // ════════════════════════════════════════════
+        // ✅❌ CHOICE — ce que l'arène a besoin de savoir
+        // ════════════════════════════════════════════
+        jeSuisVivantChoice() {
+            const moi = this.ch.joueurs.find(j => j.playerId === this.playerId);
+            return !!moi && moi.vivant;
+        },
+        chVivants() {
+            return this.ch.joueurs.filter(j => j.vivant);
+        },
+        // Les trois tas. ⚠️ Quand « voir les autres » est éteint, le serveur
+        // n'envoie PAS le camp : tout le monde reste donc au milieu à
+        // l'écran, et c'est voulu — on sait seulement combien ont choisi.
+        chTasMilieu() {
+            return this.chVivants.filter(j => !j.camp);
+        },
+        chTasVrai() {
+            return this.chVivants.filter(j => j.camp === 'v');
+        },
+        chTasFaux() {
+            return this.chVivants.filter(j => j.camp === 'f');
+        },
+        // La part du chrono qui reste, de 1 à 0. Sert à la jauge, qui ne
+        // porte AUCUN chiffre : la même échelle que la mèche de BombAnime —
+        // un compteur permettrait de résoudre la manche de tête.
+        chPartChrono() {
+            const total = (this.ch.duree || 8) * 1000;
+            if (!total) return 0;
+            return Math.max(0, Math.min(1, this.ch.reste / total));
+        },
+        // Le camp qui tombe, une fois la révélation arrivée. 'v' ou 'f', ou
+        // null si la manche est nulle (personne n'avait trouvé).
+        chCampPerdant() {
+            const r = this.ch.revelation;
+            if (!r || r.nulle) return null;
+            return r.bonne ? 'f' : 'v';
+        },
+        chAiJuste() {
+            const r = this.ch.revelation;
+            if (!r || this.ch.monCamp === null) return null;
+            return (this.ch.monCamp === 'v') === r.bonne;
         },
 
         // La barre de jetons est-elle à l'écran ? Même chose, plus les deux
@@ -3850,6 +3925,11 @@ createApp({
                 // « Bleach » et la manche se jouait en Naruto.
                 this.appliquerReglagesSalon(data.reglages);
 
+                // Le tiroir de Choice propose les séries que la BANQUE
+                // contient, pas une liste écrite à côté : elles sortent de la
+                // saisie à la main et changent à chaque lot.
+                if (this.selectedMode === 'choice') this.chargerSeriesChoice();
+
                 this.hostToken = data.hostToken || '';
                 localStorage.setItem('hostToken', this.hostToken);
                 this.isHost = true;
@@ -4122,6 +4202,16 @@ createApp({
             if (r.ascension) {
                 poser(this.asc, 'etages', r.ascension.etages);
                 poser(this.asc, 'timer', r.ascension.timer);
+            }
+            if (r.choice) {
+                poser(this.ch, 'vies', r.choice.vies);
+                poser(this.ch, 'duree', r.choice.duree);
+                // ⚠️ `poser` teste `undefined`, jamais la vérité de la valeur :
+                // un `||` ici ignorerait un `false` venu du serveur, et le
+                // réglage « voir les autres » resterait allumé chez l'hôte.
+                poser(this.ch, 'voirLesAutres', r.choice.voirLesAutres);
+                poser(this.ch, 'serieFiltre', r.choice.serieFiltre);
+                poser(this.ch, 'noSpoil', r.choice.noSpoil);
             }
         },
 
@@ -5258,6 +5348,57 @@ createApp({
         arreterChronoRush() {
             clearInterval(this.rush._tic);
             this.rush._tic = null;
+        },
+
+        // ════════════════════════════════════════════
+        // ✅❌ CHOICE
+        // ════════════════════════════════════════════
+        // ⚠️ Le chrono se fabrique sur un RESTE, jamais sur une échéance du
+        // serveur : comparer son horloge à la nôtre fait finir le compte
+        // avant ou après la vraie fin. `maintenant()` corrige en plus l'écart
+        // mesuré à la connexion, donc on l'utilise des deux côtés.
+        lancerChronoChoice(reste) {
+            clearInterval(this.ch._tic);
+            this.ch.finA = this.maintenant() + (reste || 0);
+            const tic = () => {
+                const r = Math.max(0, this.ch.finA - this.maintenant());
+                this.ch.reste = r;
+                if (r <= 0) { clearInterval(this.ch._tic); this.ch._tic = null; }
+            };
+            tic();
+            // 100 ms : la jauge doit couler, pas sauter de seconde en seconde.
+            this.ch._tic = setInterval(tic, 100);
+        },
+
+        arreterChronoChoice() {
+            clearInterval(this.ch._tic);
+            this.ch._tic = null;
+        },
+
+        // Les séries proposées dans le tiroir. Une série qui n'a pas trois
+        // énoncés n'y figure pas : on ne met pas dans le tiroir un choix qui
+        // ferait refuser le démarrage.
+        async chargerSeriesChoice() {
+            try {
+                const r = await fetch('/choice/series');
+                const d = await r.json();
+                this.ch.series = d.series || [];
+                this.ch.totalBanque = d.total || 0;
+            } catch (e) {
+                this.ch.series = [];
+                this.ch.totalBanque = 0;
+            }
+        },
+
+        // Le joueur va d'un bord. ⚠️ UNE SEULE FOIS — on ne se reprend pas,
+        // c'est la règle du mode. Le serveur refuse de toute façon un second
+        // envoi : ce garde-ci ne sert qu'à ne pas l'ennuyer pour rien.
+        choisirCamp(camp) {
+            if (!this.ch.enCours || !this.ch.question) return;
+            if (this.ch.verrou || this.ch.monCamp !== null) return;
+            if (this.estSpectateur || !this.jeSuisVivantChoice) return;
+            this.ch.monCamp = camp;
+            this.socket.emit('choice-choisir', { camp });
         },
 
         // L'entrée de manche tient en deux temps : le chrono paraît seul, puis
@@ -7722,6 +7863,105 @@ createApp({
 
             this.socket.on('rush-config', (data) => {
                 Object.assign(this.rush, data);
+            });
+
+            // ════════════════════════════════════════════
+            // ✅❌ CHOICE
+            // ════════════════════════════════════════════
+            this.socket.on('choice-config', (data) => {
+                // ⚠️ Object.assign et pas un champ à champ : un réglage ajouté
+                // plus tard arriverait tout seul. Mais seuls les RÉGLAGES
+                // passent par cet événement — jamais l'état d'une manche.
+                Object.assign(this.ch, data);
+            });
+
+            this.socket.on('choice-debut', (data) => {
+                this.ch.enCours = true;
+                this.ch.manche = 0;
+                this.ch.question = null;
+                this.ch.monCamp = null;
+                this.ch.verrou = false;
+                this.ch.revelation = null;
+                this.ch.classement = null;
+                this.ch.joueurs = data.joueurs || [];
+                this.ch.vies = data.vies;
+                this.ch.voirLesAutres = data.voirLesAutres;
+                this.gameInProgress = true;
+                this.gameEnded = false;
+                document.body.classList.add('game-active');
+            });
+
+            this.socket.on('choice-question', (data) => {
+                this.ch.manche = data.manche;
+                this.ch.question = data.question;
+                this.ch.monCamp = null;
+                this.ch.verrou = false;
+                this.ch.revelation = null;
+                this.ch.joueurs = data.joueurs || [];
+                this.ch.comptes = { v: 0, f: 0, indecis: (data.joueurs || []).length };
+                // ⚠️ Le serveur envoie un RESTE, pas une échéance : on
+                // fabrique la nôtre sur NOTRE montre. Une machine en retard
+                // de trois secondes verrait sinon le compte s'arrêter avant
+                // le bout. `maintenant()` corrige en plus l'écart mesuré.
+                this.lancerChronoChoice(data.reste);
+            });
+
+            this.socket.on('choice-bouge', (data) => {
+                const j = this.ch.joueurs.find(x => x.playerId === data.playerId);
+                if (j) { j.camp = data.camp; j.aChoisi = true; }
+                if (data.comptes) this.ch.comptes = data.comptes;
+            });
+
+            this.socket.on('choice-verrou', (data) => {
+                this.ch.verrou = true;
+                this.ch.reste = 0;
+                this.arreterChronoChoice();
+                if (data && data.joueurs) this.ch.joueurs = data.joueurs;
+            });
+
+            this.socket.on('choice-revelation', (data) => {
+                this.ch.revelation = data;
+                // Les camps de tout le monde arrivent ici, y compris quand le
+                // salon les cachait : la manche est jouée, il n'y a plus rien
+                // à protéger.
+                (data.joueurs || []).forEach(d => {
+                    const j = this.ch.joueurs.find(x => x.playerId === d.playerId);
+                    if (j) { j.camp = d.camp; j.vies = d.vies; j.vivant = d.vivant; }
+                });
+            });
+
+            this.socket.on('choice-depart', (data) => {
+                const j = this.ch.joueurs.find(x => x.playerId === data.playerId);
+                if (j) j.vivant = false;
+                if (data.comptes) this.ch.comptes = data.comptes;
+            });
+
+            this.socket.on('choice-fin', (data) => {
+                this.arreterChronoChoice();
+                this.ch.enCours = false;
+                this.ch.question = null;
+                this.ch.verrou = false;
+                this.ch.classement = data.classement || [];
+                this.ch.manchesJouees = data.manches || 0;
+                this.gameInProgress = false;
+                this.gameEnded = true;
+                document.body.classList.remove('game-active');
+            });
+
+            // La reprise après une coupure : l'écran se refait sans attendre
+            // la manche suivante.
+            this.socket.on('choice-etat', (data) => {
+                if (!data) return;
+                this.ch.enCours = true;
+                this.ch.manche = data.manche;
+                this.ch.question = data.question;
+                this.ch.joueurs = data.joueurs || [];
+                this.ch.voirLesAutres = data.voirLesAutres;
+                const moi = this.ch.joueurs.find(x => x.playerId === this.playerId);
+                this.ch.monCamp = moi ? moi.camp : null;
+                this.gameInProgress = true;
+                document.body.classList.add('game-active');
+                if (data.reste > 0) this.lancerChronoChoice(data.reste);
             });
 
             this.socket.on('bombanime-game-ended', (data) => {
