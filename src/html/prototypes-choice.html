@@ -14,17 +14,20 @@
    juge le MOUVEMENT — c'est lui qui porte le mode, pas la pose.
    D'où les commandes en bas : la séquence se rejoue au clic.
 
-   ⚠️ CE QUI N'EST PAS ENCORE TRANCHÉ, et pourquoi la page n'en
-   décide pas : d'où vient « le camp qui perd ». Soit la minorité
-   survit (aucune banque, l'énoncé est un prétexte), soit il y a une
-   bonne réponse. Les deux donnent EXACTEMENT le même écran — un
-   camp s'éteint et éclate — donc la commande « camp perdant » le
-   laisse ouvert au lieu de figer un choix qui n'est pas fait.
+   TRANCHÉ le 6 octobre 2026 : ce sont de VRAIS vrai/faux, avec une
+   bonne réponse et une banque à part (`choice_questions`, saisie
+   depuis l'onglet « Vrai / Faux » du panneau). La commande « camp
+   perdant » reste, mais elle ne sert plus qu'à rejouer la sanction
+   d'un côté ou de l'autre sans attendre une vraie question.
 
    ── Les couleurs ──
-   Cramoisi (350°) contre azur (210°) : 140° d'écart, le maximum
-   utile. Les camps du Classique (bleu, doré, rose, vert, violet)
-   sont écartés exprès — ils disent « équipe », et ici il n'y a pas
+   Azur (210°) contre cramoisi (350°) : 140° d'écart, le maximum
+   utile. ⚠️ BLEU À GAUCHE = VRAI, rouge à droite = FAUX, et cet
+   ordre est le même dans le back-office. On finit par aller du bon
+   côté à la couleur sans lire le mot ; l'inverser un jour
+   retournerait des réflexes acquis en dix parties.
+   Les camps du Classique (bleu, doré, rose, vert, violet) sont
+   écartés exprès — ils disent « équipe », et ici il n'y a pas
    d'équipe, il y a un BORD qu'on choisit. L'or reste au chrome
    (chrono, libellés) : les camps sont immenses, le chrome est fin,
    ils ne se disputent jamais la même surface.
@@ -43,11 +46,23 @@
     --or-clair: #ffe066;
 
     /* Les deux bords. Chaque camp porte sa teinte, sa lueur et son
-       verre : tout ce qui le concerne descend de ces trois-là. */
-    --gauche: #ff3b5c;
-    --gauche-vif: #ff7a8f;
-    --droite: #2f9bff;
-    --droite-vif: #7ac2ff;
+       verre : tout ce qui le concerne descend de ces trois-là.
+       ⚠️ BLEU À GAUCHE, c'est VRAI ; rouge à droite, c'est FAUX. L'ordre
+       n'est pas décoratif : il doit être le même partout, ici comme dans
+       le back-office, parce qu'on finit par aller du bon côté à la
+       couleur sans lire le mot. L'inverser un jour retournerait des
+       réflexes acquis en dix parties. */
+    --gauche: #2f9bff;
+    --gauche-vif: #7ac2ff;
+    --droite: #ff3b5c;
+    --droite-vif: #ff7a8f;
+    /* ⚠️ Les mêmes, en composantes : `rgba()` ne sait pas manger un hex
+       venu d'une variable, et les lueurs en avaient besoin. Elles étaient
+       écrites en dur, donc inverser les camps laissait quatre dégradés du
+       mauvais côté — le fond d'un camp, sa lueur et le halo des avatars.
+       Un seul endroit à changer, maintenant. */
+    --gauche-rgb: 47, 155, 255;
+    --droite-rgb: 255, 59, 92;
 
     --fond: #07070a;
     --texte: #ffffff;
@@ -324,13 +339,13 @@ h1 span { color: var(--or); }
 }
 .camp.g .camp-fond {
     background:
-        linear-gradient(90deg, rgba(255, 59, 92, 0.26), rgba(255, 59, 92, 0.03) 72%, transparent),
-        radial-gradient(60% 70% at 0% 50%, rgba(255, 59, 92, 0.3), transparent 70%);
+        linear-gradient(90deg, rgba(var(--gauche-rgb), 0.26), rgba(var(--gauche-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 0% 50%, rgba(var(--gauche-rgb), 0.3), transparent 70%);
 }
 .camp.d .camp-fond {
     background:
-        linear-gradient(270deg, rgba(47, 155, 255, 0.26), rgba(47, 155, 255, 0.03) 72%, transparent),
-        radial-gradient(60% 70% at 100% 50%, rgba(47, 155, 255, 0.32), transparent 70%);
+        linear-gradient(270deg, rgba(var(--droite-rgb), 0.26), rgba(var(--droite-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 100% 50%, rgba(var(--droite-rgb), 0.32), transparent 70%);
 }
 
 /* Le liseré du bord extérieur : fin, net, et il PULSE quand
@@ -351,32 +366,36 @@ h1 span { color: var(--or); }
     100% { opacity: 0.75; transform: scaleX(1); }
 }
 
-/* Le nom du camp, couché contre son bord. Vertical : horizontal, il
-   mangeait la place des avatars, qui sont le vrai sujet. */
+/* ── VRAI et FAUX, EN FOND ─────────────────────────────────────
+   Le mot occupe tout le camp, à l'horizontale, et il est ÉNORME —
+   mais à peine visible. C'est ce couple-là qui le rend sobre :
+   une typo de cette taille se lit du coin de l'œil à 6 % d'opacité,
+   alors qu'à 40 % elle écraserait les visages, qui sont le sujet.
+   Il ne clignote pas, ne bouge pas, ne s'anime pas : c'est le
+   DÉCOR du bord, pas un élément de jeu. Le seul mouvement qu'il
+   s'autorise est de respirer un peu quand le camp se peuple.
+   ⚠️ `pointer-events: none` : il couvre tout le camp, et sans ça
+   il attraperait les clics destinés aux avatars. */
 .camp-nom {
     position: absolute;
-    top: 50%;
+    inset: 0;
+    display: grid;
+    place-items: center;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.6rem;
-    line-height: 0.9;
-    letter-spacing: 0.1em;
+    font-size: clamp(4rem, 13vw, 11rem);
+    line-height: 1;
+    letter-spacing: 0.06em;
     white-space: nowrap;
-    opacity: 0.5;
-    transition: opacity 0.4s ease, letter-spacing 0.4s ease;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.06;
+    transition: opacity 0.5s ease;
 }
-.camp.g .camp-nom {
-    left: 0.9rem;
-    color: var(--gauche-vif);
-    transform: translateY(-50%) rotate(180deg);
-    writing-mode: vertical-rl;
-}
-.camp.d .camp-nom {
-    right: 0.9rem;
-    color: var(--droite-vif);
-    transform: translateY(-50%);
-    writing-mode: vertical-rl;
-}
-.camp.peuple .camp-nom { opacity: 0.95; letter-spacing: 0.18em; }
+.camp.g .camp-nom { color: var(--gauche-vif); }
+.camp.d .camp-nom { color: var(--droite-vif); }
+.camp.peuple .camp-nom { opacity: 0.1; }
+/* Le camp qui tombe : son mot s'éteint avec lui. */
+.camp.eteint .camp-nom { opacity: 0.03; }
 
 /* Le compteur du camp : gros, en haut, et il encaisse chaque arrivée. */
 .camp-n {
@@ -433,14 +452,14 @@ h1 span { color: var(--or); }
     letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--tres-doux);
 }
-.enonce-duo {
-    display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+/* ⚠️ L'énoncé est en BLANC, dans aucune des deux couleurs. Une seule
+   teinte posée dessus suggérerait une réponse — et à ce jeu-là, une
+   couleur suffit à faire pencher la moitié de la salle. */
+.enonce-txt {
     font-family: 'Poppins', sans-serif;
-    font-size: 1.05rem; font-weight: 700;
+    font-size: 1.02rem; font-weight: 600; line-height: 1.4;
+    color: var(--texte);
 }
-.enonce-duo i { font-style: normal; font-size: 0.7rem; color: var(--tres-doux); }
-.enonce-g { color: var(--gauche-vif); }
-.enonce-d { color: var(--droite-vif); }
 
 /* ── Le chrono ─────────────────────────────────────────────────
    Un anneau, aucun chiffre : la même échelle que la mèche de
@@ -533,8 +552,8 @@ h1 span { color: var(--or); }
 
 /* Engagé : l'avatar prend la couleur de son bord. C'est ce halo qui
    rend le camp lisible d'un coup d'œil, bien avant le compteur. */
-.j.vers-g .j-rond { box-shadow: 0 0 0 0.14rem var(--gauche), 0 0 1.4rem rgba(255, 59, 92, 0.5); }
-.j.vers-d .j-rond { box-shadow: 0 0 0 0.14rem var(--droite), 0 0 1.4rem rgba(47, 155, 255, 0.5); }
+.j.vers-g .j-rond { box-shadow: 0 0 0 0.14rem var(--gauche), 0 0 1.4rem rgba(var(--gauche-rgb), 0.5); }
+.j.vers-d .j-rond { box-shadow: 0 0 0 0.14rem var(--droite), 0 0 1.4rem rgba(var(--droite-rgb), 0.5); }
 .j.vers-g b { color: var(--gauche-vif); }
 .j.vers-d b { color: var(--droite-vif); }
 
@@ -751,9 +770,10 @@ h1 span { color: var(--or); }
     sanction doit faire mal une demi-seconde.
 </p>
 <div class="note">
-    ⚠️ <b>Ce qui n'est pas tranché</b> : d'où vient le camp qui perd. Que ce soit <b>la minorité</b>
-    (aucune banque à écrire, l'énoncé n'est qu'un prétexte) ou <b>une bonne réponse</b>, l'écran est
-    exactement le même — d'où la commande « camp perdant », qui laisse le choix ouvert.
+    <b>Ce sont de vrais vrai/faux</b> : une affirmation, une série, une bonne réponse. La banque
+    vit à part (<b>choice_questions</b>) et se remplit depuis l'onglet « Vrai / Faux » du panneau.
+    ⚠️ <b>Bleu à gauche = VRAI</b>, rouge à droite = FAUX — le même ordre partout, back-office
+    compris. La commande « camp perdant » ne sert plus qu'à rejouer la sanction d'un côté choisi.
 </div>
 
 <div class="bascule">
@@ -781,7 +801,7 @@ h1 span { color: var(--or); }
                     <path d="M70 190 L40 110"/>
                 </svg>
                 <div class="camp-bord"></div>
-                <div class="camp-nom">Naruto</div>
+                <div class="camp-nom">VRAI</div>
                 <div class="camp-n" id="n-g">0</div>
             </div>
 
@@ -795,18 +815,19 @@ h1 span { color: var(--or); }
                     <path d="M230 190 L260 110"/>
                 </svg>
                 <div class="camp-bord"></div>
-                <div class="camp-nom">Sasuke</div>
+                <div class="camp-nom">FAUX</div>
                 <div class="camp-n" id="n-d">0</div>
             </div>
 
             <div class="couloir"></div>
 
+            <!-- L'ÉNONCÉ, affirmatif. Jamais « Luffy a-t-il mangé… ? » :
+                 on affirme, et le joueur va du côté qu'il croit. La série
+                 est au-dessus, en petit — elle situe sans aider. -->
             <div class="enonce">
-                <small id="enonce-titre">Choisis ton camp</small>
-                <div class="enonce-duo">
-                    <span class="enonce-g">Naruto</span>
-                    <i>OU</i>
-                    <span class="enonce-d">Sasuke</span>
+                <small id="enonce-serie">One Piece</small>
+                <div class="enonce-txt" id="enonce-txt">
+                    Luffy a mangé le Gomu Gomu no Mi
                 </div>
             </div>
 

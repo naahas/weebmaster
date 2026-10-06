@@ -6071,6 +6071,150 @@ app.get('/api/series', async (req, res) => {
 });
 
 
+// ════════════════════════════════════════════════════════════
+// ✅❌ LA BANQUE DU MODE CHOICE — les vrai / faux
+// ════════════════════════════════════════════════════════════
+// Mêmes portes que le quiz (`codeBackOffice`), et la suppression exige
+// le MÊME second mot de passe : une banque écrite à la main ne se
+// retrouve pas davantage parce qu'elle tient en une ligne par entrée.
+//
+// ⚠️ Table séparée, et pas une colonne de plus sur `questions`. Le quiz
+// tire SES questions par difficulté et par série depuis une banque qu'il
+// garde en mémoire ; un vrai/faux glissé dedans serait sorti un jour par
+// le Classique, qui l'afficherait avec six réponses dont cinq vides.
+//
+// ⚠️ La table peut ne pas exister : le fichier docs/choice-questions.sql
+// s'exécute à la main. On ne tombe pas pour autant — `banqueAbsente()`
+// reconnaît l'erreur de Postgres et l'onglet affiche une banque vide avec
+// ce qu'il faut faire, plutôt qu'une erreur 500 sans explication.
+// ⚠️ DEUX codes, et le premier est celui qu'on reçoit vraiment. Postgres
+// dit `42P01` (« relation does not exist »), mais on ne parle pas à
+// Postgres : on parle à PostgREST, qui répond `PGRST205` « Could not find
+// the table 'public.choice_questions' in the schema cache ». Mesuré — la
+// première version ne guettait que le code de Postgres et le message
+// « does not exist », donc elle ratait le seul cas qu'elle devait
+// attraper, et l'onglet rendait une erreur 500 muette.
+const banqueAbsente = (error) => !!error && (
+    error.code === 'PGRST205' || error.code === '42P01'
+    || /choice_questions/.test(error.message || '')
+       && /(not find|does not exist)/i.test(error.message || ''));
+
+app.get('/api/choice-questions', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+
+    try {
+        // Paginé comme le quiz : voir `toutesLesLignes` dans dbs.js. Mille
+        // vrai/faux, c'est un an de saisie — mais le quiz a franchi ce
+        // plafond en silence, et six questions avaient disparu du jeu.
+        const data = await toutesLesLignes(() => supabase
+            .from('choice_questions')
+            .select('*')
+            .order('id', { ascending: false }));
+
+        res.json({ success: true, questions: data });
+    } catch (error) {
+        if (banqueAbsente(error)) {
+            return res.json({ success: true, questions: [], tableAbsente: true });
+        }
+        console.error('Erreur récupération vrai/faux:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// ⚠️ Un énoncé se nettoie avant d'entrer : les espaces en trop se voient
+// à l'écran, et surtout l'index unique les compte comme une différence —
+// « Luffy… » et « Luffy… » auraient coexisté.
+const enonceChoice = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
+
+// Les SIX paliers du quiz, à l'identique. Un palier de moins ici et les
+// deux banques ne se compareraient plus — ni à l'œil, ni dans le code.
+const DIFFICULTES_CHOICE = ['veryeasy', 'easy', 'medium', 'hard', 'veryhard', 'extreme'];
+
+const corpsChoice = (req) => {
+    const question = enonceChoice(req.body.question);
+    const serie = enonceChoice(req.body.serie);
+    const difficulty = DIFFICULTES_CHOICE.includes(req.body.difficulty)
+        ? req.body.difficulty : 'medium';
+    return {
+        question,
+        // ⚠️ `=== true` et pas une valeur molle : un `"false"` venu d'un
+        // formulaire est une chaîne non vide, donc vrai — et l'énoncé
+        // serait entré avec la réponse inverse, sans rien pour le dire.
+        reponse: req.body.reponse === true,
+        serie,
+        difficulty,
+        is_spoil: req.body.is_spoil === true,
+        proof_url: enonceChoice(req.body.proof_url) || null,
+    };
+};
+
+app.post('/api/add-choice-question', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+
+    const q = corpsChoice(req);
+    if (!q.question || !q.serie) {
+        return res.status(400).json({ error: 'Il faut un énoncé et une série.' });
+    }
+
+    try {
+        const { error } = await supabase.from('choice_questions').insert([q]);
+        if (error) throw error;
+        res.json({ success: true, message: 'Vrai/Faux ajouté !' });
+    } catch (error) {
+        if (banqueAbsente(error)) {
+            return res.status(503).json({ error: 'La table n’existe pas encore — lance docs/choice-questions.sql dans Supabase.' });
+        }
+        // 23505 = l'index unique. Le dire franchement vaut mieux qu'une
+        // erreur serveur : c'est une saisie en double, pas une panne.
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'Cet énoncé existe déjà dans cette série.' });
+        }
+        console.error('Erreur ajout vrai/faux:', error);
+        res.status(500).json({ error: 'Erreur lors de l’ajout' });
+    }
+});
+
+app.post('/api/update-choice-question', async (req, res) => {
+    if (!codeBackOffice(req, res)) return;
+
+    const { id } = req.body;
+    const q = corpsChoice(req);
+    if (!id || !q.question || !q.serie) {
+        return res.status(400).json({ error: 'Il faut un identifiant, un énoncé et une série.' });
+    }
+
+    try {
+        const { error } = await supabase.from('choice_questions').update(q).eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: 'Vrai/Faux modifié !' });
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'Cet énoncé existe déjà dans cette série.' });
+        }
+        console.error('Erreur modification vrai/faux:', error);
+        res.status(500).json({ error: 'Erreur lors de la modification' });
+    }
+});
+
+app.post('/api/delete-choice-question', async (req, res) => {
+    // Les DEUX portes, et avant toute chose — comme pour le quiz.
+    if (!codeBackOffice(req, res)) return;
+    if (!codeSuppression(req, res)) return;
+
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    try {
+        const { error } = await supabase.from('choice_questions').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: 'Vrai/Faux supprimé !' });
+    } catch (error) {
+        console.error('Erreur suppression vrai/faux:', error);
+        res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+});
+
+
 // Le portail du back-office. Même règle que codeBackOffice, mais le champ
 // s'appelle « code » ici : on ne compare qu'entre chaînes non vides.
 app.post('/api/verify-question-code', (req, res) => {

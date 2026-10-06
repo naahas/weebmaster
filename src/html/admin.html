@@ -725,6 +725,65 @@ body:not(.entre) { overflow: hidden; }
 .bouton.danger:hover { background: rgba(251,113,133,.14); }
 .bouton:disabled { opacity: .5; cursor: default; }
 
+/* ════════════════════════════════════════════
+   ✅❌ LES VRAI / FAUX
+   ⚠️ Les deux couleurs sont celles de l'arène du mode : VRAI est BLEU
+   (le bord gauche), FAUX est ROUGE (le bord droit). Les reprendre ici
+   n'est pas une coquetterie — on saisit cent énoncés d'affilée, et
+   c'est la couleur qu'on finit par lire, pas le mot.
+   ════════════════════════════════════════════ */
+:root { --vf-vrai: #2f9bff; --vf-faux: #ff3b5c; }
+
+.vf-bascule { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.vf-opt {
+    padding: .7rem;
+    font-family: inherit; font-size: .92rem; font-weight: 700;
+    letter-spacing: .1em;
+    color: var(--doux);
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--bord-fort); border-radius: 9px;
+    cursor: pointer;
+    transition: color .15s, background .15s, border-color .15s;
+}
+.vf-opt:hover { color: var(--texte); }
+.vf-opt.vrai.on { color: #fff; background: rgba(47,155,255,.18); border-color: var(--vf-vrai); }
+.vf-opt.faux.on { color: #fff; background: rgba(255,59,92,.16); border-color: var(--vf-faux); }
+
+.c-plus { margin-top: .9rem; }
+.c-plus summary {
+    font-size: .78rem; color: var(--doux); cursor: pointer;
+    padding: .35rem 0; user-select: none;
+}
+.c-plus summary:hover { color: var(--texte); }
+.c-case {
+    display: flex; align-items: center; gap: .5rem;
+    margin-top: .7rem; font-size: .82rem; color: var(--doux); cursor: pointer;
+}
+.c-case input { width: 15px; height: 15px; accent-color: var(--accent); }
+
+/* Une ligne de la liste. L'énoncé porte un filet de couleur à gauche :
+   c'est la réponse, lisible sans rien lire. */
+.vf {
+    display: flex; align-items: flex-start; gap: .8rem;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.045);
+    border-left: 3px solid transparent;
+}
+.vf[data-rep="1"] { border-left-color: var(--vf-vrai); }
+.vf[data-rep="0"] { border-left-color: var(--vf-faux); }
+.vf:hover { background: rgba(255,255,255,.02); }
+.vf-txt { flex: 1; min-width: 0; }
+.vf-enonce { font-size: .92rem; line-height: 1.45; }
+.vf-meta { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin-top: .45rem; }
+.vf-rep {
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    padding: .16rem .5rem; border-radius: 5px;
+}
+.vf[data-rep="1"] .vf-rep { color: var(--vf-vrai); background: rgba(47,155,255,.13); }
+.vf[data-rep="0"] .vf-rep { color: var(--vf-faux); background: rgba(255,59,92,.12); }
+.vf-actions { display: flex; gap: .4rem; flex: 0 0 auto; opacity: 0; transition: opacity .15s; }
+.vf:hover .vf-actions, .vf:focus-within .vf-actions { opacity: 1; }
+
 /* ── Écrans étroits ──────────────────────── */
 @media (max-width: 1000px) {
     /* ⚠️ `body` est un flex EN LIGNE (rail | scène). Coucher le rail ne
@@ -862,7 +921,7 @@ body:not(.entre) { overflow: hidden; }
    de pointeur, d'où `hover: none` plutôt qu'un seuil en pixels.
    ════════════════════════════════════════════ */
 @media (hover: none) {
-    .jeter, .q-actions { opacity: 1; }
+    .jeter, .q-actions, .vf-actions { opacity: 1; }
     /* Discrètes quand même : visibles, mais elles ne crient pas. */
     .jeter { color: var(--tres-doux); }
 }
@@ -943,6 +1002,10 @@ body:not(.entre) { overflow: hidden; }
     <g id="i-historique" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 12a9 9 0 10 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4.5l3 1.8"/>
     </g>
+    <!-- Une balance : deux plateaux, un choix. L'icône du Vrai/Faux. -->
+    <g id="i-balance" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4v16M8 20h8M3 8h18M6.5 8l-3 6h6zM17.5 8l-3 6h6z"/>
+    </g>
   </defs>
 </svg>
 
@@ -993,6 +1056,11 @@ body:not(.entre) { overflow: hidden; }
             <svg width="17" height="17"><use href="#i-crayon"/></svg>
             Questions
             <span class="compte" id="compte-questions"></span>
+        </button>
+        <button class="onglet" data-vue="choice" aria-selected="false">
+            <svg width="17" height="17"><use href="#i-balance"/></svg>
+            Vrai / Faux
+            <span class="compte" id="compte-choice"></span>
         </button>
         <button class="onglet" data-vue="suggestions" aria-selected="false">
             <svg width="17" height="17"><use href="#i-ampoule"/></svg>
@@ -1143,6 +1211,53 @@ body:not(.entre) { overflow: hidden; }
         </div>
     </section>
 
+    <!-- ── Vue : les vrai / faux du mode Choice ─────────────────────
+         Même grammaire que la banque du quiz — mêmes filtres, même liste,
+         même modale pour ajouter et modifier. Un back-office qui ne
+         ressemble pas à l'autre se réapprend à chaque visite. -->
+    <section class="vue vue-pleine" data-vue="choice">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16"><use href="#i-balance"/></svg>
+                Les vrai / faux <span id="c-note" class="q-note"></span>
+                <span class="tete-actions">
+                    <button class="mini vif" id="c-ajouter">
+                        <svg width="14" height="14"><use href="#i-plus"/></svg> Ajouter
+                    </button>
+                </span>
+            </div>
+
+            <div class="filtres-ligne">
+                <select id="c-serie"><option value="">Toutes les séries</option></select>
+                <select id="c-diff">
+                    <option value="">Toutes difficultés</option>
+                    <option value="veryeasy">Very Easy</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="veryhard">Very Hard</option>
+                    <option value="extreme">Extreme</option>
+                </select>
+                <select id="c-rep">
+                    <option value="">Réponse : toutes</option>
+                    <option value="vrai">Vrai</option>
+                    <option value="faux">Faux</option>
+                </select>
+                <!-- Même piège que la recherche du quiz : `readonly` au départ,
+                     levé au premier clic, sinon Chrome y garnit une adresse
+                     e-mail et la liste revient vide. -->
+                <input type="search" id="c-rech" name="recherche-vf"
+                       placeholder="Rechercher un énoncé, une série…"
+                       autocomplete="off" spellcheck="false" readonly
+                       data-1p-ignore data-lpignore="true" data-form-type="other">
+            </div>
+
+            <div class="defile" id="c-liste">
+                <div class="etat">Lecture…</div>
+            </div>
+        </div>
+    </section>
+
     <!-- ── Vue : suggestions ────────────────────────────────────── -->
     <section class="vue vue-pleine" data-vue="suggestions">
         <div class="carte">
@@ -1232,6 +1347,80 @@ body:not(.entre) { overflow: hidden; }
                 <span class="mot" id="q-mot"></span>
                 <button type="button" class="bouton" id="q-annuler">Fermer</button>
                 <button type="submit" class="bouton" id="q-valider"
+                        style="background:var(--accent);border-color:transparent;color:#fff">Ajouter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── LA MODALE DES VRAI / FAUX ────────────────────────────────────
+     Une seule pour ajouter comme pour modifier, comme celle du quiz.
+     ⚠️ La réponse est une BASCULE à deux pavés, pas une case à cocher :
+     une case dit « coché / pas coché », et il faut savoir ce que « coché »
+     voulait dire. Deux pavés disent VRAI et FAUX, et l'un des deux est
+     allumé. C'est la seule donnée de ce formulaire qu'on ne peut pas
+     relire sur l'énoncé, donc la seule qu'il faut rendre évidente. -->
+<div class="voile" id="voile-c">
+    <div class="modale">
+        <h3 id="c-titre">Ajouter un vrai / faux</h3>
+        <form id="c-form">
+            <input type="hidden" id="c-id">
+            <div class="modale-corps">
+                <div class="champ">
+                    <label>Énoncé <b>*</b></label>
+                    <!-- Affirmatif, jamais interrogatif : le joueur choisit
+                         un bord, il ne répond pas à une question. -->
+                    <textarea id="c-texte" required
+                        placeholder="Ex : Luffy a mangé le Gomu Gomu no Mi"></textarea>
+                </div>
+
+                <div class="champ" style="margin-top:.8rem">
+                    <label>Réponse <b>*</b></label>
+                    <div class="vf-bascule">
+                        <button type="button" class="vf-opt vrai on" data-rep="1">VRAI</button>
+                        <button type="button" class="vf-opt faux" data-rep="0">FAUX</button>
+                    </div>
+                </div>
+
+                <div class="form-lignes" style="margin-top:.8rem">
+                    <div class="champ">
+                        <label>Série <b>*</b></label>
+                        <input type="text" id="c-serie-in" required autocomplete="off"
+                               list="c-series-connues" placeholder="Ex : One Piece">
+                        <datalist id="c-series-connues"></datalist>
+                    </div>
+                    <div class="champ">
+                        <label>Difficulté</label>
+                        <select id="c-diff-in">
+                            <option value="veryeasy">Very Easy</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="veryhard">Very Hard</option>
+                            <option value="extreme">Extreme</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Les deux facultatifs. Repliés derrière un dépliant : ils
+                     servent rarement, et les laisser ouverts donnait un
+                     formulaire deux fois plus long qu'il n'a besoin d'être. -->
+                <details class="c-plus">
+                    <summary>Le reste, si besoin</summary>
+                    <div class="champ" style="margin-top:.7rem">
+                        <label>Lien de preuve</label>
+                        <input type="url" id="c-preuve" autocomplete="off" placeholder="https://…">
+                    </div>
+                    <label class="c-case">
+                        <input type="checkbox" id="c-spoil">
+                        <span>C'est un spoil</span>
+                    </label>
+                </details>
+            </div>
+            <div class="modale-actions" style="margin-top:1.1rem">
+                <span class="mot" id="c-mot"></span>
+                <button type="button" class="bouton" id="c-annuler">Fermer</button>
+                <button type="submit" class="bouton" id="c-valider"
                         style="background:var(--accent);border-color:transparent;color:#fff">Ajouter</button>
             </div>
         </form>
@@ -1413,6 +1602,7 @@ function pousser(sel, cle, prop) {
 const TITRES = {
     ensemble: ["Vue d'ensemble", 'Ce qui se joue, et ce qui a été joué'],
     questions: ['Questions', 'La banque du mode Classique'],
+    choice: ['Vrai / Faux', 'La banque du mode Choice'],
     suggestions: ['Suggestions', 'Les personnages proposés depuis BombAnime'],
 };
 // Chaque section ne va chercher ses données qu'à sa première ouverture :
@@ -1434,6 +1624,11 @@ document.querySelectorAll('.onglet').forEach(o => {
             // « aucune question ne correspond » sans raison visible.
             $('q-rech').value = '';
             lireQuestions();
+        }
+        if (v === 'choice' && !CHARGE.choice) {
+            CHARGE.choice = true;
+            $('c-rech').value = '';   // même filet que la recherche du quiz
+            lireChoice();
         }
         if (v === 'suggestions' && !CHARGE.suggestions) { CHARGE.suggestions = true; lireSuggestions(); }
     };
@@ -2147,10 +2342,25 @@ async function basculerSpoil(id, bouton) {
 }
 
 // ── La suppression, avec son second mot de passe ────────────────────
-function demanderSuppression(id) {
-    const q = QUESTIONS.find(x => x.id === id);
+// ⚠️ La MÊME modale sert les deux banques — le quiz et les vrai/faux.
+// `CIBLE_TYPE` dit laquelle, et c'est tout ce qui change : la route
+// appelée et la liste qu'on rafraîchit. Une seconde modale aurait
+// divergé au premier détail (le tremblement du refus, l'oubli du code
+// refusé, le rappel du code déjà saisi — trois pièges déjà payés ici).
+let CIBLE_TYPE = 'question';
+const BANQUES = {
+    question: { route: '/api/delete-question', defaut: 'cette question',
+                retirer: (id) => { QUESTIONS = QUESTIONS.filter(q => q.id !== id); filtrerQuestions(); } },
+    choice: { route: '/api/delete-choice-question', defaut: 'ce vrai/faux',
+              retirer: (id) => { CHOIX = CHOIX.filter(q => q.id !== id); filtrerChoice(); } },
+};
+
+function demanderSuppression(id, type = 'question') {
+    CIBLE_TYPE = type;
+    const liste = type === 'choice' ? CHOIX : QUESTIONS;
+    const q = liste.find(x => x.id === id);
     CIBLE_SUP = id;
-    $('sup-cible').textContent = q ? q.question : 'cette question';
+    $('sup-cible').textContent = q ? q.question : BANQUES[type].defaut;
     // Le code déjà saisi est rappelé : on ne le retape pas à chaque ligne
     // d'un ménage, et la modale reste le geste délibéré qui confirme.
     $('sup-code').value = CODE_SUP;
@@ -2184,7 +2394,7 @@ $('sup-go').onclick = async () => {
     try {
         // ⚠️ false : ici un 401 parle du mot de passe de SUPPRESSION, pas du
         // code du panneau. Laisser appel() le traiter déconnectait de tout.
-        const r = await appel('/api/delete-question', {
+        const r = await appel(BANQUES[CIBLE_TYPE].route, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ deleteCode: CODE_SUP, id: CIBLE_SUP }),
@@ -2195,13 +2405,195 @@ $('sup-go').onclick = async () => {
         // échoueraient sans qu'on comprenne pourquoi.
         if (r.status === 401) { CODE_SUP = ''; throw new Error(d.error || 'Mot de passe refusé.'); }
         if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
-        QUESTIONS = QUESTIONS.filter(q => q.id !== CIBLE_SUP);
+        // ⚠️ Retirer AVANT de fermer : `fermerSuppression()` remet
+        // `CIBLE_SUP` à null, et la ligne survivait à sa suppression.
+        BANQUES[CIBLE_TYPE].retirer(CIBLE_SUP);
         fermerSuppression();
-        filtrerQuestions();
     } catch (e) {
         refusSuppression();
         b.disabled = false;
         b.textContent = 'Supprimer';
+    }
+};
+
+// ════════════════════════════════════════════
+// ✅❌ LES VRAI / FAUX — la banque du mode Choice
+// ════════════════════════════════════════════
+// Tout est lu d'un coup puis filtré DANS LA PAGE, comme la banque du quiz :
+// une requête par frappe dans la recherche aurait fait clignoter la liste
+// et chargé Supabase pour rien.
+let CHOIX = [];
+let C_REP_SAISIE = true;   // la bascule VRAI/FAUX de la modale
+
+async function lireChoice() {
+    const zone = $('c-liste');
+    zone.innerHTML = '<div class="etat">Lecture…</div>';
+    try {
+        const r = await appel('/api/choice-questions');
+        if (!r.ok) throw new Error('Erreur ' + r.status);
+        const d = await r.json();
+        CHOIX = d.questions || [];
+
+        // La table s'installe à la main (docs/choice-questions.sql). Tant
+        // qu'elle n'existe pas, on le DIT — une liste vide sans explication
+        // ressemble à une panne, et on cherche du côté du code.
+        if (d.tableAbsente) {
+            $('compte-choice').textContent = '';
+            $('c-note').textContent = '';
+            zone.innerHTML = '<div class="etat">La table n’existe pas encore.<br>'
+                + 'Lance <b>docs/choice-questions.sql</b> dans Supabase, puis reviens ici.</div>';
+            return;
+        }
+
+        // Les séries connues nourrissent le filtre ET le champ de saisie :
+        // on retape « One Piece » à la main une fois sur deux, sinon.
+        const series = [...new Set(CHOIX.map(q => q.serie).filter(Boolean))].sort();
+        $('c-serie').innerHTML = '<option value="">Toutes les séries</option>'
+            + series.map(s => '<option>' + ech(s) + '</option>').join('');
+        $('c-series-connues').innerHTML = series.map(s => '<option>' + ech(s) + '</option>').join('');
+
+        filtrerChoice();
+    } catch (e) {
+        zone.innerHTML = '<div class="etat">Lecture impossible : ' + ech(e.message) + '</div>';
+    }
+}
+
+function filtrerChoice() {
+    const serie = $('c-serie').value;
+    const diff = $('c-diff').value;
+    const rep = $('c-rep').value;
+    const cherche = $('c-rech').value.trim().toLowerCase();
+
+    const vues = CHOIX.filter(q => {
+        if (serie && q.serie !== serie) return false;
+        if (diff && q.difficulty !== diff) return false;
+        if (rep === 'vrai' && q.reponse !== true) return false;
+        if (rep === 'faux' && q.reponse !== false) return false;
+        if (cherche && !((q.question || '') + ' ' + (q.serie || '')).toLowerCase().includes(cherche)) return false;
+        return true;
+    });
+
+    const vrais = CHOIX.filter(q => q.reponse === true).length;
+    $('compte-choice').textContent = CHOIX.length || '';
+    // L'ÉQUILIBRE, et c'est le chiffre qui compte vraiment : une banque à
+    // 70 % de « vrai » s'apprend en trois parties — on va à gauche les yeux
+    // fermés. Il est affiché en permanence pour qu'on le voie dériver.
+    $('c-note').textContent = vues.length === CHOIX.length
+        ? CHOIX.length + ' · ' + vrais + ' vrai / ' + (CHOIX.length - vrais) + ' faux'
+        : vues.length + ' / ' + CHOIX.length;
+
+    const zone = $('c-liste');
+    if (!vues.length) {
+        zone.innerHTML = '<div class="etat">'
+            + (CHOIX.length ? 'Aucun énoncé ne correspond.' : 'La banque est vide — ajoute le premier.')
+            + '</div>';
+        return;
+    }
+    zone.innerHTML = vues.map(q =>
+        '<div class="vf" data-rep="' + (q.reponse ? '1' : '0') + '">'
+        + '<div class="vf-txt">'
+        + '<div class="vf-enonce">' + ech(q.question) + '</div>'
+        + '<div class="vf-meta">'
+        + '<span class="vf-rep">' + (q.reponse ? 'VRAI' : 'FAUX') + '</span>'
+        + '<span class="etiq">' + ech(q.serie) + '</span>'
+        + '<span class="dif" data-d="' + ech(q.difficulty) + '">'
+        + ech(DIFFS[q.difficulty] || q.difficulty) + '</span>'
+        + (q.is_spoil ? '<span class="dif" data-d="extreme">SPOIL</span>' : '')
+        + (q.proof_url ? '<a class="etiq" target="_blank" rel="noopener" href="'
+            + ech(q.proof_url) + '">preuve</a>' : '')
+        + '</div></div>'
+        + '<span class="vf-actions">'
+        + '<button class="mini" data-c-mod="' + q.id + '">Modifier</button>'
+        + '<button class="mini danger" data-c-sup="' + q.id + '">Supprimer</button>'
+        + '</span></div>').join('');
+}
+
+['c-serie', 'c-diff', 'c-rep'].forEach(id => { $(id).onchange = filtrerChoice; });
+$('c-rech').oninput = filtrerChoice;
+// Le `readonly` ne tombe qu'au premier contact — voir la recherche du quiz.
+$('c-rech').onfocus = () => $('c-rech').removeAttribute('readonly');
+
+$('c-liste').onclick = (e) => {
+    const mod = e.target.closest('[data-c-mod]');
+    if (mod) return ouvrirChoice(Number(mod.dataset.cMod));
+    const sup = e.target.closest('[data-c-sup]');
+    if (sup) return demanderSuppression(Number(sup.dataset.cSup), 'choice');
+};
+
+// ── La modale ───────────────────────────────────────────────────────
+function poserBascule(vrai) {
+    C_REP_SAISIE = vrai;
+    document.querySelectorAll('#voile-c .vf-opt').forEach(b =>
+        b.classList.toggle('on', (b.dataset.rep === '1') === vrai));
+}
+document.querySelectorAll('#voile-c .vf-opt').forEach(b => {
+    b.onclick = () => poserBascule(b.dataset.rep === '1');
+});
+
+function ouvrirChoice(id) {
+    const q = id ? CHOIX.find(x => x.id === id) : null;
+    $('c-id').value = q ? q.id : '';
+    $('c-titre').textContent = q ? 'Modifier un vrai / faux' : 'Ajouter un vrai / faux';
+    $('c-valider').textContent = q ? 'Enregistrer' : 'Ajouter';
+    $('c-texte').value = q ? q.question : '';
+    // ⚠️ Défaut à VRAI pour une création, mais la valeur EXACTE pour une
+    // modification : un `||` aurait rendu « faux » en « vrai » à chaque
+    // réouverture, et retourné l'énoncé sans rien dire.
+    poserBascule(q ? q.reponse === true : true);
+    $('c-serie-in').value = q ? (q.serie || '') : $('c-serie').value;
+    $('c-diff-in').value = q ? (q.difficulty || 'medium') : ($('c-diff').value || 'medium');
+    $('c-preuve').value = q ? (q.proof_url || '') : '';
+    $('c-spoil').checked = q ? q.is_spoil === true : false;
+    $('c-mot').textContent = '';
+    $('voile-c').classList.add('ouvert');
+    setTimeout(() => $('c-texte').focus(), 30);
+}
+
+function fermerChoice() { $('voile-c').classList.remove('ouvert'); }
+$('c-ajouter').onclick = () => ouvrirChoice(null);
+$('c-annuler').onclick = fermerChoice;
+$('voile-c').onclick = e => { if (e.target === $('voile-c')) fermerChoice(); };
+
+$('c-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = $('c-id').value;
+    const corps = {
+        question: $('c-texte').value,
+        reponse: C_REP_SAISIE,
+        serie: $('c-serie-in').value,
+        difficulty: $('c-diff-in').value,
+        proof_url: $('c-preuve').value,
+        is_spoil: $('c-spoil').checked,
+    };
+    if (id) corps.id = Number(id);
+
+    const b = $('c-valider');
+    b.disabled = true;
+    $('c-mot').textContent = 'Envoi…';
+    try {
+        const r = await appel(id ? '/api/update-choice-question' : '/api/add-choice-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
+
+        // On relit la banque entière : l'identifiant d'un ajout vient de la
+        // base, et le recomposer dans la page le ferait diverger au premier
+        // ajout fait depuis un autre onglet.
+        fermerChoice();
+        await lireChoice();
+
+        // ⚠️ On rouvre la modale après un AJOUT, vidée : on en saisit trente
+        // d'affilée, et rouvrir à la main entre chacune use plus que ça n'aide.
+        if (!id) ouvrirChoice(null);
+    } catch (err) {
+        $('c-mot').textContent = err.message;
+    } finally {
+        b.disabled = false;
+        if (!$('c-mot').textContent.startsWith('Envoi')) { /* le message reste */ }
+        else $('c-mot').textContent = '';
     }
 };
 
@@ -2379,6 +2771,7 @@ $('b-relire').onclick = async () => {
             lireStats(),
             lireDirect(),
             CHARGE.questions ? lireQuestions() : null,
+            CHARGE.choice ? lireChoice() : null,
             CHARGE.suggestions ? lireSuggestions() : null,
         ].filter(Boolean));
     } catch (e) { /* chaque lecture affiche déjà son propre échec */ }
