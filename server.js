@@ -385,6 +385,7 @@ const AVATARS_AUTORISES = new Set([
     'gojo.webp',
     // Reborn
     'tsuna.webp',
+    'fran.webp',
     // JoJo
     'giorno.webp',
     'dio.webp',
