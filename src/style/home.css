@@ -13784,17 +13784,20 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    un avatar — ou juste pour poser sa souris — comptait comme un choix
    DÉFINITIF, qu'on ne peut pas reprendre. Il faut aller chercher son camp
    au bord : le choix redevient un geste au lieu d'un accident.
-   ⚠️ MAIS UNE ZONE QU'ON NE VOIT PAS EST UNE ZONE QU'ON NE TROUVE PAS.
-   À 10 % et révélée au seul survol, elle était introuvable : on clique
-   là où l'on cliquait avant — sur le grand mot, au quart de l'écran —
-   et rien ne se passe. Elle fait donc 15 % (plancher 90 px, car 10 %
-   d'un téléphone de 390 font moins qu'un pouce) et elle se MONTRE EN
-   PERMANENCE, discrètement, avant même qu'on l'ait survolée. */
+   ⚠️ MAIS C'EST LE MILIEU QUI EST MORT, PAS LE CAMP. Deux bandes de
+   10 % puis 15 % collées aux bords ont été essayées : le clic marchait —
+   mesuré — mais personne ne le trouvait, parce qu'on clique sur LE GRAND
+   MOT, à 22 % de l'écran, et qu'il tombait hors de la bande. Le mot EST
+   le camp, pour l'œil.
+   La zone couvre donc tout son côté et s'arrête à 12 % du centre : il
+   reste une bande morte de 24 % au milieu, soit deux fois et demie la
+   largeur du tas des indécis. Le milieu ne compte pas, le camp compte
+   partout ailleurs. */
 .chx-zone {
     position: absolute;
     top: 0; bottom: 0;
     z-index: 4;
-    width: max(15%, 90px);
+    width: 38%;
     border: 0;
     padding: 0;
     background: none;
@@ -13811,8 +13814,8 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     transition: opacity 0.25s ease;
     pointer-events: none;
 }
-.chx-zone.g::after { background: linear-gradient(90deg, rgba(var(--vrai-rgb), 0.22), transparent); }
-.chx-zone.d::after { background: linear-gradient(270deg, rgba(var(--faux-rgb), 0.22), transparent); }
+.chx-zone.g::after { background: linear-gradient(90deg, rgba(var(--vrai-rgb), 0.14), transparent 60%); }
+.chx-zone.d::after { background: linear-gradient(270deg, rgba(var(--faux-rgb), 0.14), transparent 60%); }
 .chx-zone:not(:disabled):hover::after { opacity: 1; }
 .chx-zone:disabled::after { opacity: 0; }
 .chx-zone.g { left: 0; }
@@ -14008,8 +14011,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .chx-enonce small {
     display: block;
     /* L'étiquette RESPIRE : collée à l'énoncé, on lisait les deux d'un
-       bloc et la série devenait le début de la phrase. */
-    margin-bottom: 0.55rem;
+       bloc et la série devenait le début de la phrase. Elles sont toutes
+       deux en capitales maintenant, donc il en faut DAVANTAGE — deux
+       lignes de capitales se collent l'une à l'autre sans les hampes qui
+       les séparaient. */
+    margin-bottom: 1rem;
     font-size: 0.62rem;
     font-weight: 500;
     letter-spacing: 0.22em;
@@ -14025,14 +14031,19 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    /prototypes/choice-question. */
 .chx-enonce p {
     font-family: 'Space Grotesk', 'Poppins', sans-serif;
-    font-size: clamp(1rem, 2vw, 1.32rem);
+    /* ⚠️ EN CAPITALES, et les trois corrections qui vont avec. Une
+       capitale n'est pas une bas-de-casse en plus grand : elle perd les
+       hampes et les jambages, ces montants et descentes qui donnent sa
+       silhouette à un mot. D'où, dans l'ordre : INTERLETTRER (serrées,
+       les capitales se collent — on passe de -0,015 à +0,045 em),
+       DESCENDRE EN TAILLE (une capitale paraît plus grosse à corps
+       égal), et AÉRER L'INTERLIGNE (sans jambages, deux lignes se
+       touchent). */
+    text-transform: uppercase;
+    font-size: clamp(0.92rem, 1.6vw, 1.12rem);
     font-weight: 400;
-    letter-spacing: -0.015em;
-    /* ⚠️ 1,45 et non 1,32 : les JAMBAGES — le p de « pensées », le g, le
-       y — descendent sous la ligne, et un interligne trop serré les
-       faisait passer pour coupés. Le `padding-bottom` finit le travail
-       sur la dernière ligne, que l'interligne ne protège pas. */
-    line-height: 1.45;
+    letter-spacing: 0.045em;
+    line-height: 1.5;
     padding-bottom: 0.2rem;
     color: #fff;
     text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
