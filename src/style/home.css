@@ -13901,35 +13901,43 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     position: absolute;
     top: 1.2rem; left: 50%;
     z-index: 5;
-    /* Plus ÉTALÉ que haut : un énoncé de deux lignes dans une boîte étroite
-       se lit moins vite qu'une seule ligne large, et l'arène a toute la
-       largeur de l'écran à offrir. Le plafond en rem garde la ligne sous
-       les 90 caractères — au-delà l'œil perd son retour. */
-    width: min(46rem, 92%);
-    padding: 0.85rem 1.6rem;
+    /* ⚠️ SANS CADRE. La boîte opaque posait un rectangle de plus sur un
+       écran qui n'en a aucun ; le texte se tient tout seul, décollé par
+       une ombre douce. Plus ÉTALÉ que haut : une phrase sur une ligne se
+       lit plus vite qu'un pavé de deux, et l'arène a toute la largeur à
+       offrir. Le plafond en rem garde la ligne sous 90 caractères — au-delà
+       l'œil perd son retour. */
+    width: min(50rem, 92%);
     text-align: center;
-    background: rgba(8, 8, 12, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 0.7rem;
     transform: translateX(-50%);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
     pointer-events: none;
 }
 .chx-enonce small {
     display: block;
-    margin-bottom: 0.25rem;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
+    /* L'étiquette RESPIRE : collée à l'énoncé, on lisait les deux d'un
+       bloc et la série devenait le début de la phrase. */
+    margin-bottom: 0.55rem;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.34);
+    text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9);
 }
+/* ⚠️ Space Grotesk 400, pas Poppins 600 : la graisse de Poppins est celle
+   d'un BOUTON, pas d'un énoncé — elle criait là où il faut poser. Une
+   grotesque plus fine, plus grande, au crénage légèrement serré, donne la
+   tenue d'un titre de presse. Elle est déjà chargée par le jeu : pas une
+   requête de plus. Les autres pistes se comparent sur
+   /prototypes/choice-question. */
 .chx-enonce p {
-    font-size: clamp(0.95rem, 2.2vw, 1.15rem);
-    font-weight: 600;
-    line-height: 1.4;
+    font-family: 'Space Grotesk', 'Poppins', sans-serif;
+    font-size: clamp(1.1rem, 2.3vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.32;
     color: #fff;
+    text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
 }
 
 /* ── Les trois tas ─────────────────────────────────────────────────
@@ -13966,14 +13974,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     cursor: pointer;
     transition: transform 0.72s cubic-bezier(0.22, 1.2, 0.3, 1);
     will-change: transform;
-    animation: chx-pose 0.45s cubic-bezier(0.2, 1.6, 0.35, 1) both;
 }
-/* L'apparition : ils grossissent sur place au lieu de surgir. ⚠️ Pas de
-   `transform` ici — il est écrit en ligne par le placement, et une
-   animation qui le touche l'écraserait. */
+/* ⚠️ L'apparition s'anime sur l'IMAGE, pas sur `.chx-j` : le `transform`
+   du conteneur est écrit en ligne par le placement, et une animation qui
+   le touche l'écraserait — les avatars repartiraient au coin de l'écran.
+   Le retard est posé par le placement, un cran par joueur : ils tombent
+   les uns après les autres, et c'est instantané avec le début du jeu —
+   pas un écran d'intro qui retarde la première manche. */
+.chx-j img { animation: chx-pose 0.42s cubic-bezier(0.2, 1.7, 0.35, 1) both; animation-delay: var(--retard, 0ms); }
 @keyframes chx-pose {
-    from { opacity: 0; filter: blur(0.3rem); }
-    to   { opacity: 1; filter: blur(0); }
+    0%   { opacity: 0; transform: scale(0.3); filter: blur(0.25rem); }
+    70%  { opacity: 1; transform: scale(1.1); filter: blur(0); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 /* Le pseudo, au survol seulement : cinquante étiquettes affichées en

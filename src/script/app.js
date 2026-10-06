@@ -5531,6 +5531,13 @@ createApp({
                         if (premierePose) {
                             el.style.transition = 'none';
                             el.dataset.pose = '1';
+                            // L'apparition s'échelonne : les avatars tombent
+                            // les uns après les autres plutôt que d'un bloc.
+                            // 22 ms, et plafonné à un demi-millier — à
+                            // cinquante joueurs, un escalier trop long ferait
+                            // attendre le dernier bien après la question.
+                            el.style.setProperty('--retard',
+                                Math.min(500, i * 22) + 'ms');
                         }
                         el.style.transform = 'translate(' + (x - demi) + 'px,' + (y - demiH) + 'px)';
                         // Plus bas à l'écran = devant. C'est la profondeur
@@ -8220,20 +8227,39 @@ createApp({
 
             this.socket.on('choice-revelation', (data) => {
                 this.ch.revelation = data;
-                // Les camps de tout le monde arrivent ici, y compris quand le
-                // salon les cachait : la manche est jouée, il n'y a plus rien
-                // à protéger. C'est aussi le moment où ceux qui n'avaient pas
-                // bougé rejoignent visuellement leur bord.
+                // Les camps et les vies tout de suite. ⚠️ Mais PAS `vivant` :
+                // voir plus bas, c'est ce qui tuait le shatter.
                 (data.joueurs || []).forEach(d => {
                     const j = this.ch.joueurs.find(x => x.playerId === d.playerId);
-                    if (j) { j.camp = d.camp; j.vies = d.vies; j.vivant = d.vivant; }
+                    if (j) { j.camp = d.camp; j.vies = d.vies; }
                 });
-                this.replacerChoice();
-                // La sanction arrive APRÈS que les tas se sont rangés : briser
-                // un portrait en plein vol ne se lit pas.
+
+                // ⚠️ ON NE REPLACE PAS ICI quand les placements étaient déjà
+                // visibles. Le tas du milieu se vide à la révélation, donc la
+                // place libre change, donc les deux camps GLISSENT de quinze
+                // pixels — mesuré — juste au moment où l'on regarde la
+                // fissure. Rien n'a pourtant bougé pour le joueur. La manche
+                // suivante replacera tout le monde.
+                // Le seul cas où il FAUT replacer : « Mouvement » éteint, où
+                // tout le monde était resté au milieu et se révèle enfin.
+                const cache = !this.ch.voirLesAutres;
+                if (cache) this.replacerChoice();
+
+                // ⚠️ LE SHATTER LIT LA POSITION DES AVATARS DANS LE DOM. En
+                // marquant les éliminés tout de suite, Vue les retirait de la
+                // liste AVANT que l'animation ne cherche leur place : elle ne
+                // trouvait plus rien et ne jouait jamais. Les suites ne
+                // pouvaient pas le voir — elles n'ont pas de DOM. On brise
+                // donc d'abord, on retire ensuite.
                 this.ch._introT.push(setTimeout(() => {
                     this.eclaterChoice(data.perdants || []);
-                }, 620));
+                    this.ch._introT.push(setTimeout(() => {
+                        (data.joueurs || []).forEach(d => {
+                            const j = this.ch.joueurs.find(x => x.playerId === d.playerId);
+                            if (j) j.vivant = d.vivant;
+                        });
+                    }, 950));
+                }, cache ? 820 : 260));
             });
 
             this.socket.on('choice-depart', (data) => {

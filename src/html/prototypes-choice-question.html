@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Choice — le bandeau de question</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════════════════════════════
    CHOICE — cinq façons de poser l'énoncé en haut de l'arène
@@ -129,93 +129,100 @@ h1 span { color: var(--or); }
 }
 .bandeau p { color: #fff; font-family: 'Poppins', sans-serif; font-weight: 600; }
 
-/* 1 — LA CARTE. Celle qui est en place. Un cadre plein, posé sur le
-   fond : il se détache partout, mais il pose une BOÎTE de plus sur un
-   écran qui n'en a aucune. */
-.p1 .bandeau {
-    top: 1.1rem; width: min(46rem, 92%);
-    padding: 0.85rem 1.6rem;
-    background: rgba(8, 8, 12, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 0.7rem;
-    backdrop-filter: blur(6px);
+/* ── La mise en page est TRANCHÉE : sans cadre ─────────────────────
+   Ce qui se joue ici n'est plus que la TYPOGRAPHIE. Communes aux cinq :
+   pas de boîte, le texte posé sur le fond, et une ombre douce qui le
+   décolle sans le tamponner. */
+.bandeau { top: 1.5rem; width: min(50rem, 92%); }
+.bandeau small {
+    /* ⚠️ L'ÉTIQUETTE RESPIRE. Collée à l'énoncé, on lit les deux d'un
+       bloc et la série devient le début de la phrase. Un demi-cadratin
+       suffit à les séparer sans en faire deux éléments distincts. */
+    margin-bottom: 0.55rem;
+    text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9);
 }
-.p1 .bandeau p { font-size: 1.1rem; line-height: 1.4; }
 
-/* 2 — LE BANDEAU PLEINE LARGEUR. Il court d'un bord à l'autre et
-   coupe l'écran en deux : l'arène commence SOUS lui. Le plus lisible
-   des cinq, et le plus lourd — il mange 5 rem de haut en permanence. */
-.p2 .bandeau {
-    top: 0; left: 0; width: 100%; transform: none;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(180deg, rgba(6, 6, 10, 0.96), rgba(6, 6, 10, 0.75));
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-.p2 .bandeau p { font-size: 1.15rem; line-height: 1.35; }
-
-/* 3 — SANS CADRE. Le texte seul, posé sur le fond, avec une ombre qui
-   le décolle. Rien ne s'ajoute à l'écran — mais sur le dégradé clair
-   d'un bord, l'ombre travaille beaucoup. */
-.p3 .bandeau { top: 1.4rem; width: min(50rem, 92%); }
-.p3 .bandeau p {
+/* A — POPPINS 600, la nôtre aujourd'hui. Géométrique et épaisse : très
+   lisible, mais c'est la graisse d'un bouton, pas celle d'un énoncé. */
+.pA .bandeau p {
+    font-family: 'Poppins', sans-serif; font-weight: 600;
     font-size: 1.3rem; line-height: 1.35;
     text-shadow: 0 0.15rem 1.4rem rgba(0, 0, 0, 0.95), 0 0 2.5rem rgba(0, 0, 0, 0.8);
 }
-.p3 .bandeau small { margin-bottom: 0.3rem; text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9); }
 
-/* 4 — LE TRAIT. Pas de cadre, mais un filet d'or SOUS la phrase : il
-   l'ancre sans l'enfermer, et c'est le seul endroit de l'arène où l'or
-   a encore sa place. ⚠️ Le filet est NEUTRE, jamais bleu ni rouge. */
-.p4 .bandeau { top: 1.5rem; width: min(50rem, 92%); padding-bottom: 0.7rem; }
-.p4 .bandeau p { font-size: 1.28rem; line-height: 1.35; text-shadow: 0 0.15rem 1.2rem rgba(0, 0, 0, 0.9); }
-.p4 .bandeau::after {
-    content: ''; position: absolute; left: 50%; bottom: 0;
-    width: 4.5rem; height: 0.14rem; border-radius: 99px;
-    background: linear-gradient(90deg, transparent, var(--or), transparent);
-    transform: translateX(-50%);
+/* B — SPACE GROTESK 400. Une grotesque moderne, plus FINE et plus large
+   que Poppins à taille égale. Le crénage légèrement serré donne la
+   tenue d'un titre de presse. Déjà chargée par le jeu. */
+.pB .bandeau p {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 400;
+    font-size: 1.5rem; line-height: 1.32; letter-spacing: -0.015em;
+    text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
 }
+.pB .bandeau small { font-weight: 500; letter-spacing: 0.22em; color: rgba(255, 255, 255, 0.34); }
 
-/* 5 — LA SÉRIE À PART. L'anime devient une pastille posée AU-DESSUS du
-   cadre, à cheval : elle cesse d'être une ligne de plus à lire dans le
-   bloc. L'énoncé gagne toute la place. */
-.p5 .bandeau {
-    top: 1.9rem; width: min(48rem, 92%);
-    padding: 1rem 1.6rem 0.85rem;
-    background: rgba(8, 8, 12, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 0.7rem;
+/* C — SPACE GROTESK 300 SUR UN VOILE. Le même texte, encore plus fin,
+   mais posé sur un voile FLOU SANS BORD : le fond se brouille derrière
+   la phrase, elle gagne son contraste sans qu'aucune boîte apparaisse.
+   Le masque radial efface les bords du voile — c'est lui qui fait toute
+   la différence entre « un voile » et « une boîte transparente ». */
+.pC .bandeau { padding: 0.9rem 2.5rem 0.7rem; }
+.pC .bandeau::before {
+    content: ''; position: absolute; inset: -0.5rem -1rem;
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+    background: rgba(6, 6, 10, 0.35);
+    -webkit-mask-image: radial-gradient(70% 70% at 50% 50%, #000 45%, transparent 100%);
+    mask-image: radial-gradient(70% 70% at 50% 50%, #000 45%, transparent 100%);
+    pointer-events: none;
 }
-.p5 .bandeau small {
-    position: absolute; top: 0; left: 50%;
-    padding: 0.2rem 0.7rem;
-    background: #12131a;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 99px;
-    transform: translate(-50%, -50%);
+.pC .bandeau small, .pC .bandeau p { position: relative; }
+.pC .bandeau p {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 300;
+    font-size: 1.58rem; line-height: 1.3; letter-spacing: -0.01em;
+    text-shadow: 0 0.1rem 1rem rgba(0, 0, 0, 0.7);
 }
-.p5 .bandeau p { font-size: 1.18rem; line-height: 1.38; }
+.pC .bandeau small { font-weight: 500; letter-spacing: 0.24em; color: rgba(255, 255, 255, 0.34); }
+
+/* D — CORMORANT GARAMOND 400. Une display serif à fort contraste : la
+   plus « luxe » des cinq, sans discussion. ⚠️ Et la plus risquée — ses
+   déliés disparaissent sur un stream réencodé, et l'énoncé doit se lire
+   en huit secondes. À juger en plissant les yeux. */
+.pD .bandeau p {
+    font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 400;
+    font-size: 1.95rem; line-height: 1.22; letter-spacing: 0.005em;
+    text-shadow: 0 0.12rem 1.4rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
+}
+.pD .bandeau small { font-weight: 500; letter-spacing: 0.26em; color: rgba(255, 255, 255, 0.32); }
+
+/* E — SPACE GROTESK 400, LARGEMENT INTERLETTRÉ. Même police que B, mais
+   la phrase s'étire : c'est le geste « premium » le plus courant, et le
+   plus coûteux — chaque espace en plus est un aller-retour de l'œil. */
+.pE .bandeau p {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 400;
+    font-size: 1.38rem; line-height: 1.45; letter-spacing: 0.055em;
+    text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
+}
+.pE .bandeau small { font-weight: 500; letter-spacing: 0.24em; color: rgba(255, 255, 255, 0.34); }
 
 @media (max-width: 760px) {
     .scene { height: 13rem; }
     .mot { font-size: 2.6rem; }
-    .p1 .bandeau p, .p2 .bandeau p, .p5 .bandeau p { font-size: 0.98rem; }
-    .p3 .bandeau p, .p4 .bandeau p { font-size: 1.05rem; }
+    .pA .bandeau p, .pB .bandeau p, .pC .bandeau p, .pE .bandeau p { font-size: 1.05rem; }
+    .pD .bandeau p { font-size: 1.35rem; }
 }
 </style>
 </head>
 <body>
 
-<h1>Choice — <span>le bandeau de question</span></h1>
+<h1>Choice — <span>la typo de l'énoncé</span></h1>
 <p class="sous">
-    Cinq façons de poser l'énoncé en haut de l'arène, sur le <b>vrai fond</b> des deux bords —
-    c'est dessus qu'il doit se détacher, pas sur du noir. Le tas des indécis est dessiné dessous :
-    un bandeau trop haut le pousse sous la jauge.
+    La mise en page est tranchée : <b>sans cadre</b>. Ne reste que la TYPOGRAPHIE — cinq
+    traitements du même énoncé, sur le <b>vrai fond</b> des deux bords. L étiquette de série
+    respire désormais un demi-cadratin au-dessus de la phrase, dans les cinq.
 </p>
 <div class="note">
-    ⚠️ <b>Aucune des deux couleurs sur l'énoncé</b>, dans aucune des cinq pistes. Une seule teinte
-    posée dessus suggérerait une réponse, et une couleur suffit à faire pencher la moitié de la
-    salle. Le texte est blanc, le cadre neutre — l'or n'apparaît que sur le filet de la piste 4,
-    qui ne dit rien d'un camp.
+    ⚠️ <b>Aucune des deux couleurs sur l énoncé</b>, dans aucune des cinq : une seule teinte posée
+    dessus suggérerait une réponse. Et le vrai juge n est pas cet écran mais un <b>stream
+    réencodé</b> — plisse les yeux devant chaque piste, c est ce que verra le viewer.
 </div>
 
 <div class="commandes">
@@ -233,24 +240,24 @@ h1 span { color: var(--or); }
     </div>
 </div>
 
-<div class="piste p1">
-    <h2>1 · La carte <em>— celle qui est en place</em></h2>
+<div class="piste pA">
+    <h2>A · Poppins 600 <em>— la nôtre aujourd'hui, la graisse d'un bouton</em></h2>
     <div class="scene"></div>
 </div>
-<div class="piste p2">
-    <h2>2 · Le bandeau pleine largeur <em>— le plus lisible, le plus lourd</em></h2>
+<div class="piste pB">
+    <h2>B · Space Grotesk 400 <em>— plus fine, crénage serré, tenue de presse</em></h2>
     <div class="scene"></div>
 </div>
-<div class="piste p3">
-    <h2>3 · Sans cadre <em>— rien ne s'ajoute à l'écran</em></h2>
+<div class="piste pC">
+    <h2>C · Space Grotesk 300 sur voile flou <em>— contraste sans boîte</em></h2>
     <div class="scene"></div>
 </div>
-<div class="piste p4">
-    <h2>4 · Le trait <em>— ancré sans être enfermé</em></h2>
+<div class="piste pD">
+    <h2>D · Cormorant Garamond 400 <em>— la plus luxe, et la plus risquée</em></h2>
     <div class="scene"></div>
 </div>
-<div class="piste p5">
-    <h2>5 · La série à part <em>— une ligne de moins à lire</em></h2>
+<div class="piste pE">
+    <h2>E · Space Grotesk interlettré <em>— le geste premium le plus courant</em></h2>
     <div class="scene"></div>
 </div>
 
