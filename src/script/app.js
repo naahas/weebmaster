@@ -380,7 +380,7 @@ createApp({
                 { id: 'Fma', nom: 'Fullmetal Alchemist' },
                 // { id: 'Gintama', nom: 'Gintama' },            ⏳ suspendue
                 { id: 'Pokemon', nom: 'Pokémon' },
-                // { id: 'Reborn', nom: 'Reborn' },              ⏳ suspendue
+                { id: 'Reborn', nom: 'Reborn' },
             ],
             homeScreen: 'hub',    // hub | modes | join
             editingPseudo: false,
