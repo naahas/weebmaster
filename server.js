@@ -638,7 +638,6 @@ function reglagesDuSalon(gameState) {
             duree: gameState.choice.duree,
             voirLesAutres: gameState.choice.voirLesAutres,
             serieFiltre: gameState.choice.serieFiltre,
-            noSpoil: gameState.choice.noSpoil,
         },
     };
 }
@@ -1100,7 +1099,6 @@ app.get('/game/state', (req, res) => {
             duree: gameState.choice.duree,
             voirLesAutres: gameState.choice.voirLesAutres,
             serieFiltre: gameState.choice.serieFiltre,
-            noSpoil: gameState.choice.noSpoil,
             manche: gameState.choice.manche,
         } : null,
         bombanime: gameState.lobbyMode === 'bombanime' ? {
@@ -2688,7 +2686,6 @@ function diffuserReglagesChoice(gameState) {
         duree: gameState.choice.duree,
         voirLesAutres: gameState.choice.voirLesAutres,
         serieFiltre: gameState.choice.serieFiltre,
-        noSpoil: gameState.choice.noSpoil,
     });
 }
 
@@ -2720,14 +2717,6 @@ app.post('/admin/choice/set-voir', (req, res) => {
     gameState.choice.voirLesAutres = req.body && req.body.voir === true;
     diffuserReglagesChoice(gameState);
     res.json({ success: true, voirLesAutres: gameState.choice.voirLesAutres });
-});
-
-app.post('/admin/choice/set-spoil', (req, res) => {
-    const gameState = req.room;
-    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
-    gameState.choice.noSpoil = req.body && req.body.noSpoil === true;
-    diffuserReglagesChoice(gameState);
-    res.json({ success: true, noSpoil: gameState.choice.noSpoil });
 });
 
 // Le filtre de série. ⚠️ On valide contre ce que la BANQUE contient

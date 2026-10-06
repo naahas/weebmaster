@@ -846,10 +846,12 @@
 
                                 <!-- ⚠️ « Oui » par défaut : voir les autres bouger EST le
                                      jeu. Le réglage existe pour les salons où l'on se
-                                     plaint de ceux qui suivent toujours le même joueur. -->
-                                <div class="v2-set" data-info="choice-voir">
+                                     plaint de ceux qui suivent toujours le même joueur.
+                                     Il s'appelle « Mouvement » comme celui de BombAnime :
+                                     dans les deux cas il ne décide que de ce qu'on VOIT. -->
+                                <div class="v2-set" data-info="choice-mouvement">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <span class="v2-set-label">Voir les autres</span>
+                                    <span class="v2-set-label">Mouvement</span>
                                     <span class="v2-set-value">{{ ch.voirLesAutres ? 'Oui' : 'Non' }}</span>
                                     <span class="v2-set-opts">
                                         <button class="v2-set-opt" :class="{ on: ch.voirLesAutres }"
@@ -859,32 +861,12 @@
                                     </span>
                                 </div>
 
-                                <div class="v2-set">
-                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-                                    <span class="v2-set-label">Série</span>
-                                    <span class="v2-set-value">{{ ch.serieFiltre === 'overall' ? 'Toutes' : ch.serieFiltre }}</span>
-                                    <span class="v2-set-opts grille">
-                                        <button class="v2-set-opt" :class="{ on: ch.serieFiltre === 'overall' }"
-                                                @click="applySetting('/admin/choice/set-serie', { serie: 'overall' }, () => ch.serieFiltre = 'overall')">
-                                            Toutes <em>{{ ch.totalBanque }}</em></button>
-                                        <button v-for="s in ch.series" :key="s.nom"
-                                                class="v2-set-opt" :class="{ on: ch.serieFiltre === s.nom }"
-                                                @click="applySetting('/admin/choice/set-serie', { serie: s.nom }, () => ch.serieFiltre = s.nom)">
-                                            {{ s.nom }} <em>{{ s.n }}</em></button>
-                                    </span>
-                                </div>
-
-                                <div class="v2-set">
-                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
-                                    <span class="v2-set-label">Spoils</span>
-                                    <span class="v2-set-value">{{ ch.noSpoil ? 'Écartés' : 'Autorisés' }}</span>
-                                    <span class="v2-set-opts">
-                                        <button class="v2-set-opt" :class="{ on: !ch.noSpoil }"
-                                                @click="applySetting('/admin/choice/set-spoil', { noSpoil: false }, () => ch.noSpoil = false)">Autorisés</button>
-                                        <button class="v2-set-opt" :class="{ on: ch.noSpoil }"
-                                                @click="applySetting('/admin/choice/set-spoil', { noSpoil: true }, () => ch.noSpoil = true)">Écartés</button>
-                                    </span>
-                                </div>
+                                <!-- ⚠️ NI filtre de série, NI réglage de spoil ici, et ce
+                                     n'est pas un oubli. Le spoil ne reviendra pas. Le
+                                     filtre de série est retiré le temps que la banque
+                                     grossisse : à trente énoncés, filtrer sur une série
+                                     n'en laisse pas de quoi tenir une partie. Le serveur
+                                     garde la route et le réglage — ils attendent. -->
                             </template>
 
                             <!-- BombAnime -->
@@ -1145,13 +1127,28 @@
                             dans le même ordre.<br><b>Propre</b> : chacun la sienne, au hasard.</span>
                     </span>
                 </template>
+
+                <template v-if="isHost && lobbyMode === 'choice'">
+                    <!-- Une phrase, comme celle de la mèche : le réglage est un
+                         oui/non qui se comprend seul, la bulle n a qu à dire de
+                         quoi on parle. -->
+                    <span class="v2-set-info" data-pour="choice-mouvement" tabindex="0">!
+                        <span class="v2-set-bulle">Affiche la position des joueurs en temps
+                            réel.</span>
+                    </span>
+                </template>
             </div>
 
 
             <!-- État: Partie en cours -->
             <!-- 🆕 v2 — Contrôles de l'hôte pendant la partie (remplacent /admin) -->
             <!-- Commandes de l'hôte : enchaînement en bas à droite, arrêt en bas à gauche -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension' && lobbyMode !== 'collect'">
+            <!-- ⚠️ `choice` s'ajoute à la liste des modes qui n'en veulent pas :
+                 l'enchaînement y est automatique — la manche suivante tombe
+                 toute seule après la sanction — et « question suivante » n'a
+                 donc rien à piloter. Les deux ronds flottaient sur l'arène
+                 sans jamais rien faire. -->
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension' && lobbyMode !== 'collect' && lobbyMode !== 'choice'">
                 <button class="v2q-cmd-btn"
                         @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
                         :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
@@ -2023,33 +2020,51 @@
                              couleurs : une seule teinte posée dessus
                              suggérerait une réponse, et à ce jeu-là une
                              couleur suffit à faire pencher la moitié de la
-                             salle. -->
-                        <div class="chx-enonce">
-                            <small>{{ ch.question ? ch.question.serie : '' }} · manche {{ ch.manche }}</small>
-                            <p>{{ ch.question ? ch.question.question : '' }}</p>
+                             salle.
+                             Il n'apparaît qu'au second temps de l'intro :
+                             les joueurs se posent d'abord, la question
+                             tombe ensuite. Dans l'autre ordre on lit déjà
+                             l'énoncé pendant que les avatars arrivent, et
+                             les trois secondes sont perdues. -->
+                        <div class="chx-enonce" v-if="ch.question"
+                             :class="{ parait: ch.intro === 'question' }">
+                            <small>{{ ch.question.serie }} · manche {{ ch.manche }}</small>
+                            <p>{{ ch.question.question }}</p>
                         </div>
 
-                        <!-- Les joueurs : un tas au milieu, deux tas aux bords.
-                             Les avatars glissent d'un tas à l'autre. -->
-                        <div class="chx-scene">
-                            <div class="chx-tas milieu">
-                                <span v-for="j in chTasMilieu" :key="j.playerId" class="chx-j"
-                                      :title="j.username">
-                                    <img :src="srcAvatar(j.avatar)" alt="">
-                                </span>
-                            </div>
-                            <div class="chx-tas vrai">
-                                <span v-for="j in chTasVrai" :key="j.playerId" class="chx-j v"
-                                      :title="j.username">
-                                    <img :src="srcAvatar(j.avatar)" alt="">
-                                </span>
-                            </div>
-                            <div class="chx-tas faux">
-                                <span v-for="j in chTasFaux" :key="j.playerId" class="chx-j f"
-                                      :title="j.username">
-                                    <img :src="srcAvatar(j.avatar)" alt="">
-                                </span>
-                            </div>
+                        <!-- Le premier temps de l'intro : le mode s'annonce.
+                             Deux secondes, pas plus — c'est un lever de
+                             rideau, pas un écran de chargement. -->
+                        <div class="chx-intro" v-if="ch.intro === 'ouverture'">
+                            <b>CHOICE</b>
+                            <span>{{ chVivants.length }} joueurs · {{ ch.vies }} vie<span v-if="ch.vies > 1">s</span></span>
+                        </div>
+
+                        <!-- L'éclair du verrouillage : il balaie l'écran, et
+                             c'est le seul moment où les deux bords disent la
+                             même chose en même temps. -->
+                        <div class="chx-eclair" :class="{ joue: ch.verrou }"></div>
+
+                        <!-- ⚠️ LES JOUEURS SONT POSÉS EN ABSOLU, et Vue ne décide
+                             PAS de leur place : il rend la liste, `placerChoice()`
+                             calcule les positions et les écrit en `transform`.
+                             C'est la seule façon d'obtenir le GLISSEMENT d'un tas
+                             à l'autre — trois colonnes en flex font disparaître
+                             l'avatar d'un côté et réapparaître de l'autre, ce qui
+                             retire au mode ce qu'il a de meilleur : voir qui part,
+                             et quand.
+                             Le `key` porte le playerId : sans lui Vue recycle les
+                             nœuds entre deux manches et les transforms se
+                             retrouvent sur le mauvais joueur. -->
+                        <div class="chx-scene" ref="chxScene">
+                            <span v-for="j in chVivants" :key="j.playerId"
+                                  class="chx-j" :data-pid="j.playerId"
+                                  :class="{ v: j.camp === 'v', f: j.camp === 'f',
+                                            moi: j.playerId === playerId }"
+                                  :title="j.username">
+                                <i class="chx-trace"></i>
+                                <img :src="srcAvatar(j.avatar)" alt="">
+                            </span>
                         </div>
 
                         <!-- La jauge. AUCUN CHIFFRE : la même échelle que la
@@ -3099,6 +3114,50 @@
                 </div>
             </div>
         </div>
+        <!-- ============================================
+             ✅❌ ÉCRAN DE FIN CHOICE — le podium
+             ============================================
+             Le classement se lit à l'envers du Rush : ici on ne compte pas
+             des points mais des MANCHES TENUES. Tenir un tour de plus est
+             le seul exploit du mode, donc c'est le seul chiffre affiché. -->
+        <div class="chx-fin" v-if="gameEnded && lobbyMode === 'choice' && ch.classement">
+            <div class="chx-fin-boite">
+                <span class="chx-fin-titre">
+                    {{ ch.classement[0] && ch.classement[0].vivant ? 'Dernier debout' : 'Personne ne reste' }}
+                </span>
+
+                <!-- Le vainqueur, seul et en grand. Les suivants sont une
+                     liste : deux podiums à trois marches côte à côte se
+                     regardent, un seul gagnant se retient. -->
+                <div class="chx-fin-roi" v-if="ch.classement[0] && ch.classement[0].vivant">
+                    <span class="chx-fin-nom">{{ ch.classement[0].username }}</span>
+                    <span class="chx-fin-sous">{{ ch.manchesJouees }} manche<span v-if="ch.manchesJouees > 1">s</span></span>
+                </div>
+
+                <ol class="chx-fin-liste">
+                    <li v-for="(j, i) in chPodium" :key="j.playerId"
+                        :class="{ moi: j.playerId === playerId, premier: i === 0 }">
+                        <span class="rang">{{ i + 1 }}</span>
+                        <span class="nom">{{ j.username }}</span>
+                        <span class="detail">
+                            <template v-if="j.vivant">survit</template>
+                            <template v-else>manche {{ j.manche }}</template>
+                        </span>
+                    </li>
+                </ol>
+
+                <div class="chx-fin-moi" v-if="monRangChoice > chPodium.length">
+                    Tu termines <b>{{ monRangChoice }}<sup>e</sup></b>
+                </div>
+
+                <div class="chx-fin-actions">
+                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouerChoice">Rejouer</button>
+                    <button class="winner-back-btn" @click="quitterChoice">Retour</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ============================================
              ÉCRAN DE FIN ASCENSION
              ============================================ -->

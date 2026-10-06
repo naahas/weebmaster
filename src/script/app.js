@@ -186,7 +186,6 @@ createApp({
                 duree: 8,
                 voirLesAutres: true,
                 serieFiltre: 'overall',
-                noSpoil: false,
                 barDurees: [5, 8, 12],
                 series: [],          // ce que la banque contient, pour le tiroir
                 totalBanque: 0,
@@ -206,6 +205,12 @@ createApp({
                 revelation: null,    // { bonne, nulle, perdants, proof_url }
                 classement: null,    // à la fin
                 manchesJouees: 0,
+
+                // L'intro, en deux temps : « ouverture » (le mode s'annonce,
+                // les joueurs tombent au milieu) puis « question » (l'énoncé
+                // paraît). Null le reste du temps.
+                intro: null,
+                _introT: [],
             },
 
             asc: {
@@ -325,7 +330,7 @@ createApp({
                 // en quatre lignes exactement — soit la hauteur déjà réservée plus
                 // haut pour que le titre ne bouge pas d'un mode à l'autre.
                 { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'sebastian.webp',
-                  desc: "Une affirmation s'affiche. Tout le monde part du milieu et choisit un bord : VRAI à gauche, FAUX à droite. On ne se reprend pas. Le mauvais côté éclate, le dernier debout l'emporte." },
+                  desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
@@ -972,6 +977,16 @@ createApp({
             const r = this.ch.revelation;
             if (!r || this.ch.monCamp === null) return null;
             return (this.ch.monCamp === 'v') === r.bonne;
+        },
+        // Le podium s'arrête à cinq : au-delà, la boîte déborde sur
+        // téléphone et personne ne lit la huitième ligne. Celui qui n'y est
+        // pas apprend son rang par la ligne « tu termines ».
+        chPodium() {
+            return (this.ch.classement || []).slice(0, 5);
+        },
+        monRangChoice() {
+            const i = (this.ch.classement || []).findIndex(j => j.playerId === this.playerId);
+            return i < 0 ? 0 : i + 1;
         },
 
         // La barre de jetons est-elle à l'écran ? Même chose, plus les deux
@@ -4211,7 +4226,6 @@ createApp({
                 // réglage « voir les autres » resterait allumé chez l'hôte.
                 poser(this.ch, 'voirLesAutres', r.choice.voirLesAutres);
                 poser(this.ch, 'serieFiltre', r.choice.serieFiltre);
-                poser(this.ch, 'noSpoil', r.choice.noSpoil);
             }
         },
 
@@ -5208,6 +5222,45 @@ createApp({
         },
 
         // ── Sortir de la tour ──
+        // ── Sortir de l'arène ──
+        async hostRejouerChoice() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalonChoice();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        // Remet les écrans au salon sans toucher au salon lui-même.
+        // ⚠️ Les minuteurs de l'intro et du chrono S'ANNULENT ici : une
+        // manche relancée pendant qu'un `setTimeout` de la précédente court
+        // encore ferait paraître l'énoncé d'avant par-dessus le nouveau.
+        revenirAuSalonChoice() {
+            this.arreterChronoChoice();
+            this.ch._introT.forEach(t => clearTimeout(t));
+            this.ch._introT = [];
+            Object.assign(this.ch, {
+                enCours: false, manche: 0, question: null, monCamp: null,
+                verrou: false, revelation: null, classement: null, intro: null,
+                reste: 0, comptes: { v: 0, f: 0, indecis: 0 }, joueurs: [],
+            });
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            document.body.classList.remove('game-active');
+        },
+
+        quitterChoice() {
+            this.revenirAuSalonChoice();
+            this.backToHome();
+        },
+
         async hostRejouerAsc() {
             if (this.rejouerBusy) return;
             this.rejouerBusy = true;
@@ -5373,6 +5426,182 @@ createApp({
         arreterChronoChoice() {
             clearInterval(this.ch._tic);
             this.ch._tic = null;
+        },
+
+        // ════════════════════════════════════════════
+        // ✅❌ LE PLACEMENT — repris du prototype, à l'identique
+        // ════════════════════════════════════════════
+        // UN TAS, pas une grille. Les avatars se posent en anneaux
+        // concentriques autour d'un point unique, du centre vers
+        // l'extérieur — l'empilement hexagonal, le plus dense à disques
+        // égaux. Une grille demande à chacun sa case, donc sa place : à
+        // cinquante elle déborde, et bien avant ça elle fait « liste de
+        // participants » au lieu de « la salle ».
+        //
+        // ⚠️ Vue rend les nœuds, c'est TOUT. La position s'écrit ici en
+        // `transform`, la seule propriété qui glisse sans faire recalculer
+        // la page. Laisser Vue répartir les avatars dans trois colonnes
+        // les faisait disparaître d'un côté pour reparaître de l'autre, ce
+        // qui retire au mode ce qu'il a de meilleur : voir QUI part, et
+        // quand.
+        chPlaces(k) { return k === 0 ? 1 : Math.floor(6.28 * k * 0.92); },
+        chAnneauxPour(n) {
+            let total = 0, k = 0;
+            while (total < n) { total += this.chPlaces(k); k++; }
+            return Math.max(1, k - 1);
+        },
+
+        placerChoice() {
+            const scene = this.$refs.chxScene;
+            if (!scene) return;
+            const noeuds = [...scene.querySelectorAll('.chx-j')];
+            if (!noeuds.length) return;
+
+            const b = scene.getBoundingClientRect();
+            if (!b.width) return;
+
+            // La densité : au-delà de seize les noms tombent, au-delà de
+            // trente les portraits rapetissent. On ne lit plus un pseudo,
+            // on lit une MASSE — et c'est ce qu'il faut lire.
+            const n = noeuds.length;
+            scene.classList.toggle('foule-2', n > 16 && n <= 30);
+            scene.classList.toggle('foule-3', n > 30);
+
+            const demi = noeuds[0].offsetWidth / 2;
+            const demiH = noeuds[0].offsetHeight / 2;
+            const taille = demi * 2;
+            if (!taille) return;
+
+            const groupes = { null: [], v: [], f: [] };
+            noeuds.forEach(el => {
+                const j = this.ch.joueurs.find(x => x.playerId === el.dataset.pid);
+                groupes[(j && j.camp) ? j.camp : 'null'].push(el);
+            });
+
+            // La bande libre : l'énoncé mange le haut, la jauge le bas. Les
+            // deux se MESURENT — l'énoncé se replie en deux lignes sur
+            // téléphone, et deux nombres en dur tomberaient juste sur un
+            // seul écran.
+            const bEn = scene.parentElement.querySelector('.chx-enonce');
+            const bJa = scene.parentElement.querySelector('.chx-jauge, .chx-verdict');
+            const haut = bEn ? (bEn.getBoundingClientRect().bottom - b.top + 16) : 80;
+            const bas = bJa ? (b.bottom - bJa.getBoundingClientRect().top + 16) : 80;
+            const bande = Math.max(90, b.height - haut - bas);
+            const centreY = haut + bande / 2;
+            const rayonY = Math.max(40, bande / 2 - demiH);
+
+            // ⚠️ Le rayon qu'on donne borne les CENTRES : il faut lui
+            // retirer une demi-largeur d'avatar, sinon le tas dépasse par
+            // les bords de tout juste ce que mesure un portrait.
+            const tas = (liste, cx, rayonMax, serrage) => {
+                if (!liste.length) return 0;
+                const anneaux = this.chAnneauxPour(liste.length);
+                const pas = Math.min(taille * serrage, rayonMax / Math.max(1, anneaux));
+                let i = 0;
+                for (let k = 0; i < liste.length; k++) {
+                    const combien = Math.min(this.chPlaces(k), liste.length - i);
+                    for (let p = 0; p < combien; p++, i++) {
+                        // Le décalage par anneau évite les rayons alignés,
+                        // qui donnaient une rosace — on veut un tas.
+                        const a = (p / combien) * 6.283 + k * 0.7;
+                        const x = cx + (k === 0 ? 0 : Math.cos(a) * pas * k);
+                        // Aplati : l'arène est large et basse, un tas rond y
+                        // monterait sous l'énoncé avant d'être plein.
+                        const y = centreY + (k === 0 ? 0 : Math.sin(a) * pas * k * 0.66);
+                        const el = liste[i];
+                        el.style.transform = 'translate(' + (x - demi) + 'px,' + (y - demiH) + 'px)';
+                        // Plus bas à l'écran = devant. C'est la profondeur
+                        // qu'on lit sans y penser sur une foule.
+                        el.style.zIndex = String(Math.round(y));
+                    }
+                }
+                return pas * anneaux + demi;
+            };
+
+            // ⚠️ L'ORDRE compte : le MILIEU se pose en premier, les bords
+            // prennent ce qu'il laisse. Le tas du milieu rétrécit exactement
+            // au rythme où les bords se remplissent, donc les trois zones ne
+            // peuvent pas se croiser — sans avoir à les borner chacune par
+            // un pourcentage recopié.
+            const rMilieu = tas(groupes.null, b.width / 2,
+                Math.max(1, Math.min(b.width * 0.3, rayonY / 0.66) - demi), 0.62);
+            const libre = Math.max(taille, b.width / 2 - rMilieu - 14);
+            const rBord = Math.max(1, Math.min(libre / 2, rayonY / 0.66) - demi);
+            tas(groupes.v, libre / 2, rBord, 0.92);
+            tas(groupes.f, b.width - libre / 2, rBord, 0.92);
+        },
+
+        // Replacer après que Vue a rendu. Les engagements qui tombent dans
+        // la même image sont servis par UN seul replacement : replacer coûte
+        // un parcours de tous les joueurs, et à deux cents c'était n².
+        replacerChoice() {
+            if (this.ch._replace) return;
+            this.ch._replace = true;
+            this.$nextTick(() => {
+                requestAnimationFrame(() => {
+                    this.ch._replace = false;
+                    this.placerChoice();
+                });
+            });
+        },
+
+        // ── L'éclatement d'un portrait ────────────────────────────────
+        // Chaque éclat porte la MÊME image, calée au même endroit : c'est ce
+        // qui fait un visage qui se BRISE, et non un visage remplacé par des
+        // triangles. ⚠️ Un BUDGET de parts, pas une part par visage : à cent
+        // joueurs, cinquante éliminés feraient 250 éléments animés d'un coup.
+        eclaterChoice(perdants) {
+            const scene = this.$refs.chxScene;
+            if (!scene) return;
+            const BUDGET = 180;
+            let poses = 0;
+            const total = this.ch.joueurs.length;
+            const N = total > 30 ? 5 : total > 16 ? 7 : 9;
+
+            perdants.forEach(pid => {
+                const el = scene.querySelector('.chx-j[data-pid="' + CSS.escape(pid) + '"]');
+                if (!el) return;
+                const img = el.querySelector('img');
+                if (!img) return;
+
+                if (poses + N > BUDGET) { el.classList.add('efface'); return; }
+                poses += N;
+
+                const r = el.getBoundingClientRect();
+                const bs = scene.getBoundingClientRect();
+                const src = img.getAttribute('src');
+
+                for (let i = 0; i < N; i++) {
+                    const a1 = (i / N) * 360, a2 = ((i + 1) / N) * 360;
+                    const p = (a) => (50 + 75 * Math.cos(a * Math.PI / 180)) + '% '
+                                   + (50 + 75 * Math.sin(a * Math.PI / 180)) + '%';
+                    const frag = document.createElement('div');
+                    frag.className = 'chx-eclat';
+                    // ⚠️ Aucun `border-radius` : le `clip-path` découpe déjà
+                    // la part, et arrondir par-dessus la rognait une seconde
+                    // fois — il ne restait qu'un éclat où l'on ne
+                    // reconnaissait plus un visage.
+                    frag.style.cssText = 'left:' + (r.left - bs.left) + 'px;top:' + (r.top - bs.top) + 'px;'
+                        + 'width:' + r.width + 'px;height:' + r.height + 'px;'
+                        + 'background-image:url(' + src + ');'
+                        + 'clip-path:polygon(50% 50%,' + p(a1) + ',' + p((a1 + a2) / 2) + ',' + p(a2) + ')';
+                    scene.appendChild(frag);
+
+                    const dir = (a1 + a2) / 2 * Math.PI / 180;
+                    const d = 90 + Math.random() * 110;
+                    frag.animate([
+                        { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1, offset: 0 },
+                        // Un temps d'arrêt à l'écartement : la part s'ouvre
+                        // d'abord, et c'est là qu'on voit un visage se fendre.
+                        { transform: 'translate(' + Math.cos(dir) * 10 + 'px,' + Math.sin(dir) * 10 + 'px) rotate('
+                                   + (Math.random() * 18 - 9) + 'deg)', opacity: 1, offset: 0.18 },
+                        { transform: 'translate(' + Math.cos(dir) * d + 'px,' + (Math.sin(dir) * d + 70) + 'px) rotate('
+                                   + (Math.random() * 220 - 110) + 'deg) scale(0.7)', opacity: 0, offset: 1 },
+                    ], { duration: 820 + Math.random() * 280, easing: 'cubic-bezier(0.2,0.7,0.3,1)', fill: 'forwards' });
+                    setTimeout(() => frag.remove(), 1180);
+                }
+                el.style.opacity = '0';
+            });
         },
 
         // Les séries proposées dans le tiroir. Une série qui n'a pas trois
@@ -6046,7 +6275,16 @@ createApp({
                     this.socket.emit('collect-get-state');
                     console.log('🎴 Demande état Collect après connexion');
                 }
-                
+
+                // ✅❌ Idem pour Choice. C'est le seul chemin qui rend MON camp :
+                // sans lui, un joueur qui rafraîchit en pleine manche retrouve
+                // les deux bords cliquables et croit pouvoir se reprendre,
+                // alors que le serveur refusera son second envoi.
+                if (this.lobbyMode === 'choice') {
+                    this.socket.emit('choice-get-state');
+                    console.log('✅❌ Demande état Choice après connexion');
+                }
+
             });
 
             // Restauration du joueur
@@ -7876,6 +8114,8 @@ createApp({
             });
 
             this.socket.on('choice-debut', (data) => {
+                this.ch._introT.forEach(t => clearTimeout(t));
+                this.ch._introT = [];
                 this.ch.enCours = true;
                 this.ch.manche = 0;
                 this.ch.question = null;
@@ -7884,11 +8124,19 @@ createApp({
                 this.ch.revelation = null;
                 this.ch.classement = null;
                 this.ch.joueurs = data.joueurs || [];
+                this.ch.comptes = { v: 0, f: 0, indecis: (data.joueurs || []).length };
                 this.ch.vies = data.vies;
                 this.ch.voirLesAutres = data.voirLesAutres;
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 document.body.classList.add('game-active');
+
+                // Le lever de rideau : le mode s'annonce pendant que les
+                // avatars tombent au milieu. Deux temps, pas trois — au-delà
+                // ce n'est plus une intro, c'est une attente.
+                this.ch.intro = 'ouverture';
+                this.replacerChoice();
+                this.ch._introT.push(setTimeout(() => { this.ch.intro = null; }, 1900));
             });
 
             this.socket.on('choice-question', (data) => {
@@ -7899,17 +8147,27 @@ createApp({
                 this.ch.revelation = null;
                 this.ch.joueurs = data.joueurs || [];
                 this.ch.comptes = { v: 0, f: 0, indecis: (data.joueurs || []).length };
+                // L'énoncé paraît d'abord, le compte part ensuite : lire la
+                // question pendant que la jauge coule déjà vole une seconde
+                // à tout le monde.
+                this.ch.intro = 'question';
+                this.ch._introT.push(setTimeout(() => { this.ch.intro = null; }, 700));
                 // ⚠️ Le serveur envoie un RESTE, pas une échéance : on
                 // fabrique la nôtre sur NOTRE montre. Une machine en retard
                 // de trois secondes verrait sinon le compte s'arrêter avant
                 // le bout. `maintenant()` corrige en plus l'écart mesuré.
                 this.lancerChronoChoice(data.reste);
+                this.replacerChoice();
             });
 
             this.socket.on('choice-bouge', (data) => {
                 const j = this.ch.joueurs.find(x => x.playerId === data.playerId);
                 if (j) { j.camp = data.camp; j.aChoisi = true; }
                 if (data.comptes) this.ch.comptes = data.comptes;
+                // ⚠️ Rien à faire si le camp n'est pas venu : « Mouvement »
+                // est éteint, le joueur reste donc au milieu à l'écran, et
+                // replacer ferait bouger tout le tas pour rien.
+                if (data.camp) this.replacerChoice();
             });
 
             this.socket.on('choice-verrou', (data) => {
@@ -7917,30 +8175,42 @@ createApp({
                 this.ch.reste = 0;
                 this.arreterChronoChoice();
                 if (data && data.joueurs) this.ch.joueurs = data.joueurs;
+                this.replacerChoice();
             });
 
             this.socket.on('choice-revelation', (data) => {
                 this.ch.revelation = data;
                 // Les camps de tout le monde arrivent ici, y compris quand le
                 // salon les cachait : la manche est jouée, il n'y a plus rien
-                // à protéger.
+                // à protéger. C'est aussi le moment où ceux qui n'avaient pas
+                // bougé rejoignent visuellement leur bord.
                 (data.joueurs || []).forEach(d => {
                     const j = this.ch.joueurs.find(x => x.playerId === d.playerId);
                     if (j) { j.camp = d.camp; j.vies = d.vies; j.vivant = d.vivant; }
                 });
+                this.replacerChoice();
+                // La sanction arrive APRÈS que les tas se sont rangés : briser
+                // un portrait en plein vol ne se lit pas.
+                this.ch._introT.push(setTimeout(() => {
+                    this.eclaterChoice(data.perdants || []);
+                }, 620));
             });
 
             this.socket.on('choice-depart', (data) => {
                 const j = this.ch.joueurs.find(x => x.playerId === data.playerId);
                 if (j) j.vivant = false;
                 if (data.comptes) this.ch.comptes = data.comptes;
+                this.replacerChoice();
             });
 
             this.socket.on('choice-fin', (data) => {
                 this.arreterChronoChoice();
+                this.ch._introT.forEach(t => clearTimeout(t));
+                this.ch._introT = [];
                 this.ch.enCours = false;
                 this.ch.question = null;
                 this.ch.verrou = false;
+                this.ch.intro = null;
                 this.ch.classement = data.classement || [];
                 this.ch.manchesJouees = data.manches || 0;
                 this.gameInProgress = false;
@@ -7948,20 +8218,33 @@ createApp({
                 document.body.classList.remove('game-active');
             });
 
-            // La reprise après une coupure : l'écran se refait sans attendre
-            // la manche suivante.
+            // ⚠️ LA REPRISE APRÈS UN RAFRAÎCHISSEMENT. Elle ne se contente pas
+            // de rallumer l'écran : elle rend aussi MON camp, sinon un joueur
+            // qui recharge retrouve les deux bords cliquables et croit pouvoir
+            // se reprendre — alors que le serveur refusera. Et surtout elle
+            // passe par `etatPourLeClient`, qui ne porte PAS la réponse :
+            // recharger ne doit pas être une façon de la lire.
             this.socket.on('choice-etat', (data) => {
                 if (!data) return;
                 this.ch.enCours = true;
+                this.ch.intro = null;
                 this.ch.manche = data.manche;
                 this.ch.question = data.question;
                 this.ch.joueurs = data.joueurs || [];
                 this.ch.voirLesAutres = data.voirLesAutres;
                 const moi = this.ch.joueurs.find(x => x.playerId === this.playerId);
-                this.ch.monCamp = moi ? moi.camp : null;
+                this.ch.monCamp = moi ? (moi.camp || null) : null;
+                this.ch.comptes = {
+                    v: this.ch.joueurs.filter(j => j.vivant && j.camp === 'v').length,
+                    f: this.ch.joueurs.filter(j => j.vivant && j.camp === 'f').length,
+                    indecis: this.ch.joueurs.filter(j => j.vivant && !j.camp).length,
+                };
                 this.gameInProgress = true;
+                this.gameEnded = false;
                 document.body.classList.add('game-active');
                 if (data.reste > 0) this.lancerChronoChoice(data.reste);
+                else { this.ch.reste = 0; this.ch.verrou = true; }
+                this.replacerChoice();
             });
 
             this.socket.on('bombanime-game-ended', (data) => {
@@ -9339,6 +9622,10 @@ createApp({
             this.isMobile = window.innerWidth <= 768;
             this.ecran = window.innerWidth;
             this.$nextTick(() => this.suivreInfosReglages());
+            // L'arène de Choice place ses avatars en pixels : elle doit se
+            // refaire quand la scène change de taille, sinon le tas reste
+            // calé sur l'ancienne largeur et déborde.
+            if (this.lobbyMode === 'choice' && this.ch.enCours) this.replacerChoice();
             // Fermer l'alphabet mobile si on passe en desktop
             if (!this.isMobile) {
                 this.isMobileAlphabetOpen = false;

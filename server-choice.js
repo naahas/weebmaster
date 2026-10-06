@@ -57,7 +57,9 @@ function etatNeuf() {
         duree: DUREE_DEFAUT,
         voirLesAutres: true,     // voir les autres bouger EST le jeu
         serieFiltre: 'overall',  // 'overall' ou un nom de série exact
-        noSpoil: false,
+        // ⚠️ AUCUN réglage de spoil ici, et il ne reviendra pas. La colonne
+        // `is_spoil` reste en base — un énoncé peut être marqué — mais plus
+        // rien ne la lit : un salon ne trie pas ses énoncés là-dessus.
 
         manche: 0,
         palier: 0,               // index dans PALIERS, ne redescend jamais
@@ -118,7 +120,6 @@ function tirerQuestion(etat, banque) {
 
     const utilisable = (q) => {
         if (vus.has(q.id)) return false;
-        if (etat.noSpoil && q.is_spoil) return false;
         if (serie !== 'overall' && q.serie !== serie) return false;
         return true;
     };
@@ -138,8 +139,7 @@ function tirerQuestion(etat, banque) {
 // pour refuser tout de suite plutôt qu'au milieu de la troisième manche.
 function combienDisponibles(etat, banque) {
     return banque.filter(q =>
-        (!etat.noSpoil || !q.is_spoil)
-        && (etat.serieFiltre === 'overall' || q.serie === etat.serieFiltre)).length;
+        etat.serieFiltre === 'overall' || q.serie === etat.serieFiltre).length;
 }
 
 // Le dépouillement d'une manche. PUR : il prend l'état et rend ce qu'il

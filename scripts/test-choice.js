@@ -91,13 +91,6 @@ e5.serieFiltre = 'Naruto';
 const dix = Array.from({ length: 10 }, () => C.tirerQuestion(e5, banque));
 dire(dix.every(q => q && q.serie === 'Naruto'), 'le filtre de série tient sur dix tirages');
 
-// Le filtre « sans spoil »
-const e6 = C.etatNeuf();
-e6.serieFiltre = 'Naruto';
-e6.noSpoil = true;
-const sansSpoil = Array.from({ length: 10 }, () => C.tirerQuestion(e6, banque));
-dire(sansSpoil.every(q => q && !q.is_spoil), 'et « sans spoil » écarte bien l’énoncé marqué');
-
 // Le repli : on demande « extreme », la banque n'en a pas
 const e7 = C.etatNeuf();
 e7.palier = C.PALIERS.indexOf('extreme');
@@ -161,7 +154,6 @@ dire(neuf.vies === 1, 'une vie par défaut', String(neuf.vies));
 dire(neuf.duree === 8, 'huit secondes par défaut', String(neuf.duree));
 dire(neuf.voirLesAutres === true, 'on voit les autres par défaut — c’est le jeu');
 dire(neuf.serieFiltre === 'overall', 'aucun filtre de série au départ');
-dire(neuf.noSpoil === false, 'et les spoils ne sont pas écartés d’office');
 dire(neuf.active === false && neuf.manche === 0, 'un état neuf ne joue pas');
 
 // ════════════════════════════════════════════

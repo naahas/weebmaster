@@ -13737,16 +13737,27 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    « équipe », et ici il n'y a pas d'équipe, il y a un BORD qu'on choisit.
    L'or reste au chrome — les bords sont immenses, le chrome est fin, ils
    ne se disputent jamais la même surface. */
+/* ⚠️ PLEIN ÉCRAN, et pas « 100 % du conteneur ». L'arène vivait dans la
+   colonne centrale du jeu, large de 1000 px au milieu d'un écran de 1900 :
+   les deux bords s'arrêtaient en plein vide et le mode perdait ce qu'il a
+   de physique — on choisit un CÔTÉ DE L'ÉCRAN, pas un côté d'une boîte.
+   `position: fixed` la sort de la colonne sans toucher à la mise en page
+   du reste. */
 .chx {
     --vrai: #2f9bff;
     --faux: #ff3b5c;
     --vrai-rgb: 47, 155, 255;
     --faux-rgb: 255, 59, 92;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 60vh;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
     overflow: hidden;
+    background: #07070a;
+    animation: chx-ouvre 0.5s ease both;
+}
+@keyframes chx-ouvre {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 /* ── Les deux bords ────────────────────────────────────────────────
@@ -13884,36 +13895,125 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     position: absolute;
     inset: 0;
     z-index: 3;
-    display: flex;
-    align-items: center;
     pointer-events: none;
 }
-.chx-tas {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: center;
-    justify-content: center;
-    padding: 0 0.4rem;
-}
-.chx-tas.vrai { width: 34%; }
-.chx-tas.milieu { width: 32%; }
-.chx-tas.faux { width: 34%; }
+
+/* ⚠️ EN ABSOLU, déplacés par `transform` depuis `placerChoice()`. C'est la
+   seule propriété qui GLISSE sans faire recalculer la page — et c'est le
+   glissement qui porte le mode : on voit QUI part, et quand. Trois colonnes
+   en flex faisaient disparaître l'avatar d'un côté pour le faire reparaître
+   de l'autre. */
 .chx-j {
+    position: absolute;
+    top: 0; left: 0;
     display: block;
-    /* Le recouvrement : c'est lui qui fait le tas, pas une grille. */
-    margin: -0.35rem;
-    transition: transform 0.4s cubic-bezier(0.22, 1.2, 0.3, 1);
+    width: 2.6rem;
+    transition: transform 0.72s cubic-bezier(0.22, 1.2, 0.3, 1);
+    will-change: transform;
+    /* L'arrivée dans l'arène, échelonnée par le navigateur. */
+    animation: chx-pose 0.5s cubic-bezier(0.2, 1.6, 0.35, 1) both;
 }
+@keyframes chx-pose {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.chx-scene.foule-2 .chx-j { width: 2.1rem; }
+.chx-scene.foule-3 .chx-j { width: 1.6rem; }
+
 .chx-j img {
-    width: clamp(1.6rem, 4vw, 2.6rem);
-    height: clamp(1.6rem, 4vw, 2.6rem);
+    width: 100%;
+    aspect-ratio: 1;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255, 255, 255, 0.16);
     display: block;
+    transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.3s ease;
 }
-.chx-j.v img { border-color: var(--vrai); box-shadow: 0 0 0.9rem rgba(var(--vrai-rgb), 0.5); }
-.chx-j.f img { border-color: var(--faux); box-shadow: 0 0 0.9rem rgba(var(--faux-rgb), 0.5); }
+.chx-j.v img { border-color: var(--vrai); box-shadow: 0 0 0 0.1rem var(--vrai), 0 0 1.2rem rgba(var(--vrai-rgb), 0.55); }
+.chx-j.f img { border-color: var(--faux); box-shadow: 0 0 0 0.1rem var(--faux), 0 0 1.2rem rgba(var(--faux-rgb), 0.55); }
+/* Le mien porte un liseré d'or : à cinquante visages, se retrouver est la
+   première chose qu'on cherche. */
+.chx-j.moi img { outline: 2px solid var(--neon-primary); outline-offset: 2px; }
+
+/* La traînée : elle ne dure que le temps du glissement et dit d'où l'on
+   vient. Sans elle, à trente joueurs, on ne voit plus qui bouge. */
+.chx-trace {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0.5rem; height: 0.5rem;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+.chx-j.v .chx-trace { background: var(--vrai); animation: chx-trace 0.72s ease-out; }
+.chx-j.f .chx-trace { background: var(--faux); animation: chx-trace 0.72s ease-out; }
+@keyframes chx-trace {
+    0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(9); }
+}
+
+/* L'éliminé qui n'a pas eu de part d'éclat : il s'efface. */
+.chx-j.efface { animation: chx-efface 0.5s ease-out forwards; }
+@keyframes chx-efface {
+    to { opacity: 0; filter: grayscale(1); }
+}
+
+/* Une part de portrait, découpée et jetée. */
+.chx-eclat {
+    position: absolute;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+/* ── L'intro ───────────────────────────────────────────────────────
+   Un lever de rideau de deux secondes, pas un écran de chargement : le
+   mode s'annonce pendant que les avatars tombent au milieu. */
+.chx-intro {
+    position: absolute;
+    top: 50%; left: 50%;
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: chx-intro 1.9s ease both;
+}
+.chx-intro b {
+    font-family: 'Bebas Neue', 'Poppins', sans-serif;
+    font-size: clamp(2.6rem, 9vw, 5rem);
+    letter-spacing: 0.14em;
+    color: #fff;
+    text-shadow: 0 0 2.5rem rgba(255, 215, 0, 0.45);
+}
+.chx-intro span { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
+@keyframes chx-intro {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(1.25); filter: blur(0.5rem); }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1);    filter: blur(0); }
+    78%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+}
+
+/* L'éclair du verrouillage : il balaie l'écran d'un bord à l'autre. */
+.chx-eclair {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+}
+.chx-eclair.joue { animation: chx-balayage 0.45s ease-out; }
+@keyframes chx-balayage {
+    0%   { opacity: 0;   transform: translateX(-60%) skewX(-14deg); }
+    35%  { opacity: 0.9; }
+    100% { opacity: 0;   transform: translateX(60%) skewX(-14deg); }
+}
 
 /* ── La jauge ──────────────────────────────────────────────────────
    ⚠️ AUCUN CHIFFRE, et c'est la même échelle que la mèche de BombAnime :
@@ -13991,6 +14091,79 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     pointer-events: none;
 }
 
+/* L'énoncé ne paraît qu'au second temps de l'intro. */
+.chx-enonce.parait { animation: chx-enonce 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
+@keyframes chx-enonce {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(-0.8rem) scale(0.96); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ✅❌ CHOICE — le podium
+   ════════════════════════════════════════════════════════════
+   ⚠️ Le classement se lit à l'envers du Rush : ici on ne compte pas des
+   points mais des MANCHES TENUES. Tenir un tour de plus est le seul
+   exploit du mode, donc c'est le seul chiffre affiché. */
+.chx-fin {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: radial-gradient(70% 60% at 50% 30%, #16131c, #07070a 70%);
+    animation: chx-ouvre 0.45s ease both;
+}
+.chx-fin-boite {
+    width: min(26rem, 100%);
+    padding: 1.6rem 1.4rem 1.3rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+}
+.chx-fin-titre {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+/* Le vainqueur, seul et en grand : deux podiums à trois marches côte à
+   côte se regardent, un seul gagnant se retient. */
+.chx-fin-roi { margin: 0.8rem 0 1.2rem; }
+.chx-fin-nom {
+    display: block;
+    font-family: 'Bebas Neue', 'Poppins', sans-serif;
+    font-size: clamp(2rem, 7vw, 3rem);
+    letter-spacing: 0.04em;
+    color: var(--neon-primary);
+    text-shadow: 0 0 2rem rgba(255, 215, 0, 0.35);
+}
+.chx-fin-sous { font-size: 0.78rem; color: var(--text-secondary); }
+
+.chx-fin-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.chx-fin-liste li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.86rem;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.45rem;
+}
+.chx-fin-liste li.moi { background: rgba(255, 215, 0, 0.09); }
+.chx-fin-liste .rang { width: 1.1rem; font-weight: 700; color: var(--text-secondary); }
+.chx-fin-liste .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chx-fin-liste .detail { font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; }
+.chx-fin-liste li.premier .rang, .chx-fin-liste li.premier .nom { color: var(--neon-primary); }
+
+.chx-fin-moi { margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-secondary); }
+.chx-fin-moi b { color: var(--neon-primary); }
+.chx-fin-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.2rem; }
+
 @media (prefers-reduced-motion: reduce) {
-    .chx-bord.perdu { animation: none; }
+    .chx-bord.perdu, .chx-intro, .chx-eclair.joue, .chx-j { animation: none; }
 }
