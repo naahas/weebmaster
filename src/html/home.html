@@ -1994,13 +1994,11 @@
                         <!-- Les deux bords. Ils sont CLIQUABLES en entier : au
                              doigt, viser un petit bouton pendant que le compte
                              descend est une façon de perdre sans se tromper. -->
-                        <button class="chx-bord g"
-                                :class="{ choisi: ch.monCamp === 'v',
-                                          perdu: chCampPerdant === 'v',
-                                          gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'v',
-                                          fige: ch.verrou || ch.monCamp !== null }"
-                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
-                                @click="choisirCamp('v')">
+                        <div class="chx-bord g"
+                             :class="{ choisi: ch.monCamp === 'v',
+                                       vise: ch.survol === 'v',
+                                       perdu: chCampPerdant === 'v',
+                                       gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'v' }">
                             <span class="chx-mot">VRAI</span>
                             <span class="chx-n">{{ ch.comptes.v }}</span>
                             <!-- Les fissures : tracées par-dessus le bord, elles
@@ -2014,15 +2012,13 @@
                                 <path d="M70 190 L40 110"/>
                             </svg>
                             <span class="chx-flash"></span>
-                        </button>
+                        </div>
 
-                        <button class="chx-bord d"
-                                :class="{ choisi: ch.monCamp === 'f',
-                                          perdu: chCampPerdant === 'f',
-                                          gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'f',
-                                          fige: ch.verrou || ch.monCamp !== null }"
-                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
-                                @click="choisirCamp('f')">
+                        <div class="chx-bord d"
+                             :class="{ choisi: ch.monCamp === 'f',
+                                       vise: ch.survol === 'f',
+                                       perdu: chCampPerdant === 'f',
+                                       gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'f' }">
                             <span class="chx-mot">FAUX</span>
                             <span class="chx-n">{{ ch.comptes.f }}</span>
                             <svg class="chx-fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
@@ -2032,7 +2028,7 @@
                                 <path d="M230 190 L260 110"/>
                             </svg>
                             <span class="chx-flash"></span>
-                        </button>
+                        </div>
 
                         <!-- L'énoncé. ⚠️ En BLANC, dans aucune des deux
                              couleurs : une seule teinte posée dessus
@@ -2072,14 +2068,11 @@
                              Le `key` porte le playerId : sans lui Vue recycle les
                              nœuds entre deux manches et les transforms se
                              retrouvent sur le mauvais joueur. -->
-                        <!-- ⚠️ Le clic sur un AVATAR vaut clic sur le bord où
-                             il se trouve. Les avatars couvrent les deux
-                             boutons ; sans pointeur ils ne pourraient pas
-                             montrer leur pseudo au survol, et avec un
-                             pointeur ils avalaient le clic du bord. On le
-                             rend donc, en lisant de quel côté de l'écran il
-                             est tombé. -->
-                        <div class="chx-scene" ref="chxScene" @click="choisirParPosition($event)">
+                        <!-- ⚠️ Les avatars ne choisissent plus rien : le clic
+                             vit aux bords de l'écran, et ils n'y sont jamais.
+                             Ils gardent le pointeur uniquement pour montrer
+                             leur pseudo au survol. -->
+                        <div class="chx-scene" ref="chxScene">
                             <span v-for="j in chVivants" :key="j.playerId"
                                   class="chx-j" :data-pid="j.playerId"
                                   :class="{ v: j.camp === 'v', f: j.camp === 'f',
@@ -2090,13 +2083,39 @@
                             </span>
                         </div>
 
-                        <!-- La jauge. AUCUN CHIFFRE : la même échelle que la
-                             mèche de BombAnime. Un compteur dit « dans 4,2 s »
-                             et l'on attend le dernier dixième ; un arc dit
-                             « bientôt » et l'on bouge. -->
-                        <div class="chx-jauge" v-if="!ch.verrou && !ch.revelation">
+                        <!-- Le temps, en trait sur l'arête HAUTE, comme dans
+                             Ascension. AUCUN CHIFFRE : la même échelle que la
+                             mèche de BombAnime — un compteur dit « dans
+                             4,2 s » et l'on attend le dernier dixième, un
+                             trait dit « bientôt » et l'on bouge. En haut
+                             plutôt qu'en bas : c'est là que l'œil est déjà,
+                             puisque l'énoncé y est. -->
+                        <div class="chx-jauge" :class="{ urgence: ch.reste <= 2500 }"
+                             v-if="!ch.verrou && !ch.revelation">
                             <i :style="{ transform: 'scaleX(' + chPartChrono + ')' }"></i>
                         </div>
+
+                        <!-- ⚠️ LES ZONES DE CLIC NE SONT PAS LES BORDS. Le
+                             milieu est MORT : on y empile les indécis, et un
+                             clic pour viser un avatar ou juste pour poser sa
+                             souris comptait comme un choix définitif — qu'on
+                             ne peut pas reprendre. Il faut aller CHERCHER son
+                             camp au bord de l'écran, ce qui fait du choix un
+                             geste et non un accident. -->
+                        <button class="chx-zone g"
+                                :class="{ vise: ch.survol === 'v' }"
+                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
+                                @mouseenter="ch.survol = 'v'" @mouseleave="ch.survol = null"
+                                @click="choisirCamp('v')">
+                            <span class="chx-fleche">‹</span>
+                        </button>
+                        <button class="chx-zone d"
+                                :class="{ vise: ch.survol === 'f' }"
+                                :disabled="ch.verrou || ch.monCamp !== null || !jeSuisVivantChoice"
+                                @mouseenter="ch.survol = 'f'" @mouseleave="ch.survol = null"
+                                @click="choisirCamp('f')">
+                            <span class="chx-fleche">›</span>
+                        </button>
 
                         <!-- Le verdict, une fois la manche jouée -->
                         <div class="chx-verdict" v-if="ch.revelation">

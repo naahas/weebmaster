@@ -198,6 +198,7 @@ createApp({
                 _tic: null,
 
                 monCamp: null,       // 'v' | 'f' — une seule fois
+                survol: null,        // le bord que la souris vise, pour l effet
                 verrou: false,
                 joueurs: [],         // ce qu'on dessine dans l'arène
                 comptes: { v: 0, f: 0, indecis: 0 },
@@ -5667,13 +5668,10 @@ createApp({
             this.socket.emit('choice-choisir', { camp });
         },
 
-        // Un clic tombé sur un avatar : il vaut pour le bord où cet avatar
-        // se trouve. C'est la moitié de l'écran qui décide, exactement comme
-        // si le clic avait atteint le bouton dessous.
-        choisirParPosition(e) {
-            if (!e || typeof e.clientX !== 'number') return;
-            this.choisirCamp(e.clientX < window.innerWidth / 2 ? 'v' : 'f');
-        },
+        // ⚠️ Plus de clic « par position » : le milieu est MORT. On y empile
+        // les indécis, et un clic pour viser un avatar — ou juste pour poser
+        // sa souris — comptait comme un choix définitif qu'on ne peut pas
+        // reprendre. Le choix se prend aux BORDS de l'écran, dans `chx-zone`.
 
         // L'entrée de manche tient en deux temps : le chrono paraît seul, puis
         // le jeu entier apparaît une seconde plus tard. Une seconde d'avance

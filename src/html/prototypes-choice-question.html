@@ -203,11 +203,34 @@ h1 span { color: var(--or); }
 }
 .pE .bandeau small { font-weight: 500; letter-spacing: 0.24em; color: rgba(255, 255, 255, 0.34); }
 
+/* ════════════════════════════════════════════════════════════════
+   LES MAJUSCULES
+   ⚠️ Elles ne sont pas des minuscules en plus grand. Elles perdent les
+   HAMPES et les JAMBAGES — ces montants et descentes qui donnent sa
+   silhouette à un mot et permettent de le reconnaître sans l'épeler.
+   Une phrase entière en capitales se lit donc lettre à lettre, environ
+   un dixième plus lentement. Sur un énoncé à juger en huit secondes, ce
+   dixième se paie.
+   Trois corrections le rattrapent en partie, et chaque piste les
+   applique : INTERLETTRER (les capitales serrées se collent), ALLÉGER
+   d'un cran, et DESCENDRE un peu en taille — une capitale paraît plus
+   grosse qu'une bas-de-casse de même corps.
+   ════════════════════════════════════════════════════════════════ */
+body.caps .bandeau p { text-transform: uppercase; }
+body.caps .pA .bandeau p { font-weight: 500; font-size: 1.15rem; letter-spacing: 0.05em; line-height: 1.45; }
+body.caps .pB .bandeau p { font-weight: 400; font-size: 1.3rem;  letter-spacing: 0.07em; line-height: 1.42; }
+body.caps .pC .bandeau p { font-weight: 300; font-size: 1.38rem; letter-spacing: 0.085em; line-height: 1.4; }
+/* ⚠️ Le Cormorant en capitales perd ce qui faisait son intérêt : ses
+   bas-de-casse. Il reste ici pour qu'on le voie, pas parce qu'il tient. */
+body.caps .pD .bandeau p { font-weight: 400; font-size: 1.6rem;  letter-spacing: 0.09em; line-height: 1.35; }
+body.caps .pE .bandeau p { font-weight: 300; font-size: 1.22rem; letter-spacing: 0.16em; line-height: 1.55; }
+
 @media (max-width: 760px) {
     .scene { height: 13rem; }
     .mot { font-size: 2.6rem; }
     .pA .bandeau p, .pB .bandeau p, .pC .bandeau p, .pE .bandeau p { font-size: 1.05rem; }
     .pD .bandeau p { font-size: 1.35rem; }
+    body.caps .bandeau p { font-size: 0.92rem !important; }
 }
 </style>
 </head>
@@ -238,7 +261,22 @@ h1 span { color: var(--or); }
         <button data-n="14" class="on">14</button>
         <button data-n="40">40</button>
     </div>
+    <div class="cmd">
+        <span>Casse</span>
+        <button data-c="0" class="on">Normale</button>
+        <button data-c="1">MAJUSCULES</button>
+    </div>
 </div>
+
+<div class="note" id="note-caps" hidden>
+    ⚠️ <b>Les majuscules ne se contentent pas d'être des minuscules en plus grand.</b> Elles
+    perdent les <b>hampes et les jambages</b> — ces montants et descentes qui donnent sa silhouette
+    à un mot et permettent de le reconnaître sans l'épeler. Une phrase entière en capitales se lit
+    donc <b>lettre à lettre</b>, et c'est mesurable : environ un dixième plus lentement. Sur un
+    énoncé qu'il faut juger en huit secondes, ce dixième se paie.<br>
+    Ce qui le rattrape en partie, et que chaque piste applique ici : <b>interlettrer</b> (les
+    capitales serrées se collent), <b>alléger la graisse</b> d'un cran, et <b>descendre d'un
+    poil</b> en taille — une capitale paraît plus grosse qu'une bas-de-casse de même corps.</div>
 
 <div class="piste pA">
     <h2>A · Poppins 600 <em>— la nôtre aujourd'hui, la graisse d'un bouton</em></h2>
@@ -299,6 +337,16 @@ document.querySelectorAll('[data-n]').forEach((b) => {
         b.classList.add('on');
         nJoueurs = Number(b.dataset.n);
         dessiner();
+    };
+});
+document.querySelectorAll('[data-c]').forEach((b) => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-c]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        const caps = b.dataset.c === '1';
+        document.body.classList.toggle('caps', caps);
+        // La note sur les hampes et les jambages n'a de sens qu'en capitales.
+        document.getElementById('note-caps').hidden = !caps;
     };
 });
 dessiner();

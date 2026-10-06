@@ -13764,17 +13764,78 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    Des BOUTONS, et pleine hauteur : au doigt, viser une petite cible
    pendant que le compte descend est une façon de perdre sans s'être
    trompé. La moitié de l'écran est la zone de clic. */
+/* ⚠️ Les bords sont des DÉCORS : ils ne prennent pas le clic. Celui-ci
+   vit dans `.chx-zone`, au bord de l'écran. */
 .chx-bord {
     position: absolute;
     top: 0; bottom: 0;
     width: 42%;
     border: 0;
     padding: 0;
-    cursor: pointer;
+    pointer-events: none;
     font-family: inherit;
     transition: filter 0.45s ease, opacity 0.45s ease;
 }
-.chx-bord:disabled { cursor: default; }
+
+/* ════════════════════════════════════════════════════════════
+   LA ZONE DE CLIC — au bord, et nulle part ailleurs
+   ════════════════════════════════════════════════════════════
+   ⚠️ Le milieu est MORT. On y empile les indécis, et un clic pour viser
+   un avatar — ou juste pour poser sa souris — comptait comme un choix
+   DÉFINITIF, qu'on ne peut pas reprendre. Il faut aller chercher son camp
+   au bord : le choix redevient un geste au lieu d'un accident.
+   La largeur est de 10 % de l'écran, avec un plancher de 64 px : sur un
+   téléphone de 390, 10 % font 39 px — moins qu'un pouce. */
+.chx-zone {
+    position: absolute;
+    top: 0; bottom: 0;
+    z-index: 4;
+    width: max(10%, 64px);
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+.chx-zone.g { left: 0; }
+.chx-zone.d { right: 0; }
+.chx-zone:disabled { cursor: default; pointer-events: none; }
+
+/* La flèche : elle ne paraît qu'au survol, et pointe VERS LE BORD. C'est
+   elle qui apprend en une seconde où il faut aller — sans elle, une zone
+   qui ne se voit pas est une zone qu'on ne trouve pas. */
+.chx-fleche {
+    position: absolute;
+    top: 50%;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 1;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.6);
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.chx-zone.g .chx-fleche { left: 0.8rem; color: var(--vrai); }
+.chx-zone.d .chx-fleche { right: 0.8rem; color: var(--faux); }
+.chx-zone:not(:disabled):hover .chx-fleche { opacity: 0.9; transform: translateY(-50%) scale(1); }
+
+/* Le bord VISÉ : tout s'allume d'un coup — le fond, le mot, et un liseré
+   qui court sur l'arête. On doit savoir qu'on est sur le point de
+   s'engager AVANT de cliquer, parce qu'ensuite on ne se reprend pas. */
+.chx-bord.vise { filter: brightness(1.6); }
+.chx-bord.vise .chx-mot { opacity: 0.2; }
+.chx-bord.vise::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 0.3rem;
+    animation: chx-arete 1.1s ease-in-out infinite;
+}
+.chx-bord.g.vise::before { left: 0; background: linear-gradient(transparent, var(--vrai), transparent); }
+.chx-bord.d.vise::before { right: 0; background: linear-gradient(transparent, var(--faux), transparent); }
+@keyframes chx-arete {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 1; }
+}
 .chx-bord.g {
     left: 0;
     background:
@@ -13899,7 +13960,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    la moitié de la salle. */
 .chx-enonce {
     position: absolute;
-    top: 1.2rem; left: 50%;
+    /* Abaissé d'un demi-cadratin : la jauge occupe désormais l'arête
+       haute, et le texte collé dessus se lisait comme sa légende. */
+    top: 1.9rem; left: 50%;
     z-index: 5;
     /* ⚠️ SANS CADRE. La boîte opaque posait un rectangle de plus sur un
        écran qui n'en a aucun ; le texte se tient tout seul, décollé par
@@ -14087,16 +14150,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ AUCUN CHIFFRE, et c'est la même échelle que la mèche de BombAnime :
    un compteur dit « dans 4,2 s » et l'on attend le dernier dixième ; une
    jauge dit « bientôt » et l'on bouge. */
+/* Un TRAIT SUR L'ARÊTE HAUTE, collé au bord et sur toute la largeur —
+   comme celui d'Ascension. En haut plutôt qu'en bas : c'est là que l'œil
+   est déjà, puisque l'énoncé y est. Il se vide du coin de l'œil sans
+   qu'on quitte le jeu. */
 .chx-jauge {
     position: absolute;
-    left: 50%; bottom: 1.6rem;
-    z-index: 5;
-    width: min(20rem, 70%);
-    height: 0.3rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-    transform: translateX(-50%);
+    top: 0; left: 0; right: 0;
+    z-index: 7;
+    height: 0.18rem;
+    background: rgba(255, 255, 255, 0.05);
     pointer-events: none;
 }
 .chx-jauge i {
@@ -14104,9 +14167,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, var(--neon-secondary), var(--neon-primary));
+    box-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.4);
     transform-origin: left center;
     /* Le pas du client est de 100 ms : la transition lisse entre deux. */
-    transition: transform 0.1s linear;
+    transition: transform 0.1s linear, background 0.4s ease;
+}
+/* Les deux dernières secondes : il rougit. Aucun chiffre pour autant —
+   un compteur permettrait de résoudre la manche de tête. */
+.chx-jauge.urgence i {
+    background: linear-gradient(90deg, rgba(255, 100, 100, 0.7), #ff5a5a);
+    box-shadow: 0 0 0.9rem rgba(255, 90, 90, 0.55);
 }
 
 /* ── Le verdict ────────────────────────────────────────────────────── */
