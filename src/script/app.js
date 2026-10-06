@@ -5460,12 +5460,19 @@ createApp({
             const b = scene.getBoundingClientRect();
             if (!b.width) return;
 
-            // La densité : au-delà de seize les noms tombent, au-delà de
-            // trente les portraits rapetissent. On ne lit plus un pseudo,
-            // on lit une MASSE — et c'est ce qu'il faut lire.
             const n = noeuds.length;
-            scene.classList.toggle('foule-2', n > 16 && n <= 30);
-            scene.classList.toggle('foule-3', n > 30);
+
+            // ⚠️ LA TAILLE SE CALCULE, elle n'est plus un palier. À quatre
+            // joueurs des pastilles de 2,6 rem se perdaient dans un écran de
+            // 1900 : il faut des GROS visages quand il y a peu de monde. Et
+            // elle décroît LENTEMENT (puissance 0,33) — à cinquante, ils se
+            // collent et se recouvrent, ce qui fait justement la foule. Le
+            // plancher de 34 px est la limite au-dessous de laquelle un
+            // portrait ne se reconnaît plus.
+            const base = Math.min(b.width, b.height) * 0.085;
+            const px = Math.max(34, Math.min(92,
+                Math.max(44, base) * Math.pow(6 / Math.max(6, n), 0.33)));
+            scene.style.setProperty('--chx-taille', px + 'px');
 
             const demi = noeuds[0].offsetWidth / 2;
             const demiH = noeuds[0].offsetHeight / 2;
@@ -5486,8 +5493,14 @@ createApp({
             const bJa = scene.parentElement.querySelector('.chx-jauge, .chx-verdict');
             const haut = bEn ? (bEn.getBoundingClientRect().bottom - b.top + 16) : 80;
             const bas = bJa ? (b.bottom - bJa.getBoundingClientRect().top + 16) : 80;
-            const bande = Math.max(90, b.height - haut - bas);
-            const centreY = haut + bande / 2;
+            // ⚠️ La réserve est SYMÉTRIQUE — la plus grande des deux, des deux
+            // côtés. Centrer dans la bande libre asymétrique posait le tas
+            // trente pixels sous le milieu de l'écran : correct au sens strict,
+            // mais l'œil compare au CENTRE DE L'ÉCRAN, pas au centre d'une
+            // bande qu'il ne voit pas.
+            const marge = Math.max(haut, bas);
+            const bande = Math.max(90, b.height - marge * 2);
+            const centreY = b.height / 2;
             const rayonY = Math.max(40, bande / 2 - demiH);
 
             // ⚠️ Le rayon qu'on donne borne les CENTRES : il faut lui
@@ -5509,10 +5522,27 @@ createApp({
                         // monterait sous l'énoncé avant d'être plein.
                         const y = centreY + (k === 0 ? 0 : Math.sin(a) * pas * k * 0.66);
                         const el = liste[i];
+                        // ⚠️ UN AVATAR QUI N'A JAMAIS ÉTÉ PLACÉ est à (0,0),
+                        // c'est-à-dire au coin HAUT GAUCHE de l'écran — et
+                        // comme il porte une transition, il y glissait depuis
+                        // au lieu d'apparaître au milieu. On pose donc sa
+                        // première position SANS transition, puis on la rend.
+                        const premierePose = !el.dataset.pose;
+                        if (premierePose) {
+                            el.style.transition = 'none';
+                            el.dataset.pose = '1';
+                        }
                         el.style.transform = 'translate(' + (x - demi) + 'px,' + (y - demiH) + 'px)';
                         // Plus bas à l'écran = devant. C'est la profondeur
                         // qu'on lit sans y penser sur une foule.
                         el.style.zIndex = String(Math.round(y));
+                        if (premierePose) {
+                            // Forcer le calcul avant de rendre la transition :
+                            // sinon le navigateur fond les deux et le
+                            // glissement depuis le coin revient.
+                            void el.offsetWidth;
+                            el.style.transition = '';
+                        }
                     }
                 }
                 return pas * anneaux + demi;
@@ -5628,6 +5658,14 @@ createApp({
             if (this.estSpectateur || !this.jeSuisVivantChoice) return;
             this.ch.monCamp = camp;
             this.socket.emit('choice-choisir', { camp });
+        },
+
+        // Un clic tombé sur un avatar : il vaut pour le bord où cet avatar
+        // se trouve. C'est la moitié de l'écran qui décide, exactement comme
+        // si le clic avait atteint le bouton dessous.
+        choisirParPosition(e) {
+            if (!e || typeof e.clientX !== 'number') return;
+            this.choisirCamp(e.clientX < window.innerWidth / 2 ? 'v' : 'f');
         },
 
         // L'entrée de manche tient en deux temps : le chrono paraît seul, puis
@@ -8134,9 +8172,11 @@ createApp({
                 // Le lever de rideau : le mode s'annonce pendant que les
                 // avatars tombent au milieu. Deux temps, pas trois — au-delà
                 // ce n'est plus une intro, c'est une attente.
-                this.ch.intro = 'ouverture';
+                // Les avatars apparaissent au milieu, et c est tout : pas de
+                // titre, pas de decompte. La question suit une seconde apres,
+                // envoyee par le serveur.
+                this.ch.intro = null;
                 this.replacerChoice();
-                this.ch._introT.push(setTimeout(() => { this.ch.intro = null; }, 1900));
             });
 
             this.socket.on('choice-question', (data) => {

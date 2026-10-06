@@ -2003,6 +2003,17 @@
                                 @click="choisirCamp('v')">
                             <span class="chx-mot">VRAI</span>
                             <span class="chx-n">{{ ch.comptes.v }}</span>
+                            <!-- Les fissures : tracées par-dessus le bord, elles
+                                 se dessinent depuis le centre. Elles ne durent
+                                 qu'une demi-seconde, mais c'est elles qui font
+                                 « casser » plutôt que « s'éteindre ». -->
+                            <svg class="chx-fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
+                                <path d="M300 250 L210 210 L150 250 L70 190 L0 215"/>
+                                <path d="M210 210 L190 90 L140 0"/>
+                                <path d="M150 250 L130 360 L160 500"/>
+                                <path d="M70 190 L40 110"/>
+                            </svg>
+                            <span class="chx-flash"></span>
                         </button>
 
                         <button class="chx-bord d"
@@ -2014,6 +2025,13 @@
                                 @click="choisirCamp('f')">
                             <span class="chx-mot">FAUX</span>
                             <span class="chx-n">{{ ch.comptes.f }}</span>
+                            <svg class="chx-fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
+                                <path d="M0 250 L90 210 L150 250 L230 190 L300 215"/>
+                                <path d="M90 210 L110 90 L160 0"/>
+                                <path d="M150 250 L170 360 L140 500"/>
+                                <path d="M230 190 L260 110"/>
+                            </svg>
+                            <span class="chx-flash"></span>
                         </button>
 
                         <!-- L'énoncé. ⚠️ En BLANC, dans aucune des deux
@@ -2032,13 +2050,11 @@
                             <p>{{ ch.question.question }}</p>
                         </div>
 
-                        <!-- Le premier temps de l'intro : le mode s'annonce.
-                             Deux secondes, pas plus — c'est un lever de
-                             rideau, pas un écran de chargement. -->
-                        <div class="chx-intro" v-if="ch.intro === 'ouverture'">
-                            <b>CHOICE</b>
-                            <span>{{ chVivants.length }} joueurs · {{ ch.vies }} vie<span v-if="ch.vies > 1">s</span></span>
-                        </div>
+                        <!-- ⚠️ AUCUN TEXTE d'ouverture, et pas de décompte.
+                             L'intro est l'apparition des joueurs puis celle
+                             de la question, rien d'autre : un titre « CHOICE »
+                             et un décompte disent ce qu'on sait déjà et
+                             retardent la première manche de deux secondes. -->
 
                         <!-- L'éclair du verrouillage : il balaie l'écran, et
                              c'est le seul moment où les deux bords disent la
@@ -2056,14 +2072,21 @@
                              Le `key` porte le playerId : sans lui Vue recycle les
                              nœuds entre deux manches et les transforms se
                              retrouvent sur le mauvais joueur. -->
-                        <div class="chx-scene" ref="chxScene">
+                        <!-- ⚠️ Le clic sur un AVATAR vaut clic sur le bord où
+                             il se trouve. Les avatars couvrent les deux
+                             boutons ; sans pointeur ils ne pourraient pas
+                             montrer leur pseudo au survol, et avec un
+                             pointeur ils avalaient le clic du bord. On le
+                             rend donc, en lisant de quel côté de l'écran il
+                             est tombé. -->
+                        <div class="chx-scene" ref="chxScene" @click="choisirParPosition($event)">
                             <span v-for="j in chVivants" :key="j.playerId"
                                   class="chx-j" :data-pid="j.playerId"
                                   :class="{ v: j.camp === 'v', f: j.camp === 'f',
-                                            moi: j.playerId === playerId }"
-                                  :title="j.username">
+                                            moi: j.playerId === playerId }">
                                 <i class="chx-trace"></i>
                                 <img :src="srcAvatar(j.avatar)" alt="">
+                                <b class="chx-pseudo">{{ j.username }}</b>
                             </span>
                         </div>
 

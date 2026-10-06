@@ -13851,6 +13851,48 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 .chx-bord.gagne { filter: brightness(1.25); }
 
+/* Les fissures, tracées en SVG par-dessus le bord qui tombe : elles se
+   dessinent depuis le centre, puis s'effacent. Une demi-seconde, mais
+   c'est elles qui font « casser » plutôt que « s'éteindre ». */
+.chx-fissures {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    opacity: 0;
+}
+.chx-fissures path {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.85);
+    stroke-width: 1.4;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+}
+.chx-bord.perdu .chx-fissures { opacity: 1; }
+.chx-bord.perdu .chx-fissures path { animation: chx-fissure 0.55s ease-out forwards; }
+@keyframes chx-fissure {
+    0%   { stroke-dashoffset: 400; opacity: 1; }
+    70%  { stroke-dashoffset: 0;   opacity: 1; }
+    100% { stroke-dashoffset: 0;   opacity: 0; }
+}
+
+/* Le flash de la casse : un blanc très court. La secousse seule se lit
+   comme une erreur de saisie, pas comme une sanction. */
+.chx-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+.chx-bord.perdu .chx-flash { animation: chx-flash 0.42s ease-out; }
+@keyframes chx-flash {
+    0%   { opacity: 0; }
+    12%  { opacity: 0.85; }
+    100% { opacity: 0; }
+}
+
 /* ── L'énoncé ──────────────────────────────────────────────────────
    ⚠️ En BLANC, dans aucune des deux couleurs : une seule teinte posée
    dessus suggérerait une réponse, et une couleur suffit à faire pencher
@@ -13859,8 +13901,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     position: absolute;
     top: 1.2rem; left: 50%;
     z-index: 5;
-    width: min(26rem, 84%);
-    padding: 0.8rem 1rem;
+    /* Plus ÉTALÉ que haut : un énoncé de deux lignes dans une boîte étroite
+       se lit moins vite qu'une seule ligne large, et l'arène a toute la
+       largeur de l'écran à offrir. Le plafond en rem garde la ligne sous
+       les 90 caractères — au-delà l'œil perd son retour. */
+    width: min(46rem, 92%);
+    padding: 0.85rem 1.6rem;
     text-align: center;
     background: rgba(8, 8, 12, 0.88);
     border: 1px solid rgba(255, 255, 255, 0.09);
@@ -13903,22 +13949,57 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    glissement qui porte le mode : on voit QUI part, et quand. Trois colonnes
    en flex faisaient disparaître l'avatar d'un côté pour le faire reparaître
    de l'autre. */
+/* ⚠️ La taille vient de `--chx-taille`, que `placerChoice()` calcule
+   d'après le nombre de joueurs — et non de trois paliers CSS. À quatre
+   joueurs, des pastilles de 2,6 rem se perdaient dans un écran de 1900 :
+   il faut de GROS visages quand il y a peu de monde, et une décroissance
+   LENTE ensuite. À cinquante ils se collent et se recouvrent, ce qui fait
+   justement la foule. */
 .chx-j {
     position: absolute;
     top: 0; left: 0;
     display: block;
-    width: 2.6rem;
+    width: var(--chx-taille, 3.4rem);
+    /* Les avatars prennent le pointeur pour montrer leur pseudo au survol ;
+       le clic est rendu au bord par `choisirParPosition`. */
+    pointer-events: auto;
+    cursor: pointer;
     transition: transform 0.72s cubic-bezier(0.22, 1.2, 0.3, 1);
     will-change: transform;
-    /* L'arrivée dans l'arène, échelonnée par le navigateur. */
-    animation: chx-pose 0.5s cubic-bezier(0.2, 1.6, 0.35, 1) both;
+    animation: chx-pose 0.45s cubic-bezier(0.2, 1.6, 0.35, 1) both;
 }
+/* L'apparition : ils grossissent sur place au lieu de surgir. ⚠️ Pas de
+   `transform` ici — il est écrit en ligne par le placement, et une
+   animation qui le touche l'écraserait. */
 @keyframes chx-pose {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from { opacity: 0; filter: blur(0.3rem); }
+    to   { opacity: 1; filter: blur(0); }
 }
-.chx-scene.foule-2 .chx-j { width: 2.1rem; }
-.chx-scene.foule-3 .chx-j { width: 1.6rem; }
+
+/* Le pseudo, au survol seulement : cinquante étiquettes affichées en
+   permanence font un mur de texte, et ce qu'on lit alors n'est plus la
+   foule. */
+.chx-pseudo {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 50%;
+    padding: 0.12rem 0.4rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #fff;
+    background: rgba(8, 8, 12, 0.9);
+    border-radius: 0.3rem;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+.chx-j:hover { z-index: 999 !important; }
+.chx-j:hover .chx-pseudo { opacity: 1; }
+/* Le mien porte toujours le sien : à cinquante visages, se retrouver est
+   la première chose qu'on cherche. */
+.chx-j.moi .chx-pseudo { opacity: 1; }
 
 .chx-j img {
     width: 100%;
@@ -13968,36 +14049,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     will-change: transform, opacity;
 }
 
-/* ── L'intro ───────────────────────────────────────────────────────
-   Un lever de rideau de deux secondes, pas un écran de chargement : le
-   mode s'annonce pendant que les avatars tombent au milieu. */
-.chx-intro {
-    position: absolute;
-    top: 50%; left: 50%;
-    z-index: 8;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    text-align: center;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    animation: chx-intro 1.9s ease both;
-}
-.chx-intro b {
-    font-family: 'Bebas Neue', 'Poppins', sans-serif;
-    font-size: clamp(2.6rem, 9vw, 5rem);
-    letter-spacing: 0.14em;
-    color: #fff;
-    text-shadow: 0 0 2.5rem rgba(255, 215, 0, 0.45);
-}
-.chx-intro span { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 0.1em; }
-@keyframes chx-intro {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(1.25); filter: blur(0.5rem); }
-    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1);    filter: blur(0); }
-    78%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
-}
+/* ⚠️ PLUS DE BLOC D'INTRO ici, et c'est délibéré : il portait un titre
+   « CHOICE » et un compte de joueurs, qui disaient ce qu'on sait déjà et
+   retardaient la première manche de deux secondes. L'intro, c'est
+   l'apparition des avatars puis celle de l'énoncé — rien d'autre, et
+   aucun décompte. */
 
 /* L'éclair du verrouillage : il balaie l'écran d'un bord à l'autre. */
 .chx-eclair {
@@ -14165,5 +14221,5 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .chx-fin-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.2rem; }
 
 @media (prefers-reduced-motion: reduce) {
-    .chx-bord.perdu, .chx-intro, .chx-eclair.joue, .chx-j { animation: none; }
+    .chx-bord.perdu, .chx-eclair.joue, .chx-j { animation: none; }
 }

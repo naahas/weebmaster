@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choice — le bandeau de question</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   CHOICE — cinq façons de poser l'énoncé en haut de l'arène
+
+   ⚠️ Le fond n'est pas un décor : c'est le vrai dégradé des deux
+   bords, parce que c'est DESSUS que le bandeau doit se détacher.
+   Jugé sur du noir, n'importe lequel passe.
+
+   Trois contraintes décident, et aucune n'est négociable :
+
+   1. ⚠️ AUCUNE DES DEUX COULEURS sur l'énoncé. Une seule teinte
+      posée dessus suggère une réponse, et à ce jeu-là une couleur
+      suffit à faire pencher la moitié de la salle. Le texte est
+      blanc, le cadre est neutre.
+   2. Il se lit en UN COUP D'ŒIL. Le compte démarre en même temps
+      que lui : une seconde passée à chercher où commence la phrase
+      est une seconde volée à tout le monde.
+   3. Il ne mange pas le milieu. Le tas des indécis vit juste en
+      dessous, et un bandeau trop haut le pousse sous la jauge.
+
+   Et une mesure : la ligne reste sous ~90 caractères. Au-delà l'œil
+   perd son retour à la ligne, quelle que soit la largeur du cadre.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --or: #ffd700;
+    --vrai: #2f9bff;
+    --faux: #ff3b5c;
+    --vrai-rgb: 47, 155, 255;
+    --faux-rgb: 255, 59, 92;
+    --doux: rgba(255, 255, 255, 0.46);
+    --tres-doux: rgba(255, 255, 255, 0.26);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: #07070a;
+    min-height: 100vh;
+}
+h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+h1 span { color: var(--or); }
+.sous { max-width: 56rem; margin: 0.25rem 0 1.2rem; font-size: 0.85rem; line-height: 1.6; color: var(--doux); }
+.sous b { color: rgba(255, 255, 255, 0.78); }
+.note {
+    max-width: 56rem; margin-bottom: 1.6rem; padding: 0.7rem 0.9rem;
+    font-size: 0.78rem; line-height: 1.6; color: var(--doux);
+    border-left: 0.14rem solid rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.04);
+}
+.note b { color: var(--or); }
+
+.commandes {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; align-items: center;
+    max-width: 70rem; margin-bottom: 1.5rem; padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.025);
+    border: 0.06rem solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.7rem;
+}
+.cmd { display: flex; align-items: center; gap: 0.45rem; }
+.cmd > span {
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--tres-doux);
+}
+.cmd button {
+    padding: 0.4rem 0.8rem; font-family: inherit; font-size: 0.76rem; font-weight: 600;
+    color: var(--doux); background: rgba(255, 255, 255, 0.06);
+    border: none; border-radius: 0.35rem; cursor: pointer;
+}
+.cmd button:hover { color: #fff; background: rgba(255, 255, 255, 0.14); }
+.cmd button.on { color: #14100a; background: linear-gradient(135deg, #ffe066, var(--or)); }
+
+/* ── La scène : le VRAI fond de l'arène ─────────────────────────── */
+.piste { max-width: 70rem; margin-bottom: 2.2rem; }
+.piste > h2 {
+    display: flex; align-items: baseline; gap: 0.6rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--or);
+}
+.piste > h2 em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--tres-doux); font-size: 0.74rem; }
+.scene {
+    position: relative; height: 15rem; overflow: hidden;
+    border-radius: 0.8rem; background: #060609;
+    box-shadow: inset 0 0 0 0.06rem rgba(255, 255, 255, 0.06);
+}
+.scene::before, .scene::after { content: ''; position: absolute; top: 0; bottom: 0; width: 42%; }
+.scene::before {
+    left: 0;
+    background:
+        linear-gradient(90deg, rgba(var(--vrai-rgb), 0.26), rgba(var(--vrai-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 0% 50%, rgba(var(--vrai-rgb), 0.3), transparent 70%);
+}
+.scene::after {
+    right: 0;
+    background:
+        linear-gradient(270deg, rgba(var(--faux-rgb), 0.26), rgba(var(--faux-rgb), 0.03) 72%, transparent),
+        radial-gradient(60% 70% at 100% 50%, rgba(var(--faux-rgb), 0.32), transparent 70%);
+}
+/* Le mot de fond et le tas, pour juger le bandeau dans son vrai voisinage */
+.mot {
+    position: absolute; top: 50%; font-family: 'Bebas Neue', sans-serif;
+    font-size: 5rem; line-height: 1; opacity: 0.07; transform: translateY(-50%);
+}
+.mot.g { left: 12%; color: #7ac2ff; }
+.mot.d { right: 12%; color: #ff7a8f; }
+.tas {
+    position: absolute; top: 50%; left: 50%;
+    display: flex; transform: translate(-50%, -40%);
+}
+.tas i {
+    width: 2.4rem; height: 2.4rem; margin: -0.5rem;
+    border-radius: 50%; background: #1a1d24;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+/* ══ Le bandeau, cinq pistes ══════════════════════════════════════ */
+.bandeau { position: absolute; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; }
+.bandeau small {
+    display: block; font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--tres-doux);
+}
+.bandeau p { color: #fff; font-family: 'Poppins', sans-serif; font-weight: 600; }
+
+/* 1 — LA CARTE. Celle qui est en place. Un cadre plein, posé sur le
+   fond : il se détache partout, mais il pose une BOÎTE de plus sur un
+   écran qui n'en a aucune. */
+.p1 .bandeau {
+    top: 1.1rem; width: min(46rem, 92%);
+    padding: 0.85rem 1.6rem;
+    background: rgba(8, 8, 12, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.7rem;
+    backdrop-filter: blur(6px);
+}
+.p1 .bandeau p { font-size: 1.1rem; line-height: 1.4; }
+
+/* 2 — LE BANDEAU PLEINE LARGEUR. Il court d'un bord à l'autre et
+   coupe l'écran en deux : l'arène commence SOUS lui. Le plus lisible
+   des cinq, et le plus lourd — il mange 5 rem de haut en permanence. */
+.p2 .bandeau {
+    top: 0; left: 0; width: 100%; transform: none;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(180deg, rgba(6, 6, 10, 0.96), rgba(6, 6, 10, 0.75));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.p2 .bandeau p { font-size: 1.15rem; line-height: 1.35; }
+
+/* 3 — SANS CADRE. Le texte seul, posé sur le fond, avec une ombre qui
+   le décolle. Rien ne s'ajoute à l'écran — mais sur le dégradé clair
+   d'un bord, l'ombre travaille beaucoup. */
+.p3 .bandeau { top: 1.4rem; width: min(50rem, 92%); }
+.p3 .bandeau p {
+    font-size: 1.3rem; line-height: 1.35;
+    text-shadow: 0 0.15rem 1.4rem rgba(0, 0, 0, 0.95), 0 0 2.5rem rgba(0, 0, 0, 0.8);
+}
+.p3 .bandeau small { margin-bottom: 0.3rem; text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9); }
+
+/* 4 — LE TRAIT. Pas de cadre, mais un filet d'or SOUS la phrase : il
+   l'ancre sans l'enfermer, et c'est le seul endroit de l'arène où l'or
+   a encore sa place. ⚠️ Le filet est NEUTRE, jamais bleu ni rouge. */
+.p4 .bandeau { top: 1.5rem; width: min(50rem, 92%); padding-bottom: 0.7rem; }
+.p4 .bandeau p { font-size: 1.28rem; line-height: 1.35; text-shadow: 0 0.15rem 1.2rem rgba(0, 0, 0, 0.9); }
+.p4 .bandeau::after {
+    content: ''; position: absolute; left: 50%; bottom: 0;
+    width: 4.5rem; height: 0.14rem; border-radius: 99px;
+    background: linear-gradient(90deg, transparent, var(--or), transparent);
+    transform: translateX(-50%);
+}
+
+/* 5 — LA SÉRIE À PART. L'anime devient une pastille posée AU-DESSUS du
+   cadre, à cheval : elle cesse d'être une ligne de plus à lire dans le
+   bloc. L'énoncé gagne toute la place. */
+.p5 .bandeau {
+    top: 1.9rem; width: min(48rem, 92%);
+    padding: 1rem 1.6rem 0.85rem;
+    background: rgba(8, 8, 12, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.7rem;
+}
+.p5 .bandeau small {
+    position: absolute; top: 0; left: 50%;
+    padding: 0.2rem 0.7rem;
+    background: #12131a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    transform: translate(-50%, -50%);
+}
+.p5 .bandeau p { font-size: 1.18rem; line-height: 1.38; }
+
+@media (max-width: 760px) {
+    .scene { height: 13rem; }
+    .mot { font-size: 2.6rem; }
+    .p1 .bandeau p, .p2 .bandeau p, .p5 .bandeau p { font-size: 0.98rem; }
+    .p3 .bandeau p, .p4 .bandeau p { font-size: 1.05rem; }
+}
+</style>
+</head>
+<body>
+
+<h1>Choice — <span>le bandeau de question</span></h1>
+<p class="sous">
+    Cinq façons de poser l'énoncé en haut de l'arène, sur le <b>vrai fond</b> des deux bords —
+    c'est dessus qu'il doit se détacher, pas sur du noir. Le tas des indécis est dessiné dessous :
+    un bandeau trop haut le pousse sous la jauge.
+</p>
+<div class="note">
+    ⚠️ <b>Aucune des deux couleurs sur l'énoncé</b>, dans aucune des cinq pistes. Une seule teinte
+    posée dessus suggérerait une réponse, et une couleur suffit à faire pencher la moitié de la
+    salle. Le texte est blanc, le cadre neutre — l'or n'apparaît que sur le filet de la piste 4,
+    qui ne dit rien d'un camp.
+</div>
+
+<div class="commandes">
+    <div class="cmd">
+        <span>Énoncé</span>
+        <button data-t="0" class="on">Court</button>
+        <button data-t="1">Moyen</button>
+        <button data-t="2">Long</button>
+    </div>
+    <div class="cmd">
+        <span>Joueurs</span>
+        <button data-n="5">5</button>
+        <button data-n="14" class="on">14</button>
+        <button data-n="40">40</button>
+    </div>
+</div>
+
+<div class="piste p1">
+    <h2>1 · La carte <em>— celle qui est en place</em></h2>
+    <div class="scene"></div>
+</div>
+<div class="piste p2">
+    <h2>2 · Le bandeau pleine largeur <em>— le plus lisible, le plus lourd</em></h2>
+    <div class="scene"></div>
+</div>
+<div class="piste p3">
+    <h2>3 · Sans cadre <em>— rien ne s'ajoute à l'écran</em></h2>
+    <div class="scene"></div>
+</div>
+<div class="piste p4">
+    <h2>4 · Le trait <em>— ancré sans être enfermé</em></h2>
+    <div class="scene"></div>
+</div>
+<div class="piste p5">
+    <h2>5 · La série à part <em>— une ligne de moins à lire</em></h2>
+    <div class="scene"></div>
+</div>
+
+<script>
+const TEXTES = [
+    { s: 'One Piece', q: 'Zoro se bat avec deux sabres.' },
+    { s: 'Fullmetal Alchemist', q: 'Edward a perdu son bras droit lorsqu’il était enfant.' },
+    { s: 'Hunter x Hunter', q: 'Le Nen se divise en quatre catégories : renforcement, émission, manipulation et transformation.' },
+];
+let iTexte = 0, nJoueurs = 14;
+
+function dessiner() {
+    const t = TEXTES[iTexte];
+    document.querySelectorAll('.scene').forEach((sc) => {
+        sc.innerHTML =
+            '<span class="mot g">VRAI</span><span class="mot d">FAUX</span>'
+            + '<span class="tas">' + '<i></i>'.repeat(Math.min(nJoueurs, 22)) + '</span>'
+            + '<div class="bandeau"><small>' + t.s + ' · manche 3</small><p>' + t.q + '</p></div>';
+    });
+    // La mesure qui tranche : au-delà de ~90 caractères, l'œil perd son
+    // retour à la ligne quelle que soit la largeur du cadre.
+    document.querySelectorAll('.piste > h2 em').forEach((e) => {
+        if (!e.dataset.base) e.dataset.base = e.textContent;
+        e.textContent = e.dataset.base + ' · ' + t.q.length + ' caractères';
+    });
+}
+
+document.querySelectorAll('[data-t]').forEach((b) => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-t]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        iTexte = Number(b.dataset.t);
+        dessiner();
+    };
+});
+document.querySelectorAll('[data-n]').forEach((b) => {
+    b.onclick = () => {
+        document.querySelectorAll('[data-n]').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        nJoueurs = Number(b.dataset.n);
+        dessiner();
+    };
+});
+dessiner();
+</script>
+</body>
+</html>

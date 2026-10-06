@@ -2103,6 +2103,12 @@ app.get('/prototypes/choice', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-choice.html');
 });
 
+// Le bandeau de question de Choice : cinq facons de le poser, sur le VRAI
+// fond des deux bords — c est dessus qu il doit se detacher, pas sur du noir.
+app.get('/prototypes/choice-question', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-choice-question.html');
+});
+
 app.get('/prototypes/collect-duel', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-duel.html');
 });
