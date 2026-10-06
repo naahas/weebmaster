@@ -2118,15 +2118,17 @@
                         </button>
 
                         <!-- Le verdict, une fois la manche jouée -->
+                        <!-- ⚠️ La manche nulle ne dit plus « personne n'a
+                             trouvé » : la phrase expliquait une règle au lieu
+                             d'annoncer un résultat, et c'est le genre de texte
+                             qu'on lit une fois. On montre la réponse, et rien
+                             d'autre — personne n'étant tombé, il n'y a rien à
+                             annoncer à personne. -->
                         <div class="chx-verdict" v-if="ch.revelation">
-                            <template v-if="ch.revelation.nulle">
-                                <b class="nulle">Personne n'a trouvé</b>
-                                <span>manche annulée, personne ne perd de vie</span>
-                            </template>
-                            <template v-else>
-                                <b :class="ch.revelation.bonne ? 'v' : 'f'">
-                                    {{ ch.revelation.bonne ? 'VRAI' : 'FAUX' }}
-                                </b>
+                            <b :class="ch.revelation.bonne ? 'v' : 'f'">
+                                {{ ch.revelation.bonne ? 'VRAI' : 'FAUX' }}
+                            </b>
+                            <template v-if="!ch.revelation.nulle">
                                 <span v-if="chAiJuste === true">tu restes</span>
                                 <span v-else-if="chAiJuste === false">tu tombes</span>
                                 <span v-else-if="jeSuisVivantChoice">tu n'as pas choisi</span>

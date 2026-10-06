@@ -5470,9 +5470,9 @@ createApp({
             // collent et se recouvrent, ce qui fait justement la foule. Le
             // plancher de 34 px est la limite au-dessous de laquelle un
             // portrait ne se reconnaît plus.
-            const base = Math.min(b.width, b.height) * 0.085;
-            const px = Math.max(34, Math.min(92,
-                Math.max(44, base) * Math.pow(6 / Math.max(6, n), 0.33)));
+            const base = Math.min(b.width, b.height) * 0.1;
+            const px = Math.max(42, Math.min(104,
+                Math.max(52, base) * Math.pow(6 / Math.max(6, n), 0.28)));
             scene.style.setProperty('--chx-taille', px + 'px');
 
             const demi = noeuds[0].offsetWidth / 2;
@@ -5490,10 +5490,17 @@ createApp({
             // deux se MESURENT — l'énoncé se replie en deux lignes sur
             // téléphone, et deux nombres en dur tomberaient juste sur un
             // seul écran.
+            // ⚠️ NE PAS CHERCHER LA JAUGE ICI. Elle est passée sur l'arête
+            // HAUTE : la prendre pour la borne du bas donnait `bas = hauteur
+            // de l'écran`, donc une bande libre réduite à son plancher de
+            // 90 px — et les neuf avatars s'y empilaient les uns sur les
+            // autres. Le haut est déjà couvert par l'énoncé, qui est sous
+            // elle ; en bas il n'y a que le verdict, et seulement après la
+            // révélation.
             const bEn = scene.parentElement.querySelector('.chx-enonce');
-            const bJa = scene.parentElement.querySelector('.chx-jauge, .chx-verdict');
-            const haut = bEn ? (bEn.getBoundingClientRect().bottom - b.top + 16) : 80;
-            const bas = bJa ? (b.bottom - bJa.getBoundingClientRect().top + 16) : 80;
+            const bVe = scene.parentElement.querySelector('.chx-verdict');
+            const haut = bEn ? (bEn.getBoundingClientRect().bottom - b.top + 16) : 90;
+            const bas = bVe ? (b.bottom - bVe.getBoundingClientRect().top + 16) : 90;
             // ⚠️ La réserve est SYMÉTRIQUE — la plus grande des deux, des deux
             // côtés. Centrer dans la bande libre asymétrique posait le tas
             // trente pixels sous le milieu de l'écran : correct au sens strict,
@@ -5561,12 +5568,16 @@ createApp({
             // au rythme où les bords se remplissent, donc les trois zones ne
             // peuvent pas se croiser — sans avoir à les borner chacune par
             // un pourcentage recopié.
+            // ⚠️ Le SERRAGE remonte : à 0,62 au milieu les visages se
+            // recouvraient au point de faire une tache, et l'on ne
+            // distinguait plus personne. Ils se touchent toujours — c'est ce
+            // qui fait la foule — mais chaque portrait reste entier.
             const rMilieu = tas(groupes.null, b.width / 2,
-                Math.max(1, Math.min(b.width * 0.3, rayonY / 0.66) - demi), 0.62);
+                Math.max(1, Math.min(b.width * 0.3, rayonY / 0.66) - demi), 0.82);
             const libre = Math.max(taille, b.width / 2 - rMilieu - 14);
             const rBord = Math.max(1, Math.min(libre / 2, rayonY / 0.66) - demi);
-            tas(groupes.v, libre / 2, rBord, 0.92);
-            tas(groupes.f, b.width - libre / 2, rBord, 0.92);
+            tas(groupes.v, libre / 2, rBord, 1);
+            tas(groupes.f, b.width - libre / 2, rBord, 1);
         },
 
         // Replacer après que Vue a rendu. Les engagements qui tombent dans

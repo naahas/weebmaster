@@ -13784,19 +13784,37 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    un avatar — ou juste pour poser sa souris — comptait comme un choix
    DÉFINITIF, qu'on ne peut pas reprendre. Il faut aller chercher son camp
    au bord : le choix redevient un geste au lieu d'un accident.
-   La largeur est de 10 % de l'écran, avec un plancher de 64 px : sur un
-   téléphone de 390, 10 % font 39 px — moins qu'un pouce. */
+   ⚠️ MAIS UNE ZONE QU'ON NE VOIT PAS EST UNE ZONE QU'ON NE TROUVE PAS.
+   À 10 % et révélée au seul survol, elle était introuvable : on clique
+   là où l'on cliquait avant — sur le grand mot, au quart de l'écran —
+   et rien ne se passe. Elle fait donc 15 % (plancher 90 px, car 10 %
+   d'un téléphone de 390 font moins qu'un pouce) et elle se MONTRE EN
+   PERMANENCE, discrètement, avant même qu'on l'ait survolée. */
 .chx-zone {
     position: absolute;
     top: 0; bottom: 0;
     z-index: 4;
-    width: max(10%, 64px);
+    width: max(15%, 90px);
     border: 0;
     padding: 0;
     background: none;
     cursor: pointer;
     font-family: inherit;
 }
+/* Le voile permanent : il dit « ici » sans crier. C'est lui qui remplace
+   la découverte par le hasard. */
+.chx-zone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+.chx-zone.g::after { background: linear-gradient(90deg, rgba(var(--vrai-rgb), 0.22), transparent); }
+.chx-zone.d::after { background: linear-gradient(270deg, rgba(var(--faux-rgb), 0.22), transparent); }
+.chx-zone:not(:disabled):hover::after { opacity: 1; }
+.chx-zone:disabled::after { opacity: 0; }
 .chx-zone.g { left: 0; }
 .chx-zone.d { right: 0; }
 .chx-zone:disabled { cursor: default; pointer-events: none; }
@@ -13804,19 +13822,31 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 /* La flèche : elle ne paraît qu'au survol, et pointe VERS LE BORD. C'est
    elle qui apprend en une seconde où il faut aller — sans elle, une zone
    qui ne se voit pas est une zone qu'on ne trouve pas. */
+/* La flèche pointe VERS LE BORD, et elle est là DÈS LE DÉPART — c'est
+   elle qui apprend en une seconde où il faut aller. Elle respire
+   doucement pour attirer l'œil sans l'occuper, et s'allume au survol. */
 .chx-fleche {
     position: absolute;
     top: 50%;
     font-family: 'Bebas Neue', sans-serif;
     font-size: 4rem;
     line-height: 1;
-    opacity: 0;
-    transform: translateY(-50%) scale(0.6);
+    opacity: 0.4;
+    transform: translateY(-50%) scale(0.9);
     transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.2, 1.5, 0.4, 1);
+    animation: chx-respire 2.2s ease-in-out infinite;
+}
+@keyframes chx-respire {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 0.6; }
 }
 .chx-zone.g .chx-fleche { left: 0.8rem; color: var(--vrai); }
 .chx-zone.d .chx-fleche { right: 0.8rem; color: var(--faux); }
-.chx-zone:not(:disabled):hover .chx-fleche { opacity: 0.9; transform: translateY(-50%) scale(1); }
+.chx-zone:not(:disabled):hover .chx-fleche {
+    opacity: 1; transform: translateY(-50%) scale(1.15); animation: none;
+}
+/* Choisi ou manche verrouillée : la zone s'efface entièrement. */
+.chx-zone:disabled .chx-fleche { opacity: 0; animation: none; }
 
 /* Le bord VISÉ : tout s'allume d'un coup — le fond, le mot, et un liseré
    qui court sur l'arête. On doit savoir qu'on est sur le point de
@@ -13995,10 +14025,15 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    /prototypes/choice-question. */
 .chx-enonce p {
     font-family: 'Space Grotesk', 'Poppins', sans-serif;
-    font-size: clamp(1.1rem, 2.3vw, 1.5rem);
+    font-size: clamp(1rem, 2vw, 1.32rem);
     font-weight: 400;
     letter-spacing: -0.015em;
-    line-height: 1.32;
+    /* ⚠️ 1,45 et non 1,32 : les JAMBAGES — le p de « pensées », le g, le
+       y — descendent sous la ligne, et un interligne trop serré les
+       faisait passer pour coupés. Le `padding-bottom` finit le travail
+       sur la dernière ligne, que l'interligne ne protège pas. */
+    line-height: 1.45;
+    padding-bottom: 0.2rem;
     color: #fff;
     text-shadow: 0 0.12rem 1.6rem rgba(0, 0, 0, 0.9), 0 0 3rem rgba(0, 0, 0, 0.7);
 }
