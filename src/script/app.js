@@ -4405,6 +4405,15 @@ createApp({
             this.lancerRevelationListe(this.rushPlaces.length, '.rush-fin');
         },
 
+        // La place dévoilée au pas « n - i » : le dernier d'abord, le premier
+        // en dernier. Même geste que Rush, Collect et Ascension.
+        chEndSlot(i) {
+            return this.chPodium.length - i;
+        },
+        startChoiceReveal() {
+            this.lancerRevelationListe(this.chPodium.length, '.chx-fin');
+        },
+
         colEndSlot(i) {
             return this.colClassement.length - i;
         },
@@ -8336,6 +8345,11 @@ createApp({
                 this.gameInProgress = false;
                 this.gameEnded = true;
                 document.body.classList.remove('game-active');
+                // Le classement se dévoile du dernier au premier. ⚠️ Au
+                // `$nextTick` : la liste n'existe pas encore dans le DOM au
+                // moment où l'on reçoit l'événement, et `celebrerVainqueur`
+                // cherche un élément.
+                this.$nextTick(() => this.startChoiceReveal());
             });
 
             // ⚠️ LA REPRISE APRÈS UN RAFRAÎCHISSEMENT. Elle ne se contente pas

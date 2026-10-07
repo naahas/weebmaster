@@ -3183,20 +3183,20 @@
         <div class="chx-fin" v-if="gameEnded && lobbyMode === 'choice' && ch.classement">
             <div class="chx-fin-boite">
                 <span class="chx-fin-titre">
-                    {{ ch.classement[0] && ch.classement[0].vivant ? 'Dernier debout' : 'Personne ne reste' }}
+                    {{ ch.classement[0] && ch.classement[0].vivant ? 'Vainqueur' : 'Personne ne reste' }}
                 </span>
 
-                <!-- Le vainqueur, seul et en grand. Les suivants sont une
-                     liste : deux podiums à trois marches côte à côte se
-                     regardent, un seul gagnant se retient. -->
-                <div class="chx-fin-roi" v-if="ch.classement[0] && ch.classement[0].vivant">
-                    <span class="chx-fin-nom">{{ ch.classement[0].username }}</span>
-                    <span class="chx-fin-sous">{{ ch.manchesJouees }} manche<span v-if="ch.manchesJouees > 1">s</span></span>
-                </div>
-
+                <!-- ⚠️ Plus de nom en grand au-dessus : la première ligne du
+                     classement le dit déjà, et elle le dit MIEUX — c'est elle
+                     qui paraît en dernier, après le suspense. Le répéter
+                     au-dessus brûlait la révélation avant qu'elle commence.
+                     Les places se dévoilent du DERNIER au PREMIER, comme dans
+                     Rush, Collect et Ascension : même geste, même attente. -->
                 <ol class="chx-fin-liste">
                     <li v-for="(j, i) in chPodium" :key="j.playerId"
-                        :class="{ moi: j.playerId === playerId, premier: i === 0 }">
+                        :class="{ moi: j.playerId === playerId, premier: i === 0,
+                                  vu: endStep >= chEndSlot(i) }">
+                        <span class="chx-fin-sweep"></span>
                         <span class="rang">{{ i + 1 }}</span>
                         <span class="nom">{{ j.username }}</span>
                         <span class="detail">
@@ -3206,11 +3206,12 @@
                     </li>
                 </ol>
 
-                <div class="chx-fin-moi" v-if="monRangChoice > chPodium.length">
+                <div class="chx-fin-moi" :class="{ vu: endStep > chPodium.length }"
+                     v-if="monRangChoice > chPodium.length">
                     Tu termines <b>{{ monRangChoice }}<sup>e</sup></b>
                 </div>
 
-                <div class="chx-fin-actions">
+                <div class="chx-fin-actions" :class="{ vu: endStep > chPodium.length }">
                     <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouerChoice">Rejouer</button>
                     <button class="winner-back-btn" @click="quitterChoice">Retour</button>

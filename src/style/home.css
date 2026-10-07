@@ -14419,39 +14419,72 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     text-transform: uppercase;
     color: var(--text-secondary);
 }
-/* Le vainqueur, seul et en grand : deux podiums à trois marches côte à
-   côte se regardent, un seul gagnant se retient. */
-.chx-fin-roi { margin: 0.8rem 0 1.2rem; }
-.chx-fin-nom {
-    display: block;
-    font-family: 'Bebas Neue', 'Poppins', sans-serif;
-    font-size: clamp(2rem, 7vw, 3rem);
-    letter-spacing: 0.04em;
-    color: var(--neon-primary);
-    text-shadow: 0 0 2rem rgba(255, 215, 0, 0.35);
+/* ⚠️ Plus de nom en grand au-dessus de la liste : la première ligne le dit
+   déjà, et elle le dit MIEUX — c'est elle qui paraît en dernier, après le
+   suspense. Le répéter au-dessus brûlait la révélation avant qu'elle
+   commence. */
+.chx-fin-liste {
+    list-style: none; margin: 1.2rem 0 0; padding: 0;
+    display: flex; flex-direction: column; gap: 0.3rem;
 }
-.chx-fin-sous { font-size: 0.78rem; color: var(--text-secondary); }
-
-.chx-fin-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+/* Chaque place attend son tour mais OCCUPE SA HAUTEUR dès le départ : la
+   boîte garde la même taille du premier au dernier dévoilement, sinon
+   elle grandirait sous les yeux et les boutons sauteraient. */
 .chx-fin-liste li {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.5rem 0.7rem;
+    padding: 0.55rem 0.7rem;
     font-size: 0.86rem;
     text-align: left;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 0.45rem;
+    opacity: 0;
+    transform: translateY(0.55rem);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
+.chx-fin-liste li.vu { opacity: 1; transform: none; }
 .chx-fin-liste li.moi { background: rgba(255, 215, 0, 0.09); }
 .chx-fin-liste .rang { width: 1.1rem; font-weight: 700; color: var(--text-secondary); }
 .chx-fin-liste .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chx-fin-liste .detail { font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; }
 .chx-fin-liste li.premier .rang, .chx-fin-liste li.premier .nom { color: var(--neon-primary); }
 
-.chx-fin-moi { margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-secondary); }
+/* Un trait de lumière balaie la ligne au moment où elle paraît — le même
+   que dans Rush, à l'identique. */
+.chx-fin-sweep {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+    opacity: 0;
+}
+.chx-fin-liste li.vu .chx-fin-sweep {
+    animation: rushFinSweep 0.85s cubic-bezier(0.3, 0.8, 0.2, 1) 0.1s both;
+}
+
+.chx-fin-moi {
+    margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-secondary);
+    opacity: 0; transition: opacity 0.4s ease;
+}
+.chx-fin-moi.vu { opacity: 1; }
 .chx-fin-moi b { color: var(--neon-primary); }
-.chx-fin-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.2rem; }
+
+/* Les deux boutons l'un SOUS l'autre, comme sur les autres podiums : le
+   « Rejouer » prime, et côte à côte ils se disputaient le regard. Ils ne
+   paraissent qu'une fois le classement entier dévoilé. */
+.chx-fin-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 1.4rem;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.chx-fin-actions.vu { opacity: 1; }
 
 /* ════════════════════════════════════════════════════════════
    📱 CHOICE EN PORTRAIT — les deux camps l'un SUR l'autre
