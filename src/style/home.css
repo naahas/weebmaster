@@ -13792,6 +13792,26 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     to   { opacity: 1; }
 }
 
+/* ⚠️ LA FIN NE TOMBE PAS D'UN BLOC, comme dans Collect : l'arène s'efface
+   d'abord, puis le podium paraît. Sans ce temps, on passait du dernier
+   éclat au classement sans avoir vu la manche qui l'a décidé — et le
+   podium arrivait par-dessus une arène encore pleine de portraits qui
+   volaient. Un fondu AVEC un retrait : l'arène recule de deux pour cent,
+   ce qui la fait partir au lieu de simplement disparaître. */
+.chx.sortie {
+    animation: chx-sortie 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+    pointer-events: none;
+}
+@keyframes chx-sortie {
+    0%   { opacity: 1; transform: scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: scale(0.98); filter: blur(0.25rem); }
+}
+
+/* Le podium prend le relais en douceur. ⚠️ Posé sur `.chx-fin` et non sur
+   `.rush-fin` : Rush, Collect et Ascension ont leur propre enchaînement,
+   et le leur changer sans qu'on l'ait demandé serait un effet de bord. */
+.chx-fin { animation: chx-ouvre 0.65s ease both; }
+
 /* ── Les deux bords ────────────────────────────────────────────────
    Des BOUTONS, et pleine hauteur : au doigt, viser une petite cible
    pendant que le compte descend est une façon de perdre sans s'être

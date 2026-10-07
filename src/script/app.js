@@ -201,6 +201,7 @@ createApp({
                 styleJauge: {},
 
                 monCamp: null,       // 'v' | 'f' — une seule fois
+                sortie: false,       // l arene s efface avant le podium
                 survol: null,        // le bord que la souris vise, pour l effet
                 verrou: false,
                 joueurs: [],         // ce qu'on dessine dans l'arène
@@ -8336,20 +8337,36 @@ createApp({
                 this.arreterChronoChoice();
                 this.ch._introT.forEach(t => clearTimeout(t));
                 this.ch._introT = [];
-                this.ch.enCours = false;
-                this.ch.question = null;
-                this.ch.verrou = false;
-                this.ch.intro = null;
                 this.ch.classement = data.classement || [];
                 this.ch.manchesJouees = data.manches || 0;
-                this.gameInProgress = false;
-                this.gameEnded = true;
-                document.body.classList.remove('game-active');
-                // Le classement se dévoile du dernier au premier. ⚠️ Au
-                // `$nextTick` : la liste n'existe pas encore dans le DOM au
-                // moment où l'on reçoit l'événement, et `celebrerVainqueur`
-                // cherche un élément.
-                this.$nextTick(() => this.startChoiceReveal());
+
+                // ⚠️ `gameInProgress` ne tombe PAS ici. L'arène vit dans un
+                // conteneur qui en dépend : l'éteindre tout de suite la
+                // démontait d'un coup, et le fondu n'avait plus rien à
+                // faire disparaître — mesuré, « arène partie » dès le
+                // premier relevé. Il tombe avec le reste, à la fin.
+                //
+                // ⚠️ LA FIN NE TOMBE PAS D'UN BLOC, comme dans Collect :
+                // l'arène s'efface d'abord, puis le podium paraît. Sans ce
+                // temps on passait du dernier éclat au classement sans avoir
+                // vu la manche qui l'a décidé — et le podium arrivait par-
+                // dessus une arène encore pleine de portraits qui volaient.
+                this.ch.sortie = true;
+                this.ch._introT.push(setTimeout(() => {
+                    this.ch.sortie = false;
+                    this.gameInProgress = false;
+                    this.ch.enCours = false;
+                    this.ch.question = null;
+                    this.ch.verrou = false;
+                    this.ch.intro = null;
+                    this.gameEnded = true;
+                    document.body.classList.remove('game-active');
+                    // Le classement se dévoile du dernier au premier. ⚠️ Au
+                    // `$nextTick` : la liste n'existe pas encore dans le DOM
+                    // au moment où l'on bascule, et `celebrerVainqueur`
+                    // cherche un élément.
+                    this.$nextTick(() => this.startChoiceReveal());
+                }, 900));
             });
 
             // ⚠️ LA REPRISE APRÈS UN RAFRAÎCHISSEMENT. Elle ne se contente pas

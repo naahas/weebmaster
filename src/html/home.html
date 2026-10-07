@@ -1989,7 +1989,7 @@
                      côté à la couleur sans lire le mot ; l'inverser un jour
                      retournerait des réflexes acquis en dix parties. -->
                 <template v-if="lobbyMode === 'choice' && !gameEnded">
-                    <div class="chx" v-if="ch.enCours">
+                    <div class="chx" :class="{ sortie: ch.sortie }" v-if="ch.enCours">
 
                         <!-- Les deux bords. Ils sont CLIQUABLES en entier : au
                              doigt, viser un petit bouton pendant que le compte
