@@ -385,9 +385,19 @@ const CHARACTER_VARIANTS = {
     // MANGANIME
     // ============================================
     "Manganime": [
+        // ⚠️ DB et DBZ ne font QU UNE reponse, et c est voulu — la question a
+        // ete posee et tranchee. A l ecran ce sont deux animes, mais c est le
+        // MEME MANGA : « Z » est un decoupage de l anime, Toriyama n a jamais
+        // publie qu une serie. Les separer ferait marquer deux fois le meme
+        // titre. GT et Super, eux, restent a part : ce sont de vraies suites.
         ["DRAGON BALL" , "DB" , "DRAGONBALL", "DRAGON BALL Z" , "DBZ" , "DRAGONBALL Z"],
         ["DBGT" , "DRAGONBALL GT" , "DRAGON BALL GT"],
-        ["DBSUPER" , "DRAGONBALL SUPER" , "DRAGON BALL SUPER"],
+        // ⚠️ « DBS » appartient a ce groupe, et il y manquait : il est dans la
+        // banque mais n etait cite dans AUCUN groupe, donc il ne bloquait que
+        // lui-meme. « Dragon Ball Super » puis « DBS » rapportaient deux fois
+        // la meme serie, en silence — ce n est pas une suite de plus, c est le
+        // meme titre abrege. Un alias oublie ici se paie toujours comme ca.
+        ["DBSUPER" , "DBS" , "DRAGONBALL SUPER" , "DRAGON BALL SUPER"],
         ["DBDAIMA" , "DRAGON BALL DAIMA" , "DRAGONBALL DAIMA"],
         ["FMA" , "FULLMETAL ALCHEMIST" , "FMAB" , "FULLMETAL ALCHEMIST BROTHERHOOD"],
         ["L'ATTAQUE DES TITANS" , "SHINGEKI NO KYOJIN" , "SNK" , "ATTACK ON TITAN" , "AOT" , "ATTAQUE DES TITANS"],

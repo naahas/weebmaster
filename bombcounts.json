@@ -2,8 +2,8 @@
   "_": "Produit par npm run bomb:compter — ne pas éditer à la main",
   "series": {
     "Naruto": {
-      "noms": 471,
-      "persos": 337
+      "noms": 472,
+      "persos": 338
     },
     "Dbz": {
       "noms": 408,
@@ -38,7 +38,7 @@
       "persos": 92
     },
     "Reborn": {
-      "noms": 224,
+      "noms": 225,
       "persos": 172
     },
     "DeathNote": {
@@ -62,8 +62,8 @@
       "persos": 126
     },
     "Manganime": {
-      "noms": 1274,
-      "persos": 907
+      "noms": 1278,
+      "persos": 910
     },
     "Studio": {
       "noms": 232,
