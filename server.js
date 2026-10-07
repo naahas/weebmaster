@@ -399,6 +399,12 @@ const AVATARS_AUTORISES = new Set([
     'cc.webp',
     // Bocchi the Rock!
     'bocchi.webp',
+    // Chuunibyou
+    'rikka.webp',
+    // Higurashi
+    'satoko.webp',
+    // Yu-Gi-Oh!
+    'yugi.webp',
     // A Sign of Affection
     'yuki.webp',
     // Chainsaw Man
