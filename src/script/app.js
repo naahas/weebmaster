@@ -3458,15 +3458,19 @@ createApp({
             this.asc.cible = d && d.currentTarget ? d.currentTarget : null;
             if (reprise) return;
 
-            // ⚠️ Le compte est CINQ SECONDES, et tout se cale dessus : les six
-            // cartes descendent (100 ms d’écart, la dernière posée vers 1 150 ms),
-            // on les laisse un instant, puis elles battent quatre fois à 825 ms —
-            // 1 700 + 4 × 825 = 5 000. Changer un battement demande de refaire
-            // la somme ICI ET EN CSS, sinon le retournement tombe au milieu
-            // d une pulsation au lieu de l heure dite.
+            // ⚠️ Le compte est HUIT SECONDES TROIS, et tout se cale dessus : les
+            // six cartes descendent (100 ms d’écart, la dernière posée vers
+            // 1 150 ms), on les laisse un instant, puis elles battent HUIT fois
+            // à 825 ms — 1 700 + 8 × 825 = 8 300. Changer un battement demande
+            // de refaire la somme ICI ET EN CSS, sinon le retournement tombe au
+            // milieu d une pulsation au lieu de l heure dite.
+            // ⚠️ Il y en avait quatre, soit cinq secondes en tout : six visages
+            // ne se retiennent pas en cinq secondes, on en gardait trois et le
+            // reste se jouait au hasard. Les 3,3 s de plus sont prises sur le
+            // temps de clic, qui en a (30 s par défaut).
             this._oeilT0 = setTimeout(() => { this.asc.oeilPhase = 'montre'; }, 1150);
             this._oeilT1 = setTimeout(() => { this.asc.oeilPhase = 'clignote'; }, 1700);
-            this._oeilT2 = setTimeout(() => { this.asc.oeilPhase = 'cache'; }, 1700 + 4 * 825);
+            this._oeilT2 = setTimeout(() => { this.asc.oeilPhase = 'cache'; }, 1700 + 8 * 825);
         },
 
         // Le client n'envoie QUE la position : il ne connaît pas

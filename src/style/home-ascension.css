@@ -2100,18 +2100,23 @@ body.game-active:has(.asc) {
     to   { opacity: 1; transform: none; }
 }
 
-/* Le clignotement : QUATRE battements lents. C est ce qui force a regarder —
+/* Le clignotement : HUIT battements lents. C est ce qui force a regarder —
    un affichage fixe se laisse detailler, un clignotement non. Mais la mesure
    est toujours allee dans le meme sens : 320 ms ne faisaient qu un
    scintillement, 550 pressaient encore. A 825 le battement se suit a l oeil
-   nu. Le total ne bouge pas — on echange donc du nombre contre de la duree,
-   et quatre pulsations lentes valent mieux que six pressees.
-   ⚠️ 4 x 825 ms tombe pile sur le retournement calé dans app.js : toucher
+   nu — on echange donc du nombre contre de la duree, et des pulsations
+   lentes valent mieux que des pressees.
+   ⚠️ Il y en avait QUATRE, et six visages a retenir en cinq secondes ne se
+   retenaient pas : on en gardait trois. Le battement ne change pas, c est le
+   NOMBRE qui double — allonger la pulsation aurait rendu le stroboscope mou,
+   et c est lui qui empeche de detailler. +3,3 s, pris sur le temps de clic
+   (30 s par defaut, donc il en reste large ; au reglage 20 s c est serre).
+   ⚠️ 8 x 825 ms tombe pile sur le retournement calé dans app.js : toucher
    a l un demande de refaire la somme de l autre. */
 /* ⚠️ Plus de « steps(1) » : la coupure franche faisait un stroboscope, dur a
    l oeil et illisible. Un fondu garde le battement — on sait qu il se passe
    quelque chose — sans jamais eteindre tout a fait le visage. */
-.asc-oeil.phase-clignote .asc-oeil-face { animation: ascOeilClin 0.825s ease-in-out 4; }
+.asc-oeil.phase-clignote .asc-oeil-face { animation: ascOeilClin 0.825s ease-in-out 8; }
 @keyframes ascOeilClin {
     0%   { opacity: 1; }
     45%  { opacity: 0.18; }
