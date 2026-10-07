@@ -30,7 +30,16 @@
 }
 
 
+/* ⚠️ RIEN NE SE SÉLECTIONNE, sauf ce qu'on a de bonnes raisons de copier.
+   Un clic sur le logotype — ou sur n'importe quel texte de l'interface —
+   posait un CURSEUR DE SÉLECTION dans l'élément : une barre verticale
+   clignotante, comme si l'on pouvait taper. Deux joueurs l'ont signalée
+   le même soir, donc ce n'était pas un réglage de navigateur. Mesuré :
+   après un vrai clic sur le titre, `getSelection().type` valait
+   « Caret ». Un jeu ne se sélectionne pas ; un code de salon, si. */
 body {
+    -webkit-user-select: none;
+    user-select: none;
     font-family: 'Poppins', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -8287,6 +8296,15 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 
 /* Code du salon */
+/* Les exceptions à « rien ne se sélectionne » : ce qu'on copie pour de
+   vrai. Le code du salon s'épelle au micro ou se colle dans un chat, et
+   un champ de saisie sans sélection est inutilisable. */
+input, textarea,
+.v2-room-code-block, .v2-room-code-mini, .v2-room-code-char {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
 .v2-room-code-block {
     display: flex;
     flex-direction: column;
@@ -13832,7 +13850,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     position: absolute;
     top: 50%;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem;
+    font-size: 6rem;
     line-height: 1;
     opacity: 0.4;
     transform: translateY(-50%) scale(0.9);
@@ -13843,10 +13861,24 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     0%, 100% { opacity: 0.3; }
     50%      { opacity: 0.6; }
 }
-.chx-zone.g .chx-fleche { left: 0.8rem; color: var(--vrai); }
-.chx-zone.d .chx-fleche { right: 0.8rem; color: var(--faux); }
+.chx-zone.g .chx-fleche { left: 2.2rem; color: var(--vrai); }
+.chx-zone.d .chx-fleche { right: 2.2rem; color: var(--faux); }
+/* Au survol elle ne grossit pas seulement : elle POUSSE vers son bord, en
+   boucle. Un mouvement qui va quelque part se lit comme une direction ;
+   un grossissement sur place ne dit que « je suis survolée ». */
 .chx-zone:not(:disabled):hover .chx-fleche {
-    opacity: 1; transform: translateY(-50%) scale(1.15); animation: none;
+    opacity: 1;
+    animation: chx-pousse 0.85s ease-in-out infinite;
+}
+.chx-zone.g:not(:disabled):hover .chx-fleche { animation-name: chx-pousse-g; }
+.chx-zone.d:not(:disabled):hover .chx-fleche { animation-name: chx-pousse-d; }
+@keyframes chx-pousse-g {
+    0%, 100% { transform: translateY(-50%) translateX(0) scale(1.1); }
+    50%      { transform: translateY(-50%) translateX(-0.7rem) scale(1.25); }
+}
+@keyframes chx-pousse-d {
+    0%, 100% { transform: translateY(-50%) translateX(0) scale(1.1); }
+    50%      { transform: translateY(-50%) translateX(0.7rem) scale(1.25); }
 }
 /* Choisi ou manche verrouillée : la zone s'efface entièrement. */
 .chx-zone:disabled .chx-fleche { opacity: 0; animation: none; }
@@ -13854,8 +13886,45 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 /* Le bord VISÉ : tout s'allume d'un coup — le fond, le mot, et un liseré
    qui court sur l'arête. On doit savoir qu'on est sur le point de
    s'engager AVANT de cliquer, parce qu'ensuite on ne se reprend pas. */
+/* ⚠️ Le bord VISÉ doit se voir de loin : c'est le dernier instant avant un
+   choix qu'on ne peut pas reprendre. Trois choses bougent ensemble — le
+   fond s'éclaire, le MOT grandit et s'allume, et une onde traverse le
+   camp depuis son bord. Une seule des trois (le fond, comme avant) se lit
+   comme un simple survol de bouton. */
 .chx-bord.vise { filter: brightness(1.6); }
-.chx-bord.vise .chx-mot { opacity: 0.2; }
+.chx-bord.vise .chx-mot {
+    opacity: 0.3;
+    transform: scale(1.06);
+    transition: opacity 0.25s ease, transform 0.45s cubic-bezier(0.2, 1.3, 0.35, 1);
+}
+.chx-mot { transition: opacity 0.4s ease, transform 0.45s ease; }
+
+/* L'onde : elle part du bord extérieur et balaie le camp, en boucle.
+   C'est elle qui donne la DIRECTION — on sent de quel côté on part. */
+.chx-bord.vise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.chx-bord.g.vise::after {
+    background: linear-gradient(90deg, rgba(var(--vrai-rgb), 0.5), transparent 55%);
+    animation: chx-onde-g 1.3s ease-out infinite;
+}
+.chx-bord.d.vise::after {
+    background: linear-gradient(270deg, rgba(var(--faux-rgb), 0.5), transparent 55%);
+    animation: chx-onde-d 1.3s ease-out infinite;
+}
+@keyframes chx-onde-g {
+    0%   { opacity: 0;    transform: translateX(-12%); }
+    35%  { opacity: 0.85; }
+    100% { opacity: 0;    transform: translateX(14%); }
+}
+@keyframes chx-onde-d {
+    0%   { opacity: 0;    transform: translateX(12%); }
+    35%  { opacity: 0.85; }
+    100% { opacity: 0;    transform: translateX(-14%); }
+}
 .chx-bord.vise::before {
     content: '';
     position: absolute;
@@ -14016,11 +14085,14 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        lignes de capitales se collent l'une à l'autre sans les hampes qui
        les séparaient. */
     margin-bottom: 1.4rem;
-    font-size: 0.62rem;
-    font-weight: 500;
+    font-size: 0.66rem;
+    /* ⚠️ Plus LISIBLE sans devenir bruyante : c'est le gris qui montait
+       (0,34 → 0,58) et la graisse d'un cran, pas la taille. Grossie, elle
+       serait entrée en concurrence avec l'énoncé qu'elle situe. */
+    font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.34);
+    color: rgba(255, 255, 255, 0.58);
     text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9);
 }
 /* ⚠️ Space Grotesk 400, pas Poppins 600 : la graisse de Poppins est celle
@@ -14040,7 +14112,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        égal), et AÉRER L'INTERLIGNE (sans jambages, deux lignes se
        touchent). */
     text-transform: uppercase;
-    font-size: clamp(0.84rem, 1.35vw, 0.98rem);
+    font-size: clamp(0.95rem, 1.55vw, 1.13rem);
     font-weight: 400;
     letter-spacing: 0.05em;
     line-height: 1.5;
@@ -14110,7 +14182,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    foule. */
 .chx-pseudo {
     position: absolute;
-    top: calc(100% + 0.25rem);
+    top: calc(100% + 0.5rem);
     left: 50%;
     padding: 0.12rem 0.4rem;
     font-size: 0.68rem;
@@ -14126,9 +14198,10 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 .chx-j:hover { z-index: 999 !important; }
 .chx-j:hover .chx-pseudo { opacity: 1; }
-/* Le mien porte toujours le sien : à cinquante visages, se retrouver est
-   la première chose qu'on cherche. */
-.chx-j.moi .chx-pseudo { opacity: 1; }
+/* ⚠️ Le mien ne porte PLUS le sien en permanence : c'était la seule
+   étiquette de l'écran, elle disait ce qu'on sait déjà — on se reconnaît
+   au liseré d'or — et elle encombrait le tas. Au survol, elle dit
+   « Vous ». */
 
 .chx-j img {
     width: 100%;

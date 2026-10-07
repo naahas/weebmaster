@@ -2079,7 +2079,13 @@
                                             moi: j.playerId === playerId }">
                                 <i class="chx-trace"></i>
                                 <img :src="srcAvatar(j.avatar)" alt="">
-                                <b class="chx-pseudo">{{ j.username }}</b>
+                                <!-- ⚠️ « Vous » pour soi, et au SURVOL comme les
+                                     autres. Son propre pseudo affiché en
+                                     permanence était la seule étiquette à
+                                     l'écran : elle disait ce qu'on sait déjà
+                                     — on se reconnaît au liseré d'or — et
+                                     elle encombrait le tas. -->
+                                <b class="chx-pseudo">{{ j.playerId === playerId ? 'Vous' : j.username }}</b>
                             </span>
                         </div>
 
