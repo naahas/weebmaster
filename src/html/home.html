@@ -2157,9 +2157,13 @@
                                :href="ch.revelation.proof_url" target="_blank" rel="noopener">preuve</a>
                         </div>
 
-                        <div class="chx-spectateur" v-if="!jeSuisVivantChoice">
-                            Éliminé — tu regardes la fin
-                        </div>
+                        <!-- ⚠️ Plus de badge « Éliminé — tu regardes la fin ».
+                             On le sait : son portrait a éclaté, les deux bords
+                             ont cessé de répondre, et le pseudo ne bouge plus.
+                             Une étiquette posée au milieu de l'arène le
+                             répétait en travers de ce qu'on est justement resté
+                             pour regarder. -->
+
                     </div>
                 </template>
 
@@ -3097,7 +3101,7 @@
                 </div>
 
                 <div class="v2-end-me" :class="{ vu: endStep >= 4 }" v-if="myEndRank && myEndRank.rank > 3 && !estFinEnCamps">
-                    Tu termines <b>{{ myEndRank.rank }}<sup>e</sup></b>
+                    Tu es <b>{{ myEndRank.rank }}<sup>e</sup></b>
                 </div>
 
                 <!-- ⚠️ En camps, le classement s arrête à trois : une ligne de camp
@@ -3164,7 +3168,7 @@
                 <!-- Au-delà de la cinquième place on ne s'affiche plus : on le dit -->
                 <div class="rush-fin-moi" :class="{ vu: endStep > rushPlaces.length }"
                      v-if="monRangRush > rushPlaces.length">
-                    Tu termines <b>{{ monRangRush }}<sup>e</sup></b>
+                    Tu es <b>{{ monRangRush }}<sup>e</sup></b>
                 </div>
 
                 <div class="rush-fin-actions" :class="{ vu: endStep > rushPlaces.length }">
@@ -3208,7 +3212,7 @@
 
                 <div class="rush-fin-moi" :class="{ vu: endStep > chPodium.length }"
                      v-if="monRangChoice > chPodium.length">
-                    Tu termines <b>{{ monRangChoice }}<sup>e</sup></b>
+                    Tu es <b>{{ monRangChoice }}<sup>e</sup></b>
                 </div>
 
                 <div class="rush-fin-actions" :class="{ vu: endStep > chPodium.length }">
@@ -3248,7 +3252,7 @@
                 <!-- Au-delà de la sixième place on ne se voit pas : on le dit -->
                 <div class="asc-fin-moi" :class="{ vu: endStep > ascPlaces.length }"
                      v-if="monRangAsc > ascPlaces.length">
-                    Tu termines <b>{{ monRangAsc }}<sup>e</sup></b>
+                    Tu es <b>{{ monRangAsc }}<sup>e</sup></b>
                 </div>
 
                 <div class="asc-fin-actions" :class="{ vu: endStep > ascPlaces.length }">

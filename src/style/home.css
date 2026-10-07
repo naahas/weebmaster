@@ -14379,20 +14379,10 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     border-bottom: 1px solid rgba(122, 167, 255, 0.4);
 }
 
-.chx-spectateur {
-    position: absolute;
-    top: 50%; left: 50%;
-    z-index: 7;
-    padding: 0.4rem 0.9rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    background: rgba(8, 8, 12, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
-    transform: translate(-50%, 7rem);
-    pointer-events: none;
-}
+n/* ⚠️ Plus de badge « Éliminé » : son portrait a éclaté, les deux bords ont
+   cessé de répondre, et le pseudo ne bouge plus. Une étiquette posée au
+   milieu de l’arène le répétait en travers de ce qu’on est justement resté
+   pour regarder. */
 
 /* L'énoncé ne paraît qu'au second temps de l'intro. */
 .chx-enonce.parait { animation: chx-enonce 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
