@@ -750,10 +750,18 @@
 .rush-fin-moi b { color: var(--neon-primary, #ffd700); font-weight: 700; }
 .rush-fin-moi sup { font-size: 0.6em; }
 
+/* ⚠️ CÔTE À CÔTE, et c'est la forme de TOUS les podiums du site — Rush,
+   Collect, Ascension et Choice, qui partage cette feuille. Empilés, les
+   deux boutons allongeaient la boîte d'un cran juste après un classement
+   déjà long, et « Retour » tombait sous la ligne de flottaison sur un
+   téléphone. Côte à côte ils tiennent sur une ligne, et c'est l'OR de
+   « Rejouer » qui dit lequel prime, pas sa position. */
 .rush-fin-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.7rem;
     margin-top: 0.4rem;
 }

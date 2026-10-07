@@ -3180,38 +3180,38 @@
              Le classement se lit à l'envers du Rush : ici on ne compte pas
              des points mais des MANCHES TENUES. Tenir un tour de plus est
              le seul exploit du mode, donc c'est le seul chiffre affiché. -->
-        <div class="chx-fin" v-if="gameEnded && lobbyMode === 'choice' && ch.classement">
-            <div class="chx-fin-boite">
-                <span class="chx-fin-titre">
+        <!-- ⚠️ CE SONT LES CLASSES DE RUSH, et c'est volontaire : le podium
+             doit être le MÊME d'un mode à l'autre, et deux copies finissent
+             toujours par diverger. En partageant la feuille, une retouche
+             faite ici se voit partout. Seule la DONNÉE change — Rush compte
+             des portraits trouvés, Choice des manches tenues. -->
+        <div class="rush-fin chx-fin" v-if="gameEnded && lobbyMode === 'choice' && ch.classement">
+            <div class="rush-fin-boite">
+                <span class="rush-fin-titre">
                     {{ ch.classement[0] && ch.classement[0].vivant ? 'Vainqueur' : 'Personne ne reste' }}
                 </span>
 
-                <!-- ⚠️ Plus de nom en grand au-dessus : la première ligne du
-                     classement le dit déjà, et elle le dit MIEUX — c'est elle
-                     qui paraît en dernier, après le suspense. Le répéter
-                     au-dessus brûlait la révélation avant qu'elle commence.
-                     Les places se dévoilent du DERNIER au PREMIER, comme dans
-                     Rush, Collect et Ascension : même geste, même attente. -->
-                <ol class="chx-fin-liste">
+                <ol class="rush-fin-liste">
                     <li v-for="(j, i) in chPodium" :key="j.playerId"
                         :class="{ moi: j.playerId === playerId, premier: i === 0,
                                   vu: endStep >= chEndSlot(i) }">
-                        <span class="chx-fin-sweep"></span>
+                        <span class="rush-fin-sweep"></span>
                         <span class="rang">{{ i + 1 }}</span>
                         <span class="nom">{{ j.username }}</span>
-                        <span class="detail">
-                            <template v-if="j.vivant">survit</template>
-                            <template v-else>manche {{ j.manche }}</template>
-                        </span>
+                        <!-- ⚠️ Pas de « survit » pour le vainqueur : tout le
+                             monde est jugé sur LA MÊME chose, la manche
+                             atteinte. Un mot pour lui et un nombre pour les
+                             autres, et la colonne ne se compare plus. -->
+                        <span class="record">{{ j.manche }}</span>
                     </li>
                 </ol>
 
-                <div class="chx-fin-moi" :class="{ vu: endStep > chPodium.length }"
+                <div class="rush-fin-moi" :class="{ vu: endStep > chPodium.length }"
                      v-if="monRangChoice > chPodium.length">
                     Tu termines <b>{{ monRangChoice }}<sup>e</sup></b>
                 </div>
 
-                <div class="chx-fin-actions" :class="{ vu: endStep > chPodium.length }">
+                <div class="rush-fin-actions" :class="{ vu: endStep > chPodium.length }">
                     <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouerChoice">Rejouer</button>
                     <button class="winner-back-btn" @click="quitterChoice">Retour</button>

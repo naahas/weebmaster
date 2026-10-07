@@ -1802,10 +1802,14 @@
 .asc-fin-moi b { color: var(--neon-primary, #ffd700); font-weight: 700; }
 .asc-fin-moi sup { font-size: 0.6em; }
 
+/* Côte à côte, comme sur tous les podiums du site — voir la note dans
+   home-rush.css. */
 .asc-fin-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.7rem;
     margin-top: 0.4rem;
 }

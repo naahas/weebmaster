@@ -392,7 +392,10 @@ function creerModule(deps) {
             .map(([id, j]) => ({
                 playerId: id, username: nomDe(id),
                 vivant: j.vivant, vies: j.vies,
-                manche: j.vivant ? etat.manche + 1 : (j.elimineA || 0),
+                // ⚠️ La manche ATTEINTE, et le vainqueur a atteint la
+                // dernière — pas une de plus. `etat.manche + 1` annonçait
+                // une manche qui n'a jamais été jouée.
+                manche: j.vivant ? etat.manche : (j.elimineA || 0),
             }))
             .sort((a, b) => (b.vivant - a.vivant) || (b.manche - a.manche));
 
