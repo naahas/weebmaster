@@ -14015,7 +14015,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        deux en capitales maintenant, donc il en faut DAVANTAGE — deux
        lignes de capitales se collent l'une à l'autre sans les hampes qui
        les séparaient. */
-    margin-bottom: 1rem;
+    margin-bottom: 1.4rem;
     font-size: 0.62rem;
     font-weight: 500;
     letter-spacing: 0.22em;

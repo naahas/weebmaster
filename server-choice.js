@@ -199,7 +199,14 @@ function creerModule(deps) {
             out.push({
                 playerId: p.playerId,
                 username: p.username,
-                avatar: p.avatar,
+                // ⚠️ `avatarUrl`, PAS `avatar` : c'est le nom que porte
+                // l'entrée d'un joueur dans `gameState.players`, posé par
+                // `avatarPropre()` à la jointure. En lisant `p.avatar` on
+                // envoyait `undefined`, et tout le monde se retrouvait avec
+                // le portrait par défaut — y compris celui qui venait d'en
+                // choisir un. Rien ne le signalait : `srcAvatar()` retombe
+                // en silence sur « novice.png ».
+                avatar: p.avatarUrl,
                 vies: j.vies,
                 vivant: j.vivant,
                 // ⚠️ `camp` est à null quand le salon cache les placements.
