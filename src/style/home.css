@@ -14446,10 +14446,34 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     100% { opacity: 1; transform: scaleX(1); }
 }
 
-/* ⚠️ AUCUN style de podium propre à Choice : il porte les classes de RUSH
-   et hérite de sa feuille. Un podium par mode finit toujours par diverger ;
-   en partageant, une retouche se voit partout. Seule la DONNÉE change —
-   Rush compte des portraits trouvés, Choice des manches tenues. */
+/* ⚠️ Le podium de Choice porte les classes de RUSH et hérite de sa feuille.
+   Un podium par mode finit toujours par diverger ; en partageant, une retouche
+   se voit partout. Seule la DONNÉE change — Rush compte des portraits trouvés,
+   Choice des manches tenues.
+
+   D'où la SEULE règle propre à Choice ci-dessous, et elle est scopée à
+   « .chx-fin » : le mot qui nomme la colonne. Rush a le sien dans sa feuille,
+   et une règle non scopée les mélangerait. Toute autre retouche de podium se
+   fait chez Rush, pour les deux à la fois. */
+.chx-fin .rush-fin-liste .record small {
+    /* ⚠️ Surtout pas « inherit » : `.record` est en Bebas Neue, le mot
+       passerait en capitales condensées de titre et pèserait autant que le
+       nombre. C'est le NOMBRE qu'on compare d'une ligne à l'autre ; le mot
+       est le même partout et doit s'effacer. */
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.56rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    /* Une couleur à lui, jamais celle du nombre : la première place passe le
+       sien en doré et sur 2,1 rem — le mot l'aurait suivi et aurait crié. */
+    color: rgba(255, 255, 255, 0.3);
+    margin-right: 0.42rem;
+    /* Les deux ne s'alignent pas sur la même ligne de base : le petit mot
+       remonte au milieu du chiffre, qui est trois fois plus haut. */
+    vertical-align: middle;
+}
+.chx-fin .rush-fin-liste li.premier .record small { color: rgba(255, 215, 0, 0.45); }
 
 
 /* ════════════════════════════════════════════════════════════

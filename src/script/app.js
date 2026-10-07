@@ -5730,6 +5730,13 @@ createApp({
             if (this.ch.verrou || this.ch.monCamp !== null) return;
             if (this.estSpectateur || !this.jeSuisVivantChoice) return;
             this.ch.monCamp = camp;
+            // ⚠️ Sur le CLIC, pas sur la réponse du serveur. Le bruit doit
+            // tomber avec le geste : l'aller-retour se compte en dizaines de
+            // millisecondes en salle, mais en centaines sur un téléphone en
+            // 4G — et un son qui arrive après coup s'entend comme un retard.
+            // Les gardes ci-dessus ont déjà écarté les clics sans effet, donc
+            // il ne ment pas : s'il part, le camp est pris.
+            this.playSound(this.sounds.chxCamp);
             this.socket.emit('choice-choisir', { camp });
         },
 
@@ -9626,6 +9633,17 @@ createApp({
                 colCasse: this.createPreloadedSound('col-casse.mp3'),
                 colTour: this.createPreloadedSound('col-tour.mp3'),
                 ascPas: this.createPreloadedSound('step.mp3'),
+                // ⚖️ Choice : choisir son camp, c'est un DÉPLACEMENT — le même
+                // pas que le grimpeur d'Ascension. Rien de neuf à déposer, et
+                // le vocabulaire se tient d'un mode à l'autre : ce bruit-là
+                // veut dire « quelqu'un bouge » partout sur le site.
+                //
+                // ⚠️ Un cran plus bas que les autres (0,4 contre 0,5) : il part
+                // sur un geste qu'on refait à CHAQUE manche, et un son qui
+                // revient toutes les huit secondes s'use plus vite qu'un son
+                // d'événement. Et il ne part QUE sur son propre clic — le jouer
+                // sur « choice-bouge » le ferait claquer quinze fois d'affilée.
+                chxCamp: this.createPreloadedSound('step.mp3', 0.4),
                 // L'ampoule : un carillon quand elle est pleine, un éclat
                 // quand on la casse.
                 ascCharge: this.createPreloadedSound('fusion.mp3'),
