@@ -14111,7 +14111,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        deux en capitales maintenant, donc il en faut DAVANTAGE — deux
        lignes de capitales se collent l'une à l'autre sans les hampes qui
        les séparaient. */
-    margin-bottom: 1.4rem;
+    /* Le filet ci-dessous apporte son propre blanc : l'écart se resserre,
+       sinon les trois éléments flottent sans se tenir. */
+    margin-bottom: 0.9rem;
     font-size: 0.66rem;
     /* ⚠️ Plus LISIBLE sans devenir bruyante : c'est le gris qui montait
        (0,34 → 0,58) et la graisse d'un cran, pas la taille. Grossie, elle
@@ -14128,6 +14130,28 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    tenue d'un titre de presse. Elle est déjà chargée par le jeu : pas une
    requête de plus. Les autres pistes se comparent sur
    /prototypes/choice-question. */
+/* ── Le filet, entre le badge et l'énoncé ──────────────────────────
+   ⚠️ UN SEUL DÉGRADÉ, pas un trait plein : une ligne nette d'un bout à
+   l'autre pose une BARRE en travers de l'écran, et l'arène n'a aucune
+   autre arête — ça ferait tableau. Celui-ci naît de rien, s'allume en son
+   milieu et s'éteint : on le voit sans le regarder.
+   ⚠️ Blanc, jamais or ni bleu ni rouge. L'or appartient au chrome (la
+   jauge), et une des deux couleurs posée si près de l'énoncé
+   suggérerait une réponse. */
+.chx-enonce p::before {
+    content: '';
+    display: block;
+    width: 4.5rem;
+    height: 1px;
+    margin: 0 auto 0.95rem;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.07) 18%,
+        rgba(255, 255, 255, 0.42) 50%,
+        rgba(255, 255, 255, 0.07) 82%,
+        transparent);
+}
+
 .chx-enonce p {
     font-family: 'Space Grotesk', 'Poppins', sans-serif;
     /* ⚠️ EN CAPITALES, et les trois corrections qui vont avec. Une
