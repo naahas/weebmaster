@@ -336,7 +336,7 @@ createApp({
                 // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
                 // en quatre lignes exactement — soit la hauteur déjà réservée plus
                 // haut pour que le titre ne bouge pas d'un mode à l'autre.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'sebastian.webp',
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'choice.webp',
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

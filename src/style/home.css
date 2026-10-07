@@ -8105,15 +8105,12 @@ body.game-active:has(.poll-game-container) #particles-js {
         right: -10%;
     }
 
-    /* Sebastian est carré (1400 × 1400), exactement le rapport de Kenshin : il
-       part donc de son calage plutôt que d'un réglage inventé. Comme pour lui,
-       c'est la largeur qui borne l'échelle, et les deux bornes bougent ensemble
-       pour que le réglage garde un sens le jour où l'image change. */
-    .v2-mode-char.char-chase {
-        height: 118%;
-        max-width: 66%;
-        right: -1%;
-    }
+    /* ⚠️ Choice n'a PAS de calage à lui, et c'est voulu : Saitama arrive dans
+       une aura qui occupe déjà ses bords (1400 × 1045, rapport 1,34). Les
+       réglages des autres poussent la silhouette vers le bord droit, ce qui
+       couperait l'aura ; la règle de base le laisse rentré de 33 px à droite
+       et l'aura respire. Le jour où l'image change, c'est ici qu'un
+       « .char-choice » viendra. */
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
        egale il reclame plus de largeur, sa borne de largeur mord donc en
@@ -8211,20 +8208,14 @@ body.game-active:has(.poll-game-container) #particles-js {
     filter: grayscale(1) contrast(1.06) brightness(0.96);
 }
 
-/* ── Chase : le personnage reste une ombre ──
-   « brightness(0) » écrase toute l'image sur du noir en gardant sa
-   transparence : il ne reste que la découpe. L'« invert » qui suit relève ce
-   noir d'un cran — à zéro, la silhouette se confondrait avec le panneau ET
-   avec le fond de la page, et il n'y aurait plus rien à voir. C'est le
-   réglage à bouger pour la vouloir plus sombre ou plus présente.
-
-   ⚠️ Cette règle DOIT rester APRÈS « .soon » juste au-dessus. Les deux ont la
-   même spécificité — deux classes — et visent le même élément ; deux « filter »
-   ne s'additionnent pas, le dernier déclaré écrase l'autre. Placée avant, la
-   silhouette était purement et simplement annulée par la grisaille. */
-.v2-mode-char.char-chase {
-    filter: brightness(0) invert(0.17);
-}
+/* ⚠️ Il y avait ici une règle « .char-chase » qui écrasait le personnage en
+   ombre noire (« brightness(0) »), du temps où Chase occupait cette carte.
+   Chase n'existe plus, la classe est donc devenue « char-choice » et la règle
+   ne visait plus rien — mais elle restait une mine : la remettre en service
+   d'un simple renommage aurait réduit Saitama à une découpe noire, en silence.
+   Si une silhouette redevient utile un jour, elle doit rester APRÈS « .soon »
+   ci-dessus : même spécificité, deux « filter » ne s'additionnent pas, et le
+   dernier déclaré écrase l'autre. */
 
 .v2-mode-char.plain {
     right: 0;
