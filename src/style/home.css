@@ -8794,6 +8794,20 @@ input, textarea,
     .v2-room-players { max-width: none; }
     .v2-room-players-grid { justify-content: center; }
     .v2-settings { max-height: none; }
+
+    /* ⚠️ SUR TÉLÉPHONE C'EST LE SALON QUI DÉFILE, PAS LE PANNEAU. Le
+       `min-height: 0` posé plus haut est une règle de BUREAU : il fait
+       rendre sa place à la colonne pour qu'une seule barre existe, celle
+       du panneau. Sur un écran de 844 px de haut, ça donnait au panneau
+       les 302 px qui restaient sous le code du salon — mesuré — et ses
+       quatre réglages défilaient dans une boîte où trois tenaient. Le
+       geste est mauvais : on cherche un réglage dans une lucarne alors
+       que toute la page est disponible dessous.
+       On rend donc sa hauteur naturelle à la colonne ET au panneau :
+       `.v2-room` porte déjà `overflow-y: auto`, c'est lui qui défile, et
+       l'on fait défiler LE SALON — un seul geste, celui qu'on attend. */
+    .v2-room-layout { min-height: auto; }
+    .v2-settings-body { overflow: visible; }
 }
 
 /* Badge du mode, en haut à droite pendant le salon */
