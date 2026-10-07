@@ -13799,7 +13799,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    volaient. Un fondu AVEC un retrait : l'arène recule de deux pour cent,
    ce qui la fait partir au lieu de simplement disparaître. */
 .chx.sortie {
-    animation: chx-sortie 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+    animation: chx-sortie 0.45s cubic-bezier(0.5, 0, 0.75, 0) forwards;
     pointer-events: none;
 }
 @keyframes chx-sortie {
@@ -14423,16 +14423,36 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     border-bottom: 1px solid rgba(122, 167, 255, 0.4);
 }
 
-n/* ⚠️ Plus de badge « Éliminé » : son portrait a éclaté, les deux bords ont
+/* ⚠️ Plus de badge « Éliminé » : son portrait a éclaté, les deux bords ont
    cessé de répondre, et le pseudo ne bouge plus. Une étiquette posée au
    milieu de l’arène le répétait en travers de ce qu’on est justement resté
    pour regarder. */
 
-/* L'énoncé ne paraît qu'au second temps de l'intro. */
-.chx-enonce.parait { animation: chx-enonce 0.7s cubic-bezier(0.2, 1.4, 0.35, 1) both; }
-@keyframes chx-enonce {
-    0%   { opacity: 0; transform: translateX(-50%) translateY(-0.8rem) scale(0.96); }
-    100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+/* ── L'ENTRÉE DE LA QUESTION, EN TROIS TEMPS ───────────────────────
+   ⚠️ Le badge, le filet et l'énoncé entrent SÉPARÉMENT, à 90 ms d'écart.
+   Animés ensemble, le bloc glissait d'une pièce : un déplacement, pas une
+   arrivée. Décalés, l'œil suit la série et finit sur la phrase — qui est
+   ce qu'il doit lire.
+   ⚠️ Et c'est l'INTÉRIEUR qui s'anime, jamais `.chx-enonce` : son
+   `transform: translateX(-50%)` est ce qui le centre, et une animation
+   qui y touche le décale de la moitié de sa largeur. */
+.chx-enonce small {
+    animation: chx-entre 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.chx-enonce p::before {
+    animation: chx-filet 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) 0.09s both;
+}
+.chx-enonce p {
+    animation: chx-entre 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) 0.18s both;
+}
+@keyframes chx-entre {
+    0%   { opacity: 0; transform: translateY(-0.5rem); filter: blur(0.2rem); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+/* Le filet, lui, ne tombe pas : il s'OUVRE depuis son centre. */
+@keyframes chx-filet {
+    0%   { opacity: 0; transform: scaleX(0.1); }
+    100% { opacity: 1; transform: scaleX(1); }
 }
 
 /* ⚠️ AUCUN style de podium propre à Choice : il porte les classes de RUSH

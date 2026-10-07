@@ -2040,8 +2040,14 @@
                              tombe ensuite. Dans l'autre ordre on lit déjà
                              l'énoncé pendant que les avatars arrivent, et
                              les trois secondes sont perdues. -->
-                        <div class="chx-enonce" v-if="ch.question"
-                             :class="{ parait: ch.intro === 'question' }">
+                        <!-- ⚠️ `key` sur la manche : le bloc n'est pas démonté
+                             entre deux questions, seul son texte change. Sans
+                             clef, l'animation d'entrée ne se rejouait pas —
+                             elle n'avait tourné qu'à la toute première, et
+                             l'énoncé des suivantes apparaissait d'un coup.
+                             Avec elle, Vue remonte le bloc et l'animation
+                             repart à chaque manche. -->
+                        <div class="chx-enonce" v-if="ch.question" :key="ch.manche">
                             <small>{{ ch.question.serie }} · manche {{ ch.manche }}</small>
                             <p>{{ ch.question.question }}</p>
                         </div>

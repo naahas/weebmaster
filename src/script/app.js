@@ -211,10 +211,12 @@ createApp({
                 classement: null,    // à la fin
                 manchesJouees: 0,
 
-                // L'intro, en deux temps : « ouverture » (le mode s'annonce,
-                // les joueurs tombent au milieu) puis « question » (l'énoncé
-                // paraît). Null le reste du temps.
-                intro: null,
+                // ⚠️ Plus de drapeau d'intro : les deux temps de l'ouverture
+                // (les joueurs tombent au milieu, puis l'énoncé paraît) sont
+                // tenus par le CSS seul — les avatars par leur pose, l'énoncé
+                // par la clef de son bloc. Un drapeau qui ne faisait que poser
+                // une classe ne relançait rien quand le bloc restait monté.
+                // Les minuteries, elles, restent : il faut les annuler.
                 _introT: [],
             },
 
@@ -5264,7 +5266,7 @@ createApp({
             this.ch._introT = [];
             Object.assign(this.ch, {
                 enCours: false, manche: 0, question: null, monCamp: null,
-                verrou: false, revelation: null, classement: null, intro: null,
+                verrou: false, revelation: null, classement: null,
                 reste: 0, comptes: { v: 0, f: 0, indecis: 0 }, joueurs: [],
             });
             this.gameEnded = false;
@@ -8243,7 +8245,6 @@ createApp({
                 // Les avatars apparaissent au milieu, et c est tout : pas de
                 // titre, pas de decompte. La question suit une seconde apres,
                 // envoyee par le serveur.
-                this.ch.intro = null;
                 this.replacerChoice();
             });
 
@@ -8258,8 +8259,11 @@ createApp({
                 // L'énoncé paraît d'abord, le compte part ensuite : lire la
                 // question pendant que la jauge coule déjà vole une seconde
                 // à tout le monde.
-                this.ch.intro = 'question';
-                this.ch._introT.push(setTimeout(() => { this.ch.intro = null; }, 700));
+                // ⚠️ Plus de drapeau `intro` pour l'entrée de la question :
+                // c'est la CLEF du bloc (la manche) qui la rejoue, et elle le
+                // fait à tous les coups. Le drapeau ne servait qu'à poser une
+                // classe, et il ne relançait rien quand le bloc n'était pas
+                // remonté — c'est-à-dire à partir de la deuxième manche.
                 // ⚠️ Le serveur envoie un RESTE, pas une échéance : on
                 // fabrique la nôtre sur NOTRE montre. Une machine en retard
                 // de trois secondes verrait sinon le compte s'arrêter avant
@@ -8362,7 +8366,6 @@ createApp({
                     this.ch.enCours = false;
                     this.ch.question = null;
                     this.ch.verrou = false;
-                    this.ch.intro = null;
                     this.gameEnded = true;
                     document.body.classList.remove('game-active');
                     // Le classement se dévoile du dernier au premier. ⚠️ Au
@@ -8370,7 +8373,7 @@ createApp({
                     // au moment où l'on bascule, et `celebrerVainqueur`
                     // cherche un élément.
                     this.$nextTick(() => this.startChoiceReveal());
-                }, 900));
+                }, 480));
             });
 
             // ⚠️ LA REPRISE APRÈS UN RAFRAÎCHISSEMENT. Elle ne se contente pas
@@ -8382,7 +8385,6 @@ createApp({
             this.socket.on('choice-etat', (data) => {
                 if (!data) return;
                 this.ch.enCours = true;
-                this.ch.intro = null;
                 this.ch.manche = data.manche;
                 this.ch.question = data.question;
                 this.ch.joueurs = data.joueurs || [];
