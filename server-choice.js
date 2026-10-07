@@ -308,6 +308,24 @@ function creerModule(deps) {
             joueurs: joueursPourLEcran(gameState),
         });
 
+        // 🧪 Les bots de mise au point choisissent un bord AU HASARD, trois à
+        // quatre secondes après le départ. Sans ça ils restaient indécis et
+        // tombaient tous à la première manche : impossible d'éprouver une
+        // partie à dix sans dix onglets ouverts.
+        // ⚠️ Le retard est borné à la durée du choix moins six dixièmes :
+        // avec un salon réglé à cinq secondes, un bot qui part à 4,0 s
+        // passerait encore, mais à 4,9 s il jouerait après le verrou.
+        const retardMax = Math.max(400, etat.duree * 1000 - 600);
+        for (const [, p] of gameState.players) {
+            if (!p.estBot) continue;
+            const j = etat.joueurs.get(p.playerId);
+            if (!j || !j.vivant) continue;
+            const quand = Math.min(3000 + Math.random() * 1000, retardMax);
+            plusTard(etat, () => {
+                choisir(gameState, p.playerId, Math.random() < 0.5 ? 'v' : 'f');
+            }, quand);
+        }
+
         plusTard(etat, () => verrouiller(gameState), etat.duree * 1000);
     }
 

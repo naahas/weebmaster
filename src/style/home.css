@@ -14077,8 +14077,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     transform: translateX(-50%);
     pointer-events: none;
 }
+/* ⚠️ UN BADGE, pas une ligne de texte. Même montée en gris et en graisse,
+   la série restait une étiquette discrète au-dessus d'une phrase — or elle
+   dit DE QUOI on parle, et sans elle « il possède neuf queues » ne veut
+   rien dire. Un cadre la sort du flux du texte : on la lit comme une
+   catégorie, en un coup d'œil, avant la phrase. ⚠️ Et il reste NEUTRE —
+   fond blanc très dilué, jamais bleu ni rouge : une teinte ici
+   suggérerait une réponse. */
 .chx-enonce small {
-    display: block;
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
     /* L'étiquette RESPIRE : collée à l'énoncé, on lisait les deux d'un
        bloc et la série devenait le début de la phrase. Elles sont toutes
        deux en capitales maintenant, donc il en faut DAVANTAGE — deux
@@ -14092,8 +14105,8 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.58);
-    text-shadow: 0 0.1rem 0.8rem rgba(0, 0, 0, 0.9);
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: none;
 }
 /* ⚠️ Space Grotesk 400, pas Poppins 600 : la graisse de Poppins est celle
    d'un BOUTON, pas d'un énoncé — elle criait là où il faut poser. Une
@@ -14439,6 +14452,104 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .chx-fin-moi { margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-secondary); }
 .chx-fin-moi b { color: var(--neon-primary); }
 .chx-fin-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1.2rem; }
+
+/* ════════════════════════════════════════════════════════════
+   📱 CHOICE EN PORTRAIT — les deux camps l'un SUR l'autre
+   ════════════════════════════════════════════════════════════
+   ⚠️ Côte à côte, deux colonnes de 42 % sur un écran de 390 font 160 px
+   chacune : ni le mot ni le tas n'y tiennent, et le pouce doit viser une
+   bande verticale étroite. Le mode garde son sens — on va d'un côté —
+   mais le côté devient le HAUT ou le BAS, ce qui donne deux cibles de la
+   largeur de l'écran. VRAI reste le premier, donc en haut.
+   `orientation: portrait` et non une largeur : c'est la FORME de l'écran
+   qui décide, et un téléphone couché doit retrouver les deux colonnes. */
+@media (orientation: portrait) and (max-width: 860px) {
+    .chx-bord {
+        top: auto; bottom: auto;
+        left: 0; right: 0;
+        width: auto; height: 42%;
+    }
+    .chx-bord.g { top: 0; }
+    .chx-bord.d { bottom: 0; }
+    .chx-bord.g .camp-fond, .chx-bord.g {
+        background:
+            linear-gradient(180deg, rgba(var(--vrai-rgb), 0.26), rgba(var(--vrai-rgb), 0.03) 72%, transparent),
+            radial-gradient(70% 60% at 50% 0%, rgba(var(--vrai-rgb), 0.3), transparent 70%);
+    }
+    .chx-bord.d {
+        background:
+            linear-gradient(0deg, rgba(var(--faux-rgb), 0.26), rgba(var(--faux-rgb), 0.03) 72%, transparent),
+            radial-gradient(70% 60% at 50% 100%, rgba(var(--faux-rgb), 0.32), transparent 70%);
+    }
+    /* Le liseré du bord visé court sur l'arête HAUTE ou BASSE. */
+    .chx-bord.vise::before {
+        top: auto; bottom: auto; left: 6%; right: 6%;
+        width: auto; height: 0.3rem;
+    }
+    .chx-bord.g.vise::before { top: 0; background: linear-gradient(90deg, transparent, var(--vrai), transparent); }
+    .chx-bord.d.vise::before { bottom: 0; background: linear-gradient(90deg, transparent, var(--faux), transparent); }
+    .chx-bord.g.vise::after {
+        background: linear-gradient(180deg, rgba(var(--vrai-rgb), 0.5), transparent 55%);
+        animation-name: chx-onde-haut;
+    }
+    .chx-bord.d.vise::after {
+        background: linear-gradient(0deg, rgba(var(--faux-rgb), 0.5), transparent 55%);
+        animation-name: chx-onde-bas;
+    }
+    @keyframes chx-onde-haut {
+        0%   { opacity: 0;    transform: translateY(-12%); }
+        35%  { opacity: 0.85; }
+        100% { opacity: 0;    transform: translateY(14%); }
+    }
+    @keyframes chx-onde-bas {
+        0%   { opacity: 0;    transform: translateY(12%); }
+        35%  { opacity: 0.85; }
+        100% { opacity: 0;    transform: translateY(-14%); }
+    }
+
+    /* ⚠️ Le mot se range vers le CENTRE, pas vers son bord extérieur. Collé
+       au bord, « VRAI » passait sous l'énoncé — qui occupe tout le haut en
+       portrait — et on n'en voyait que le sommet des lettres. Les deux mots
+       encadrent donc la zone neutre, juste au-dessus et au-dessous du tas
+       des indécis, où rien d'autre ne vit. */
+    .chx-mot {
+        font-size: clamp(2.2rem, 14vw, 4.2rem);
+        padding: 0.8rem 0;
+    }
+    .chx-bord.g .chx-mot { align-items: flex-end; }
+    .chx-bord.d .chx-mot { align-items: flex-start; }
+
+    /* Les compteurs passent aux coins extérieurs. */
+    .chx-bord.g .chx-n { top: 0.6rem; left: 1rem; }
+    .chx-bord.d .chx-n { top: auto; bottom: 0.6rem; right: 1rem; }
+
+    /* La zone de clic : deux bandes pleine largeur, qui s'arrêtent à 12 %
+       du centre comme leurs équivalents en paysage. */
+    .chx-zone {
+        top: auto; bottom: auto; left: 0; right: 0;
+        width: auto; height: 38%;
+    }
+    .chx-zone.g { top: 0; }
+    .chx-zone.d { bottom: 0; }
+    .chx-zone.g::after { background: linear-gradient(180deg, rgba(var(--vrai-rgb), 0.14), transparent 60%); }
+    .chx-zone.d::after { background: linear-gradient(0deg, rgba(var(--faux-rgb), 0.14), transparent 60%); }
+
+    /* La flèche pointe vers le haut ou le bas : c'est le même glyphe,
+       tourné d'un quart de tour. */
+    .chx-fleche {
+        top: auto; bottom: auto; left: 50%; right: auto;
+        font-size: 4rem;
+        transform: translateX(-50%) rotate(90deg);
+    }
+    .chx-zone.g .chx-fleche { top: 1.4rem; left: 50%; }
+    .chx-zone.d .chx-fleche { bottom: 1.4rem; left: 50%; }
+    .chx-zone:not(:disabled):hover .chx-fleche,
+    .chx-zone.g:not(:disabled):hover .chx-fleche,
+    .chx-zone.d:not(:disabled):hover .chx-fleche { animation: none; transform: translateX(-50%) rotate(90deg) scale(1.15); }
+
+    .chx-enonce { width: 94%; }
+    .chx-verdict { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+}
 
 @media (prefers-reduced-motion: reduce) {
     .chx-bord.perdu, .chx-eclair.joue, .chx-j { animation: none; }

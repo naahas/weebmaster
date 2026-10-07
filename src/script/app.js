@@ -5526,7 +5526,14 @@ createApp({
             // ⚠️ Le rayon qu'on donne borne les CENTRES : il faut lui
             // retirer une demi-largeur d'avatar, sinon le tas dépasse par
             // les bords de tout juste ce que mesure un portrait.
-            const tas = (liste, cx, rayonMax, serrage) => {
+            // ⚠️ SUR TÉLÉPHONE LES DEUX CAMPS SONT L'UN SUR L'AUTRE, pas
+            // côte à côte : deux colonnes de 42 % sur un écran de 390 font
+            // 160 px chacune, où ni un mot ni un tas ne tiennent. Le mode
+            // garde son sens — on va d'un côté — mais le côté devient le
+            // HAUT ou le BAS. Tout le placement bascule donc d'axe.
+            const vertical = b.height > b.width;
+
+            const tas = (liste, cx, cy, rayonMax, serrage) => {
                 if (!liste.length) return 0;
                 const anneaux = this.chAnneauxPour(liste.length);
                 const pas = Math.min(taille * serrage, rayonMax / Math.max(1, anneaux));
@@ -5537,10 +5544,13 @@ createApp({
                         // Le décalage par anneau évite les rayons alignés,
                         // qui donnaient une rosace — on veut un tas.
                         const a = (p / combien) * 6.283 + k * 0.7;
-                        const x = cx + (k === 0 ? 0 : Math.cos(a) * pas * k);
-                        // Aplati : l'arène est large et basse, un tas rond y
-                        // monterait sous l'énoncé avant d'être plein.
-                        const y = centreY + (k === 0 ? 0 : Math.sin(a) * pas * k * 0.66);
+                        // Aplati sur l'axe CONTRAINT : large et basse en
+                        // paysage, haute et étroite en portrait. Un tas rond
+                        // déborderait du petit côté avant d'être plein.
+                        const ax = vertical ? 0.66 : 1;
+                        const ay = vertical ? 1 : 0.66;
+                        const x = cx + (k === 0 ? 0 : Math.cos(a) * pas * k * ax);
+                        const y = cy + (k === 0 ? 0 : Math.sin(a) * pas * k * ay);
                         const el = liste[i];
                         // ⚠️ UN AVATAR QUI N'A JAMAIS ÉTÉ PLACÉ est à (0,0),
                         // c'est-à-dire au coin HAUT GAUCHE de l'écran — et
@@ -5584,12 +5594,28 @@ createApp({
             // recouvraient au point de faire une tache, et l'on ne
             // distinguait plus personne. Ils se touchent toujours — c'est ce
             // qui fait la foule — mais chaque portrait reste entier.
-            const rMilieu = tas(groupes.null, b.width / 2,
+            if (vertical) {
+                // En portrait, VRAI occupe le haut et FAUX le bas. La bande
+                // utile part sous l'énoncé et descend jusqu'en bas.
+                const hautUtile = haut;
+                const dispo = b.height - hautUtile;
+                const centre = hautUtile + dispo / 2;
+                const rayonLarge = Math.max(40, b.width / 2 - demi);
+                const rM = tas(groupes.null, b.width / 2, centre,
+                    Math.max(1, Math.min(rayonLarge, dispo * 0.3)), 0.82);
+                const libreV = Math.max(taille, dispo / 2 - rM - 14);
+                const rB = Math.max(1, Math.min(libreV / 2, rayonLarge));
+                tas(groupes.v, b.width / 2, hautUtile + libreV / 2, rB, 1);
+                tas(groupes.f, b.width / 2, b.height - libreV / 2, rB, 1);
+                return;
+            }
+
+            const rMilieu = tas(groupes.null, b.width / 2, centreY,
                 Math.max(1, Math.min(b.width * 0.3, rayonY / 0.66) - demi), 0.82);
             const libre = Math.max(taille, b.width / 2 - rMilieu - 14);
             const rBord = Math.max(1, Math.min(libre / 2, rayonY / 0.66) - demi);
-            tas(groupes.v, libre / 2, rBord, 1);
-            tas(groupes.f, b.width - libre / 2, rBord, 1);
+            tas(groupes.v, libre / 2, centreY, rBord, 1);
+            tas(groupes.f, b.width - libre / 2, centreY, rBord, 1);
         },
 
         // Replacer après que Vue a rendu. Les engagements qui tombent dans
@@ -8273,6 +8299,13 @@ createApp({
                 // pouvaient pas le voir — elles n'ont pas de DOM. On brise
                 // donc d'abord, on retire ensuite.
                 this.ch._introT.push(setTimeout(() => {
+                    // ⚠️ Le son part AVEC l'image, pas avant ni après : c'est
+                    // le même instant qui porte la fissure du bord et
+                    // l'éclatement des portraits. `col-casse` est court et
+                    // sec — il a été choisi pour ça dans Collect, et c'est
+                    // exactement ce qu'il faut ici. Un son de plus en banque
+                    // n'aurait rien ajouté.
+                    this.playSound(this.sounds.colCasse);
                     this.eclaterChoice(data.perdants || []);
                     this.ch._introT.push(setTimeout(() => {
                         (data.joueurs || []).forEach(d => {
