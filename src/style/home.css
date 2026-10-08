@@ -8115,21 +8115,29 @@ body.game-active:has(.poll-game-container) #particles-js {
     }
 
     /* Mitsuri (1350 × 1400, rapport 0,96) tourne dans un ruban qui lui fait
-       une roue AUTOUR d'elle, bien plus large que sa silhouette. À la règle de
-       base, la boucle de gauche passait en travers de la description — on
-       lisait « Chaque joueur doit répondre à une affirmation » sous un trait
-       rose. D'où ce décalage vers la droite, le seul réglage dont elle ait
-       besoin : sa hauteur et sa largeur, elles, vont bien.
+       une roue AUTOUR d'elle, bien plus large que sa silhouette. Son réglage
+       se joue donc entre deux bords : assez grande pour tenir le panneau,
+       assez à gauche pour ne pas s'y coller, sans que la boucle du ruban
+       passe en travers de la description.
 
-       ⚠️ -4 % et pas plus, et c'est mesuré aux quatre largeurs. À -8 % le
-       texte est entièrement dégagé sur grand écran, mais en dessous de
-       1 280 px elle SORT DE L'ÉCRAN par la droite (-13 px à 800, -23 px à
-       1 000) : le panneau rétrécit, le décalage reste en pourcentage de lui,
-       et la marge disponible fond plus vite que lui. À -4 % il reste 4 px au
-       pire, et le ruban ne fait plus qu'effleurer la fin de la première
-       ligne. */
+       ⚠️ C'est la LARGEUR qui la borne, pas la hauteur — son cadre est plus
+       haut que large, elle y rentre par les côtés. Monter `height` seul ne
+       faisait donc rien : à 62 % il restait 72 px de vide en haut du cadre.
+       Tout se règle sur `max-width`, et au-delà de 72 % c'est la hauteur qui
+       prend le relais et plus rien ne grandit.
+
+       ⚠️ 68 %, pas 72 %. À 72 % elle est encore plus présente, mais le ruban
+       remange « une affirmation » en première ligne. À 68 % il ne fait que
+       l'effleurer.
+
+       ⚠️ -1 %, et c'est mesuré de 800 à 1920 px. Le décalage est un
+       pourcentage du PANNEAU : plus l'écran est étroit, plus le panneau l'est,
+       et la marge d'écran fond plus vite que le décalage ne rétrécit. À -8 %
+       elle sortait de l'écran sous 1 280 px (-13 px à 800). À -1 % il reste
+       17 px au pire. */
     .v2-mode-char.char-choice {
-        right: -4%;
+        right: -1%;
+        max-width: 68%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
