@@ -2360,11 +2360,63 @@ app.get('/prototypes/avatars/liste', (req, res) => {
                 });
         } catch (e) { return []; }
     };
+    // 🧪 UN DOSSIER DE PASSAGE. Les portraits qu'on veut juger ne sont pas
+    // toujours déjà dans `avatarpic` : on les reçoit, on les pose quelque part,
+    // et c'est AVANT de les adopter qu'on veut les voir sur un siège. Le
+    // paramètre « dossier » laisse donc viser n'importe quel chemin de la
+    // machine, et les fichiers sont servis par la route ci-dessous.
+    //
+    // ⚠️ Ça n'ouvre rien : tout /prototypes est déjà en 404 en production
+    // (garde montée plus haut), donc ce chemin n'existe que sur la machine de
+    // développement, où l'on a de toute façon le disque entier.
+    const externe = typeof req.query.dossier === 'string' ? req.query.dossier.trim() : '';
+    if (externe) {
+        let liste = [];
+        try {
+            liste = fs.readdirSync(externe)
+                .filter(f => /\.(webp|png|jpe?g|gif)$/i.test(f))
+                .map(f => {
+                    let poids = 0;
+                    try { poids = fs.statSync(path.join(externe, f)).size; } catch (e) {}
+                    return {
+                        f, bot: false, poids,
+                        // Servis par /prototypes/avatars/fichier, qui relit le
+                        // même dossier : rien n'est copié dans le dépôt tant
+                        // qu'on n'a pas décidé de garder le portrait.
+                        url: '/prototypes/avatars/fichier?dossier='
+                           + encodeURIComponent(externe) + '&f=' + encodeURIComponent(f),
+                        ecarte: f.startsWith('_'),
+                        autorise: false,   // par définition : il n'est pas encore en jeu
+                        v: null,
+                    };
+                });
+        } catch (e) {
+            return res.json({ defaut: AVATAR_DEFAUT, avatars: [], erreur: 'Dossier illisible : ' + externe });
+        }
+        res.set('Cache-Control', 'no-cache');
+        return res.json({ defaut: AVATAR_DEFAUT, avatars: liste, dossier: externe });
+    }
+
     res.set('Cache-Control', 'no-cache');
     res.json({
         defaut: AVATAR_DEFAUT,
         avatars: lire('/src/img/avatarpic/', false).concat(lire('/src/img/avatarpic/bot/', true)),
     });
+});
+
+// Sert UN fichier d'un dossier de passage. Même raison d'être que ci-dessus,
+// et même garde : /prototypes est en 404 en production.
+// ⚠️ On recompose le chemin avec `path.join` puis on vérifie que le résultat
+// est bien DANS le dossier demandé — sinon « ../../.env » serait un nom de
+// fichier valable.
+app.get('/prototypes/avatars/fichier', (req, res) => {
+    const dossier = typeof req.query.dossier === 'string' ? req.query.dossier : '';
+    const f = typeof req.query.f === 'string' ? req.query.f : '';
+    if (!dossier || !f || !/\.(webp|png|jpe?g|gif)$/i.test(f)) return res.status(400).end();
+    const cible = path.resolve(dossier, f);
+    if (path.dirname(cible) !== path.resolve(dossier)) return res.status(400).end();
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(cible, (e) => { if (e && !res.headersSent) res.status(404).end(); });
 });
 
 app.get('/', (req, res) => {

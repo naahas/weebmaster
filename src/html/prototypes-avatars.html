@@ -295,6 +295,20 @@
     <button class="pa-bouton" id="b-tel">téléphone</button>
     <button class="pa-bouton" id="b-melanger">remplir au hasard</button>
     <button class="pa-bouton" id="b-partout">mettre partout</button>
+    <!-- 🧪 UN DOSSIER DE PASSAGE. Les portraits qu'on veut juger ne sont pas
+         toujours déjà dans src/img/avatarpic : on les reçoit, on les pose
+         quelque part, et c'est AVANT de les adopter qu'on veut les voir sur
+         un siège. Coller le chemin ici suffit — rien n'est copié dans le
+         dépôt tant qu'on n'a pas décidé de garder le portrait.
+         Le chemin est retenu dans le navigateur : on y revient souvent. -->
+    <label class="pa-reglage" style="flex:1 1 22rem;min-width:16rem">
+        dossier
+        <input type="text" id="r-dossier" placeholder="laisser vide = src/img/avatarpic"
+               style="flex:1;min-width:10rem;font:inherit;font-size:0.76rem;color:#fff;
+                      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);
+                      border-radius:0.35rem;padding:0.3rem 0.5rem">
+    </label>
+    <button class="pa-bouton" id="b-dossier">charger</button>
 </div>
 
 <div class="pa-corps">
@@ -420,7 +434,13 @@ const DEMARRAGE = Date.now().toString(36);
 //    l'heure du chargement de la page, ce qui suffit ici.
 function src(a) {
     if (!a) return '/novice.png';
-    return a.v ? a.url + '?v=' + a.v : a.url + '?t=' + DEMARRAGE;
+    // ⚠️ Le séparateur dépend de l'adresse. Un avatar du dépôt sort en
+    // « /naruto.webp » et prend donc « ? » ; un portrait venu d'un dossier de
+    // passage sort en « /prototypes/avatars/fichier?dossier=…&f=… » et en a
+    // déjà un. Recoller un second « ? » faisait une adresse invalide, et les
+    // trois vignettes du dossier externe s'affichaient cassées.
+    const sep = a.url.includes('?') ? '&' : '?';
+    return a.v ? a.url + sep + 'v=' + a.v : a.url + sep + 't=' + DEMARRAGE;
 }
 
 function unAuHasard() {
@@ -576,13 +596,25 @@ $('b-partout').addEventListener('click', () => {
 window.addEventListener('resize', () => { if (!TEL) dessiner(); });
 
 /* ═══ Le chargement ═══ */
-fetch('/prototypes/avatars/liste')
+/* ⚠️ Le dossier de passage est retenu dans le navigateur : on y revient
+   souvent, et le retaper à chaque rechargement serait le premier agacement. */
+const CLEF_DOSSIER = 'proto-avatars:dossier';
+try { $('r-dossier').value = localStorage.getItem(CLEF_DOSSIER) || ''; } catch (e) {}
+
+function charger() {
+    const dossier = $('r-dossier').value.trim();
+    try {
+        if (dossier) localStorage.setItem(CLEF_DOSSIER, dossier);
+        else localStorage.removeItem(CLEF_DOSSIER);
+    } catch (e) {}
+    return fetch('/prototypes/avatars/liste' + (dossier ? '?dossier=' + encodeURIComponent(dossier) : ''))
     .then(r => r.json())
     .then(d => {
         LISTE = d.avatars || [];
         if (!LISTE.length) {
-            $('tiroir').innerHTML = '<div class="pa-vide">Aucune image dans '
-                + 'src/img/avatarpic.</div>';
+            $('tiroir').innerHTML = '<div class="pa-vide">'
+                + (d.erreur ? d.erreur : 'Aucune image dans ' + (dossier || 'src/img/avatarpic'))
+                + '</div>';
             return;
         }
         // Les nouveaux d'abord sur les sièges : ce sont eux qu'on vient voir.
@@ -596,6 +628,12 @@ fetch('/prototypes/avatars/liste')
         $('tiroir').innerHTML = '<div class="pa-vide">La liste n\'a pas '
             + 'répondu. Le serveur tourne-t-il ?</div>';
     });
+}
+
+$('b-dossier').addEventListener('click', charger);
+// Entrée vaut « charger » : on colle un chemin, on valide, sans viser le bouton.
+$('r-dossier').addEventListener('keydown', (e) => { if (e.key === 'Enter') charger(); });
+charger();
 </script>
 </body>
 </html>
