@@ -154,20 +154,33 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
 @keyframes sceau { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 100% { transform: scale(1); } }
 @keyframes onde  { 0% { opacity: 0.85; transform: scale(1); } 100% { opacity: 0; transform: scale(1.75); } }
 
-/* ════ 4 · LE VERROU ════════════════════════════════════════════
-   Une pastille en bas à droite, comme une pastille de statut. Elle
+/* ════ 4 · LA MAIN ══════════════════════════════════════════════
+   Une pastille EN HAUT à droite, comme une pastille de statut. Elle
    NOMME l'état au lieu de le suggérer — c'est la piste la plus
    lisible à deux joueurs, et la plus encombrante à quinze.
-   ⚠️ Le cadenas est dessiné en SVG inline : une emoji dépendrait de
-   la police du système et ne s'alignerait pas. */
+
+   ⚠️ EN HAUT, et c'est ce qui la sauve : en bas, chaque portrait
+   venait recouvrir la pastille de son voisin de gauche, et seule la
+   dernière restait lisible. Même position horizontale (bord droit),
+   seule la verticale change.
+
+   ⚠️ La main est dessinée en SVG inline : une emoji dépendrait de la
+   police du système, ne s'alignerait pas, et changerait d'un appareil
+   à l'autre. Blanche sur pastille sombre — toujours aucune teinte.
+
+   ⚠️ `z-index` sur la pastille ET ordre de peinture inversé sur les
+   portraits (voir `construire()`) : les deux sont nécessaires. Le
+   premier la sort de son portrait, le second empêche le portrait
+   SUIVANT de repasser par-dessus. */
 .p4 .pastille {
-    position: absolute; right: -2px; bottom: -2px;
+    position: absolute; right: -2px; top: -2px;
+    z-index: 30;
     width: 42%; height: 42%; border-radius: 50%;
     background: #15161d; border: 1.5px solid rgba(255,255,255,0.75);
     display: grid; place-items: center;
     opacity: 0; transform: scale(0.4);
 }
-.p4 .pastille svg { width: 58%; height: 58%; fill: #fff; }
+.p4 .pastille svg { width: 62%; height: 62%; fill: #fff; }
 .p4.pret .pastille { animation: pop 0.38s cubic-bezier(0.2, 1.7, 0.4, 1) forwards; }
 @keyframes pop { to { opacity: 1; transform: scale(1); } }
 
@@ -280,7 +293,11 @@ h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
   La <b>5 (lumière)</b> est la seule qui n'ajoute RIEN à l'écran — donc la seule qui tienne vraiment
   à quinze portraits empilés — mais elle inverse la logique : ce sont les indécis qu'on marque,
   en les éteignant.
-  La <b>4 (verrou)</b> est la plus lisible à deux et la plus encombrante à quinze.
+  La <b>4 (la main)</b> est la plus lisible à deux et la plus encombrante à quinze. ⚠️ Elle est
+  passée EN HAUT à droite : en bas, chaque portrait recouvrait la pastille de son voisin et seule
+  la dernière restait lisible. Il a fallu DEUX choses, pas une — un <i>z-index</i> sur la pastille,
+  et l'ordre de peinture des portraits inversé pour que le voisin de droite ne repasse pas
+  par-dessus. Mesuré à 2, 6 et 15 joueurs : zéro pastille recouverte.
   La <b>6 (respiration)</b> est la seule qui reste vivante après coup : à deux joueurs figés
   pendant huit secondes, un écran parfaitement immobile a l'air planté.
   Les <b>2, 3, 7 et 8</b> ne jouent qu'une fois : elles disent l'INSTANT, puis se taisent — c'est
@@ -294,7 +311,7 @@ const PISTES = [
   { c: 'p1', t: 'Anneau blanc', ref: true, d: "Ce qui est en ligne : la bordure du portrait passe au blanc franc avec un halo doux. Lisible, neutre, sans caractère — on la prend pour un survol." },
   { c: 'p2', t: "L'anneau se trace", h: '<i class="anneau"></i>', d: "Un cercle se dessine autour du portrait en moins d'une demi-seconde, puis s'arrête. Le mouvement dit « ça vient d'arriver » ; une fois tracé il ne bouge plus." },
   { c: 'p3', t: 'Le sceau',        h: '<i class="onde"></i>',   d: "Le portrait s'enfonce d'un cran et une onde part de lui. L'image d'un tampon qu'on abat : le choix est pris, on ne revient pas dessus." },
-  { c: 'p4', t: 'Le verrou',       h: '<i class="pastille"><svg viewBox="0 0 24 24"><path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V6a3 3 0 0 1 3-3z"/></svg></i>', d: "Une pastille en bas à droite, comme un statut. Elle NOMME l'état au lieu de le suggérer : impossible à mal lire, mais ça fait un objet de plus par joueur." },
+  { c: 'p4', t: 'La main',         h: '<i class="pastille"><svg viewBox="0 0 24 24"><path d="M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5z"/></svg></i>', d: "Une main blanche en pastille, EN HAUT à droite. Elle NOMME l'état au lieu de le suggérer : impossible à mal lire. En haut parce qu'en bas le voisin la recouvrait." },
   { c: 'p5', t: 'La montée de lumière', d: "Rien ne s'ajoute : c'est le portrait qui change. Tant qu'on n'a pas tranché on est en veilleuse, sombre et gris ; en choisissant, on s'allume." },
   { c: 'p6', t: 'La respiration',  h: '<i class="halo"></i>',   d: "Un halo qui enfle et retombe, lentement, et qui ne s'arrête pas. Le seul qui garde l'écran vivant pendant qu'on attend l'autre joueur." },
   { c: 'p7', t: 'Le réticule',     h: '<i class="ret"></i>',    d: "Deux arcs opposés tournent puis se bloquent, comme une visée qui accroche. Le vocabulaire du VERROUILLAGE, qui est exactement ce dont il s'agit." },
@@ -315,7 +332,13 @@ function construire() {
     for (let k = 0; k < nb; k++) {
       // Le premier porte le liseré d'or : en jeu, « c'est moi » se superpose
       // toujours à l'indicateur, et c'est là qu'une piste peut se brouiller.
-      av.push('<span class="av ' + p.c + (allume ? ' pret' : '') + (k === 0 ? ' moi' : '') + '">'
+      // ⚠️ ORDRE DE PEINTURE INVERSÉ : le portrait le plus à GAUCHE passe
+      // au-dessus. Les portraits se chevauchent de 28 % ; dans l'ordre
+      // naturel, chacun recouvre la pastille de son voisin de gauche et
+      // seule la dernière reste lisible. En inversant, la pastille du bord
+      // droit n'a plus rien au-dessus d'elle.
+      av.push('<span class="av ' + p.c + (allume ? ' pret' : '') + (k === 0 ? ' moi' : '') + '"'
+            + ' style="z-index:' + (nb - k) + '">'
             + '<img src="/' + VISAGES[k % VISAGES.length] + '.webp" alt="">'
             + (p.h || '') + '</span>');
     }
