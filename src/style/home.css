@@ -14657,17 +14657,28 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         100% { opacity: 0;    transform: translateY(-14%); }
     }
 
-    /* ⚠️ Le mot se range vers le CENTRE, pas vers son bord extérieur. Collé
-       au bord, « VRAI » passait sous l'énoncé — qui occupe tout le haut en
-       portrait — et on n'en voyait que le sommet des lettres. Les deux mots
-       encadrent donc la zone neutre, juste au-dessus et au-dessous du tas
-       des indécis, où rien d'autre ne vit. */
+    /* ⚠️ LES DEUX MOTS NE SE PLACENT PAS PAREIL, et c'est ce qui a été mal
+       compris deux fois. En portrait, trois choses se disputent la hauteur :
+       l'énoncé tout en haut, le tas des indécis au milieu, les mots.
+
+       « VRAI » tient entre l'énoncé et le tas : il descend donc au BAS de sa
+       moitié. Le coller en haut le faisait passer sous l'énoncé, qui mesure
+       de 32 à 209 px selon la longueur de la phrase — quatre lignes ne sont
+       pas rares.
+
+       « FAUX » tient entre le tas et le bas de l'écran, qui est une bande
+       bien plus large : il se CENTRE dans sa moitié. L'ancienne règle le
+       collait en haut de celle-ci, c'est-à-dire pile sur le tas — mesuré,
+       le mot occupait 490→545 et les portraits 421→554. C'est ce que l'on
+       voyait à l'écran : les visages en travers du mot.
+
+       ⚠️ Donc pas de symétrie ici, et ne pas « harmoniser » les deux : ce
+       qui les sépare, c'est que l'énoncé n'existe qu'en haut. */
     .chx-mot {
         font-size: clamp(2.2rem, 14vw, 4.2rem);
         padding: 0.8rem 0;
     }
     .chx-bord.g .chx-mot { align-items: flex-end; }
-    .chx-bord.d .chx-mot { align-items: flex-start; }
 
     /* Les compteurs passent aux coins extérieurs. */
     .chx-bord.g .chx-n { top: 0.6rem; left: 1rem; }
