@@ -2268,6 +2268,59 @@ app.get('/prototypes/avatars', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-avatars.html');
 });
 
+// 🧪 Les VIGNETTES D'OPENINGS, à l'essai. Même esprit que la page des avatars
+// — tout voir d'un coup, au poids près — mais les deux ne pouvaient pas
+// partager la page : celle des avatars simule les SIÈGES de BombAnime, des
+// ronds de 3 rem, et une vignette d'opening est un 16/10 de 23 rem.
+app.get('/prototypes/openings', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-openings.html');
+});
+
+// Le dossier CROISÉ avec les données. C'est tout l'objet : un fichier peut
+// être là sans être déclaré (il ne sortira jamais au tirage) ou déclaré sans
+// être là (l'étage affichera une carte vide). Ni l'un ni l'autre ne se voit
+// en ouvrant le dossier, et aucun des deux ne lève d'erreur.
+app.get('/prototypes/openings/liste', (req, res) => {
+    const DOSSIER = __dirname + '/src/img/ascensionpic/ascensionops/';
+    let surDisque = [];
+    try { surDisque = fs.readdirSync(DOSSIER).filter(f => /\.(webp|png|jpe?g|gif)$/i.test(f)); }
+    catch (e) { /* dossier absent : la page le dira */ }
+
+    const poidsDe = (f) => { try { return fs.statSync(DOSSIER + f).size; } catch (e) { return 0; } };
+    const restants = new Set(surDisque);
+
+    let data = {};
+    try { data = require('./ascensiondata.json').openings || {}; } catch (e) {}
+
+    const series = Object.entries(data).map(([serie, liste]) => ({
+        serie,
+        openings: (liste || []).slice()
+            .sort((a, b) => (a.order || 0) - (b.order || 0))
+            .map(o => {
+                // ⚠️ Le nom de fichier peut porter un chemin dans les données :
+                // on ne garde que le dernier segment pour chercher sur le disque.
+                const f = String(o.img || '').split('/').pop();
+                restants.delete(f);
+                const poids = poidsDe(f);
+                return {
+                    nom: o.name, ordre: o.order, f,
+                    url: '/ascensionpic/ascensionops/' + f,
+                    poids,
+                    manquante: poids === 0,
+                    lourde: poids > 90 * 1024,     // le seuil de npm run openings
+                    pasWebp: !/\.webp$/i.test(f),
+                };
+            }),
+    })).sort((a, b) => a.serie.localeCompare(b.serie, 'fr'));
+
+    // Ce qui traîne dans le dossier sans qu'aucune série ne le cite.
+    const orphelines = [...restants].sort().map(f => ({
+        f, url: '/ascensionpic/ascensionops/' + f, poids: poidsDe(f),
+    }));
+
+    res.json({ series, orphelines, surDisque: surDisque.length });
+});
+
 // Les avatars tels qu ils sont SUR LE DISQUE, et non tels qu AVATARS_AUTORISES
 // les connait.
 //

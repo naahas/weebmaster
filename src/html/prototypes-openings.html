@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les vignettes d'openings à l'essai — ShonenMaster</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Les vignettes d'openings, toutes d'un coup.
+
+   Elles servent à l'étage « Classer par ordre » d'Ascension : on
+   reçoit les openings d'une série dans le désordre et on les remet
+   en ordre chronologique. Donc deux choses se jugent ici, et pas
+   une :
+
+   1. LA VIGNETTE EST-ELLE RECONNAISSABLE ? Elle est rendue à la
+      taille EXACTE de l'étage — 16/10 recadré, jusqu'à 23 rem — et
+      non en planche-contact. Un plan qui marche en grand peut ne
+      plus rien dire une fois recadré.
+   2. LA SUITE EST-ELLE LISIBLE DANS L'ORDRE ? Les vignettes sont
+      affichées dans l'ordre déclaré, de 1 à N. Si deux openings
+      voisins se ressemblent, l'étage devient un tirage au sort, et
+      ça ne se voit qu'en les mettant côte à côte.
+
+   ⚠️ Et la page croise le DOSSIER avec les DONNÉES, ce qu'aucune des
+   deux ne montre seule : un fichier peut être là sans être déclaré
+   (il ne sortira jamais), ou déclaré sans être là (l'étage affiche
+   une carte vide). Aucun des deux ne lève d'erreur.
+   ════════════════════════════════════════════════════════════════ */
+:root { --or: #ffd24a; --rouge: #ff6b6b; --vert: #4ade80; }
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #15161d, #07080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.2rem; max-width: 62rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.78); }
+
+.barre { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.6rem; }
+.barre .lab { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
+.puce {
+    font-size: 0.72rem; padding: 0.3rem 0.7rem; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6);
+}
+.puce.ok   { border-color: rgba(74,222,128,0.4);  color: var(--vert); }
+.puce.mal  { border-color: rgba(255,107,107,0.45); color: var(--rouge); }
+.puce.att  { border-color: rgba(255,210,74,0.4);  color: var(--or); }
+.barre button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.35rem 0.75rem; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 0.45rem;
+}
+.barre button:hover { background: rgba(255,255,255,0.12); }
+.barre button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+
+.serie { margin-top: 2.2rem; }
+.serie h2 {
+    margin: 0 0 0.6rem; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem; letter-spacing: 0.06em; color: var(--or);
+    display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+}
+.serie h2 small { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 400; color: rgba(255,255,255,0.35); letter-spacing: 0; }
+
+/* ⚠️ LA SUITE, pas une grille : l'étage les montre EN LIGNE, reliées par des
+   flèches, et c'est dans cet enchaînement qu'on voit si deux openings
+   voisins se ressemblent. Une grille en colonnes casserait justement ce
+   qu'on vient vérifier. Elle défile donc horizontalement. */
+.suite {
+    display: flex; gap: 0.5rem; align-items: flex-start;
+    overflow-x: auto; padding-bottom: 0.7rem;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+.carte {
+    flex: 0 0 auto;
+    width: var(--l, 14rem);
+    position: relative;
+}
+/* Le cadre de l'étage, à l'identique : 16/10 recadré. */
+.carte img {
+    width: 100%; aspect-ratio: 16 / 10; object-fit: cover;
+    display: block; border-radius: 0.55rem;
+    background: #101119;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.carte .nom {
+    display: block; margin-top: 0.35rem;
+    font-size: 0.72rem; line-height: 1.25; color: rgba(255,255,255,0.72);
+}
+.carte .meta { display: block; font-size: 0.62rem; color: rgba(255,255,255,0.3); }
+.carte .rang {
+    position: absolute; top: 0.3rem; left: 0.3rem;
+    min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem;
+    border-radius: 0.35rem; background: rgba(0,0,0,0.72);
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.82rem;
+    display: grid; place-items: center; color: #fff;
+}
+.carte .drapeau {
+    position: absolute; top: 0.3rem; right: 0.3rem;
+    font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.15rem 0.4rem; border-radius: 0.3rem;
+    background: var(--rouge); color: #1a0b0b;
+}
+.carte .drapeau.att { background: var(--or); color: #17140a; }
+.carte.manquante img { border: 1px dashed rgba(255,107,107,0.6); }
+
+.note {
+    margin-top: 2.6rem; max-width: 62rem;
+    border-left: 3px solid rgba(255,210,74,0.5);
+    background: rgba(255,210,74,0.05);
+    padding: 0.9rem 1.1rem; border-radius: 0.3rem;
+    font-size: 0.78rem; line-height: 1.6; color: rgba(255,255,255,0.55);
+}
+.note b { color: rgba(255,255,255,0.85); }
+.note code { background: rgba(255,255,255,0.08); padding: 0.08rem 0.3rem; border-radius: 0.2rem; }
+.vide { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>Les vignettes d'openings à l'essai</h1>
+<p class="sous">
+  Les 151 vignettes de l'étage <b>« Classer par ordre »</b> d'Ascension, rendues à la taille
+  EXACTE de l'étage — 16/10 recadré — et <b>dans l'ordre déclaré</b>, série par série.<br>
+  ⚠️ Deux choses se jugent, pas une : est-ce qu'une vignette <b>se reconnaît</b> une fois
+  recadrée, et est-ce que <b>la suite se lit</b>. Si deux openings voisins se ressemblent,
+  l'étage devient un tirage au sort — et ça ne se voit qu'en les mettant côte à côte, d'où le
+  défilement horizontal plutôt qu'une grille.<br>
+  ⚠️ La page <b>croise le dossier et les données</b>, ce qu'aucun des deux ne montre seul : un
+  fichier peut être là sans être déclaré (il ne sortira jamais au tirage), ou déclaré sans être
+  là (l'étage affiche une carte vide). Ni l'un ni l'autre ne lève d'erreur.
+</p>
+
+<div class="barre" id="compteurs"></div>
+<div class="barre">
+  <span class="lab">Taille</span>
+  <button data-l="8">8 rem — serré</button>
+  <button data-l="14" class="on">14 rem</button>
+  <button data-l="23">23 rem — la vraie taille</button>
+  <span class="lab" style="margin-left:1rem">Filtre</span>
+  <button data-f="tout" class="on">Tout</button>
+  <button data-f="souci">Ce qui cloche</button>
+</div>
+
+<div id="corps"></div>
+
+<div class="note">
+  <b>Les seuils.</b> Le rouge marque un fichier <b>absent</b> (déclaré dans
+  <code>ascensiondata.json</code>, introuvable sur le disque) ou qui <b>n'est pas en WebP</b>.
+  Le doré marque une vignette <b>au-dessus de 90 Ko</b> — c'est le seuil de
+  <code>npm&nbsp;run&nbsp;openings</code>, et il est large : la moyenne tourne à 15 Ko. Une
+  capture laissée en PNG puis renommée pèse dix à trente fois ses voisines sans que rien ne le
+  signale.<br>
+  Pour convertir un lot : <code>npm run openings:convertir</code>. ⚠️ Le serveur ne recense les
+  images qu'au démarrage — relance-le après.
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const ko = (o) => Math.round(o / 1024) + ' Ko';
+let DATA = null, large = 14, filtre = 'tout';
+
+function souci(o) { return o.manquante || o.lourde || o.pasWebp; }
+
+function carte(o) {
+    const cl = 'carte' + (o.manquante ? ' manquante' : '');
+    let drapeau = '';
+    if (o.manquante)      drapeau = '<span class="drapeau">absente</span>';
+    else if (o.pasWebp)   drapeau = '<span class="drapeau">pas WebP</span>';
+    else if (o.lourde)    drapeau = '<span class="drapeau att">' + ko(o.poids) + '</span>';
+    return '<div class="' + cl + '">'
+         + '<span class="rang">' + (o.ordre || '?') + '</span>'
+         + drapeau
+         + '<img src="' + o.url + '" alt="" loading="lazy">'
+         + '<span class="nom">' + o.nom + '</span>'
+         + '<span class="meta">' + o.f + (o.manquante ? '' : ' · ' + ko(o.poids)) + '</span>'
+         + '</div>';
+}
+
+function dessiner() {
+    if (!DATA) return;
+    let total = 0, manq = 0, lourd = 0, pasW = 0;
+    DATA.series.forEach(s => s.openings.forEach(o => {
+        total++; if (o.manquante) manq++; if (o.lourde) lourd++; if (o.pasWebp) pasW++;
+    }));
+
+    $('compteurs').innerHTML =
+        '<span class="puce">' + DATA.series.length + ' séries</span>'
+      + '<span class="puce">' + total + ' openings déclarés</span>'
+      + '<span class="puce">' + DATA.surDisque + ' fichiers sur le disque</span>'
+      + '<span class="puce ' + (manq ? 'mal' : 'ok') + '">' + manq + ' absente(s)</span>'
+      + '<span class="puce ' + (DATA.orphelines.length ? 'att' : 'ok') + '">'
+      +   DATA.orphelines.length + ' orpheline(s)</span>'
+      + '<span class="puce ' + (lourd ? 'att' : 'ok') + '">' + lourd + ' au-dessus de 90 Ko</span>'
+      + '<span class="puce ' + (pasW ? 'mal' : 'ok') + '">' + pasW + ' hors WebP</span>';
+
+    let html = '';
+    DATA.series.forEach(s => {
+        const liste = filtre === 'souci' ? s.openings.filter(souci) : s.openings;
+        if (!liste.length) return;
+        const poids = s.openings.reduce((a, o) => a + o.poids, 0);
+        html += '<div class="serie"><h2>' + s.serie
+             +  ' <small>' + s.openings.length + ' openings · ' + ko(poids) + '</small></h2>'
+             +  '<div class="suite" style="--l:' + large + 'rem">'
+             +  liste.map(carte).join('') + '</div></div>';
+    });
+
+    // ⚠️ Les orphelines à part, et pas mélangées : elles n'ont ni ordre ni nom,
+    // justement parce qu'aucune série ne les cite.
+    if (DATA.orphelines.length && filtre !== 'souci') {
+        html += '<div class="serie"><h2 style="color:var(--rouge)">Orphelines'
+             +  ' <small>sur le disque, citées par aucune série — elles ne sortiront jamais</small></h2>'
+             +  '<div class="suite" style="--l:' + large + 'rem">'
+             +  DATA.orphelines.map(o => carte({ ...o, nom: '(non déclarée)', ordre: '·' })).join('')
+             +  '</div></div>';
+    }
+    $('corps').innerHTML = html || '<p class="vide">Rien à montrer avec ce filtre.</p>';
+}
+
+document.querySelectorAll('[data-l]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-l]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); large = +b.dataset.l; dessiner();
+});
+document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-f]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); filtre = b.dataset.f; dessiner();
+});
+
+fetch('/prototypes/openings/liste')
+    .then(r => r.json())
+    .then(d => { DATA = d; dessiner(); })
+    .catch(() => {
+        $('corps').innerHTML = '<p class="vide">La liste n\'a pas répondu. '
+            + 'Le serveur tourne-t-il ?</p>';
+    });
+</script>
+</body>
+</html>
