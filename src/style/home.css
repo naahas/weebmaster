@@ -14159,8 +14159,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .chx-enonce {
     position: absolute;
     /* Abaissé d'un demi-cadratin : la jauge occupe désormais l'arête
-       haute, et le texte collé dessus se lisait comme sa légende. */
-    top: 1.9rem; left: 50%;
+       haute, et le texte collé dessus se lisait comme sa légende.
+       ⚠️ En REM, pas en pixels : la valeur suit la taille de police du
+       document, comme tout l'écart de ce bloc. 2 rem valent 32 px au réglage
+       par défaut — l'ajustement de 1,6 px demandé se lit ici. */
+    top: 2rem; left: 50%;
     z-index: 5;
     /* ⚠️ SANS CADRE. La boîte opaque posait un rectangle de plus sur un
        écran qui n'en a aucun ; le texte se tient tout seul, décollé par
@@ -14347,6 +14350,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 .chx-j.v img { border-color: var(--vrai); box-shadow: 0 0 0 0.1rem var(--vrai), 0 0 1.2rem rgba(var(--vrai-rgb), 0.55); }
 .chx-j.f img { border-color: var(--faux); box-shadow: 0 0 0 0.1rem var(--faux), 0 0 1.2rem rgba(var(--faux-rgb), 0.55); }
+/* « A choisi, mais on ne dit pas quoi. » C'est l'état du DUEL FINAL : à deux
+   survivants le serveur cesse d'envoyer les bords, sans quoi le second à
+   jouer n'aurait qu'à se coller au premier et la manche ne départagerait
+   jamais. Il sert aussi quand l'hôte a éteint « Mouvement », où rien ne
+   disait jusqu'ici que l'autre avait tranché.
+
+   ⚠️ Un blanc NEUTRE, et surtout pas une teinte : le bord est précisément ce
+   qu'on cache ici, un halo tirant sur le bleu ou le rouge le dirait à moitié.
+   Et il reste plus discret que les deux camps — il annonce un choix pris, pas
+   un camp rejoint. */
+.chx-j.pret img {
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 0 0.08rem rgba(255, 255, 255, 0.28), 0 0 0.9rem rgba(255, 255, 255, 0.2);
+}
+
 /* Le mien porte un liseré d'or : à cinquante visages, se retrouver est la
    première chose qu'on cherche. */
 .chx-j.moi img { outline: 2px solid var(--neon-primary); outline-offset: 2px; }

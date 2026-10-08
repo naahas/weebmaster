@@ -2000,7 +2000,14 @@
                                        perdu: chCampPerdant === 'v',
                                        gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'v' }">
                             <span class="chx-mot">VRAI</span>
-                            <span class="chx-n">{{ ch.comptes.v }}</span>
+                            <!-- ⚠️ `!== null`, jamais la vérité de la valeur :
+                                 un compteur à ZÉRO doit s'afficher, c'est une
+                                 information juste. C'est `null` qui veut dire
+                                 « on ne le dit pas » — le duel final à deux,
+                                 où « 2 · 0 » comme « 1 · 1 » livrerait le bord
+                                 de l'adversaire qu'on vient justement de
+                                 cacher. -->
+                            <span class="chx-n" v-if="ch.comptes.v !== null">{{ ch.comptes.v }}</span>
                             <!-- Les fissures : tracées par-dessus le bord, elles
                                  se dessinent depuis le centre. Elles ne durent
                                  qu'une demi-seconde, mais c'est elles qui font
@@ -2020,7 +2027,7 @@
                                        perdu: chCampPerdant === 'f',
                                        gagne: ch.revelation && !ch.revelation.nulle && chCampPerdant !== 'f' }">
                             <span class="chx-mot">FAUX</span>
-                            <span class="chx-n">{{ ch.comptes.f }}</span>
+                            <span class="chx-n" v-if="ch.comptes.f !== null">{{ ch.comptes.f }}</span>
                             <svg class="chx-fissures" viewBox="0 0 300 500" preserveAspectRatio="none">
                                 <path d="M0 250 L90 210 L150 250 L230 190 L300 215"/>
                                 <path d="M90 210 L110 90 L160 0"/>
@@ -2082,6 +2089,7 @@
                             <span v-for="j in chVivants" :key="j.playerId"
                                   class="chx-j" :data-pid="j.playerId"
                                   :class="{ v: j.camp === 'v', f: j.camp === 'f',
+                                            pret: j.aChoisi && !j.camp,
                                             moi: j.playerId === playerId }">
                                 <i class="chx-trace"></i>
                                 <img :src="srcAvatar(j.avatar)" alt="">

@@ -187,9 +187,33 @@ function creerModule(deps) {
         return t;
     };
 
+    // ⚠️ LE DUEL FINAL SE JOUE À L'AVEUGLE, et ce n'est pas un réglage.
+    //
+    // À deux survivants, voir le bord de l'autre casse la fin : le second à
+    // choisir n'a qu'à se coller au premier. Les deux sont alors toujours du
+    // même côté, donc toujours justes ensemble ou faux ensemble — la manche
+    // ne peut plus départager et le duel tourne en rond jusqu'à ce que la
+    // banque s'épuise. Vu en partie.
+    //
+    // Les placements se cachent donc d'eux-mêmes dès qu'il ne reste que deux
+    // vivants, quoi qu'ait réglé l'hôte. Le compte reste connu (`aChoisi`) :
+    // on sait que l'autre a tranché, on ne sait pas pour quoi.
+    //
+    // ⚠️ Côté SERVEUR, jamais en masquant côté client : l'onglet réseau
+    // donnerait le bord de l'adversaire, ce qui est exactement ce qu'on
+    // protège ici.
+    function placementsCaches(gameState) {
+        const etat = gameState.choice;
+        if (!etat.voirLesAutres) return true;
+        let vivants = 0;
+        for (const [, j] of etat.joueurs) if (j.vivant) vivants++;
+        return vivants <= 2;
+    }
+
     // Ce que l'écran doit savoir des joueurs. Le camp n'y est que si le
-    // salon a laissé « voir les autres » — sinon on dit seulement QUE la
-    // personne a choisi, ce qui garde le compte sans donner le bord.
+    // salon a laissé « voir les autres » ET qu'on n'est pas dans le duel
+    // final — sinon on dit seulement QUE la personne a choisi, ce qui garde
+    // le compte sans donner le bord.
     function joueursPourLEcran(gameState) {
         const etat = gameState.choice;
         const out = [];
@@ -213,7 +237,7 @@ function creerModule(deps) {
                 // Ne PAS envoyer puis masquer côté client : l'onglet réseau
                 // donnerait le bord de chacun, ce que le réglage promet
                 // justement de cacher.
-                camp: etat.voirLesAutres ? j.camp : null,
+                camp: placementsCaches(gameState) ? null : j.camp,
                 aChoisi: j.camp !== null,
             });
         }
@@ -228,6 +252,12 @@ function creerModule(deps) {
             reste: Math.max(0, etat.finA - Date.now()),
             duree: etat.duree * 1000,
             voirLesAutres: etat.voirLesAutres,
+            // ⚠️ SÉPARÉ du réglage, et pas une valeur « effective » qui
+            // l'écraserait : `voirLesAutres` est ce qu'a choisi l'hôte et le
+            // tiroir l'affiche, `caches` est ce qui s'applique à cette manche
+            // — le duel final le force. Les confondre ferait mentir le tiroir
+            // après une partie, quand on revient au salon.
+            caches: placementsCaches(gameState),
             joueurs: joueursPourLEcran(gameState),
         };
     }
@@ -269,6 +299,7 @@ function creerModule(deps) {
             vies: etat.vies,
             duree: etat.duree * 1000,
             voirLesAutres: etat.voirLesAutres,
+            caches: placementsCaches(gameState),
             joueurs: joueursPourLEcran(gameState),
         });
 
@@ -305,6 +336,9 @@ function creerModule(deps) {
             // s'arrêter avant le bout. Le client fabrique son échéance
             // sur SA montre.
             reste: etat.duree * 1000,
+            // Recalculé à CHAQUE manche : le duel final arrive en cours de
+            // partie, c'est une élimination qui le déclenche.
+            caches: placementsCaches(gameState),
             joueurs: joueursPourLEcran(gameState),
         });
 
@@ -431,14 +465,25 @@ function creerModule(deps) {
         j.camp = camp;
         diffuser(gameState, 'choice-bouge', {
             playerId,
-            // Même garde que `joueursPourLEcran` : le bord ne part que si
-            // le salon l'autorise.
-            camp: etat.voirLesAutres ? camp : null,
+            // Même garde que `joueursPourLEcran` : le bord ne part que si le
+            // salon l'autorise ET qu'on n'est pas dans le duel final.
+            camp: placementsCaches(gameState) ? null : camp,
             comptes: comptes(gameState),
         });
         return { ok: true };
     }
 
+    // ⚠️ LES DEUX COMPTEURS DES COINS SONT UNE FUITE au duel final, et c'est
+    // le trou que cacher les placements laissait grand ouvert : à deux
+    // vivants, « VRAI 2 · FAUX 0 » dit que l'autre est du même bord, et
+    // « 1 · 1 » qu'il est en face. Dans les deux cas on sait tout, et cacher
+    // les avatars n'aura servi à rien.
+    //
+    // On n'envoie donc plus que le nombre d'INDÉCIS, qui suffit à savoir si
+    // l'autre a tranché sans dire pour quoi — et c'est déjà ce que dit le
+    // halo sur son portrait. `v` et `f` partent à null : le client cache les
+    // deux chiffres plutôt que d'afficher un zéro, qui se lirait comme une
+    // information.
     function comptes(gameState) {
         const etat = gameState.choice;
         let v = 0, f = 0, indecis = 0;
@@ -448,6 +493,7 @@ function creerModule(deps) {
             else if (j.camp === 'f') f++;
             else indecis++;
         });
+        if (placementsCaches(gameState)) return { v: null, f: null, indecis };
         return { v, f, indecis };
     }
 

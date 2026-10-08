@@ -185,6 +185,10 @@ createApp({
                 vies: 1,
                 duree: 8,
                 voirLesAutres: true,
+                // Ce qui s'applique VRAIMENT à la manche en cours. Distinct
+                // du réglage ci-dessus : le duel final à deux cache les
+                // placements sans que l'hôte ait rien demandé.
+                caches: false,
                 serieFiltre: 'overall',
                 barDurees: [5, 8, 12],
                 series: [],          // ce que la banque contient, pour le tiroir
@@ -8250,6 +8254,15 @@ createApp({
                 this.ch.comptes = { v: 0, f: 0, indecis: (data.joueurs || []).length };
                 this.ch.vies = data.vies;
                 this.ch.voirLesAutres = data.voirLesAutres;
+                // ⚠️ Deux champs distincts, et il faut les deux :
+                // `voirLesAutres` est le RÉGLAGE de l'hôte, que le tiroir
+                // affiche ; `caches` est ce qui s'applique à cette manche-ci,
+                // que le duel final force quoi qu'ait réglé l'hôte.
+                this.ch.caches = !!data.caches;
+                // ⚠️ `null` et pas zéro quand les placements sont cachés : un
+                // « 0 » affiché est une information, et au duel final il dit
+                // que l'autre est forcément en face. Le gabarit teste `null`.
+                if (this.ch.caches) this.ch.comptes = { v: null, f: null, indecis: this.ch.comptes.indecis };
                 this.gameInProgress = true;
                 this.gameEnded = false;
                 document.body.classList.add('game-active');
@@ -8270,7 +8283,13 @@ createApp({
                 this.ch.verrou = false;
                 this.ch.revelation = null;
                 this.ch.joueurs = data.joueurs || [];
-                this.ch.comptes = { v: 0, f: 0, indecis: (data.joueurs || []).length };
+                // Relu à chaque manche : c'est une élimination qui fait
+                // basculer la partie dans le duel final, pas son début.
+                this.ch.caches = !!data.caches;
+                const vivants = (data.joueurs || []).filter(j => j.vivant).length;
+                this.ch.comptes = this.ch.caches
+                    ? { v: null, f: null, indecis: vivants }
+                    : { v: 0, f: 0, indecis: vivants };
                 // L'énoncé paraît d'abord, le compte part ensuite : lire la
                 // question pendant que la jauge coule déjà vole une seconde
                 // à tout le monde.
@@ -8322,8 +8341,10 @@ createApp({
                 // suivante replacera tout le monde.
                 // Le seul cas où il FAUT replacer : « Mouvement » éteint, où
                 // tout le monde était resté au milieu et se révèle enfin.
-                const cache = !this.ch.voirLesAutres;
-                if (cache) this.replacerChoice();
+                // ⚠️ `caches`, pas `!voirLesAutres` : le duel final cache les
+                // placements sans toucher au réglage, et c'est bien LÀ qu'il
+                // faut replacer — tout le monde était resté au milieu.
+                if (this.ch.caches) this.replacerChoice();
 
                 // ⚠️ LE SHATTER LIT LA POSITION DES AVATARS DANS LE DOM. En
                 // marquant les éliminés tout de suite, Vue les retirait de la
@@ -8346,7 +8367,11 @@ createApp({
                             if (j) j.vivant = d.vivant;
                         });
                     }, 950));
-                }, cache ? 820 : 260));
+                    // ⚠️ Plus long quand les placements étaient CACHÉS : les
+                    // avatars viennent de glisser vers leur bord à la
+                    // révélation, et briser leur portrait avant qu'ils y
+                    // soient arrivés fait éclater du vide.
+                }, this.ch.caches ? 820 : 260));
             });
 
             this.socket.on('choice-depart', (data) => {
@@ -8404,11 +8429,12 @@ createApp({
                 this.ch.question = data.question;
                 this.ch.joueurs = data.joueurs || [];
                 this.ch.voirLesAutres = data.voirLesAutres;
+                this.ch.caches = !!data.caches;
                 const moi = this.ch.joueurs.find(x => x.playerId === this.playerId);
                 this.ch.monCamp = moi ? (moi.camp || null) : null;
                 this.ch.comptes = {
-                    v: this.ch.joueurs.filter(j => j.vivant && j.camp === 'v').length,
-                    f: this.ch.joueurs.filter(j => j.vivant && j.camp === 'f').length,
+                    v: this.ch.caches ? null : this.ch.joueurs.filter(j => j.vivant && j.camp === 'v').length,
+                    f: this.ch.caches ? null : this.ch.joueurs.filter(j => j.vivant && j.camp === 'f').length,
                     indecis: this.ch.joueurs.filter(j => j.vivant && !j.camp).length,
                 };
                 this.gameInProgress = true;
