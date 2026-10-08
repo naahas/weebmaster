@@ -8127,8 +8127,15 @@ body.game-active:has(.poll-game-container) #particles-js {
        relais et c'est l'inverse : `max-width` seul ne fait plus rien non
        plus. Toucher à une seule des deux, c'est ne rien changer du tout.
 
-       ⚠️ 74 % / 122 %, et pas au-delà : le ruban effleure déjà la fin de la
-       première ligne de la description. Plus grande, il la traverse.
+       ⚠️ 74 % / 116 %, et le nombre ne vient pas du goût mais d'une
+       COMPARAISON : de combien chaque personnage dépasse du haut du cadre.
+       Kenshin 110 px, Nagi 92, Lambo 69, Sora 21, Esdeath 15. À 122 % Mitsuri
+       montait à 112 et sa tête sortait plus haut que tout le monde ; à 116 %
+       elle dépasse de 88, soit entre Lambo et Nagi. C'est cette mesure qu'il
+       faut refaire si l'image change, pas l'œil sur une seule carte.
+
+       ⚠️ Et pas plus grande non plus : le ruban effleure déjà la fin de la
+       première ligne de la description. Au-delà, il la traverse.
 
        ⚠️ -1 %, mesuré de 800 à 1920 px. Le décalage est un pourcentage du
        PANNEAU : plus l'écran est étroit, plus le panneau l'est, et la marge
@@ -8138,7 +8145,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-mode-char.char-choice {
         right: -1%;
         max-width: 74%;
-        height: 122%;
+        /* ⚠️ Écrit même si c'est la valeur de base : la taille de Mitsuri est
+           calée sur celle des AUTRES personnages, pas sur un défaut. Si le
+           défaut bougeait un jour pour une autre raison, elle n'a aucune
+           raison de suivre. */
+        height: 116%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
