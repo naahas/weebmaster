@@ -8127,11 +8127,19 @@ body.game-active:has(.poll-game-container) #particles-js {
        relais et c'est l'inverse : `max-width` seul ne fait plus rien non
        plus. Toucher à une seule des deux, c'est ne rien changer du tout.
 
-       ⚠️ 74 % / 117 %, et le nombre ne vient pas du goût mais d'une
+       ⚠️ 77 % / 121 %, et le nombre ne vient pas du goût mais d'une
        COMPARAISON : de combien chaque personnage dépasse du haut du cadre.
        Kenshin 110 px, Nagi 92, Lambo 69, Sora 21, Esdeath 15. Mitsuri monte à
-       87, soit entre Lambo et Nagi. C'est cette mesure qu'il faut refaire si
+       85, soit entre Lambo et Nagi. C'est cette mesure qu'il faut refaire si
        l'image change, pas l'œil sur une seule carte.
+
+       ⚠️ Le `bottom: -6%` n'est PAS une retouche indépendante : grandir pousse
+       la tête vers le haut, puisque l'image est ancrée en bas. Sans lui, les
+       3,4 % de taille gagnés ici auraient fait monter le dépassement de 90 à
+       96 px. L'abaissement compense d'abord cette poussée, et seulement
+       ensuite la descend vraiment — d'où un chiffre qui paraît gros pour un
+       déplacement qu'on voit à peine. Les deux se règlent ENSEMBLE, et
+       toucher l'un sans l'autre déplace la tête.
 
        ℹ️ L'image elle-même est PENCHÉE DE 14° dans le fichier, et c'est ce qui
        permet ces 74 % : sa silhouette est une diagonale, la redresser vers la
@@ -8162,12 +8170,13 @@ body.game-active:has(.poll-game-container) #particles-js {
        et aucun défilement horizontal nulle part. */
     .v2-mode-char.char-choice {
         right: -1%;
-        max-width: 74%;
+        max-width: 77%;
         /* ⚠️ Écrit même si c'est proche de la valeur de base : la taille de
            Mitsuri est calée sur celle des AUTRES personnages, pas sur un
            défaut. Si le défaut bougeait un jour pour une autre raison, elle
            n'a aucune raison de suivre. */
-        height: 117%;
+        height: 121%;
+        bottom: -6%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
