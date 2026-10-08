@@ -8105,12 +8105,23 @@ body.game-active:has(.poll-game-container) #particles-js {
         right: -10%;
     }
 
-    /* ⚠️ Choice n'a PAS de calage à lui, et c'est voulu : Saitama arrive dans
-       une aura qui occupe déjà ses bords (1400 × 1045, rapport 1,34). Les
-       réglages des autres poussent la silhouette vers le bord droit, ce qui
-       couperait l'aura ; la règle de base le laisse rentré de 33 px à droite
-       et l'aura respire. Le jour où l'image change, c'est ici qu'un
-       « .char-choice » viendra. */
+    /* Mitsuri (1350 × 1400, rapport 0,96) tourne dans un ruban qui lui fait
+       une roue AUTOUR d'elle, bien plus large que sa silhouette. À la règle de
+       base, la boucle de gauche passait en travers de la description — on
+       lisait « Chaque joueur doit répondre à une affirmation » sous un trait
+       rose. D'où ce décalage vers la droite, le seul réglage dont elle ait
+       besoin : sa hauteur et sa largeur, elles, vont bien.
+
+       ⚠️ -4 % et pas plus, et c'est mesuré aux quatre largeurs. À -8 % le
+       texte est entièrement dégagé sur grand écran, mais en dessous de
+       1 280 px elle SORT DE L'ÉCRAN par la droite (-13 px à 800, -23 px à
+       1 000) : le panneau rétrécit, le décalage reste en pourcentage de lui,
+       et la marge disponible fond plus vite que lui. À -4 % il reste 4 px au
+       pire, et le ruban ne fait plus qu'effleurer la fin de la première
+       ligne. */
+    .v2-mode-char.char-choice {
+        right: -4%;
+    }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
        egale il reclame plus de largeur, sa borne de largeur mord donc en
