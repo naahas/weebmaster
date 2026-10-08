@@ -2116,6 +2116,11 @@ app.get('/prototypes/choice-question', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-choice-question.html');
 });
 
+// 🧪 L'indicateur « a choisi » quand le bord reste secret — huit pistes.
+app.get('/prototypes/choice-pret', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-choice-pret.html');
+});
+
 app.get('/prototypes/collect-duel', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-duel.html');
 });

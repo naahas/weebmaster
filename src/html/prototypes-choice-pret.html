@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choice — « a choisi, mais on ne dit pas quoi »</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   L'INDICATEUR DE CHOIX, quand le bord reste secret.
+
+   Il sert dans deux situations, et c'est la seconde qui commande :
+   quand l'hôte a éteint « Mouvement », et SURTOUT au DUEL FINAL, où
+   le serveur cesse de donner les camps dès qu'il ne reste que deux
+   vivants — sans quoi le second à jouer se collerait au premier et la
+   manche ne départagerait jamais.
+
+   Quatre contraintes, et elles éliminent beaucoup :
+
+   1. ⚠️ AUCUNE TEINTE. Le bleu est le camp VRAI, le rouge le camp
+      FAUX. Un halo qui tire sur l'un ou l'autre dit à moitié ce qu'on
+      cache. Blanc, or, ou rien.
+   2. ⚠️ Ça se lit sur un AVATAR DE 42 À 104 PX, posé sur un fond
+      sombre, parfois à deux, parfois à quinze empilés au milieu.
+   3. ⚠️ C'est un CHANGEMENT D'ÉTAT, pas une décoration : ce qui
+      compte est l'instant où ça s'allume. D'où le bouton « rejouer ».
+   4. Ça dure jusqu'à la révélation — quelques secondes seulement,
+      donc une animation permanente est tolérable ici, là où elle
+      fatiguerait sur un écran qu'on garde une partie entière.
+
+   La piste 1 est CE QUI EST EN LIGNE aujourd'hui : elle sert de
+   référence, pas de candidate.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --vrai: #2f9bff;
+    --faux: #ff3b5c;
+    --or: #ffd24a;
+}
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #fff;
+    background: radial-gradient(70% 55% at 50% 0%, #15161d, #07080b 68%);
+    min-height: 100vh;
+}
+h1 { margin: 0 0 0.3rem; font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; }
+.sous { margin: 0 0 1.4rem; max-width: 60rem; font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.45); }
+.sous b { color: rgba(255,255,255,0.75); }
+
+.reglage { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; align-items: center; }
+.reglage .lab { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-right: 0.2rem; }
+.reglage button {
+    font: inherit; font-size: 0.72rem; font-weight: 600; color: #fff; cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255,255,255,0.06);
+    border: 0.06rem solid rgba(255,255,255,0.1);
+    border-radius: 0.45rem;
+}
+.reglage button:hover { background: rgba(255,255,255,0.12); }
+.reglage button.on { background: var(--or); border-color: var(--or); color: #17140a; }
+.reglage button.go { background: rgba(47,155,255,0.18); border-color: rgba(47,155,255,0.5); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2rem 1.6rem; margin-top: 1.8rem; }
+.piste { width: 340px; }
+.piste h2 {
+    margin: 0 0 0.15rem; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem; letter-spacing: 0.07em; color: var(--or);
+}
+.piste h2 .num { color: rgba(255,255,255,0.22); margin-right: 0.35rem; }
+.piste h2.ref { color: rgba(255,255,255,0.4); }
+.piste p { margin: 0 0 0.8rem; font-size: 0.72rem; line-height: 1.55; color: rgba(255,255,255,0.4); min-height: 6.8em; }
+
+/* ── L'ARÈNE, en réduction ──────────────────────────────────────
+   Les deux bords teintés sont là EXPRÈS : c'est devant eux que
+   l'indicateur doit rester neutre. Juger sur un fond gris uni
+   laisserait passer un halo bleuté qu'on verrait tout de suite en jeu. */
+.arene {
+    position: relative;
+    height: 190px;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    background: #0a0b10;
+    display: flex; align-items: center; justify-content: center;
+}
+.arene::before, .arene::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 38%;
+    pointer-events: none;
+}
+.arene::before { left: 0;  background: linear-gradient(90deg, rgba(47,155,255,0.38), transparent); }
+.arene::after  { right: 0; background: linear-gradient(270deg, rgba(255,59,92,0.38), transparent); }
+.mot {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-family: 'Bebas Neue', sans-serif; font-size: 2.1rem; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.07); pointer-events: none;
+}
+.mot.g { left: 1.1rem; } .mot.d { right: 1.1rem; }
+
+.tas { position: relative; display: flex; justify-content: center; align-items: center; z-index: 2; }
+
+/* L'avatar. `--t` est sa taille, pilotée par les boutons du haut. */
+.av {
+    position: relative;
+    width: var(--t, 64px); height: var(--t, 64px);
+    flex: 0 0 auto;
+    margin-left: calc(var(--t, 64px) * -0.28);   /* ils s'empilent, comme en jeu */
+}
+.av:first-child { margin-left: 0; }
+.av img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    border: 2px solid rgba(255,255,255,0.16);
+    background: #15161d;
+}
+
+/* ════ 1 · ANNEAU BLANC — ce qui est en ligne ═══════════════════ */
+.p1.pret img {
+    border-color: rgba(255,255,255,0.72);
+    box-shadow: 0 0 0 0.08rem rgba(255,255,255,0.28), 0 0 0.9rem rgba(255,255,255,0.2);
+}
+.p1 img { transition: border-color 0.35s ease, box-shadow 0.35s ease; }
+
+/* ════ 2 · L'ANNEAU SE TRACE ════════════════════════════════════
+   Un cercle qui se dessine en 0,45 s puis s'arrête. Le MOUVEMENT
+   dit « ça vient de se passer » ; une fois tracé, il ne bouge plus
+   et ne fatigue pas. C'est un `conic-gradient` masqué en anneau,
+   donc un seul élément et zéro SVG. */
+.p2 .anneau {
+    position: absolute; inset: -5px; border-radius: 50%;
+    background: conic-gradient(from -90deg, #fff var(--part, 0turn), transparent 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+    opacity: 0;
+}
+.p2.pret .anneau { animation: trace 0.45s cubic-bezier(0.3, 0.9, 0.3, 1) forwards; }
+@keyframes trace {
+    0%   { opacity: 1; --part: 0turn; }
+    100% { opacity: 1; --part: 1turn; }
+}
+@property --part { syntax: '<angle>'; inherits: false; initial-value: 0turn; }
+
+/* ════ 3 · LE SCEAU ═════════════════════════════════════════════
+   L'avatar s'enfonce d'un cran et une onde part de lui. L'image
+   d'un tampon qu'on abat : le choix est PRIS, on ne revient pas
+   dessus. L'onde disparaît, le léger enfoncement reste. */
+.p3 .onde {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.9);
+    opacity: 0; pointer-events: none;
+}
+.p3.pret img { animation: sceau 0.5s cubic-bezier(0.3, 1.6, 0.4, 1) both; border-color: rgba(255,255,255,0.5); }
+.p3.pret .onde { animation: onde 0.6s ease-out forwards; }
+@keyframes sceau { 0% { transform: scale(1); } 35% { transform: scale(0.88); } 100% { transform: scale(1); } }
+@keyframes onde  { 0% { opacity: 0.85; transform: scale(1); } 100% { opacity: 0; transform: scale(1.75); } }
+
+/* ════ 4 · LE VERROU ════════════════════════════════════════════
+   Une pastille en bas à droite, comme une pastille de statut. Elle
+   NOMME l'état au lieu de le suggérer — c'est la piste la plus
+   lisible à deux joueurs, et la plus encombrante à quinze.
+   ⚠️ Le cadenas est dessiné en SVG inline : une emoji dépendrait de
+   la police du système et ne s'alignerait pas. */
+.p4 .pastille {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 42%; height: 42%; border-radius: 50%;
+    background: #15161d; border: 1.5px solid rgba(255,255,255,0.75);
+    display: grid; place-items: center;
+    opacity: 0; transform: scale(0.4);
+}
+.p4 .pastille svg { width: 58%; height: 58%; fill: #fff; }
+.p4.pret .pastille { animation: pop 0.38s cubic-bezier(0.2, 1.7, 0.4, 1) forwards; }
+@keyframes pop { to { opacity: 1; transform: scale(1); } }
+
+/* ════ 5 · LA MONTÉE DE LUMIÈRE ═════════════════════════════════
+   Pas d'ajout : c'est le PORTRAIT qui change. Tant qu'on n'a pas
+   tranché on est en veilleuse — sombre et désaturé ; en choisissant
+   on « s'allume ». Zéro élément de plus à l'écran, donc le seul qui
+   tienne vraiment à quinze joueurs empilés. */
+.p5 img { filter: grayscale(0.85) brightness(0.45); transition: filter 0.4s ease; }
+.p5.pret img { filter: grayscale(0) brightness(1.12); border-color: rgba(255,255,255,0.45); }
+
+/* ════ 6 · LA RESPIRATION ═══════════════════════════════════════
+   Un halo qui enfle et retombe, lentement. Le seul qui reste VIVANT
+   après coup : à deux joueurs figés au milieu pendant huit secondes,
+   un écran totalement immobile a l'air planté. */
+.p6 .halo {
+    position: absolute; inset: -6px; border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.35);
+    opacity: 0;
+}
+.p6.pret .halo { opacity: 1; animation: souffle 1.9s ease-in-out infinite; }
+.p6.pret img { border-color: rgba(255,255,255,0.5); }
+@keyframes souffle {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.3), 0 0 0.6rem rgba(255,255,255,0.12); }
+    50%      { box-shadow: 0 0 0 6px rgba(255,255,255,0), 0 0 1.4rem rgba(255,255,255,0.22); }
+}
+
+/* ════ 7 · LE RÉTICULE ══════════════════════════════════════════
+   Deux arcs opposés qui tournent puis se bloquent, comme une visée
+   qui accroche sa cible. Le vocabulaire est celui d'un VERROUILLAGE,
+   qui est exactement ce dont il s'agit.
+   ⚠️ Deux arcs et non un cercle plein : à cette taille un trait
+   continu redevient une simple bordure. */
+.p7 .ret {
+    position: absolute; inset: -7px; border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: rgba(255,255,255,0.85);
+    border-bottom-color: rgba(255,255,255,0.85);
+    opacity: 0;
+}
+.p7.pret .ret { animation: accroche 0.75s cubic-bezier(0.15, 0.85, 0.25, 1) forwards; }
+@keyframes accroche {
+    0%   { opacity: 0; transform: rotate(-150deg) scale(1.5); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+
+/* ════ 8 · LE TRAIT ═════════════════════════════════════════════
+   Le plus sobre de tous : un trait court qui se déploie sous le
+   portrait. Il n'enveloppe rien, ne brille pas, n'entre pas en
+   concurrence avec le liseré d'or qui marque « c'est moi ». */
+.p8 .trait {
+    position: absolute; left: 50%; bottom: -9px;
+    height: 2px; width: 0; border-radius: 2px;
+    background: rgba(255,255,255,0.85);
+    transform: translateX(-50%);
+    box-shadow: 0 0 0.4rem rgba(255,255,255,0.35);
+}
+.p8.pret .trait { animation: deploie 0.35s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+@keyframes deploie { to { width: 62%; } }
+
+/* Le liseré d'or de « c'est moi », pour vérifier qu'aucune piste ne
+   lui fait concurrence : en jeu, les deux se superposent. */
+.av.moi img { outline: 2px solid var(--or); outline-offset: 2px; }
+
+.note {
+    margin-top: 2.6rem; max-width: 60rem;
+    border-left: 3px solid rgba(255,210,74,0.5);
+    background: rgba(255,210,74,0.05);
+    padding: 0.9rem 1.1rem; border-radius: 0.3rem;
+    font-size: 0.78rem; line-height: 1.6; color: rgba(255,255,255,0.55);
+}
+.note b { color: rgba(255,255,255,0.85); }
+</style>
+</head>
+<body>
+
+<h1>Choice — « a choisi, mais on ne dit pas quoi »</h1>
+<p class="sous">
+  Huit façons de dire qu'un joueur a tranché <b>sans dire pour quel bord</b>. Ça sert quand l'hôte
+  éteint « Mouvement », et surtout au <b>duel final</b> : à deux survivants le serveur cesse
+  d'envoyer les camps, sinon le second à jouer n'a qu'à se coller au premier.<br>
+  ⚠️ <b>Aucune teinte n'est permise</b> — le bleu est le camp VRAI, le rouge le camp FAUX, et un
+  halo qui tire sur l'un des deux dit à moitié ce qu'on cache. D'où les bords teintés derrière
+  chaque piste : c'est devant EUX qu'il faut juger, pas sur un gris uni.<br>
+  La <b>piste 1 est ce qui tourne en ligne aujourd'hui</b> : référence, pas candidate.
+</p>
+
+<div class="reglage">
+  <span class="lab">Joueurs</span>
+  <button data-n="2" class="on">2 — le duel</button>
+  <button data-n="6">6</button>
+  <button data-n="15">15 — « Mouvement » éteint</button>
+</div>
+<div class="reglage">
+  <span class="lab">Taille</span>
+  <button data-t="42" >42 px — plein salon</button>
+  <button data-t="64" class="on">64 px</button>
+  <button data-t="104">104 px — à deux</button>
+</div>
+<div class="reglage">
+  <button id="rejouer" class="go">↻ Rejouer l'instant du choix</button>
+  <button id="bascule">Basculer « a choisi / indécis »</button>
+</div>
+
+<div class="grille" id="grille"></div>
+
+<div class="note">
+  <b>Ce que chaque piste coûte ailleurs.</b>
+  La <b>5 (lumière)</b> est la seule qui n'ajoute RIEN à l'écran — donc la seule qui tienne vraiment
+  à quinze portraits empilés — mais elle inverse la logique : ce sont les indécis qu'on marque,
+  en les éteignant.
+  La <b>4 (verrou)</b> est la plus lisible à deux et la plus encombrante à quinze.
+  La <b>6 (respiration)</b> est la seule qui reste vivante après coup : à deux joueurs figés
+  pendant huit secondes, un écran parfaitement immobile a l'air planté.
+  Les <b>2, 3, 7 et 8</b> ne jouent qu'une fois : elles disent l'INSTANT, puis se taisent — c'est
+  le plus honnête, mais si tu arrives une seconde trop tard tu n'as rien vu.
+</div>
+
+<script>
+/* Huit pistes, décrites une fois ici — le DOM se fabrique à partir de
+   cette liste pour que les réglages du haut s'appliquent à toutes. */
+const PISTES = [
+  { c: 'p1', t: 'Anneau blanc', ref: true, d: "Ce qui est en ligne : la bordure du portrait passe au blanc franc avec un halo doux. Lisible, neutre, sans caractère — on la prend pour un survol." },
+  { c: 'p2', t: "L'anneau se trace", h: '<i class="anneau"></i>', d: "Un cercle se dessine autour du portrait en moins d'une demi-seconde, puis s'arrête. Le mouvement dit « ça vient d'arriver » ; une fois tracé il ne bouge plus." },
+  { c: 'p3', t: 'Le sceau',        h: '<i class="onde"></i>',   d: "Le portrait s'enfonce d'un cran et une onde part de lui. L'image d'un tampon qu'on abat : le choix est pris, on ne revient pas dessus." },
+  { c: 'p4', t: 'Le verrou',       h: '<i class="pastille"><svg viewBox="0 0 24 24"><path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V6a3 3 0 0 1 3-3z"/></svg></i>', d: "Une pastille en bas à droite, comme un statut. Elle NOMME l'état au lieu de le suggérer : impossible à mal lire, mais ça fait un objet de plus par joueur." },
+  { c: 'p5', t: 'La montée de lumière', d: "Rien ne s'ajoute : c'est le portrait qui change. Tant qu'on n'a pas tranché on est en veilleuse, sombre et gris ; en choisissant, on s'allume." },
+  { c: 'p6', t: 'La respiration',  h: '<i class="halo"></i>',   d: "Un halo qui enfle et retombe, lentement, et qui ne s'arrête pas. Le seul qui garde l'écran vivant pendant qu'on attend l'autre joueur." },
+  { c: 'p7', t: 'Le réticule',     h: '<i class="ret"></i>',    d: "Deux arcs opposés tournent puis se bloquent, comme une visée qui accroche. Le vocabulaire du VERROUILLAGE, qui est exactement ce dont il s'agit." },
+  { c: 'p8', t: 'Le trait',        h: '<i class="trait"></i>',  d: "Le plus sobre : un trait court se déploie sous le portrait. Il n'enveloppe rien et n'entre pas en concurrence avec le liseré d'or du « c'est moi »." },
+];
+
+/* De vrais portraits, et pas un carré gris : la plupart des avatars du
+   jeu sont clairs sur fond sombre, ce qui change tout pour un halo blanc. */
+const VISAGES = ['aizen','deku','denji','dio','edward','bakugo','cc','bocchi'];
+
+let nb = 2, taille = 64, allume = true;
+
+function construire() {
+  const g = document.getElementById('grille');
+  g.innerHTML = '';
+  PISTES.forEach((p, i) => {
+    const av = [];
+    for (let k = 0; k < nb; k++) {
+      // Le premier porte le liseré d'or : en jeu, « c'est moi » se superpose
+      // toujours à l'indicateur, et c'est là qu'une piste peut se brouiller.
+      av.push('<span class="av ' + p.c + (allume ? ' pret' : '') + (k === 0 ? ' moi' : '') + '">'
+            + '<img src="/' + VISAGES[k % VISAGES.length] + '.webp" alt="">'
+            + (p.h || '') + '</span>');
+    }
+    g.insertAdjacentHTML('beforeend',
+      '<div class="piste">'
+      + '<h2 class="' + (p.ref ? 'ref' : '') + '"><span class="num">' + (i + 1) + '</span>' + p.t + (p.ref ? ' · en ligne' : '') + '</h2>'
+      + '<p>' + p.d + '</p>'
+      + '<div class="arene"><span class="mot g">VRAI</span><span class="mot d">FAUX</span>'
+      + '<div class="tas" style="--t:' + taille + 'px">' + av.join('') + '</div></div>'
+      + '</div>');
+  });
+}
+
+/* ⚠️ Rejouer = RECONSTRUIRE. Retirer puis remettre la classe ne suffit
+   pas : le navigateur groupe les deux changements dans la même image et
+   l'animation ne repart pas. C'est le piège classique du « replay » CSS. */
+document.getElementById('rejouer').onclick = () => { allume = false; construire(); requestAnimationFrame(() => { allume = true; construire(); }); };
+document.getElementById('bascule').onclick = () => { allume = !allume; construire(); };
+
+document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-n]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); nb = +b.dataset.n; construire();
+});
+document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-t]').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); taille = +b.dataset.t; construire();
+});
+
+construire();
+</script>
+</body>
+</html>
