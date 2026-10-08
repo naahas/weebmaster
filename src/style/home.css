@@ -7378,6 +7378,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-row.mode-collect.active   { background: rgba(195, 201, 212, 0.09); border-color: rgba(195, 201, 212, 0.42); }
 .v2-mode-row.mode-collect.active .v2-mode-row-bar { background: #c3c9d4; box-shadow: 0 0 0.8rem rgba(195, 201, 212, 0.55); }
 .v2-mode-row.mode-ascension.active .v2-mode-row-bar { background: #7fb4ff; box-shadow: 0 0 0.8rem rgba(127, 180, 255, 0.6); }
+/* Choice est ROSE, la couleur de Mitsuri. C'est le seul creux qui restait :
+   doré, vert, blanc, gris bleuté, bleu et lavande étaient pris. */
+.v2-mode-row.mode-choice.active    { background: rgba(244, 114, 182, 0.09); border-color: rgba(244, 114, 182, 0.42); }
+.v2-mode-row.mode-choice.active .v2-mode-row-bar { background: #f472b6; box-shadow: 0 0 0.8rem rgba(244, 114, 182, 0.6); }
 
 .v2-mode-preview {
     position: relative;
@@ -7402,6 +7406,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-rush      { border-color: rgba(255, 255, 255, 0.32); box-shadow: 0 1rem 3rem rgba(255, 255, 255, 0.09); }
 .v2-mode-preview.mode-ascension { border-color: rgba(127, 180, 255, 0.35); box-shadow: 0 1rem 3rem rgba(127, 180, 255, 0.13); }
 .v2-mode-preview.mode-collect   { border-color: rgba(195, 201, 212, 0.32); box-shadow: 0 1rem 3rem rgba(195, 201, 212, 0.1); }
+/* ⚠️ Choice ne pose QUE son ombre ici : son liseré est plus bas, dans la
+   règle en « color-mix » qui le dérive de `--mode-color`. Le poser deux fois
+   obligerait à retoucher deux endroits le jour où le rose bouge. */
+.v2-mode-preview.mode-choice    { box-shadow: 0 1rem 3rem rgba(244, 114, 182, 0.13); }
 
 /* Personnage détouré : au premier plan, entier, débordant du cadre par le haut */
 .v2-mode-char {
@@ -8020,13 +8028,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-collect   { --mode-color: #c3c9d4; }
 .v2-mode-preview.mode-rivalry   { --mode-color: #a78bfa; }
 .v2-mode-preview.mode-bombanime { --mode-color: #4ade80; }
-/* Chase est le mode NOIR. Mais un accent parfaitement noir sur un fond noir
-   ne se voit pas : le filet sous le titre et la pastille de la liste sont
-   dessinés AVEC cette variable, et disparaîtraient purement et simplement.
-   D'où un noir relevé juste ce qu'il faut pour rester un trait — il se lit
-   comme du noir à côté du doré, du vert et du bleu des autres, sans être
-   absent. */
-.v2-mode-preview.mode-chase     { --mode-color: #3a3f4a; }
+/* Le rose de Mitsuri. C'est CETTE variable qui compte : le filet sous le
+   titre, les particules qui montent et le liseré du cadre en sortent tous
+   les trois. ⚠️ Il y avait ici un « mode-chase » à #3a3f4a, le temps où la
+   carte portait un mode noir — il ne visait plus rien depuis le changement
+   de mode, et son noir aurait éteint les trois d'un coup si la classe
+   était revenue. */
+.v2-mode-preview.mode-choice    { --mode-color: #f472b6; }
 /* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et
    la recouvrait : c'est elle qui teintait le filet et les particules. */
 .v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
@@ -8082,6 +8090,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-rivalry,
 .v2-mode-preview.mode-rush,
 .v2-mode-preview.mode-ascension,
+.v2-mode-preview.mode-choice,
 .v2-mode-preview.mode-bombanime { border-color: color-mix(in srgb, var(--mode-color) 38%, transparent); }
 
 /* Illustration sans fond transparent : on la cadre dans le panneau au lieu de
@@ -8839,6 +8848,8 @@ input, textarea,
 .v2-mode-badge.mode-rivalry .v2-mode-badge-dot { background: #a78bfa; box-shadow: 0 0 0.6rem #a78bfa; }
 .v2-mode-badge.mode-bombanime { border-color: rgba(74, 222, 128, 0.4); }
 .v2-mode-badge.mode-bombanime .v2-mode-badge-dot { background: #4ade80; box-shadow: 0 0 0.6rem #4ade80; }
+.v2-mode-badge.mode-choice { border-color: rgba(244, 114, 182, 0.4); }
+.v2-mode-badge.mode-choice .v2-mode-badge-dot { background: #f472b6; box-shadow: 0 0 0.6rem #f472b6; }
 
 /* Coin haut droit du salon : badge de mode + fermeture */
 .v2-room-topright { display: flex; align-items: center; gap: 0.6rem; }
@@ -11405,6 +11416,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 .v2-recent-row .mode.mode-rivalry { color: rgba(167, 139, 250, 0.75); }
 .v2-recent-row .mode.mode-bombanime { color: rgba(74, 222, 128, 0.75); }
+.v2-recent-row .mode.mode-choice { color: rgba(244, 114, 182, 0.75); }
 
 /* L'affluence, en chiffre discret suivi d'une silhouette */
 /* Depuis quand : discret, il ne doit pas concurrencer le mode */
@@ -13464,6 +13476,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-astuce-mode.mode-rush      { color: #ffffff; }
 .v2-astuce-mode.mode-ascension { color: #7fb4ff; }
 .v2-astuce-mode.mode-collect   { color: #c3c9d4; }
+.v2-astuce-mode.mode-choice    { color: #f472b6; }
 
 /* ⚠️ La transition, en `mode="out-in"` : l'ancienne phrase s'efface
    AVANT que la nouvelle entre. Un fondu croisé aurait demandé de les

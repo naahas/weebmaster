@@ -336,7 +336,15 @@ createApp({
                 // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
                 // en quatre lignes exactement — soit la hauteur déjà réservée plus
                 // haut pour que le titre ne bouge pas d'un mode à l'autre.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'choice.webp',
+                // ⚠️ L'image porte le nom du PERSONNAGE, jamais celui du mode.
+                // `src/img` est servi avec sept jours de cache, et c'est permis
+                // parce qu'« une image ne change pas sans changer de nom ».
+                // Un « choice.webp » remplacé sur place casse cette promesse :
+                // le navigateur garde l'ancien personnage une semaine, et un
+                // rafraîchissement forcé n'y suffit pas toujours. En changeant
+                // de personnage on change de fichier, donc d'adresse, et le
+                // cache tombe tout seul — comme chez les autres cartes.
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri.webp',
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
