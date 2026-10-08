@@ -22,6 +22,27 @@ const { createApp } = Vue;
 // quiz à deux joueurs.
 const MIN_CLASSIQUE = 10;
 
+// 🏠 SOMMES-NOUS CHEZ NOUS ? Sert à garder un mode fermé au public tout en le
+// laissant jouable à la maison (voir `soon` sur Choice).
+//
+// ⚠️ Il n'y a NI build NI variable d'environnement côté client — les fichiers
+// sont servis tels quels, le même app.js part en production et tourne en
+// local. Le seul signal disponible est donc l'ADRESSE.
+//
+// ⚠️ Et pas seulement « localhost » : le mobile s'éprouve depuis le TÉLÉPHONE,
+// qui ouvre le site par l'IP de la machine sur le wifi. S'en tenir à la
+// boucle locale aurait verrouillé le mode exactement là où on en a le plus
+// besoin. D'où les trois plages privées (10/8, 172.16/12, 192.168/16).
+//
+// ⚠️ C'est un garde-fou de PRODUIT, jamais de sécurité : il vit dans la page,
+// donc il se contourne depuis la console. Le serveur, lui, ouvre le salon
+// sans poser de question — c'est voulu, les suites en dépendent.
+const EN_LOCAL = (() => {
+    const h = location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true;
+    return /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+})();
+
 // 🎴 Les séries de Collect sont écrites d'un seul tenant dans les données
 // (« FairyTail ») : c'est une CLÉ, pas un titre. On ne la découpe pas aux
 // majuscules — « JoJo » donnerait « Jo Jo », « HunterXHunter » un X esseulé.
@@ -348,17 +369,15 @@ createApp({
                 // rafraîchissement forcé n'y suffit pas toujours. En changeant
                 // de personnage on change de fichier, donc d'adresse, et le
                 // cache tombe tout seul — comme chez les autres cartes.
-                // ⚠️ `soon` EN LIGNE, le temps d'étoffer la banque de vrai/faux.
-                // Le mode est fini et joué de bout en bout en local ; ce qui
+                // ⚠️ `soon` EN LIGNE SEULEMENT, le temps d'étoffer la banque de
+                // vrai/faux. Le mode est fini et joué de bout en bout ; ce qui
                 // lui manque, ce sont des énoncés. Un seul drapeau fait tout :
                 // le badge « soon » dans la liste, le bouton verrouillé en
-                // « Bientôt disponible », et le portrait qui passe en NOIR ET
-                // BLANC (`.v2-mode-char.soon`, un grayscale déjà câblé).
-                // ⚠️ C'est un garde-fou de PRODUIT, pas de sécurité : le
-                // serveur accepterait encore d'ouvrir un salon Choice. C'est
-                // volontaire, et c'est ce qui permet d'y jouer en local sans
-                // rien défaire — même choix que le plancher du Classique.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
+                // « Bientôt disponible », et le portrait réduit à une
+                // SILHOUETTE NOIRE — on ne doit même pas savoir qui c'est.
+                // En local il vaut faux : le mode est ouvert et l'image rend
+                // en couleur, sans rien avoir à défaire pour jouer.
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: !EN_LOCAL,
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

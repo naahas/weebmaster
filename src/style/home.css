@@ -8275,14 +8275,30 @@ body.game-active:has(.poll-game-container) #particles-js {
     filter: grayscale(1) contrast(1.06) brightness(0.96);
 }
 
-/* ⚠️ Il y avait ici une règle « .char-chase » qui écrasait le personnage en
-   ombre noire (« brightness(0) »), du temps où Chase occupait cette carte.
-   Chase n'existe plus, la classe est donc devenue « char-choice » et la règle
-   ne visait plus rien — mais elle restait une mine : la remettre en service
-   d'un simple renommage aurait réduit Saitama à une découpe noire, en silence.
-   Si une silhouette redevient utile un jour, elle doit rester APRÈS « .soon »
-   ci-dessus : même spécificité, deux « filter » ne s'additionnent pas, et le
-   dernier déclaré écrase l'autre. */
+/* ── CHOICE À VENIR : une OMBRE, pas une image en gris ──
+   Le grayscale ci-dessus montre encore le personnage ; ici on ne veut même
+   pas qu'on sache qui c'est. « brightness(0) » écrase toute l'image sur du
+   noir en gardant sa transparence : il ne reste que la découpe. L'« invert »
+   qui suit relève ce noir d'un cran — à zéro, la silhouette se confondrait
+   avec le panneau ET avec le fond de la page, et il n'y aurait plus rien à
+   voir. C'est le réglage à bouger pour la vouloir plus sombre ou plus
+   présente. (Ce sont les valeurs de l'ancienne carte Chase, déjà éprouvées.)
+
+   ⚠️ Elle est accrochée à « .soon », pas à « .char-choice » seul : le jour où
+   le mode ouvre, le drapeau tombe et l'image revient en couleur TOUTE SEULE.
+   Rien à retirer ici, rien à réexporter — et c'est déjà ce qui se passe en
+   local, où `soon` vaut faux.
+
+   ⚠️ APRÈS « .soon » ci-dessus, toujours : deux « filter » ne s'additionnent
+   pas, et au-delà de la spécificité c'est le dernier déclaré qui gagne. Placée
+   avant, la silhouette serait purement et simplement annulée par la grisaille.
+
+   ⚠️ Et elle ne vaut que pour Choice. Un autre mode « soon » garde le gris :
+   lui, on veut qu'on voie ce qui arrive. Généraliser tiendrait en un
+   sélecteur, mais c'est un choix de produit, pas un oubli. */
+.v2-mode-char.char-choice.soon {
+    filter: brightness(0) invert(0.17);
+}
 
 .v2-mode-char.plain {
     right: 0;
