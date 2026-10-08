@@ -6116,11 +6116,25 @@ createApp({
                         this.gameEndData = fin;
                         this.gameInProgress = false;
                         this.gameStartedOnServer = false;
+                        // ⚠️ Choice lit son classement dans `ch`, pas dans
+                        // `gameEndData` : son podium est construit sur
+                        // `ch.classement` et `ch.manchesJouees`. Sans ces deux
+                        // lignes l'écran se montait vide — et comme `ch.enCours`
+                        // restait vrai, l'arène revenait par-dessus.
+                        if (fin.gameMode === 'choice') {
+                            this.ch.classement = fin.classement || [];
+                            this.ch.manchesJouees = fin.manches || 0;
+                            this.ch.enCours = false;
+                            this.ch.sortie = false;
+                            this.ch.question = null;
+                            this.arreterChronoChoice();
+                        }
                         // Rush dévoile cinq places, le quiz trois : les deux
                         // révélations ne comptent pas le même nombre de pas.
                         this.$nextTick(() => {
                             if (fin.gameMode === 'rush') this.startRushReveal();
                             else if (fin.gameMode === 'ascension') this.startAscReveal();
+                            else if (fin.gameMode === 'choice') this.startChoiceReveal();
                             else this.startEndReveal();
                         });
                     }

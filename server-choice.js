@@ -294,6 +294,12 @@ function creerModule(deps) {
         }
         gameState.inProgress = true;
         gameState.initialPlayerCount = gameState.players.size;
+        // ⚠️ Le podium de la manche PRÉCÉDENTE s'efface ici. Il survit
+        // volontairement à un rafraîchissement — c'est ce qui permet de
+        // recharger sans perdre le classement — donc rien ne le retire tout
+        // seul : sans cette ligne, un joueur qui recharge en pleine manche
+        // suivante retomberait sur le classement de celle d'avant.
+        gameState.winnerScreenData = null;
 
         diffuser(gameState, 'choice-debut', {
             vies: etat.vies,
@@ -435,9 +441,20 @@ function creerModule(deps) {
 
         const vainqueur = classement[0] && classement[0].vivant ? classement[0] : null;
 
-        diffuser(gameState, 'choice-fin', {
-            classement, manches: etat.manche, raison: raison || null,
-        });
+        const fin = { classement, manches: etat.manche, raison: raison || null };
+        diffuser(gameState, 'choice-fin', fin);
+
+        // ⚠️ LE PODIUM DOIT SURVIVRE À UN RAFRAÎCHISSEMENT, comme dans tous
+        // les autres modes. Sans cette ligne, `etat.active` venait de tomber
+        // à faux et il ne restait plus rien à retrouver : celui qui rechargeait
+        // était renvoyé au salon pendant que les autres lisaient encore le
+        // classement. `/game/state` relit `winnerScreenData`, le client y
+        // reconnaît `gameMode` et rejoue la révélation.
+        //
+        // ⚠️ `gameMode` est le champ que le client teste pour savoir QUELLE
+        // révélation lancer — Rush en dévoile cinq, le quiz trois. Sans lui,
+        // Choice serait repris avec la révélation du quiz.
+        gameState.winnerScreenData = { gameMode: 'choice', ...fin };
 
         if (recordFinishedGame) {
             recordFinishedGame({
