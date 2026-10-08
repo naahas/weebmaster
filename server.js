@@ -425,6 +425,23 @@ const AVATARS_AUTORISES = new Set([
     'onizuka.webp',
     // Vinland Saga
     'thorfinn.webp',
+    // Demon Slayer
+    'rengoku.webp',
+    // Bleach
+    'rukia.webp',
+    // Re:Zero
+    'rem.webp',
+    // Sword Art Online
+    'asuna.webp',
+    'sinon.webp',
+    // Food Wars
+    'erina.webp',
+    // Code Geass
+    'lelouch.webp',
+    // Fairy Tail
+    'lucy.webp',
+    // Evangelion
+    'rei.webp',
 ]);
 
 // ⚠️ Un nom listé dont le FICHIER manque laisse une vignette cassée dans le
