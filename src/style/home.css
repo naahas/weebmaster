@@ -8120,24 +8120,25 @@ body.game-active:has(.poll-game-container) #particles-js {
        assez à gauche pour ne pas s'y coller, sans que la boucle du ruban
        passe en travers de la description.
 
-       ⚠️ C'est la LARGEUR qui la borne, pas la hauteur — son cadre est plus
-       haut que large, elle y rentre par les côtés. Monter `height` seul ne
-       faisait donc rien : à 62 % il restait 72 px de vide en haut du cadre.
-       Tout se règle sur `max-width`, et au-delà de 72 % c'est la hauteur qui
-       prend le relais et plus rien ne grandit.
+       ⚠️ LES DEUX BORNES BOUGENT ENSEMBLE, et il faut les deux. Son cadre est
+       plus haut que large : elle y rentre par les côtés, donc `max-width`
+       commande — monter `height` seul ne faisait RIEN, il restait juste du
+       vide en haut du cadre. Mais passé 72 % de large la hauteur prend le
+       relais et c'est l'inverse : `max-width` seul ne fait plus rien non
+       plus. Toucher à une seule des deux, c'est ne rien changer du tout.
 
-       ⚠️ 68 %, pas 72 %. À 72 % elle est encore plus présente, mais le ruban
-       remange « une affirmation » en première ligne. À 68 % il ne fait que
-       l'effleurer.
+       ⚠️ 74 % / 122 %, et pas au-delà : le ruban effleure déjà la fin de la
+       première ligne de la description. Plus grande, il la traverse.
 
-       ⚠️ -1 %, et c'est mesuré de 800 à 1920 px. Le décalage est un
-       pourcentage du PANNEAU : plus l'écran est étroit, plus le panneau l'est,
-       et la marge d'écran fond plus vite que le décalage ne rétrécit. À -8 %
-       elle sortait de l'écran sous 1 280 px (-13 px à 800). À -1 % il reste
-       17 px au pire. */
+       ⚠️ -1 %, mesuré de 800 à 1920 px. Le décalage est un pourcentage du
+       PANNEAU : plus l'écran est étroit, plus le panneau l'est, et la marge
+       d'écran fond plus vite que le décalage ne rétrécit. À -8 % elle sortait
+       de l'écran sous 1 280 px (-13 px à 800). À -1 % il reste 17 px au pire,
+       et aucun défilement horizontal nulle part. */
     .v2-mode-char.char-choice {
         right: -1%;
-        max-width: 68%;
+        max-width: 74%;
+        height: 122%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
