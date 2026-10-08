@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saisie — ylia — Your Lie in April</title>
+<style>:root{
+    --fond:#0d0e12; --carte:#15171d; --bord:#242731; --or:#ffd24a;
+    --texte:#e8e9ee; --pale:#8b8fa0; --vert:#4ade80; --rouge:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem 6rem;background:var(--fond);color:var(--texte);
+       font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .page{max-width:56rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  .sous{color:var(--pale);margin:0 0 2rem;font-size:.9rem}
+  .barre{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem}
+  .puce{font-size:.72rem;padding:.25rem .6rem;border-radius:999px;
+        border:1px solid var(--bord);background:var(--carte);color:var(--pale)}
+  .puce.compte{border-color:rgba(255,210,74,.35);color:var(--or)}
+  .puce.faite{border-color:rgba(74,222,128,.35);color:var(--vert)}
+
+  .alerte{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);
+          color:#ffb0b0;border-radius:.5rem;padding:.7rem .9rem;margin-bottom:1.2rem;
+          font-size:.85rem}
+
+  .q{background:var(--carte);border:1px solid var(--bord);border-radius:.8rem;
+     padding:1.1rem 1.2rem;margin-bottom:1.2rem;position:relative}
+  /* Une carte partie : très effacée, mais toujours lisible et rouvrable. */
+  .q.envoyee{opacity:.4;border-color:rgba(74,222,128,.3)}
+  .q.envoyee:hover{opacity:.85}
+  /* Une carte retouchée porte un liseré : on voit d'un coup d'œil ce qu'on a
+     changé par rapport au lot d'origine. */
+  .q.modifiee{border-left:3px solid var(--or)}
+  .tete{display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem}
+  .num{font-weight:700;color:var(--or);font-size:1.05rem}
+  .diff{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;
+        padding:.2rem .55rem;border-radius:.3rem;font-weight:700}
+  .veryeasy{background:rgba(0,255,136,.15);color:#00ff88}
+  .easy{background:rgba(0,200,255,.15);color:#00c8ff}
+  .medium{background:rgba(255,200,0,.15);color:#ffc800}
+  .hard{background:rgba(255,100,0,.15);color:#ff6400}
+  .veryhard{background:rgba(255,50,50,.15);color:#ff3232}
+  .extreme{background:rgba(190,80,255,.18);color:#c77dff}
+  .grappe{font-size:.68rem;color:var(--pale);text-transform:uppercase;letter-spacing:.05em}
+
+  .champ{display:grid;grid-template-columns:7.5rem 1fr auto;gap:.5rem;
+         align-items:start;padding:.3rem 0}
+  .etiq{color:var(--pale);font-size:.78rem;padding-top:.4rem;white-space:nowrap}
+
+  /* ── les champs éditables ──────────────────────────────────────────
+     Ils se fondent dans la carte au repos et ne se révèlent qu'au survol :
+     la page reste une liste qu'on lit, pas un formulaire qu'on subit. */
+  .ed{width:100%;background:transparent;color:var(--texte);font:inherit;
+      border:1px solid transparent;border-radius:.35rem;padding:.25rem .45rem;
+      transition:border-color .15s,background .15s}
+  .ed:hover{border-color:var(--bord);background:rgba(255,255,255,.02)}
+  .ed:focus{outline:none;border-color:var(--or);background:rgba(255,210,74,.05)}
+  textarea.ed{resize:vertical;overflow:hidden;min-height:2.1rem;line-height:1.45}
+  .ed.url{font-size:.8rem;color:#7aa7ff}
+  .ed.court{max-width:11rem}
+  select.ed{cursor:pointer;max-width:9rem;border-color:var(--bord)}
+  select.ed option{background:var(--carte);color:var(--texte)}
+
+  /* série · difficulté · spoil sur une rangée */
+  .trio{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+        padding:.35rem 0 .1rem}
+  .trio .etiq{padding-top:0}
+  .trio .etiq:first-child{width:7.5rem}
+  label.sp{display:flex;align-items:center;gap:.35rem;color:var(--pale);
+           font-size:.78rem;cursor:pointer;user-select:none;margin-left:.4rem}
+
+  .reps{margin-top:.8rem;border-top:1px solid var(--bord);padding-top:.7rem}
+  .rep{display:grid;grid-template-columns:1.2rem 1fr;gap:.5rem;
+       align-items:center;padding:.1rem 0}
+  .rep input[type=radio]{accent-color:var(--vert);cursor:pointer;margin:0}
+  .rep.bonne .ed{color:var(--vert);font-weight:600}
+
+  .src{margin-top:.9rem;padding:.6rem .8rem;background:rgba(255,255,255,.028);
+       border-left:2px solid var(--bord);border-radius:0 .3rem .3rem 0;
+       font-size:.8rem;color:var(--pale);font-style:italic}
+  .note{margin-top:.5rem;padding:.6rem .8rem;background:rgba(255,210,74,.06);
+        border-left:2px solid rgba(255,210,74,.4);border-radius:0 .3rem .3rem 0;
+        font-size:.8rem;color:#d8c48a;font-style:normal}
+  .note b{color:var(--or)}
+
+  /* ── le pied de carte ──────────────────────────────────────────── */
+  .pied{display:flex;align-items:center;gap:.7rem;margin-top:1rem;
+        padding-top:.8rem;border-top:1px solid var(--bord)}
+  .statut{font-size:.8rem;color:var(--pale);flex:1;min-width:0}
+  .statut.ok{color:var(--vert)}
+  .statut.ko{color:var(--rouge)}
+  button.envoi{background:var(--or);border:0;color:#12131a;font-weight:700;
+               border-radius:.45rem;font-size:.82rem;padding:.45rem 1rem;
+               cursor:pointer;white-space:nowrap;transition:filter .15s}
+  button.envoi:hover:not(:disabled){filter:brightness(1.12)}
+  button.envoi:disabled{background:rgba(74,222,128,.18);color:var(--vert);cursor:default}
+  button.lien{background:transparent;border:1px solid var(--bord);color:var(--pale);
+              border-radius:.35rem;font-size:.7rem;padding:.25rem .55rem;cursor:pointer;
+              white-space:nowrap;transition:all .15s}
+  button.lien:hover{border-color:var(--or);color:var(--or)}
+  /* « renvoyer » ne s'offre que sur une carte déjà partie. */
+  button.reprise{display:none}
+  .q.envoyee button.reprise{display:inline-block}
+
+  .filtres{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.6rem}
+  button.f{background:var(--carte);border:1px solid var(--bord);color:var(--pale);
+           border-radius:999px;font-size:.75rem;padding:.3rem .8rem;cursor:pointer;transition:all .15s}
+  button.f:hover{border-color:var(--or);color:var(--or)}
+  button.f.actif{border-color:var(--or);color:var(--fond);background:var(--or);font-weight:600}
+  .puce.veryeasy{color:#00ff88}.puce.easy{color:#00c8ff}.puce.medium{color:#ffc800}
+  .puce.hard{color:#ff6400}.puce.veryhard{color:#ff3232}.puce.extreme{color:#c77dff}
+
+  @media (max-width:640px){
+    .champ{grid-template-columns:1fr;gap:.15rem}
+    .champ .etiq{padding-top:0}
+    .trio .etiq:first-child{width:auto}
+    .ed.court{max-width:100%}
+  }
+</style></head><body>
+<div class="page">
+  <h1>Lot « ylia » — 20 questions sur Your Lie in April</h1>
+  <p class="sous">Tout est modifiable sur place : le texte, les six réponses, la bonne
+     réponse, la série, la difficulté, le spoil et le lien de preuve. « Ajouter à la banque »
+     envoie la question telle qu'elle est affichée. Les retouches et les envois sont retenus
+     dans ce navigateur.<br>
+     ⚠️ <b>Série ABSENTE de la banque</b> — vérifié sur les 1 603 questions avant d'écrire :
+     aucune ne parle de Your Lie in April. Zéro doublon possible.<br>
+     ⚠️ <b>Rien sur la fin.</b> La maladie de Kaori et ce qu'elle devient sont écartés : c'est
+     tout l'enjeu de l'œuvre, et une question suffirait à le gâcher. Les vingt portent sur ce
+     qu'on apprend dans les premiers épisodes — qui joue de quoi, qui est qui, et pourquoi
+     Kōsei ne s'entend plus jouer.<br>
+     ⚠️ <b>Aucune n'est marquée spoil</b>, c'est toi qui décides.<br>
+     ℹ️ Les liens pointent <i>fr.wikipedia.org</i> : il n'existe pas de wiki Fandom
+     francophone pour cette série — j'ai cherché cinq adresses, toutes en 404. Le « src » sous
+     chaque question est la phrase exacte d'où elle sort.</p>
+  <div class="barre" id="barre"></div>
+  <div class="filtres" id="filtres"></div>
+  <div id="liste"></div>
+</div>
+<script>
+const QUESTIONS = [{"g":"Kōsei","d":"veryeasy","t":"De quel instrument Kōsei Arima joue-t-il ?","b":3,"r":["Du violon","Du violoncelle","Du piano","De la flûte traversière","De la guitare","De la clarinette"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Arima Kōsei est un jeune pianiste de renom. Piano qu'utilise Arima Kōsei lors de ses auditions.","s":"Your Lie in April"},{"g":"Kaori","d":"veryeasy","t":"De quel instrument Kaori Miyazono joue-t-elle ?","b":6,"r":["Du piano","Du violoncelle","De la harpe","De l'alto","De la trompette","Du violon"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Kaori Miyazono, une violoniste du même âge que lui et qui est dans la même classe que sa voisine.","s":"Your Lie in April"},{"g":"Kōsei","d":"easy","t":"Quel surnom Kōsei portait-il enfant, pour son jeu d'une précision parfaite ?","b":1,"r":["Le Métronome humain","Le Petit Prince du clavier","La Machine à partitions","L'Horloge de verre","Le Pianiste de marbre","Le Diapason vivant"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Petit prodige depuis son plus jeune âge, communément appelé « métronome humain », il excelle dans toutes les compétitions.","s":"Your Lie in April"},{"g":"Kōsei","d":"easy","t":"Qu'est-ce qui empêche Kōsei de jouer après la mort de sa mère ?","b":5,"r":["Ses mains tremblent sans qu'il puisse les contrôler","Il a perdu la mémoire des partitions","Il ne supporte plus la vue d'un clavier","Il s'évanouit dès qu'il monte sur scène","Il n'entend plus les notes de son piano","Il a perdu l'usage de deux doigts"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Kōsei perd la capacité d'entendre le son du piano quand il joue, peu de temps après le décès de sa mère.","s":"Your Lie in April"},{"g":"La mère","d":"medium","t":"Quel rôle la mère de Kōsei tenait-elle auprès de lui, en plus d'être sa mère ?","b":2,"r":["Elle était son imprésario","Elle était son professeur de piano","Elle était sa partenaire de duo","Elle dirigeait l'orchestre de son école","Elle composait ses morceaux","Elle était son accordeuse de piano"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"sa mère qui est à la fois pianiste et son professeur décède subitement des suites d'une grave maladie.","s":"Your Lie in April"},{"g":"Kaori","d":"medium","t":"Que Kaori demande-t-elle à Kōsei pour le ramener à la musique ?","b":4,"r":["De lui donner des cours de piano","De composer un morceau pour elle","De la remplacer à un concours","De devenir son pianiste accompagnateur","D'accorder son violon avant chaque concert","De jouer en duo avec Tsubaki"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Kaori va alors redoubler de courage pour recréer le lien entre Kōsei et le piano en lui proposant de devenir son pianiste accompagnateur pour ses compétitions.","s":"Your Lie in April"},{"g":"Kaori","d":"hard","t":"De quel instrument Kaori jouait-elle avant de passer au violon ?","b":6,"r":["De la flûte","Du violoncelle","De la harpe","De l'accordéon","De la guitare","Du piano"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Elle jouait du piano quand elle avait cinq ans, mais a arrêté pour pratiquer le violon.","s":"Your Lie in April"},{"g":"Tsubaki","d":"medium","t":"Quel lien unit Tsubaki Sawabe à Kōsei depuis l'enfance ?","b":1,"r":["C'est sa voisine et son amie d'enfance","C'est sa cousine","C'est sa demi-sœur","C'est son ancienne camarade de conservatoire","C'est la fille du professeur de sa mère","C'est sa partenaire de concours"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Tsubaki est une amie d'enfance et une voisine de Kōsei, elle le considère comme son petit frère.","s":"Your Lie in April"},{"g":"Tsubaki","d":"hard","t":"Quel sport Tsubaki pratique-t-elle en club ?","b":3,"r":["Le tennis","Le volley-ball","Le softball","La natation","L'athlétisme","Le basket-ball"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Elle est très sportive et fait partie d'un club de softball.","s":"Your Lie in April"},{"g":"Watari","d":"medium","t":"De quelle équipe Ryōta Watari est-il le capitaine ?","b":5,"r":["L'équipe de base-ball","L'équipe de basket-ball","L'équipe d'athlétisme","L'équipe de tennis","L'équipe de football","L'équipe de natation"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"C'est le capitaine de l'équipe de football de l'école et il est extrêmement populaire auprès des filles de son collège.","s":"Your Lie in April"},{"g":"Watari","d":"hard","t":"Quel lien unit Ryōta Watari à Tsubaki ?","b":2,"r":["C'est son cousin","C'est son ami d'enfance","C'est son grand frère","C'est son voisin de palier","C'est son coéquipier de club","C'est son camarade de pupitre"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Ryōta est l'ami d'enfance de Tsubaki et le meilleur ami de Kōsei.","s":"Your Lie in April"},{"g":"Kōsei","d":"hard","t":"Quelle faculté musicale Kōsei possède-t-il ?","b":4,"r":["La mémoire eidétique des partitions","La synesthésie des couleurs","Une main d'une envergure rare","L'oreille absolue","La lecture à vue instantanée","Le sens parfait du rythme"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Kōsei est un jeune adolescent, musicien, doté d'une oreille absolue et avec un talent pianistique remarquable.","s":"Your Lie in April"},{"g":"Hiroko","d":"veryhard","t":"Qui est Hiroko, l'ancienne professeure de piano de Kōsei ?","b":6,"r":["La sœur de la mère de Kōsei","La directrice du conservatoire","Une amie de Tsubaki","L'accompagnatrice de Kaori","La mère de Watari","L'assistante de la mère de Kōsei"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"elle rencontre l'ancienne professeure de piano de Kōsei (l'assistante de la mère de Kōsei, Hiroko).","s":"Your Lie in April"},{"g":"L'œuvre","d":"medium","t":"Qui est l'auteur du manga Your Lie in April ?","b":1,"r":["Naoshi Arakawa","Io Sakisaka","Mari Yamazaki","Yuki Suetsugu","Ichigo Takano","Jun Mayuzuki"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Your Lie in April — auteur : Naoshi Arakawa.","s":"Your Lie in April"},{"g":"L'œuvre","d":"hard","t":"Combien de tomes compte le manga Your Lie in April ?","b":5,"r":["7","15","20","9","11","24"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Your Lie in April — nb_volumes : 11.","s":"Your Lie in April"},{"g":"L'œuvre","d":"veryhard","t":"Dans quel magazine Your Lie in April a-t-il été prépublié ?","b":3,"r":["Le Weekly Shōnen Jump","Le Bessatsu Margaret","Le Monthly Shōnen Magazine","Le Young Jump","Le Monthly Afternoon","Le Weekly Shōnen Sunday"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Your Lie in April — prépublié : Monthly Shōnen Magazine.","s":"Your Lie in April"},{"g":"L'œuvre","d":"hard","t":"Quel studio a animé Your Lie in April ?","b":2,"r":["Kyoto Animation","A-1 Pictures","Bones","Madhouse","P.A. Works","Wit Studio"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Your Lie in April — studio d'animation : A-1 Pictures. Réalisateur : Kyōhei Ishiguro.","s":"Your Lie in April"},{"g":"Kōsei","d":"medium","t":"À quel âge Kōsei perd-il la capacité d'entendre son piano ?","b":6,"r":["7 ans","9 ans","13 ans","15 ans","5 ans","11 ans"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Malheureusement, à l'âge de onze ans, Kōsei perd la capacité d'entendre le son du piano quand il joue.","s":"Your Lie in April"},{"g":"Kōsei","d":"hard","t":"Comment le jeu de Kōsei change-t-il à mesure qu'il se reconstruit ?","b":4,"r":["Il gagne en vitesse d'exécution","Il se met à improviser sans partition","Il abandonne le classique pour le jazz","Il devient plus expressif et transmet ses émotions","Il joue désormais les yeux fermés","Il ne joue plus qu'en duo"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"son jeu au piano évolue par la même occasion : il devient plus expressif et transmet ses émotions quand il joue.","s":"Your Lie in April"},{"g":"Kaori","d":"veryhard","t":"Dans quelle classe Kaori se trouve-t-elle au moment où Kōsei la rencontre ?","b":1,"r":["Celle de Tsubaki","Celle de Kōsei","Celle de Watari","Une classe de l'année supérieure","Une classe d'un autre collège","Une classe de l'année inférieure"],"p":"https://fr.wikipedia.org/wiki/Your_Lie_in_April","src":"Kaori Miyazono, une violoniste du même âge que lui et qui est dans la même classe que sa voisine et sœur de cœur, Tsubaki.","s":"Your Lie in April"}];
+const LIB = {"veryeasy":"Very Easy","easy":"Easy","medium":"Medium","hard":"Hard","veryhard":"Very Hard","extreme":"Extreme"};
+const ORDRE = ["veryeasy","easy","medium","hard","veryhard","extreme"];
+// ⚠️ Clef du brouillon en localStorage (saisie:<lot>).
+const LOT = "ylia";
+// Poste de saisie d'un lot de questions.
+//
+// La page est servie par /saisie/<lot>?code=… : elle est donc de MÊME ORIGINE
+// que l'API, ce qui lui permet d'appeler /api/add-question directement. Le code
+// du back-office voyage dans l'adresse ; on le relit ici pour le joindre à
+// chaque envoi.
+const CODE = new URLSearchParams(location.search).get('code') || '';
+const CLEF = 'saisie:' + LOT;
+
+// ── l'état de travail ────────────────────────────────────────────────
+// On garde en mémoire du navigateur les questions TELLES QU'ÉDITÉES, et non
+// seulement les cases cochées : une correction perdue au rafraîchissement
+// serait à refaire de tête. La signature protège d'un lot régénéré entre-temps,
+// dont les questions ne seraient plus dans le même ordre.
+const SIGNATURE = QUESTIONS.length + '|' + (QUESTIONS[0] ? QUESTIONS[0].t : '');
+
+function charger() {
+    try {
+        const brut = JSON.parse(localStorage.getItem(CLEF) || 'null');
+        if (brut && brut.sig === SIGNATURE) return brut;
+    } catch (e) {}
+    return { sig: SIGNATURE, q: JSON.parse(JSON.stringify(QUESTIONS)), envoyees: [] };
+}
+const etat = charger();
+function sauver() {
+    try { localStorage.setItem(CLEF, JSON.stringify(etat)); } catch (e) {}
+}
+
+// ── petits outils ────────────────────────────────────────────────────
+function el(balise, classe, texte) {
+    const n = document.createElement(balise);
+    if (classe) n.className = classe;
+    if (texte !== undefined) n.textContent = texte;
+    return n;
+}
+function ligne(etiq, controle, extra) {
+    const d = el('div', 'champ');
+    d.appendChild(el('span', 'etiq', etiq));
+    d.appendChild(controle);
+    if (extra) d.appendChild(extra);
+    return d;
+}
+function grandir(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = (ta.scrollHeight + 2) + 'px';
+}
+
+// ── ce qui interdit l'envoi ──────────────────────────────────────────
+function valider(q) {
+    const t = (q.t || '').trim();
+    if (!t) return 'Le texte de la question est vide.';
+    if (!ORDRE.includes(q.d)) return 'Difficulté inconnue.';
+    if (!(q.s || '').trim()) return 'La série est vide.';
+    const p = (q.p || '').trim();
+    if (!p) return 'Pas de lien de preuve.';
+    if (!/^https?:/i.test(p)) return 'Le lien de preuve doit commencer par http.';
+    if (!Array.isArray(q.r) || q.r.length !== 6) return 'Il faut exactement 6 réponses.';
+    const vides = q.r.filter(r => !String(r || '').trim()).length;
+    if (vides) return vides + ' réponse(s) vide(s).';
+    const nettes = q.r.map(r => String(r).trim().toLowerCase());
+    if (new Set(nettes).size !== 6) return 'Deux réponses sont identiques.';
+    if (!(q.b >= 1 && q.b <= 6)) return 'Aucune bonne réponse désignée.';
+    return null;
+}
+
+// ── l'envoi ──────────────────────────────────────────────────────────
+async function envoyer(i, carte, bouton, statut) {
+    const q = etat.q[i];
+    const pb = valider(q);
+    if (pb) { statut.className = 'statut ko'; statut.textContent = pb; return; }
+
+    bouton.disabled = true;
+    statut.className = 'statut'; statut.textContent = 'envoi…';
+    try {
+        const rep = await fetch('/api/add-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminCode: CODE,
+                question: String(q.t).trim(),
+                answers: q.r.map(r => String(r).trim()),
+                correctAnswer: q.b,
+                serie: String(q.s).trim(),
+                difficulty: q.d,
+                proof_url: String(q.p).trim(),
+                is_spoil: !!q.sp,
+            }),
+        });
+        const d = await rep.json().catch(() => ({}));
+        if (rep.ok && d.success) {
+            etat.envoyees[i] = true; sauver();
+            carte.classList.add('envoyee');
+            statut.className = 'statut ok'; statut.textContent = '✓ ajoutée à la banque';
+            bouton.textContent = 'ajoutée';
+            compter();
+        } else {
+            bouton.disabled = false;
+            statut.className = 'statut ko';
+            statut.textContent = d.error || ('Refus du serveur (' + rep.status + ')');
+        }
+    } catch (e) {
+        bouton.disabled = false;
+        statut.className = 'statut ko';
+        statut.textContent = 'Serveur injoignable — est-il lancé ?';
+    }
+}
+
+// ── une carte ────────────────────────────────────────────────────────
+const liste = document.getElementById('liste');
+
+etat.q.forEach((q, i) => {
+    const c = el('div', 'q'); c.id = 'q' + i;
+    c.dataset.g = q.g || 'divers';
+    if (etat.envoyees[i]) c.classList.add('envoyee');
+
+    let touche = false;
+    function marquer() {
+        sauver();
+        if (!touche) { touche = true; c.classList.add('modifiee'); }
+    }
+
+    // en-tête : numéro, pastille de difficulté (qui suit le menu), grappe
+    const tete = el('div', 'tete');
+    tete.appendChild(el('span', 'num', String(i + 1)));
+    const past = el('span', 'diff ' + q.d, LIB[q.d]);
+    tete.appendChild(past);
+    tete.appendChild(el('span', 'grappe', q.g || ''));
+    c.appendChild(tete);
+
+    // texte de la question
+    const ta = el('textarea', 'ed texte'); ta.value = q.t; ta.rows = 1;
+    ta.oninput = () => { q.t = ta.value; grandir(ta); marquer(); };
+    c.appendChild(ligne('Texte', ta));
+    setTimeout(() => grandir(ta), 0);
+
+    // série · difficulté · spoil, sur une seule rangée
+    const trio = el('div', 'trio');
+    const iS = el('input', 'ed court'); iS.value = q.s || '';
+    iS.oninput = () => { q.s = iS.value; marquer(); };
+    trio.appendChild(el('span', 'etiq', 'Série')); trio.appendChild(iS);
+
+    const sel = el('select', 'ed');
+    ORDRE.forEach(d => { const o = el('option', null, LIB[d]); o.value = d; sel.appendChild(o); });
+    sel.value = q.d;
+    sel.onchange = () => {
+        q.d = sel.value; past.className = 'diff ' + q.d; past.textContent = LIB[q.d];
+        marquer(); compter();
+    };
+    trio.appendChild(el('span', 'etiq', 'Difficulté')); trio.appendChild(sel);
+
+    const sp = el('input'); sp.type = 'checkbox'; sp.checked = !!q.sp;
+    sp.onchange = () => { q.sp = sp.checked; marquer(); };
+    const lsp = el('label', 'sp'); lsp.appendChild(sp);
+    lsp.appendChild(document.createTextNode('spoil'));
+    trio.appendChild(lsp);
+    c.appendChild(trio);
+
+    // lien de preuve, avec un bouton pour l'ouvrir
+    const iP = el('input', 'ed url'); iP.value = q.p || ''; iP.type = 'url';
+    iP.oninput = () => { q.p = iP.value; marquer(); };
+    const ouvrir = el('button', 'lien', 'ouvrir ↗');
+    ouvrir.onclick = () => {
+        const u = iP.value.trim();
+        if (u) window.open(u, '_blank', 'noopener');
+    };
+    c.appendChild(ligne('Preuve', iP, ouvrir));
+
+    // les six réponses : le rond désigne la bonne
+    const reps = el('div', 'reps');
+    const ronds = [];
+    q.r.forEach((r, k) => {
+        const l = el('div', 'rep' + (k + 1 === q.b ? ' bonne' : ''));
+        const rd = el('input'); rd.type = 'radio'; rd.name = 'b' + i;
+        rd.checked = (k + 1 === q.b);
+        rd.onchange = () => {
+            q.b = k + 1; marquer();
+            ronds.forEach((x, j) => x.parentElement.classList.toggle('bonne', j === k));
+        };
+        ronds.push(rd);
+        l.appendChild(rd);
+        const ir = el('input', 'ed'); ir.value = r;
+        ir.oninput = () => { q.r[k] = ir.value; marquer(); };
+        l.appendChild(ir);
+        reps.appendChild(l);
+    });
+    c.appendChild(reps);
+
+    if (q.src) c.appendChild(el('div', 'src', '« ' + q.src + ' »'));
+    if (q.n) { const n = el('div', 'note'); n.innerHTML = q.n; c.appendChild(n); }
+
+    // le pied : envoyer, et ce que le serveur répond
+    const pied = el('div', 'pied');
+    const statut = el('span', 'statut', etat.envoyees[i] ? '✓ ajoutée à la banque' : '');
+    if (etat.envoyees[i]) statut.className = 'statut ok';
+    const bt = el('button', 'envoi', etat.envoyees[i] ? 'ajoutée' : 'Ajouter à la banque');
+    bt.disabled = !!etat.envoyees[i];
+    bt.onclick = () => envoyer(i, c, bt, statut);
+
+    // Rouvrir une carte déjà envoyée reste possible, mais il faut le vouloir :
+    // le serveur ne refuse pas un doublon, il l'insère.
+    const reprise = el('button', 'lien reprise', 'renvoyer');
+    reprise.onclick = () => {
+        if (!confirm('Cette question a déjà été ajoutée. La renvoyer créerait un doublon en base. Continuer ?')) return;
+        etat.envoyees[i] = false; sauver();
+        c.classList.remove('envoyee');
+        bt.disabled = false; bt.textContent = 'Ajouter à la banque';
+        statut.className = 'statut'; statut.textContent = '';
+        compter();
+    };
+    pied.appendChild(statut); pied.appendChild(reprise); pied.appendChild(bt);
+    c.appendChild(pied);
+
+    liste.appendChild(c);
+});
+
+// ── la barre de comptage, qui suit les envois et les difficultés ─────
+function compter() {
+    const restantes = etat.q.filter((q, i) => !etat.envoyees[i]);
+    const parD = {};
+    restantes.forEach(q => parD[q.d] = (parD[q.d] || 0) + 1);
+    const envoyees = etat.q.length - restantes.length;
+    document.getElementById('barre').innerHTML =
+        ORDRE.filter(d => parD[d]).map(d =>
+            '<span class="puce ' + d + '">' + LIB[d] + ' ' + parD[d] + '</span>').join('')
+        + '<span class="puce compte">' + restantes.length + ' restante'
+        + (restantes.length > 1 ? 's' : '') + '</span>'
+        + (envoyees ? '<span class="puce faite">' + envoyees + ' ajoutée'
+            + (envoyees > 1 ? 's' : '') + '</span>' : '');
+}
+compter();
+
+// ── filtres par grappe, plus « à saisir » ────────────────────────────
+const grappes = [...new Set(etat.q.map(q => q.g || 'divers'))];
+const fz = document.getElementById('filtres');
+let filtreActif = null;
+
+function bouton(texte, valeur) {
+    const b = el('button', 'f', texte);
+    b.onclick = () => {
+        filtreActif = valeur;
+        document.querySelectorAll('.f').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        appliquer();
+    };
+    fz.appendChild(b);
+    return b;
+}
+function appliquer() {
+    document.querySelectorAll('.q').forEach((c, i) => {
+        const ok = !filtreActif
+            || (filtreActif === '__restantes__' ? !etat.envoyees[i] : c.dataset.g === filtreActif);
+        c.style.display = ok ? '' : 'none';
+    });
+}
+bouton('tout (' + etat.q.length + ')', null).classList.add('actif');
+bouton('à saisir', '__restantes__');
+grappes.forEach(g => bouton(
+    g + ' (' + etat.q.filter(q => (q.g || 'divers') === g).length + ')', g));
+
+// ── garde-fou : sans code dans l'adresse, rien ne partira ────────────
+if (!CODE) {
+    const av = el('div', 'alerte');
+    av.textContent = "Aucun code dans l'adresse : les envois seront refusés. "
+        + 'Ouvre la page par /saisie/' + LOT + '?code=…';
+    document.querySelector('.page').insertBefore(av, document.getElementById('barre'));
+}
+
+</script></body></html>
