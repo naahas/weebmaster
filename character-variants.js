@@ -306,6 +306,11 @@ const CHARACTER_VARIANTS = {
         ["RENJI ABARAI", "ABARAI RENJI"],
         ["URAHARA", "KISUKE"],
         ["HASCHWALTH", "JUGRAM"],
+        // ⚠️ Deux ORTHOGRAPHES du meme nom, pas deux personnages : la regle du
+        // mot entier ne pouvait pas les relier — « BARRAGAN » et « BARAGGAN »
+        // ne partagent aucun mot, c est un R et un G qui se deplacent. Seul un
+        // groupe les tient. Sans lui on marquait deux fois le meme Espada.
+        ["BARAGGAN LOUISENBAIRN", "BARAGGAN", "BARRAGAN"],
         ["YAMAMOTO", "GENRYUSAI"],
         ["INOUE ORIHIME", "ORIHIME INOUE", "INOUE", "ORIHIME"],
         ["SADO YASUTORA", "SADO", "CHAD"],
