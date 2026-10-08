@@ -5629,7 +5629,20 @@ createApp({
                         el.style.transform = 'translate(' + (x - demi) + 'px,' + (y - demiH) + 'px)';
                         // Plus bas à l'écran = devant. C'est la profondeur
                         // qu'on lit sans y penser sur une foule.
-                        el.style.zIndex = String(Math.round(y));
+                        //
+                        // ⚠️ SAUF quand les placements sont cachés : la main
+                        // « a choisi » se pose en haut à droite du portrait, et
+                        // `.chx-j` porte un z-index — donc un contexte
+                        // d'empilement dont la pastille ne peut PAS sortir. Le
+                        // voisin de droite repasserait par-dessus. On ordonne
+                        // alors de GAUCHE À DROITE : le portrait le plus à
+                        // gauche devant, et plus rien ne couvre une pastille.
+                        // La profondeur par le bas ne se perd que là où elle ne
+                        // sert à rien — à deux au duel, ou tous au milieu quand
+                        // « Mouvement » est éteint.
+                        el.style.zIndex = this.ch.caches
+                            ? String(10000 - Math.round(x))
+                            : String(Math.round(y));
                         if (premierePose) {
                             // Forcer le calcul avant de rendre la transition :
                             // sinon le navigateur fond les deux et le

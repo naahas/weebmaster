@@ -14372,13 +14372,35 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    jamais. Il sert aussi quand l'hôte a éteint « Mouvement », où rien ne
    disait jusqu'ici que l'autre avait tranché.
 
-   ⚠️ Un blanc NEUTRE, et surtout pas une teinte : le bord est précisément ce
-   qu'on cache ici, un halo tirant sur le bleu ou le rouge le dirait à moitié.
-   Et il reste plus discret que les deux camps — il annonce un choix pris, pas
-   un camp rejoint. */
-.chx-j.pret img {
-    border-color: rgba(255, 255, 255, 0.72);
-    box-shadow: 0 0 0 0.08rem rgba(255, 255, 255, 0.28), 0 0 0.9rem rgba(255, 255, 255, 0.2);
+   ⚠️ Une MAIN, pas un halo. Six pistes ont été éprouvées côte à côte dans
+   /prototypes/choice-pret : l'anneau blanc qui tournait ici se prenait pour
+   un survol, il ne disait rien. La pastille, elle, NOMME l'état.
+
+   ⚠️ Aucune teinte, jamais : le bord est précisément ce qu'on cache, et un
+   fond tirant sur le bleu ou le rouge le dirait à moitié. Blanc sur sombre.
+
+   ⚠️ EN HAUT à droite, et c'est ce qui la sauve : en bas, chaque portrait
+   venait recouvrir la pastille de son voisin et seule la dernière restait
+   lisible. Il faut AUSSI l'ordre de peinture inversé, posé par
+   `placerChoice` quand les placements sont cachés — un z-index ici ne suffit
+   pas, `.chx-j` en porte un et enferme donc sa pastille. */
+.chx-main {
+    position: absolute;
+    top: -3px; right: -2px;
+    z-index: 3;
+    width: 42%; height: 42%;
+    border-radius: 50%;
+    background: #15161d;
+    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    animation: chx-main-pop 0.38s cubic-bezier(0.2, 1.7, 0.4, 1) both;
+}
+.chx-main svg { width: 62%; height: 62%; fill: #fff; display: block; }
+@keyframes chx-main-pop {
+    0%   { opacity: 0; transform: scale(0.4); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 /* Le mien porte un liseré d'or : à cinquante visages, se retrouver est la
