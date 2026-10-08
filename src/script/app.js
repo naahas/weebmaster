@@ -320,7 +320,7 @@ createApp({
             modes: [
                 // `plain: true` = illustration sans fond transparent : elle est alors
                 // cadrée dans le panneau au lieu de flotter comme un personnage détouré.
-                { id: 'classic',   name: 'Classique', kind: 'Solo ou équipes', min: String(MIN_CLASSIQUE), max: '∞',  img: 'kenshin2.webp',
+                { id: 'classic',   name: 'Classique', kind: 'Solo / Équipe', min: String(MIN_CLASSIQUE), max: '∞',  img: 'kenshin2.webp',
                   desc: "Quiz anime/manga général. La même question s'affiche pour tout le monde, avec un temps limité pour répondre. Mode vie ou point disponible, seul ou en deux équipes." },
                 { id: 'bombanime', name: 'BombAnime', kind: 'Solo',   min: '1', max: '15', img: 'lambo3.webp',
                   desc: "Le jeu de la bombe, version anime. Chaque joueur cite un personnage d'une série donnée avant qu'elle n'explose sur lui. Le dernier survivant l'emporte." },
