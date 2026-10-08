@@ -347,7 +347,6 @@ const AVATARS_AUTORISES = new Set([
     'naruto.webp',
     'sasuke.webp',
     'hinata.webp',
-    'sakura.webp',
     // One Piece
     'luffy.webp',
     'zoro.webp',
@@ -360,6 +359,7 @@ const AVATARS_AUTORISES = new Set([
     'trunks.webp',
     // Bleach
     'ichigo.webp',
+    'rukia.webp',
     'aizen.webp',
     // My Hero Academia
     'deku.webp',
@@ -371,10 +371,12 @@ const AVATARS_AUTORISES = new Set([
     'levi.webp',
     // Demon Slayer
     'tanjiro.webp',
+    'rengoku.webp',
     'mitsuri.webp',
     // Fairy Tail
     'natsu.webp',
     'erza.webp',
+    'lucy.webp',
     // Death Note
     'light.webp',
     // Hunter x Hunter
@@ -398,6 +400,7 @@ const AVATARS_AUTORISES = new Set([
     // Persona 5
     'joker.webp',
     // Code Geass
+    'lelouch.webp',
     'cc.webp',
     // Bocchi the Rock!
     'bocchi.webp',
@@ -425,10 +428,6 @@ const AVATARS_AUTORISES = new Set([
     'onizuka.webp',
     // Vinland Saga
     'thorfinn.webp',
-    // Demon Slayer
-    'rengoku.webp',
-    // Bleach
-    'rukia.webp',
     // Re:Zero
     'rem.webp',
     // Sword Art Online
@@ -436,10 +435,6 @@ const AVATARS_AUTORISES = new Set([
     'sinon.webp',
     // Food Wars
     'erina.webp',
-    // Code Geass
-    'lelouch.webp',
-    // Fairy Tail
-    'lucy.webp',
     // Evangelion
     'rei.webp',
 ]);
