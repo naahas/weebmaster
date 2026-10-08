@@ -348,7 +348,17 @@ createApp({
                 // rafraîchissement forcé n'y suffit pas toujours. En changeant
                 // de personnage on change de fichier, donc d'adresse, et le
                 // cache tombe tout seul — comme chez les autres cartes.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp',
+                // ⚠️ `soon` EN LIGNE, le temps d'étoffer la banque de vrai/faux.
+                // Le mode est fini et joué de bout en bout en local ; ce qui
+                // lui manque, ce sont des énoncés. Un seul drapeau fait tout :
+                // le badge « soon » dans la liste, le bouton verrouillé en
+                // « Bientôt disponible », et le portrait qui passe en NOIR ET
+                // BLANC (`.v2-mode-char.soon`, un grayscale déjà câblé).
+                // ⚠️ C'est un garde-fou de PRODUIT, pas de sécurité : le
+                // serveur accepterait encore d'ouvrir un salon Choice. C'est
+                // volontaire, et c'est ce qui permet d'y jouer en local sans
+                // rien défaire — même choix que le plancher du Classique.
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
