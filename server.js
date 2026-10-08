@@ -346,7 +346,6 @@ const AVATARS_AUTORISES = new Set([
     // Naruto
     'naruto.webp',
     'sasuke.webp',
-    'hinata.webp',
     // One Piece
     'luffy.webp',
     'zoro.webp',
@@ -391,6 +390,14 @@ const AVATARS_AUTORISES = new Set([
     // JoJo
     'giorno.webp',
     'dio.webp',
+    // Haikyū
+    // ⚠️ Le fichier s'appelle « hinata », et il était rangé sous Naruto —
+    //    mais c'est Hinata SHŌYŌ, le roux de Haikyū, pas Hinata Hyūga. Deux
+    //    personnages très connus pour un seul prénom : le nom de fichier ne
+    //    tranche pas, seule l'image le dit. Le renommer casserait l'avatar de
+    //    ceux qui le portent (ils retomberaient sur le défaut), donc il garde
+    //    son nom et c'est ce commentaire qui fait foi.
+    'hinata.webp',
     // Frieren
     'fern.webp',
     // Fate
