@@ -344,7 +344,7 @@ createApp({
                 // rafraîchissement forcé n'y suffit pas toujours. En changeant
                 // de personnage on change de fichier, donc d'adresse, et le
                 // cache tombe tout seul — comme chez les autres cartes.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri2.webp',
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp',
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

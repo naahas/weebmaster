@@ -8127,18 +8127,25 @@ body.game-active:has(.poll-game-container) #particles-js {
        relais et c'est l'inverse : `max-width` seul ne fait plus rien non
        plus. Toucher à une seule des deux, c'est ne rien changer du tout.
 
-       ⚠️ 75 % / 117 %, et le nombre ne vient pas du goût mais d'une
+       ⚠️ 74 % / 117 %, et le nombre ne vient pas du goût mais d'une
        COMPARAISON : de combien chaque personnage dépasse du haut du cadre.
        Kenshin 110 px, Nagi 92, Lambo 69, Sora 21, Esdeath 15. Mitsuri monte à
        87, soit entre Lambo et Nagi. C'est cette mesure qu'il faut refaire si
        l'image change, pas l'œil sur une seule carte.
 
-       ℹ️ L'image elle-même est PENCHÉE DE 8° dans le fichier, et c'est ce qui
-       permet ces 75 % : sa silhouette est une diagonale, la redresser de 8°
-       vers la gauche l'aplatit (rapport 0,964 → 1,008, hauteur utile -3,6 %).
-       À dépassement égal elle gagne donc 5 % de largeur. Mesuré de -20° à
-       +20° : le creux est à -8°, le plateau va de -6 à -10, et TOURNER DANS
-       L'AUTRE SENS l'allonge (+20° : 1 943 px de haut contre 1 818).
+       ℹ️ L'image elle-même est PENCHÉE DE 14° dans le fichier, et c'est ce qui
+       permet ces 74 % : sa silhouette est une diagonale, la redresser vers la
+       gauche l'aplatit (rapport 0,964 → 0,997), donc à dépassement égal elle
+       gagne de la largeur. Mesuré de -20° à +20° : le creux est à -8° (1 818 px
+       de haut contre 1 886), le plateau va de -6 à -10, et TOURNER DANS
+       L'AUTRE SENS l'allonge (+20° : 1 943 px).
+
+       ⚠️ Et pourtant c'est -14° qui est retenu, pas l'optimum. À -8° le gain
+       de place est au maximum mais L'INCLINAISON NE SE VOIT PAS : sur une pose
+       déjà dynamique, huit degrés passent inaperçus — vérifié à l'œil, la
+       carte semblait inchangée. À -14° le gain de place ne perd presque rien
+       (0,997 contre 1,008) et le redressement, lui, se lit. Entre deux valeurs
+       qui tiennent la même place, on garde celle qui se voit.
 
        ⚠️ La rotation est cuite dans le FICHIER, jamais en CSS. `.v2-mode-char`
        porte déjà `animation: v2CharFloat`, qui anime `transform` : un
@@ -8155,7 +8162,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        et aucun défilement horizontal nulle part. */
     .v2-mode-char.char-choice {
         right: -1%;
-        max-width: 75%;
+        max-width: 74%;
         /* ⚠️ Écrit même si c'est proche de la valeur de base : la taille de
            Mitsuri est calée sur celle des AUTRES personnages, pas sur un
            défaut. Si le défaut bougeait un jour pour une autre raison, elle
