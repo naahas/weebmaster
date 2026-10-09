@@ -54,6 +54,16 @@ const CHARACTER_VARIANTS = {
         ["BUU", "BOO", "MAJIN BOO", "MAJIN BUU"],
         ["HERCULE", "SATAN", "MISTER SATAN", "MR SATAN"],
         ["C17", "C 17", "C-17", "LAPIS"],
+
+        // Super C17 (GT), ses trois graphies. ⚠️ Groupe INDISPENSABLE : la
+        // règle du mot entier ne relie chaque graphie qu'à SA jumelle exacte
+        // côté C17 — « SUPER C17 » ne voyait pas « SUPER C-17 », et les trois
+        // étaient citables à la suite.
+        //
+        // ⚠️ Il NE contient pas C17 : c'est un autre personnage, la fusion du
+        // C17 humain avec le C17 de l'enfer. Ce qui les sépare du C17 simple,
+        // c'est SEULEMENT_EXACT, plus bas.
+        ["SUPER C17", "SUPER C 17", "SUPER C-17"],
         ["C18", "C 18", "C-18", "LAZULI"],
         ["C16", "C 16", "C-16"],
         ["C19", "C 19", "C-19"],
@@ -1049,8 +1059,17 @@ const NE_PAS_LIER = {
 // entier dans « LI SHENRON » (pas de frontière entre L et I), la règle ne les
 // reliait donc jamais. Ceux qui sont le MÊME personnage passent par un groupe
 // d'alias, juste au-dessus.
+// ⚠️ Même histoire pour « C17 », mais le mot commun est en PRÉFIXE : « SUPER
+// C17 » est un autre personnage (la fusion du C17 humain et de celui de
+// l'enfer, dans GT), et chaque graphie contenait la sienne en mot entier —
+// « C 17 » condamnait « SUPER C 17 », et réciproquement.
+//
+// Les TROIS graphies sont protégées, pas seulement « C17 » : le joueur écrit
+// indifféremment C17, C-17 ou C 17, et n'en protéger qu'une laisserait les
+// deux autres portes ouvertes. C18 et C16 n'ont pas de « SUPER » dans la
+// banque — rien à protéger pour eux tant que personne n'en ajoute.
 const SEULEMENT_EXACT = {
-    "Dbz": ["SHENRON"],
+    "Dbz": ["SHENRON", "C17", "C 17", "C-17"],
 };
 
 function seulementExact(theme) {
