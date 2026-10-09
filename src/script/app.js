@@ -433,10 +433,13 @@ createApp({
             // Douze seulement étaient proposées : les neuf autres existaient en
             // données sans que personne puisse les choisir.
             //
-            // ⏳ MESURE TEMPORAIRE : quatre séries sont retirées du choix, le
-            // temps d'étoffer leurs listes de personnages — Studios, Chainsaw
-            // Man, Death Note et Gintama. Elles sont ici, en commentaire : les
+            // ⏳ MESURE TEMPORAIRE : trois séries sont retirées du choix, le
+            // temps d'étoffer leurs listes de personnages — Chainsaw Man,
+            // Death Note et Gintama. Elles sont ici, en commentaire : les
             // remettre, c'est retirer les barres.
+            //
+            // « Studios » est RENDUE le 9 octobre 2026 : 232 entrées, c'est
+            // la troisième plus fournie après Manganime et Protagonistes.
             //
             // ⚠️ Contrairement aux filtres du quiz, il n'y a RIEN à faire côté
             // serveur, et c'est un défaut à connaître : « /admin/toggle-game »
@@ -447,7 +450,7 @@ createApp({
             bombanimeSeries: [
                 { id: 'Prota', nom: 'Protagonistes' },
                 { id: 'Manganime', nom: 'Manganime' },
-                // { id: 'Studio', nom: 'Studios' },   ⏳ suspendue
+                { id: 'Studio', nom: 'Studios' },
                 { id: 'Naruto', nom: 'Naruto' },
                 { id: 'OnePiece', nom: 'One Piece' },
                 { id: 'Dbz', nom: 'Dragon Ball' },
@@ -10632,7 +10635,11 @@ createApp({
                 'Reborn': 'Reborn',
                 'DeathNote': 'Death Note',
                 'Prota': 'Protagonist',
-                'Manganime': 'Manganime'
+                'Manganime': 'Manganime',
+                // ⚠️ Sans cette ligne le repli rend la CLEF, « Studio », alors
+                // que le tiroir annonce « Studios » : deux noms pour la même
+                // série, à deux écrans d'écart.
+                'Studio': 'Studios'
             };
             return serieNames[this.bombanime.serie] || this.bombanime.serie;
         },
