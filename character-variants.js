@@ -17,6 +17,20 @@ const CHARACTER_VARIANTS = {
         // ENTIER le reliait déjà à GOKU, l entrée ne servait à rien.
         ["GOKU", "SON GOKU", "SONGOKU", "KAKAROT"],
 
+        // Le dragon à une étoile de GT, sous ses trois noms : « LI SHENRON »
+        // et « I SHENRON » sont deux translittérations du même (Yi Xing Long),
+        // et c est lui qui devient « OMEGA SHENRON » en absorbant les boules.
+        //
+        // ⚠️ Ce groupe est INDISPENSABLE, la règle du mot entier ne les relie
+        // pas : « I SHENRON » n est pas un mot entier dans « LI SHENRON » —
+        // entre le L et le I il n y a aucune frontière de mot. Les trois
+        // étaient donc citables à la suite.
+        //
+        // ⚠️ Les huit autres dragons de GT ne sont PAS ici : ce sont huit
+        // personnages distincts. Ce qu il fallait les empêcher de faire, c est
+        // de se condamner entre eux par leur mot commun — voir SEULEMENT_EXACT.
+        ["LI SHENRON", "I SHENRON", "OMEGA SHENRON"],
+
         // Goku Black, dans les deux ordres, plus « BLACK » tout court.
         //
         // ⚠️ CE GROUPE EST NÉCESSAIRE, et c est un cas rare. La règle du mot
@@ -1015,6 +1029,35 @@ const NE_PAS_LIER = {
     ],
 };
 
+// Les noms qui ne se lient QU'À L'IDENTIQUE : la règle du mot entier ne
+// s'applique ni dans un sens ni dans l'autre. Le groupe d'alias, lui, continue
+// de valoir — c'est la différence avec NE_PAS_LIER, qui ne coupe qu'une paire.
+//
+// ⚠️ « SHENRON » est le dragon de Dragon Ball, et il est devenu le MOT COMMUN
+// d'une famille entière : les huit dragons maléfiques de GT (LI, I, SU, SAN,
+// OMEGA, RYU, U, CHI, RYAN SHENRON) plus SUPER SHENRON de Super. Par la règle
+// du mot entier, citer « SHENRON » les condamnait tous les dix d'un coup, et
+// citer n'importe lequel d'entre eux condamnait SHENRON.
+//
+// ⚠️ Pourquoi PAS dix paires dans NE_PAS_LIER : il en aurait fallu une par
+// dragon, et le onzième ajouté un jour dans bombdata.json serait repassé dans
+// le trou, en silence — personne ne relit NE_PAS_LIER en ajoutant un nom. Ici
+// la protection porte sur le mot commun lui-même : tout « X SHENRON » futur est
+// couvert sans qu'on y touche.
+//
+// ⚠️ Et ça ne sépare PAS les dragons entre eux : « I SHENRON » n'est pas un mot
+// entier dans « LI SHENRON » (pas de frontière entre L et I), la règle ne les
+// reliait donc jamais. Ceux qui sont le MÊME personnage passent par un groupe
+// d'alias, juste au-dessus.
+const SEULEMENT_EXACT = {
+    "Dbz": ["SHENRON"],
+};
+
+function seulementExact(theme) {
+    const variantKey = THEME_MAPPING[theme] || theme;
+    return SEULEMENT_EXACT[variantKey] || [];
+}
+
 // Les noms que `nom` ne doit PAS condamner par la règle du mot entier.
 function liensInterdits(nom, theme) {
     const variantKey = THEME_MAPPING[theme] || theme;
@@ -1092,6 +1135,13 @@ function getAllNamesToBlock(name, availableNames, theme) {
     // Les homonymes qu'on ne doit pas condamner au passage : voir NE_PAS_LIER.
     const interdits = liensInterdits(normalizedName, theme);
 
+    // Un nom « seulement exact » ne tend aucun fil par la règle du mot entier.
+    // ⚠️ On sort APRÈS avoir pris le groupe d'alias, pas avant : un nom protégé
+    // peut très bien avoir des variantes d'orthographe, et elles doivent rester
+    // bloquées. Ici c'est le mot entier qu'on coupe, pas les alias.
+    const exacts = seulementExact(theme);
+    if (exacts.includes(normalizedName)) return Array.from(toBlock);
+
     // Ajouter les noms qui contiennent le nom cité comme MOT COMPLET
     // (ex: "MONKEY D LUFFY" contient "LUFFY" comme mot → OK)
     // (ex: "GOTENKS" contient "GOTEN" mais PAS comme mot complet → IGNORÉ)
@@ -1103,6 +1153,11 @@ function getAllNamesToBlock(name, availableNames, theme) {
         // un groupe : le `groupe.includes` garantit qu'un alias déclaré reste
         // bloqué même si quelqu'un l'inscrit par erreur dans NE_PAS_LIER.
         if (interdits.includes(upperAvailable) && !groupe.includes(upperAvailable)) continue;
+
+        // L'AUTRE SENS, et il faut les deux : sans cette ligne, « SHENRON »
+        // ne condamnerait plus les dix dragons, mais citer « OMEGA SHENRON »
+        // condamnerait encore « SHENRON », qui y figure en mot entier.
+        if (exacts.includes(upperAvailable) && !groupe.includes(upperAvailable)) continue;
 
         // Vérifier si le nom cité est un mot complet dans le nom disponible
         // Ex: "GOTEN" dans "SON GOTEN" → match (séparé par espace)
