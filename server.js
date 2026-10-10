@@ -169,6 +169,7 @@ function getCharacterImage(name, serie) {
 const ascension = require('./server-ascension.js');
 const collect = require('./server-collect.js');
 const choixVF = require('./server-choice.js');
+const codanimeMoteur = require('./server-codanime.js');
 const jetons = require('./jetons-images.js');
 const interdits = require('./pseudos-interdits.js');
 jetons.recenser('rushpic');
@@ -597,7 +598,7 @@ function avatarPropre(brut) {
     return AVATARS_AUTORISES.has(brut) ? brut : AVATAR_DEFAUT;
 }
 
-const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect', choice: 'Choice' };
+const MODE_LABELS = { classic: 'Classique', rivalry: 'Rivalité', bombanime: 'BombAnime', rush: 'Rush', ascension: 'Ascension', collect: 'Collect', choice: 'Choice', codanime: 'Codanime' };
 
 // Les réglages d une partie, résumés pour le panneau. On les prend À LA FIN :
 // l hôte peut les avoir changés entre l ouverture du salon et le départ.
@@ -664,6 +665,10 @@ function reglagesDuSalon(gameState) {
             duree: gameState.choice.duree,
             voirLesAutres: gameState.choice.voirLesAutres,
             serieFiltre: gameState.choice.serieFiltre,
+        },
+        codanime: {
+            chrono: gameState.codanime.chrono,
+            dureeTour: gameState.codanime.dureeTour,
         },
     };
 }
@@ -1127,6 +1132,17 @@ app.get('/game/state', (req, res) => {
             serieFiltre: gameState.choice.serieFiltre,
             manche: gameState.choice.manche,
         } : null,
+        // ⚠️ Même règle que Choice, et elle compte double ici : `/game/state`
+        // s'ouvre avec le SEUL code du salon. La grille et les camps n'y
+        // figurent donc pas — un curieux y lirait la clef entière. Ils
+        // voyagent par la socket, et chacun ne reçoit que sa vue.
+        codanime: gameState.lobbyMode === 'codanime' ? {
+            active: gameState.codanime.active,
+            phase: gameState.codanime.phase,
+            chrono: gameState.codanime.chrono,
+            dureeTour: gameState.codanime.dureeTour,
+            manche: gameState.codanime.manche,
+        } : null,
         bombanime: gameState.lobbyMode === 'bombanime' ? {
             active: gameState.bombanime.active,
             serie: gameState.bombanime.serie,
@@ -1200,6 +1216,28 @@ const choice = choixVF.creerModule({
     supabase,
     recordFinishedGame: (args) => recordFinishedGame(args),
     MIN_JOUEURS: 2,
+});
+
+// 🕵️ Codanime, raccordé de la même façon. Le vivier est relu à CHAQUE
+// partie — Adem remplace sa liste de personnages à la main, et il ne doit
+// pas avoir à redémarrer le dyno pour la voir.
+//
+// ⚠️ `urlImage` passe par les jetons : le nom du fichier dit qui est le
+// personnage, et comme le mode n'affiche pas les noms, le lire dans
+// l'onglet réseau rendrait la moitié du jeu gratuite.
+const codanime = codanimeMoteur.creerModule({
+    diffuser,
+    // ⚠️ `io` n'existe pas encore ici — il est construit huit mille lignes
+    // plus bas, avec le serveur HTTP. On le prend donc PARESSEUSEMENT : le
+    // module n'en a besoin qu'une fois une partie lancée, et à ce
+    // moment-là il est là. Le passer directement plantait au démarrage.
+    getIo: () => io,
+    urlImage: (nom) => jetons.urlImage('rushpic', nom),
+    recordFinishedGame: (args) => recordFinishedGame(args),
+    vivier: () => {
+        delete require.cache[require.resolve('./codanimedata.json')];
+        return require('./codanimedata.json').personnages;
+    },
 });
 
 // ============================================
@@ -1338,6 +1376,9 @@ function fermerRoom(gameState) {
     // Même raison pour Collect : ses minuteries de tour et de duel tourneraient
     // sinon pour un salon que plus personne ne regarde.
     collect.reinitialiser(gameState);
+    // Codanime arme une minuterie par carte révélée : un salon fermé
+    // continuerait sinon à retourner sa salve pour personne.
+    if (gameState.codanime) codanime.arreter(gameState);
     rooms.delete(gameState.roomCode);
     console.log(`❌ Salon fermé : ${gameState.roomCode} (${rooms.size} restant(s))`);
 }
@@ -1443,6 +1484,9 @@ function etatNeuf() {
 
     // ✅❌ Choice : les vrai/faux à deux bords
     choice: choixVF.etatNeuf(),
+
+    // 🕵️ Codanime : la grille de portraits et ses deux espions
+    codanime: codanimeMoteur.etatNeuf(),
 
     rush: {
         active: false,
@@ -2541,7 +2585,7 @@ app.post('/admin/toggle-game', async (req, res) => {
     //
     // Le contrôle vient AVANT creerRoom : un refus ne doit pas laisser
     // derrière lui un salon fantôme que personne ne viendrait fermer.
-    const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension', 'choice'];
+    const MODES_CONNUS = ['classic', 'rivalry', 'rush', 'bombanime', 'collect', 'ascension', 'choice', 'codanime'];
     const modeDemande = (req.body && req.body.lobbyMode) || 'classic';
 
     if (!MODES_CONNUS.includes(modeDemande)) {
@@ -2900,6 +2944,87 @@ app.get('/choice/series', async (req, res) => {
     }
 });
 
+// ══════════════════════════════════════════════════════════════
+// 🕵️ CODANIME — les réglages du salon
+// ══════════════════════════════════════════════════════════════
+function diffuserReglagesCodanime(gameState) {
+    diffuser(gameState, 'codanime-config', {
+        chrono: gameState.codanime.chrono,
+        dureeTour: gameState.codanime.dureeTour,
+        equipes: codanime.vueDesEquipes(gameState),
+    });
+}
+
+app.post('/admin/codanime/set-chrono', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    // ⚠️ `=== true` et pas une valeur molle : un « "false" » venu d'un
+    // formulaire est une chaîne non vide, donc vrai.
+    gameState.codanime.chrono = req.body && req.body.chrono === true;
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, chrono: gameState.codanime.chrono });
+});
+
+app.post('/admin/codanime/set-duree', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const d = parseInt(req.body && req.body.duree, 10);
+    if (!codanimeMoteur.DUREES_TOUR.includes(d)) {
+        return res.status(400).json({ error: 'Durée inconnue' });
+    }
+    gameState.codanime.dureeTour = d;
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, dureeTour: d });
+});
+
+// La composition : l'hôte range un joueur dans une équipe, et désigne son
+// espion. ⚠️ Un seul espion par équipe — poser le nouveau démet l'ancien,
+// plutôt que de refuser : l'hôte corrige en un clic au lieu de deux.
+app.post('/admin/codanime/placer', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+
+    const { playerId, equipe, role } = req.body || {};
+    if (!playerId) return res.status(400).json({ error: 'Joueur manquant' });
+    if (!['A', 'B'].includes(equipe)) return res.status(400).json({ error: 'Équipe inconnue' });
+    if (!['espion', 'agent'].includes(role)) return res.status(400).json({ error: 'Rôle inconnu' });
+
+    const etat = gameState.codanime;
+    // On le retire d'abord de partout : sans ça, déplacer quelqu'un le
+    // laisserait dans ses deux équipes à la fois.
+    for (const e of ['A', 'B']) {
+        if (etat.equipes[e].espion === playerId) etat.equipes[e].espion = null;
+        etat.equipes[e].agents = etat.equipes[e].agents.filter(id => id !== playerId);
+    }
+
+    if (role === 'espion') {
+        const ancien = etat.equipes[equipe].espion;
+        etat.equipes[equipe].espion = playerId;
+        if (ancien && ancien !== playerId
+            && etat.equipes[equipe].agents.length < codanimeMoteur.AGENTS_MAX) {
+            etat.equipes[equipe].agents.push(ancien);
+        }
+    } else {
+        if (etat.equipes[equipe].agents.length >= codanimeMoteur.AGENTS_MAX) {
+            return res.status(400).json({ error: 'Trois agents au plus par équipe' });
+        }
+        etat.equipes[equipe].agents.push(playerId);
+    }
+
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, equipes: codanime.vueDesEquipes(gameState) });
+});
+
+// Répartir au hasard — le bouton qu'on utilise en vrai, quand personne ne
+// veut choisir.
+app.post('/admin/codanime/melanger', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    codanime.composerAuto(gameState);
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, equipes: codanime.vueDesEquipes(gameState) });
+});
+
 // 💣 Une ou deux vies
 app.post('/admin/bombanime/set-lives', (req, res) => {
     const gameState = req.room;
@@ -3129,6 +3254,23 @@ app.post('/admin/start-game', async (req, res) => {
         const r = await choice.demarrer(gameState);
         if (!r.success) return res.status(400).json({ success: false, error: r.error });
         return res.json({ success: true, mode: 'choice', vies: gameState.choice.vies });
+    }
+
+    // 🕵️ MODE CODANIME — deux équipes, deux espions. Le moteur compose
+    // lui-même si l'hôte n'a rien réparti : un mode qui refuse de démarrer
+    // parce que personne n'a cliqué sur les bons boutons est un mode qu'on
+    // ne lance jamais. Il refuse en revanche s'il n'y a pas de quoi faire
+    // deux équipes — il faut au moins un espion et un agent de chaque côté,
+    // donc QUATRE joueurs.
+    if (gameState.lobbyMode === 'codanime') {
+        const r = codanime.demarrer(gameState);
+        if (!r.ok) {
+            const dit = r.raison === 'composition'
+                ? 'Il faut au moins 4 joueurs : un espion et un agent par équipe.'
+                : 'Impossible de démarrer Codanime.';
+            return res.status(400).json({ success: false, error: dit });
+        }
+        return res.json({ success: true, mode: 'codanime', premier: r.premier });
     }
 
     // ⚡ MODE RUSH — chacun court de son côté, donc jouable même seul
@@ -3983,6 +4125,12 @@ app.post('/admin/replay', (req, res) => {
         collect.reinitialiser(gameState);
         Object.assign(gameState.collect, reglagesCollect);
     }
+
+    // 🕵️ Codanime : on éteint les minuteries de révélation et l'on vide la
+    // grille, mais on GARDE la composition des équipes. Refaire les camps à
+    // chaque manche obligerait l'hôte à tout recomposer entre deux parties,
+    // et c'est précisément le moment où les joueurs veulent enchaîner.
+    if (gameState.codanime) codanime.arreter(gameState);
 
     console.log(`🔁 Salon ${gameState.roomCode} : retour au lobby pour une nouvelle manche`);
     diffuser(gameState, 'retour-au-salon');
@@ -8715,6 +8863,13 @@ io.on('connection', (socket) => {
             if (gameState.lobbyMode === 'choice' && gameState.inProgress) {
                 choice.quitter(gameState, player.playerId);
             }
+            // ⚠️ Ses marques RESTENT sur le plateau — c'est assumé. Mais le
+            // seuil, lui, se recalcule sur les agents PRÉSENTS : il faut donc
+            // rediffuser, sinon les survivants voteraient encore contre un
+            // seuil périmé.
+            if (gameState.lobbyMode === 'codanime' && gameState.inProgress) {
+                codanime.quitter(gameState, player.playerId);
+            }
 
             gameState.players.delete(socket.id);
             gameState.answers.delete(socket.id);
@@ -8883,6 +9038,9 @@ io.on('connection', (socket) => {
             }
             if (gameState.lobbyMode === 'choice' && gameState.inProgress) {
                 choice.quitter(gameState, targetPlayer.playerId);
+            }
+            if (gameState.lobbyMode === 'codanime' && gameState.inProgress) {
+                codanime.quitter(gameState, targetPlayer.playerId);
             }
 
             // Supprimer le joueur
@@ -9149,6 +9307,58 @@ io.on('connection', (socket) => {
         const gameState = roomDeSocket(socket);
         if (!gameState || !gameState.choice.active) return;
         socket.emit('choice-etat', choice.etatPourLeClient(gameState));
+    });
+
+    // ══════════════════════════════════════════════════════════
+    // 🕵️ CODANIME
+    // ══════════════════════════════════════════════════════════
+    //
+    // ⚠️ Toutes ces portes vérifient le RÔLE côté serveur. Un agent qui
+    // forgerait un « codanime-indice » ne doit pas pouvoir annoncer à la
+    // place de son espion, et un espion ne doit pas pouvoir marquer une
+    // carte — il désignerait du doigt ce que l'indice doit dire.
+    const joueurDe = (s) => {
+        const gs = roomDeSocket(s);
+        if (!gs || !gs.codanime.active) return null;
+        const j = gs.players.get(s.id);
+        return j ? { gs, playerId: j.playerId } : null;
+    };
+
+    // L'espion n'envoie que le NOMBRE : le mot se dit à la voix, et il est
+    // public de toute façon. C'est ce qui évite la saisie de texte au doigt.
+    socket.on('codanime-indice', (data) => {
+        const q = joueurDe(socket);
+        if (!q) return;
+        const r = codanime.annoncerIndice(q.gs, q.playerId, data && data.nombre);
+        if (!r.ok) socket.emit('codanime-refus', r);
+    });
+
+    socket.on('codanime-vote', (data) => {
+        const q = joueurDe(socket);
+        if (!q) return;
+        const idx = parseInt(data && data.i, 10);
+        if (!Number.isInteger(idx)) return;
+        const r = codanime.voter(q.gs, q.playerId, idx);
+        if (!r.ok) socket.emit('codanime-refus', r);
+    });
+
+    // « On s'arrête » se vote comme une carte, au même seuil — sinon
+    // l'équipe ne peut jamais renoncer, et c'est la moitié de la stratégie.
+    socket.on('codanime-passer', () => {
+        const q = joueurDe(socket);
+        if (!q) return;
+        codanime.passer(q.gs, q.playerId);
+    });
+
+    // La reprise après une coupure. ⚠️ Elle repasse par `etatPourLeClient`,
+    // qui décide de ce que ce joueur-là a le droit de voir : se reconnecter
+    // ne doit pas être une façon de recevoir la grille de l'espion.
+    socket.on('codanime-get-state', () => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.codanime.active) return;
+        const j = gameState.players.get(socket.id);
+        if (!j) return;
+        socket.emit('codanime-etat', codanime.etatPourLeClient(gameState, j.playerId));
     });
 
     // ⚡ RUSH — la saisie se valide sans touche Entrée : le client envoie ce

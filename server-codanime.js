@@ -320,8 +320,382 @@ function agentsPresents(etat, equipe, estPresent) {
     return estPresent ? l.filter(estPresent) : l;
 }
 
+// ══════════════════════════════════════════════════════════════
+// 🔌 Le raccord au salon
+// ══════════════════════════════════════════════════════════════
+function creerModule(deps) {
+    // ⚠️ `getIo` et non `io` : au moment où ce module est construit, le
+    // serveur de sockets n'existe pas encore. On va le chercher au moment de
+    // s'en servir — c'est-à-dire une fois une partie lancée.
+    const { diffuser, getIo, urlImage, recordFinishedGame, vivier } = deps;
+
+    const nettoyerTimeouts = (etat) => {
+        etat.timeouts.forEach(t => clearTimeout(t));
+        etat.timeouts = [];
+    };
+    const plusTard = (etat, fn, ms) => {
+        const t = setTimeout(fn, ms);
+        etat.timeouts.push(t);
+        return t;
+    };
+
+    const joueursDuSalon = (gameState) => [...gameState.players.values()];
+    const nomDe = (gameState, playerId) => {
+        for (const p of gameState.players.values()) {
+            if (p.playerId === playerId) return p.username;
+        }
+        return '—';
+    };
+    // ⚠️ `gameState.players` est indexée par socket.id, jamais par playerId :
+    // un `get(playerId)` rend toujours undefined. On cherche sur le CHAMP.
+    const estPresent = (gameState) => {
+        const vus = new Set(joueursDuSalon(gameState).map(p => p.playerId));
+        return (playerId) => vus.has(playerId);
+    };
+
+    // ── La composition ─────────────────────────────────────────────
+    //
+    // L'hôte la décide dans le salon. S'il n'a rien touché, on répartit
+    // nous-mêmes : un mode qui refuse de démarrer parce que personne n'a
+    // cliqué sur les bons boutons est un mode qu'on ne lance jamais.
+    function composerAuto(gameState) {
+        const etat = gameState.codanime;
+        const ids = joueursDuSalon(gameState).map(p => p.playerId);
+        const melanges = melanger(ids, Math.random);
+        etat.equipes = { A: { espion: null, agents: [] }, B: { espion: null, agents: [] } };
+        let tour = 'A';
+        for (const id of melanges) {
+            const e = etat.equipes[tour];
+            if (!e.espion) e.espion = id;
+            else if (e.agents.length < AGENTS_MAX) e.agents.push(id);
+            else {
+                const autre = etat.equipes[tour === 'A' ? 'B' : 'A'];
+                if (!autre.espion) autre.espion = id;
+                else if (autre.agents.length < AGENTS_MAX) autre.agents.push(id);
+                // Au-delà, le joueur reste spectateur : le mode plafonne à 8.
+            }
+            tour = tour === 'A' ? 'B' : 'A';
+        }
+    }
+
+    // Une composition est jouable s'il y a deux espions et au moins un agent
+    // de chaque côté.
+    function compositionValide(etat) {
+        for (const e of ['A', 'B']) {
+            if (!etat.equipes[e].espion) return false;
+            if (!etat.equipes[e].agents.length) return false;
+        }
+        return true;
+    }
+
+    // ── Les vues ───────────────────────────────────────────────────
+    function vueDesEquipes(gameState) {
+        const etat = gameState.codanime;
+        const paquet = {};
+        for (const e of ['A', 'B']) {
+            paquet[e] = {
+                espion: etat.equipes[e].espion,
+                espionNom: etat.equipes[e].espion ? nomDe(gameState, etat.equipes[e].espion) : null,
+                agents: etat.equipes[e].agents.map(id => ({ playerId: id, username: nomDe(gameState, id) })),
+                restant: etat.restant[e],
+            };
+        }
+        return paquet;
+    }
+
+    // ⚠️ La seule fonction qui décide QUI VOIT QUOI. Un agent ne reçoit
+    // jamais les camps des cartes cachées — pas même pour les masquer à
+    // l'affichage, ce qui laisserait la clef dans l'onglet réseau.
+    function etatPourLeClient(gameState, playerId) {
+        const etat = gameState.codanime;
+        const espion = estEspion(etat, playerId);
+        const monEquipe = equipeDe(etat, playerId);
+        const ordre = ordreFranchissement(etat);
+        const retenues = engagees(etat);
+
+        return {
+            active: etat.active,
+            phase: etat.phase,
+            tourDe: etat.tourDe,
+            monEquipe,
+            jeSuisEspion: espion,
+            grille: espion ? grillePourEspion(etat, urlImage) : grillePourAgent(etat, urlImage),
+            equipes: vueDesEquipes(gameState),
+            indice: etat.indice,
+            // Les marques, visibles de TOUS : c'est la convergence qui se
+            // regarde monter, et c'est elle qui remplace les mains tendues
+            // autour d'une table.
+            votes: etat.votes,
+            // L'ordre affiché ① ② ③ — et les cartes au-delà du quota, que le
+            // client grise pour qu'on voie qu'on s'est trop engagé.
+            ordre,
+            retenues,
+            seuil: seuil(agentsPresents(etat, etat.tourDe || 'A', estPresent(gameState)).length),
+            historique: etat.historique,
+            restant: etat.restant,
+            // ⚠️ Un RESTE en millisecondes, jamais une échéance : l'horloge du
+            // client n'est pas celle du serveur. Voir la note de Rush.
+            reste: etat.finTour ? Math.max(0, etat.finTour - Date.now()) : 0,
+            chrono: etat.chrono,
+            dureeTour: etat.dureeTour,
+            gagnant: etat.gagnant,
+            manche: etat.manche,
+        };
+    }
+
+    // ⚠️ Chacun reçoit SA vue, donc PAS de diffusion groupée : l'espion voit
+    // les 25 camps, l'agent n'en voit aucun. Un `diffuser()` unique enverrait
+    // la même charge à tout le monde, c'est-à-dire la clef à tout le monde.
+    function diffuserEtat(gameState) {
+        const io = getIo && getIo();
+        if (!io) return;
+        for (const [sid, p] of gameState.players) {
+            const socket = io.sockets.sockets.get(sid);
+            if (socket) socket.emit('codanime-etat', etatPourLeClient(gameState, p.playerId));
+        }
+    }
+
+    // ── Le déroulé ─────────────────────────────────────────────────
+    function ouvrirTour(gameState, equipe) {
+        const etat = gameState.codanime;
+        etat.tourDe = equipe;
+        etat.phase = 'indice';
+        etat.indice = null;
+        etat.votes = {};
+        etat.franchiA = {};
+        etat.file = [];
+        etat.finTour = 0;
+        diffuserEtat(gameState);
+    }
+
+    function demarrer(gameState) {
+        const etat = gameState.codanime;
+        if (etat.active) return { ok: false, raison: 'deja-en-cours' };
+
+        if (!compositionValide(etat)) composerAuto(gameState);
+        if (!compositionValide(etat)) {
+            return { ok: false, raison: 'composition' };
+        }
+
+        const premier = Math.random() < 0.5 ? 'A' : 'B';
+        etat.grille = construireGrille(vivier(), premier, Math.random);
+        etat.restant = {
+            A: premier === 'A' ? CAMP_PREMIER : CAMP_SECOND,
+            B: premier === 'B' ? CAMP_PREMIER : CAMP_SECOND,
+        };
+        etat.historique = [];
+        etat.gagnant = null;
+        etat.manche++;
+        etat.active = true;
+        gameState.inProgress = true;
+        gameState.winnerScreenData = null;
+
+        diffuser(gameState, 'codanime-debut', { premier });
+        ouvrirTour(gameState, premier);
+        return { ok: true, premier };
+    }
+
+    // L'espion annonce SON NOMBRE. Le mot, lui, se dit à la voix.
+    function annoncerIndice(gameState, playerId, nombre) {
+        const etat = gameState.codanime;
+        if (!etat.active || etat.phase !== 'indice') return { ok: false, raison: 'phase' };
+        if (etat.equipes[etat.tourDe].espion !== playerId) return { ok: false, raison: 'pas-espion' };
+
+        const n = parseInt(nombre, 10);
+        if (!Number.isInteger(n) || n < 1) return { ok: false, raison: 'nombre' };
+        // ⚠️ Borné par le plafond ET par ce qu'il reste à trouver : annoncer 4
+        // quand il ne reste que 2 cartes n'a aucun sens, et laisserait engager
+        // plus de cartes que l'équipe n'en possède.
+        const max = Math.min(INDICE_MAX, etat.restant[etat.tourDe]);
+        if (n > max) return { ok: false, raison: 'trop-grand', max };
+
+        etat.indice = { nombre: n };
+        etat.phase = 'vote';
+        etat.finTour = etat.chrono ? Date.now() + etat.dureeTour * 1000 : 0;
+        if (etat.chrono) {
+            plusTard(etat, () => cloturer(gameState), etat.dureeTour * 1000);
+        }
+        diffuserEtat(gameState);
+        return { ok: true, nombre: n };
+    }
+
+    function voter(gameState, playerId, idx) {
+        const etat = gameState.codanime;
+        if (!etat.active || etat.phase !== 'vote') return { ok: false, raison: 'phase' };
+        const monEquipe = equipeDe(etat, playerId);
+        if (monEquipe !== etat.tourDe) return { ok: false, raison: 'pas-ton-tour' };
+        // ⚠️ L'espion ne vote pas et ne pose aucune marque : il désignerait
+        // du doigt, ce qui est exactement ce que l'indice doit remplacer.
+        if (estEspion(etat, playerId)) return { ok: false, raison: 'espion-ne-vote-pas' };
+
+        const nbAgents = agentsPresents(etat, monEquipe, estPresent(gameState)).length;
+        const r = basculerVote(etat, playerId, idx, nbAgents, Date.now());
+        if (!r.ok) return r;
+
+        diffuserEtat(gameState);
+
+        // Quota atteint → on résout tout de suite, sans faire attendre une
+        // équipe décidée. C'est « le premier des deux » avec le chrono.
+        if (engagees(etat).length >= etat.indice.nombre) {
+            plusTard(etat, () => cloturer(gameState), 400);
+        }
+        return r;
+    }
+
+    // Les agents peuvent renoncer : « on s'arrête » se vote comme une carte,
+    // au même seuil. Sans ça l'équipe ne peut jamais choisir de s'arrêter.
+    function passer(gameState, playerId) {
+        const etat = gameState.codanime;
+        if (!etat.active || etat.phase !== 'vote') return { ok: false, raison: 'phase' };
+        if (equipeDe(etat, playerId) !== etat.tourDe) return { ok: false, raison: 'pas-ton-tour' };
+        if (estEspion(etat, playerId)) return { ok: false, raison: 'espion-ne-vote-pas' };
+
+        etat.passe = etat.passe || [];
+        if (etat.passe.includes(playerId)) etat.passe = etat.passe.filter(p => p !== playerId);
+        else etat.passe.push(playerId);
+
+        const nbAgents = agentsPresents(etat, etat.tourDe, estPresent(gameState)).length;
+        diffuserEtat(gameState);
+        if (etat.passe.length >= seuil(nbAgents)) cloturer(gameState);
+        return { ok: true };
+    }
+
+    function cloturer(gameState) {
+        const etat = gameState.codanime;
+        if (!etat.active || etat.phase !== 'vote') return;
+        nettoyerTimeouts(etat);
+
+        etat.file = engagees(etat);
+        etat.passe = [];
+        etat.phase = 'revelation';
+        etat.finTour = 0;
+
+        etat.historique.push({
+            equipe: etat.tourDe,
+            nombre: etat.indice ? etat.indice.nombre : 0,
+            engagees: etat.file.length,
+            trouvees: 0,
+        });
+
+        diffuserEtat(gameState);
+        plusTard(etat, () => revelerSuivante(gameState), BATTEMENT);
+    }
+
+    function revelerSuivante(gameState) {
+        const etat = gameState.codanime;
+        if (!etat.active || etat.phase !== 'revelation') return;
+
+        if (!etat.file.length) { finirTour(gameState); return; }
+
+        const idx = etat.file.shift();
+        const issue = revelerCarte(etat, idx);
+        const ligne = etat.historique[etat.historique.length - 1];
+        if (issue === 'bonne' && ligne) ligne.trouvees++;
+
+        diffuser(gameState, 'codanime-carte', {
+            i: idx,
+            camp: etat.grille[idx].camp,
+            issue,
+            restant: etat.restant,
+        });
+        diffuserEtat(gameState);
+
+        if (issue === 'assassin') { terminer(gameState, 'assassin', etat.tourDe); return; }
+
+        const gagne = vainqueur(etat, null);
+        if (gagne) { terminer(gameState, 'complet', null, gagne); return; }
+
+        // ⚠️ La chaîne casse à la PREMIÈRE carte qui n'est pas la leur, et les
+        // cartes engagées restantes ne sont jamais révélées. C'est tout le
+        // prix de la gourmandise : engager trois cartes, c'est accepter de
+        // n'en toucher aucune au-delà de la première erreur.
+        if (issue !== 'bonne') { etat.file = []; finirTour(gameState); return; }
+
+        plusTard(etat, () => revelerSuivante(gameState), BATTEMENT);
+    }
+
+    function finirTour(gameState) {
+        const etat = gameState.codanime;
+        if (!etat.active) return;
+        nettoyerTimeouts(etat);
+        ouvrirTour(gameState, equipeAdverse(etat.tourDe));
+    }
+
+    function terminer(gameState, raison, parAssassin, gagnantDirect) {
+        const etat = gameState.codanime;
+        if (!etat.active) return;
+        etat.active = false;
+        nettoyerTimeouts(etat);
+        gameState.inProgress = false;
+
+        const gagnant = gagnantDirect || vainqueur(etat, parAssassin);
+        etat.gagnant = gagnant;
+        etat.phase = 'fini';
+
+        const fin = {
+            gameMode: 'codanime',
+            gagnant,
+            raison: raison || null,
+            equipes: vueDesEquipes(gameState),
+            // Tout se dévoile à la fin : c'est le moment « ahhh c'était ÇA »,
+            // et la capture d'écran que les gens postent.
+            grille: grillePourEspion(etat, urlImage),
+            historique: etat.historique,
+        };
+
+        diffuser(gameState, 'codanime-fin', fin);
+        // ⚠️ Le podium doit survivre à un rafraîchissement, comme partout
+        // ailleurs : sans ça, celui qui recharge est renvoyé au salon pendant
+        // que les autres lisent encore le résultat.
+        gameState.winnerScreenData = fin;
+
+        if (recordFinishedGame) {
+            const joueurs = [].concat(
+                etat.equipes.A.espion ? [etat.equipes.A.espion] : [], etat.equipes.A.agents,
+                etat.equipes.B.espion ? [etat.equipes.B.espion] : [], etat.equipes.B.agents);
+            recordFinishedGame({
+                mode: 'codanime',
+                playersCount: joueurs.length,
+                winnerName: gagnant ? ('Équipe ' + gagnant) : null,
+                duration: 0,
+                gameState,
+            });
+        }
+    }
+
+    // ⚠️ Les votes d'un joueur parti RESTENT sur le plateau — décision
+    // assumée. Conséquence à connaître : à trois agents dont un parti, le
+    // seuil reste 2, donc un agent vivant qui clique une carte déjà marquée
+    // par l'absent l'engage à lui seul. L'hôte peut toujours arrêter la
+    // partie, comme dans les autres modes.
+    function quitter(gameState, playerId) {
+        const etat = gameState.codanime;
+        if (!etat.active) return;
+        diffuserEtat(gameState);
+    }
+
+    function arreter(gameState) {
+        const etat = gameState.codanime;
+        nettoyerTimeouts(etat);
+        etat.active = false;
+        etat.phase = 'repos';
+        etat.grille = [];
+        etat.votes = {};
+        etat.franchiA = {};
+        etat.file = [];
+        etat.passe = [];
+    }
+
+    return {
+        demarrer, annoncerIndice, voter, passer, cloturer,
+        quitter, arreter, terminer,
+        etatPourLeClient, diffuserEtat, vueDesEquipes,
+        composerAuto, compositionValide,
+    };
+}
+
 module.exports = {
-    etatNeuf,
+    etatNeuf, creerModule,
     // Le moteur, éprouvable sans serveur
     seuil, configJouable, melanger,
     tirerPersonnages, distribuerCamps, construireGrille,

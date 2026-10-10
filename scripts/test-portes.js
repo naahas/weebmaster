@@ -73,7 +73,7 @@ const salons = () => fetch(BASE + '/api/home-stats').then(r => r.json()).then(s 
     // est refusé par construction — mais c'est précisément ce qu'on vérifie :
     // le jour où quelqu'un la retourne en liste noire « pour simplifier », ce
     // sont ces lignes qui le disent.
-    for (const mode of ['rush', 'collect', 'ascension', 'choice']) {
+    for (const mode of ['rush', 'collect', 'ascension', 'choice', 'codanime']) {
         const ouvert = await poste('/admin/toggle-game', { lobbyMode: mode });
         if (!ouvert.body.hostToken) {
             check(mode + ' : ouverture', false, 'HTTP ' + ouvert.status);

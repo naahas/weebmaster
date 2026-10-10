@@ -39,6 +39,7 @@
     "test:choice-salon": "node scripts/test-choice-salon.js",
     "test:collect-salon": "node scripts/test-collect-salon.js",
     "test:codanime": "node scripts/test-codanime.js",
+    "test:codanime-salon": "node scripts/test-codanime-salon.js",
     "check:vue": "node scripts/verif-calculees.js && node scripts/verif-appels.js && node scripts/verif-panneau.js",
     "test:rush-mult": "node scripts/test-rush-multiplicateur.js",
     "test:preuve": "node scripts/test-preuve.js",
