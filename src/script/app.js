@@ -379,6 +379,17 @@ createApp({
                 // en couleur, sans rien avoir à défaire pour jouer.
                 { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: !EN_LOCAL,
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
+                // 🕵️ Le PREMIER mode purement par équipe du site — d'où le
+                // « Équipe » tout court, là où le Classique annonce
+                // « Solo / Équipe » parce qu'il bascule entre les deux.
+                //
+                // ⚠️ Le plancher de 4 n'est pas cosmétique : il faut un espion
+                // ET un agent de chaque côté, sinon personne ne peut voter.
+                // Le serveur refuse d'ailleurs de démarrer en dessous.
+                // Le plafond de 8 vient des rôles : 2 espions + 3 agents par
+                // camp. Au-delà, on resterait spectateur.
+                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo.webp', soon: !EN_LOCAL,
+                  desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],

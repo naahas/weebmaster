@@ -7382,6 +7382,11 @@ body.game-active:has(.poll-game-container) #particles-js {
    doré, vert, blanc, gris bleuté, bleu et lavande étaient pris. */
 .v2-mode-row.mode-choice.active    { background: rgba(244, 114, 182, 0.09); border-color: rgba(244, 114, 182, 0.42); }
 .v2-mode-row.mode-choice.active .v2-mode-row-bar { background: #f472b6; box-shadow: 0 0 0.8rem rgba(244, 114, 182, 0.6); }
+/* 🕵️ Le marron clair de Codanime. ⚠️ Il frôle le doré du Classique en TEINTE
+   (28° contre 45°), mais il en est très loin en SATURATION — 43 % contre
+   100 %. Cest ce qui les sépare à lœil : lun est vif, lautre est terreux. */
+.v2-mode-row.mode-codanime.active  { background: rgba(191, 138, 95, 0.09); border-color: rgba(191, 138, 95, 0.42); }
+.v2-mode-row.mode-codanime.active .v2-mode-row-bar { background: #bf8a5f; box-shadow: 0 0 0.8rem rgba(191, 138, 95, 0.6); }
 
 .v2-mode-preview {
     position: relative;
@@ -7410,6 +7415,7 @@ body.game-active:has(.poll-game-container) #particles-js {
    règle en « color-mix » qui le dérive de `--mode-color`. Le poser deux fois
    obligerait à retoucher deux endroits le jour où le rose bouge. */
 .v2-mode-preview.mode-choice    { box-shadow: 0 1rem 3rem rgba(244, 114, 182, 0.13); }
+.v2-mode-preview.mode-codanime  { box-shadow: 0 1rem 3rem rgba(191, 138, 95, 0.13); }
 
 /* Personnage détouré : au premier plan, entier, débordant du cadre par le haut */
 .v2-mode-char {
@@ -8035,6 +8041,7 @@ body.game-active:has(.poll-game-container) #particles-js {
    de mode, et son noir aurait éteint les trois d'un coup si la classe
    était revenue. */
 .v2-mode-preview.mode-choice    { --mode-color: #f472b6; }
+.v2-mode-preview.mode-codanime  { --mode-color: #bf8a5f; }
 /* La v1 donnait du rouge à Ascension. La règle vivait après la nouvelle et
    la recouvrait : c'est elle qui teintait le filet et les particules. */
 .v2-mode-preview.mode-duel      { --mode-color: #60a5fa; }
@@ -8091,6 +8098,7 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-mode-preview.mode-rush,
 .v2-mode-preview.mode-ascension,
 .v2-mode-preview.mode-choice,
+.v2-mode-preview.mode-codanime,
 .v2-mode-preview.mode-bombanime { border-color: color-mix(in srgb, var(--mode-color) 38%, transparent); }
 
 /* Illustration sans fond transparent : on la cadre dans le panneau au lieu de
@@ -8913,6 +8921,8 @@ input, textarea,
 .v2-mode-badge.mode-bombanime .v2-mode-badge-dot { background: #4ade80; box-shadow: 0 0 0.6rem #4ade80; }
 .v2-mode-badge.mode-choice { border-color: rgba(244, 114, 182, 0.4); }
 .v2-mode-badge.mode-choice .v2-mode-badge-dot { background: #f472b6; box-shadow: 0 0 0.6rem #f472b6; }
+.v2-mode-badge.mode-codanime { border-color: rgba(191, 138, 95, 0.4); }
+.v2-mode-badge.mode-codanime .v2-mode-badge-dot { background: #bf8a5f; box-shadow: 0 0 0.6rem #bf8a5f; }
 
 /* Coin haut droit du salon : badge de mode + fermeture */
 .v2-room-topright { display: flex; align-items: center; gap: 0.6rem; }
@@ -11480,6 +11490,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-recent-row .mode.mode-rivalry { color: rgba(167, 139, 250, 0.75); }
 .v2-recent-row .mode.mode-bombanime { color: rgba(74, 222, 128, 0.75); }
 .v2-recent-row .mode.mode-choice { color: rgba(244, 114, 182, 0.75); }
+.v2-recent-row .mode.mode-codanime { color: rgba(191, 138, 95, 0.8); }
 
 /* L'affluence, en chiffre discret suivi d'une silhouette */
 /* Depuis quand : discret, il ne doit pas concurrencer le mode */
@@ -13540,6 +13551,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-astuce-mode.mode-ascension { color: #7fb4ff; }
 .v2-astuce-mode.mode-collect   { color: #c3c9d4; }
 .v2-astuce-mode.mode-choice    { color: #f472b6; }
+.v2-astuce-mode.mode-codanime  { color: #bf8a5f; }
 
 /* ⚠️ La transition, en `mode="out-in"` : l'ancienne phrase s'efface
    AVANT que la nouvelle entre. Un fondu croisé aurait demandé de les
