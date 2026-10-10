@@ -8197,10 +8197,18 @@ body.game-active:has(.poll-game-container) #particles-js {
        « object-fit: contain », ce qui est dessiné tient dedans et peut être
        bien plus petit. */
     .v2-mode-char.char-codanime {
-        max-width: 78%;
-        height: 121%;
+        /* ⚠️ Les DEUX bornes montent ensemble. Son sujet fait 1,03 de
+           rapport, donc la largeur mord la première : ne relever que la
+           hauteur n'aurait rien changé du tout. */
+        max-width: 82%;
+        height: 126%;
         bottom: -4%;
-        right: -1%;
+        /* Décalé plus à DROITE que les autres, et c'est voulu : à hauteur
+           égale son dessin déborde plus vers la gauche, où se trouve la
+           description. Mesuré — à 133 %, sa jambe passait sur « sur-le-champ ».
+           Le repère est le chevauchement de Mitsuri, 168 px, qui se lit très
+           bien parce que son contour y est transparent. */
+        right: -4%;
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur

@@ -51,8 +51,17 @@ const AGENTS_MAX = 3;
 // muettes. Mesuré sur le vivier d'amorce.
 const MAX_PAR_SERIE = 3;
 
-const DUREES_TOUR = [60, 90, 120];
+// ⚠️ Un INTERVALLE, pas une liste de trois valeurs. Le temps qu'il faut à un
+// espion dépend trop du salon — quatre habitués vont trois fois plus vite que
+// quatre curieux — pour qu'on puisse deviner trois bons crans. Le pas de 15 s
+// garde le curseur lisible sans lui donner 150 positions.
+const DUREE_MIN = 30;
+const DUREE_MAX = 180;
+const DUREE_PAS = 15;
 const DUREE_TOUR_DEFAUT = 90;
+function dureeValide(d) {
+    return Number.isInteger(d) && d >= DUREE_MIN && d <= DUREE_MAX && d % DUREE_PAS === 0;
+}
 // Le battement entre deux cartes d'une même salve. C'est le suspense : on ne
 // sait pas encore si le tour continue. Trop court, la salve devient un bloc.
 const BATTEMENT = 1400;
@@ -704,5 +713,5 @@ module.exports = {
     grillePourAgent, grillePourEspion, estEspion, equipeDe, agentsPresents,
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
     INDICE_MAX, AGENTS_MAX, MAX_PAR_SERIE,
-    DUREES_TOUR, DUREE_TOUR_DEFAUT, BATTEMENT,
+    DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, dureeValide, BATTEMENT,
 };

@@ -290,6 +290,72 @@
 .cod-histo-l.camp-A { border-color: rgba(47, 155, 255, 0.4); color: var(--cod-a); }
 .cod-histo-l.camp-B { border-color: rgba(255, 59, 92, 0.4); color: var(--cod-b); }
 
+/* ── Le bouton « Mélanger » ─────────────────────────────────────── */
+/* ⚠️ Il est VISIBLE en permanence, juste atténué, et il s'allume au
+   survol. Le cacher complètement jusqu'au survol le rendrait introuvable
+   au doigt — un téléphone n'a pas de survol, et c'est précisément là que
+   recomposer les équipes à la main est le plus pénible. */
+.cod-set-equipes { position: relative; }
+.cod-melange {
+    margin-left: auto;
+    padding: 0.22rem 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--cod-brun, #bf8a5f);
+    font-size: 0.7rem; font-weight: 700;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+.cod-set-equipes:hover .cod-melange,
+.cod-melange:focus-visible {
+    opacity: 1;
+    border-color: rgba(191, 138, 95, 0.6);
+    background: rgba(191, 138, 95, 0.12);
+}
+
+/* ── Qui est dans quelle équipe ─────────────────────────────────── */
+.cod-roles { display: flex; flex-direction: column; gap: 0.18rem; padding: 0.1rem 0 0.35rem; }
+.cod-role {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.2rem 0.3rem 0.2rem 0.5rem;
+    border-radius: 0.4rem;
+    border-left: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.025);
+}
+.cod-role.est-A { border-left-color: var(--cod-a); }
+.cod-role.est-B { border-left-color: var(--cod-b); }
+
+.cod-role-nom {
+    flex: 1; min-width: 0;
+    font-size: 0.72rem;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cod-role.est-sans .cod-role-nom { opacity: 0.45; }
+
+.cod-role-btns { display: inline-flex; gap: 0.18rem; flex: 0 0 auto; }
+.cod-role-b {
+    width: 1.5rem; height: 1.5rem;
+    display: grid; place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.32rem;
+    background: transparent; color: rgba(255, 255, 255, 0.55);
+    font-size: 0.64rem; font-weight: 800;
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.cod-role-b:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.38); color: #fff; }
+.cod-role-b:disabled { opacity: 0.25; cursor: default; }
+.cod-role-b.camp-a.on { background: var(--cod-a); border-color: var(--cod-a); color: #0b1016; }
+.cod-role-b.camp-b.on { background: var(--cod-b); border-color: var(--cod-b); color: #190a0e; }
+.cod-role-b.espion.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
+.cod-role-b svg {
+    width: 0.78rem; height: 0.78rem;
+    fill: none; stroke: currentColor; stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
 /* ── La composition, dans le tiroir du salon ────────────────────── */
 .cod-compo { display: flex; gap: 0.5rem; padding: 0.2rem 0 0.4rem; }
 .cod-compo-camp {

@@ -969,6 +969,12 @@ function questionSansReponse(q) {
 function plafondDuSalon(gameState) {
     if (gameState.lobbyMode === 'bombanime') return BOMBANIME_CONFIG.MAX_PLAYERS;
     if (gameState.lobbyMode === 'collect') return collect.CONFIG.MAX_JOUEURS;
+    // 🕵️ Codanime : 2 espions + 3 agents par camp. Au-delà, le joueur
+    // resterait spectateur toute la partie sans qu'on le lui dise — la carte
+    // du mode annonce « 4 – 8 », la porte doit tenir la même promesse.
+    if (gameState.lobbyMode === 'codanime') {
+        return 2 * (1 + codanimeMoteur.AGENTS_MAX);
+    }
     return Infinity;
 }
 
@@ -2969,8 +2975,11 @@ app.post('/admin/codanime/set-duree', (req, res) => {
     const gameState = req.room;
     if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
     const d = parseInt(req.body && req.body.duree, 10);
-    if (!codanimeMoteur.DUREES_TOUR.includes(d)) {
-        return res.status(400).json({ error: 'Durée inconnue' });
+    // ⚠️ On vérifie aussi le PAS, pas seulement les bornes : le curseur ne
+    // peut produire que des multiples de 15, mais la route s'appelle à la
+    // main aussi — et une durée de 83 s n'aurait aucune raison d'exister.
+    if (!codanimeMoteur.dureeValide(d)) {
+        return res.status(400).json({ error: 'Durée hors bornes' });
     }
     gameState.codanime.dureeTour = d;
     diffuserReglagesCodanime(gameState);

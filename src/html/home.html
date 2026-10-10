@@ -890,16 +890,19 @@
 
                                 <!-- ⚠️ Un seul chrono, pour le TOUR ENTIER, et non un par
                                      carte : couper une équipe au milieu de sa salve est
-                                     la pire sensation possible. -->
+                                     la pire sensation possible.
+                                     ⚠️ Un CURSEUR et non trois boutons : le temps qu'il
+                                     faut à un espion dépend trop du salon — quatre
+                                     habitués vont trois fois plus vite que quatre
+                                     curieux — pour qu'on devine trois bons crans. -->
                                 <div class="v2-set" v-if="cod.chrono">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
                                     <span class="v2-set-label">Durée du tour</span>
-                                    <span class="v2-set-value">{{ cod.dureeTour }}s</span>
-                                    <span class="v2-set-opts">
-                                        <button v-for="d in cod.barDurees" :key="d"
-                                                class="v2-set-opt" :class="{ on: cod.dureeTour === d }"
-                                                @click="applySetting('/admin/codanime/set-duree', { duree: d }, () => cod.dureeTour = d)">{{ d }}s</button>
-                                    </span>
+                                    <input class="v2-range" type="range" min="30" max="180" step="15"
+                                           :value="cod.dureeTour"
+                                           @input="cod.dureeTour = parseInt($event.target.value)"
+                                           @change="applySetting('/admin/codanime/set-duree', { duree: cod.dureeTour }, () => {})">
+                                    <span class="v2-set-value num">{{ cod.dureeTour }}s</span>
                                 </div>
 
                                 <!-- La composition. ⚠️ Elle n'est PAS un réglage comme les
@@ -907,25 +910,59 @@
                                      la décide avant le départ. Le serveur compose
                                      lui-même si personne n'a rien touché — un mode qui
                                      refuse de démarrer faute de clics est un mode qu'on
-                                     ne lance jamais. -->
-                                <button class="v2-set v2-set-porte" @click="applySetting('/admin/codanime/melanger', {}, () => {})">
+                                     ne lance jamais.
+                                     ⚠️ « Mélanger » est un BOUTON dans la ligne, pas la
+                                     ligne elle-même : une ligne entièrement cliquable au
+                                     milieu de réglages qui ne le sont pas se déclenche
+                                     par accident en lisant la composition juste en
+                                     dessous. -->
+                                <div class="v2-set cod-set-equipes">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
                                     <span class="v2-set-label">Équipes</span>
-                                    <span class="v2-set-value">Mélanger</span>
-                                </button>
+                                    <button class="cod-melange"
+                                            @click="applySetting('/admin/codanime/melanger', {}, () => {})">Mélanger</button>
+                                </div>
 
+                                <!-- Qui est où. Une ligne par joueur, et trois cibles :
+                                     le camp bleu, le camp rouge, et la loupe qui en fait
+                                     l'espion de son camp.
+                                     ⚠️ La loupe est DÉSACTIVÉE tant que le joueur n'a pas
+                                     de camp : « espion de rien » n'existe pas, et le
+                                     serveur refuserait — autant que le bouton le dise. -->
+                                <div class="cod-roles" v-if="lobbyPlayers && lobbyPlayers.length">
+                                    <div class="cod-role" v-for="p in lobbyPlayers" :key="p.playerId"
+                                         :class="'est-' + (codCampDe(p.playerId) || 'sans')">
+                                        <span class="cod-role-nom">{{ p.username }}</span>
+                                        <span class="cod-role-btns">
+                                            <button class="cod-role-b camp-a" :class="{ on: codCampDe(p.playerId) === 'A' }"
+                                                    title="Équipe bleue"
+                                                    @click="codPlacer(p.playerId, 'A', 'agent')">B</button>
+                                            <button class="cod-role-b camp-b" :class="{ on: codCampDe(p.playerId) === 'B' }"
+                                                    title="Équipe rouge"
+                                                    @click="codPlacer(p.playerId, 'B', 'agent')">R</button>
+                                            <button class="cod-role-b espion" :class="{ on: codEstEspion(p.playerId) }"
+                                                    :disabled="!codCampDe(p.playerId)"
+                                                    title="En faire l’espion de son camp"
+                                                    @click="codPlacer(p.playerId, codCampDe(p.playerId), 'espion')">
+                                                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/></svg>
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Le récapitulatif, qui dit d'un coup d'œil si la
+                                     partie peut partir : un espion et un agent de chaque
+                                     côté. -->
                                 <div class="cod-compo" v-if="cod.equipes">
                                     <div class="cod-compo-camp camp-a">
                                         <span class="cod-compo-titre">Bleue</span>
-                                        <span class="cod-compo-espion" v-if="cod.equipes.A.espionNom">
-                                            🕵 {{ cod.equipes.A.espionNom }}</span>
+                                        <span class="cod-compo-espion" v-if="cod.equipes.A.espionNom">{{ cod.equipes.A.espionNom }}</span>
                                         <span class="cod-compo-vide" v-else>pas d’espion</span>
                                         <span class="cod-compo-agent" v-for="a in cod.equipes.A.agents" :key="a.playerId">{{ a.username }}</span>
                                     </div>
                                     <div class="cod-compo-camp camp-b">
                                         <span class="cod-compo-titre">Rouge</span>
-                                        <span class="cod-compo-espion" v-if="cod.equipes.B.espionNom">
-                                            🕵 {{ cod.equipes.B.espionNom }}</span>
+                                        <span class="cod-compo-espion" v-if="cod.equipes.B.espionNom">{{ cod.equipes.B.espionNom }}</span>
                                         <span class="cod-compo-vide" v-else>pas d’espion</span>
                                         <span class="cod-compo-agent" v-for="a in cod.equipes.B.agents" :key="a.playerId">{{ a.username }}</span>
                                     </div>

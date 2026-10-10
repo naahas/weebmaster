@@ -257,7 +257,6 @@ createApp({
                 // Réglages du salon
                 chrono: true,
                 dureeTour: 90,
-                barDurees: [60, 90, 120],
                 equipes: { A: { espion: null, espionNom: null, agents: [], restant: 0 },
                            B: { espion: null, espionNom: null, agents: [], restant: 0 } },
 
@@ -5679,6 +5678,41 @@ createApp({
 
         codNomEquipe(e) {
             return e === 'A' ? 'Bleue' : 'Rouge';
+        },
+
+        // ── La composition, côté hôte ──────────────────────────────
+        //
+        // ⚠️ On lit le camp dans `cod.equipes`, qui vient du SERVEUR, et non
+        // dans une table locale : l'hôte n'est pas le seul à bouger les
+        // joueurs — quelqu'un peut partir, et la composition change alors
+        // sans qu'aucun clic n'ait eu lieu ici.
+        codCampDe(playerId) {
+            const e = this.cod.equipes;
+            if (!e) return null;
+            for (const camp of ['A', 'B']) {
+                if (e[camp].espion === playerId) return camp;
+                if ((e[camp].agents || []).some(a => a.playerId === playerId)) return camp;
+            }
+            return null;
+        },
+
+        codEstEspion(playerId) {
+            const e = this.cod.equipes;
+            return !!e && (e.A.espion === playerId || e.B.espion === playerId);
+        },
+
+        codPlacer(playerId, equipe, role) {
+            if (!equipe) return;
+            // Recliquer le camp où l'on est déjà, quand on en est l'espion,
+            // redescend au rang d'agent : sans ça, un espion posé par erreur
+            // ne peut plus redevenir simple agent de son camp.
+            if (role === 'agent' && this.codCampDe(playerId) === equipe
+                && this.codEstEspion(playerId)) {
+                this.applySetting('/admin/codanime/placer',
+                    { playerId, equipe, role: 'agent' }, () => {});
+                return;
+            }
+            this.applySetting('/admin/codanime/placer', { playerId, equipe, role }, () => {});
         },
 
         arreterChronoChoice() {
