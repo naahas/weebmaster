@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="home-rush.css">
     <link rel="stylesheet" href="home-ascension.css">
     <link rel="stylesheet" href="home-collect.css">
+    <link rel="stylesheet" href="home-codanime.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
@@ -867,6 +868,68 @@
                                      grossisse : à trente énoncés, filtrer sur une série
                                      n'en laisse pas de quoi tenir une partie. Le serveur
                                      garde la route et le réglage — ils attendent. -->
+                            </template>
+
+                            <!-- 🕵️ Codanime -->
+                            <template v-else-if="lobbyMode === 'codanime'">
+                                <!-- Le chrono est ALLUMÉ par défaut : l'espion est le
+                                     goulot du mode, une personne réfléchit pendant que
+                                     sept attendent. Sans limite, un tour peut durer
+                                     trois minutes. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+                                    <span class="v2-set-label">Chrono</span>
+                                    <span class="v2-set-value">{{ cod.chrono ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: cod.chrono }"
+                                                @click="applySetting('/admin/codanime/set-chrono', { chrono: true }, () => cod.chrono = true)">Oui</button>
+                                        <button class="v2-set-opt" :class="{ on: !cod.chrono }"
+                                                @click="applySetting('/admin/codanime/set-chrono', { chrono: false }, () => cod.chrono = false)">Non</button>
+                                    </span>
+                                </div>
+
+                                <!-- ⚠️ Un seul chrono, pour le TOUR ENTIER, et non un par
+                                     carte : couper une équipe au milieu de sa salve est
+                                     la pire sensation possible. -->
+                                <div class="v2-set" v-if="cod.chrono">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+                                    <span class="v2-set-label">Durée du tour</span>
+                                    <span class="v2-set-value">{{ cod.dureeTour }}s</span>
+                                    <span class="v2-set-opts">
+                                        <button v-for="d in cod.barDurees" :key="d"
+                                                class="v2-set-opt" :class="{ on: cod.dureeTour === d }"
+                                                @click="applySetting('/admin/codanime/set-duree', { duree: d }, () => cod.dureeTour = d)">{{ d }}s</button>
+                                    </span>
+                                </div>
+
+                                <!-- La composition. ⚠️ Elle n'est PAS un réglage comme les
+                                     autres : elle vit dans l'état de la partie, et l'hôte
+                                     la décide avant le départ. Le serveur compose
+                                     lui-même si personne n'a rien touché — un mode qui
+                                     refuse de démarrer faute de clics est un mode qu'on
+                                     ne lance jamais. -->
+                                <button class="v2-set v2-set-porte" @click="applySetting('/admin/codanime/melanger', {}, () => {})">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                                    <span class="v2-set-label">Équipes</span>
+                                    <span class="v2-set-value">Mélanger</span>
+                                </button>
+
+                                <div class="cod-compo" v-if="cod.equipes">
+                                    <div class="cod-compo-camp camp-a">
+                                        <span class="cod-compo-titre">Bleue</span>
+                                        <span class="cod-compo-espion" v-if="cod.equipes.A.espionNom">
+                                            🕵 {{ cod.equipes.A.espionNom }}</span>
+                                        <span class="cod-compo-vide" v-else>pas d’espion</span>
+                                        <span class="cod-compo-agent" v-for="a in cod.equipes.A.agents" :key="a.playerId">{{ a.username }}</span>
+                                    </div>
+                                    <div class="cod-compo-camp camp-b">
+                                        <span class="cod-compo-titre">Rouge</span>
+                                        <span class="cod-compo-espion" v-if="cod.equipes.B.espionNom">
+                                            🕵 {{ cod.equipes.B.espionNom }}</span>
+                                        <span class="cod-compo-vide" v-else>pas d’espion</span>
+                                        <span class="cod-compo-agent" v-for="a in cod.equipes.B.agents" :key="a.playerId">{{ a.username }}</span>
+                                    </div>
+                                </div>
                             </template>
 
                             <!-- BombAnime -->
@@ -2189,6 +2252,134 @@
                              répétait en travers de ce qu'on est justement resté
                              pour regarder. -->
 
+                    </div>
+                </template>
+
+                <!-- ══════════════════════════════════════════════════
+                     🕵️ CODANIME
+                     ══════════════════════════════════════════════════ -->
+                <template v-if="lobbyMode === 'codanime' && !gameEnded">
+                    <div class="cod" v-if="cod.enCours">
+
+                        <!-- Les deux compteurs, de part et d'autre. Celui de
+                             l'équipe qui joue s'allume : à quatre contre
+                             quatre en vocal, savoir à qui c'est doit se lire
+                             sans écouter. -->
+                        <div class="cod-tete">
+                            <div class="cod-score camp-a" :class="{ actif: cod.tourDe === 'A' }">
+                                <span class="cod-score-n">{{ cod.restant.A }}</span>
+                                <span class="cod-score-l">Bleue</span>
+                            </div>
+
+                            <div class="cod-centre">
+                                <!-- L'indice en cours. ⚠️ Seul le NOMBRE est
+                                     transmis : le mot se dit à la voix, il est
+                                     public de toute façon, et le taper au doigt
+                                     était le frottement à éviter. -->
+                                <div class="cod-indice" v-if="cod.indice">
+                                    <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
+                                    <span class="cod-indice-l">carte{{ cod.indice.nombre > 1 ? 's' : '' }} à trouver</span>
+                                </div>
+                                <!-- ⚠️ « de l’équipe bleue » et non « l’espion
+                                     bleue » : les noms de camp sont féminins
+                                     parce qu’ils qualifient « équipe », et les
+                                     coller à « espion » donnait un accord faux
+                                     à l’écran. -->
+                                <div class="cod-attente" v-else-if="cod.phase === 'indice'">
+                                    L’espion de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }} réfléchit…
+                                </div>
+                                <div class="cod-attente" v-else-if="cod.phase === 'revelation'">
+                                    On retourne…
+                                </div>
+                                <!-- Le temps, en trait, sans chiffre — même
+                                     échelle que la mèche de BombAnime. -->
+                                <div class="cod-jauge" v-if="cod.chrono && cod.reste > 0"
+                                     :class="{ urgence: cod.reste <= 10000 }">
+                                    <span class="cod-jauge-fil"
+                                          :style="{ width: Math.min(100, (cod.reste / (cod.dureeTour * 1000)) * 100) + '%' }"></span>
+                                </div>
+                            </div>
+
+                            <div class="cod-score camp-b" :class="{ actif: cod.tourDe === 'B' }">
+                                <span class="cod-score-n">{{ cod.restant.B }}</span>
+                                <span class="cod-score-l">Rouge</span>
+                            </div>
+                        </div>
+
+                        <!-- La grille. Cinq par cinq.
+                             ⚠️ Les portraits arrivent SOUS JETON : leur nom de
+                             fichier dirait qui est le personnage, et le mode
+                             n'affiche justement pas les noms. -->
+                        <div class="cod-grille" :class="{ espion: cod.jeSuisEspion }">
+                            <button v-for="c in cod.grille" :key="c.i"
+                                    class="cod-carte" :class="codClasseCarte(c)"
+                                    :disabled="!codPeutVoter || c.revelee"
+                                    @click="codVoter(c.i)">
+                                <img class="cod-portrait" :src="c.img" alt="" draggable="false">
+                                <!-- Le numéro ① ② ③ : l'ordre dans lequel les
+                                     cartes se retourneront. Il est AFFICHÉ, et
+                                     c'est tout l'intérêt — un ordre invisible
+                                     qui décide de qui survit à la chaîne serait
+                                     inacceptable. -->
+                                <span class="cod-num" v-if="codNumero(c.i)">{{ codNumero(c.i) }}</span>
+                                <!-- Les voix, visibles de tous : c'est la
+                                     convergence qu'on regarde monter, et elle
+                                     remplace les mains tendues autour d'une
+                                     table. -->
+                                <span class="cod-voix" v-if="codVoix(c.i) && !c.revelee">
+                                    {{ codVoix(c.i) }}<small>/{{ cod.seuil }}</small>
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- Le pied : ce que j'ai à faire, selon mon rôle. -->
+                        <div class="cod-pied">
+                            <!-- L'espion du tour annonce son nombre. -->
+                            <div class="cod-annonce" v-if="codMonTourDAnnoncer">
+                                <span class="cod-annonce-l">Dis ton mot à voix haute, puis choisis le nombre</span>
+                                <span class="cod-annonce-n">
+                                    <button v-for="n in codMaxIndice" :key="n"
+                                            class="cod-n" :class="{ on: cod.saisieNombre === n }"
+                                            @click="cod.saisieNombre = n">{{ n }}</button>
+                                </span>
+                                <button class="cod-valider" @click="codAnnoncer">Annoncer</button>
+                            </div>
+
+                            <!-- Les agents du tour votent. -->
+                            <div class="cod-actions" v-else-if="codPeutVoter">
+                                <span class="cod-aide">
+                                    Marque jusqu’à {{ cod.indice ? cod.indice.nombre : 1 }} carte(s) ·
+                                    {{ cod.seuil }} voix pour en engager une
+                                </span>
+                                <button class="cod-stop" @click="codPasser">On s’arrête</button>
+                            </div>
+
+                            <!-- Tous les autres regardent. On le dit, plutôt que
+                                 de laisser un pied vide qui ressemble à un bug. -->
+                            <div class="cod-actions" v-else>
+                                <span class="cod-aide" v-if="cod.jeSuisEspion">
+                                    Tu vois les couleurs — ne dis rien.
+                                </span>
+                                <span class="cod-aide" v-else-if="cod.monEquipe">
+                                    C’est le tour de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }}.
+                                </span>
+                                <span class="cod-aide" v-else>Tu regardes cette partie.</span>
+                            </div>
+
+                            <span class="cod-refus" v-if="cod.refus">{{ cod.refus }}</span>
+                        </div>
+
+                        <!-- L'historique des indices. ⚠️ Pièce OBLIGATOIRE, pas
+                             décorative : avec des portraits, se rappeler « l'indice
+                             couvrait 3, on en a trouvé 1 » est bien plus dur
+                             qu'avec des mots. Et le serveur sait compter, ce
+                             qu'aucune table ne peut faire. -->
+                        <div class="cod-histo" v-if="cod.historique.length">
+                            <span class="cod-histo-l" v-for="(h, k) in cod.historique.slice(-6)" :key="k"
+                                  :class="'camp-' + h.equipe">
+                                {{ h.trouvees }}/{{ h.nombre }}
+                            </span>
+                        </div>
                     </div>
                 </template>
 

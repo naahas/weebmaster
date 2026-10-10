@@ -245,6 +245,52 @@ createApp({
                 _introT: [],
             },
 
+            // 🕵️ CODANIME
+            //
+            // ⚠️ Presque tout ici est REÇU, jamais déduit. La grille, les
+            // votes, les numéros et le seuil viennent du serveur à chaque
+            // changement, parce que c'est lui qui décide de ce que ce
+            // joueur-là a le droit de voir. Recalculer le seuil dans la page
+            // reviendrait à parier sur le nombre d'agents présents, que le
+            // client ne connaît pas de façon fiable.
+            cod: {
+                // Réglages du salon
+                chrono: true,
+                dureeTour: 90,
+                barDurees: [60, 90, 120],
+                equipes: { A: { espion: null, espionNom: null, agents: [], restant: 0 },
+                           B: { espion: null, espionNom: null, agents: [], restant: 0 } },
+
+                enCours: false,
+                phase: 'repos',      // repos | indice | vote | revelation | fini
+                tourDe: null,        // 'A' | 'B'
+                monEquipe: null,
+                jeSuisEspion: false,
+                grille: [],          // 25 × { i, img, revelee, camp }
+                votes: {},           // i -> [playerId]
+                ordre: [],           // les i ayant franchi le seuil, dans l'ordre
+                retenues: [],        // les premiers « nombre » — les autres sont en trop
+                seuil: 1,
+                indice: null,        // { nombre }
+                historique: [],
+                restant: { A: 0, B: 0 },
+                gagnant: null,
+                manche: 0,
+
+                // ⚠️ Une échéance fabriquée sur MA montre à partir d'un RESTE
+                // envoyé par le serveur. Comparer une échéance serveur à
+                // Date.now() a déjà coûté une jauge fausse au Rush.
+                finA: 0,
+                reste: 0,
+                _tic: null,
+
+                // Le nombre que l'espion s'apprête à annoncer
+                saisieNombre: 1,
+                refus: '',           // le dernier refus du serveur, à montrer
+                _refusT: null,
+                derniereCarte: null, // { i, issue } — pour l'animation du retournement
+            },
+
             asc: {
                 etages: 15,          // réglage du salon
                 timer: 30,           // secondes par étage
@@ -955,6 +1001,38 @@ createApp({
 
         nbModes() {
             return this.modes.filter(m => !m.soon).length;
+        },
+
+        // 🕵️ Ai-je le droit de marquer une carte en ce moment ?
+        //
+        // ⚠️ Ce n'est QU'UN CONFORT D'AFFICHAGE : le serveur refuse de toute
+        // façon, et c'est lui qui fait foi. On s'en sert pour griser les
+        // cartes plutôt que pour protéger quoi que ce soit — un garde-fou
+        // posé seulement ici se contournerait depuis la console.
+        codPeutVoter() {
+            const c = this.cod;
+            return c.enCours && c.phase === 'vote'
+                && !c.jeSuisEspion && c.monEquipe && c.monEquipe === c.tourDe;
+        },
+
+        // L'espion du tour, c'est moi ?
+        codMonTourDAnnoncer() {
+            const c = this.cod;
+            return c.enCours && c.phase === 'indice'
+                && c.jeSuisEspion && c.monEquipe === c.tourDe;
+        },
+
+        // Le plafond que l'espion peut annoncer : jamais plus que ce qu'il
+        // reste à son équipe, sinon elle pourrait engager plus de cartes
+        // qu'elle n'en possède.
+        codMaxIndice() {
+            const c = this.cod;
+            const reste = c.monEquipe ? (c.restant[c.monEquipe] || 0) : 0;
+            return Math.max(1, Math.min(4, reste));
+        },
+
+        codResteSec() {
+            return Math.ceil((this.cod.reste || 0) / 1000);
         },
 
         // 🤖 Le partenaire de BombAnime est-il dans le salon ? On le DÉDUIT de
@@ -5507,6 +5585,93 @@ createApp({
             this.ch._tic = setInterval(tic, 250);
         },
 
+        // ══════════════════════════════════════════════════════════
+        // 🕵️ CODANIME
+        // ══════════════════════════════════════════════════════════
+
+        // ⚠️ Le serveur envoie un RESTE en millisecondes, jamais une
+        // échéance : son horloge n'est pas la mienne. On fabrique l'échéance
+        // sur SA montre via `maintenant()`, qui porte l'écart mesuré.
+        lancerChronoCodanime(reste) {
+            clearInterval(this.cod._tic);
+            this.cod.finA = this.maintenant() + (reste || 0);
+            const tic = () => {
+                const r = Math.max(0, this.cod.finA - this.maintenant());
+                this.cod.reste = r;
+                if (r <= 0) { clearInterval(this.cod._tic); this.cod._tic = null; }
+            };
+            tic();
+            this.cod._tic = setInterval(tic, 250);
+        },
+
+        arreterChronoCodanime() {
+            clearInterval(this.cod._tic);
+            this.cod._tic = null;
+            this.cod.reste = 0;
+            this.cod.finA = 0;
+        },
+
+        // L'espion annonce SON NOMBRE. Le mot se dit à la voix — il est
+        // public de toute façon, seule la répartition est secrète, et c'est
+        // ce qui évite d'avoir à taper au doigt.
+        codAnnoncer() {
+            const n = parseInt(this.cod.saisieNombre, 10);
+            if (!Number.isInteger(n) || n < 1) return;
+            this.socket.emit('codanime-indice', { nombre: n });
+        },
+
+        codVoter(i) {
+            if (!this.codPeutVoter) return;
+            this.socket.emit('codanime-vote', { i });
+        },
+
+        codPasser() {
+            if (!this.codPeutVoter) return;
+            this.socket.emit('codanime-passer');
+        },
+
+        // Le numéro ① ② ③ d'une carte, ou 0 si elle n'a pas franchi le seuil.
+        // ⚠️ Il sort de l'ORDRE DE FRANCHISSEMENT, pas du nombre de voix :
+        // l'ordre décide de qui survit à la chaîne, il ne doit donc pas
+        // bouger à chaque clic.
+        codNumero(i) {
+            const k = this.cod.ordre.indexOf(i);
+            return k < 0 ? 0 : k + 1;
+        },
+
+        codVoix(i) {
+            const v = this.cod.votes[i];
+            return v ? v.length : 0;
+        },
+
+        codJaiVote(i) {
+            const v = this.cod.votes[i];
+            return !!(v && v.includes(this.playerId));
+        },
+
+        // La classe d'une carte. Tout se joue ici : une carte retournée porte
+        // la couleur de son camp, une carte cachée n'en porte aucune — sauf
+        // pour l'espion, qui voit tout.
+        codClasseCarte(carte) {
+            const c = [];
+            if (carte.revelee) c.push('revelee', 'camp-' + carte.camp);
+            else if (this.cod.jeSuisEspion && carte.camp) c.push('vue-espion', 'camp-' + carte.camp);
+            if (this.codNumero(carte.i)) {
+                c.push('engagee');
+                // Au-delà du quota, la carte a franchi le seuil mais ne sera
+                // PAS retournée. On la grise pour que l'équipe le voie et
+                // enlève une marque, plutôt que de la découvrir à la clôture.
+                if (!this.cod.retenues.includes(carte.i)) c.push('en-trop');
+            }
+            if (this.codJaiVote(carte.i)) c.push('ma-voix');
+            if (this.cod.derniereCarte && this.cod.derniereCarte.i === carte.i) c.push('tombe');
+            return c;
+        },
+
+        codNomEquipe(e) {
+            return e === 'A' ? 'Bleue' : 'Rouge';
+        },
+
         arreterChronoChoice() {
             clearInterval(this.ch._tic);
             this.ch._tic = null;
@@ -8513,6 +8678,104 @@ createApp({
                 if (data.reste > 0) this.lancerChronoChoice(data.reste);
                 else { this.ch.reste = 0; this.ch.verrou = true; }
                 this.replacerChoice();
+            });
+
+            // ══════════════════════════════════════════════════════
+            // 🕵️ CODANIME
+            // ══════════════════════════════════════════════════════
+            //
+            // ⚠️ UN SEUL écouteur porte l'état, et il arrive à chaque
+            // changement. Le serveur envoie à chacun SA vue — l'espion
+            // reçoit les 25 camps, l'agent aucun — donc la page n'a rien à
+            // filtrer, et surtout rien à reconstituer.
+            this.socket.on('codanime-etat', (data) => {
+                if (!data) return;
+                const c = this.cod;
+                c.enCours = !!data.active;
+                c.phase = data.phase;
+                c.tourDe = data.tourDe;
+                c.monEquipe = data.monEquipe;
+                c.jeSuisEspion = !!data.jeSuisEspion;
+                c.grille = data.grille || [];
+                c.equipes = data.equipes || c.equipes;
+                c.votes = data.votes || {};
+                c.ordre = data.ordre || [];
+                c.retenues = data.retenues || [];
+                c.seuil = data.seuil || 1;
+                c.indice = data.indice;
+                c.historique = data.historique || [];
+                c.restant = data.restant || { A: 0, B: 0 };
+                c.gagnant = data.gagnant;
+                c.manche = data.manche;
+                c.chrono = data.chrono;
+                c.dureeTour = data.dureeTour;
+
+                if (data.active) {
+                    this.gameInProgress = true;
+                    this.gameEnded = false;
+                    document.body.classList.add('game-active');
+                }
+                // Un reste de zéro veut dire « pas de chrono », pas « fini ».
+                if (data.reste > 0) this.lancerChronoCodanime(data.reste);
+                else this.arreterChronoCodanime();
+            });
+
+            this.socket.on('codanime-config', (data) => {
+                if (!data) return;
+                if (data.chrono !== undefined) this.cod.chrono = data.chrono;
+                if (data.dureeTour !== undefined) this.cod.dureeTour = data.dureeTour;
+                if (data.equipes) this.cod.equipes = data.equipes;
+            });
+
+            this.socket.on('codanime-debut', () => {
+                this.cod.enCours = true;
+                this.cod.gagnant = null;
+                this.gameEnded = false;
+            });
+
+            // Une carte vient de se retourner. L'état suit juste après ; ceci
+            // ne sert qu'à l'animation et au son.
+            this.socket.on('codanime-carte', (data) => {
+                if (!data) return;
+                this.cod.derniereCarte = { i: data.i, issue: data.issue };
+                if (this.sounds) {
+                    const s = data.issue === 'bonne' ? this.sounds.correct
+                        : data.issue === 'assassin' ? this.sounds.eliminated
+                            : this.sounds.wrong;
+                    if (s) this.playSound(s);
+                }
+            });
+
+            this.socket.on('codanime-fin', (data) => {
+                if (!data) return;
+                this.arreterChronoCodanime();
+                this.cod.enCours = false;
+                this.cod.phase = 'fini';
+                this.cod.gagnant = data.gagnant;
+                // ⚠️ Tout se dévoile à la fin : c'est le moment « ahhh c'était
+                // ÇA ». La grille de fin porte donc les 25 camps, pour tout
+                // le monde — la partie est jouée, il n'y a plus rien à cacher.
+                this.cod.grille = data.grille || this.cod.grille;
+                this.cod.historique = data.historique || this.cod.historique;
+                this.gameEnded = true;
+                this.gameStartedOnServer = false;
+            });
+
+            // Un refus se montre deux secondes plutôt que de disparaître dans
+            // la console : un clic ignoré sans rien à l'écran, c'est le
+            // défaut qu'on a déjà payé sur la mèche de BombAnime.
+            this.socket.on('codanime-refus', (data) => {
+                const dits = {
+                    'plafond-atteint': 'Tu as déjà marqué autant de cartes que l’indice en annonce.',
+                    'espion-ne-vote-pas': 'L’espion ne marque pas de carte.',
+                    'pas-ton-tour': 'Ce n’est pas le tour de ton équipe.',
+                    'pas-espion': 'Seul l’espion de l’équipe annonce.',
+                    'trop-grand': 'Trop grand : au plus ' + (data && data.max ? data.max : 4) + '.',
+                    'nombre': 'Il faut un nombre.',
+                };
+                this.cod.refus = dits[data && data.raison] || '';
+                if (this.cod._refusT) clearTimeout(this.cod._refusT);
+                this.cod._refusT = setTimeout(() => { this.cod.refus = ''; }, 2600);
             });
 
             this.socket.on('bombanime-game-ended', (data) => {

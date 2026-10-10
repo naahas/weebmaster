@@ -1,0 +1,334 @@
+/* ══════════════════════════════════════════════════════════════
+   🕵️ CODANIME
+   ══════════════════════════════════════════════════════════════
+
+   Un fichier à part, comme home-bombanime.css et home-collect.css :
+   home.css fait déjà 14 700 lignes, et une grille de 25 cartes avec ses
+   quatre états de camp n'a aucune raison d'y disparaître.
+
+   ⚠️ Les deux camps portent les couleurs de l'arène, les MÊMES que Choice :
+   bleu à gauche, rouge à droite. On relit une grille de vingt-cinq cartes
+   d'un coup d'œil, et c'est la couleur qu'on finit par lire, jamais le mot. */
+
+:root {
+    --cod-a: #2f9bff;          /* équipe bleue */
+    --cod-b: #ff3b5c;          /* équipe rouge */
+    --cod-neutre: #b9a88f;     /* le passant : beige, pour ne rien évoquer */
+    --cod-assassin: #14151a;   /* l'assassin : le seul presque noir */
+    --cod-brun: #bf8a5f;       /* la couleur du mode */
+}
+
+/* ⚠️ Le côté d'une carte est calculé ICI, sur `.cod`, et non sur la
+   grille : l'en-tête et le pied s'alignent dessus. Posé sur la grille
+   seule, les compteurs s'étalaient sur 62 rem pendant que le plateau n'en
+   faisait que 41 — ils flottaient dans le vide, loin des cartes qu'ils
+   comptent. */
+.cod {
+    /* ⚠️ Les marges sont CALCULÉES, pas estimées. Un « − 3rem » au jugé
+       laissait quatorze pixels perdus de chaque côté sur téléphone, soit
+       une carte plus petite pour rien — et à 68 px, un portrait d'anime se
+       reconnaît déjà mal. */
+    --cod-pad: 1rem;
+    --cod-jour: 0.45rem;
+    --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour));
+    --cod-cote: min(
+        calc((min(100vw, 62rem) - var(--cod-marges)) / 5),
+        calc((100dvh - 17rem) / 5)
+    );
+    --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour));
+
+    /* ⚠️ PLEIN ÉCRAN, hors du flux — comme l'arène de Choice.
+       `.game-section` est une GRILLE, et le conteneur du quiz y occupe une
+       rangée en permanence. Posé dedans, le plateau créait une seconde
+       rangée : 510 px + 844 px dans un conteneur de 844, donc un
+       débordement que le centrage répartissait des deux côtés. Mesuré sur
+       téléphone : la grille commençait à −247 px, les deux premières
+       rangées de cartes étaient hors de l'écran, et rien ne permettait d'y
+       accéder puisque la page, elle, ne défilait pas. */
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    overflow: hidden;
+    background: #07070a;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    padding: 0.6rem 1rem 1.4rem;
+}
+
+/* ── L'en-tête : les deux compteurs et l'indice ─────────────────── */
+.cod-tete {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    width: var(--cod-plateau);
+    min-width: 17rem;
+}
+
+.cod-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 4.2rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.7rem;
+    /* ⚠️ Le camp qui ne joue pas est ATTÉNUÉ, pas caché : on doit toujours
+       pouvoir lire son score pour savoir où en est la course. */
+    opacity: 0.45;
+    transition: opacity 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.cod-score.actif { opacity: 1; }
+.cod-score.camp-a.actif { border-color: rgba(47, 155, 255, 0.55); box-shadow: 0 0 1.1rem rgba(47, 155, 255, 0.22); }
+.cod-score.camp-b.actif { border-color: rgba(255, 59, 92, 0.55); box-shadow: 0 0 1.1rem rgba(255, 59, 92, 0.22); }
+
+.cod-score-n { font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.cod-score.camp-a .cod-score-n { color: var(--cod-a); }
+.cod-score.camp-b .cod-score-n { color: var(--cod-b); }
+.cod-score-l { font-size: 0.6rem; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.6; margin-top: 0.15rem; }
+
+.cod-centre { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; min-height: 3.1rem; justify-content: center; }
+.cod-indice { display: flex; align-items: baseline; gap: 0.5rem; }
+.cod-indice-n {
+    font-size: 2rem; font-weight: 900; line-height: 1;
+    color: var(--cod-brun);
+    text-shadow: 0 0 1.4rem rgba(191, 138, 95, 0.4);
+}
+.cod-indice-l { font-size: 0.72rem; letter-spacing: 0.06em; opacity: 0.65; }
+.cod-attente { font-size: 0.8rem; opacity: 0.55; font-style: italic; }
+
+/* Le temps : un trait, aucun chiffre. Même échelle que la mèche de
+   BombAnime — un compteur dit « dans 4,2 s » et l'on attend le dernier
+   dixième ; un trait dit « bientôt » et l'on bouge. */
+.cod-jauge { width: 11rem; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.cod-jauge-fil { display: block; height: 100%; background: var(--cod-brun); transition: width 0.25s linear; }
+.cod-jauge.urgence .cod-jauge-fil { background: var(--cod-b); }
+
+/* ── La grille ──────────────────────────────────────────────────── */
+/* ⚠️ LE PLATEAU DOIT TENIR DANS L'ÉCRAN, SANS DÉFILEMENT. C'est la
+   contrainte qui décide de toute la mise en page : on scanne les
+   vingt-cinq cartes d'un coup d'œil pour chercher le lien, et une grille
+   qu'il faut faire défiler rend ce geste impossible.
+
+   Premier essai : des cartes en 3/4, le format des portraits. Mesuré à
+   1280 px de large, la grille faisait 1270 px de HAUT pour un écran de
+   728 — deux écrans de défilement. Un rapport de 3/4 sur cinq lignes
+   donne toujours une grille 1,33 fois plus haute que large, quelle que
+   soit la largeur.
+
+   D'où le côté CARRÉ, calculé sur la plus serrée des deux dimensions :
+   la largeur disponible, ou la hauteur restante une fois l'en-tête, le
+   pied et l'historique déduits. Les cartes rapetissent plutôt que la
+   grille ne déborde. */
+.cod-grille {
+    display: grid;
+    grid-template-columns: repeat(5, var(--cod-cote));
+    gap: var(--cod-jour);
+    justify-content: center;
+}
+
+.cod-carte {
+    position: relative;
+    width: var(--cod-cote);
+    height: var(--cod-cote);
+    padding: 0;
+    border: 2px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.55rem;
+    background: #15171d;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.cod-carte:disabled { cursor: default; }
+.cod-carte:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); }
+.cod-carte:focus-visible { outline: 2px solid var(--cod-brun); outline-offset: 2px; }
+
+/* ⚠️ `object-position` au QUART HAUT, pas au centre. Les portraits sont
+   des images verticales (225 × 350) recadrées dans un carré : centrées,
+   le cadrage coupe le visage en deux et garde le torse. Or c'est le
+   visage qui se reconnaît. */
+.cod-portrait {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center 22%;
+    display: block;
+}
+
+/* ⚠️ La vue de l'ESPION : un liseré de couleur, pas un aplat. Un aplat
+   masquerait le portrait, or il doit continuer à le reconnaître pour
+   trouver son indice. */
+.cod-carte.vue-espion { border-width: 3px; }
+.cod-carte.vue-espion.camp-A { border-color: var(--cod-a); }
+.cod-carte.vue-espion.camp-B { border-color: var(--cod-b); }
+.cod-carte.vue-espion.camp-neutre { border-color: var(--cod-neutre); }
+.cod-carte.vue-espion.camp-assassin {
+    border-color: #000;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+/* ⚠️ La carte RETOURNÉE, elle, se couvre pour de bon : c'est la seule
+   façon de voir d'un coup d'œil où en est la course. Le portrait reste
+   visible dessous, assombri — on veut encore pouvoir dire « ah c'était
+   lui ». */
+.cod-carte.revelee { cursor: default; }
+.cod-carte.revelee .cod-portrait { filter: brightness(0.38) saturate(0.5); }
+.cod-carte.revelee::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 0.4rem;
+    mix-blend-mode: normal;
+}
+.cod-carte.revelee.camp-A::after { background: rgba(47, 155, 255, 0.5); }
+.cod-carte.revelee.camp-B::after { background: rgba(255, 59, 92, 0.5); }
+.cod-carte.revelee.camp-neutre::after { background: rgba(185, 168, 143, 0.5); }
+.cod-carte.revelee.camp-assassin::after { background: rgba(0, 0, 0, 0.78); }
+.cod-carte.revelee.camp-A { border-color: var(--cod-a); }
+.cod-carte.revelee.camp-B { border-color: var(--cod-b); }
+.cod-carte.revelee.camp-neutre { border-color: var(--cod-neutre); }
+.cod-carte.revelee.camp-assassin { border-color: #000; }
+
+/* Le battement du retournement : 1,4 s séparent deux cartes, et c'est
+   là que vit le suspense. Il faut que ça SE VOIE. */
+.cod-carte.tombe { animation: codTombe 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+@keyframes codTombe {
+    0%   { transform: scale(1) rotateY(0deg); }
+    45%  { transform: scale(1.09) rotateY(-16deg); }
+    100% { transform: scale(1) rotateY(0deg); }
+}
+
+/* ── Les marques et les numéros ─────────────────────────────────── */
+.cod-voix {
+    position: absolute; left: 0.2rem; bottom: 0.2rem;
+    display: inline-flex; align-items: baseline; gap: 1px;
+    padding: 0.1rem 0.32rem;
+    border-radius: 0.3rem;
+    background: rgba(0, 0, 0, 0.72);
+    font-size: 0.64rem; font-weight: 800; line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+.cod-voix small { font-size: 0.52rem; opacity: 0.6; font-weight: 600; }
+
+.cod-carte.ma-voix { border-color: rgba(255, 255, 255, 0.55); }
+
+/* Le numéro ① ② ③ : gros, en haut à droite, impossible à rater. C'est
+   l'ordre dans lequel les cartes se retourneront, et il décide de qui
+   survit à la chaîne. */
+.cod-num {
+    position: absolute; right: 0.2rem; top: 0.2rem;
+    display: grid; place-items: center;
+    width: 1.35rem; height: 1.35rem;
+    border-radius: 50%;
+    background: var(--cod-brun);
+    color: #15171d;
+    font-size: 0.78rem; font-weight: 900; line-height: 1;
+}
+.cod-carte.engagee { border-color: var(--cod-brun); }
+
+/* ⚠️ AU-DELÀ DU QUOTA. Plus de cartes peuvent franchir le seuil que
+   l'indice n'en annonce — à trois agents, un indice à 2 met six voix en
+   jeu, de quoi en faire passer trois. Celles en trop ne seront JAMAIS
+   retournées : on les grise pour que l'équipe le voie et en retire une,
+   plutôt qu'elle ne le découvre à la clôture. */
+.cod-carte.en-trop { border-color: rgba(255, 255, 255, 0.16); opacity: 0.6; }
+.cod-carte.en-trop .cod-num { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
+
+/* ── Le pied ────────────────────────────────────────────────────── */
+.cod-pied {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    min-height: 3.4rem; justify-content: center;
+    width: var(--cod-plateau); min-width: 17rem;
+}
+.cod-annonce { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; }
+.cod-annonce-l { font-size: 0.74rem; opacity: 0.7; }
+.cod-annonce-n { display: inline-flex; gap: 0.3rem; }
+
+.cod-n {
+    width: 2.1rem; height: 2.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0.5rem;
+    background: transparent; color: inherit;
+    font-size: 0.95rem; font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.cod-n.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
+
+.cod-valider {
+    padding: 0.5rem 1.1rem;
+    border: none; border-radius: 0.55rem;
+    background: var(--cod-brun); color: #15171d;
+    font-weight: 800; font-size: 0.82rem; cursor: pointer;
+}
+.cod-valider:hover { filter: brightness(1.1); }
+
+.cod-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.cod-aide { font-size: 0.74rem; opacity: 0.6; }
+.cod-stop {
+    padding: 0.35rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.45rem;
+    background: transparent; color: inherit;
+    font-size: 0.74rem; cursor: pointer;
+}
+.cod-stop:hover { border-color: rgba(255, 255, 255, 0.45); }
+
+/* Un refus se MONTRE. Un clic ignoré sans rien à l'écran est le défaut
+   qu'on a déjà payé sur la mèche de BombAnime. */
+.cod-refus { font-size: 0.72rem; color: var(--cod-b); }
+
+/* ── L'historique des indices ───────────────────────────────────── */
+.cod-histo { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center; }
+.cod-histo-l {
+    padding: 0.12rem 0.42rem;
+    border-radius: 0.3rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.64rem; font-variant-numeric: tabular-nums; opacity: 0.75;
+}
+.cod-histo-l.camp-A { border-color: rgba(47, 155, 255, 0.4); color: var(--cod-a); }
+.cod-histo-l.camp-B { border-color: rgba(255, 59, 92, 0.4); color: var(--cod-b); }
+
+/* ── La composition, dans le tiroir du salon ────────────────────── */
+.cod-compo { display: flex; gap: 0.5rem; padding: 0.2rem 0 0.4rem; }
+.cod-compo-camp {
+    flex: 1; display: flex; flex-direction: column; gap: 0.15rem;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    font-size: 0.7rem;
+}
+.cod-compo-camp.camp-a { border-color: rgba(47, 155, 255, 0.3); }
+.cod-compo-camp.camp-b { border-color: rgba(255, 59, 92, 0.3); }
+.cod-compo-titre { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55; }
+.cod-compo-camp.camp-a .cod-compo-titre { color: var(--cod-a); }
+.cod-compo-camp.camp-b .cod-compo-titre { color: var(--cod-b); }
+.cod-compo-espion { font-weight: 700; }
+.cod-compo-vide { opacity: 0.35; font-style: italic; }
+.cod-compo-agent { opacity: 0.75; }
+
+/* ── Téléphone ──────────────────────────────────────────────────── */
+/* ⚠️ La grille reste à CINQ colonnes, même à 360 px. Passer à quatre
+   casserait la lecture 5×5 qui EST le plateau — on compte les lignes et
+   les colonnes pour se repérer et pour désigner une carte à la voix. Les
+   cartes rétrécissent, l'écart se resserre, et les badges suivent. */
+@media (max-width: 640px) {
+    .cod { padding: 0.4rem var(--cod-pad) 1rem; gap: 0.6rem; }
+    .cod { --cod-jour: 0.25rem; --cod-pad: 0.5rem; }
+    .cod-carte { border-width: 1.5px; border-radius: 0.4rem; }
+    .cod-carte.vue-espion { border-width: 2.5px; }
+    .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; right: 0.12rem; top: 0.12rem; }
+    .cod-voix { font-size: 0.54rem; padding: 0.05rem 0.22rem; left: 0.12rem; bottom: 0.12rem; }
+    .cod-voix small { font-size: 0.44rem; }
+    .cod-tete { gap: 0.5rem; }
+    .cod-score { min-width: 3.2rem; padding: 0.3rem 0.45rem; }
+    .cod-score-n { font-size: 1.25rem; }
+    .cod-indice-n { font-size: 1.5rem; }
+    .cod-jauge { width: 8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cod-carte.tombe { animation: none; }
+    .cod-carte:not(:disabled):hover { transform: none; }
+}
