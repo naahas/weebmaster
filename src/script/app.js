@@ -434,7 +434,16 @@ createApp({
                 // Le serveur refuse d'ailleurs de démarrer en dessous.
                 // Le plafond de 8 vient des rôles : 2 espions + 3 agents par
                 // camp. Au-delà, on resterait spectateur.
-                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo.webp', soon: !EN_LOCAL,
+                // ⚠️ `ranpo2` et non `ranpo` : la première toile portait 25 %
+                // de vide transparent sur les côtés, ce qui la rendait LARGE
+                // (1875 × 1400) là où les autres personnages sont presque
+                // carrés. Avec `object-fit: contain`, c'était donc la largeur
+                // qui bridait et la hauteur s'effondrait — Ranpo paraissait
+                // deux fois plus petit que ses voisins. Recadrée sur sa boîte
+                // alpha, elle fait 1437 × 1400, comme Mitsuri.
+                // Et le NOM change, il ne se remplace pas sur place : src/img
+                // est servi avec sept jours de cache.
+                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo2.webp', soon: !EN_LOCAL,
                   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.

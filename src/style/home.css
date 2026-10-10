@@ -8187,6 +8187,22 @@ body.game-active:has(.poll-game-container) #particles-js {
         bottom: -6%;
     }
 
+    /* 🕵️ Ranpo. ⚠️ Sa borne de LARGEUR est ce qui compte ici, pas sa
+       hauteur : son sujet fait un rapport de 1,03, donc à 121 % de haut il
+       réclame 124 % de cette hauteur en largeur. Laissé au défaut de 62 %,
+       c'est la largeur qui mordait, et l'image dessinée retombait à 98 % de
+       la hauteur du panneau quand Mitsuri en occupe 120 %. Il paraissait
+       deux fois plus petit que ses voisins — alors que sa BOÎTE, elle,
+       faisait bien 116 %. Mesurer la boîte ne dit rien : avec
+       « object-fit: contain », ce qui est dessiné tient dedans et peut être
+       bien plus petit. */
+    .v2-mode-char.char-codanime {
+        max-width: 78%;
+        height: 121%;
+        bottom: -4%;
+        right: -1%;
+    }
+
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur
        egale il reclame plus de largeur, sa borne de largeur mord donc en
        premier. Les deux bornes bougent ensemble, sans quoi le reglage n aurait
