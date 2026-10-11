@@ -297,9 +297,7 @@
 .cod-sep {
     flex: 0 0 100%;
     display: flex; align-items: center; gap: 0.6rem;
-    /* ⚠️ Le filet respire DES DEUX CÔTÉS : collé à ses joueurs, il se
-       lit comme leur soulignement plutôt que comme leur titre. */
-    margin: 0.2rem 0 0.35rem;
+    margin-top: 0.2rem;
     font-size: 0.62rem; font-weight: 800;
     letter-spacing: 0.16em; text-transform: uppercase;
 }
@@ -332,19 +330,45 @@
 .v2-room-players-grid.par-camps .v2-room-player-wrap[draggable="true"] { cursor: grab; }
 .v2-room-player-wrap.cod-traine { opacity: 0.4; }
 
-/* Pendant qu'on traîne, les titres de camp deviennent des cibles — et
-   ça se voit, sinon on ne sait pas où lâcher. */
+/* ⚠️ LA CIBLE EST LA BANDE ENTIÈRE, pas le trait. Viser une ligne de
+   quatorze pixels de haut avec un joueur au bout du curseur est pénible,
+   et c'est exactement ce que faisait la première version.
+
+   Le titre descend donc par un `padding-bottom` de la hauteur d'une
+   rangée de vignettes, et le remonte aussitôt par une marge négative de
+   la même valeur : la mise en page ne bouge pas d'un pixel, mais la
+   surface sensible, elle, couvre les joueurs du camp. Les vignettes
+   passent au-dessus (z-index) et gardent leurs propres gestionnaires —
+   déposer sur un joueur marche donc aussi.
+
+   Les deux valeurs doivent rester ÉGALES : les délier décalerait toute
+   la liste. Et la bande ne couvre qu'une rangée — au-delà, c'est le
+   dépôt sur une vignette qui prend le relais. */
+.cod-sep {
+    /* Mesurée, pas estimée : à 3,6 rem la bande s arrêtait quinze pixels
+       au-dessus du bas des vignettes. */
+    --cod-bande: 4.6rem;
+    position: relative;
+    z-index: 0;
+    padding-bottom: var(--cod-bande);
+    margin-bottom: calc(-1 * var(--cod-bande) + 0.35rem);
+    align-items: flex-start;
+}
+/* Le filet suit le texte en haut de la bande, pas en bas. */
+.cod-sep::after { margin-top: 0.45rem; }
+.v2-room-players-grid.par-camps .v2-room-player-wrap { position: relative; z-index: 1; }
+
+/* Pendant qu'on traîne, les bandes deviennent des cibles — et ça se
+   voit, sinon on ne sait pas où lâcher. */
 .cod-sep.en-cours {
-    border-radius: 0.4rem;
-    outline: 1px dashed rgba(255, 255, 255, 0.22);
-    outline-offset: 0.25rem;
+    border-radius: 0.5rem;
+    outline: 1px dashed rgba(255, 255, 255, 0.2);
+    outline-offset: -0.1rem;
+    background: rgba(255, 255, 255, 0.022);
 }
-.cod-sep.vise {
-    outline-style: solid;
-    outline-width: 2px;
-}
-.cod-sep.camp-A.vise { outline-color: var(--cod-a); }
-.cod-sep.camp-B.vise { outline-color: var(--cod-b); }
+.cod-sep.vise { outline-style: solid; outline-width: 2px; }
+.cod-sep.camp-A.vise { outline-color: var(--cod-a); background: rgba(47, 155, 255, 0.07); }
+.cod-sep.camp-B.vise { outline-color: var(--cod-b); background: rgba(255, 59, 92, 0.07); }
 
 /* ── La pastille de rôle, sur la vignette ───────────────────────── */
 /* ⚠️ UN APLAT, pas un contour teinté. À 1,65 rem, posée sur une vignette

@@ -1801,6 +1801,19 @@ function broadcastLobbyUpdate(gameState) {
         // BombAnime - Lobby plein
         maxPlayers: maxPlayers,
         isLobbyFull: isLobbyFull,
+        // 🕵️ La composition de Codanime voyage AVEC la liste des joueurs.
+        //
+        // ⚠️ C'est le seul endroit où elle ne peut pas être périmée. Elle
+        // vivait sur sa propre diffusion, qu'il fallait penser à appeler
+        // depuis chaque chemin de départ — or un joueur qui ferme son onglet
+        // reste SOIXANTE SECONDES dans la table (GRACE_LOBBY_MS), et c'est
+        // un minuteur, pas un événement, qui le retire ensuite. Personne ne
+        // rediffusait alors : le tiroir annonçait « 4 · 4 » dans un salon de
+        // deux, et le bouton Démarrer restait allumé sur une partie
+        // impossible. Ici, toute modification de la liste la remet à jour,
+        // quelle qu'en soit la cause.
+        codanimeEquipes: gameState.lobbyMode === 'codanime'
+            ? codanime.vueDesEquipes(gameState) : null,
         // Liste des joueurs
         players: Array.from(gameState.players.values()).map(p => ({
             playerId: p.playerId,

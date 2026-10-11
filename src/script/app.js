@@ -7096,6 +7096,10 @@ createApp({
                 // Codanime annonçait « 15 max » et refusait le neuvième. Le
                 // serveur, lui, envoyait bien 8 — c'est le client qui ne
                 // l'écoutait pas.
+                // 🕵️ La composition arrive AVEC la liste des joueurs : c'est
+                // le seul chemin par lequel elle ne peut pas être périmée.
+                if (data.codanimeEquipes) this.cod.equipes = data.codanimeEquipes;
+
                 if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'codanime') {
                     this.isLobbyFull = data.isLobbyFull || false;
                     this.maxPlayers = data.maxPlayers || 15;
