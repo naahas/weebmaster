@@ -325,15 +325,39 @@
    partie, et ça doit se voir sans qu'on ait à lire. */
 .v2-room-players-grid.par-camps .cod-sep.camp-sans ~ .v2-room-player-wrap { opacity: 0.5; }
 
-/* ── La pastille de rôle, sur la vignette ───────────────────────── */
-.v2-team-flag.cod-sans { color: rgba(255, 255, 255, 0.5); }
-.v2-team-flag.cod-A { color: var(--cod-a); border-color: rgba(47, 155, 255, 0.5); }
-.v2-team-flag.cod-B { color: var(--cod-b); border-color: rgba(255, 59, 92, 0.5); }
-.v2-team-flag.cod-flag.espion {
-    color: var(--cod-brun);
-    border-color: rgba(191, 138, 95, 0.65);
-    box-shadow: 0 0 0.5rem rgba(191, 138, 95, 0.35);
+/* ── Le glisser-déposer ─────────────────────────────────────────── */
+/* ⚠️ Il DOUBLE la pastille, il ne la remplace pas : le glisser n'existe
+   pas au doigt, et s'y fier aurait fermé la composition à la moitié des
+   appareils. */
+.v2-room-players-grid.par-camps .v2-room-player-wrap[draggable="true"] { cursor: grab; }
+.v2-room-player-wrap.cod-traine { opacity: 0.4; }
+
+/* Pendant qu'on traîne, les titres de camp deviennent des cibles — et
+   ça se voit, sinon on ne sait pas où lâcher. */
+.cod-sep.en-cours {
+    border-radius: 0.4rem;
+    outline: 1px dashed rgba(255, 255, 255, 0.22);
+    outline-offset: 0.25rem;
 }
+.cod-sep.vise {
+    outline-style: solid;
+    outline-width: 2px;
+}
+.cod-sep.camp-A.vise { outline-color: var(--cod-a); }
+.cod-sep.camp-B.vise { outline-color: var(--cod-b); }
+
+/* ── La pastille de rôle, sur la vignette ───────────────────────── */
+/* ⚠️ UN APLAT, pas un contour teinté. À 1,65 rem, posée sur une vignette
+   claire, une pastille cerclée se lit mal — c'est la surface pleine qui
+   porte la couleur à cette taille. L'icône passe donc en sombre, sur le
+   fond de la couleur du camp. */
+.v2-team-flag.cod-flag { background: rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.55); }
+.v2-team-flag.cod-A { background: var(--cod-a); color: #07131f; }
+.v2-team-flag.cod-B { background: var(--cod-b); color: #1e060b; }
+
+/* L'espion garde la couleur de son camp — il EST de ce camp — mais sa
+   loupe et son anneau clair le distinguent de ses agents. */
+.v2-team-flag.cod-flag.espion { box-shadow: 0 0 0 0.11rem rgba(255, 255, 255, 0.8); }
 
 /* ⚠️ Les deux camps sont des PASTILLES DE COULEUR, sans lettre : la
    couleur est déjà le langage du mode — le badge du joueur, le titre de

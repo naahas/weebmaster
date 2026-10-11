@@ -400,8 +400,26 @@ function creerModule(deps) {
         const etat = gameState.codanime;
         if (etat.active) return false;
         if (equipeDe(etat, playerId)) return false;
-        for (const e of ['A', 'B']) {
-            if (!etat.equipes[e].espion) { etat.equipes[e].espion = playerId; return true; }
+
+        // ⚠️ LES DEUX ESPIONS D'ABORD, puis les agents en alternance.
+        //
+        // La consigne d'origine était « on remplit A en entier, puis B ».
+        // Elle rend le salon INJOUABLE À QUATRE : les quatre premiers vont
+        // tous en bleu, le rouge n'a son espion qu'au cinquième et son agent
+        // qu'au sixième — alors que le mode annonce « 4 – 8 » et qu'on exige
+        // maintenant deux espions et un agent de chaque côté pour démarrer.
+        // Un salon de quatre resterait bloqué sans que rien ne le dise.
+        //
+        // L'hôte reste l'espion bleu, ce qui était le cœur de la demande.
+        if (!etat.equipes.A.espion) { etat.equipes.A.espion = playerId; return true; }
+        if (!etat.equipes.B.espion) { etat.equipes.B.espion = playerId; return true; }
+
+        // Puis le camp le MOINS fourni, à égalité le bleu. À quatre on a
+        // donc 1+1 de chaque côté, et à huit 4+4.
+        const a = etat.equipes.A.agents.length;
+        const b = etat.equipes.B.agents.length;
+        const ordre = a <= b ? ['A', 'B'] : ['B', 'A'];
+        for (const e of ordre) {
             if (etat.equipes[e].agents.length < AGENTS_MAX) {
                 etat.equipes[e].agents.push(playerId);
                 return true;

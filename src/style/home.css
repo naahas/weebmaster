@@ -8212,7 +8212,9 @@ body.game-active:has(.poll-game-container) #particles-js {
            description. Mesuré — à 133 %, sa jambe passait sur « sur-le-champ ».
            Le repère est le chevauchement de Mitsuri, 168 px, qui se lit très
            bien parce que son contour y est transparent. */
-        right: -4%;
+        /* Quatre pixels plus a GAUCHE, demandes a l oeil. En pixels,
+           comme la descente : c est un decalage vu, pas une proportion. */
+        right: calc(-4% + 4px);
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur

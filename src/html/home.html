@@ -498,11 +498,26 @@
                                      un flex qui enroule) et porte le nom du camp : à six
                                      joueurs mélangés dans une seule rangée, on ne voit plus
                                      qui joue avec qui. -->
+                                <!-- ⚠️ Le titre du camp est AUSSI sa zone de dépôt, et
+                                     il court sur toute la largeur grâce à son filet :
+                                     c'est la plus grande cible de l'écran, bien plus
+                                     facile à viser qu'une vignette. -->
                                 <span class="cod-sep" v-if="codTitreAvant(iJ)"
-                                      :class="'camp-' + codTitreAvant(iJ)">
+                                      :class="['camp-' + codTitreAvant(iJ),
+                                               { vise: codSurvol === codTitreAvant(iJ),
+                                                 'en-cours': codDrag && codTitreAvant(iJ) !== 'sans' }]"
+                                      @dragover="codDragOver(codTitreAvant(iJ), $event)"
+                                      @dragleave="codSurvol = null"
+                                      @drop="codDrop(codTitreAvant(iJ), $event)">
                                     {{ codNomEquipe(codTitreAvant(iJ)) }}
                                 </span>
-                                <span class="v2-room-player-wrap">
+                                <span class="v2-room-player-wrap"
+                                      :class="{ 'cod-traine': codDrag === p.playerId }"
+                                      :draggable="isHost && lobbyMode === 'codanime'"
+                                      @dragstart="codDragStart(p.playerId, $event)"
+                                      @dragend="codDragEnd"
+                                      @dragover="codDragOver(codCampDe(p.playerId), $event)"
+                                      @drop="codDrop(codCampDe(p.playerId), $event)">
                                 <!-- ⚠️ L exclusion demande DEUX clics, et pas une modale.
                                      D un seul clic on excluait sans le vouloir en visant la
                                      pastille de camp, qui est posée sur la vignette. Mais une
@@ -567,11 +582,17 @@
                                                        espion: codEstEspion(p.playerId) }]"
                                             @click.stop="ouvrirCampMenu(p.playerId)"
                                             :title="'Rôle de ' + p.username">
-                                        <svg v-if="codEstEspion(p.playerId)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                                            <circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/>
+                                        <!-- ⚠️ Les deux dessins sont CENTRÉS dans leur
+                                             viewBox. Ceux d'origine vivaient dans sa
+                                             moitié gauche — la silhouette allait de x=2
+                                             à x=16, la loupe de 5 à 21 — et paraissaient
+                                             donc décalés dans un cercle, alors que le
+                                             cercle, lui, est bien centré. -->
+                                        <svg v-if="codEstEspion(p.playerId)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                                            <circle cx="10.5" cy="10.5" r="5.5"/><path d="M14.6 14.6L19 19"/>
                                         </svg>
                                         <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/>
+                                            <circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/>
                                         </svg>
                                     </button>
                                     <span class="v2-team-menu cod-menu" v-if="campMenu === p.playerId" @click.stop
@@ -965,7 +986,7 @@
                                      curieux — pour qu'on devine trois bons crans. -->
                                 <div class="v2-set" v-if="cod.chrono">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-                                    <span class="v2-set-label">Durée tour</span>
+                                    <span class="v2-set-label">Durée</span>
                                     <input class="v2-range" type="range" min="30" max="180" step="15"
                                            :value="cod.dureeTour"
                                            @input="cod.dureeTour = parseInt($event.target.value)"

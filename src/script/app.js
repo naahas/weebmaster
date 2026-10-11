@@ -290,6 +290,11 @@ createApp({
                 derniereCarte: null, // { i, issue } — pour l'animation du retournement
             },
 
+            // Le glisser-déposer de la composition : qui l'on traîne, et
+            // au-dessus de quel camp on survole.
+            codDrag: null,
+            codSurvol: null,
+
             asc: {
                 etages: 15,          // réglage du salon
                 timer: 30,           // secondes par étage
@@ -1066,7 +1071,33 @@ createApp({
             // peuplé. Le bouton le dit avant, plutôt que de laisser l hôte
             // cliquer dans le vide.
             if (this.lobbyMode === 'rivalry' && this.campsEnJeu.length < 2) return false;
+            // 🕵️ Codanime veut DEUX espions et au moins un agent de chaque
+            // côté. Le serveur refuse déjà, mais il le fait après le clic :
+            // le bouton doit le dire avant, sinon on clique dans le vide.
+            if (this.lobbyMode === 'codanime' && this.codManque) return false;
             return true;
+        },
+
+        // Ce qui manque à Codanime pour pouvoir partir, en clair — ou une
+        // chaîne vide si tout est prêt. Sert au bouton ET à son infobulle,
+        // pour qu'ils ne puissent pas se contredire.
+        codManque() {
+            if (this.lobbyMode !== 'codanime') return '';
+            const e = this.cod.equipes;
+            if (!e) return 'Composition inconnue';
+            const sansEspion = ['A', 'B'].filter(c => !e[c].espion);
+            if (sansEspion.length) {
+                return sansEspion.length === 2
+                    ? 'Il faut un espion dans chaque équipe'
+                    : 'Il manque l’espion de l’équipe ' + this.codNomEquipe(sansEspion[0]).toLowerCase();
+            }
+            const sansAgent = ['A', 'B'].filter(c => !(e[c].agents || []).length);
+            if (sansAgent.length) {
+                return sansAgent.length === 2
+                    ? 'Il faut au moins un agent dans chaque équipe'
+                    : 'Il manque un agent dans l’équipe ' + this.codNomEquipe(sansAgent[0]).toLowerCase();
+            }
+            return '';
         },
 
         // Une question est-elle en cours ? C'est ce qui décide, sur téléphone,
@@ -1216,6 +1247,10 @@ createApp({
             if (this.lobbyMode === 'rivalry' && this.campsEnJeu.length < 2) {
                 return 'Il faut au moins deux camps avec des joueurs';
             }
+            // ⚠️ La MÊME source que `canStart`, jamais un second message
+            // écrit à côté : un bouton grisé dont l'infobulle dit autre chose
+            // que la vraie raison fait chercher au mauvais endroit.
+            if (this.lobbyMode === 'codanime' && this.codManque) return this.codManque;
             return 'Démarrer la partie';
         },
 
@@ -5742,6 +5777,48 @@ createApp({
             if (i === 0) return camp;
             const avant = this.codCampDe(l[i - 1].playerId) || 'sans';
             return avant === camp ? null : camp;
+        },
+
+        // ── Glisser-déposer un joueur d'un camp à l'autre ──────────
+        //
+        // ⚠️ Il DOUBLE la pastille, il ne la remplace pas. Le glisser est
+        // plus agréable à la souris, mais il n'existe pas au doigt : sur
+        // téléphone, seule la pastille reste. Retirer l'une pour l'autre
+        // aurait fermé la composition à la moitié des appareils.
+        codDragStart(playerId, ev) {
+            if (!this.isHost || this.lobbyMode !== 'codanime') return;
+            this.codDrag = playerId;
+            if (ev && ev.dataTransfer) {
+                ev.dataTransfer.effectAllowed = 'move';
+                // Safari refuse le glisser si rien n'est écrit dedans.
+                ev.dataTransfer.setData('text/plain', playerId);
+            }
+        },
+
+        codDragEnd() { this.codDrag = null; this.codSurvol = null; },
+
+        codDragOver(camp, ev) {
+            if (!this.codDrag) return;
+            // Un camp plein n'accepte pas : on le dit en n'appelant pas
+            // `preventDefault`, ce qui affiche le curseur « interdit ».
+            if (this.codCampPlein(camp, this.codDrag)) return;
+            if (ev) ev.preventDefault();
+            this.codSurvol = camp;
+        },
+
+        codDrop(camp, ev) {
+            if (ev) ev.preventDefault();
+            const qui = this.codDrag;
+            this.codDrag = null;
+            this.codSurvol = null;
+            if (!qui || this.codCampPlein(camp, qui)) return;
+            if (this.codCampDe(qui) === camp) return;
+            // ⚠️ On dépose toujours comme AGENT. Faire de quelqu'un l'espion
+            // d'un camp en l'y glissant démettrait l'espion en place sans
+            // qu'on l'ait demandé — ça reste un geste explicite, par la
+            // pastille.
+            this.applySetting('/admin/codanime/placer',
+                { playerId: qui, equipe: camp, role: 'agent' }, () => {});
         },
 
         codPlacer(playerId, equipe, role) {
