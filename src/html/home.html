@@ -486,8 +486,19 @@
                                 </button>
 
                             </div>
-                            <div class="v2-room-players-grid" v-if="lobbyPlayers.length">
-                                <span class="v2-room-player-wrap" v-for="p in joueursAffiches" :key="p.playerId">
+                            <div class="v2-room-players-grid" v-if="lobbyPlayers.length"
+                                 :class="{ 'par-camps': lobbyMode === 'codanime' }">
+                                <template v-for="(p, iJ) in joueursAffiches" :key="p.playerId">
+                                <!-- 🕵️ Les deux camps de Codanime sont SÉPARÉS à l'écran.
+                                     Le séparateur force un retour à la ligne (la grille est
+                                     un flex qui enroule) et porte le nom du camp : à six
+                                     joueurs mélangés dans une seule rangée, on ne voit plus
+                                     qui joue avec qui. -->
+                                <span class="cod-sep" v-if="codTitreAvant(iJ)"
+                                      :class="'camp-' + codTitreAvant(iJ)">
+                                    {{ codNomEquipe(codTitreAvant(iJ)) }}
+                                </span>
+                                <span class="v2-room-player-wrap">
                                 <!-- ⚠️ L exclusion demande DEUX clics, et pas une modale.
                                      D un seul clic on excluait sans le vouloir en visant la
                                      pastille de camp, qui est posée sur la vignette. Mais une
@@ -536,7 +547,54 @@
                                                 :title="teamNames[c]">{{ lettreCamp(c) }}</button>
                                     </span>
                                 </span>
+
+                                <!-- 🕵️ La même pastille pour Codanime, avec TROIS choix :
+                                     les deux camps et la loupe de l'espion. Le menu ne
+                                     s'ouvre que pour l'hôte, comme pour les camps du
+                                     Classique.
+                                     ⚠️ Un camp PLEIN est proposé quand même, mais grisé :
+                                     le masquer ferait disparaître un bouton sous le doigt
+                                     dès qu'un quatrième joueur arrive, et l'on ne saurait
+                                     pas pourquoi. -->
+                                <span class="v2-team-pick" v-if="isHost && lobbyMode === 'codanime'">
+                                    <button class="v2-team-flag cod-flag"
+                                            :class="['cod-' + (codCampDe(p.playerId) || 'sans'),
+                                                     { ouvert: campMenu === p.playerId,
+                                                       espion: codEstEspion(p.playerId) }]"
+                                            @click.stop="ouvrirCampMenu(p.playerId)"
+                                            :title="'Rôle de ' + p.username">
+                                        <svg v-if="codEstEspion(p.playerId)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                                            <circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/>
+                                        </svg>
+                                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-1.8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V21"/><circle cx="9" cy="7" r="3.4"/>
+                                        </svg>
+                                    </button>
+                                    <span class="v2-team-menu cod-menu" v-if="campMenu === p.playerId" @click.stop
+                                          :style="{ '--decal': campMenuDecal + 'px' }">
+                                        <button class="v2-team-opt cod-opt camp-a"
+                                                :class="{ on: codCampDe(p.playerId) === 'A' }"
+                                                :disabled="codCampPlein('A', p.playerId)"
+                                                title="Équipe bleue"
+                                                @click.stop="codPlacer(p.playerId, 'A', 'agent'); campMenu = null">B</button>
+                                        <button class="v2-team-opt cod-opt camp-b"
+                                                :class="{ on: codCampDe(p.playerId) === 'B' }"
+                                                :disabled="codCampPlein('B', p.playerId)"
+                                                title="Équipe rouge"
+                                                @click.stop="codPlacer(p.playerId, 'B', 'agent'); campMenu = null">R</button>
+                                        <button class="v2-team-opt cod-opt espion"
+                                                :class="{ on: codEstEspion(p.playerId) }"
+                                                :disabled="!codCampDe(p.playerId)"
+                                                title="En faire l’espion de son camp"
+                                                @click.stop="codPlacer(p.playerId, codCampDe(p.playerId), 'espion'); campMenu = null">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                                                <circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/>
+                                            </svg>
+                                        </button>
+                                    </span>
                                 </span>
+                                </span>
+                                </template>
                             </div>
                             <div class="v2-room-empty" v-else>
                                 Partage le code pour que tes joueurs te rejoignent
@@ -897,7 +955,7 @@
                                      curieux — pour qu'on devine trois bons crans. -->
                                 <div class="v2-set" v-if="cod.chrono">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-                                    <span class="v2-set-label">Durée du tour</span>
+                                    <span class="v2-set-label">Durée tour</span>
                                     <input class="v2-range" type="range" min="30" max="180" step="15"
                                            :value="cod.dureeTour"
                                            @input="cod.dureeTour = parseInt($event.target.value)"
@@ -919,40 +977,30 @@
                                 <div class="v2-set cod-set-equipes">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
                                     <span class="v2-set-label">Équipes</span>
+                                    <span class="v2-set-value cod-equipes-etat">{{ cod.equipes.A.agents.length + (cod.equipes.A.espion ? 1 : 0) }} · {{ cod.equipes.B.agents.length + (cod.equipes.B.espion ? 1 : 0) }}</span>
+                                    <!-- ⚠️ Il RECOUVRE la ligne au survol, sur toute sa
+                                         largeur, au lieu de se glisser dedans : une
+                                         petite cible posée au bout d'une ligne de
+                                         réglages se vise mal, et se confond avec les
+                                         valeurs des lignes voisines. -->
                                     <button class="cod-melange"
-                                            @click="applySetting('/admin/codanime/melanger', {}, () => {})">Mélanger</button>
+                                            @click="applySetting('/admin/codanime/melanger', {}, () => {})">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                                        </svg>
+                                        Mélanger les équipes
+                                    </button>
                                 </div>
 
-                                <!-- Qui est où. Une ligne par joueur, et trois cibles :
-                                     le camp bleu, le camp rouge, et la loupe qui en fait
-                                     l'espion de son camp.
-                                     ⚠️ La loupe est DÉSACTIVÉE tant que le joueur n'a pas
-                                     de camp : « espion de rien » n'existe pas, et le
-                                     serveur refuserait — autant que le bouton le dise. -->
-                                <div class="cod-roles" v-if="lobbyPlayers && lobbyPlayers.length">
-                                    <div class="cod-role" v-for="p in lobbyPlayers" :key="p.playerId"
-                                         :class="'est-' + (codCampDe(p.playerId) || 'sans')">
-                                        <span class="cod-role-nom">{{ p.username }}</span>
-                                        <span class="cod-role-btns">
-                                            <button class="cod-role-b camp-a" :class="{ on: codCampDe(p.playerId) === 'A' }"
-                                                    title="Équipe bleue"
-                                                    @click="codPlacer(p.playerId, 'A', 'agent')">B</button>
-                                            <button class="cod-role-b camp-b" :class="{ on: codCampDe(p.playerId) === 'B' }"
-                                                    title="Équipe rouge"
-                                                    @click="codPlacer(p.playerId, 'B', 'agent')">R</button>
-                                            <button class="cod-role-b espion" :class="{ on: codEstEspion(p.playerId) }"
-                                                    :disabled="!codCampDe(p.playerId)"
-                                                    title="En faire l’espion de son camp"
-                                                    @click="codPlacer(p.playerId, codCampDe(p.playerId), 'espion')">
-                                                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/></svg>
-                                            </button>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Le récapitulatif, qui dit d'un coup d'œil si la
-                                     partie peut partir : un espion et un agent de chaque
-                                     côté. -->
+                                <!-- ⚠️ Le choix des rôles n'est PLUS ici : il a rejoint
+                                     les vignettes de joueurs, au milieu de l'écran, comme
+                                     les camps du Classique. Une liste de noms répétée dans
+                                     le tiroir, à côté de la même liste en grand juste à
+                                     droite, demandait de faire le lien entre deux endroits
+                                     pour un seul geste.
+                                     Reste ici le RÉCAPITULATIF, qui dit d'un coup d'œil si
+                                     la partie peut partir : un espion et un agent de
+                                     chaque côté. -->
                                 <div class="cod-compo" v-if="cod.equipes">
                                     <div class="cod-compo-camp camp-a">
                                         <span class="cod-compo-titre">Bleue</span>

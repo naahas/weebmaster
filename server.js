@@ -8801,6 +8801,16 @@ io.on('connection', (socket) => {
 
         console.log(`✅ ${data.username} a rejoint le lobby${data.team ? ` (Team ${data.team})` : ''}`);
 
+        // 🕵️ Codanime place le nouveau venu tout de suite : A d'abord, puis
+        // B. L'hôte, qui entre le premier, est donc l'espion bleu, et le
+        // cinquième à entrer devient l'espion rouge.
+        // ⚠️ Sans ça, un salon où l'hôte n'a touché à rien ne peut pas
+        // démarrer, et rien à l'écran ne dit pourquoi.
+        if (gameState.lobbyMode === 'codanime') {
+            codanime.placerAuto(gameState, data.playerId);
+            diffuserReglagesCodanime(gameState);
+        }
+
         // 🆕 Utiliser la fonction helper
         broadcastLobbyUpdate(gameState);
         
@@ -8878,6 +8888,12 @@ io.on('connection', (socket) => {
             // seuil périmé.
             if (gameState.lobbyMode === 'codanime' && gameState.inProgress) {
                 codanime.quitter(gameState, player.playerId);
+            }
+            // Hors partie, il LIBÈRE sa place : sinon le suivant tombe dans
+            // un camp plein et reste spectateur sans savoir pourquoi.
+            if (gameState.lobbyMode === 'codanime' && !gameState.inProgress) {
+                codanime.retirerDuSalon(gameState, player.playerId);
+                diffuserReglagesCodanime(gameState);
             }
 
             gameState.players.delete(socket.id);

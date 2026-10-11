@@ -1183,6 +1183,17 @@ createApp({
         // répartition a échoué.
         joueursAffiches() {
             const l = this.lobbyPlayers || [];
+            // 🕵️ Codanime range TOUJOURS par camp, sans bouton « Trier » :
+            // ses deux équipes sont la structure même du mode, pas un
+            // réglage qu'on active. Et l'espion passe devant ses agents.
+            if (this.lobbyMode === 'codanime') {
+                const rang = (p) => {
+                    const c = this.codCampDe(p.playerId);
+                    if (!c) return 9;
+                    return (c === 'A' ? 0 : 4) + (this.codEstEspion(p.playerId) ? 0 : 1);
+                };
+                return l.slice().sort((a, b) => rang(a) - rang(b));
+            }
             if (!this.triParCamp || this.lobbyMode !== 'rivalry') return l;
             return l.slice().sort((a, b) => (a.team || 99) - (b.team || 99));
         },
@@ -5699,6 +5710,31 @@ createApp({
         codEstEspion(playerId) {
             const e = this.cod.equipes;
             return !!e && (e.A.espion === playerId || e.B.espion === playerId);
+        },
+
+        // Un camp est plein à 1 espion + 3 agents. ⚠️ On EXCLUT le joueur
+        // visé du compte : sans ça, le bouton de son propre camp se grisait
+        // dès que le camp était plein, et l'on ne pouvait plus en faire
+        // l'espion de l'équipe où il se trouve déjà.
+        codCampPlein(camp, saufPlayerId) {
+            const e = this.cod.equipes;
+            if (!e) return false;
+            let n = 0;
+            if (e[camp].espion && e[camp].espion !== saufPlayerId) n++;
+            n += (e[camp].agents || []).filter(a => a.playerId !== saufPlayerId).length;
+            return n >= 4;
+        },
+
+        // Le nom du camp à poser AVANT la vignette d'indice `i`, ou null.
+        // Il paraît devant le premier joueur de chaque camp — donc deux fois
+        // au plus, et jamais pour un camp vide.
+        codTitreAvant(i) {
+            if (this.lobbyMode !== 'codanime') return null;
+            const l = this.joueursAffiches || [];
+            const camp = this.codCampDe(l[i] && l[i].playerId);
+            if (!camp) return null;
+            if (i === 0) return camp;
+            return this.codCampDe(l[i - 1].playerId) === camp ? null : camp;
         },
 
         codPlacer(playerId, equipe, role) {

@@ -387,6 +387,49 @@ function creerModule(deps) {
         }
     }
 
+    // ── Le placement a l'arrivée ───────────────────────────────────
+    //
+    // On remplit A, puis B, dans l'ordre d'arrivée. Donc :
+    //   1er (l'hôte) → espion bleu · 2 à 4 → agents bleus
+    //   5e           → espion rouge · 6 à 8 → agents rouges
+    //
+    // ⚠️ Ça n'est pas qu'un confort : sans placement automatique, un salon
+    // où l'hôte n'a touché à rien ne peut pas démarrer, et rien à l'écran ne
+    // dit pourquoi. Le mode doit être jouable en cliquant « Démarrer ».
+    function placerAuto(gameState, playerId) {
+        const etat = gameState.codanime;
+        if (etat.active) return false;
+        if (equipeDe(etat, playerId)) return false;
+        for (const e of ['A', 'B']) {
+            if (!etat.equipes[e].espion) { etat.equipes[e].espion = playerId; return true; }
+            if (etat.equipes[e].agents.length < AGENTS_MAX) {
+                etat.equipes[e].agents.push(playerId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ⚠️ Un joueur qui part AVANT la partie libère sa place, sinon le suivant
+    // tombe dans un camp plein et reste spectateur. En COURS de partie, au
+    // contraire, on ne touche à rien : son équipe doit continuer à exister,
+    // et le classement doit pouvoir le nommer.
+    function retirerDuSalon(gameState, playerId) {
+        const etat = gameState.codanime;
+        if (etat.active) return;
+        for (const e of ['A', 'B']) {
+            if (etat.equipes[e].espion === playerId) etat.equipes[e].espion = null;
+            etat.equipes[e].agents = etat.equipes[e].agents.filter(id => id !== playerId);
+        }
+        // Un camp sans espion mais avec des agents en promeut un : sinon le
+        // départ de l'hôte bloque le salon pour tout le monde.
+        for (const e of ['A', 'B']) {
+            if (!etat.equipes[e].espion && etat.equipes[e].agents.length) {
+                etat.equipes[e].espion = etat.equipes[e].agents.shift();
+            }
+        }
+    }
+
     // Une composition est jouable s'il y a deux espions et au moins un agent
     // de chaque côté.
     function compositionValide(etat) {
@@ -699,7 +742,7 @@ function creerModule(deps) {
         demarrer, annoncerIndice, voter, passer, cloturer,
         quitter, arreter, terminer,
         etatPourLeClient, diffuserEtat, vueDesEquipes,
-        composerAuto, compositionValide,
+        composerAuto, compositionValide, placerAuto, retirerDuSalon,
     };
 }
 
