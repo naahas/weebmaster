@@ -8178,7 +8178,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        et aucun défilement horizontal nulle part. */
     .v2-mode-char.char-choice {
         right: -1%;
-        max-width: 77%;
+        max-width: 83%;
         /* ⚠️ Écrit même si c'est proche de la valeur de base : la taille de
            Mitsuri est calée sur celle des AUTRES personnages, pas sur un
            défaut. Si le défaut bougeait un jour pour une autre raison, elle
@@ -8200,7 +8200,7 @@ body.game-active:has(.poll-game-container) #particles-js {
         /* ⚠️ Les DEUX bornes montent ensemble. Son sujet fait 1,03 de
            rapport, donc la largeur mord la première : ne relever que la
            hauteur n'aurait rien changé du tout. */
-        max-width: 77%;
+        max-width: 83%;
         height: 119%;
         /* Trois pixels plus bas, demandés à l oeil sur la carte rendue.
            En PIXELS et non en pourcentage : trois pixels de descente ne
@@ -8214,7 +8214,7 @@ body.game-active:has(.poll-game-container) #particles-js {
            bien parce que son contour y est transparent. */
         /* Quatre pixels plus a GAUCHE, demandes a l oeil. En pixels,
            comme la descente : c est un decalage vu, pas une proportion. */
-        right: calc(-4% + 4px);
+        right: calc(-9% + 4px);
     }
 
     /* Lambo est le plus trapu des trois (0,84 contre 1,00 et 0,56) : a hauteur

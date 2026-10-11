@@ -447,7 +447,7 @@ createApp({
                 // alpha, elle fait 1437 × 1400, comme Mitsuri.
                 // Et le NOM change, il ne se remplace pas sur place : src/img
                 // est servi avec sept jours de cache.
-                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo2.webp', soon: !EN_LOCAL,
+                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
                   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
