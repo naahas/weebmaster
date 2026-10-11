@@ -7013,8 +7013,13 @@ createApp({
                 if (data.teamNames) this.teamNames = data.teamNames;
                 if (data.teamCounts) this.teamCounts = data.teamCounts;
                 
-                // 💣 BombAnime — lobby plein
-                if (data.lobbyMode === 'bombanime') {
+                // 💣 BombAnime et 🕵️ Codanime — lobby plein
+                // ⚠️ La condition ne connaissait que BombAnime, si bien que
+                // `maxPlayers` gardait son défaut de 15 : le salon de
+                // Codanime annonçait « 15 max » et refusait le neuvième. Le
+                // serveur, lui, envoyait bien 8 — c'est le client qui ne
+                // l'écoutait pas.
+                if (data.lobbyMode === 'bombanime' || data.lobbyMode === 'codanime') {
                     this.isLobbyFull = data.isLobbyFull || false;
                     this.maxPlayers = data.maxPlayers || 15;
                     // Reset l'erreur si le lobby n'est plus plein

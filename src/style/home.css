@@ -8202,7 +8202,11 @@ body.game-active:has(.poll-game-container) #particles-js {
            hauteur n'aurait rien changé du tout. */
         max-width: 77%;
         height: 119%;
-        bottom: -4%;
+        /* Trois pixels plus bas, demandés à l oeil sur la carte rendue.
+           En PIXELS et non en pourcentage : trois pixels de descente ne
+           sont pas la même chose selon la hauteur du panneau, et c est bien
+           trois pixels qu on a vus. */
+        bottom: calc(-4% - 3px);
         /* Décalé plus à DROITE que les autres, et c'est voulu : à hauteur
            égale son dessin déborde plus vers la gauche, où se trouve la
            description. Mesuré — à 133 %, sa jambe passait sur « sur-le-champ ».

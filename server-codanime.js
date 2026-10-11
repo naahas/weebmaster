@@ -440,8 +440,42 @@ function creerModule(deps) {
         return true;
     }
 
+    // ⚠️ LA COMPOSITION SE RÉPARE TOUTE SEULE, et il le faut absolument :
+    // un joueur peut disparaître de `players` par des chemins qui ignorent
+    // Codanime — `dev-clear-bots` en est un, qui vide la table sans rien
+    // dire à personne. Les places restaient alors prises par des absents, le
+    // tiroir annonçait « 4 · 4 » dans un salon de quatre, et tout nouvel
+    // arrivant tombait en « sans équipe ».
+    //
+    // Corriger chaque chemin de sortie un par un, c'est en oublier un : on
+    // répare donc À LA LECTURE, dans la seule fonction par laquelle passent
+    // toutes les diffusions.
+    //
+    // ⚠️ Jamais PENDANT une partie : un joueur parti doit garder sa place,
+    // son équipe doit continuer d'exister et le résultat doit pouvoir le
+    // nommer.
+    function synchroniser(gameState) {
+        const etat = gameState.codanime;
+        if (etat.active) return;
+        const present = estPresent(gameState);
+
+        for (const e of ['A', 'B']) {
+            if (etat.equipes[e].espion && !present(etat.equipes[e].espion)) {
+                etat.equipes[e].espion = null;
+            }
+            etat.equipes[e].agents = etat.equipes[e].agents.filter(present);
+            if (!etat.equipes[e].espion && etat.equipes[e].agents.length) {
+                etat.equipes[e].espion = etat.equipes[e].agents.shift();
+            }
+        }
+        // Et l'on replace ceux qui attendent : une place libérée doit
+        // profiter à quelqu'un, sinon le salon reste bloqué sous le plafond.
+        for (const p of joueursDuSalon(gameState)) placerAuto(gameState, p.playerId);
+    }
+
     // ── Les vues ───────────────────────────────────────────────────
     function vueDesEquipes(gameState) {
+        synchroniser(gameState);
         const etat = gameState.codanime;
         const paquet = {};
         for (const e of ['A', 'B']) {
@@ -742,7 +776,7 @@ function creerModule(deps) {
         demarrer, annoncerIndice, voter, passer, cloturer,
         quitter, arreter, terminer,
         etatPourLeClient, diffuserEtat, vueDesEquipes,
-        composerAuto, compositionValide, placerAuto, retirerDuSalon,
+        composerAuto, compositionValide, placerAuto, retirerDuSalon, synchroniser,
     };
 }
 

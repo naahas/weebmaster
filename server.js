@@ -8977,9 +8977,13 @@ io.on('connection', (socket) => {
         if (!gameState || gameState.inProgress) return;
         if (!gameState.hostToken || !data || data.hostToken !== gameState.hostToken) return;
 
-        const plafond = gameState.lobbyMode === 'bombanime' ? BOMBANIME_CONFIG.MAX_PLAYERS
-            : gameState.lobbyMode === 'collect' ? collect.CONFIG.MAX_JOUEURS
-            : 60;
+        // ⚠️ `plafondDuSalon`, et PAS une seconde liste de modes écrite ici.
+        // Celle qui s'y trouvait ne connaissait ni Codanime ni rien de ce
+        // qu'on ajouterait plus tard : on pouvait poser vingt bots dans un
+        // mode qui en accepte huit, et les douze de trop restaient « sans
+        // équipe » — un état que le jeu ne doit jamais produire. C'est la
+        // maladie du plafond écrit deux fois.
+        const plafond = Math.min(plafondDuSalon(gameState), 60);
         const place = Math.max(0, plafond - gameState.players.size);
         const combien = Math.min(parseInt(data.count, 10) || 0, place);
 
@@ -9026,6 +9030,10 @@ io.on('connection', (socket) => {
             if (p.estBot) { gameState.players.delete(id); n++; }
         }
         if (gameState.lobbyMode === 'rivalry') updateTeamCounts(gameState);
+        // La composition se répare à la lecture, mais il faut encore la
+        // DIFFUSER : sans ça le tiroir garde son « 4 · 4 » périmé jusqu'au
+        // prochain événement qui passe par là.
+        if (gameState.lobbyMode === 'codanime') diffuserReglagesCodanime(gameState);
         console.log(`🧪 ${n} bot(s) retiré(s)`);
         broadcastLobbyUpdate(gameState);
     });
