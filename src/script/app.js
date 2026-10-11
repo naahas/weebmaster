@@ -438,15 +438,22 @@ createApp({
                 // Le serveur refuse d'ailleurs de démarrer en dessous.
                 // Le plafond de 8 vient des rôles : 2 espions + 3 agents par
                 // camp. Au-delà, on resterait spectateur.
-                // ⚠️ `ranpo2` et non `ranpo` : la première toile portait 25 %
-                // de vide transparent sur les côtés, ce qui la rendait LARGE
-                // (1875 × 1400) là où les autres personnages sont presque
-                // carrés. Avec `object-fit: contain`, c'était donc la largeur
-                // qui bridait et la hauteur s'effondrait — Ranpo paraissait
-                // deux fois plus petit que ses voisins. Recadrée sur sa boîte
-                // alpha, elle fait 1437 × 1400, comme Mitsuri.
-                // Et le NOM change, il ne se remplace pas sur place : src/img
-                // est servi avec sept jours de cache.
+                // ⚠️ LE NOM CHANGE À CHAQUE NOUVELLE ILLUSTRATION — on en est
+                // à `ranpo3` —, jamais un remplacement sur place : src/img
+                // est servi avec sept jours de cache, et un fichier réécrit
+                // sous le même nom resterait l'ancien chez les joueurs.
+                //
+                // ⚠️ Et deux choses à savoir avant de déposer la suivante.
+                // D'abord elle se RECADRE sur sa boîte alpha : la première
+                // version portait 25 % de vide transparent sur les côtés, ce
+                // qui la rendait large et faisait mordre sa borne de largeur
+                // bien avant sa hauteur — elle paraissait deux fois plus
+                // petite que ses voisines. Ensuite son RAPPORT décide des
+                // réglages : à 1,164, celle-ci est plus large que la
+                // précédente (1,026), il a donc fallu rouvrir `max-width`
+                // puis la reculer, parce qu'elle porte des braises jusque
+                // dans son bord gauche — là où Mitsuri n'a que du vide — et
+                // qu'elles passaient sur la description.
                 { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
                   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
