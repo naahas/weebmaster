@@ -5688,7 +5688,9 @@ createApp({
         },
 
         codNomEquipe(e) {
-            return e === 'A' ? 'Bleue' : 'Rouge';
+            if (e === 'A') return 'Bleue';
+            if (e === 'B') return 'Rouge';
+            return 'Sans équipe';
         },
 
         // ── La composition, côté hôte ──────────────────────────────
@@ -5728,13 +5730,18 @@ createApp({
         // Le nom du camp à poser AVANT la vignette d'indice `i`, ou null.
         // Il paraît devant le premier joueur de chaque camp — donc deux fois
         // au plus, et jamais pour un camp vide.
+        // ⚠️ « sans » est un groupe À PART ENTIÈRE, et il le fallait : sans
+        // lui, les joueurs sans équipe se rangeaient en silence sous le
+        // dernier titre affiché. Avec vingt joueurs de test, dix-neuf grisés
+        // paraissaient appartenir à l'équipe rouge.
         codTitreAvant(i) {
             if (this.lobbyMode !== 'codanime') return null;
             const l = this.joueursAffiches || [];
-            const camp = this.codCampDe(l[i] && l[i].playerId);
-            if (!camp) return null;
+            if (!l[i]) return null;
+            const camp = this.codCampDe(l[i].playerId) || 'sans';
             if (i === 0) return camp;
-            return this.codCampDe(l[i - 1].playerId) === camp ? null : camp;
+            const avant = this.codCampDe(l[i - 1].playerId) || 'sans';
+            return avant === camp ? null : camp;
         },
 
         codPlacer(playerId, equipe, role) {

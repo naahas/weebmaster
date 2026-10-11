@@ -8200,8 +8200,8 @@ body.game-active:has(.poll-game-container) #particles-js {
         /* ⚠️ Les DEUX bornes montent ensemble. Son sujet fait 1,03 de
            rapport, donc la largeur mord la première : ne relever que la
            hauteur n'aurait rien changé du tout. */
-        max-width: 80%;
-        height: 123%;
+        max-width: 77%;
+        height: 119%;
         bottom: -4%;
         /* Décalé plus à DROITE que les autres, et c'est voulu : à hauteur
            égale son dessin déborde plus vers la gauche, où se trouve la

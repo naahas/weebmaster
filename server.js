@@ -9002,6 +9002,15 @@ io.on('connection', (socket) => {
         }
 
         if (gameState.lobbyMode === 'rivalry') updateTeamCounts(gameState);
+        // 🕵️ Les bots de mise au point entrent SANS passer par `join-lobby` :
+        // sans ce rappel, ils arrivaient tous sans équipe et le salon restait
+        // injouable quel que soit leur nombre. On les place donc comme de
+        // vrais arrivants — et au-delà de huit, les suivants restent sans
+        // équipe, ce qui est exactement ce qu'il faut voir.
+        if (gameState.lobbyMode === 'codanime') {
+            for (const p of gameState.players.values()) codanime.placerAuto(gameState, p.playerId);
+            diffuserReglagesCodanime(gameState);
+        }
         console.log(`🧪 ${combien} bot(s) ajouté(s) — ${gameState.players.size} joueur(s)`);
         broadcastLobbyUpdate(gameState);
     });

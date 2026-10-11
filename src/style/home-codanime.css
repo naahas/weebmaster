@@ -290,38 +290,6 @@
 .cod-histo-l.camp-A { border-color: rgba(47, 155, 255, 0.4); color: var(--cod-a); }
 .cod-histo-l.camp-B { border-color: rgba(255, 59, 92, 0.4); color: var(--cod-b); }
 
-/* ── Le bouton « Mélanger » ─────────────────────────────────────── */
-/* ⚠️ Il RECOUVRE la ligne entière au survol au lieu de s'y glisser : une
-   petite cible posée au bout d'une ligne de réglages se vise mal, et se
-   confond avec les valeurs des lignes voisines.
-   ⚠️ Et il reste atteignable AU DOIGT : un téléphone n'a pas de survol,
-   donc une règle « coarse » le montre en permanence. Le cacher derrière
-   un survol l'aurait rendu introuvable là où recomposer les équipes à la
-   main est justement le plus pénible. */
-.cod-set-equipes { position: relative; overflow: hidden; }
-.cod-equipes-etat { font-variant-numeric: tabular-nums; }
-
-.cod-melange {
-    position: absolute;
-    inset: 0;
-    display: flex; align-items: center; justify-content: center; gap: 0.45rem;
-    border: 0; border-radius: 0.5rem;
-    background: rgba(191, 138, 95, 0.16);
-    box-shadow: inset 0 0 0 1px rgba(191, 138, 95, 0.55);
-    color: #f0d9c2;
-    font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.16s ease;
-}
-.cod-melange svg { width: 0.95rem; height: 0.95rem; }
-.cod-set-equipes:hover .cod-melange,
-.cod-melange:focus-visible { opacity: 1; }
-
-@media (hover: none) {
-    .cod-melange { opacity: 1; }
-}
-
 /* ── Les deux camps dans la liste du salon ──────────────────────── */
 /* ⚠️ Le séparateur force un RETOUR À LA LIGNE : la grille des joueurs est
    un flex qui enroule, donc un `flex-basis: 100%` suffit. À six joueurs
@@ -340,13 +308,20 @@
 }
 .cod-sep.camp-A { color: var(--cod-a); }
 .cod-sep.camp-B { color: var(--cod-b); }
+.cod-sep.camp-sans { color: rgba(255, 255, 255, 0.35); }
 .cod-sep.camp-A::after { background: linear-gradient(90deg, rgba(47, 155, 255, 0.45), transparent); }
 .cod-sep.camp-B::after { background: linear-gradient(90deg, rgba(255, 59, 92, 0.45), transparent); }
+.cod-sep.camp-sans::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent); }
 
-/* Le second camp respire : c'est l'espace qui sépare, le titre ne fait
-   que nommer. */
+/* Les camps suivants respirent : c'est l'espace qui sépare, le titre ne
+   fait que nommer. */
 .v2-room-players-grid.par-camps .cod-sep + .v2-room-player-wrap { margin-left: 0; }
-.v2-room-players-grid.par-camps .cod-sep.camp-B { margin-top: 1.1rem; }
+.v2-room-players-grid.par-camps .cod-sep.camp-B,
+.v2-room-players-grid.par-camps .cod-sep.camp-sans { margin-top: 1.1rem; }
+
+/* Sans équipe : on les montre, mais en retrait. Ils ne jouent pas cette
+   partie, et ça doit se voir sans qu'on ait à lire. */
+.v2-room-players-grid.par-camps .cod-sep.camp-sans ~ .v2-room-player-wrap { opacity: 0.5; }
 
 /* ── La pastille de rôle, sur la vignette ───────────────────────── */
 .v2-team-flag.cod-sans { color: rgba(255, 255, 255, 0.5); }
@@ -358,30 +333,34 @@
     box-shadow: 0 0 0.5rem rgba(191, 138, 95, 0.35);
 }
 
+/* ⚠️ Les deux camps sont des PASTILLES DE COULEUR, sans lettre : la
+   couleur est déjà le langage du mode — le badge du joueur, le titre de
+   son camp et le filet qui le suit en sont tous teintés. Une lettre
+   demanderait de traduire « B » en bleu à chaque fois. */
 .cod-opt { font-weight: 800; }
-.cod-opt.camp-a.on { background: var(--cod-a); border-color: var(--cod-a); color: #0b1016; }
-.cod-opt.camp-b.on { background: var(--cod-b); border-color: var(--cod-b); color: #190a0e; }
+.cod-opt.camp-a, .cod-opt.camp-b {
+    background: currentColor;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.cod-opt.camp-a { color: var(--cod-a); border-color: rgba(47, 155, 255, 0.7); }
+.cod-opt.camp-b { color: var(--cod-b); border-color: rgba(255, 59, 92, 0.7); }
+/* Le camp où le joueur se trouve déjà : un anneau clair autour, puisque
+   la pastille est pleine et ne peut pas « s'allumer » davantage. */
+.cod-opt.camp-a.on, .cod-opt.camp-b.on {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
 .cod-opt.espion.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
-.cod-opt:disabled { opacity: 0.25; cursor: default; }
+.cod-opt:disabled { opacity: 0.22; cursor: default; }
 .cod-opt svg { width: 0.8rem; height: 0.8rem; }
 
-/* ── La composition, dans le tiroir du salon ────────────────────── */
-.cod-compo { display: flex; gap: 0.5rem; padding: 0.2rem 0 0.4rem; }
-.cod-compo-camp {
-    flex: 1; display: flex; flex-direction: column; gap: 0.15rem;
-    padding: 0.45rem 0.55rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    font-size: 0.7rem;
-}
-.cod-compo-camp.camp-a { border-color: rgba(47, 155, 255, 0.3); }
-.cod-compo-camp.camp-b { border-color: rgba(255, 59, 92, 0.3); }
-.cod-compo-titre { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55; }
-.cod-compo-camp.camp-a .cod-compo-titre { color: var(--cod-a); }
-.cod-compo-camp.camp-b .cod-compo-titre { color: var(--cod-b); }
-.cod-compo-espion { font-weight: 700; }
-.cod-compo-vide { opacity: 0.35; font-style: italic; }
-.cod-compo-agent { opacity: 0.75; }
+/* Un seul bouton, sur toute la largeur du panneau. */
+.cod-melange-opt { flex: 1; font-weight: 800; letter-spacing: 0.04em; }
+
+/* Le compte « 4 · 2 » de la ligne Équipes. ⚠️ Le TABLEAU qui listait
+   les deux camps ici a été retiré : il répétait les vignettes de joueurs
+   affichées en grand juste à droite, déjà rangées par camp sous leur nom.
+   Deux listes des mêmes noms obligent à faire le lien entre elles. */
+.cod-equipes-etat { font-variant-numeric: tabular-nums; }
 
 /* ── Téléphone ──────────────────────────────────────────────────── */
 /* ⚠️ La grille reste à CINQ colonnes, même à 360 px. Passer à quatre

@@ -572,16 +572,22 @@
                                     </button>
                                     <span class="v2-team-menu cod-menu" v-if="campMenu === p.playerId" @click.stop
                                           :style="{ '--decal': campMenuDecal + 'px' }">
+                                        <!-- ⚠️ La COULEUR seule, pas de lettre : « B » et
+                                             « R » demandent de traduire, alors que la
+                                             pastille du joueur, le titre de son camp et
+                                             le filet qui le suit sont déjà bleus ou
+                                             rouges. Le titre reste pour le lecteur
+                                             d'écran et l'infobulle. -->
                                         <button class="v2-team-opt cod-opt camp-a"
                                                 :class="{ on: codCampDe(p.playerId) === 'A' }"
                                                 :disabled="codCampPlein('A', p.playerId)"
-                                                title="Équipe bleue"
-                                                @click.stop="codPlacer(p.playerId, 'A', 'agent'); campMenu = null">B</button>
+                                                title="Équipe bleue" aria-label="Équipe bleue"
+                                                @click.stop="codPlacer(p.playerId, 'A', 'agent'); campMenu = null"></button>
                                         <button class="v2-team-opt cod-opt camp-b"
                                                 :class="{ on: codCampDe(p.playerId) === 'B' }"
                                                 :disabled="codCampPlein('B', p.playerId)"
-                                                title="Équipe rouge"
-                                                @click.stop="codPlacer(p.playerId, 'B', 'agent'); campMenu = null">R</button>
+                                                title="Équipe rouge" aria-label="Équipe rouge"
+                                                @click.stop="codPlacer(p.playerId, 'B', 'agent'); campMenu = null"></button>
                                         <button class="v2-team-opt cod-opt espion"
                                                 :class="{ on: codEstEspion(p.playerId) }"
                                                 :disabled="!codCampDe(p.playerId)"
@@ -974,47 +980,29 @@
                                      milieu de réglages qui ne le sont pas se déclenche
                                      par accident en lisant la composition juste en
                                      dessous. -->
-                                <div class="v2-set cod-set-equipes">
+                                <!-- ⚠️ « v2-set-opts », exactement comme le réglage Test et
+                                     ses « +1 / +3 » : c'est un panneau OPAQUE qui recouvre
+                                     la ligne au survol. Un bouton translucide posé dessus
+                                     laissait lire « ÉQUIPES » et « 1 · 0 » DERRIÈRE le
+                                     texte du bouton — deux libellés superposés. -->
+                                <div class="v2-set">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
                                     <span class="v2-set-label">Équipes</span>
                                     <span class="v2-set-value cod-equipes-etat">{{ cod.equipes.A.agents.length + (cod.equipes.A.espion ? 1 : 0) }} · {{ cod.equipes.B.agents.length + (cod.equipes.B.espion ? 1 : 0) }}</span>
-                                    <!-- ⚠️ Il RECOUVRE la ligne au survol, sur toute sa
-                                         largeur, au lieu de se glisser dedans : une
-                                         petite cible posée au bout d'une ligne de
-                                         réglages se vise mal, et se confond avec les
-                                         valeurs des lignes voisines. -->
-                                    <button class="cod-melange"
-                                            @click="applySetting('/admin/codanime/melanger', {}, () => {})">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
-                                        </svg>
-                                        Mélanger les équipes
-                                    </button>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt cod-melange-opt"
+                                                @click="applySetting('/admin/codanime/melanger', {}, () => {})">Mélanger</button>
+                                    </span>
                                 </div>
 
-                                <!-- ⚠️ Le choix des rôles n'est PLUS ici : il a rejoint
-                                     les vignettes de joueurs, au milieu de l'écran, comme
-                                     les camps du Classique. Une liste de noms répétée dans
-                                     le tiroir, à côté de la même liste en grand juste à
-                                     droite, demandait de faire le lien entre deux endroits
-                                     pour un seul geste.
-                                     Reste ici le RÉCAPITULATIF, qui dit d'un coup d'œil si
-                                     la partie peut partir : un espion et un agent de
-                                     chaque côté. -->
-                                <div class="cod-compo" v-if="cod.equipes">
-                                    <div class="cod-compo-camp camp-a">
-                                        <span class="cod-compo-titre">Bleue</span>
-                                        <span class="cod-compo-espion" v-if="cod.equipes.A.espionNom">{{ cod.equipes.A.espionNom }}</span>
-                                        <span class="cod-compo-vide" v-else>pas d’espion</span>
-                                        <span class="cod-compo-agent" v-for="a in cod.equipes.A.agents" :key="a.playerId">{{ a.username }}</span>
-                                    </div>
-                                    <div class="cod-compo-camp camp-b">
-                                        <span class="cod-compo-titre">Rouge</span>
-                                        <span class="cod-compo-espion" v-if="cod.equipes.B.espionNom">{{ cod.equipes.B.espionNom }}</span>
-                                        <span class="cod-compo-vide" v-else>pas d’espion</span>
-                                        <span class="cod-compo-agent" v-for="a in cod.equipes.B.agents" :key="a.playerId">{{ a.username }}</span>
-                                    </div>
-                                </div>
+                                <!-- ⚠️ NI le choix des rôles NI le récapitulatif ne sont
+                                     ici, et ce n'est pas un oubli. Les deux disaient la
+                                     même chose que les vignettes de joueurs affichées en
+                                     grand juste à droite, rangées par camp sous leur nom.
+                                     Deux listes des mêmes noms à deux endroits obligent à
+                                     faire le lien entre elles pour un seul geste. Le
+                                     compte « 4 · 2 » de la ligne ci-dessus suffit à dire
+                                     si la partie peut partir. -->
                             </template>
 
                             <!-- BombAnime -->
