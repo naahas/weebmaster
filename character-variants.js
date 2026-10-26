@@ -180,7 +180,7 @@ const CHARACTER_VARIANTS = {
         ["BROOK"],
         ["JINBE", "JINBEI"],
         ["LUCKY ROO", "LUCKY ROUX"],
-        ["BEN BECKMAN", "BENN BECKMAN" , "BEN BECKMANN", "BENN BECKMANN" , "BECKMAN", "BECKMANN"],
+        ["BEN BECKMAN", "BENN BECKMAN" , "BEN BECKMANN", "BENN BECKMANN" , "BECKMAN", "BECKMANN" , "BENN", "BEN"],
         ["AOKIJI", "KUZAN"],
         ["KIZARU", "BORSALINO"],
         ["FUJITORA", "ISSHO"],
@@ -263,6 +263,7 @@ const CHARACTER_VARIANTS = {
         ["MAHA ZOLDIK", "MAHA ZOLDYCK"],
         ["ZZIGG ZOLDIK", "ZZIGG ZOLDYCK"],
         ["UVOGIN", "UVOGUINE"],
+        ["KORUTOPI", "KOTORPI", "KORTOPI"],
         ["PEGGY", "PEGUI"],
         ["TOMPA", "TONPA"],
         ["LEORIO", "LEOLIO", "LEOLIO PARADINAITO"],
@@ -368,7 +369,9 @@ const CHARACTER_VARIANTS = {
         ["AGATSUMA ZENITSU", "ZENITSU AGATSUMA"],
         ["HASHIBIRA INOSUKE", "INOSUKE HASHIBIRA"],
         ["UROKODAKI SAKONJI", "SAKONJI", "UROKODAKI"],
+        ["TSUGIKUNI YORIICHI", "YORIICHI", "YORICHI"],
         ["GYUTARO", "GYUTAROU"],
+        ["TOKITO", "MUICHIRO", "MUICHIRO TOKITO"],
     ],
 
     // ============================================
