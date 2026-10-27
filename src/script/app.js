@@ -427,7 +427,7 @@ createApp({
                 // SILHOUETTE NOIRE — on ne doit même pas savoir qui c'est.
                 // En local il vaut faux : le mode est ouvert et l'image rend
                 // en couleur, sans rien avoir à défaire pour jouer.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: !EN_LOCAL,
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
                   desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // 🕵️ Le PREMIER mode purement par équipe du site — d'où le
                 // « Équipe » tout court, là où le Classique annonce
@@ -454,8 +454,6 @@ createApp({
                 // puis la reculer, parce qu'elle porte des braises jusque
                 // dans son bord gauche — là où Mitsuri n'a que du vide — et
                 // qu'elles passaient sur la description.
-                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
-                  desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
