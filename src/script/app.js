@@ -405,30 +405,6 @@ createApp({
                   desc: "Une tour à gravir étage par étage, chacun à son rythme. Chaque étage est une épreuve différente. Le premier arrivé au sommet l'emporte." },
                 { id: 'collect',   name: 'Collect',   kind: 'Solo',   min: '2', max: '5',  img: 'sora.webp',
                   desc: "Jeu de cartes à plusieurs. Chacun doit réunir des personnages d'un même anime avant les autres et les poser au milieu de la table." },
-                // Cette description est un COUPLET : ses retours à la ligne sont
-                // écrits dans la donnée et rendus tels quels, grâce au
-                // « white-space: pre-line » posé sur le paragraphe. Aucune de ses
-                // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
-                // en quatre lignes exactement — soit la hauteur déjà réservée plus
-                // haut pour que le titre ne bouge pas d'un mode à l'autre.
-                // ⚠️ L'image porte le nom du PERSONNAGE, jamais celui du mode.
-                // `src/img` est servi avec sept jours de cache, et c'est permis
-                // parce qu'« une image ne change pas sans changer de nom ».
-                // Un « choice.webp » remplacé sur place casse cette promesse :
-                // le navigateur garde l'ancien personnage une semaine, et un
-                // rafraîchissement forcé n'y suffit pas toujours. En changeant
-                // de personnage on change de fichier, donc d'adresse, et le
-                // cache tombe tout seul — comme chez les autres cartes.
-                // ⚠️ `soon` EN LIGNE SEULEMENT, le temps d'étoffer la banque de
-                // vrai/faux. Le mode est fini et joué de bout en bout ; ce qui
-                // lui manque, ce sont des énoncés. Un seul drapeau fait tout :
-                // le badge « soon » dans la liste, le bouton verrouillé en
-                // « Bientôt disponible », et le portrait réduit à une
-                // SILHOUETTE NOIRE — on ne doit même pas savoir qui c'est.
-                // En local il vaut faux : le mode est ouvert et l'image rend
-                // en couleur, sans rien avoir à défaire pour jouer.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
-                  desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // 🕵️ Le PREMIER mode purement par équipe du site — d'où le
                 // « Équipe » tout court, là où le Classique annonce
                 // « Solo / Équipe » parce qu'il bascule entre les deux.
@@ -462,6 +438,30 @@ createApp({
                 // code, et on n'a rien à y éprouver en local pour l'instant.
                 { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
                   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
+                // Cette description est un COUPLET : ses retours à la ligne sont
+                // écrits dans la donnée et rendus tels quels, grâce au
+                // « white-space: pre-line » posé sur le paragraphe. Aucune de ses
+                // quatre lignes n'atteint la largeur du bloc, le couplet tient donc
+                // en quatre lignes exactement — soit la hauteur déjà réservée plus
+                // haut pour que le titre ne bouge pas d'un mode à l'autre.
+                // ⚠️ L'image porte le nom du PERSONNAGE, jamais celui du mode.
+                // `src/img` est servi avec sept jours de cache, et c'est permis
+                // parce qu'« une image ne change pas sans changer de nom ».
+                // Un « choice.webp » remplacé sur place casse cette promesse :
+                // le navigateur garde l'ancien personnage une semaine, et un
+                // rafraîchissement forcé n'y suffit pas toujours. En changeant
+                // de personnage on change de fichier, donc d'adresse, et le
+                // cache tombe tout seul — comme chez les autres cartes.
+                // ⚠️ `soon` EN LIGNE SEULEMENT, le temps d'étoffer la banque de
+                // vrai/faux. Le mode est fini et joué de bout en bout ; ce qui
+                // lui manque, ce sont des énoncés. Un seul drapeau fait tout :
+                // le badge « soon » dans la liste, le bouton verrouillé en
+                // « Bientôt disponible », et le portrait réduit à une
+                // SILHOUETTE NOIRE — on ne doit même pas savoir qui c'est.
+                // En local il vaut faux : le mode est ouvert et l'image rend
+                // en couleur, sans rien avoir à défaire pour jouer.
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
+                  desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
