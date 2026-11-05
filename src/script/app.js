@@ -454,8 +454,14 @@ createApp({
                 // puis la reculer, parce qu'elle porte des braises jusque
                 // dans son bord gauche — là où Mitsuri n'a que du vide — et
                 // qu'elles passaient sur la description.
-                // { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: true,
-                //   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
+                // ⚠️ `!EN_LOCAL` et non `true` : jouable en local pour qu'on
+                // puisse le finir, « bientôt » en ligne tant que son écran de
+                // jeu n'est pas terminé. Un seul drapeau fait tout — le badge,
+                // le bouton verrouillé et la silhouette noire.
+                // Choice, lui, reste à `true` : il attend des énoncés, pas du
+                // code, et on n'a rien à y éprouver en local pour l'instant.
+                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
+                  desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
