@@ -164,6 +164,88 @@ h1 { font-size: 1.1rem; letter-spacing: 0.02em; margin: 0 0 0.3rem; }
 }
 .p6 .c.revelee::after { background: linear-gradient(200deg, rgba(0,0,0,0.25) 0%, var(--teinte) 30%); }
 
+/* ════════════════════════════════════════════════════════════════
+   LES FUSIONS — teinte + halo + coin
+
+   Les trois retenus règlent chacun un morceau du problème :
+   • la TEINTE donne de la masse de couleur, mais mange les couleurs
+     propres du portrait — or les cheveux sont un crochet d'indice ;
+   • le HALO colore sans jamais toucher au visage, mais reste doux ;
+   • le COIN donne la lecture franche, mais il est petit.
+
+   La fusion les empile, et sa clef est un MASQUE RADIAL sur la teinte :
+   transparent au centre, opaque sur les bords. La couleur envahit donc
+   la carte en laissant un creux net autour du visage — c'est
+   littéralement « teinte » et « halo » dans la même couche, au lieu de
+   deux effets superposés qui se battraient.
+
+   Les trois pistes ne diffèrent que par le DOSAGE. Même recette.
+   ════════════════════════════════════════════════════════════════ */
+.fus .c { border-color: var(--teinte); }
+
+/* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
+   remplace la teinte en gardant la LUMINOSITÉ du portrait, donc ses
+   ombres et ses traits. Un aplat normal, même transparent, les écrase. */
+.fus .c::before {
+    content: ''; position: absolute; inset: 0; z-index: 1;
+    background: var(--teinte);
+    mix-blend-mode: color;
+    -webkit-mask-image: radial-gradient(circle at 50% 38%, transparent var(--creux), #000 var(--bord));
+    mask-image: radial-gradient(circle at 50% 38%, transparent var(--creux), #000 var(--bord));
+    opacity: var(--force);
+}
+/* Le coin, par-dessus tout : c'est lui qui tranche quand deux camps se
+   ressemblent à distance. */
+.fus .c::after {
+    content: ''; position: absolute; top: 0; right: 0; z-index: 2;
+    border-style: solid;
+    border-width: 0 var(--coin) var(--coin) 0;
+    border-color: transparent var(--teinte) transparent transparent;
+    filter: drop-shadow(-0.12rem 0.12rem 0.35rem rgba(0, 0, 0, 0.55));
+}
+
+/* ⚠️ RETOURNÉE, tout change d'échelle : le portrait n'a plus d'utilité,
+   on veut lire le camp de loin. La teinte perd son masque et passe en
+   aplat, le coin se déploie, le halo sature. */
+.fus .c.revelee::before {
+    -webkit-mask-image: none; mask-image: none;
+    mix-blend-mode: normal;
+    opacity: 0.8;
+}
+.fus .c.revelee::after { border-width: 0 14rem 14rem 0; opacity: 0.55; }
+.fus .c.revelee img { filter: brightness(0.5) saturate(0.6); }
+
+/* ⚠️ LE MÉLANGE « color » NE MARCHE QUE POUR DES COULEURS VIVES, et ça
+   se voit seulement en zoomant : il remplace la TEINTE en gardant la
+   luminosité. Un beige désaturé n'a presque pas de teinte à donner, un
+   presque-noir n'en a aucune — le neutre et l'assassin restaient donc
+   invisibles, deux camps sur quatre.
+
+   Ils gardent la même recette (masque radial, halo, coin) mais changent
+   de mélange : le neutre DÉSATURE le portrait — rien n'attire l'œil,
+   c'est exactement ce qu'un passant doit faire —, et l'assassin
+   ASSOMBRIT. Chacun dit sa nature par un geste, pas par une couleur. */
+.fus .c.camp-n::before { mix-blend-mode: saturation; background: #808080; }
+.fus .c.camp-x::before { mix-blend-mode: multiply; background: #2a2a33; }
+.fus .c.camp-x { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65); }
+/* Retournés, ils s'affirment comme les autres. */
+.fus .c.camp-n.revelee::before { mix-blend-mode: normal; background: var(--neutre); }
+.fus .c.camp-x.revelee::before { mix-blend-mode: normal; background: #0a0a0d; opacity: 0.9; }
+
+/* ── Les trois dosages ─────────────────────────────────────────── */
+/* A — sobre : grand creux, halo discret, petit coin. L'espion lit vingt-
+   cinq portraits intacts ; la couleur ne fait que border. */
+.fusA .c { --creux: 42%; --bord: 96%; --force: 0.95; --coin: 1.5rem;
+           box-shadow: inset 0 0 0.9rem rgba(var(--teinte-rgb), 0.5); }
+/* B — équilibré : le creux se referme sur le seul visage, le halo mord,
+   le coin se voit. */
+.fusB .c { --creux: 26%; --bord: 82%; --force: 1; --coin: 2.1rem;
+           box-shadow: inset 0 0 1.6rem rgba(var(--teinte-rgb), 0.8); }
+/* C — franc : presque tout est teinté, seul le visage reste net, et le
+   coin devient une vraie écharpe. */
+.fusC .c { --creux: 15%; --bord: 62%; --force: 1; --coin: 2.9rem;
+           box-shadow: inset 0 0 2.4rem rgba(var(--teinte-rgb), 1); }
+
 /* ── Les quatre camps ──────────────────────────────────────────── */
 .c.camp-a { --teinte: var(--a); --teinte-rgb: var(--a-rgb); }
 .c.camp-b { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
@@ -216,13 +298,17 @@ body.vue-agent .p3 .c:not(.revelee) { background: #15171d; }
 <div id="pistes"></div>
 
 <script>
+// ⚠️ Les trois RETENUS restent en haut, en référence : une fusion ne se
+// juge pas seule, elle se juge contre ce qu'elle prétend remplacer. Les
+// trois écartés (bandeau, cartouche, diagonale) sont sortis — six pistes
+// de plus auraient rendu la page illisible.
 const PISTES = [
-    ['Le bandeau', 'Le portrait garde le haut, un aplat prend le tiers bas. La transposition la plus directe du jeu d’origine. Retournée, l’aplat couvre tout.'],
-    ['La teinte', 'Toute la carte passe dans la couleur. ⚠️ Le portrait perd ses couleurs propres — or les cheveux sont un crochet d’indice fréquent.'],
-    ['Le cartouche', 'Le portrait rétrécit dans un cadre de couleur, comme une photo collée sur une fiche. Beaucoup de couleur, le visage jamais touché.'],
-    ['Le coin plié', 'Un triangle mord le coin. Discret pour l’espion ; à la révélation il se déploie sur toute la carte.'],
-    ['Le halo', 'Pas d’aplat : la couleur rentre par les bords. Le portrait reste intact au centre.'],
-    ['La diagonale', 'Une bande oblique traverse le bas. Beaucoup de surface colorée, visage dégagé, et l’angle anime la rangée.'],
+    ['p2 ref', 'La teinte', 'RETENU — toute la carte passe dans la couleur. ⚠️ Le portrait perd ses couleurs propres, or les cheveux sont un crochet d’indice fréquent.'],
+    ['p4 ref', 'Le coin plié', 'RETENU — un triangle mord le coin. Franc et net, mais petit.'],
+    ['p5 ref', 'Le halo', 'RETENU — la couleur rentre par les bords, le portrait reste intact au centre. Doux, peut-être trop.'],
+    ['fus fusA', 'Fusion A — sobre', 'Les trois empilés, dosage léger : grand creux autour du visage, halo discret, petit coin. L’espion lit vingt-cinq portraits intacts.'],
+    ['fus fusB', 'Fusion B — équilibrée', 'Le creux se referme sur le seul visage, le halo mord, le coin se voit. Le dosage que je recommande.'],
+    ['fus fusC', 'Fusion C — franche', 'Presque tout est teinté, seul le visage reste net, et le coin devient une écharpe. Le plus lisible de loin, le plus fatigant de près.'],
 ];
 
 // La même répartition que le jeu : 9 / 8 / 7 / 1 sur vingt-cinq cartes.
@@ -251,9 +337,11 @@ function tirer() {
 function dessiner() {
     const hote = document.getElementById('pistes');
     hote.innerHTML = '';
-    PISTES.forEach(([nom, note], k) => {
+    PISTES.forEach(([cls, nom, note], k) => {
         const bloc = document.createElement('section');
-        bloc.className = 'piste p' + (k + 1);
+        // La classe vient de la DONNEE, plus de l indice : retirer une
+        // piste decalait sinon toutes les suivantes en silence.
+        bloc.className = 'piste ' + cls;
         bloc.innerHTML = '<div class="tete"><span class="num">' + (k + 1) + '</span>'
             + '<span class="nom">' + nom + '</span></div>'
             + '<p class="note">' + note + '</p>'
