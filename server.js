@@ -2227,6 +2227,22 @@ app.get('/prototypes/collect-lueur', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-lueur.html');
 });
 
+// 🕵️ Marquer le camp d'une carte de Codanime : six pistes sur une vraie
+// grille de vingt-cinq.
+app.get('/prototypes/codanime-cartes', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-cartes.html');
+});
+
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
+// Une page de prototype qui les servirait en clair ne dirait rien du
+// rendu réel — et les noms de fichiers sont justement ce que le mode
+// cache.
+app.get('/prototypes/codanime-cartes/portraits', (req, res) => {
+    delete require.cache[require.resolve('./codanimedata.json')];
+    const vivier = require('./codanimedata.json').personnages || [];
+    res.json({ portraits: vivier.map(p => jetons.urlImage('rushpic', p.img)) });
+});
+
 app.get('/prototypes/collect-hud', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-hud.html');
 });

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — marquer le camp d'une carte</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   À qui appartient cette carte ?
+
+   Le jeu d'origine n'a pas ce problème : sa carte est un MOT sur un
+   rectangle, donc 70 % de sa surface peut devenir un aplat de couleur
+   sans rien cacher. Ici la carte EST un portrait — et le portrait doit
+   rester lisible, puisque reconnaître le personnage fait partie du jeu.
+
+   ⚠️ Et ce sont DEUX problèmes, pas un. On les juge donc séparément :
+
+   • La vue de l'ESPION. La carte n'est pas retournée, il doit encore
+     reconnaître le personnage pour trouver son indice. Le marquage doit
+     donc être lisible SANS couvrir le visage. Vingt-cinq d'un coup, en
+     quatre couleurs, pendant qu'il réfléchit : ça ne doit pas fatiguer.
+
+   • La carte RETOURNÉE, que tout le monde voit. Là le portrait ne sert
+     plus à rien : on veut lire le camp d'un coup d'œil, de loin, sur un
+     stream en 360p. Le marquage peut être brutal.
+
+   Une piste peut très bien gagner d'un côté et perdre de l'autre.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;          /* équipe bleue */
+    --b: #ff3b5c;          /* équipe rouge */
+    --neutre: #b9a88f;     /* le passant */
+    --assassin: #14151a;
+    --brun: #bf8a5f;       /* la couleur du mode */
+    --a-rgb: 47, 155, 255;
+    --b-rgb: 255, 59, 92;
+    --n-rgb: 185, 168, 143;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.6rem 1.4rem 5rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee;
+    background: radial-gradient(70% 55% at 50% 0%, #171318, #08080b 68%);
+}
+h1 { font-size: 1.1rem; letter-spacing: 0.02em; margin: 0 0 0.3rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.4rem; max-width: 46rem; line-height: 1.5; }
+
+/* ── La barre de réglages ──────────────────────────────────────── */
+.barre {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 0.9rem; margin: 0 0 1.4rem;
+    background: rgba(12, 12, 16, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.6rem;
+}
+.barre b { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.45; margin-right: 0.2rem; }
+.bt {
+    padding: 0.32rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.4rem;
+    background: transparent; color: inherit;
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    cursor: pointer;
+}
+.bt.on { background: var(--brun); border-color: var(--brun); color: #15171d; font-weight: 800; }
+.sep { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.1); margin: 0 0.4rem; }
+
+/* ── Une piste ─────────────────────────────────────────────────── */
+.piste { margin: 0 0 2.6rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; margin: 0 0 0.2rem; }
+.num {
+    display: grid; place-items: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 50%;
+    background: var(--brun); color: #15171d;
+    font-size: 0.74rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.note { font-size: 0.73rem; opacity: 0.55; margin: 0 0 0.8rem 2.2rem; max-width: 44rem; line-height: 1.5; }
+
+.grille { display: grid; grid-template-columns: repeat(5, var(--cote)); gap: 0.4rem; --cote: 7.2rem; }
+.c {
+    position: relative;
+    width: var(--cote); height: var(--cote);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #15171d;
+    border: 2px solid rgba(255, 255, 255, 0.08);
+}
+.c img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center 22%;
+    display: block;
+}
+
+/* ════════ 1 — LE BANDEAU ════════
+   Le portrait garde le haut, un aplat prend le bas. C'est la
+   transposition la plus directe du jeu d'origine : là-bas le mot est
+   sur fond de couleur, ici le visage reste en haut et la couleur
+   occupe le tiers bas. */
+.p1 .c::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+    height: 34%;
+    background: var(--teinte);
+    box-shadow: 0 -0.5rem 0.9rem rgba(0, 0, 0, 0.45);
+}
+.p1 .c.revelee::after { height: 100%; opacity: 0.86; }
+
+/* ════════ 2 — LA TEINTE ════════
+   Toute la carte passe dans la couleur, par un mélange. Le portrait
+   reste lisible en silhouette mais perd ses couleurs propres — ce qui
+   peut gêner, les cheveux étant un crochet d'indice fréquent. */
+.p2 .c::after {
+    content: ''; position: absolute; inset: 0;
+    background: var(--teinte);
+    mix-blend-mode: color;
+    opacity: 0.85;
+}
+.p2 .c.revelee::after { mix-blend-mode: normal; opacity: 0.72; }
+
+/* ════════ 3 — LE CARTOUCHE ════════
+   Le portrait rétrécit dans un cadre de couleur, comme une photo
+   collée sur une fiche. Le camp occupe largement la carte sans jamais
+   toucher au visage. */
+/* ⚠️ L'image repasse en flux normal (`position: static`). En absolu avec
+   `inset` et `width: auto`, une <img> prend sa taille INTRINSÈQUE — ici
+   225 × 350 — et non celle de son cadre : elle débordait de 244 px sous
+   une carte de 115. C'est le piège des éléments remplacés. En flux, le
+   100 % se mesure sur la boîte de contenu, donc sur le creux. */
+.p3 .c { background: var(--teinte); padding: 0.42rem 0.42rem 0.9rem; }
+.p3 .c img { position: static; width: 100%; height: 100%; border-radius: 0.28rem; }
+.p3 .c.revelee img { opacity: 0.22; }
+
+/* ════════ 4 — LE COIN PLIÉ ════════
+   Un triangle de couleur mord le coin haut-droit. Discret pour
+   l'espion, mais sans doute trop petit pour se lire de loin. */
+.p4 .c::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    border-style: solid; border-width: 0 2.6rem 2.6rem 0;
+    border-color: transparent var(--teinte) transparent transparent;
+    filter: drop-shadow(-0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
+}
+.p4 .c.revelee::after { border-width: 0 14rem 14rem 0; opacity: 0.88; }
+
+/* ════════ 5 — LE HALO ════════
+   Pas d'aplat du tout : la carte baigne dans la couleur par son bord,
+   vers l'intérieur. Le portrait est intact au centre. */
+.p5 .c {
+    border-color: var(--teinte);
+    box-shadow: inset 0 0 1.5rem rgba(var(--teinte-rgb), 0.85),
+                0 0 0.7rem rgba(var(--teinte-rgb), 0.35);
+}
+.p5 .c.revelee { box-shadow: inset 0 0 6rem rgba(var(--teinte-rgb), 1), 0 0 1rem rgba(var(--teinte-rgb), 0.5); }
+
+/* ════════ 6 — LA DIAGONALE ════════
+   Une bande oblique traverse le bas de la carte. Elle donne beaucoup
+   de surface colorée en laissant le visage dégagé, et son angle rend
+   les rangées plus vivantes qu'un bandeau droit. */
+.p6 .c::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(200deg, transparent 52%, var(--teinte) 52%);
+}
+.p6 .c.revelee::after { background: linear-gradient(200deg, rgba(0,0,0,0.25) 0%, var(--teinte) 30%); }
+
+/* ── Les quatre camps ──────────────────────────────────────────── */
+.c.camp-a { --teinte: var(--a); --teinte-rgb: var(--a-rgb); }
+.c.camp-b { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
+.c.camp-n { --teinte: var(--neutre); --teinte-rgb: var(--n-rgb); }
+.c.camp-x { --teinte: var(--assassin); --teinte-rgb: 20, 21, 26; }
+/* L'assassin porte en plus un liséré clair : en noir sur fond noir, il
+   se confondrait avec une carte non marquée. */
+.c.camp-x { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6); }
+
+/* Mode « agent » : aucune carte cachée ne porte sa couleur. */
+body.vue-agent .c:not(.revelee) { --teinte: transparent; --teinte-rgb: 0,0,0; }
+body.vue-agent .c:not(.revelee)::after { display: none; }
+body.vue-agent .c:not(.revelee) { border-color: rgba(255,255,255,0.08); box-shadow: none; }
+body.vue-agent .p3 .c:not(.revelee) { background: #15171d; }
+
+/* Le repère : à quoi ressemble une carte SANS marquage. */
+.temoin { font-size: 0.66rem; opacity: 0.4; margin: 0.45rem 0 0 0.1rem; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — à qui appartient cette carte&nbsp;?</h1>
+<p class="sous">
+    Dans le jeu d'origine, 70&nbsp;% de la carte peut devenir un aplat&nbsp;: c'est un mot sur un
+    rectangle. Ici la carte <b>est</b> un portrait, et reconnaître le personnage fait partie du jeu.
+    Six façons de marquer le camp, sur une vraie grille de vingt-cinq.
+    <br><b>Deux problèmes séparés&nbsp;:</b> l'espion doit lire le camp <i>sans perdre le visage</i>&nbsp;;
+    une carte retournée doit se lire <i>de loin</i>, le portrait n'ayant plus d'utilité. Une piste peut
+    gagner d'un côté et perdre de l'autre — d'où le basculeur.
+</p>
+
+<div class="barre">
+    <b>Vue</b>
+    <button class="bt on" data-vue="espion">Espion</button>
+    <button class="bt" data-vue="agent">Agent</button>
+    <span class="sep"></span>
+    <b>Cartes</b>
+    <button class="bt on" data-rev="0">Aucune retournée</button>
+    <button class="bt" data-rev="1">Quelques-unes</button>
+    <button class="bt" data-rev="2">Toutes</button>
+    <span class="sep"></span>
+    <b>Taille</b>
+    <button class="bt" data-cote="5.2">Téléphone</button>
+    <button class="bt on" data-cote="7.2">Normale</button>
+    <button class="bt" data-cote="9">Grande</button>
+    <span class="sep"></span>
+    <button class="bt" id="retirer">Autre grille</button>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const PISTES = [
+    ['Le bandeau', 'Le portrait garde le haut, un aplat prend le tiers bas. La transposition la plus directe du jeu d’origine. Retournée, l’aplat couvre tout.'],
+    ['La teinte', 'Toute la carte passe dans la couleur. ⚠️ Le portrait perd ses couleurs propres — or les cheveux sont un crochet d’indice fréquent.'],
+    ['Le cartouche', 'Le portrait rétrécit dans un cadre de couleur, comme une photo collée sur une fiche. Beaucoup de couleur, le visage jamais touché.'],
+    ['Le coin plié', 'Un triangle mord le coin. Discret pour l’espion ; à la révélation il se déploie sur toute la carte.'],
+    ['Le halo', 'Pas d’aplat : la couleur rentre par les bords. Le portrait reste intact au centre.'],
+    ['La diagonale', 'Une bande oblique traverse le bas. Beaucoup de surface colorée, visage dégagé, et l’angle anime la rangée.'],
+];
+
+// La même répartition que le jeu : 9 / 8 / 7 / 1 sur vingt-cinq cartes.
+const REPARTITION = [].concat(
+    Array(9).fill('camp-a'), Array(8).fill('camp-b'),
+    Array(7).fill('camp-n'), ['camp-x']);
+
+let portraits = [];
+let grille = [];
+
+function melanger(t) {
+    const a = t.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function tirer() {
+    const imgs = melanger(portraits).slice(0, 25);
+    const camps = melanger(REPARTITION);
+    grille = imgs.map((src, i) => ({ src, camp: camps[i] }));
+}
+
+function dessiner() {
+    const hote = document.getElementById('pistes');
+    hote.innerHTML = '';
+    PISTES.forEach(([nom, note], k) => {
+        const bloc = document.createElement('section');
+        bloc.className = 'piste p' + (k + 1);
+        bloc.innerHTML = '<div class="tete"><span class="num">' + (k + 1) + '</span>'
+            + '<span class="nom">' + nom + '</span></div>'
+            + '<p class="note">' + note + '</p>'
+            + '<div class="grille"></div>';
+        const g = bloc.querySelector('.grille');
+        grille.forEach((c, i) => {
+            const d = document.createElement('div');
+            d.className = 'c ' + c.camp + (estRetournee(i) ? ' revelee' : '');
+            d.innerHTML = '<img src="' + c.src + '" alt="" draggable="false">';
+            g.appendChild(d);
+        });
+        hote.appendChild(bloc);
+    });
+}
+
+let niveauRev = 0;
+// ⚠️ Toujours les MÊMES cartes retournées d'une piste à l'autre : si le
+// tirage changeait entre deux pistes, on comparerait deux grilles au lieu
+// de comparer deux marquages.
+function estRetournee(i) {
+    if (niveauRev === 0) return false;
+    if (niveauRev === 2) return true;
+    return [1, 4, 7, 12, 13, 18, 22].includes(i);
+}
+
+document.querySelectorAll('[data-vue]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-vue]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.body.classList.toggle('vue-agent', b.dataset.vue === 'agent');
+});
+document.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-rev]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    niveauRev = parseInt(b.dataset.rev, 10);
+    dessiner();
+});
+document.querySelectorAll('[data-cote]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--cote-g', b.dataset.cote + 'rem');
+    document.querySelectorAll('.grille').forEach(g => g.style.setProperty('--cote', b.dataset.cote + 'rem'));
+});
+document.getElementById('retirer').onclick = () => { tirer(); dessiner(); };
+
+// Les portraits viennent de la VRAIE route, sous jeton, comme en jeu :
+// une page qui les servirait en clair ne dirait rien du vrai rendu.
+fetch('/prototypes/codanime-cartes/portraits')
+    .then(r => r.json())
+    .then(d => { portraits = d.portraits || []; tirer(); dessiner(); })
+    .catch(() => {
+        document.getElementById('pistes').innerHTML =
+            '<p style="opacity:.6">Impossible de charger les portraits.</p>';
+    });
+</script>
+</body></html>
