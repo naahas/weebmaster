@@ -2,19 +2,19 @@
   "_": "Produit par npm run bomb:compter — ne pas éditer à la main",
   "series": {
     "Naruto": {
-      "noms": 472,
-      "persos": 338
+      "noms": 473,
+      "persos": 339
     },
     "Dbz": {
-      "noms": 424,
-      "persos": 317
+      "noms": 429,
+      "persos": 318
     },
     "OnePiece": {
-      "noms": 927,
-      "persos": 689
+      "noms": 931,
+      "persos": 690
     },
     "Hxh": {
-      "noms": 346,
+      "noms": 348,
       "persos": 232
     },
     "Snk": {
@@ -26,20 +26,20 @@
       "persos": 147
     },
     "Pokemon": {
-      "noms": 1244,
+      "noms": 1245,
       "persos": 1234
     },
     "Bleach": {
-      "noms": 452,
-      "persos": 246
+      "noms": 454,
+      "persos": 247
     },
     "DemonSlayer": {
-      "noms": 155,
-      "persos": 92
+      "noms": 163,
+      "persos": 97
     },
     "Reborn": {
-      "noms": 225,
-      "persos": 172
+      "noms": 226,
+      "persos": 173
     },
     "DeathNote": {
       "noms": 88,
@@ -50,7 +50,7 @@
       "persos": 250
     },
     "JujutsuKaisen": {
-      "noms": 186,
+      "noms": 187,
       "persos": 108
     },
     "ChainsawMan": {
@@ -62,8 +62,8 @@
       "persos": 126
     },
     "Manganime": {
-      "noms": 1278,
-      "persos": 910
+      "noms": 1283,
+      "persos": 915
     },
     "Studio": {
       "noms": 232,
