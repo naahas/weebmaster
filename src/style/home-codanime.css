@@ -30,9 +30,15 @@
        reconnaît déjà mal. */
     --cod-pad: 1rem;
     --cod-jour: 0.45rem;
-    --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour));
+    /* ⚠️ LA LARGEUR DES DEUX RANGS ENTRE DANS LE CALCUL, et il le fallait :
+       posés de part et d'autre de la grille sans être déduits ici, ils la
+       poussaient hors de l'écran — la grille se calculait sur 62 rem alors
+       qu'il n'en restait que 48. Un rang vaut sa largeur plus son écart. */
+    --cod-rail: 5.9rem;
+    --cod-rails: calc(2 * (var(--cod-rail) + 0.7rem));
+    --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour) + var(--cod-rails));
     --cod-cote: min(
-        calc((min(100vw, 62rem) - var(--cod-marges)) / 5),
+        calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
         calc((100dvh - 17rem) / 5)
     );
     --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour));
@@ -69,12 +75,15 @@
     min-width: 17rem;
 }
 
+/* ⚠️ EN LIGNE, et non en colonne : il n'y a plus de mot sous le nombre mais
+   une silhouette À CÔTÉ de lui — « 8 personnages », qui se lit d'un bloc. Le
+   mot « BLEUE » répétait ce que la couleur dit déjà trois fois à l'écran. */
 .cod-score {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    min-width: 4.2rem;
-    padding: 0.45rem 0.7rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.7rem;
     /* ⚠️ Le camp qui ne joue pas est ATTÉNUÉ, pas caché : on doit toujours
@@ -87,9 +96,19 @@
 .cod-score.camp-b.actif { border-color: rgba(255, 59, 92, 0.55); box-shadow: 0 0 1.1rem rgba(255, 59, 92, 0.22); }
 
 .cod-score-n { font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.cod-score.camp-a .cod-score-n { color: var(--cod-a); }
-.cod-score.camp-b .cod-score-n { color: var(--cod-b); }
-.cod-score-l { font-size: 0.6rem; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.6; margin-top: 0.15rem; }
+.cod-score-i { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+.cod-score.camp-a .cod-score-n, .cod-score.camp-a .cod-score-i { color: var(--cod-a); }
+.cod-score.camp-b .cod-score-n, .cod-score.camp-b .cod-score-i { color: var(--cod-b); }
+
+/* Le nom du camp reste dans le flux pour les lecteurs d'écran : la couleur
+   seule ne se lit pas à la voix. ⚠️ Ni `display: none` ni `hidden`, qui le
+   retireraient aussi de l'arbre d'accessibilité — c'est-à-dire tout le
+   contraire du but. */
+.cod-hv {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 
 .cod-centre { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; min-height: 3.1rem; justify-content: center; }
 .cod-indice { display: flex; align-items: baseline; gap: 0.5rem; }
@@ -130,6 +149,107 @@
     gap: var(--cod-jour);
     justify-content: center;
 }
+
+/* ── Les deux rangs, de part et d'autre du plateau ──────────────── */
+/* ⚠️ Ce n'est pas de la décoration. Trois choses s'y lisent qu'on ne peut
+   pas déduire d'ailleurs : à qui l'espion s'adresse, COMBIEN ils sont (le
+   seuil de voix en dépend — à trois agents il faut deux voix, à deux il en
+   faut deux aussi, et l'écart change tout), et qui n'a pas encore voté.
+
+   Ils encadrent la grille comme on s'assoit autour d'une table, et le rang
+   du camp qui joue s'allume — c'est le même langage que les deux compteurs
+   de l'en-tête. */
+.cod-plateau {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+}
+
+.cod-rang {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.5rem;
+    width: var(--cod-rail);
+    flex: 0 0 var(--cod-rail);
+    padding: 0.55rem 0.3rem;
+    border-radius: 0.7rem;
+    /* ⚠️ Le rang au repos garde SON CADRE, en très faible. Sans lui, seul le
+       camp actif avait une boîte et l'autre flottait en colonne nue : les
+       deux côtés du plateau ne se ressemblaient plus, et l'on croyait à un
+       défaut d'affichage plutôt qu'à « ce n'est pas leur tour ». */
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.015);
+    /* ⚠️ Le rang qui ne joue pas est ATTÉNUÉ, pas caché, pour la même raison
+       que son compteur : on doit pouvoir regarder l'adversaire. */
+    opacity: 0.4;
+    transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.cod-rang.actif { opacity: 1; }
+.cod-rang.camp-A.actif { border-color: rgba(47, 155, 255, 0.38); background: rgba(47, 155, 255, 0.055); }
+.cod-rang.camp-B.actif { border-color: rgba(255, 59, 92, 0.38); background: rgba(255, 59, 92, 0.055); }
+
+.cod-siege { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; width: 100%; }
+
+/* Le portrait. ⚠️ `position: relative` : l'œil de l'espion se pose sur son
+   coin, et sans ancêtre positionné il irait se coller au coin de la PAGE —
+   l'erreur qu'on a déjà payée sur le prototype des icônes. */
+.cod-siege-p {
+    position: relative;
+    width: 2.7rem; height: 2.7rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    overflow: visible;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cod-siege-p img {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+.cod-rang.camp-A .cod-siege-p { border-color: rgba(47, 155, 255, 0.45); }
+.cod-rang.camp-B .cod-siege-p { border-color: rgba(255, 59, 92, 0.45); }
+
+/* L'œil de l'espion, dans la couleur de son camp — il EST de ce camp. */
+.cod-siege-oeil {
+    position: absolute; right: -0.18rem; bottom: -0.18rem;
+    width: 1.15rem; height: 1.15rem;
+    padding: 0.14rem;
+    border-radius: 50%;
+    border: 0.12rem solid #07070a;
+    background: #07070a;
+}
+.cod-rang.camp-A .cod-siege-oeil { color: var(--cod-a); }
+.cod-rang.camp-B .cod-siege-oeil { color: var(--cod-b); }
+
+/* ⚠️ Le pseudo est TRONQUÉ, jamais replié : un nom de quinze caractères sur
+   deux lignes décalait tout le rang vers le bas, et les sièges d'un camp ne
+   se trouvaient plus en face de ceux de l'autre. */
+.cod-siege-n {
+    max-width: 100%;
+    font-size: 0.6rem; font-weight: 700; line-height: 1.2;
+    text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    opacity: 0.72;
+}
+.cod-siege.moi .cod-siege-n { opacity: 1; }
+.cod-siege.moi .cod-siege-p { box-shadow: 0 0 0 0.12rem rgba(255, 255, 255, 0.75); }
+
+/* A VOTÉ. ⚠️ C'est la pièce qui remplace les mains tendues autour d'une
+   table : sans elle, une équipe de quatre attend sans savoir s'il manque
+   une voix ou si tout le monde a déjà parlé. Une pastille en haut à gauche,
+   dans la couleur du camp. */
+.cod-siege.vote .cod-siege-p::after {
+    content: '';
+    position: absolute; left: -0.1rem; top: -0.1rem;
+    width: 0.55rem; height: 0.55rem;
+    border-radius: 50%;
+    border: 0.1rem solid #07070a;
+    background: currentColor;
+}
+.cod-rang.camp-A .cod-siege.vote .cod-siege-p { color: var(--cod-a); }
+.cod-rang.camp-B .cod-siege.vote .cod-siege-p { color: var(--cod-b); }
 
 .cod-carte {
     position: relative;
@@ -199,6 +319,40 @@
     100% { transform: scale(1) rotateY(0deg); }
 }
 
+/* ── L'arrivée du plateau ───────────────────────────────────────── */
+/* ⚠️ LES CARTES SE POSENT EN DIAGONALE, pas ligne par ligne. Le retard est
+   calculé sur `ligne + colonne` (`codDiag` dans app.js) : la vague traverse
+   la grille depuis le coin haut gauche, et les vingt-cinq cartes se posent
+   en huit temps. Un retard sur l'indice brut les faisait tomber par rangées
+   — cinq paquets de cinq, qu'on voit arriver l'un après l'autre.
+
+   ⚠️ Et la classe S'ÉTEINT au bout d'une seconde et demie (`cod._introT`) :
+   laissée en place, la moindre remise en page rejouait toute la vague. */
+.cod.en-entree .cod-carte {
+    animation: codPose 0.42s both cubic-bezier(0.18, 0.86, 0.26, 1.12);
+    animation-delay: calc(var(--k, 0) * 55ms);
+}
+@keyframes codPose {
+    0%   { opacity: 0; transform: scale(0.72) translateY(0.7rem); }
+    70%  { opacity: 1; transform: scale(1.035) translateY(0); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* L'en-tête tombe d'abord, le pied en dernier : on lit le plateau de haut
+   en bas, et ce qu'on a à faire arrive quand les cartes sont posées. */
+.cod.en-entree .cod-tete { animation: codDescend 0.42s both cubic-bezier(0.2, 0.8, 0.25, 1); }
+.cod.en-entree .cod-pied,
+.cod.en-entree .cod-histo { animation: codRemonte 0.4s 0.62s both cubic-bezier(0.2, 0.8, 0.25, 1); }
+@keyframes codDescend { from { opacity: 0; transform: translateY(-0.8rem); } }
+@keyframes codRemonte { from { opacity: 0; transform: translateY(0.8rem); } }
+
+/* Les deux rangs entrent PAR LEUR CÔTÉ : c'est ce qui dit qu'ils sont
+   assis là, et non posés sur le plateau. */
+.cod.en-entree .cod-rang { animation: codRangEntre 0.45s 0.3s both cubic-bezier(0.2, 0.8, 0.25, 1); }
+.cod.en-entree .cod-rang.camp-A { --cod-vient: -1.6rem; }
+.cod.en-entree .cod-rang.camp-B { --cod-vient: 1.6rem; }
+@keyframes codRangEntre { from { opacity: 0; transform: translateX(var(--cod-vient, 0)); } }
+
 /* ── Les marques et les numéros ─────────────────────────────────── */
 .cod-voix {
     position: absolute; left: 0.2rem; bottom: 0.2rem;
@@ -266,6 +420,29 @@
 
 .cod-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
 .cod-aide { font-size: 0.74rem; opacity: 0.6; }
+
+/* ── « L'espion choisit son indice… » ───────────────────────────── */
+/* ⚠️ TROIS POINTS QUI BATTENT, et pas des points de suspension. C'est le
+   seul moment de la partie où personne ne peut rien faire : rien ne bouge à
+   l'écran, aucun clic ne répond, et c'est exactement là qu'on croit le jeu
+   cassé. Un texte figé ne dit pas « ça tourne » ; un battement, oui.
+
+   Les points sont des `<i>` vides plutôt qu'un « … » dans le texte : trois
+   caractères ne peuvent pas s'allumer l'un après l'autre. */
+.cod-songe { display: inline-flex; align-items: center; opacity: 0.78; }
+.cod-songe i {
+    width: 3.5px; height: 3.5px;
+    margin-left: 3px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: codPoint 1.15s infinite ease-in-out;
+}
+.cod-songe i:nth-child(2) { animation-delay: 0.19s; }
+.cod-songe i:nth-child(3) { animation-delay: 0.38s; }
+@keyframes codPoint {
+    0%, 62%, 100% { opacity: 0.22; transform: translateY(0); }
+    31%           { opacity: 1;    transform: translateY(-2.5px); }
+}
 .cod-stop {
     padding: 0.35rem 0.8rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -314,10 +491,16 @@
 .cod-sep.camp-sans::after { background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), transparent); }
 
 /* Les camps suivants respirent : c'est l'espace qui sépare, le titre ne
-   fait que nommer. */
+   fait que nommer.
+   ⚠️ Le titre du camp rouge descend PLUS BAS que celui du bleu — 2,6 rem
+   au lieu de 1,5 — et il est séparé de ses propres vignettes par moins
+   d'espace qu'il ne l'est du camp au-dessus. C'est ce qui fait qu'on lit
+   deux blocs et non une liste : à 1,5 rem, l'écart entre les deux camps
+   valait presque celui d'une rangée, et le titre rouge paraissait
+   appartenir aux joueurs bleus qui le précédaient. */
 .v2-room-players-grid.par-camps .cod-sep + .v2-room-player-wrap { margin-left: 0; }
 .v2-room-players-grid.par-camps .cod-sep.camp-B,
-.v2-room-players-grid.par-camps .cod-sep.camp-sans { margin-top: 1.5rem; }
+.v2-room-players-grid.par-camps .cod-sep.camp-sans { margin-top: 2.6rem; }
 
 /* Sans équipe : on les montre, mais en retrait. Ils ne jouent pas cette
    partie, et ça doit se voir sans qu'on ait à lire. */
@@ -379,8 +562,11 @@
 .v2-team-flag.cod-A { background: var(--cod-a); color: #07131f; }
 .v2-team-flag.cod-B { background: var(--cod-b); color: #1e060b; }
 
-/* L'espion garde la couleur de son camp — il EST de ce camp — mais sa
-   loupe et son anneau clair le distinguent de ses agents. */
+/* L'espion garde la couleur de son camp — il EST de ce camp — mais son
+   ŒIL et son anneau clair le distinguent de ses agents.
+   ⚠️ Un œil, et non une loupe : la loupe disait « chercher », or l'espion
+   ne cherche pas, il VOIT — c'est le seul à qui le serveur envoie les
+   vingt-cinq camps. Les huit pistes sont dans /prototypes/codanime-espion. */
 .v2-team-flag.cod-flag.espion { box-shadow: 0 0 0 0.11rem rgba(255, 255, 255, 0.8); }
 
 /* ⚠️ Les deux camps sont des PASTILLES DE COULEUR, sans lettre : la
@@ -412,6 +598,65 @@
    Deux listes des mêmes noms obligent à faire le lien entre elles. */
 .cod-equipes-etat { font-variant-numeric: tabular-nums; }
 
+/* ── L'écran de fin ─────────────────────────────────────────────── */
+/* ⚠️ AUCUN CLASSEMENT ICI, et ce n'est pas un oubli : deux camps, un
+   vainqueur, et pas un seul score individuel. Un podium à trois places
+   aurait demandé d'inventer une mesure par joueur que le mode ne produit
+   pas — « qui a trouvé le plus de cartes » récompenserait le plus rapide à
+   cliquer, alors que c'est l'équipe qui désigne.
+
+   Ce qu'on montre à la place, c'est la GRILLE DÉVOILÉE. C'est le moment
+   « ahhh c'était ÇA », et c'est la capture d'écran que les gens postent. */
+.cod-fin {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.2rem;
+    background: radial-gradient(70% 60% at 50% 15%, #16121a, #07070a 72%);
+}
+.cod-fin-boite {
+    display: flex; flex-direction: column; align-items: center; gap: 0.55rem;
+    max-width: 30rem; width: 100%;
+    animation: codRemonte 0.5s both cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+.cod-fin-titre {
+    font-size: 1.5rem; font-weight: 900; line-height: 1.1; text-align: center;
+    text-wrap: balance;
+}
+.cod-fin-titre.camp-A { color: var(--cod-a); text-shadow: 0 0 1.6rem rgba(47, 155, 255, 0.35); }
+.cod-fin-titre.camp-B { color: var(--cod-b); text-shadow: 0 0 1.6rem rgba(255, 59, 92, 0.35); }
+.cod-fin-raison { font-size: 0.8rem; opacity: 0.6; text-align: center; }
+
+/* La grille de fin tient dans une largeur FIXE, pas dans `--cod-cote` :
+   elle ne sert plus à jouer, seulement à se raconter la partie. */
+.cod-fin-grille {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 0.3rem;
+    width: 100%; max-width: 22rem;
+    margin: 0.5rem 0 0.3rem;
+}
+/* ⚠️ Un CADRE de couleur, et le portrait intact dedans. Le camp se lit
+   dans le liseré ; l'image garde ses propres couleurs, qui sont justement
+   ce dont on se reparle (« le mec en rouge, c'était à eux ? »). */
+.cod-fin-c {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 0.4rem;
+    border: 2.5px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    animation: codPose 0.4s both cubic-bezier(0.18, 0.86, 0.26, 1.12);
+    animation-delay: calc(0.25s + var(--k, 0) * 50ms);
+}
+.cod-fin-c img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
+.cod-fin-c.camp-A { border-color: var(--cod-a); }
+.cod-fin-c.camp-B { border-color: var(--cod-b); }
+.cod-fin-c.camp-neutre { border-color: var(--cod-neutre); }
+/* L'assassin, lui, se COUVRE : c'est la seule carte dont on veut savoir
+   tout de suite où elle était. */
+.cod-fin-c.camp-assassin { border-color: #000; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.cod-fin-c.camp-assassin img { filter: brightness(0.3) saturate(0.3); }
+
+.cod-fin-actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
+
 /* ── Téléphone ──────────────────────────────────────────────────── */
 /* ⚠️ La grille reste à CINQ colonnes, même à 360 px. Passer à quatre
    casserait la lecture 5×5 qui EST le plateau — on compte les lignes et
@@ -420,6 +665,16 @@
 @media (max-width: 640px) {
     .cod { padding: 0.4rem var(--cod-pad) 1rem; gap: 0.6rem; }
     .cod { --cod-jour: 0.25rem; --cod-pad: 0.5rem; }
+    /* ⚠️ LES DEUX RANGS DISPARAISSENT, et c'est assumé : à 360 px, deux
+       colonnes de portraits ne laisseraient que 240 px aux vingt-cinq
+       cartes, soit 44 px chacune — un portrait d'anime ne s'y reconnaît
+       plus. La largeur va donc tout entière aux cartes, et l'en-tête porte
+       déjà les deux comptes. Qui joue avec qui se lit dans le salon.
+       ⚠️ Il faut remettre `--cod-rails` à zéro ET masquer les rangs : la
+       variable seule laisserait deux colonnes vides écraser la grille,
+       le `display: none` seul laisserait leur largeur déduite du calcul. */
+    .cod { --cod-rail: 0rem; --cod-rails: 0rem; }
+    .cod-rang { display: none; }
     .cod-carte { border-width: 1.5px; border-radius: 0.4rem; }
     .cod-carte.vue-espion { border-width: 2.5px; }
     .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; right: 0.12rem; top: 0.12rem; }
@@ -435,4 +690,15 @@
 @media (prefers-reduced-motion: reduce) {
     .cod-carte.tombe { animation: none; }
     .cod-carte:not(:disabled):hover { transform: none; }
+    /* ⚠️ `animation: none` et non une durée nulle : à 0 s l'animation se
+       joue instantanément, et son image finale — retenue par `both` —
+       resterait. Sur l'entrée c'est sans effet, mais c'est exactement le
+       piège qui avait réduit la mèche de BombAnime à 4 px pour toujours. */
+    .cod.en-entree .cod-carte,
+    .cod.en-entree .cod-tete,
+    .cod.en-entree .cod-pied,
+    .cod.en-entree .cod-histo,
+    .cod.en-entree .cod-rang,
+    .cod-fin-boite, .cod-fin-c { animation: none; }
+    .cod-songe i { animation: none; opacity: 0.6; }
 }

@@ -59,6 +59,11 @@ const DUREE_MIN = 30;
 const DUREE_MAX = 180;
 const DUREE_PAS = 15;
 const DUREE_TOUR_DEFAUT = 90;
+// Le temps de reflexion de l espion, avant que la main ne passe. Il est
+// FIXE et non reglable : c est un garde-fou contre un espion absent, pas
+// un parametre de jeu. Trente secondes suffisent a trouver un mot ; au-dela
+// ce sont sept personnes qui attendent.
+const DUREE_INDICE = 30;
 function dureeValide(d) {
     return Number.isInteger(d) && d >= DUREE_MIN && d <= DUREE_MAX && d % DUREE_PAS === 0;
 }
@@ -492,6 +497,22 @@ function creerModule(deps) {
     }
 
     // ── Les vues ───────────────────────────────────────────────────
+    // ⚠️ L'avatar part en NOM DE FICHIER, pas en URL : c'est `srcAvatar()`
+    // côté client qui y colle le jeton de version, et le dossier est servi
+    // en « immutable » pour un an. Fabriquer l'adresse ici la ferait diverger
+    // de celle que le reste de la page écrit — exactement le défaut qu'a déjà
+    // eu le panneau /admin.
+    const vignette = (gameState, playerId) => {
+        for (const p of gameState.players.values()) {
+            if (p.playerId === playerId) {
+                return { playerId, username: p.username, avatar: p.avatarUrl || null };
+            }
+        }
+        // Un joueur parti garde sa place dans la composition : on le nomme
+        // quand même, plutôt que de laisser un trou dans le rang.
+        return { playerId, username: '—', avatar: null };
+    };
+
     function vueDesEquipes(gameState) {
         synchroniser(gameState);
         const etat = gameState.codanime;
@@ -500,7 +521,10 @@ function creerModule(deps) {
             paquet[e] = {
                 espion: etat.equipes[e].espion,
                 espionNom: etat.equipes[e].espion ? nomDe(gameState, etat.equipes[e].espion) : null,
-                agents: etat.equipes[e].agents.map(id => ({ playerId: id, username: nomDe(gameState, id) })),
+                // La vignette complète de l'espion, pour le rang de côté : son
+                // seul nom suffisait au tiroir du salon, pas à un portrait.
+                espionFiche: etat.equipes[e].espion ? vignette(gameState, etat.equipes[e].espion) : null,
+                agents: etat.equipes[e].agents.map(id => vignette(gameState, id)),
                 restant: etat.restant[e],
             };
         }
@@ -542,6 +566,10 @@ function creerModule(deps) {
             reste: etat.finTour ? Math.max(0, etat.finTour - Date.now()) : 0,
             chrono: etat.chrono,
             dureeTour: etat.dureeTour,
+            // ⚠️ La durée de RÉFÉRENCE change selon la phase : la jauge se
+            // remplirait de travers si le client divisait toujours par la
+            // durée du tour, alors que la phase d'indice en dure trente.
+            dureePhase: etat.phase === 'indice' ? DUREE_INDICE : etat.dureeTour,
             gagnant: etat.gagnant,
             manche: etat.manche,
         };
@@ -560,15 +588,34 @@ function creerModule(deps) {
     }
 
     // ── Le déroulé ─────────────────────────────────────────────────
+    // ⚠️ LA PHASE D'INDICE A SON PROPRE CHRONO, et il manquait : rien ne
+    // bornait le temps de réflexion de l'espion. Un espion absent, ou qui
+    // ne trouve rien, figeait la partie pour les sept autres — sans que
+    // rien à l'écran ne dise qu'on attendait quelqu'un.
+    //
+    // À l'échéance, on passe la main : annoncer de force un nombre au
+    // hasard serait pire, l'équipe engagerait des cartes sur un mot que
+    // personne n'a dit.
     function ouvrirTour(gameState, equipe) {
         const etat = gameState.codanime;
+        nettoyerTimeouts(etat);
         etat.tourDe = equipe;
         etat.phase = 'indice';
         etat.indice = null;
         etat.votes = {};
         etat.franchiA = {};
         etat.file = [];
-        etat.finTour = 0;
+        etat.passe = [];
+        etat.finTour = etat.chrono ? Date.now() + DUREE_INDICE * 1000 : 0;
+        if (etat.chrono) {
+            plusTard(etat, () => {
+                // Toujours vérifier qu'on est encore là où l'on croit : le
+                // minuteur peut survivre d'un battement à l'annonce.
+                if (!etat.active || etat.phase !== 'indice') return;
+                diffuser(gameState, 'codanime-indice-rate', { equipe: etat.tourDe });
+                finirTour(gameState);
+            }, DUREE_INDICE * 1000);
+        }
         diffuserEtat(gameState);
     }
 
@@ -808,5 +855,5 @@ module.exports = {
     grillePourAgent, grillePourEspion, estEspion, equipeDe, agentsPresents,
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
     INDICE_MAX, AGENTS_MAX, MAX_PAR_SERIE,
-    DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, dureeValide, BATTEMENT,
+    DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, DUREE_INDICE, dureeValide, BATTEMENT,
 };

@@ -282,6 +282,18 @@ createApp({
                 finA: 0,
                 reste: 0,
                 _tic: null,
+                // ⚠️ La durée de RÉFÉRENCE de la jauge, qui change avec la
+                // phase : trente secondes pour l'indice, jusqu'à cent
+                // quatre-vingts pour le vote. Diviser toujours par la durée du
+                // tour remplissait la jauge de travers dans l'une des deux.
+                dureePhase: 90,
+
+                // L'entrée du plateau. ⚠️ Posé au DÉPART de la manche et au
+                // retour d'un rafraîchissement, jamais à chaque état : l'état
+                // arrive à chaque clic, et les vingt-cinq cartes auraient
+                // rejoué leur arrivée sous le doigt.
+                intro: false,
+                _introT: null,
 
                 // Le nombre que l'espion s'apprête à annoncer
                 saisieNombre: 1,
@@ -5479,6 +5491,45 @@ createApp({
             this.backToHome();
         },
 
+        // 🕵️ Codanime : même mécanique, et pour la même raison. ⚠️ Le serveur
+        // GARDE la composition des équipes au rejeu (`codanime.arreter`) ; on
+        // ne la vide donc pas ici, sinon le salon reviendrait avec des camps
+        // vides à l'écran pendant que le serveur en tient toujours deux.
+        async hostRejouerCodanime() {
+            if (this.rejouerBusy) return;
+            this.rejouerBusy = true;
+            try {
+                const res = await this.hostFetch('/admin/replay', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) this.hostError = data.error;
+                else this.revenirAuSalonCodanime();
+            } catch (e) {
+                this.hostError = 'Erreur de connexion';
+            } finally {
+                setTimeout(() => { this.rejouerBusy = false; }, 500);
+            }
+        },
+
+        revenirAuSalonCodanime() {
+            this.arreterChronoCodanime();
+            clearTimeout(this.cod._introT);
+            this.cod._introT = null;
+            Object.assign(this.cod, {
+                enCours: false, intro: false, phase: 'repos', tourDe: null,
+                grille: [], votes: {}, ordre: [], retenues: [], indice: null,
+                historique: [], gagnant: null, derniereCarte: null,
+                restant: { A: 0, B: 0 }, saisieNombre: 1, refus: '',
+            });
+            this.gameEnded = false;
+            this.gameInProgress = false;
+            document.body.classList.remove('game-active');
+        },
+
+        quitterCodanime() {
+            this.revenirAuSalonCodanime();
+            this.backToHome();
+        },
+
         async hostRejouerAsc() {
             if (this.rejouerBusy) return;
             this.rejouerBusy = true;
@@ -5714,6 +5765,56 @@ createApp({
         codJaiVote(i) {
             const v = this.cod.votes[i];
             return !!(v && v.includes(this.playerId));
+        },
+
+        // ⚠️ Celui-ci prend un JOUEUR, pas une carte : il dit si ce joueur-là
+        // a déjà marqué quelque chose dans le tour en cours, et c'est ce que
+        // son siège affiche. Confondre les deux donnait un rang entier allumé
+        // ou éteint d'un bloc — la table des votes est indexée par carte.
+        codAVote(playerId) {
+            const v = this.cod.votes || {};
+            for (const i in v) {
+                if (Array.isArray(v[i]) && v[i].includes(playerId)) return true;
+            }
+            return false;
+        },
+
+        // Le rang d'un camp, dans l'ordre où l'on s'assoit : l'espion
+        // d'abord — c'est lui qui parle — puis ses agents.
+        // ⚠️ On fabrique la liste ICI plutôt que de la demander au serveur
+        // sous une seconde forme : `cod.equipes` porte déjà tout, et deux
+        // listes des mêmes joueurs se seraient mises à diverger.
+        codRang(camp) {
+            const e = this.cod.equipes;
+            if (!e || !e[camp]) return [];
+            const rang = [];
+            const esp = e[camp].espionFiche;
+            if (esp) rang.push({ ...esp, espion: true });
+            else if (e[camp].espion) {
+                // Un serveur resté sur l'ancienne version n'envoie que le nom.
+                rang.push({ playerId: e[camp].espion, username: e[camp].espionNom || '—',
+                            avatar: null, espion: true });
+            }
+            for (const a of (e[camp].agents || [])) rang.push({ ...a, espion: false });
+            return rang;
+        },
+
+        // Le retard d'entrée d'une carte, compté en DIAGONALES et non en
+        // rangées : les vingt-cinq cartes se posent alors depuis le coin haut
+        // gauche en une vague, là où un retard linéaire les faisait tomber
+        // ligne par ligne — cinq paquets de cinq, pas une vague.
+        codDiag(i) {
+            return Math.floor(i / 5) + (i % 5);
+        },
+
+        // L'arrivée du plateau. Un drapeau qui s'éteint tout seul : la classe
+        // ne doit pas rester, sinon la moindre remise en page rejouerait les
+        // vingt-cinq cartes.
+        codEntree() {
+            clearTimeout(this.cod._introT);
+            this.cod.intro = true;
+            // 8 diagonales × 55 ms + la durée d'une carte, avec de la marge.
+            this.cod._introT = setTimeout(() => { this.cod.intro = false; }, 1400);
         },
 
         // La classe d'une carte. Tout se joue ici : une carte retournée porte
@@ -6464,6 +6565,18 @@ createApp({
                     // l'écran de victoire s'évaporait au rechargement.
                     const fin = state.winnerScreenData;
                     const finalistes = fin.playersData || fin.ranking || fin.classement || [];
+                    // 🕵️ Codanime ne produit AUCUN classement individuel : deux
+                    // camps, un vainqueur. Sa liste de finalistes est donc
+                    // vide, et sans cette ligne seul l'hôte retrouvait l'écran
+                    // de fin — les sept autres étaient renvoyés au salon.
+                    if (fin.gameMode === 'codanime' && fin.equipes) {
+                        for (const camp of ['A', 'B']) {
+                            const e = fin.equipes[camp] || {};
+                            if (e.espionFiche) finalistes.push(e.espionFiche);
+                            else if (e.espion) finalistes.push({ playerId: e.espion });
+                            for (const a of (e.agents || [])) finalistes.push(a);
+                        }
+                    }
                     const moi = this.isHost || finalistes
                         .some(p => p.playerId === this.playerId || p.username === this.username);
                     if (moi) {
@@ -6490,6 +6603,10 @@ createApp({
                             if (fin.gameMode === 'rush') this.startRushReveal();
                             else if (fin.gameMode === 'ascension') this.startAscReveal();
                             else if (fin.gameMode === 'choice') this.startChoiceReveal();
+                            // 🕵️ Codanime n'a pas de classement à dévoiler pas
+                            // à pas : la grille se montre d'un coup, et son
+                            // entrée est tenue par le CSS seul.
+                            else if (fin.gameMode === 'codanime') { /* rien à dévoiler */ }
                             else this.startEndReveal();
                         });
                     }
@@ -6510,6 +6627,15 @@ createApp({
                     }
                     // La reprise se demande à la connexion de la socket, pas ici :
                     // this.socket est encore nul à ce stade.
+                }
+
+                // 🕵️ Les réglages Codanime reviennent avec l'état du salon.
+                // ⚠️ La grille, elle, NON : elle est propre à chaque joueur et
+                // ne part qu'à sa propre socket — c'est `codanime-get-state`,
+                // demandé à la connexion, qui la rapporte.
+                if (state.codanime) {
+                    if (state.codanime.chrono !== undefined) this.cod.chrono = state.codanime.chrono;
+                    if (state.codanime.dureeTour) this.cod.dureeTour = state.codanime.dureeTour;
                 }
 
                 // Les réglages BombAnime reviennent avec l'état du salon
@@ -6821,6 +6947,16 @@ createApp({
                 if (this.lobbyMode === 'choice') {
                     this.socket.emit('choice-get-state');
                     console.log('✅❌ Demande état Choice après connexion');
+                }
+
+                // 🕵️ Idem pour Codanime, et c'est le SEUL chemin possible :
+                // chacun y reçoit sa propre vue de la grille — l'espion avec
+                // les vingt-cinq camps, l'agent sans aucun — donc rien ne la
+                // rejoue tant qu'on ne la redemande pas. Sans ça, celui qui
+                // rafraîchissait en pleine partie retrouvait un écran vide.
+                if (this.lobbyMode === 'codanime') {
+                    this.socket.emit('codanime-get-state');
+                    console.log('🕵️ Demande état Codanime après connexion');
                 }
 
             });
@@ -8876,6 +9012,12 @@ createApp({
             this.socket.on('codanime-etat', (data) => {
                 if (!data) return;
                 const c = this.cod;
+                // ⚠️ Mesuré AVANT d'écraser l'état : c'est le passage de
+                // « pas de plateau » à « plateau » qui déclenche l'entrée. Ça
+                // couvre le retour d'un rafraîchissement, où aucun
+                // « codanime-debut » ne repasse — lui a déjà posé `enCours`,
+                // donc la condition est fausse et l'entrée ne joue pas deux fois.
+                if (data.active && !c.enCours) this.codEntree();
                 c.enCours = !!data.active;
                 c.phase = data.phase;
                 c.tourDe = data.tourDe;
@@ -8894,6 +9036,9 @@ createApp({
                 c.manche = data.manche;
                 c.chrono = data.chrono;
                 c.dureeTour = data.dureeTour;
+                // Un serveur d'avant n'envoie pas `dureePhase` : on retombe sur
+                // la durée du tour, c'est-à-dire le comportement d'alors.
+                c.dureePhase = data.dureePhase || data.dureeTour || 90;
 
                 if (data.active) {
                     this.gameInProgress = true;
@@ -8915,7 +9060,26 @@ createApp({
             this.socket.on('codanime-debut', () => {
                 this.cod.enCours = true;
                 this.cod.gagnant = null;
+                // ⚠️ Sinon la carte retournée à la manche d'avant rejouait son
+                // battement en même temps que l'entrée du plateau : les deux
+                // animations se disputent le même `transform`.
+                this.cod.derniereCarte = null;
                 this.gameEnded = false;
+                // ⚠️ Il arrive AVANT le premier état, donc avant la grille :
+                // la classe est déjà posée quand les cartes se montent, et
+                // leur animation part à leur arrivée dans la page.
+                this.codEntree();
+            });
+
+            // L'espion n'a rien annoncé dans ses trente secondes : la main
+            // passe. On le DIT — sinon le tour change tout seul et son équipe
+            // croit avoir raté quelque chose.
+            this.socket.on('codanime-indice-rate', (data) => {
+                const e = data && data.equipe;
+                this.cod.refus = 'L’espion de l’équipe '
+                    + this.codNomEquipe(e).toLowerCase() + ' n’a pas annoncé à temps.';
+                if (this.cod._refusT) clearTimeout(this.cod._refusT);
+                this.cod._refusT = setTimeout(() => { this.cod.refus = ''; }, 3200);
             });
 
             // Une carte vient de se retourner. L'état suit juste après ; ceci
@@ -8942,6 +9106,11 @@ createApp({
                 // le monde — la partie est jouée, il n'y a plus rien à cacher.
                 this.cod.grille = data.grille || this.cod.grille;
                 this.cod.historique = data.historique || this.cod.historique;
+                // ⚠️ L'écran de fin lit `gameEndData`, comme tous les autres
+                // modes : sans cette ligne la partie se terminait sur un écran
+                // NOIR — `.cod` se cache dès que `gameEnded` passe, et rien ne
+                // le remplaçait.
+                this.gameEndData = data;
                 this.gameEnded = true;
                 this.gameStartedOnServer = false;
             });

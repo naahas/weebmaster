@@ -588,8 +588,15 @@
                                              à x=16, la loupe de 5 à 21 — et paraissaient
                                              donc décalés dans un cercle, alors que le
                                              cercle, lui, est bien centré. -->
-                                        <svg v-if="codEstEspion(p.playerId)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-                                            <circle cx="10.5" cy="10.5" r="5.5"/><path d="M14.6 14.6L19 19"/>
+                                        <!-- ⚠️ UN ŒIL, et non une loupe. La loupe disait
+                                             « chercher » ; or l'espion ne cherche pas, il
+                                             VOIT — il est le seul à qui le serveur envoie
+                                             les vingt-cinq camps. C'est l'asymétrie exacte
+                                             du rôle, et la silhouette la plus lisible à
+                                             26 px. Les huit pistes sont dans
+                                             /prototypes/codanime-espion. -->
+                                        <svg v-if="codEstEspion(p.playerId)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
                                         </svg>
                                         <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/>
@@ -618,8 +625,8 @@
                                                 :disabled="!codCampDe(p.playerId)"
                                                 title="En faire l’espion de son camp"
                                                 @click.stop="codPlacer(p.playerId, codCampDe(p.playerId), 'espion'); campMenu = null">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-                                                <circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21"/>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
                                             </svg>
                                         </button>
                                     </span>
@@ -1309,7 +1316,11 @@
                  toute seule après la sanction — et « question suivante » n'a
                  donc rien à piloter. Les deux ronds flottaient sur l'arène
                  sans jamais rien faire. -->
-            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension' && lobbyMode !== 'collect' && lobbyMode !== 'choice'">
+            <!-- ⚠️ `codanime` aussi : la partie s'y enchaîne d'elle-même, tour
+                 après tour, et il n'y a pas de « question » à passer. Les deux
+                 ronds du quiz flottaient sur le coin bas droit du plateau, par-
+                 dessus les cartes de la dernière colonne. -->
+            <div class="v2-hostbar" v-if="isHost && gameInProgress && !gameEnded && lobbyMode !== 'bombanime' && lobbyMode !== 'rush' && lobbyMode !== 'ascension' && lobbyMode !== 'collect' && lobbyMode !== 'choice' && lobbyMode !== 'codanime'">
                 <button class="v2q-cmd-btn"
                         @click="hostNextQuestion" :disabled="nextQuestionBusy || !showResults || autoMode"
                         :title="autoMode ? 'Le mode auto enchaîne tout seul' : (showResults ? 'Question suivante' : 'Disponible à la fin de la question')">
@@ -2357,16 +2368,28 @@
                      🕵️ CODANIME
                      ══════════════════════════════════════════════════ -->
                 <template v-if="lobbyMode === 'codanime' && !gameEnded">
-                    <div class="cod" v-if="cod.enCours">
+                    <div class="cod" v-if="cod.enCours" :class="{ 'en-entree': cod.intro }">
 
                         <!-- Les deux compteurs, de part et d'autre. Celui de
                              l'équipe qui joue s'allume : à quatre contre
                              quatre en vocal, savoir à qui c'est doit se lire
                              sans écouter. -->
                         <div class="cod-tete">
-                            <div class="cod-score camp-a" :class="{ actif: cod.tourDe === 'A' }">
+                            <!-- ⚠️ UN NOMBRE ET UNE SILHOUETTE, pas « 8 BLEUE ».
+                                 Le mot répétait ce que la couleur dit déjà — le
+                                 chiffre est teinté, le cadre est teinté, et le
+                                 rang de ce camp est teinté juste dessous. Il ne
+                                 restait de « BLEUE » qu'un mot à lire, là où la
+                                 silhouette dit ce que le nombre compte : des
+                                 personnages à retrouver. Le nom du camp reste
+                                 dans l'infobulle et pour le lecteur d'écran. -->
+                            <div class="cod-score camp-a" :class="{ actif: cod.tourDe === 'A' }"
+                                 :title="codNomEquipe('A') + ' — ' + cod.restant.A + ' à trouver'">
                                 <span class="cod-score-n">{{ cod.restant.A }}</span>
-                                <span class="cod-score-l">Bleue</span>
+                                <svg class="cod-score-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/>
+                                </svg>
+                                <span class="cod-hv">{{ codNomEquipe('A') }}</span>
                             </div>
 
                             <div class="cod-centre">
@@ -2378,56 +2401,100 @@
                                     <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
                                     <span class="cod-indice-l">carte{{ cod.indice.nombre > 1 ? 's' : '' }} à trouver</span>
                                 </div>
-                                <!-- ⚠️ « de l’équipe bleue » et non « l’espion
-                                     bleue » : les noms de camp sont féminins
-                                     parce qu’ils qualifient « équipe », et les
-                                     coller à « espion » donnait un accord faux
-                                     à l’écran. -->
-                                <div class="cod-attente" v-else-if="cod.phase === 'indice'">
-                                    L’espion de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }} réfléchit…
-                                </div>
                                 <div class="cod-attente" v-else-if="cod.phase === 'revelation'">
                                     On retourne…
                                 </div>
                                 <!-- Le temps, en trait, sans chiffre — même
-                                     échelle que la mèche de BombAnime. -->
+                                     échelle que la mèche de BombAnime.
+                                     ⚠️ Divisé par `dureePhase` et non par la
+                                     durée du TOUR : la phase d'indice en dure
+                                     trente, le vote jusqu'à cent quatre-vingts.
+                                     Une seule référence remplissait la jauge de
+                                     travers dans l'une des deux. -->
                                 <div class="cod-jauge" v-if="cod.chrono && cod.reste > 0"
                                      :class="{ urgence: cod.reste <= 10000 }">
                                     <span class="cod-jauge-fil"
-                                          :style="{ width: Math.min(100, (cod.reste / (cod.dureeTour * 1000)) * 100) + '%' }"></span>
+                                          :style="{ width: Math.min(100, (cod.reste / (Math.max(1, cod.dureePhase) * 1000)) * 100) + '%' }"></span>
                                 </div>
                             </div>
 
-                            <div class="cod-score camp-b" :class="{ actif: cod.tourDe === 'B' }">
+                            <div class="cod-score camp-b" :class="{ actif: cod.tourDe === 'B' }"
+                                 :title="codNomEquipe('B') + ' — ' + cod.restant.B + ' à trouver'">
                                 <span class="cod-score-n">{{ cod.restant.B }}</span>
-                                <span class="cod-score-l">Rouge</span>
+                                <svg class="cod-score-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/>
+                                </svg>
+                                <span class="cod-hv">{{ codNomEquipe('B') }}</span>
                             </div>
                         </div>
 
-                        <!-- La grille. Cinq par cinq.
-                             ⚠️ Les portraits arrivent SOUS JETON : leur nom de
-                             fichier dirait qui est le personnage, et le mode
-                             n'affiche justement pas les noms. -->
-                        <div class="cod-grille" :class="{ espion: cod.jeSuisEspion }">
-                            <button v-for="c in cod.grille" :key="c.i"
-                                    class="cod-carte" :class="codClasseCarte(c)"
-                                    :disabled="!codPeutVoter || c.revelee"
-                                    @click="codVoter(c.i)">
-                                <img class="cod-portrait" :src="c.img" alt="" draggable="false">
-                                <!-- Le numéro ① ② ③ : l'ordre dans lequel les
-                                     cartes se retourneront. Il est AFFICHÉ, et
-                                     c'est tout l'intérêt — un ordre invisible
-                                     qui décide de qui survit à la chaîne serait
-                                     inacceptable. -->
-                                <span class="cod-num" v-if="codNumero(c.i)">{{ codNumero(c.i) }}</span>
-                                <!-- Les voix, visibles de tous : c'est la
-                                     convergence qu'on regarde monter, et elle
-                                     remplace les mains tendues autour d'une
-                                     table. -->
-                                <span class="cod-voix" v-if="codVoix(c.i) && !c.revelee">
-                                    {{ codVoix(c.i) }}<small>/{{ cod.seuil }}</small>
+                        <!-- ⚠️ LES DEUX ÉQUIPES ENCADRENT LE PLATEAU, comme on
+                             s'assoit de part et d'autre d'une table. Ce n'est
+                             pas décoratif : l'espion doit savoir à QUI il
+                             s'adresse et combien ils sont (le seuil de voix en
+                             dépend), et un agent doit voir qui, dans son camp,
+                             n'a pas encore voté. Sur téléphone les rangs
+                             disparaissent — la largeur y va tout entière aux
+                             cartes, et l'en-tête porte déjà les deux comptes. -->
+                        <div class="cod-plateau">
+                            <div class="cod-rang camp-A" :class="{ actif: cod.tourDe === 'A' }">
+                                <span class="cod-siege" v-for="j in codRang('A')" :key="j.playerId"
+                                      :class="{ espion: j.espion, moi: j.playerId === playerId,
+                                                vote: codAVote(j.playerId) }"
+                                      :title="j.username + (j.espion ? ' · espion' : '')">
+                                    <span class="cod-siege-p">
+                                        <img :src="srcAvatar(j.avatar)" alt="" draggable="false">
+                                        <!-- L'œil ne se pose que sur l'espion : c'est
+                                             le seul rôle à distinguer dans un rang. -->
+                                        <svg class="cod-siege-oeil" v-if="j.espion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
+                                        </svg>
+                                    </span>
+                                    <span class="cod-siege-n">{{ j.username }}</span>
                                 </span>
-                            </button>
+                            </div>
+
+                            <!-- La grille. Cinq par cinq.
+                                 ⚠️ Les portraits arrivent SOUS JETON : leur nom de
+                                 fichier dirait qui est le personnage, et le mode
+                                 n'affiche justement pas les noms. -->
+                            <div class="cod-grille" :class="{ espion: cod.jeSuisEspion }">
+                                <button v-for="(c, iC) in cod.grille" :key="c.i"
+                                        class="cod-carte" :class="codClasseCarte(c)"
+                                        :style="{ '--k': codDiag(iC) }"
+                                        :disabled="!codPeutVoter || c.revelee"
+                                        @click="codVoter(c.i)">
+                                    <img class="cod-portrait" :src="c.img" alt="" draggable="false">
+                                    <!-- Le numéro ① ② ③ : l'ordre dans lequel les
+                                         cartes se retourneront. Il est AFFICHÉ, et
+                                         c'est tout l'intérêt — un ordre invisible
+                                         qui décide de qui survit à la chaîne serait
+                                         inacceptable. -->
+                                    <span class="cod-num" v-if="codNumero(c.i)">{{ codNumero(c.i) }}</span>
+                                    <!-- Les voix, visibles de tous : c'est la
+                                         convergence qu'on regarde monter, et elle
+                                         remplace les mains tendues autour d'une
+                                         table. -->
+                                    <span class="cod-voix" v-if="codVoix(c.i) && !c.revelee">
+                                        {{ codVoix(c.i) }}<small>/{{ cod.seuil }}</small>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <div class="cod-rang camp-B" :class="{ actif: cod.tourDe === 'B' }">
+                                <span class="cod-siege" v-for="j in codRang('B')" :key="j.playerId"
+                                      :class="{ espion: j.espion, moi: j.playerId === playerId,
+                                                vote: codAVote(j.playerId) }"
+                                      :title="j.username + (j.espion ? ' · espion' : '')">
+                                    <span class="cod-siege-p">
+                                        <img :src="srcAvatar(j.avatar)" alt="" draggable="false">
+                                        <svg class="cod-siege-oeil" v-if="j.espion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
+                                        </svg>
+                                    </span>
+                                    <span class="cod-siege-n">{{ j.username }}</span>
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Le pied : ce que j'ai à faire, selon mon rôle. -->
@@ -2443,6 +2510,24 @@
                                 <button class="cod-valider" @click="codAnnoncer">Annoncer</button>
                             </div>
 
+                            <!-- ⚠️ L'ATTENTE DE L'INDICE SE DIT ICI, dans le pied,
+                                 et non au centre de l'en-tête. C'est le seul
+                                 moment de la partie où personne ne peut rien
+                                 faire, et c'est précisément là qu'on croit que
+                                 le jeu est cassé : le pied est l'endroit où l'on
+                                 regarde pour savoir ce qu'on a à faire, et les
+                                 trois points qui battent disent « ça tourne »
+                                 là où un texte fixe laisse penser le contraire.
+                                 ⚠️ « de l'équipe bleue » et non « l'espion
+                                 bleue » : les noms de camp sont féminins parce
+                                 qu'ils qualifient « équipe », et les coller à
+                                 « espion » donnait un accord faux à l'écran. -->
+                            <div class="cod-actions" v-else-if="cod.phase === 'indice'">
+                                <span class="cod-aide cod-songe">
+                                    L’espion de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }} choisit son indice<i></i><i></i><i></i>
+                                </span>
+                            </div>
+
                             <!-- Les agents du tour votent. -->
                             <div class="cod-actions" v-else-if="codPeutVoter">
                                 <span class="cod-aide">
@@ -2453,12 +2538,14 @@
                             </div>
 
                             <!-- Tous les autres regardent. On le dit, plutôt que
-                                 de laisser un pied vide qui ressemble à un bug. -->
+                                 de laisser un pied vide qui ressemble à un bug.
+                                 ⚠️ Plus de ligne à part pour l'espion : « Tu vois
+                                 les couleurs — ne dis rien » lui apprenait la
+                                 règle du jeu à chaque tour de l'adversaire, et
+                                 occupait la seule ligne qui devait dire à qui
+                                 c'est. Il lit donc la même phrase que ses agents. -->
                             <div class="cod-actions" v-else>
-                                <span class="cod-aide" v-if="cod.jeSuisEspion">
-                                    Tu vois les couleurs — ne dis rien.
-                                </span>
-                                <span class="cod-aide" v-else-if="cod.monEquipe">
+                                <span class="cod-aide" v-if="cod.monEquipe">
                                     C’est le tour de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }}.
                                 </span>
                                 <span class="cod-aide" v-else>Tu regardes cette partie.</span>
@@ -3538,6 +3625,50 @@
                     <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouerChoice">Rejouer</button>
                     <button class="winner-back-btn" @click="quitterChoice">Retour</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             🕵️ ÉCRAN DE FIN CODANIME
+             ============================================ -->
+        <!-- ⚠️ Il n'y a RIEN À CLASSER ici : deux camps, un vainqueur, et
+             aucun score individuel. Un podium à trois places aurait demandé
+             d'inventer une mesure par joueur que le mode ne produit pas.
+
+             Ce qu'on montre à la place, c'est LA GRILLE DÉVOILÉE — le moment
+             « ahhh c'était ÇA », qui est aussi la capture d'écran que les gens
+             postent. Le serveur l'envoie avec les vingt-cinq camps : la partie
+             est jouée, il n'y a plus rien à cacher. -->
+        <div class="cod-fin" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'codanime'">
+            <div class="cod-fin-boite">
+                <span class="cod-fin-titre" :class="'camp-' + (gameEndData.gagnant || 'nul')">
+                    <template v-if="gameEndData.gagnant">
+                        L’équipe {{ codNomEquipe(gameEndData.gagnant).toLowerCase() }} gagne
+                    </template>
+                    <template v-else>Partie arrêtée</template>
+                </span>
+                <!-- La raison est la moitié de l'histoire : perdre sur
+                     l'assassin et perdre à la course ne se racontent pas
+                     pareil, et c'est la première chose qu'on se dit. -->
+                <span class="cod-fin-raison" v-if="gameEndData.raison === 'assassin'">
+                    L’assassin a été retourné.
+                </span>
+                <span class="cod-fin-raison" v-else-if="gameEndData.raison === 'complet'">
+                    Toutes ses cartes ont été trouvées.
+                </span>
+
+                <div class="cod-fin-grille">
+                    <span class="cod-fin-c" v-for="(c, iC) in (gameEndData.grille || [])" :key="c.i"
+                          :class="'camp-' + c.camp" :style="{ '--k': codDiag(iC) }">
+                        <img :src="c.img" alt="" draggable="false">
+                    </span>
+                </div>
+
+                <div class="cod-fin-actions">
+                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
+                            @click="hostRejouerCodanime">Rejouer</button>
+                    <button class="winner-back-btn" @click="quitterCodanime">Retour</button>
                 </div>
             </div>
         </div>
