@@ -35,18 +35,25 @@
        trait bicolore. L'écart ne sert pas à aérer, il sert à SÉPARER les
        cadres. */
     --cod-jour: 0.62rem;
+    /* ⚠️ L'ÉCART HORIZONTAL EST PLUS LARGE QUE LE VERTICAL, et c'est
+       voulu : une rangée se lit de gauche à droite, donc c'est
+       horizontalement que deux cadres de couleur voisins se soudent en un
+       seul trait bicolore. En hauteur, l'œil change déjà de ligne — le
+       même écart y serait de l'air perdu, pris sur la taille des cartes
+       puisque la hauteur est la dimension qui contraint sur ordinateur. */
+    --cod-jour-h: calc(var(--cod-jour) + 3px);
     /* ⚠️ LA LARGEUR DES DEUX RANGS ENTRE DANS LE CALCUL, et il le fallait :
        posés de part et d'autre de la grille sans être déduits ici, ils la
        poussaient hors de l'écran — la grille se calculait sur 62 rem alors
        qu'il n'en restait que 48. Un rang vaut sa largeur plus son écart. */
     --cod-rail: 6.8rem;
-    --cod-rails: calc(2 * (var(--cod-rail) + 1.5rem));
-    --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour) + var(--cod-rails));
+    --cod-rails: calc(2 * (var(--cod-rail) + 2.2rem));
+    --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
     --cod-cote: min(
         calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
         calc((100dvh - 17rem) / 5)
     );
-    --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour));
+    --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour-h));
 
     /* ⚠️ PLEIN ÉCRAN, hors du flux — comme l'arène de Choice.
        `.game-section` est une GRILLE, et le conteneur du quiz y occupe une
@@ -168,7 +175,8 @@
 .cod-grille {
     display: grid;
     grid-template-columns: repeat(5, var(--cod-cote));
-    gap: var(--cod-jour);
+    row-gap: var(--cod-jour);
+    column-gap: var(--cod-jour-h);
     justify-content: center;
 }
 
@@ -187,7 +195,7 @@
     justify-content: center;
     /* Les rangs respirent : collés au plateau, ils se lisaient comme une
        sixième et une septième colonne de cartes. */
-    gap: 1.5rem;
+    gap: 2.2rem;
 }
 
 .cod-rang {
@@ -296,8 +304,14 @@
 
 .cod-carte {
     position: relative;
-    width: var(--cod-cote);
-    height: var(--cod-cote);
+    /* ⚠️ Le côté passe par une variable DE LA CARTE, et la carte se centre
+       dans sa case : c'est ce qui permet d'en rapetisser une sans décaler
+       la grille. Sans `place-self`, une carte plus petite se collerait au
+       coin haut gauche de sa case. */
+    --cod-c: var(--cod-cote);
+    width: var(--cod-c);
+    height: var(--cod-c);
+    place-self: center;
     padding: 0;
     border: 2px solid rgba(255, 255, 255, 0.09);
     border-radius: 0.55rem;
@@ -306,6 +320,18 @@
     cursor: pointer;
     transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
+/* ⚠️ LES CARTES DE L'AUTRE CAMP RECULENT, de 3,5 % — assez pour que les
+   neuf siennes forment un relief qu'on balaie, pas assez pour qu'on voie
+   un défaut d'alignement. C'est un ÉCART DE TAILLE et non une opacité :
+   l'espion doit continuer à reconnaître les portraits adverses, ce sont
+   eux qu'il doit éviter de faire deviner.
+
+   ⚠️ Par le CÔTÉ et non par `transform: scale()` : la carte porte déjà
+   trois transformations — le survol, le battement du retournement et la
+   vague d'entrée — et la dernière déclarée les écrase toutes. Une échelle
+   posée ici aurait annulé l'animation d'arrivée, en silence. */
+.cod-carte.adverse { --cod-c: calc(var(--cod-cote) * 0.965); }
+
 .cod-carte:disabled { cursor: default; }
 .cod-carte:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); }
 .cod-carte:focus-visible { outline: 2px solid var(--cod-brun); outline-offset: 2px; }
@@ -935,7 +961,14 @@
     /* ⚠️ L'écart gagne moins sur téléphone qu'ailleurs : quatre fois trois
        pixels se prennent sur des cartes qui n'en font déjà que 72, et un
        portrait d'anime s'y reconnaît mal en dessous de 68. */
-    .cod { --cod-jour: 0.36rem; --cod-pad: 0.5rem; }
+    /* ⚠️ Le supplément horizontal tombe à 1,5 px sur téléphone. À 3 px,
+       quatre écarts coûtaient 12 px pris sur cinq cartes qui n'en font
+       que 70 : mesuré, elles descendaient à 68, le plancher en dessous
+       duquel un portrait d'anime ne se reconnaît plus. Le défaut qu'il
+       corrige — deux cadres de couleur soudés en un trait bicolore — est
+       de toute façon une observation d'ordinateur, là où les cartes sont
+       deux fois plus grandes. */
+    .cod { --cod-jour: 0.36rem; --cod-jour-h: calc(var(--cod-jour) + 1.5px); --cod-pad: 0.5rem; }
     /* ⚠️ LES DEUX RANGS DISPARAISSENT, et c'est assumé : à 360 px, deux
        colonnes de portraits ne laisseraient que 240 px aux vingt-cinq
        cartes, soit 44 px chacune — un portrait d'anime ne s'y reconnaît

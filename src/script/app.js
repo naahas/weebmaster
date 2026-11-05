@@ -5848,7 +5848,20 @@ createApp({
         codClasseCarte(carte) {
             const c = [];
             if (carte.revelee) c.push('revelee', 'camp-' + carte.camp);
-            else if (this.cod.jeSuisEspion && carte.camp) c.push('vue-espion', 'camp-' + carte.camp);
+            else if (this.cod.jeSuisEspion && carte.camp) {
+                c.push('vue-espion', 'camp-' + carte.camp);
+                // ⚠️ Les cartes DE L'AUTRE CAMP reculent de quelques pixels.
+                // Bleu et rouge sont le seul couple qui se dispute vraiment
+                // l'œil — le passant est désaturé et l'assassin sombre, ils
+                // se distinguent déjà sans couleur. Mettre les neuf siennes
+                // en avant n'est donc utile que contre les huit de l'autre.
+                //
+                // ⚠️ Rien ici pour une carte RETOURNÉE : la grille se mettrait
+                // à frémir à chaque révélation, au moment précis où tout le
+                // monde regarde. Elle revient à sa taille pleine en tombant.
+                if ((carte.camp === 'A' || carte.camp === 'B')
+                    && carte.camp !== this.cod.monEquipe) c.push('adverse');
+            }
             if (this.codNumero(carte.i)) {
                 c.push('engagee');
                 // Au-delà du quota, la carte a franchi le seuil mais ne sera

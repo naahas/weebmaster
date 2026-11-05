@@ -1017,9 +1017,15 @@
                                      camps gardent leurs 9 et 8. Sinon on raccourcirait
                                      aussi la partie, ce que personne ne demande en
                                      désactivant le piège. -->
-                                <div class="v2-set">
+                                <!-- ⚠️ Le libellé dit « Assassin », la clef dit `piege`, et
+                                     il faut que ça reste ainsi : le contrôle de fuite de
+                                     `/game/state` cherche la chaîne « assassin » pour
+                                     s'assurer qu'aucun camp ne sort du serveur. Un
+                                     réglage nommé comme la carte le faisait sonner à
+                                     tort, sur la porte la plus sensible du mode. -->
+                                <div class="v2-set" data-info="cod-assassin">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v5c0 4.3-3.1 7.9-8 8.5-4.9-.6-8-4.2-8-8.5v-5L12 3z"/><path d="M12 9v4M12 16h.01"/></svg>
-                                    <span class="v2-set-label">Piège</span>
+                                    <span class="v2-set-label">Assassin</span>
                                     <span class="v2-set-value">{{ cod.piege ? 'Oui' : 'Non' }}</span>
                                     <span class="v2-set-opts">
                                         <button class="v2-set-opt" :class="{ on: cod.piege }"
@@ -1331,6 +1337,20 @@
                     <span class="v2-set-info" data-pour="choice-mouvement" tabindex="0">!
                         <span class="v2-set-bulle">Affiche la position des joueurs en temps
                             réel.</span>
+                    </span>
+                </template>
+
+                <template v-if="isHost && lobbyMode === 'codanime'">
+                    <!-- ⚠️ La bulle dit la CONSÉQUENCE, pas la mécanique : « une
+                         carte piégée » n apprend rien à qui ne connaît pas le jeu,
+                         alors que « fait perdre sur-le-champ » suffit à décider.
+                         Et le second cas est utile, parce qu on s attend à ce que
+                         la carte disparaisse — elle devient un passant, la grille
+                         reste à vingt-cinq. -->
+                    <span class="v2-set-info" data-pour="cod-assassin" tabindex="0">!
+                        <span class="v2-set-bulle"><b>Oui</b> : une carte de la grille fait
+                            perdre la partie sur-le-champ à qui la retourne.<br><b>Non</b> :
+                            elle devient un simple passant.</span>
                     </span>
                 </template>
             </div>
