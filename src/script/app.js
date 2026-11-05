@@ -304,6 +304,21 @@ createApp({
                 intro: false,
                 _introT: null,
 
+                // L'arrivée de l'indice : il paraît grand au milieu du plateau
+                // puis descend se ranger dans le pied. ⚠️ `saut` est la
+                // distance MESURÉE entre les deux places, en pixels — elle
+                // dépend de la hauteur des cartes, donc de l'écran, et ne peut
+                // pas s'écrire en dur dans le CSS.
+                arrive: false,
+                saut: 0,
+                _arriveT: null,
+
+                // ⚠️ Le masque des cartes adverses est PUREMENT LOCAL : il ne
+                // part sur aucune socket, personne d'autre ne le voit, et il
+                // ne touche rien d'autre que l'affichage de mes propres
+                // cartes. C'est un confort de lecture pour l'espion.
+                masquerAdverses: false,
+
                 // Ce que l'espion s'apprête à annoncer : son mot et son nombre.
                 // ⚠️ Le mot est TAPÉ et non dit à la voix — l'oral fermait le
                 // mode à tout salon sans vocal, c'est-à-dire à la moitié d'un
@@ -1084,6 +1099,19 @@ createApp({
 
         codResteSec() {
             return Math.ceil((this.cod.reste || 0) / 1000);
+        },
+
+        // ⚠️ La ligne au-dessus du temps dit l'ÉTAT DU TOUR, pas la règle du
+        // jeu. « Vos agents sont en pleine déduction » rappelle à chacun son
+        // rôle toutes les deux minutes — et c'est en plus le vocabulaire du
+        // jeu dont on s'inspire. Deux mots suffisent à dire ce qui se passe.
+        codEtatTexte() {
+            const c = this.cod;
+            if (!c.enCours) return '';
+            if (c.phase === 'indice') return 'Transmission en cours';
+            if (c.phase === 'vote') return 'Conseil de guerre';
+            if (c.phase === 'revelation') return 'On retourne…';
+            return '';
         },
 
         // 🤖 Le partenaire de BombAnime est-il dans le salon ? On le DÉDUIT de
@@ -5537,12 +5565,15 @@ createApp({
         revenirAuSalonCodanime() {
             this.arreterChronoCodanime();
             clearTimeout(this.cod._introT);
+            clearTimeout(this.cod._arriveT);
             this.cod._introT = null;
+            this.cod._arriveT = null;
             Object.assign(this.cod, {
                 enCours: false, intro: false, phase: 'repos', tourDe: null,
                 grille: [], votes: {}, ordre: [], retenues: [], indice: null,
                 historique: [], gagnant: null, derniereCarte: null,
-                restant: { A: 0, B: 0 }, saisieNombre: 1, refus: '',
+                restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refus: '',
+                arrive: false, saut: 0, masquerAdverses: false,
             });
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -5875,6 +5906,55 @@ createApp({
         // ligne par ligne — cinq paquets de cinq, pas une vague.
         codDiag(i) {
             return Math.floor(i / 5) + (i % 5);
+        },
+
+        // Le pas-à-pas du nombre, borné par ce qu'il reste à trouver.
+        codPasNombre(pas) {
+            const n = (this.cod.saisieNombre || 1) + pas;
+            this.cod.saisieNombre = Math.min(this.codMaxIndice, Math.max(1, n));
+        },
+
+        // Les trois points d'attente se posent dans le rang de l'équipe DONT
+        // C'EST LE TOUR, au-dessus de son espion. ⚠️ Sauf si cet espion c'est
+        // moi : je n'attends pas après moi-même, j'ai le champ sous les yeux.
+        codRangSonge(camp) {
+            return this.cod.enCours && this.cod.phase === 'indice'
+                && this.cod.tourDe === camp && !this.codMonTourDAnnoncer;
+        },
+
+        // Le bouton de masque ne paraît que dans MON rang, et seulement si je
+        // suis espion : un agent n'a aucune couleur à masquer.
+        codMasqueIci(camp) {
+            return this.cod.jeSuisEspion && this.cod.monEquipe === camp;
+        },
+
+        // ⚠️ L'ARRIVÉE DE L'INDICE SE MESURE. Il paraît au centre du plateau
+        // puis descend dans le pied, et la distance entre les deux places
+        // dépend de la hauteur des cartes — donc de l'écran. Écrite en dur
+        // dans le CSS, elle serait juste sur une seule taille de fenêtre.
+        //
+        // On lit donc l'écart réel entre le centre de la grille et la place
+        // de l'indice, puis on le donne au CSS. Si la grille n'est pas là
+        // (téléphone en plein chargement), on retombe sur un saut par défaut
+        // plutôt que de ne rien animer.
+        codIndiceArrive() {
+            clearTimeout(this.cod._arriveT);
+            this.cod.arrive = false;
+            this.$nextTick(() => {
+                const g = document.querySelector('.cod-grille');
+                const i = document.querySelector('.cod-pied .cod-indice');
+                if (!i) return;
+                if (g) {
+                    const rg = g.getBoundingClientRect(), ri = i.getBoundingClientRect();
+                    this.cod.saut = Math.round((rg.top + rg.height / 2) - (ri.top + ri.height / 2));
+                } else {
+                    this.cod.saut = -140;
+                }
+                this.cod.arrive = true;
+                // La classe s'éteint une fois le voyage fini : laissée en
+                // place, la moindre remise en page rejouerait la descente.
+                this.cod._arriveT = setTimeout(() => { this.cod.arrive = false; }, 1600);
+            });
         },
 
         // L'arrivée du plateau. Un drapeau qui s'éteint tout seul : la classe
@@ -9110,6 +9190,12 @@ createApp({
                 // qu'il est en train de taper à chaque état reçu, et l'état
                 // arrive à chaque clic de ses agents.
                 if (data.phase !== 'indice') c.saisieMot = '';
+                // ⚠️ Mesuré AVANT l'écrasement, comme l'entrée du plateau :
+                // c'est le PASSAGE de « pas d'indice » à « un indice » qui
+                // déclenche l'arrivée, et il n'a lieu qu'une fois par tour.
+                // Comparer les mots relancerait l'animation à chaque état
+                // reçu dès que deux tours portent le même indice.
+                const indiceNeuf = !!data.indice && !c.indice;
                 c.enCours = !!data.active;
                 c.phase = data.phase;
                 c.tourDe = data.tourDe;
@@ -9140,6 +9226,8 @@ createApp({
                 // Un reste de zéro veut dire « pas de chrono », pas « fini ».
                 if (data.reste > 0) this.lancerChronoCodanime(data.reste);
                 else this.arreterChronoCodanime();
+
+                if (indiceNeuf) this.codIndiceArrive();
             });
 
             this.socket.on('codanime-config', (data) => {
@@ -9164,16 +9252,14 @@ createApp({
                 this.codEntree();
             });
 
-            // L'espion n'a rien annoncé dans ses trente secondes : la main
-            // passe. On le DIT — sinon le tour change tout seul et son équipe
-            // croit avoir raté quelque chose.
-            this.socket.on('codanime-indice-rate', (data) => {
-                const e = data && data.equipe;
-                this.cod.refus = 'L’espion de l’équipe '
-                    + this.codNomEquipe(e).toLowerCase() + ' n’a pas annoncé à temps.';
-                if (this.cod._refusT) clearTimeout(this.cod._refusT);
-                this.cod._refusT = setTimeout(() => { this.cod.refus = ''; }, 3200);
-            });
+            // ⚠️ L'espion n'a rien annoncé dans ses trente secondes : la main
+            // passe, EN SILENCE. On l'écrivait en rouge sous le plateau, et
+            // c'était à deux titres une erreur : le rouge est la couleur d'un
+            // camp dans ce mode, et un tour qui s'épuise n'est pas une faute —
+            // c'est le minuteur qui fait son travail. Les trois points
+            // s'éteignent au-dessus de l'espion, le rang d'en face s'allume :
+            // ça suffit à dire que la main a changé.
+            this.socket.on('codanime-indice-rate', () => {});
 
             // Une carte vient de se retourner. L'état suit juste après ; ceci
             // ne sert qu'à l'animation et au son.

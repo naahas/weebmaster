@@ -154,46 +154,71 @@
 
 /* ── L'ARRIVÉE DE L'INDICE ──────────────────────────────────────── */
 /* ⚠️ C'est LE moment du tour : quatre personnes attendaient un mot, il
-   paraît. Il doit se voir arriver, et de loin — en stream, le viewer
-   bascule du chat à l'écran précisément à cet instant.
+   paraît. Il doit se voir de loin — en stream, le viewer bascule du chat
+   à l'écran précisément à cet instant — PUIS redevenir un rappel
+   discret, parce qu'il reste à l'écran pendant tout le vote.
 
-   Rien à piloter en JavaScript : `.cod-indice` porte un `v-if`, donc il
-   se monte à neuf à chaque annonce et ses animations repartent seules.
+   D'où un seul geste en deux temps : le mot se découvre EN GRAND AU
+   MILIEU du plateau, derrière un rideau qui passe, puis il DESCEND se
+   ranger dans le pied, à sa taille.
 
-   Le mot se fait la MISE AU POINT — il arrive large, flou et étalé, puis
-   se resserre. C'est le geste qui dit « lisez ça » sans rien clignoter.
-   Le nombre, lui, tombe après, une fois le mot lisible : les deux
-   ensemble se disputaient le regard. */
+   ⚠️ LA DISTANCE EST MESURÉE, pas écrite ici (`codIndiceArrive` dans
+   app.js pose `--cod-saut`). Elle sépare le centre de la grille de la
+   place de l'indice, donc elle dépend de la hauteur des cartes, donc de
+   l'écran : une valeur en dur serait juste sur une seule fenêtre.
+
+   ⚠️ Et c'est l'élément LUI-MÊME qui voyage, pas une copie posée
+   par-dessus. Deux éléments auraient demandé de faire coïncider la fin
+   de l'un avec le début de l'autre au pixel près, et le moindre écart se
+   serait vu comme un saut. */
 .cod-indice { position: relative; }
-.cod-indice::before {
+.cod-indice.arrive {
+    z-index: 30;
+    animation: codIndiceArrive 1.35s cubic-bezier(0.32, 0.9, 0.24, 1) both;
+}
+@keyframes codIndiceArrive {
+    0%   { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.05)); }
+    52%  { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.05)); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+/* Le rideau : une barre de la couleur du mode balaie le mot de gauche à
+   droite, et il est là derrière. ⚠️ Le mot reste INVISIBLE tant que la
+   barre ne l'a pas dépassé — sans ça on le lit à travers, et le rideau
+   ne découvre plus rien. */
+.cod-indice.arrive .cod-indice-mot { position: relative; animation: codParait 0.01s 0.27s both; }
+.cod-indice.arrive .cod-indice-mot::after {
     content: '';
-    position: absolute; left: 50%; top: 50%;
-    width: 16rem; height: 7rem;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(closest-side, rgba(191, 138, 95, 0.4), transparent 72%);
-    pointer-events: none;
-    animation: codLueur 0.9s ease-out both;
+    position: absolute; inset: -0.15rem -0.45rem;
+    background: var(--cod-brun);
+    animation: codRideau 0.62s cubic-bezier(0.65, 0, 0.2, 1) both;
 }
-@keyframes codLueur {
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-    28%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+@keyframes codParait { from { opacity: 0; } to { opacity: 1; } }
+@keyframes codRideau {
+    0%   { transform: scaleX(0); transform-origin: left; }
+    45%  { transform: scaleX(1); transform-origin: left; }
+    55%  { transform: scaleX(1); transform-origin: right; }
+    100% { transform: scaleX(0); transform-origin: right; }
 }
 
-.cod-indice-mot { animation: codMotEntre 0.62s cubic-bezier(0.16, 0.84, 0.3, 1.04) both; }
-@keyframes codMotEntre {
-    0%   { opacity: 0; transform: scale(1.45); filter: blur(0.5rem); letter-spacing: 0.4em; }
-    55%  { opacity: 1; }
-    100% { opacity: 1; transform: scale(1);    filter: blur(0);     letter-spacing: 0.02em; }
+/* Le nombre ne tombe qu'une fois le mot posé : les deux ensemble se
+   disputaient le regard. */
+.cod-indice.arrive .cod-indice-n {
+    animation: codNombreEntre 0.42s 0.62s cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
-
-.cod-indice-n { animation: codNombreEntre 0.42s 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
 @keyframes codNombreEntre {
     from { opacity: 0; transform: scale(0.4) rotate(-14deg); }
     to   { opacity: 1; transform: scale(1)   rotate(0deg); }
 }
 .cod-attente { font-size: 0.8rem; opacity: 0.55; font-style: italic; }
+
+/* La ligne au-dessus du temps : deux mots, et rien de plus. Elle dit ce
+   qui se passe, pas ce que chacun doit faire. */
+.cod-etat {
+    font-size: 0.66rem; font-weight: 700;
+    letter-spacing: 0.17em; text-transform: uppercase;
+    opacity: 0.38;
+}
 
 /* Le temps : un trait, aucun chiffre. Même échelle que la mèche de
    BombAnime — un compteur dit « dans 4,2 s » et l'on attend le dernier
@@ -274,6 +299,38 @@
 .cod-rang.actif { opacity: 1; }
 .cod-rang.camp-A.actif { border-color: rgba(47, 155, 255, 0.38); background: rgba(47, 155, 255, 0.055); }
 .cod-rang.camp-B.actif { border-color: rgba(255, 59, 92, 0.38); background: rgba(255, 59, 92, 0.055); }
+
+/* ── Le chapeau d'un rang ───────────────────────────────────────── */
+/* ⚠️ Il tient une HAUTEUR CONSTANTE, vide ou plein. Les trois points
+   paraissent et s'éteignent à chaque tour : sans hauteur réservée, les
+   quatre portraits du rang montaient et descendaient d'un demi-centimètre
+   toutes les trente secondes, dans le coin de l'œil. */
+.cod-chapeau {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 1.7rem;
+    margin-bottom: 0.1rem;
+}
+
+/* Le bouton de masque : discret au repos, allumé quand il agit. */
+.cod-masque {
+    display: grid; place-items: center;
+    width: 1.7rem; height: 1.7rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.cod-masque svg { width: 0.95rem; height: 0.95rem; }
+.cod-masque:hover { color: #fff; border-color: rgba(255, 255, 255, 0.35); }
+.cod-masque.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
+
+/* Le jumeau du masque, pour le téléphone : il se pose dans le coin libre
+   en haut à gauche, puisque les rangs — et le chapeau qui le portait —
+   n'existent plus à cette largeur. Caché partout ailleurs. */
+.cod-masque-tel { display: none; }
 
 .cod-siege { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.22rem; width: 100%; }
 
@@ -364,7 +421,12 @@
        coin haut gauche de sa case. */
     --cod-c: var(--cod-cote);
     width: var(--cod-c);
-    height: var(--cod-c);
+    /* ⚠️ DEUX PIXELS DE MOINS EN HAUTEUR, pas en largeur. La grille est
+       contrainte par la hauteur de l'écran sur ordinateur : deux pixels
+       repris sur chaque rangée en rendent dix au plateau, et personne ne
+       voit qu'une carte n'est plus tout à fait carrée. Le cadrage, lui,
+       ne bouge pas — `object-fit: cover` recadre d'un cheveu. */
+    height: calc(var(--cod-c) - 2px);
     place-self: center;
     padding: 0;
     border: 2px solid rgba(255, 255, 255, 0.09);
@@ -393,6 +455,20 @@
        reconnaître les portraits adverses, ce sont eux qu'il doit éviter de
        faire deviner. */
     opacity: 0.8;
+}
+
+/* ⚠️ LE MASQUE DE L'ESPION, posé par son seul bouton. Il éteint tout ce
+   qui n'est PAS à lui — le camp d'en face, les passants, l'assassin — pour
+   qu'il balaie ses neuf d'un coup. Elles restent visibles : il doit encore
+   savoir où elles sont, ce sont justement celles qu'il ne doit pas faire
+   deviner. Elles cessent seulement de compter dans le balayage.
+   ⚠️ Scopé à `.vue-espion` : une carte RETOURNÉE porte aussi son camp, et
+   l'éteindre effacerait la moitié du score sous les yeux de tout le monde. */
+.cod-grille.masque .cod-carte.vue-espion.adverse,
+.cod-grille.masque .cod-carte.vue-espion.camp-neutre,
+.cod-grille.masque .cod-carte.vue-espion.camp-assassin {
+    opacity: 0.2;
+    filter: grayscale(0.6);
 }
 
 .cod-carte:disabled { cursor: default; }
@@ -666,52 +742,68 @@
     min-height: 3.4rem; justify-content: center;
     width: var(--cod-plateau); min-width: 17rem;
 }
-.cod-annonce { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; }
-.cod-annonce-l { font-size: 0.74rem; opacity: 0.7; }
-.cod-annonce-n { display: inline-flex; gap: 0.3rem; }
+/* ── LE JETON : la barre d'indice, d'un seul bloc ───────────────── */
+/* ⚠️ UNE SEULE PIÈCE — le champ, le nombre dans un creux, le bouton au
+   bout. Les quatre boutons de nombre d'avant pesaient autant que le
+   champ, alors qu'on n'en touche qu'un : sur une barre posée sous
+   vingt-cinq portraits, tout ce qui s'étale prend la place des cartes.
+   Le nombre se règle donc au PAS-À-PAS, et n'affiche que sa valeur.
+   /prototypes/codanime-indice tient les quatre pistes essayées. */
+.cod-jeton {
+    display: flex; align-items: stretch;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cod-jeton:focus-within { border-color: var(--cod-brun); box-shadow: 0 0 0 3px rgba(191, 138, 95, 0.14); }
 
-/* Le champ de l'espion. ⚠️ SOBRE : un seul trait, aucun fond vif. Il est
-   posé au bord du plateau, sous vingt-cinq portraits — une boîte
-   contrastée y attire plus l'œil que les cartes elles-mêmes, alors qu'on
-   n'y écrit qu'un mot toutes les deux minutes. */
 .cod-mot {
-    width: 13rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.04);
-    color: inherit;
-    font: inherit; font-size: 0.9rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.06em;
+    width: 11rem;
+    padding: 0.62rem 1.1rem;
+    border: none; background: none; color: inherit;
+    font: inherit; font-size: 0.92rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.07em;
     text-align: center;
-    transition: border-color 0.18s ease, background 0.18s ease;
 }
-.cod-mot::placeholder { font-weight: 500; opacity: 0.35; }
-.cod-mot:focus {
-    outline: none;
-    border-color: var(--cod-brun);
-    background: rgba(191, 138, 95, 0.07);
-}
-.cod-valider:disabled { opacity: 0.35; cursor: default; filter: none; }
+.cod-mot:focus { outline: none; }
+.cod-mot::placeholder { font-weight: 500; opacity: 0.3; letter-spacing: 0.04em; }
 
-.cod-n {
-    width: 2.1rem; height: 2.1rem;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 0.5rem;
-    background: transparent; color: inherit;
-    font-size: 0.95rem; font-weight: 800;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+/* Le creux du nombre : deux filets le détachent du champ et du bouton,
+   sans ajouter de bord au jeton. */
+.cod-pas {
+    display: flex; align-items: center; gap: 0.1rem;
+    padding: 0 0.35rem;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08), inset -1px 0 0 rgba(255, 255, 255, 0.08);
 }
-.cod-n.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
+.cod-pas-b {
+    width: 1.5rem; height: 1.5rem;
+    border: none; border-radius: 50%;
+    background: none; color: inherit;
+    font: inherit; font-size: 0.9rem; font-weight: 900; line-height: 1;
+    opacity: 0.45; cursor: pointer;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+.cod-pas-b:hover:not(:disabled) { opacity: 1; background: rgba(255, 255, 255, 0.08); }
+.cod-pas-b:disabled { opacity: 0.14; cursor: default; }
+.cod-pas b {
+    width: 1.4rem; text-align: center;
+    font-size: 1.15rem; font-weight: 900;
+    color: var(--cod-brun);
+    font-variant-numeric: tabular-nums;
+}
 
-.cod-valider {
-    padding: 0.5rem 1.1rem;
-    border: none; border-radius: 0.55rem;
+.cod-env {
+    padding: 0 1.3rem;
+    border: none;
     background: var(--cod-brun); color: #15171d;
-    font-weight: 800; font-size: 0.82rem; cursor: pointer;
+    font: inherit; font-weight: 800; font-size: 0.82rem;
+    cursor: pointer;
 }
-.cod-valider:hover { filter: brightness(1.1); }
+.cod-env:hover:not(:disabled) { filter: brightness(1.08); }
+.cod-env:disabled { opacity: 0.35; cursor: default; }
 
 .cod-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
 .cod-aide { font-size: 0.74rem; opacity: 0.6; }
@@ -784,9 +876,22 @@
 .cod-histo::-webkit-scrollbar { display: none; }
 .cod-histo-t { display: none; }
 
-@media (min-width: 1240px) {
+/* ⚠️ LA COLONNE SE PLACE SUR LE PLATEAU, pas sur le bord de l'écran.
+   Calée à droite de la fenêtre, elle se posait SUR le rang rouge dès que
+   les rangs ont grossi : mesuré, elle commençait à 1126 px pour un rang
+   qui finissait à 1149. Son bord gauche se calcule donc depuis le centre
+   — demi-grille, l'écart, la largeur d'un rang, puis sa propre marge —
+   et il suit tout seul la taille des cartes.
+
+   ⚠️ 1500 px et non 1240. Il faut la place du plateau ENTIER plus deux
+   fois la colonne : le plateau fait 1019 px à carte pleine et peut
+   monter à 1090 sur une fenêtre très haute, la colonne en demande 154.
+   À 1240 px il ne restait que 130 px de marge. En dessous, c'est la
+   bande du bas qui prend le relais. */
+@media (min-width: 1500px) {
     .cod-histo {
-        left: auto; right: 1rem; bottom: auto; top: 50%;
+        left: calc(50% + var(--cod-plateau) / 2 + 3rem + var(--cod-rail) + 1rem);
+        right: auto; bottom: auto; top: 50%;
         transform: translateY(-50%);
         flex-direction: column; gap: 0.22rem;
         justify-content: flex-start;
@@ -805,27 +910,37 @@
    l'œil hors du plateau — or c'est un aide-mémoire qu'on consulte, pas
    une chose à regarder. */
 .cod-histo-l {
-    display: flex; align-items: baseline; gap: 0.4rem;
-    padding: 0.18rem 0.4rem 0.18rem 0.5rem;
+    display: flex; flex-direction: column; gap: 0.05rem;
+    padding: 0.22rem 0.4rem 0.26rem 0.5rem;
     border-left: 2px solid rgba(255, 255, 255, 0.18);
     border-radius: 0 0.25rem 0.25rem 0;
     background: rgba(255, 255, 255, 0.025);
-    font-size: 0.66rem;
-    /* En bande, chaque entrée garde sa taille ; en colonne elles
-       s'étirent, et `flex: 1` sur le mot s'en charge. */
+    font-size: 0.64rem;
+    /* ⚠️ Plus bas que le reste : c'est un aide-mémoire qu'on consulte, pas
+       une chose à regarder. À pleine opacité, neuf lignes tiraient l'œil
+       hors du plateau. */
+    opacity: 0.6;
     flex: 0 0 auto; max-width: 9rem;
 }
-@media (min-width: 1240px) { .cod-histo-l { max-width: none; } }
+/* Qui parle, puis ce qu'il dit. */
+.cod-histo-qui { display: flex; align-items: baseline; gap: 0.3rem; min-width: 0; }
+.cod-histo-quoi { display: flex; align-items: baseline; gap: 0.35rem; min-width: 0; }
+.cod-histo-l em {
+    font-style: normal; font-weight: 700; font-size: 0.58rem;
+    opacity: 0.75;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cod-histo-v { font-style: normal; font-size: 0.55rem; opacity: 0.4; flex: 0 0 auto; }
+.cod-histo-l u {
+    text-decoration: none; font-variant-numeric: tabular-nums;
+    font-weight: 800; opacity: 0.65; flex: 0 0 auto;
+}
 .cod-histo-l b {
-    flex: 1; min-width: 0;
-    font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    flex: 1 1 auto; min-width: 0;
+    font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em;
     /* Un indice tient sur une ligne : au-delà on coupe, l'infobulle a le
        compte complet. */
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.cod-histo-l i {
-    font-style: normal; font-size: 0.6rem; font-variant-numeric: tabular-nums;
-    opacity: 0.55; flex: 0 0 auto;
 }
 .cod-histo-l.camp-A { border-left-color: var(--cod-a); }
 .cod-histo-l.camp-A b { color: var(--cod-a); }
@@ -1071,6 +1186,10 @@
     .cod-score { min-width: 3.2rem; padding: 0.3rem 0.45rem; }
     .cod-score-n { font-size: 1.25rem; }
     .cod-indice-mot { font-size: 1.15rem; max-width: 11rem; }
+    /* ⚠️ Le saut est mesuré, mais la MISE À L'ÉCHELLE est écrite ici : à
+       2,05 sur un téléphone, un mot de vingt-quatre lettres déborde des
+       deux côtés. */
+    .cod-indice.arrive { --cod-echelle: 1.6; }
     .cod-indice-n { width: 1.5rem; height: 1.5rem; font-size: 0.85rem; }
     .cod-jauge { width: 8rem; }
     /* ⚠️ LA LIGNE D'ANNONCE DOIT TENIR SUR UN SEUL RANG. Repliée, elle
@@ -1079,14 +1198,28 @@
        puis redescendait dès qu'il avait annoncé. Le même défaut que
        l'historique, au même endroit. Mesuré à 390 px : 112 + 115 + 88 +
        trois écarts, soit 334 pour 374 de large. */
-    .cod-annonce { gap: 0.35rem; flex-wrap: nowrap; }
-    .cod-mot { width: 7rem; padding: 0.42rem 0.5rem; font-size: 0.8rem; }
-    .cod-annonce-n { gap: 0.22rem; }
-    .cod-n { width: 1.75rem; height: 1.75rem; font-size: 0.8rem; border-radius: 0.4rem; }
-    .cod-valider { padding: 0.45rem 0.7rem; font-size: 0.75rem; }
+    .cod-mot { width: 7.4rem; padding: 0.5rem 0.6rem; font-size: 0.82rem; }
+    .cod-pas { padding: 0 0.2rem; }
+    .cod-pas-b { width: 1.3rem; height: 1.3rem; font-size: 0.82rem; }
+    .cod-pas b { width: 1.1rem; font-size: 1rem; }
+    .cod-env { padding: 0 0.85rem; font-size: 0.76rem; }
+    /* Le chapeau des rangs n'existe pas ici (les rangs non plus) ; c'est
+       le jumeau du masque qui prend le relais, dans le coin libre. */
+    .cod-masque-tel {
+        display: grid;
+        position: absolute; left: 0.6rem; top: 0.6rem; z-index: 5;
+        width: 2rem; height: 2rem;
+    }
+    .cod-masque-tel svg { width: 1.1rem; height: 1.1rem; }
     /* La bande du bas est déjà le défaut ; sur téléphone on la resserre
        et l'on raccourcit les mots, pour en voir trois plutôt qu'un. */
-    .cod-histo-l { max-width: 7rem; font-size: 0.6rem; padding: 0.14rem 0.32rem 0.14rem 0.4rem; }
+    /* ⚠️ LA PHRASE NE TIENT PAS dans la bande du bas : mesuré, « nahaass
+       annonce KATANA 3 » se rendait « n… annonce K… 3 » — on perdait le mot,
+       c'est-à-dire la seule chose qu'on vient y relire. Le nom et le verbe
+       s'effacent donc, et il reste « KATANA 3 » avec son filet de camp. Le
+       nom complet est dans l'infobulle. */
+    .cod-histo-qui { display: none; }
+    .cod-histo-l { max-width: 8rem; font-size: 0.6rem; padding: 0.16rem 0.4rem; }
     .cod-histo { justify-content: flex-start; }
 }
 
@@ -1107,6 +1240,8 @@
     /* L'indice se montre, il n'arrive plus. ⚠️ `animation: none` et non une
        durée nulle : le mot resterait figé sur sa première image, c'est-à-dire
        flou et étalé. */
-    .cod-indice-mot, .cod-indice-n { animation: none; }
-    .cod-indice::before { display: none; }
+    .cod-indice.arrive,
+    .cod-indice.arrive .cod-indice-mot,
+    .cod-indice.arrive .cod-indice-n { animation: none; }
+    .cod-indice.arrive .cod-indice-mot::after { display: none; }
 }

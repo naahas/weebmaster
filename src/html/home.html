@@ -2415,6 +2415,25 @@
                 <template v-if="lobbyMode === 'codanime' && !gameEnded">
                     <div class="cod" v-if="cod.enCours" :class="{ 'en-entree': cod.intro }">
 
+                        <!-- ⚠️ LE MASQUE, EN DOUBLE, et il le faut : sur
+                             téléphone les deux rangs disparaissent, et avec
+                             eux le bouton qui vit dans le chapeau du mien. Or
+                             c'est là qu'il sert le plus — les cartes y font
+                             69 px. Celui-ci se pose dans le coin libre en haut
+                             à gauche, et n'existe que sous 640 px. -->
+                        <button class="cod-masque cod-masque-tel"
+                                v-if="cod.jeSuisEspion"
+                                :class="{ on: cod.masquerAdverses }"
+                                @click="cod.masquerAdverses = !cod.masquerAdverses"
+                                :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                :aria-pressed="String(cod.masquerAdverses)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
+                                <path v-if="cod.masquerAdverses" d="M3.5 3.5l17 17"/>
+                            </svg>
+                        </button>
+
+
                         <!-- Les deux compteurs, de part et d'autre. Celui de
                              l'équipe qui joue s'allume : à quatre contre
                              quatre en vocal, savoir à qui c'est doit se lire
@@ -2438,19 +2457,19 @@
                             </div>
 
                             <div class="cod-centre">
-                                <!-- L'indice en cours : LE MOT, puis le nombre.
-                                     ⚠️ Le mot part à TOUT LE MONDE, camp adverse
-                                     compris, comme dans le vrai jeu — voir les
-                                     autres se tromper sur un mot qu'on a lu est
-                                     la moitié du plaisir. Il est nettoyé et borné
-                                     côté serveur, jamais ici. -->
-                                <div class="cod-indice" v-if="cod.indice">
-                                    <span class="cod-indice-mot">{{ cod.indice.mot }}</span>
-                                    <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
-                                </div>
-                                <div class="cod-attente" v-else-if="cod.phase === 'revelation'">
-                                    On retourne…
-                                </div>
+                                <!-- ⚠️ L'INDICE N'EST PLUS ICI : il vit en bas,
+                                     dans le pied, et il y descend par
+                                     l'animation (grand au centre, puis il va se
+                                     ranger). L'en-tête ne garde que le temps et
+                                     ce qu'on attend — un en-tête qui portait à
+                                     la fois le mot et la jauge faisait regarder
+                                     en haut puis en bas à chaque tour.
+                                     ⚠️ Et la ligne dit l'ÉTAT, pas la règle :
+                                     « Conseil de guerre » plutôt que « vos
+                                     agents réfléchissent ». On ne relit pas le
+                                     rôle de son équipe toutes les deux
+                                     minutes. -->
+                                <div class="cod-etat" v-if="codEtatTexte">{{ codEtatTexte }}</div>
                                 <!-- Le temps, en trait, sans chiffre — même
                                      échelle que la mèche de BombAnime.
                                      ⚠️ Divisé par `dureePhase` et non par la
@@ -2491,6 +2510,35 @@
                              cartes, et l'en-tête porte déjà les deux comptes. -->
                         <div class="cod-plateau">
                             <div class="cod-rang camp-A" :class="{ actif: cod.tourDe === 'A' }">
+                                <!-- ⚠️ LE CHAPEAU DU RANG. Deux choses s'y
+                                     posent, et toujours AU-DESSUS DE L'ESPION,
+                                     qui est le premier siège :
+
+                                     • les trois points d'attente, dans le rang
+                                       de l'équipe dont c'est le tour. Ils
+                                       étaient dans le pied, en toutes lettres
+                                       — « l'espion de l'équipe rouge choisit
+                                       son indice ». On n'a pas besoin de lire
+                                       QUI attend quand on le voit ;
+                                     • le bouton de masque, dans MON rang et
+                                       seulement si je suis espion : il
+                                       assombrit fortement les cartes du camp
+                                       adverse pour que je lise les miennes
+                                       d'un coup. Il ne touche QUE l'affichage,
+                                       et il est à moi seul. -->
+                                <span class="cod-chapeau">
+                                    <span class="cod-songe" v-if="codRangSonge('A')"><i></i><i></i><i></i></span>
+                                    <button class="cod-masque" v-if="codMasqueIci('A')"
+                                            :class="{ on: cod.masquerAdverses }"
+                                            @click="cod.masquerAdverses = !cod.masquerAdverses"
+                                            :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                            :aria-pressed="String(cod.masquerAdverses)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
+                                            <path v-if="cod.masquerAdverses" d="M3.5 3.5l17 17"/>
+                                        </svg>
+                                    </button>
+                                </span>
                                 <span class="cod-siege" v-for="j in codRang('A')" :key="j.playerId"
                                       :class="{ espion: j.espion, moi: j.playerId === playerId,
                                                 vote: codAVote(j.playerId) }"
@@ -2511,7 +2559,8 @@
                                  ⚠️ Les portraits arrivent SOUS JETON : leur nom de
                                  fichier dirait qui est le personnage, et le mode
                                  n'affiche justement pas les noms. -->
-                            <div class="cod-grille" :class="{ espion: cod.jeSuisEspion }">
+                            <div class="cod-grille"
+                                 :class="{ espion: cod.jeSuisEspion, masque: cod.masquerAdverses }">
                                 <button v-for="(c, iC) in cod.grille" :key="c.i"
                                         class="cod-carte" :class="codClasseCarte(c)"
                                         :style="{ '--k': codDiag(iC) }"
@@ -2535,6 +2584,20 @@
                             </div>
 
                             <div class="cod-rang camp-B" :class="{ actif: cod.tourDe === 'B' }">
+                                <!-- Le même chapeau qu'en face — voir le rang A. -->
+                                <span class="cod-chapeau">
+                                    <span class="cod-songe" v-if="codRangSonge('B')"><i></i><i></i><i></i></span>
+                                    <button class="cod-masque" v-if="codMasqueIci('B')"
+                                            :class="{ on: cod.masquerAdverses }"
+                                            @click="cod.masquerAdverses = !cod.masquerAdverses"
+                                            :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                            :aria-pressed="String(cod.masquerAdverses)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
+                                            <path v-if="cod.masquerAdverses" d="M3.5 3.5l17 17"/>
+                                        </svg>
+                                    </button>
+                                </span>
                                 <span class="cod-siege" v-for="j in codRang('B')" :key="j.playerId"
                                       :class="{ espion: j.espion, moi: j.playerId === playerId,
                                                 vote: codAVote(j.playerId) }"
@@ -2563,66 +2626,72 @@
                                  confiance), elle évite seulement de taper
                                  trente signes pour en voir vingt-quatre
                                  arriver. -->
-                            <div class="cod-annonce" v-if="codMonTourDAnnoncer">
+                            <!-- ⚠️ LE JETON : une seule pièce, d'un bloc. Le
+                                 champ, le nombre dans un creux, le bouton au
+                                 bout. Le nombre se règle au PAS-À-PAS — les
+                                 quatre boutons d'avant pesaient autant que le
+                                 champ alors qu'on n'en touche qu'un, et sur une
+                                 barre posée sous vingt-cinq portraits, tout ce
+                                 qui s'étale prend la place des cartes.
+                                 /prototypes/codanime-indice tient les quatre
+                                 pistes essayées. -->
+                            <div class="cod-jeton" v-if="codMonTourDAnnoncer">
                                 <!-- ⚠️ `:value` + `@input` et NON `v-model` : le
                                      champ filtre à la frappe (un seul mot,
                                      lettres et chiffres, tiret toléré), et
                                      `v-model` réécrirait la saisie brute
-                                     par-dessus le filtre à chaque touche. -->
+                                     par-dessus le filtre à chaque touche.
+                                     ⚠️ `maxlength` double la borne du serveur :
+                                     elle ne protège rien (le client n'est pas de
+                                     confiance), elle évite seulement de taper
+                                     trente signes pour en voir vingt-quatre
+                                     arriver. -->
                                 <input class="cod-mot" type="text" maxlength="24"
                                        :value="cod.saisieMot" @input="codMotSaisi($event)"
-                                       placeholder="Ton indice en un mot"
+                                       placeholder="ton indice"
                                        autocomplete="off" spellcheck="false"
                                        @keyup.enter="codAnnoncer">
-                                <span class="cod-annonce-n">
-                                    <button v-for="n in codMaxIndice" :key="n"
-                                            class="cod-n" :class="{ on: cod.saisieNombre === n }"
-                                            @click="cod.saisieNombre = n">{{ n }}</button>
+                                <span class="cod-pas">
+                                    <button class="cod-pas-b" @click="codPasNombre(-1)"
+                                            :disabled="cod.saisieNombre <= 1"
+                                            aria-label="Un de moins">−</button>
+                                    <b>{{ cod.saisieNombre }}</b>
+                                    <button class="cod-pas-b" @click="codPasNombre(1)"
+                                            :disabled="cod.saisieNombre >= codMaxIndice"
+                                            aria-label="Un de plus">+</button>
                                 </span>
-                                <button class="cod-valider" :disabled="!cod.saisieMot.trim()"
+                                <button class="cod-env" :disabled="!cod.saisieMot.trim()"
                                         @click="codAnnoncer">Annoncer</button>
                             </div>
 
-                            <!-- ⚠️ L'ATTENTE DE L'INDICE SE DIT ICI, dans le pied,
-                                 et non au centre de l'en-tête. C'est le seul
-                                 moment de la partie où personne ne peut rien
-                                 faire, et c'est précisément là qu'on croit que
-                                 le jeu est cassé : le pied est l'endroit où l'on
-                                 regarde pour savoir ce qu'on a à faire, et les
-                                 trois points qui battent disent « ça tourne »
-                                 là où un texte fixe laisse penser le contraire.
-                                 ⚠️ « de l'équipe bleue » et non « l'espion
-                                 bleue » : les noms de camp sont féminins parce
-                                 qu'ils qualifient « équipe », et les coller à
-                                 « espion » donnait un accord faux à l'écran. -->
-                            <div class="cod-actions" v-else-if="cod.phase === 'indice'">
-                                <span class="cod-aide cod-songe">
-                                    L’espion de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }} choisit son indice<i></i><i></i><i></i>
-                                </span>
-                            </div>
+                            <!-- ⚠️ L'INDICE VIT ICI, et il y ARRIVE : grand au
+                                 milieu du plateau derrière un rideau, puis il
+                                 descend se ranger à sa place. C'est le moment du
+                                 tour — quatre personnes attendaient un mot — et
+                                 il doit se voir de loin avant de redevenir un
+                                 rappel discret.
+                                 ⚠️ La `key` force un remontage à chaque annonce :
+                                 sans elle, Vue réutilise le nœud, les animations
+                                 ne repartent pas, et le second indice de la
+                                 partie paraîtrait sans un geste. -->
+                            <template v-else>
+                                <div class="cod-indice" v-if="cod.indice"
+                                     :key="cod.manche + '/' + cod.historique.length"
+                                     :class="{ arrive: cod.arrive }"
+                                     :style="{ '--cod-saut': cod.saut + 'px' }">
+                                    <span class="cod-indice-mot">{{ cod.indice.mot }}</span>
+                                    <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
+                                </div>
 
-                            <!-- Les agents du tour votent. -->
-                            <div class="cod-actions" v-else-if="codPeutVoter">
-                                <span class="cod-aide">
-                                    Marque jusqu’à {{ cod.indice ? cod.indice.nombre : 1 }} carte(s) ·
-                                    {{ cod.seuil }} voix pour en engager une
-                                </span>
-                                <button class="cod-stop" @click="codPasser">On s’arrête</button>
-                            </div>
-
-                            <!-- Tous les autres regardent. On le dit, plutôt que
-                                 de laisser un pied vide qui ressemble à un bug.
-                                 ⚠️ Plus de ligne à part pour l'espion : « Tu vois
-                                 les couleurs — ne dis rien » lui apprenait la
-                                 règle du jeu à chaque tour de l'adversaire, et
-                                 occupait la seule ligne qui devait dire à qui
-                                 c'est. Il lit donc la même phrase que ses agents. -->
-                            <div class="cod-actions" v-else>
-                                <span class="cod-aide" v-if="cod.monEquipe">
-                                    C’est le tour de l’équipe {{ codNomEquipe(cod.tourDe).toLowerCase() }}.
-                                </span>
-                                <span class="cod-aide" v-else>Tu regardes cette partie.</span>
-                            </div>
+                                <!-- Les agents du tour votent. -->
+                                <div class="cod-actions" v-if="codPeutVoter">
+                                    <span class="cod-aide">
+                                        Marque jusqu’à {{ cod.indice ? cod.indice.nombre : 1 }} carte(s) ·
+                                        {{ cod.seuil }} voix pour en engager une
+                                    </span>
+                                    <button class="cod-stop" @click="codPasser">On s’arrête</button>
+                                </div>
+                            </template>
 
                             <span class="cod-refus" v-if="cod.refus">{{ cod.refus }}</span>
                         </div>
@@ -2641,13 +2710,37 @@
                              tour de chaque partie.
                              Hors du flux, sa hauteur ne coûte rien, et la
                              colonne de droite était libre. -->
+                        <!-- ⚠️ UNE PHRASE, pas une fiche. « METAL 0/1 » demandait
+                             de traduire deux nombres ; « Kitsune annonce METAL 3 »
+                             se lit comme un journal, et c'est ce qu'on y cherche —
+                             qui a dit quoi.
+                             ⚠️ Le compte des trouvées n'est pas perdu, il passe
+                             dans l'infobulle : c'est l'information qu'on vient
+                             relire quand un tour a mal tourné, mais elle n'a pas
+                             à peser sur neuf lignes en permanence. -->
                         <div class="cod-histo" v-if="cod.historique.length">
                             <span class="cod-histo-t">Indices</span>
                             <span class="cod-histo-l" v-for="(h, k) in cod.historique.slice(-9)" :key="k"
                                   :class="'camp-' + h.equipe"
                                   :title="codNomEquipe(h.equipe) + ' · ' + h.trouvees + ' trouvée(s) sur ' + h.nombre">
-                                <b>{{ h.mot || '—' }}</b>
-                                <i>{{ h.trouvees }}/{{ h.nombre }}</i>
+                                <!-- ⚠️ DEUX LIGNES, pas une. Mesuré : « nahaass
+                                     annonce KATANA 3 » sur un seul rang se
+                                     rendait « na… annonce KA… 3 » dans une
+                                     colonne de 8,6 rem — on perdait le mot,
+                                     c'est-à-dire la seule chose qu'on vient y
+                                     relire. L'élargir n'était pas possible :
+                                     au-delà, la colonne se pose sur le rang
+                                     rouge. Qui parle au-dessus, ce qu'il dit
+                                     en dessous.
+                                     ⚠️ Le verbe est balisé : sur téléphone la
+                                     bande du bas n'a qu'une ligne, et c'est le
+                                     nom et le verbe qui s'effacent. -->
+                                <span class="cod-histo-qui">
+                                    <em>{{ h.espion || '—' }}</em><i class="cod-histo-v">annonce</i>
+                                </span>
+                                <span class="cod-histo-quoi">
+                                    <b>{{ h.mot || '—' }}</b><u>{{ h.nombre }}</u>
+                                </span>
                             </span>
                         </div>
                     </div>

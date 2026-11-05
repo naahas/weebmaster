@@ -773,6 +773,13 @@ function creerModule(deps) {
 
         etat.historique.push({
             equipe: etat.tourDe,
+            // ⚠️ QUI a annoncé, et pas seulement quel camp. L'historique se
+            // lit comme un journal — « Kitsune annonce METAL 3 » — et sans le
+            // nom il manque le sujet de la phrase. Relevé À LA CLÔTURE :
+            // l'espion peut partir avant la fin du tour, et c'est bien celui
+            // qui a parlé qu'on veut citer.
+            espion: etat.equipes[etat.tourDe].espion
+                ? nomDe(gameState, etat.equipes[etat.tourDe].espion) : '—',
             // Le mot aussi : c'est lui qu'on relit pour comprendre où le tour
             // a dérapé. « 1/3 » tout seul ne raconte rien.
             mot: etat.indice ? etat.indice.mot : '',
