@@ -2247,6 +2247,12 @@ app.get('/prototypes/codanime-couleurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-couleurs.html');
 });
 
+// La barre d'indice : quatre façons de choisir le NOMBRE sans étaler
+// quatre boutons, et trois arrivées du mot en haut du plateau.
+app.get('/prototypes/codanime-indice', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-indice.html');
+});
+
 // ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
 // Une page de prototype qui les servirait en clair ne dirait rien du
 // rendu réel — et les noms de fichiers sont justement ce que le mode

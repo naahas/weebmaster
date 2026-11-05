@@ -128,17 +128,19 @@ const post = async (chemin, corps, jeton) => {
     dire(vu[espionDuTour].refus.filter(r => r.raison === 'mot-vide').length >= 2,
         'et un mot fait d\'espaces aussi');
 
-    // ⚠️ Le mot est NETTOYÉ côté serveur : sauts de ligne écrasés, espaces
-    // en rafale réduits, et 24 signes au plus. C'est un champ libre
-    // rediffusé à huit personnes, il ne part jamais tel quel.
-    socks[espionDuTour].emit('codanime-indice', { nombre: 2, mot: '  lame\n\n   tranchante  ' });
+    // ⚠️ UN SEUL MOT, ET RIEN QUE DES LETTRES. Le serveur ne fait pas que
+    // détourer : il garde le PREMIER mot et jette tout ce qui n'est ni
+    // lettre ni chiffre. Un champ libre rediffusé à huit personnes est une
+    // messagerie s'il n'est pas tenu — et « lame tranchante » donnerait
+    // deux indices pour le prix d'un.
+    socks[espionDuTour].emit('codanime-indice', { nombre: 2, mot: '  la!me\n\n   tranchante  ' });
     await wait(300);
     dire(dernier(espionDuTour).phase === 'vote', 'l\'indice ouvre la phase de vote');
     dire(dernier(espionDuTour).indice.nombre === 2, 'le nombre est transmis');
-    dire(dernier(espionDuTour).indice.mot === 'lame tranchante',
-        'le mot est transmis, nettoyé de ses sauts de ligne');
+    dire(dernier(espionDuTour).indice.mot === 'lame',
+        'le mot est transmis, réduit au premier et sans ponctuation');
     // Et il part à TOUT LE MONDE, camp adverse compris — comme dans le vrai jeu.
-    dire(dernier(agentAdverse).indice && dernier(agentAdverse).indice.mot === 'lame tranchante',
+    dire(dernier(agentAdverse).indice && dernier(agentAdverse).indice.mot === 'lame',
         'et le camp adverse le lit aussi');
 
     socks[espionDuTour].emit('codanime-vote', { i: 0 });

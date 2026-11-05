@@ -179,16 +179,29 @@ function construireGrille(vivier, premier, alea, avecAssassin) {
 // parce qu'un champ libre rediffusé à huit personnes est un salon de
 // discussion déguisé s'il n'est pas borné.
 //
-// On coupe les sauts de ligne et les caractères de contrôle (un indice
-// tient sur une ligne), on écrase les espaces en rafale, et on borne à
-// 24 signes — un indice de Codenames est UN mot, deux au pire.
+// ⚠️ UN SEUL MOT, ET RIEN QUE DES LETTRES. La règle de Codenames tient en
+// un mot, et c'est elle qui rend le jeu difficile : « lame tranchante »
+// laisse passer deux indices pour le prix d'un. On ne garde donc que le
+// PREMIER mot, et l'on jette tout ce qui n'est ni lettre ni chiffre.
+//
+// Et ce n'est pas qu'une règle de jeu : le champ est libre et son contenu
+// repart vers huit personnes. Sans ce filtre, c'est une messagerie — avec
+// ses liens, sa ponctuation et ses émojis.
+//
+// ℹ️ Le TIRET survit, seul signe admis : « sous-marin » est un mot, et
+// l'interdire obligerait à écrire « sousmarin ». Il est écrasé en rafale
+// et retiré des deux bouts, pour qu'il ne serve pas de décoration.
+//
+// ⚠️ `\p{L}` exige le drapeau `u`. Sans lui, `é`, `ñ` et `ü` tomberaient —
+// et la moitié des indices français avec.
 const MOT_MAX = 24;
 function nettoyerMot(brut) {
     if (typeof brut !== 'string') return '';
-    return brut
-        .replace(/[\u0000-\u001f\u007f]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
+    const premier = brut.trim().split(/\s+/)[0] || '';
+    return premier
+        .replace(/[^\p{L}\p{N}-]/gu, '')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-+|-+$/g, '')
         .slice(0, MOT_MAX);
 }
 

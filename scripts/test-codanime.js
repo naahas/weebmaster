@@ -100,16 +100,31 @@ dire(sansKo === 0, 'piège éteint : plus aucun assassin, un passant de plus, et
 dire(m.etatNeuf().piege === true, 'et il est ALLUMÉ par défaut');
 
 titre('Le mot de l\'indice');
-// ⚠️ C'est un champ libre rediffusé à huit personnes : il ne part jamais
-// tel quel. Sauts de ligne et caractères de contrôle écrasés, espaces en
-// rafale réduits, 24 signes au plus.
+// ⚠️ UN SEUL MOT, ET RIEN QUE DES LETTRES. La règle de Codenames tient en
+// un mot, et c'est elle qui rend le jeu difficile : « lame tranchante »
+// laisse passer deux indices pour le prix d'un. Et ce n'est pas qu'une
+// règle de jeu — le champ est libre et repart vers huit personnes : sans
+// ce filtre, c'est une messagerie, avec ses liens et ses émojis.
 dire(m.nettoyerMot('  katana  ') === 'katana', 'il est détouré');
-dire(m.nettoyerMot('lame\n\ntranchante') === 'lame tranchante',
-    'les sauts de ligne deviennent un espace — un indice tient sur une ligne');
-dire(m.nettoyerMot('a\u0007b') === 'a b', 'et les caractères de contrôle aussi');
+dire(m.nettoyerMot('lame tranchante') === 'lame',
+    'seul le PREMIER mot survit — un indice de Codenames en fait un seul');
+dire(m.nettoyerMot('lame\n\ntranchante') === 'lame', 'et le saut de ligne sépare aussi');
+dire(m.nettoyerMot('ka!ta#na') === 'katana', 'la ponctuation tombe');
+dire(m.nettoyerMot('http://x.fr/a') === 'httpxfra', 'un lien n\'en est plus un');
+dire(m.nettoyerMot('feu\u{1F525}') === 'feu', 'les émojis tombent');
+dire(m.nettoyerMot('a\u0007b') === 'ab', 'les caractères de contrôle aussi');
+// ⚠️ Les lettres ACCENTUÉES restent : sans le drapeau `u`, la classe
+// `\p{L}` les jetterait — et la moitié des indices français avec.
+dire(m.nettoyerMot('épée') === 'épée' && m.nettoyerMot('ñandú') === 'ñandú',
+    'mais les accents survivent');
+dire(m.nettoyerMot('sous-marin') === 'sous-marin',
+    'le tiret aussi — « sous-marin » est un mot');
+dire(m.nettoyerMot('--feu--') === 'feu' && m.nettoyerMot('a---b') === 'a-b',
+    'mais il ne sert pas de décoration');
 dire(m.nettoyerMot('x'.repeat(80)).length === m.MOT_MAX,
     'il est borné à ' + m.MOT_MAX + ' signes');
-dire(m.nettoyerMot('   ') === '' && m.nettoyerMot(null) === '' && m.nettoyerMot(42) === '',
+dire(m.nettoyerMot('   ') === '' && m.nettoyerMot(null) === '' && m.nettoyerMot(42) === ''
+    && m.nettoyerMot('!!!') === '',
     'et ce qui n\'est pas un mot rend une chaîne vide');
 
 titre('⚠️ Ce qu\'un AGENT reçoit — aucune couleur ne doit fuiter');

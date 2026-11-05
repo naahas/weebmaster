@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — la barre d'indice</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LA BARRE D'INDICE, et le choix du NOMBRE
+
+   C'est le seul endroit du mode où l'on écrit. L'espion s'y arrête
+   trente secondes par tour pendant que sept personnes le regardent, et
+   son geste est toujours le même : un mot, un nombre, envoyer.
+
+   ⚠️ DEUX CONTRAINTES décident, et la première version les ratait
+   toutes les deux :
+
+   • Le NOMBRE ne doit pas s'étaler. Quatre boutons posés côte à côte
+     pèsent autant que le champ lui-même, alors qu'on n'en touche qu'un.
+     Les quatre pistes affichent donc UNE valeur, et le clic la change.
+
+   • La barre est posée SOUS vingt-cinq portraits. Tout ce qui y brille
+     attire l'œil plus que les cartes, alors qu'on l'utilise une fois
+     toutes les deux minutes. Sobre au repos, vivante à la frappe.
+
+   Le mot est en MAJUSCULES partout : c'est un mot d'ordre, et en
+   capitales il se lit d'un coup à six mètres — la distance d'un stream.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --brun: #bf8a5f;
+    --a: #2f9bff;
+    --b: #ff3b5c;
+    --fond: #07070a;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee;
+    background: var(--fond);
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.6rem; max-width: 52rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.piste {
+    margin-bottom: 1.1rem;
+    padding: 1.1rem 1.2rem 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.8rem;
+    background: rgba(255, 255, 255, 0.012);
+}
+.tete { display: flex; align-items: baseline; gap: 0.7rem; }
+.num {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+    border-radius: 50%; background: var(--brun); color: #15171d;
+    font-size: 0.7rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.note { font-size: 0.72rem; opacity: 0.5; margin: 0.35rem 0 1.1rem 2.2rem; max-width: 46rem; line-height: 1.5; }
+.banc { display: flex; justify-content: center; padding: 0.8rem 0; }
+
+/* ── Le socle commun ────────────────────────────────────────────── */
+.ch { font: inherit; color: inherit; border: none; background: none; }
+input.ch { text-transform: uppercase; letter-spacing: 0.07em; }
+input.ch::placeholder { letter-spacing: 0.04em; opacity: 0.3; font-weight: 500; }
+
+/* ════════════════════════════════════════════════════════════════
+   1 · LE JETON — une seule pièce, le nombre au bout
+   ════════════════════════════════════════════════════════════════ */
+.p1 {
+    display: flex; align-items: stretch;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.p1:focus-within { border-color: var(--brun); box-shadow: 0 0 0 3px rgba(191, 138, 95, 0.14); }
+.p1 input { width: 11rem; padding: 0.65rem 1.1rem; font-size: 0.92rem; font-weight: 700; text-align: center; }
+/* Le pas-à-pas : deux flèches et un chiffre, dans un creux. */
+.p1-n {
+    display: flex; align-items: center; gap: 0.1rem;
+    padding: 0 0.35rem;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08), inset -1px 0 0 rgba(255, 255, 255, 0.08);
+}
+.p1-n button { width: 1.5rem; height: 1.5rem; border-radius: 50%; cursor: pointer; opacity: 0.45; font-size: 0.85rem; font-weight: 900; }
+.p1-n button:hover { opacity: 1; background: rgba(255, 255, 255, 0.08); }
+.p1-n b { width: 1.4rem; text-align: center; font-size: 1.15rem; font-weight: 900; color: var(--brun); font-variant-numeric: tabular-nums; }
+.p1-env { padding: 0 1.3rem; background: var(--brun); color: #15171d; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+.p1-env:hover { filter: brightness(1.08); }
+
+/* ════════════════════════════════════════════════════════════════
+   2 · LE CRAN — un seul geste, le chiffre tourne
+   ════════════════════════════════════════════════════════════════ */
+.p2 { display: flex; align-items: center; gap: 0.6rem; }
+.p2-champ {
+    position: relative;
+    width: 14rem;
+    padding: 0.6rem 0.2rem 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.14);
+    transition: border-color 0.2s ease;
+}
+.p2-champ input { width: 100%; font-size: 1.05rem; font-weight: 800; text-align: center; }
+.p2-champ::after {
+    content: ''; position: absolute; left: 50%; right: 50%; bottom: -2px; height: 2px;
+    background: var(--brun);
+    transition: left 0.28s cubic-bezier(0.2, 0.8, 0.25, 1), right 0.28s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+.p2-champ:focus-within::after { left: 0; right: 0; }
+/* Le cran : un disque, le chiffre bascule à chaque clic. */
+.p2-cran {
+    position: relative; overflow: hidden;
+    width: 2.8rem; height: 2.8rem; flex: 0 0 auto;
+    border-radius: 0.8rem;
+    border: 2px solid var(--brun);
+    background: rgba(191, 138, 95, 0.1);
+    color: var(--brun);
+    font-size: 1.3rem; font-weight: 900;
+    cursor: pointer;
+    display: grid; place-items: center;
+}
+.p2-cran span { display: block; margin-bottom: 0.3rem; animation: cranMonte 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1); }
+@keyframes cranMonte { from { transform: translateY(100%); opacity: 0; } }
+.p2-cran small {
+    position: absolute; left: 0; right: 0; bottom: 0.15rem;
+    font-size: 0.42rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; font-weight: 700;
+}
+.p2-env { padding: 0.65rem 1.3rem; border-radius: 0.7rem; background: var(--brun); color: #15171d; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+
+/* ════════════════════════════════════════════════════════════════
+   3 · L'ÉVENTAIL — le nombre se déplie au-dessus
+   ════════════════════════════════════════════════════════════════ */
+.p3 { position: relative; display: flex; align-items: center; gap: 0.55rem; }
+.p3-champ {
+    width: 13rem; padding: 0.62rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 0.65rem 0 0 0.65rem;
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.92rem; font-weight: 700; text-align: center;
+}
+.p3-champ:focus { outline: none; border-color: var(--brun); }
+.p3-grp { display: flex; }
+.p3-badge {
+    position: relative;
+    width: 2.6rem; height: 2.6rem;
+    border: 1px solid var(--brun); border-left: none;
+    border-radius: 0 0.65rem 0.65rem 0;
+    background: rgba(191, 138, 95, 0.12);
+    color: var(--brun);
+    font-size: 1.15rem; font-weight: 900;
+    cursor: pointer;
+    display: grid; place-items: center;
+}
+.p3-badge i { position: absolute; right: 0.3rem; bottom: 0.18rem; font-size: 0.55rem; opacity: 0.55; font-style: normal; line-height: 1; }
+.p3-fan {
+    position: absolute; bottom: 3.2rem; left: 12.6rem;
+    display: flex; gap: 0.3rem;
+    padding: 0.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.6rem;
+    background: #101016;
+    box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.6);
+    opacity: 0; pointer-events: none; transform: translateY(0.4rem) scale(0.9);
+    transform-origin: bottom center;
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+.p3.ouvert .p3-fan { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+.p3-fan button {
+    width: 2.1rem; height: 2.1rem; border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.05); font-size: 0.95rem; font-weight: 800; cursor: pointer;
+}
+.p3-fan button:hover { background: rgba(191, 138, 95, 0.25); }
+.p3-fan button.on { background: var(--brun); color: #15171d; }
+.p3-env { padding: 0.62rem 1.2rem; border-radius: 0.65rem; background: var(--brun); color: #15171d; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+
+/* ════════════════════════════════════════════════════════════════
+   4 · LA FRAPPE — le nombre se tape avec le mot
+   ════════════════════════════════════════════════════════════════ */
+.p4 {
+    display: flex; align-items: center; gap: 0.7rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.03);
+    font-variant-numeric: tabular-nums;
+}
+.p4:focus-within { border-color: var(--brun); }
+.p4-chev { color: var(--brun); font-weight: 900; opacity: 0.7; }
+.p4 input { width: 13rem; font-size: 0.95rem; font-weight: 700; }
+/* La pastille se remplit quand le chiffre est reconnu dans la frappe. */
+.p4-pic {
+    display: grid; place-items: center;
+    width: 2rem; height: 2rem; flex: 0 0 auto;
+    border-radius: 0.5rem;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 1rem; font-weight: 900;
+    transition: all 0.2s ease;
+}
+.p4-pic.plein { border-style: solid; border-color: var(--brun); background: var(--brun); color: #15171d; }
+.p4-env { padding: 0.55rem 1.1rem; border-radius: 0.55rem; background: var(--brun); color: #15171d; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
+.p4-aide { font-size: 0.6rem; opacity: 0.3; margin-top: 0.5rem; text-align: center; }
+
+/* ════════════════════════════════════════════════════════════════
+   L'ARRIVÉE DU MOT EN HAUT — trois façons
+   ════════════════════════════════════════════════════════════════ */
+.rev-barre { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 1.3rem; flex-wrap: wrap; }
+.rev-barre button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0.5rem;
+    background: transparent; color: inherit;
+    font: inherit; font-size: 0.74rem; font-weight: 700; cursor: pointer;
+}
+.rev-barre button:hover { border-color: var(--brun); }
+.scene {
+    position: relative;
+    display: grid; place-items: center;
+    height: 9rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0.8rem;
+    background: radial-gradient(60% 80% at 50% 50%, #12121a, #08080b 75%);
+    overflow: hidden;
+}
+.ind { display: flex; align-items: center; gap: 0.6rem; position: relative; }
+.ind-mot { font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }
+.ind-n {
+    display: grid; place-items: center; width: 2.3rem; height: 2.3rem;
+    border-radius: 0.55rem; background: var(--brun); color: #15171d;
+    font-size: 1.25rem; font-weight: 900;
+}
+
+/* A — la mise au point : large, flou, étalé, puis net. */
+.revA .ind-mot { animation: motFocus 0.62s cubic-bezier(0.16, 0.84, 0.3, 1.04) both; }
+.revA .ind-n   { animation: nPop 0.42s 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+.revA .ind::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 18rem; height: 8rem; transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(191, 138, 95, 0.4), transparent 72%);
+    animation: lueur 0.9s ease-out both;
+}
+@keyframes motFocus {
+    0%   { opacity: 0; transform: scale(1.45); filter: blur(0.5rem); letter-spacing: 0.4em; }
+    55%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); letter-spacing: 0.02em; }
+}
+@keyframes lueur {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    28% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+}
+@keyframes nPop { from { opacity: 0; transform: scale(0.4) rotate(-14deg); } }
+
+/* B — le rideau : le mot se découvre derrière une barre qui passe. */
+.revB .ind-mot { position: relative; animation: motRideau 0.01s 0.26s both; }
+.revB .ind-mot::after {
+    content: ''; position: absolute; inset: -0.2rem -0.4rem;
+    background: var(--brun);
+    animation: rideau 0.62s cubic-bezier(0.65, 0, 0.2, 1) both;
+}
+.revB .ind-n { animation: nPop 0.42s 0.46s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes motRideau { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rideau {
+    0%   { transform: scaleX(0); transform-origin: left; }
+    45%  { transform: scaleX(1); transform-origin: left; }
+    55%  { transform: scaleX(1); transform-origin: right; }
+    100% { transform: scaleX(0); transform-origin: right; }
+}
+
+/* C — la frappe : les lettres tombent une à une. */
+.revC .ind-mot em { display: inline-block; font-style: normal; animation: lettre 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.revC .ind-n { animation: nPop 0.42s 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes lettre { from { opacity: 0; transform: translateY(-0.6rem) scale(1.3); } }
+
+@media (prefers-reduced-motion: reduce) {
+    .ind-mot, .ind-n, .ind-mot em, .ind-mot::after, .ind::before { animation: none !important; }
+    .revB .ind-mot::after { display: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>Codanime — la barre d'indice</h1>
+<p class="sous">
+    C'est le seul endroit du mode où l'on écrit. L'espion s'y arrête trente secondes par tour
+    pendant que sept personnes le regardent.
+    <br>⚠️ <b>Le nombre ne s'étale plus</b> : quatre boutons côte à côte pesaient autant que le
+    champ, alors qu'on n'en touche qu'un. Les quatre pistes affichent <b>une</b> valeur, et le clic
+    la change — chacune avec un geste différent.
+    <br>⚠️ Et la barre est posée <b>sous vingt-cinq portraits</b> : tout ce qui y brille attire
+    l'œil plus que les cartes. Sobre au repos, vivante à la frappe.
+</p>
+
+<section class="piste">
+    <div class="tete"><span class="num">1</span><span class="nom">Le jeton</span></div>
+    <p class="note">Une seule pièce, d'un bloc : le champ, le nombre dans un creux, le bouton au
+        bout. Le nombre se règle au pas-à-pas — deux flèches, jamais de liste. C'est la piste la
+        plus compacte, et la seule qui ne s'ouvre ni ne se déplie.</p>
+    <div class="banc">
+        <div class="p1">
+            <input class="ch" type="text" maxlength="24" placeholder="ton indice">
+            <span class="p1-n">
+                <button class="ch" data-pas="-1">−</button><b>1</b><button class="ch" data-pas="1">+</button>
+            </span>
+            <button class="ch p1-env">Annoncer</button>
+        </div>
+    </div>
+</section>
+
+<section class="piste">
+    <div class="tete"><span class="num">2</span><span class="nom">Le cran</span></div>
+    <p class="note">Un champ souligné qui s'allume à la frappe, et un cran carré à côté : chaque
+        clic fait monter le chiffre suivant par le bas, et ça repart à 1 après 4. Un seul geste à
+        connaître, aucune cible à viser — c'est la plus facile au doigt.</p>
+    <div class="banc">
+        <div class="p2">
+            <span class="p2-champ"><input class="ch" type="text" maxlength="24" placeholder="ton indice"></span>
+            <button class="ch p2-cran"><span>1</span><small>cartes</small></button>
+            <button class="ch p2-env">Annoncer</button>
+        </div>
+    </div>
+</section>
+
+<section class="piste">
+    <div class="tete"><span class="num">3</span><span class="nom">L'éventail</span></div>
+    <p class="note">Le nombre est collé au champ comme un cachet. Un clic déplie les quatre
+        au-dessus, on en prend un, ça se referme. Le seul à montrer les choix — mais seulement
+        quand on les demande, et jamais sur la ligne du plateau.</p>
+    <div class="banc">
+        <div class="p3">
+            <span class="p3-grp">
+                <input class="ch p3-champ" type="text" maxlength="24" placeholder="ton indice">
+                <button class="ch p3-badge">1<i>▾</i></button>
+            </span>
+            <span class="p3-fan">
+                <button class="ch on">1</button><button class="ch">2</button><button class="ch">3</button><button class="ch">4</button>
+            </span>
+            <button class="ch p3-env">Annoncer</button>
+        </div>
+    </div>
+</section>
+
+<section class="piste">
+    <div class="tete"><span class="num">4</span><span class="nom">La frappe</span></div>
+    <p class="note">Aucun contrôle pour le nombre : on tape <b>« demon 3 »</b> et le chiffre final
+        se détache tout seul dans la pastille. Zéro geste à la souris, Entrée suffit — mais ça
+        s'apprend, et au doigt le clavier numérique est un aller-retour.</p>
+    <div class="banc">
+        <div>
+            <div class="p4">
+                <span class="p4-chev">›</span>
+                <input class="ch" type="text" maxlength="28" placeholder="demon 3">
+                <span class="p4-pic">—</span>
+                <button class="ch p4-env">Annoncer</button>
+            </div>
+            <p class="p4-aide">tape le mot, un espace, puis le nombre</p>
+        </div>
+    </div>
+</section>
+
+<h1 style="margin-top:2.6rem">L'arrivée du mot, en haut du plateau</h1>
+<p class="sous">
+    C'est le moment du tour : quatre personnes attendaient un mot, il paraît. En stream, le viewer
+    bascule du chat à l'écran précisément à cet instant.
+    <br>Clique pour rejouer. <b>A est celle qui est en place dans le jeu.</b>
+</p>
+<div class="rev-barre">
+    <button data-rev="revA">A · la mise au point</button>
+    <button data-rev="revB">B · le rideau</button>
+    <button data-rev="revC">C · la frappe</button>
+    <button data-rev="toutes">les trois à la suite</button>
+</div>
+<div class="scene" id="scene"></div>
+
+<script>
+// ── 1 · le jeton ────────────────────────────────────────────────
+(() => {
+    const p = document.querySelector('.p1'), b = p.querySelector('b');
+    p.querySelectorAll('[data-pas]').forEach(x => x.addEventListener('click', () => {
+        const v = Math.min(4, Math.max(1, +b.textContent + +x.dataset.pas));
+        b.textContent = v;
+    }));
+})();
+
+// ── 2 · le cran ─────────────────────────────────────────────────
+(() => {
+    const c = document.querySelector('.p2-cran'), s = c.querySelector('span');
+    c.addEventListener('click', () => {
+        const v = (+s.textContent % 4) + 1;
+        // ⚠️ On REMPLACE le nœud : réassigner le texte ne relance pas
+        // l'animation, et le chiffre changerait sans bouger.
+        const n = document.createElement('span');
+        n.textContent = v;
+        s.replaceWith(n);
+        c.querySelector('span').id = '';
+    });
+    c.addEventListener('click', () => { /* le petit libellé ne bouge pas */ });
+})();
+
+// ── 3 · l'éventail ──────────────────────────────────────────────
+(() => {
+    const p = document.querySelector('.p3');
+    const badge = p.querySelector('.p3-badge');
+    badge.addEventListener('click', (e) => { e.stopPropagation(); p.classList.toggle('ouvert'); });
+    p.querySelectorAll('.p3-fan button').forEach(b => b.addEventListener('click', () => {
+        p.querySelectorAll('.p3-fan button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        badge.childNodes[0].nodeValue = b.textContent;
+        p.classList.remove('ouvert');
+    }));
+    document.addEventListener('click', () => p.classList.remove('ouvert'));
+})();
+
+// ── 4 · la frappe ───────────────────────────────────────────────
+(() => {
+    const champ = document.querySelector('.p4 input'), pic = document.querySelector('.p4-pic');
+    champ.addEventListener('input', () => {
+        const m = champ.value.trim().match(/\s([1-4])$/);
+        pic.textContent = m ? m[1] : '—';
+        pic.classList.toggle('plein', !!m);
+    });
+})();
+
+// ── L'arrivée du mot ────────────────────────────────────────────
+const MOT = 'DEMON', NOMBRE = 3;
+function jouer(cls) {
+    const scene = document.getElementById('scene');
+    scene.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = cls;
+    const lettres = cls === 'revC'
+        ? [...MOT].map((l, i) => '<em style="animation-delay:' + (i * 55) + 'ms">' + l + '</em>').join('')
+        : MOT;
+    d.innerHTML = '<span class="ind"><span class="ind-mot">' + lettres
+        + '</span><span class="ind-n">' + NOMBRE + '</span></span>';
+    scene.appendChild(d);
+}
+document.querySelectorAll('[data-rev]').forEach(b => b.addEventListener('click', async () => {
+    if (b.dataset.rev !== 'toutes') return jouer(b.dataset.rev);
+    for (const c of ['revA', 'revB', 'revC']) {
+        jouer(c);
+        await new Promise(r => setTimeout(r, 1500));
+    }
+}));
+jouer('revA');
+</script>
+</body></html>

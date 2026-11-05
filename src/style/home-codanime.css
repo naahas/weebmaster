@@ -133,9 +133,13 @@
    espace. Sans lui, l'en-tête s'élargissait et poussait les deux
    compteurs hors de l'alignement des cartes. */
 .cod-indice { display: flex; align-items: center; gap: 0.55rem; max-width: 100%; }
+/* ⚠️ MAJUSCULES, et par le CSS seul : la valeur envoyée reste celle qui a
+   été tapée. Un indice est un mot d'ordre, pas une phrase — et en capitales
+   il se lit d'un coup à six mètres, ce qui est la distance d'un stream. */
 .cod-indice-mot {
     font-size: 1.5rem; font-weight: 900; line-height: 1.1;
-    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     max-width: 18rem;
 }
@@ -147,13 +151,63 @@
     font-size: 1.05rem; font-weight: 900; line-height: 1;
     box-shadow: 0 0 1.1rem rgba(191, 138, 95, 0.3);
 }
+
+/* ── L'ARRIVÉE DE L'INDICE ──────────────────────────────────────── */
+/* ⚠️ C'est LE moment du tour : quatre personnes attendaient un mot, il
+   paraît. Il doit se voir arriver, et de loin — en stream, le viewer
+   bascule du chat à l'écran précisément à cet instant.
+
+   Rien à piloter en JavaScript : `.cod-indice` porte un `v-if`, donc il
+   se monte à neuf à chaque annonce et ses animations repartent seules.
+
+   Le mot se fait la MISE AU POINT — il arrive large, flou et étalé, puis
+   se resserre. C'est le geste qui dit « lisez ça » sans rien clignoter.
+   Le nombre, lui, tombe après, une fois le mot lisible : les deux
+   ensemble se disputaient le regard. */
+.cod-indice { position: relative; }
+.cod-indice::before {
+    content: '';
+    position: absolute; left: 50%; top: 50%;
+    width: 16rem; height: 7rem;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(191, 138, 95, 0.4), transparent 72%);
+    pointer-events: none;
+    animation: codLueur 0.9s ease-out both;
+}
+@keyframes codLueur {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    28%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+}
+
+.cod-indice-mot { animation: codMotEntre 0.62s cubic-bezier(0.16, 0.84, 0.3, 1.04) both; }
+@keyframes codMotEntre {
+    0%   { opacity: 0; transform: scale(1.45); filter: blur(0.5rem); letter-spacing: 0.4em; }
+    55%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1);    filter: blur(0);     letter-spacing: 0.02em; }
+}
+
+.cod-indice-n { animation: codNombreEntre 0.42s 0.3s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes codNombreEntre {
+    from { opacity: 0; transform: scale(0.4) rotate(-14deg); }
+    to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+}
 .cod-attente { font-size: 0.8rem; opacity: 0.55; font-style: italic; }
 
 /* Le temps : un trait, aucun chiffre. Même échelle que la mèche de
    BombAnime — un compteur dit « dans 4,2 s » et l'on attend le dernier
    dixième ; un trait dit « bientôt » et l'on bouge. */
 .cod-jauge { width: 11rem; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
-.cod-jauge-fil { display: block; height: 100%; background: var(--cod-brun); transition: width 0.25s linear; }
+/* ⚠️ La DURÉE vient du gabarit, pas d'ici : une seule transition court sur
+   tout le temps restant. Une durée fixe de 250 ms rattrapait chaque saut du
+   minuteur avec un cran de retard, et le trait avançait par à-coups. */
+.cod-jauge-fil {
+    display: block; height: 100%;
+    background: var(--cod-brun);
+    transition-property: width;
+    transition-timing-function: linear;
+}
 .cod-jauge.urgence .cod-jauge-fil { background: var(--cod-b); }
 
 /* ── La grille ──────────────────────────────────────────────────── */
@@ -330,7 +384,16 @@
    trois transformations — le survol, le battement du retournement et la
    vague d'entrée — et la dernière déclarée les écrase toutes. Une échelle
    posée ici aurait annulé l'animation d'arrivée, en silence. */
-.cod-carte.adverse { --cod-c: calc(var(--cod-cote) * 0.965); }
+.cod-carte.adverse {
+    --cod-c: calc(var(--cod-cote) * 0.965);
+    /* ⚠️ Un VOILE en plus de l'écart de taille. Trois pour cent de côté se
+       remarquent sur une rangée alignée, beaucoup moins en diagonale : le
+       retrait se lisait sur les colonnes et se perdait ailleurs. L'opacité
+       porte partout. Elle reste haute — l'espion doit continuer à
+       reconnaître les portraits adverses, ce sont eux qu'il doit éviter de
+       faire deviner. */
+    opacity: 0.8;
+}
 
 .cod-carte:disabled { cursor: default; }
 .cod-carte:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); }
@@ -409,11 +472,11 @@
    Le halo vient en dessous de tout, et se fond dans la teinte. */
 .cod-carte.vue-espion,
 .cod-carte.revelee {
-    border-width: 3px;
+    border-width: 3.5px;
     border-color: var(--cod-teinte);
     box-shadow:
         inset 0 0 0 2px rgba(0, 0, 0, 0.72),
-        inset 0 0 0 4px rgba(var(--cod-teinte-rgb), 0.9),
+        inset 0 0 0 4.5px rgba(var(--cod-teinte-rgb), 0.9),
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
         0 0 0 1.5px rgba(var(--cod-teinte-rgb), 0.32);
 }
@@ -468,7 +531,7 @@
     border-color: #0b0b0f;
     box-shadow:
         inset 0 0 0 2px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 4.5px rgba(255, 255, 255, 0.72),
+        inset 0 0 0 5px rgba(255, 255, 255, 0.72),
         0 0 0 1.5px rgba(255, 255, 255, 0.35);
 }
 
@@ -619,6 +682,7 @@
     background: rgba(255, 255, 255, 0.04);
     color: inherit;
     font: inherit; font-size: 0.9rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
     text-align: center;
     transition: border-color 0.18s ease, background 0.18s ease;
 }
@@ -754,7 +818,7 @@
 @media (min-width: 1240px) { .cod-histo-l { max-width: none; } }
 .cod-histo-l b {
     flex: 1; min-width: 0;
-    font-weight: 700;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
     /* Un indice tient sur une ligne : au-delà on coupe, l'infobulle a le
        compte complet. */
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -999,7 +1063,7 @@
     /* ⚠️ 2,5 px et non 2,25 : à deux pixels par pixel CSS, une bordure
        de 2,25 se rend arrondie à 2 — c'est-à-dire la même que sur une
        carte sans camp, et le cadre disparaissait. Mesuré. */
-    .cod-carte.vue-espion, .cod-carte.revelee { border-width: 2.5px; }
+    .cod-carte.vue-espion, .cod-carte.revelee { border-width: 3px; }
     .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; right: 0.12rem; top: 0.12rem; }
     .cod-voix { font-size: 0.54rem; padding: 0.05rem 0.22rem; left: 0.12rem; bottom: 0.12rem; }
     .cod-voix small { font-size: 0.44rem; }
@@ -1040,4 +1104,9 @@
     .cod.en-entree .cod-rang,
     .cod-fin-boite, .cod-fin-c { animation: none; }
     .cod-songe i { animation: none; opacity: 0.6; }
+    /* L'indice se montre, il n'arrive plus. ⚠️ `animation: none` et non une
+       durée nulle : le mot resterait figé sur sa première image, c'est-à-dire
+       flou et étalé. */
+    .cod-indice-mot, .cod-indice-n { animation: none; }
+    .cod-indice::before { display: none; }
 }

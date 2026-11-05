@@ -287,6 +287,10 @@ createApp({
                 finA: 0,
                 reste: 0,
                 _tic: null,
+                // ⚠️ La jauge se dessine toute seule : une transition CSS
+                // unique, de `pc` % à zéro en `ms` millisecondes. Redessinée
+                // par le minuteur, elle avançait par à-coups de 250 ms.
+                jauge: { pc: 0, ms: 0 },
                 // ⚠️ La durée de RÉFÉRENCE de la jauge, qui change avec la
                 // phase : trente secondes pour l'indice, jusqu'à cent
                 // quatre-vingts pour le vote. Diviser toujours par la durée du
@@ -5740,6 +5744,28 @@ createApp({
             };
             tic();
             this.cod._tic = setInterval(tic, 250);
+
+            // ⚠️ LA JAUGE N'EST PAS DESSINÉE PAR LE MINUTEUR. Elle l'était, et
+            // ça SACCADAIT : la largeur ne changeait que quatre fois par
+            // seconde, et la transition de 250 ms rattrapait chaque saut en
+            // retard d'un cran. À l'œil, un trait qui avance par à-coups.
+            //
+            // On pose donc UNE SEULE transition, de la largeur actuelle à
+            // zéro, étalée sur tout le temps qu'il reste : le navigateur
+            // l'anime sur le compositeur, image par image, et le minuteur ne
+            // sert plus qu'à la logique (le seuil d'urgence, la disparition).
+            //
+            // ⚠️ Les deux valeurs doivent être posées sur DEUX IMAGES
+            // différentes — `$nextTick` pour que la première soit rendue,
+            // `requestAnimationFrame` pour que le navigateur l'ait peinte.
+            // Écrites dans la même image, il n'y a pas de changement à
+            // animer et la jauge saute directement à zéro.
+            const total = Math.max(1, (this.cod.dureePhase || 90) * 1000);
+            this.cod.jauge = { pc: Math.min(100, ((reste || 0) / total) * 100), ms: 0 };
+            this.$nextTick(() => requestAnimationFrame(() => {
+                if (!this.cod._tic) return;      // la manche s'est terminée entre-temps
+                this.cod.jauge = { pc: 0, ms: reste || 0 };
+            }));
         },
 
         arreterChronoCodanime() {
@@ -5747,6 +5773,7 @@ createApp({
             this.cod._tic = null;
             this.cod.reste = 0;
             this.cod.finA = 0;
+            this.cod.jauge = { pc: 0, ms: 0 };
         },
 
         // L'espion annonce SON NOMBRE. Le mot se dit à la voix — il est
@@ -5755,6 +5782,24 @@ createApp({
         // ⚠️ Le mot part AVEC le nombre, et le serveur le nettoie et le borne
         // lui-même : ce garde-ci n'est là que pour éviter un envoi vide, pas
         // pour valider quoi que ce soit.
+        // ⚠️ Le champ REFUSE à la frappe ce que le serveur refuserait à
+        // l'envoi : un seul mot, lettres et chiffres, le tiret toléré. Laisser
+        // taper « lame tranchante » pour n'envoyer que « lame » serait pire
+        // que de l'interdire — on croit avoir annoncé deux mots.
+        //
+        // ⚠️ Et l'on réécrit la valeur du champ quand le filtre a mordu : Vue
+        // ne rerend pas si le modèle n'a pas changé, et le caractère refusé
+        // resterait à l'écran. C'est le défaut classique d'un champ filtré.
+        codMotSaisi(e) {
+            const brut = e.target.value || '';
+            const propre = (brut.trimStart().split(/\s+/)[0] || '')
+                .replace(/[^\p{L}\p{N}-]/gu, '')
+                .replace(/-{2,}/g, '-')
+                .slice(0, 24);
+            this.cod.saisieMot = propre;
+            if (brut !== propre) e.target.value = propre;
+        },
+
         codAnnoncer() {
             const n = parseInt(this.cod.saisieNombre, 10);
             if (!Number.isInteger(n) || n < 1) return;

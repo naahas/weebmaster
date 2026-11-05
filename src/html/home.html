@@ -2458,10 +2458,16 @@
                                      trente, le vote jusqu'à cent quatre-vingts.
                                      Une seule référence remplissait la jauge de
                                      travers dans l'une des deux. -->
+                                <!-- ⚠️ La largeur ne vient PLUS du minuteur : elle
+                                     est posée une fois, avec la durée de sa
+                                     propre transition, et le navigateur l'anime
+                                     jusqu'au bout. Redessinée quatre fois par
+                                     seconde, la jauge avançait par à-coups. -->
                                 <div class="cod-jauge" v-if="cod.chrono && cod.reste > 0"
                                      :class="{ urgence: cod.reste <= 10000 }">
                                     <span class="cod-jauge-fil"
-                                          :style="{ width: Math.min(100, (cod.reste / (Math.max(1, cod.dureePhase) * 1000)) * 100) + '%' }"></span>
+                                          :style="{ width: cod.jauge.pc + '%',
+                                                    transitionDuration: cod.jauge.ms + 'ms' }"></span>
                                 </div>
                             </div>
 
@@ -2558,8 +2564,13 @@
                                  trente signes pour en voir vingt-quatre
                                  arriver. -->
                             <div class="cod-annonce" v-if="codMonTourDAnnoncer">
+                                <!-- ⚠️ `:value` + `@input` et NON `v-model` : le
+                                     champ filtre à la frappe (un seul mot,
+                                     lettres et chiffres, tiret toléré), et
+                                     `v-model` réécrirait la saisie brute
+                                     par-dessus le filtre à chaque touche. -->
                                 <input class="cod-mot" type="text" maxlength="24"
-                                       v-model="cod.saisieMot"
+                                       :value="cod.saisieMot" @input="codMotSaisi($event)"
                                        placeholder="Ton indice en un mot"
                                        autocomplete="off" spellcheck="false"
                                        @keyup.enter="codAnnoncer">
