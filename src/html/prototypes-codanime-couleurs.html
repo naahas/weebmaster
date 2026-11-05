@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — la couleur sans toucher au portrait</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   OÙ METTRE LA COULEUR DU CAMP ?
+
+   Le premier jeu de pistes (/prototypes/codanime-cartes) posait la
+   couleur SUR le portrait — teinte, halo, coin, et leurs fusions. La
+   teinte était la plus lisible, et c'est justement elle qu'on ne peut
+   pas garder : elle remplace les couleurs de l'image.
+
+   ⚠️ Et ces couleurs-là ne sont pas décoratives. L'espion fait deviner
+   avec un MOT : « rouge », « cheveux bleus », « tout en noir » sont des
+   indices qu'il donne pour de vrai. Une teinte qui repeint les
+   vingt-cinq portraits lui retire la moitié de son vocabulaire — et pire,
+   elle lui en donne un faux, puisque ses neuf cartes deviennent bleues
+   alors que les autres ne le sont pas.
+
+   Les cinq pistes ci-dessous ont donc toutes la MÊME règle :
+   le portrait n'est pas touché. La couleur prend une surface à elle.
+
+   ⚠️ ET ON JUGE SUR VINGT-CINQ CARTES, pas sur quatre. Le geste de
+   l'espion n'est pas « de quel camp est cette carte », c'est « où sont
+   mes neuf, d'un coup d'œil, pendant que je cherche un lien ». Une
+   marque qui se lit très bien isolée peut parfaitement disparaître dans
+   une grille — c'est exactement ce qui s'est passé avec le liseré.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;          /* équipe bleue */
+    --b: #ff3b5c;          /* équipe rouge */
+    --n: #b9a88f;          /* le passant */
+    --x: #14151a;          /* l'assassin */
+    --brun: #bf8a5f;
+    --cote: 7.2rem;
+    --jour: 0.45rem;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee;
+    background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 52rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+/* La barre de réglages : la taille décide de tout sur ce composant. */
+.barre {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.93);
+    backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.5; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.6rem; }
+.barre button {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0.4rem;
+    background: transparent; color: inherit;
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+
+.piste { margin-bottom: 2.6rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.2rem; }
+.num {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+    border-radius: 50%; background: var(--brun); color: #15171d;
+    font-size: 0.7rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.note { font-size: 0.72rem; opacity: 0.5; margin: 0 0 0.8rem 2.2rem; max-width: 46rem; line-height: 1.5; }
+
+.grille {
+    display: grid;
+    grid-template-columns: repeat(5, var(--cote));
+    gap: var(--jour);
+    width: max-content;
+}
+
+/* La carte de base, celle du jeu : portrait carré, coins arrondis. */
+.c {
+    position: relative;
+    width: var(--cote); height: var(--cote);
+    border-radius: 0.55rem;
+    overflow: hidden;
+    background: #15171d;
+}
+.c img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center 22%;
+    display: block;
+}
+
+/* ── 0 · LE LISERÉ (ce qui est EN LIGNE aujourd'hui) ───────────── */
+.liseré .c { border: 3px solid rgba(255, 255, 255, 0.09); }
+.liseré .c.a { border-color: var(--a); }
+.liseré .c.b { border-color: var(--b); }
+.liseré .c.n { border-color: var(--n); }
+.liseré .c.x { border-color: #000; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+
+/* ── 1 · LE CADRE ───────────────────────────────────────────────
+   Le même liseré, mais ÉPAIS, avec un filet sombre entre lui et le
+   portrait pour que la couleur ne touche jamais l'image. */
+.cadre .c {
+    border: 0.52rem solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.85);
+}
+.cadre .c.a { border-color: var(--a); }
+.cadre .c.b { border-color: var(--b); }
+.cadre .c.n { border-color: var(--n); }
+/* ⚠️ L'assassin porte un ANNEAU CLAIR en plus de son noir. Sans lui, un
+   cadre noir sur une page noire ne se lit pas comme « noir » mais comme
+   « pas de cadre » — c'est-à-dire comme un défaut d'affichage, sur la
+   seule carte qui fait perdre la partie sur-le-champ. */
+.cadre .c.x { border-color: #0b0b0f; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 0 1.5px rgba(255, 255, 255, 0.5); }
+
+/* ── 2 · LE PASSE-PARTOUT ───────────────────────────────────────
+   La carte EST la couleur ; le portrait y flotte, plus petit, avec sa
+   propre bordure. C'est le cadre poussé jusqu'au bout : la couleur
+   occupe plus de surface que l'image n'en perd, parce qu'elle est
+   continue et que l'œil l'additionne d'une carte à l'autre. */
+.passe .c { padding: 0.62rem; background: rgba(255, 255, 255, 0.08); }
+.passe .c img { border-radius: 0.28rem; }
+.passe .c.a { background: var(--a); }
+.passe .c.b { background: var(--b); }
+.passe .c.n { background: var(--n); }
+.passe .c.x { background: #0b0b0f; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 0 1.5px rgba(255, 255, 255, 0.5); }
+
+/* ── 3 · LA BANDE ───────────────────────────────────────────────
+   Un aplat plein en bas, POSÉ SUR le portrait — il ne prend pas de
+   place dans la mise en page, il couvre le cinquième du bas. C'est
+   le torse : le cadrage met déjà le visage au quart haut.
+   ⚠️ Un trait clair sépare la bande de l'image, sinon un portrait
+   sombre et la bande de l'assassin se fondent l'un dans l'autre. */
+.bande .c { border: 1.5px solid rgba(255, 255, 255, 0.1); }
+.bande .c::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 22%;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+.bande .c.a::after { background: var(--a); }
+.bande .c.b::after { background: var(--b); }
+.bande .c.n::after { background: var(--n); }
+.bande .c.x::after { background: #0b0b0f; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4); }
+
+/* ── 4 · LE COIN PLEIN ──────────────────────────────────────────
+   Le « coin plié » qu'on avait retenu, mais SANS teinte : rien que le
+   triangle, en grand. Il ne mange qu'un angle du portrait. */
+.coin .c { border: 1.5px solid rgba(255, 255, 255, 0.1); }
+.coin .c::after {
+    content: '';
+    position: absolute; left: 0; top: 0;
+    border-style: solid;
+    border-width: 2.3rem 2.3rem 0 0;
+    border-color: rgba(255, 255, 255, 0.12) transparent transparent transparent;
+    filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.5));
+}
+.coin .c.a::after { border-top-color: var(--a); }
+.coin .c.b::after { border-top-color: var(--b); }
+.coin .c.n::after { border-top-color: var(--n); }
+/* Même règle pour le coin : le triangle noir a besoin d'un bord clair,
+   sinon il se perd dans n'importe quel portrait sombre. */
+.coin .c.x::after { border-top-color: #0b0b0f; filter: drop-shadow(1px 1px 0 rgba(255, 255, 255, 0.55)); }
+
+/* ── 5 · LA CLEF À CÔTÉ ─────────────────────────────────────────
+   Le plateau n'est PAS touché du tout : la répartition vit dans une
+   grille miniature posée à côté, comme la carte-clef du vrai jeu. */
+.clef-paire { display: flex; align-items: flex-start; gap: 1.4rem; flex-wrap: wrap; }
+.clef .c { border: 1.5px solid rgba(255, 255, 255, 0.1); }
+.minik {
+    display: grid; grid-template-columns: repeat(5, 1.5rem);
+    gap: 0.2rem;
+    padding: 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.6rem;
+    background: rgba(255, 255, 255, 0.025);
+}
+.minik i { display: block; width: 1.5rem; height: 1.5rem; border-radius: 0.2rem; background: rgba(255, 255, 255, 0.1); }
+.minik i.a { background: var(--a); }
+.minik i.b { background: var(--b); }
+.minik i.n { background: var(--n); }
+.minik i.x { background: #0b0b0f; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); }
+.minik-l { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.4; margin-bottom: 0.35rem; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — la couleur sans toucher au portrait</h1>
+<p class="sous">
+    La teinte se lisait le mieux, et c'est elle qu'on ne peut pas garder : l'espion fait deviner
+    avec un <b>mot</b>, et « le rouge », « les cheveux bleus », « tout en noir » sont des indices
+    qu'il donne pour de vrai. Repeindre ses neuf cartes lui retire ce vocabulaire — et lui en donne
+    un faux.
+    <br>Les cinq pistes laissent donc le portrait <b>intact</b> et donnent à la couleur une surface
+    à elle. La piste 0 est ce qui tourne en ligne aujourd'hui.
+    <br>⚠️ On juge sur <b>vingt-cinq cartes</b>, jamais sur quatre : le geste de l'espion n'est pas
+    « de quel camp est celle-ci », c'est « où sont mes neuf » pendant qu'il cherche un lien. Le
+    même tirage sert à toutes les pistes.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="5.2">petit</button>
+    <button data-cote="7.2" class="on">réel</button>
+    <button data-cote="9.5">grand</button>
+    <label style="margin-left:1rem">Tirage</label>
+    <button id="retirer">Rejouer le tirage</button>
+    <label style="margin-left:1rem">Vue</label>
+    <button id="agent">Vue de l’agent (sans couleur)</button>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+// Les vingt-cinq camps du vrai jeu : 9 + 8 + 7 + 1.
+const CAMPS = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'), ['x']);
+
+const PISTES = [
+    ['liseré', 'Le liseré (en ligne aujourd’hui)',
+     'Trois pixels de couleur sur le bord. Isolée, la carte se lit ; dans une grille de vingt-cinq, le bord se confond avec l’écart entre les cartes et il faut la chercher.'],
+    ['cadre', 'Le cadre',
+     'Le même liseré, dix fois plus épais, avec un filet noir entre lui et l’image pour que la couleur ne touche jamais le portrait. Le portrait perd un peu de surface, rien de sa matière.'],
+    ['passe', 'Le passe-partout',
+     'La carte EST la couleur, le portrait y flotte. C’est le cadre poussé au bout : la couleur devient la surface principale, et sur vingt-cinq cartes l’œil l’additionne au lieu de la chercher.'],
+    ['bande', 'La bande',
+     'Un aplat plein sur le cinquième du bas, posé SUR le portrait — c’est le torse, le cadrage met déjà le visage au quart haut. Même place sur les vingt-cinq cartes : on suit une rangée de pastilles, on ne lit pas vingt-cinq contours.'],
+    ['coin', 'Le coin plein',
+     'Le coin plié qu’on avait retenu, mais sans teinte : rien que le triangle, en grand. Il ne mange qu’un angle — mais c’est aussi la plus petite surface de couleur des cinq.'],
+    ['clef', 'La clef à côté',
+     'Le plateau n’est pas touché du tout : la répartition vit dans une grille miniature, comme la carte-clef du vrai jeu. Aucune perte sur l’image — mais l’espion doit faire le lien entre deux grilles, case par case, et c’est précisément la corvée que le numérique devrait lui épargner.'],
+];
+
+let portraits = [];
+let tirage = [];
+let vueAgent = false;
+
+const melanger = (t) => { const c = t.slice(); for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; } return c; };
+
+function tirer() {
+    const imgs = melanger(portraits).slice(0, 25);
+    const camps = melanger(CAMPS);
+    tirage = imgs.map((img, k) => ({ img, camp: camps[k] }));
+}
+
+function rendre() {
+    document.getElementById('pistes').innerHTML = PISTES.map(([cls, nom, note], k) => {
+        const cartes = tirage.map((t) =>
+            '<span class="c ' + (vueAgent ? '' : t.camp) + '"><img src="' + t.img + '" alt="" draggable="false"></span>').join('');
+        const grille = '<div class="grille">' + cartes + '</div>';
+        const corps = cls === 'clef'
+            ? '<div class="clef-paire">' + grille
+              + '<div><div class="minik-l">la clef</div><div class="minik">'
+              + tirage.map(t => '<i class="' + (vueAgent ? '' : t.camp) + '"></i>').join('')
+              + '</div></div></div>'
+            : grille;
+        return '<section class="piste ' + cls + '">'
+            + '<div class="tete"><span class="num">' + k + '</span><span class="nom">' + nom + '</span></div>'
+            + '<p class="note">' + note + '</p>'
+            + corps
+            + '</section>';
+    }).join('');
+}
+
+fetch('/prototypes/codanime-cartes/portraits')
+    .then(r => r.json())
+    .then(d => { portraits = d.portraits || []; tirer(); rendre(); })
+    .catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+
+document.querySelectorAll('[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--cote', b.dataset.cote + 'rem');
+}));
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+document.getElementById('agent').addEventListener('click', (e) => {
+    vueAgent = !vueAgent;
+    e.currentTarget.classList.toggle('on', vueAgent);
+    e.currentTarget.textContent = vueAgent ? 'Vue de l’espion (avec couleur)' : 'Vue de l’agent (sans couleur)';
+    rendre();
+});
+</script>
+</body></html>

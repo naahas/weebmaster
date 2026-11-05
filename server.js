@@ -2239,6 +2239,12 @@ app.get('/prototypes/codanime-espion', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-espion.html');
 });
 
+// Où poser la couleur du camp SANS repeindre le portrait : cinq pistes,
+// jugées sur une vraie grille de vingt-cinq et non sur quatre cartes.
+app.get('/prototypes/codanime-couleurs', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-couleurs.html');
+});
+
 // ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
 // Une page de prototype qui les servirait en clair ne dirait rien du
 // rendu réel — et les noms de fichiers sont justement ce que le mode
