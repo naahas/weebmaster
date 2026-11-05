@@ -2233,6 +2233,12 @@ app.get('/prototypes/codanime-cartes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-cartes.html');
 });
 
+// 🕵️ Quelle icône pour l'espion ? Huit pistes dans le vrai badge, à la
+// taille réelle — 26 px, sur un aplat vif.
+app.get('/prototypes/codanime-espion', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-espion.html');
+});
+
 // ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
 // Une page de prototype qui les servirait en clair ne dirait rien du
 // rendu réel — et les noms de fichiers sont justement ce que le mode

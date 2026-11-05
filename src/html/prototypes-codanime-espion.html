@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — l'icône de l'espion</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   Quelle icône pour l'espion ?
+
+   La loupe disait « chercher ». Or ce n'est pas ce que le rôle fait :
+   l'espion est le seul à VOIR la répartition, et le seul à PARLER. Son
+   asymétrie est un savoir, pas une recherche.
+
+   ⚠️ Deux contraintes que la liste ne dit pas, et qui écartent la
+   moitié des bonnes idées :
+
+   • Le badge fait 1,65 rem — 26 px. À cette taille il ne reste qu'une
+     SILHOUETTE : tout dessin à deux niveaux de détail se referme en
+     tache. On juge donc à la taille réelle, et le zoom n'est là que
+     pour comprendre ce qu'on regarde.
+
+   • Il est posé sur un APLAT de couleur vive, bleu ou rouge, et dessiné
+     en sombre. Un trait fin disparaît ; il faut de la masse.
+   ════════════════════════════════════════════════════════════════ */
+:root { --a: #2f9bff; --b: #ff3b5c; --brun: #bf8a5f; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.6rem 1.4rem 5rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee;
+    background: radial-gradient(70% 55% at 50% 0%, #171318, #08080b 68%);
+}
+h1 { font-size: 1.1rem; margin: 0 0 0.3rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.6rem; max-width: 46rem; line-height: 1.5; }
+
+.rangee {
+    display: grid;
+    grid-template-columns: 2.2rem 13rem 1fr;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0.9rem 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.num { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+       background: var(--brun); color: #15171d; font-size: 0.74rem; font-weight: 900; }
+.quoi b { display: block; font-size: 0.86rem; font-weight: 800; }
+.quoi span { display: block; font-size: 0.68rem; opacity: 0.55; line-height: 1.4; margin-top: 0.15rem; }
+
+.essais { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
+
+/* La vraie vignette du salon, a la taille reelle. */
+.vign { position: relative; }
+.pastille {
+    display: inline-flex; align-items: center;
+    padding: 0.5rem 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.95rem; font-weight: 700;
+}
+.badge {
+    position: absolute; top: -0.42rem; right: -0.42rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.65rem; height: 1.65rem;
+    border: 0.14rem solid #0b0b0d;
+    border-radius: 50%;
+}
+.badge.a { background: var(--a); color: #07131f; }
+.badge.b { background: var(--b); color: #1e060b; }
+.badge svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: currentColor;
+             stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+/* Les dessins PLEINS n'ont pas de trait : ils vivent de leur masse. */
+.badge svg.plein { fill: currentColor; stroke: none; }
+
+/* Le zoom, pour comprendre le dessin — jamais pour juger.
+   ⚠️ `position: static` : `.badge` est en ABSOLU pour se poser sur le
+   coin d'une vignette. Hors d'une vignette, les agrandis n'avaient
+   aucun ancêtre positionné et se sont empilés dans le coin de la PAGE —
+   les huit au même endroit, dont un seul visible. */
+.zoom { position: static; width: 4.4rem; height: 4.4rem; border-radius: 50%; flex: 0 0 auto; }
+.zoom svg { width: 2.6rem; height: 2.6rem; }
+
+.ettiq { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.3; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — l'icône de l'espion</h1>
+<p class="sous">
+    La loupe dit « chercher ». Le rôle, lui, dit <b>« il voit ce que les autres ne voient pas »</b>, et
+    <b>« c'est lui qui parle »</b>. Huit pistes dans le vrai badge, à la taille réelle — le grand
+    cercle n'est là que pour comprendre le dessin, pas pour juger.
+    <br>⚠️ À 26&nbsp;px sur un aplat vif, il ne reste qu'une silhouette : un trait fin disparaît, il faut
+    de la masse.
+</p>
+
+<div id="liste"></div>
+
+<script>
+// ⚠️ Tous centrés sur x=12 dans un viewBox de 24. Les dessins qui vivent
+// dans la moitié gauche de leur viewBox paraissent décalés dans un cercle
+// qui, lui, est bien centré — c'est le défaut qu'avait la silhouette
+// d'agent avant d'être redessinée.
+const ICONES = [
+    ['L’œil', 'Il est le seul à VOIR la répartition. C’est l’asymétrie exacte du rôle, et la forme la plus lisible à 26 px.',
+     '<path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>'],
+    ['L’œil plein', 'Le même, en masse pleine. Sur un aplat vif, le plein tient mieux que le trait.',
+     '<path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12zm9.5 3.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2z"/>', true],
+    ['Le chapeau', 'Le cliché de l’espion, et celui de Ranpo sur la carte du mode. Silhouette franche, aucune ambiguïté.',
+     '<path d="M7 11.5V7.2c0-1.2 1-2.2 2.2-2.2h5.6c1.2 0 2.2 1 2.2 2.2v4.3"/><path d="M3 12.6c0-.6.5-1.1 1.1-1.1h15.8c.6 0 1.1.5 1.1 1.1 0 3-4 5.4-9 5.4s-9-2.4-9-5.4z"/>'],
+    ['Le loup', 'Le masque de bal. Très lisible en silhouette — mais tout le monde est « agent » ici, il peut se lire comme « joueur ».',
+     '<path d="M2.6 9.2c3-1 5.6-1.2 9.4-1.2s6.4.2 9.4 1.2c.3 2.6-.4 4.6-1.6 5.6-1.5 1.3-4 1-5.3-.4-.8-.9-1.3-1.6-2.5-1.6s-1.7.7-2.5 1.6c-1.3 1.4-3.8 1.7-5.3.4-1.2-1-1.9-3-1.6-5.6z"/>'],
+    ['La clef', 'Il tient la carte-CLEF. Le mot est juste en français — mais la clef sert déjà d’image à « hôte » ailleurs.',
+     '<circle cx="8.4" cy="8.4" r="3.9"/><path d="M11.2 11.2 19 19M16.2 16.2l-2 2M19 19l1.6-1.6"/>'],
+    ['La bulle', 'C’est lui qui PARLE — le mot se dit à la voix. Mais la bulle dit « quelqu’un s’exprime », pas « il sait ».',
+     '<path d="M20.5 11.3c0 3.9-3.8 7-8.5 7-1 0-2-.15-2.9-.42L3.5 19.5l1.7-3.6A6.6 6.6 0 0 1 3.5 11.3c0-3.9 3.8-7 8.5-7s8.5 3.1 8.5 7z"/>'],
+    ['Les lunettes', 'Les verres noirs. Jolie silhouette, mais à 26 px les deux cercles se referment en une barre.',
+     '<circle cx="6.6" cy="13" r="3.6"/><circle cx="17.4" cy="13" r="3.6"/><path d="M10.2 12.4c.9-.7 2.7-.7 3.6 0M2.4 9.4 5 8M21.6 9.4 19 8"/>'],
+    ['La cible', 'Il vise les cartes de son camp. Lisible, mais c’est ce que font les agents, pas lui.',
+     '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.6"/><path d="M12 1.8v3M12 19.2v3M1.8 12h3M19.2 12h3"/>'],
+];
+
+document.getElementById('liste').innerHTML = ICONES.map(([nom, note, d, plein], k) => {
+    const svg = (cls) => '<svg viewBox="0 0 24 24" class="' + (plein ? 'plein ' : '') + (cls || '') + '">' + d + '</svg>';
+    return '<div class="rangee">'
+        + '<span class="num">' + (k + 1) + '</span>'
+        + '<span class="quoi"><b>' + nom + '</b><span>' + note + '</span></span>'
+        + '<span class="essais">'
+        +   '<span class="vign"><span class="pastille">nahaass</span>'
+        +     '<span class="badge a">' + svg() + '</span></span>'
+        +   '<span class="vign"><span class="pastille">Kitsune204</span>'
+        +     '<span class="badge b">' + svg() + '</span></span>'
+        +   '<span class="badge a zoom">' + svg() + '</span>'
+        +   '<span class="badge b zoom">' + svg() + '</span>'
+        +   '<span class="ettiq">taille réelle · zoom</span>'
+        + '</span></div>';
+}).join('');
+</script>
+</body></html>
