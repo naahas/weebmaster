@@ -29,7 +29,12 @@
        une carte plus petite pour rien — et à 68 px, un portrait d'anime se
        reconnaît déjà mal. */
     --cod-pad: 1rem;
-    --cod-jour: 0.45rem;
+    /* ⚠️ Trois pixels de plus qu'avant (0,45 rem). Depuis que chaque carte
+       porte un cadre de couleur, deux cartes de camps différents se
+       touchaient presque : les deux liserés se lisaient comme un seul
+       trait bicolore. L'écart ne sert pas à aérer, il sert à SÉPARER les
+       cadres. */
+    --cod-jour: 0.62rem;
     /* ⚠️ LA LARGEUR DES DEUX RANGS ENTRE DANS LE CALCUL, et il le fallait :
        posés de part et d'autre de la grille sans être déduits ici, ils la
        poussaient hors de l'écran — la grille se calculait sur 62 rem alors
@@ -277,38 +282,143 @@
     display: block;
 }
 
-/* ⚠️ La vue de l'ESPION : un liseré de couleur, pas un aplat. Un aplat
-   masquerait le portrait, or il doit continuer à le reconnaître pour
-   trouver son indice. */
-.cod-carte.vue-espion { border-width: 3px; }
-.cod-carte.vue-espion.camp-A { border-color: var(--cod-a); }
-.cod-carte.vue-espion.camp-B { border-color: var(--cod-b); }
-.cod-carte.vue-espion.camp-neutre { border-color: var(--cod-neutre); }
-.cod-carte.vue-espion.camp-assassin {
-    border-color: #000;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+/* ══════════════════════════════════════════════════════════════
+   🎨 LA COULEUR D'UN CAMP SUR UNE CARTE — la « Fusion B »
+   ══════════════════════════════════════════════════════════════
+
+   Le liseré de trois pixels qui tenait ce rôle ne survivait pas à la
+   grille : sur vingt-cinq cartes, un bord fin se confond avec l'écart
+   entre les cartes, et l'espion devait CHERCHER ses neuf au lieu de les
+   voir. Six pistes ont été jouées dans /prototypes/codanime-cartes, et
+   c'est leur FUSION qui est retenue — trois couches qui règlent chacune
+   un morceau :
+
+   • la TEINTE donne de la masse de couleur, mais mange les couleurs
+     propres du portrait — or les cheveux sont un crochet d'indice ;
+   • le HALO colore sans jamais toucher au visage, mais reste doux ;
+   • le COIN donne la lecture franche, mais il est petit.
+
+   ⚠️ Sa clef est un MASQUE RADIAL sur la teinte : transparent au centre,
+   opaque sur les bords. La couleur envahit donc la carte en laissant un
+   creux net autour du visage — c'est littéralement « teinte » et
+   « halo » dans la même couche, au lieu de deux effets superposés qui
+   se battraient.
+
+   ⚠️ ET LE MÉLANGE `color` NE MARCHE QUE POUR DES COULEURS VIVES : il
+   remplace la TEINTE en gardant la luminosité du portrait. Un beige
+   désaturé n'a presque pas de teinte à donner, un presque-noir n'en a
+   aucune — le neutre et l'assassin restaient donc INVISIBLES, deux
+   camps sur quatre. Ils gardent la même recette mais changent de
+   mélange : le neutre DÉSATURE (rien n'attire l'œil, c'est exactement
+   ce qu'un passant doit faire) et l'assassin ASSOMBRIT. Chacun dit sa
+   nature par un geste, pas par une couleur.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Les quatre teintes. ⚠️ En DOUBLE — le nom pour les bordures, le triplet
+   RGB pour les halos, qui ont besoin d'une opacité. `rgba(var(--x), .8)`
+   ne se construit pas à partir d'un `#rrggbb`. */
+.cod-carte.camp-A { --cod-teinte: var(--cod-a); --cod-teinte-rgb: 47, 155, 255; }
+.cod-carte.camp-B { --cod-teinte: var(--cod-b); --cod-teinte-rgb: 255, 59, 92; }
+.cod-carte.camp-neutre { --cod-teinte: var(--cod-neutre); --cod-teinte-rgb: 185, 168, 143; }
+.cod-carte.camp-assassin { --cod-teinte: #2a2a33; --cod-teinte-rgb: 42, 42, 51; }
+
+/* Le dosage B — « équilibré » : le creux se referme sur le seul visage,
+   le halo mord, le coin se voit.
+   ⚠️ Le coin et le halo sont PROPORTIONNELS au côté de la carte, là où
+   le prototype les écrivait en rem. Une carte vaut 126 px sur ordinateur
+   et 72 px sur téléphone : un coin fixe de 2,1 rem y aurait couvert la
+   moitié du portrait. */
+.cod-carte.vue-espion, .cod-carte.revelee {
+    --cod-creux: 26%;
+    --cod-bord: 82%;
+    --cod-force: 1;
+    --cod-coin: calc(var(--cod-cote) * 0.27);
+    --cod-halo: calc(var(--cod-cote) * 0.2);
 }
 
-/* ⚠️ La carte RETOURNÉE, elle, se couvre pour de bon : c'est la seule
-   façon de voir d'un coup d'œil où en est la course. Le portrait reste
-   visible dessous, assombri — on veut encore pouvoir dire « ah c'était
-   lui ». */
-.cod-carte.revelee { cursor: default; }
-.cod-carte.revelee .cod-portrait { filter: brightness(0.38) saturate(0.5); }
-.cod-carte.revelee::after {
-    content: '';
-    position: absolute; inset: 0;
-    border-radius: 0.4rem;
-    mix-blend-mode: normal;
+/* ⚠️ LE CADRE EST DOUBLE, et ce n'est pas un ornement : il donne à la
+   couleur une surface À ELLE, que le portrait ne peut pas contredire.
+   Quatre anneaux, du dehors vers le dedans — le liseré externe qui
+   détache la carte du fond noir, la bordure pleine, un filet sombre qui
+   empêche la couleur de baver sur l'image, puis un second cerne plus
+   clair. C'est ce dernier qui fait « cadre » plutôt que « bord épais ».
+   Le halo vient en dessous de tout, et se fond dans la teinte. */
+.cod-carte.vue-espion,
+.cod-carte.revelee {
+    border-color: var(--cod-teinte);
+    box-shadow:
+        inset 0 0 0 1.5px rgba(0, 0, 0, 0.72),
+        inset 0 0 0 3px rgba(var(--cod-teinte-rgb), 0.9),
+        inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
+        0 0 0 1px rgba(var(--cod-teinte-rgb), 0.32);
 }
-.cod-carte.revelee.camp-A::after { background: rgba(47, 155, 255, 0.5); }
-.cod-carte.revelee.camp-B::after { background: rgba(255, 59, 92, 0.5); }
-.cod-carte.revelee.camp-neutre::after { background: rgba(185, 168, 143, 0.5); }
-.cod-carte.revelee.camp-assassin::after { background: rgba(0, 0, 0, 0.78); }
-.cod-carte.revelee.camp-A { border-color: var(--cod-a); }
-.cod-carte.revelee.camp-B { border-color: var(--cod-b); }
-.cod-carte.revelee.camp-neutre { border-color: var(--cod-neutre); }
-.cod-carte.revelee.camp-assassin { border-color: #000; }
+
+/* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
+   remplace la teinte en gardant la LUMINOSITÉ du portrait, donc ses
+   ombres et ses traits. Un aplat normal, même transparent, les écrase. */
+.cod-carte.vue-espion::before,
+.cod-carte.revelee::before {
+    content: ''; position: absolute; inset: 0; z-index: 1;
+    background: var(--cod-teinte);
+    mix-blend-mode: color;
+    -webkit-mask-image: radial-gradient(circle at 50% 38%, transparent var(--cod-creux), #000 var(--cod-bord));
+    mask-image: radial-gradient(circle at 50% 38%, transparent var(--cod-creux), #000 var(--cod-bord));
+    opacity: var(--cod-force);
+    pointer-events: none;
+}
+
+/* Le coin, par-dessus tout : c'est lui qui tranche quand deux camps se
+   ressemblent à distance.
+   ⚠️ EN HAUT À GAUCHE, et non à droite comme dans le prototype : le
+   numéro ① ② ③ occupe le coin haut droit, et les deux se recouvraient
+   exactement. Le prototype n'avait ni numéro ni voix à placer. */
+.cod-carte.vue-espion::after,
+.cod-carte.revelee::after {
+    content: ''; position: absolute; top: 0; left: 0; z-index: 2;
+    border-style: solid;
+    border-width: var(--cod-coin) 0 0 var(--cod-coin);
+    border-color: var(--cod-teinte) transparent transparent transparent;
+    filter: drop-shadow(0.12rem 0.12rem 0.35rem rgba(0, 0, 0, 0.55));
+    pointer-events: none;
+}
+
+/* ⚠️ Le neutre DÉSATURE et l'assassin ASSOMBRIT — voir l'en-tête : le
+   mélange `color` ne leur donnait rien, faute de teinte à donner. */
+.cod-carte.vue-espion.camp-neutre::before { mix-blend-mode: saturation; background: #808080; }
+.cod-carte.vue-espion.camp-assassin::before { mix-blend-mode: multiply; background: #2a2a33; }
+
+/* ⚠️ L'assassin porte EN PLUS un anneau clair. En noir sur fond noir,
+   son cadre ne se lit pas « noir » mais « pas de cadre » — c'est-à-dire
+   comme un défaut d'affichage, sur la seule carte qui fait perdre la
+   partie sur-le-champ. Il remplace donc toute la pile d'ombres. */
+.cod-carte.vue-espion.camp-assassin,
+.cod-carte.revelee.camp-assassin {
+    border-color: #0b0b0f;
+    box-shadow:
+        inset 0 0 0 1.5px rgba(0, 0, 0, 0.8),
+        inset 0 0 0 3.5px rgba(255, 255, 255, 0.72),
+        0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+/* ⚠️ RETOURNÉE, la teinte PERD SON MASQUE et passe en aplat : on veut
+   lire le camp de loin, pour savoir où en est la course sans compter.
+   Le coin, lui, GARDE SA TAILLE.
+
+   Le prototype le déployait sur toute la carte, et empilé sur l'aplat ça
+   faisait deux couches pleines : mesuré, le portrait disparaissait
+   complètement — une carte retournée n'était plus qu'un rectangle de
+   couleur. Or le « ahhh c'était LUI » est la moitié du plaisir du mode,
+   et c'est ce qu'on regarde pendant les 1,4 s avant la carte suivante.
+   Une seule couche, à 0,66, et le visage reste lisible dessous. */
+.cod-carte.revelee { cursor: default; }
+.cod-carte.revelee .cod-portrait { filter: brightness(0.62) saturate(0.55); }
+.cod-carte.revelee::before {
+    -webkit-mask-image: none; mask-image: none;
+    mix-blend-mode: normal;
+    opacity: 0.66;
+}
+.cod-carte.revelee.camp-neutre::before { background: var(--cod-neutre); }
+.cod-carte.revelee.camp-assassin::before { background: #0a0a0d; opacity: 0.82; }
 
 /* Le battement du retournement : 1,4 s séparent deux cartes, et c'est
    là que vit le suspense. Il faut que ça SE VOIE. */
@@ -356,6 +466,7 @@
 /* ── Les marques et les numéros ─────────────────────────────────── */
 .cod-voix {
     position: absolute; left: 0.2rem; bottom: 0.2rem;
+    z-index: 3;   /* au-dessus de la teinte et du coin — voir .cod-num */
     display: inline-flex; align-items: baseline; gap: 1px;
     padding: 0.1rem 0.32rem;
     border-radius: 0.3rem;
@@ -365,13 +476,22 @@
 }
 .cod-voix small { font-size: 0.52rem; opacity: 0.6; font-weight: 600; }
 
-.cod-carte.ma-voix { border-color: rgba(255, 255, 255, 0.55); }
+/* ⚠️ Les trois marques de VOTE ne repeignent la bordure que sur une carte
+   SANS couleur de camp. Depuis que le cadre porte la Fusion B, l'écraser
+   effacerait le camp sous les yeux de l'espion — et c'est la seule chose
+   qu'il regarde. Chez lui, l'engagement se lit déjà au numéro ① ② ③, qui
+   est brun, gros et posé dans le coin opposé. */
+.cod-carte.ma-voix:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.55); }
 
 /* Le numéro ① ② ③ : gros, en haut à droite, impossible à rater. C'est
    l'ordre dans lequel les cartes se retourneront, et il décide de qui
    survit à la chaîne. */
 .cod-num {
     position: absolute; right: 0.2rem; top: 0.2rem;
+    /* ⚠️ Au-dessus du coin de couleur (z-index 2) et de la teinte (1) :
+       sans ça, le coin plié passait par-dessus le numéro de la carte
+       d'en face dans la vue de l'espion. */
+    z-index: 3;
     display: grid; place-items: center;
     width: 1.35rem; height: 1.35rem;
     border-radius: 50%;
@@ -379,14 +499,15 @@
     color: #15171d;
     font-size: 0.78rem; font-weight: 900; line-height: 1;
 }
-.cod-carte.engagee { border-color: var(--cod-brun); }
+.cod-carte.engagee:not(.vue-espion):not(.revelee) { border-color: var(--cod-brun); }
 
 /* ⚠️ AU-DELÀ DU QUOTA. Plus de cartes peuvent franchir le seuil que
    l'indice n'en annonce — à trois agents, un indice à 2 met six voix en
    jeu, de quoi en faire passer trois. Celles en trop ne seront JAMAIS
    retournées : on les grise pour que l'équipe le voie et en retire une,
    plutôt qu'elle ne le découvre à la clôture. */
-.cod-carte.en-trop { border-color: rgba(255, 255, 255, 0.16); opacity: 0.6; }
+.cod-carte.en-trop { opacity: 0.6; }
+.cod-carte.en-trop:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.16); }
 .cod-carte.en-trop .cod-num { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
 
 /* ── Le pied ────────────────────────────────────────────────────── */
@@ -505,6 +626,15 @@
 /* Sans équipe : on les montre, mais en retrait. Ils ne jouent pas cette
    partie, et ça doit se voir sans qu'on ait à lire. */
 .v2-room-players-grid.par-camps .cod-sep.camp-sans ~ .v2-room-player-wrap { opacity: 0.5; }
+
+/* ⚠️ L'ESPION DÉCROCHE DE SES AGENTS. Il passe déjà devant eux et porte
+   son œil, mais posé à la même distance que les autres il se lisait
+   comme « le premier de la rangée », pas comme un rôle à part — or c'est
+   la seule asymétrie du camp, et toute la partie tient dessus.
+   L'écart est en marge DROITE : la rangée s'écrit de gauche à droite,
+   c'est donc l'espace APRÈS lui qui le détache, et non celui d'avant,
+   qui l'aurait éloigné du titre de son camp. */
+.v2-room-players-grid.par-camps .v2-room-player-wrap.cod-wrap-espion { margin-right: 1.6rem; }
 
 /* ── Le glisser-déposer ─────────────────────────────────────────── */
 /* ⚠️ Il DOUBLE la pastille, il ne la remplace pas : le glisser n'existe
@@ -664,7 +794,10 @@
    cartes rétrécissent, l'écart se resserre, et les badges suivent. */
 @media (max-width: 640px) {
     .cod { padding: 0.4rem var(--cod-pad) 1rem; gap: 0.6rem; }
-    .cod { --cod-jour: 0.25rem; --cod-pad: 0.5rem; }
+    /* ⚠️ L'écart gagne moins sur téléphone qu'ailleurs : quatre fois trois
+       pixels se prennent sur des cartes qui n'en font déjà que 72, et un
+       portrait d'anime s'y reconnaît mal en dessous de 68. */
+    .cod { --cod-jour: 0.36rem; --cod-pad: 0.5rem; }
     /* ⚠️ LES DEUX RANGS DISPARAISSENT, et c'est assumé : à 360 px, deux
        colonnes de portraits ne laisseraient que 240 px aux vingt-cinq
        cartes, soit 44 px chacune — un portrait d'anime ne s'y reconnaît

@@ -511,8 +511,15 @@
                                       @drop="codDrop(codTitreAvant(iJ), $event)">
                                     {{ codNomEquipe(codTitreAvant(iJ)) }}
                                 </span>
+                                <!-- ⚠️ L'espion DÉCROCHE de ses agents. Il passe
+                                     déjà devant eux (`joueursAffiches` le trie
+                                     ainsi) et porte l'œil, mais aligné à la même
+                                     distance que les autres il se lisait comme
+                                     « le premier de la rangée » et non comme un
+                                     rôle à part. Un écart le détache. -->
                                 <span class="v2-room-player-wrap"
-                                      :class="{ 'cod-traine': codDrag === p.playerId }"
+                                      :class="{ 'cod-traine': codDrag === p.playerId,
+                                                'cod-wrap-espion': lobbyMode === 'codanime' && codEstEspion(p.playerId) }"
                                       :draggable="isHost && lobbyMode === 'codanime'"
                                       @dragstart="codDragStart(p.playerId, $event)"
                                       @dragend="codDragEnd"
