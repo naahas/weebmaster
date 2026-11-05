@@ -5838,8 +5838,12 @@ createApp({
         codEntree() {
             clearTimeout(this.cod._introT);
             this.cod.intro = true;
-            // 8 diagonales × 55 ms + la durée d'une carte, avec de la marge.
-            this.cod._introT = setTimeout(() => { this.cod.intro = false; }, 1400);
+            // ⚠️ 2 s, et ce chiffre SUIT le minutage du CSS : les rangs
+            // s'assoient à 0,12 s, les cartes partent une demi-seconde plus
+            // tard et la dernière diagonale finit à 1,36 s, le pied à 1,55 s.
+            // Trop court, la classe s'éteint au milieu de la vague et les
+            // cartes qui n'étaient pas encore passées apparaissent d'un coup.
+            this.cod._introT = setTimeout(() => { this.cod.intro = false; }, 2000);
         },
 
         // La classe d'une carte. Tout se joue ici : une carte retournée porte

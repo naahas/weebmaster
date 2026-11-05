@@ -46,8 +46,8 @@
        posés de part et d'autre de la grille sans être déduits ici, ils la
        poussaient hors de l'écran — la grille se calculait sur 62 rem alors
        qu'il n'en restait que 48. Un rang vaut sa largeur plus son écart. */
-    --cod-rail: 6.8rem;
-    --cod-rails: calc(2 * (var(--cod-rail) + 2.2rem));
+    --cod-rail: 7.6rem;
+    --cod-rails: calc(2 * (var(--cod-rail) + 3rem));
     --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
     --cod-cote: min(
         calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
@@ -195,7 +195,7 @@
     justify-content: center;
     /* Les rangs respirent : collés au plateau, ils se lisaient comme une
        sixième et une septième colonne de cartes. */
-    gap: 2.2rem;
+    gap: 3rem;
 }
 
 .cod-rang {
@@ -247,7 +247,7 @@
    l'erreur qu'on a déjà payée sur le prototype des icônes. */
 .cod-siege-p {
     position: relative;
-    width: 3.25rem; height: 3.25rem;
+    width: 3.8rem; height: 3.8rem;
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.14);
     overflow: visible;
@@ -264,8 +264,8 @@
 
 /* L'œil de l'espion, dans la couleur de son camp — il EST de ce camp. */
 .cod-siege-oeil {
-    position: absolute; right: -0.2rem; bottom: -0.2rem;
-    width: 1.4rem; height: 1.4rem;
+    position: absolute; right: -0.22rem; bottom: -0.22rem;
+    width: 1.6rem; height: 1.6rem;
     padding: 0.14rem;
     border-radius: 50%;
     border: 0.12rem solid #07070a;
@@ -279,7 +279,7 @@
    se trouvaient plus en face de ceux de l'autre. */
 .cod-siege-n {
     max-width: 100%;
-    font-size: 0.68rem; font-weight: 700; line-height: 1.2;
+    font-size: 0.74rem; font-weight: 700; line-height: 1.2;
     text-align: center;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     opacity: 0.72;
@@ -409,12 +409,13 @@
    Le halo vient en dessous de tout, et se fond dans la teinte. */
 .cod-carte.vue-espion,
 .cod-carte.revelee {
+    border-width: 3px;
     border-color: var(--cod-teinte);
     box-shadow:
-        inset 0 0 0 1.5px rgba(0, 0, 0, 0.72),
-        inset 0 0 0 3px rgba(var(--cod-teinte-rgb), 0.9),
+        inset 0 0 0 2px rgba(0, 0, 0, 0.72),
+        inset 0 0 0 4px rgba(var(--cod-teinte-rgb), 0.9),
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
-        0 0 0 1px rgba(var(--cod-teinte-rgb), 0.32);
+        0 0 0 1.5px rgba(var(--cod-teinte-rgb), 0.32);
 }
 
 /* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
@@ -466,9 +467,9 @@
 .cod-carte.revelee.camp-assassin {
     border-color: #0b0b0f;
     box-shadow:
-        inset 0 0 0 1.5px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 3.5px rgba(255, 255, 255, 0.72),
-        0 0 0 1px rgba(255, 255, 255, 0.35);
+        inset 0 0 0 2px rgba(0, 0, 0, 0.8),
+        inset 0 0 0 4.5px rgba(255, 255, 255, 0.72),
+        0 0 0 1.5px rgba(255, 255, 255, 0.35);
 }
 
 /* ⚠️ RETOURNÉE, la teinte PERD SON MASQUE et passe en aplat : on veut
@@ -501,17 +502,32 @@
 }
 
 /* ── L'arrivée du plateau ───────────────────────────────────────── */
+/* ⚠️ L'ORDRE EST : les deux camps s'assoient, PUIS les cartes tombent.
+   C'est la mise en place d'une table, et elle se raconte dans cet ordre —
+   on regarde d'abord qui joue, et le plateau arrive devant eux. Les
+   cartes partent donc une demi-seconde après les rangs, assez pour que
+   les deux gestes se lisent l'un après l'autre et non ensemble.
+
+   Le minutage complet, et il doit rester cohérent avec `cod._introT`
+   dans app.js, qui éteint la classe à la fin :
+     0,00 s  l'en-tête
+     0,12 s  les deux rangs, chacun par son côté
+     0,50 s  la première carte  ← le retard demandé
+     0,94 s  la dernière (8 diagonales × 55 ms)
+     1,36 s  tout est posé
+     1,15 s  le pied, qui chevauche la fin de la vague
+   ⚠️ Et la classe S'ÉTEINT à 2 s : laissée en place, la moindre remise en
+   page rejouerait toute la vague. */
+:root { --cod-retard-cartes: 0.5s; }
+
 /* ⚠️ LES CARTES SE POSENT EN DIAGONALE, pas ligne par ligne. Le retard est
    calculé sur `ligne + colonne` (`codDiag` dans app.js) : la vague traverse
    la grille depuis le coin haut gauche, et les vingt-cinq cartes se posent
    en huit temps. Un retard sur l'indice brut les faisait tomber par rangées
-   — cinq paquets de cinq, qu'on voit arriver l'un après l'autre.
-
-   ⚠️ Et la classe S'ÉTEINT au bout d'une seconde et demie (`cod._introT`) :
-   laissée en place, la moindre remise en page rejouait toute la vague. */
+   — cinq paquets de cinq, qu'on voit arriver l'un après l'autre. */
 .cod.en-entree .cod-carte {
     animation: codPose 0.42s both cubic-bezier(0.18, 0.86, 0.26, 1.12);
-    animation-delay: calc(var(--k, 0) * 55ms);
+    animation-delay: calc(var(--cod-retard-cartes) + var(--k, 0) * 55ms);
 }
 @keyframes codPose {
     0%   { opacity: 0; transform: scale(0.72) translateY(0.7rem); }
@@ -523,13 +539,13 @@
    en bas, et ce qu'on a à faire arrive quand les cartes sont posées. */
 .cod.en-entree .cod-tete { animation: codDescend 0.42s both cubic-bezier(0.2, 0.8, 0.25, 1); }
 .cod.en-entree .cod-pied,
-.cod.en-entree .cod-histo { animation: codRemonte 0.4s 0.62s both cubic-bezier(0.2, 0.8, 0.25, 1); }
+.cod.en-entree .cod-histo { animation: codRemonte 0.4s 1.15s both cubic-bezier(0.2, 0.8, 0.25, 1); }
 @keyframes codDescend { from { opacity: 0; transform: translateY(-0.8rem); } }
 @keyframes codRemonte { from { opacity: 0; transform: translateY(0.8rem); } }
 
-/* Les deux rangs entrent PAR LEUR CÔTÉ : c'est ce qui dit qu'ils sont
-   assis là, et non posés sur le plateau. */
-.cod.en-entree .cod-rang { animation: codRangEntre 0.45s 0.3s both cubic-bezier(0.2, 0.8, 0.25, 1); }
+/* Les deux rangs entrent PAR LEUR CÔTÉ, et AVANT les cartes : c'est ce
+   qui dit qu'ils sont assis là, et que le plateau arrive devant eux. */
+.cod.en-entree .cod-rang { animation: codRangEntre 0.45s 0.12s both cubic-bezier(0.2, 0.8, 0.25, 1); }
 .cod.en-entree .cod-rang.camp-A { --cod-vient: -1.6rem; }
 .cod.en-entree .cod-rang.camp-B { --cod-vient: 1.6rem; }
 @keyframes codRangEntre { from { opacity: 0; transform: translateX(var(--cod-vient, 0)); } }
@@ -980,7 +996,10 @@
     .cod { --cod-rail: 0rem; --cod-rails: 0rem; }
     .cod-rang { display: none; }
     .cod-carte { border-width: 1.5px; border-radius: 0.4rem; }
-    .cod-carte.vue-espion { border-width: 2.5px; }
+    /* ⚠️ 2,5 px et non 2,25 : à deux pixels par pixel CSS, une bordure
+       de 2,25 se rend arrondie à 2 — c'est-à-dire la même que sur une
+       carte sans camp, et le cadre disparaissait. Mesuré. */
+    .cod-carte.vue-espion, .cod-carte.revelee { border-width: 2.5px; }
     .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; right: 0.12rem; top: 0.12rem; }
     .cod-voix { font-size: 0.54rem; padding: 0.05rem 0.22rem; left: 0.12rem; bottom: 0.12rem; }
     .cod-voix small { font-size: 0.44rem; }
