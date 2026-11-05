@@ -454,6 +454,8 @@ createApp({
                 // puis la reculer, parce qu'elle porte des braises jusque
                 // dans son bord gauche — là où Mitsuri n'a que du vide — et
                 // qu'elles passaient sur la description.
+                // { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: true,
+                //   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
