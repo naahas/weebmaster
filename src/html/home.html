@@ -1008,6 +1008,27 @@
                                     <span class="v2-set-value num">{{ cod.dureeTour }}s</span>
                                 </div>
 
+                                <!-- 🕵️‍♂️ LE PIÈGE. Allumé par défaut, et il doit le
+                                     rester : c'est lui qui fait qu'un indice à 4 est un
+                                     PARI et non un calcul. Sans lui, un espion annonce
+                                     toujours le maximum — se tromper ne coûte qu'un tour.
+                                     ⚠️ L'éteindre ne retire pas une carte, il la change
+                                     en passant : la grille reste à vingt-cinq et les deux
+                                     camps gardent leurs 9 et 8. Sinon on raccourcirait
+                                     aussi la partie, ce que personne ne demande en
+                                     désactivant le piège. -->
+                                <div class="v2-set">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M12 3l8 4.5v5c0 4.3-3.1 7.9-8 8.5-4.9-.6-8-4.2-8-8.5v-5L12 3z"/><path d="M12 9v4M12 16h.01"/></svg>
+                                    <span class="v2-set-label">Piège</span>
+                                    <span class="v2-set-value">{{ cod.piege ? 'Oui' : 'Non' }}</span>
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt" :class="{ on: cod.piege }"
+                                                @click="applySetting('/admin/codanime/set-piege', { piege: true }, () => cod.piege = true)">Oui</button>
+                                        <button class="v2-set-opt" :class="{ on: !cod.piege }"
+                                                @click="applySetting('/admin/codanime/set-piege', { piege: false }, () => cod.piege = false)">Non</button>
+                                    </span>
+                                </div>
+
                                 <!-- La composition. ⚠️ Elle n'est PAS un réglage comme les
                                      autres : elle vit dans l'état de la partie, et l'hôte
                                      la décide avant le départ. Le serveur compose
@@ -2400,13 +2421,15 @@
                             </div>
 
                             <div class="cod-centre">
-                                <!-- L'indice en cours. ⚠️ Seul le NOMBRE est
-                                     transmis : le mot se dit à la voix, il est
-                                     public de toute façon, et le taper au doigt
-                                     était le frottement à éviter. -->
+                                <!-- L'indice en cours : LE MOT, puis le nombre.
+                                     ⚠️ Le mot part à TOUT LE MONDE, camp adverse
+                                     compris, comme dans le vrai jeu — voir les
+                                     autres se tromper sur un mot qu'on a lu est
+                                     la moitié du plaisir. Il est nettoyé et borné
+                                     côté serveur, jamais ici. -->
                                 <div class="cod-indice" v-if="cod.indice">
+                                    <span class="cod-indice-mot">{{ cod.indice.mot }}</span>
                                     <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
-                                    <span class="cod-indice-l">carte{{ cod.indice.nombre > 1 ? 's' : '' }} à trouver</span>
                                 </div>
                                 <div class="cod-attente" v-else-if="cod.phase === 'revelation'">
                                     On retourne…
@@ -2506,15 +2529,30 @@
 
                         <!-- Le pied : ce que j'ai à faire, selon mon rôle. -->
                         <div class="cod-pied">
-                            <!-- L'espion du tour annonce son nombre. -->
+                            <!-- L'espion du tour écrit son mot et choisit son
+                                 nombre.
+                                 ⚠️ Il l'ÉCRIT, il ne le dit pas. L'oral fermait
+                                 le mode à tout salon sans vocal — c'est-à-dire à
+                                 la moitié d'un public Twitch ou TikTok, et à
+                                 n'importe quel chat.
+                                 ⚠️ `maxlength` double la borne du serveur : elle
+                                 ne protège rien (le client n'est pas de
+                                 confiance), elle évite seulement de taper
+                                 trente signes pour en voir vingt-quatre
+                                 arriver. -->
                             <div class="cod-annonce" v-if="codMonTourDAnnoncer">
-                                <span class="cod-annonce-l">Dis ton mot à voix haute, puis choisis le nombre</span>
+                                <input class="cod-mot" type="text" maxlength="24"
+                                       v-model="cod.saisieMot"
+                                       placeholder="Ton indice en un mot"
+                                       autocomplete="off" spellcheck="false"
+                                       @keyup.enter="codAnnoncer">
                                 <span class="cod-annonce-n">
                                     <button v-for="n in codMaxIndice" :key="n"
                                             class="cod-n" :class="{ on: cod.saisieNombre === n }"
                                             @click="cod.saisieNombre = n">{{ n }}</button>
                                 </span>
-                                <button class="cod-valider" @click="codAnnoncer">Annoncer</button>
+                                <button class="cod-valider" :disabled="!cod.saisieMot.trim()"
+                                        @click="codAnnoncer">Annoncer</button>
                             </div>
 
                             <!-- ⚠️ L'ATTENTE DE L'INDICE SE DIT ICI, dans le pied,
@@ -2562,14 +2600,26 @@
                         </div>
 
                         <!-- L'historique des indices. ⚠️ Pièce OBLIGATOIRE, pas
-                             décorative : avec des portraits, se rappeler « l'indice
-                             couvrait 3, on en a trouvé 1 » est bien plus dur
-                             qu'avec des mots. Et le serveur sait compter, ce
-                             qu'aucune table ne peut faire. -->
+                             décorative : avec des portraits, se rappeler
+                             « l'indice couvrait 3, on en a trouvé 1 » est bien
+                             plus dur qu'avec des mots. Et le serveur sait
+                             compter, ce qu'aucune table ne peut faire.
+
+                             ⚠️ IL EST À DROITE, EN ABSOLU, et c'est la raison
+                             d'être du changement : posé en bas dans le flux, il
+                             n'existait qu'à partir du premier tour fini — et en
+                             apparaissant il poussait TOUT le plateau vers le
+                             haut d'une rangée. Un écran qui saute au premier
+                             tour de chaque partie.
+                             Hors du flux, sa hauteur ne coûte rien, et la
+                             colonne de droite était libre. -->
                         <div class="cod-histo" v-if="cod.historique.length">
-                            <span class="cod-histo-l" v-for="(h, k) in cod.historique.slice(-6)" :key="k"
-                                  :class="'camp-' + h.equipe">
-                                {{ h.trouvees }}/{{ h.nombre }}
+                            <span class="cod-histo-t">Indices</span>
+                            <span class="cod-histo-l" v-for="(h, k) in cod.historique.slice(-9)" :key="k"
+                                  :class="'camp-' + h.equipe"
+                                  :title="codNomEquipe(h.equipe) + ' · ' + h.trouvees + ' trouvée(s) sur ' + h.nombre">
+                                <b>{{ h.mot || '—' }}</b>
+                                <i>{{ h.trouvees }}/{{ h.nombre }}</i>
                             </span>
                         </div>
                     </div>

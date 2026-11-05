@@ -144,13 +144,17 @@ function tirerPersonnages(vivier, alea, taille = TAILLE, maxParSerie = MAX_PAR_S
 }
 
 // Distribue les camps sur des portraits déjà tirés.
-function distribuerCamps(personnages, premier, alea) {
+// ⚠️ `avecAssassin` à faux ne RETIRE pas une carte, il la change en
+// PASSANT. La grille doit rester à vingt-cinq : c'est le 5×5 qu'on scanne,
+// et les deux camps gardent leurs 9 et 8 — sans quoi désactiver le piège
+// raccourcirait aussi la partie, ce que personne ne demande en le faisant.
+function distribuerCamps(personnages, premier, alea, avecAssassin) {
     const second = premier === 'A' ? 'B' : 'A';
     const camps = [];
     for (let i = 0; i < CAMP_PREMIER; i++) camps.push(premier);
     for (let i = 0; i < CAMP_SECOND; i++) camps.push(second);
     for (let i = 0; i < NEUTRES; i++) camps.push('neutre');
-    camps.push('assassin');
+    camps.push(avecAssassin === false ? 'neutre' : 'assassin');
 
     const melanges = melanger(camps, alea);
     return personnages.map((p, i) => ({
@@ -163,8 +167,29 @@ function distribuerCamps(personnages, premier, alea) {
     }));
 }
 
-function construireGrille(vivier, premier, alea) {
-    return distribuerCamps(tirerPersonnages(vivier, alea), premier, alea);
+function construireGrille(vivier, premier, alea, avecAssassin) {
+    return distribuerCamps(tirerPersonnages(vivier, alea), premier, alea, avecAssassin);
+}
+
+// ── Le mot de l'indice ─────────────────────────────────────────────
+//
+// ⚠️ Il est TAPÉ, et il part à tout le monde — y compris au camp adverse,
+// comme dans le vrai jeu : c'est la moitié du plaisir de voir les autres
+// se tromper sur un mot qu'on a entendu. Il passe donc par un nettoyage,
+// parce qu'un champ libre rediffusé à huit personnes est un salon de
+// discussion déguisé s'il n'est pas borné.
+//
+// On coupe les sauts de ligne et les caractères de contrôle (un indice
+// tient sur une ligne), on écrase les espaces en rafale, et on borne à
+// 24 signes — un indice de Codenames est UN mot, deux au pire.
+const MOT_MAX = 24;
+function nettoyerMot(brut) {
+    if (typeof brut !== 'string') return '';
+    return brut
+        .replace(/[\u0000-\u001f\u007f]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, MOT_MAX);
 }
 
 // ── L'état d'un salon ──────────────────────────────────────────────
@@ -174,6 +199,11 @@ function etatNeuf() {
         // Réglages du salon
         chrono: true,
         dureeTour: DUREE_TOUR_DEFAUT,
+        // ⚠️ Le piège est là PAR DÉFAUT : c'est lui qui fait qu'un indice à 4
+        // est un pari et non un calcul. Éteint, le mode devient une course au
+        // score — plus doux pour un premier salon, et c'est le seul usage
+        // qu'on lui connaisse.
+        piege: true,
         // Composition, décidée dans le salon par l'hôte
         equipes: {
             A: { espion: null, agents: [] },
@@ -184,11 +214,11 @@ function etatNeuf() {
         restant: { A: 0, B: 0 },
         tourDe: null,
         phase: 'repos',     // repos | indice | vote | revelation | fini
-        indice: null,       // { nombre }
+        indice: null,       // { mot, nombre }
         votes: {},          // idxCarte -> [playerId]
         franchiA: {},       // idxCarte -> horodatage du franchissement du seuil
         file: [],           // les cartes engagées, verrouillées à la clôture
-        historique: [],     // { equipe, nombre, trouvees, engagees }
+        historique: [],     // { equipe, mot, nombre, trouvees, engagees }
         gagnant: null,
         finTour: 0,
         manche: 0,
@@ -566,6 +596,7 @@ function creerModule(deps) {
             reste: etat.finTour ? Math.max(0, etat.finTour - Date.now()) : 0,
             chrono: etat.chrono,
             dureeTour: etat.dureeTour,
+            piege: etat.piege !== false,
             // ⚠️ La durée de RÉFÉRENCE change selon la phase : la jauge se
             // remplirait de travers si le client divisait toujours par la
             // durée du tour, alors que la phase d'indice en dure trente.
@@ -629,7 +660,7 @@ function creerModule(deps) {
         }
 
         const premier = Math.random() < 0.5 ? 'A' : 'B';
-        etat.grille = construireGrille(vivier(), premier, Math.random);
+        etat.grille = construireGrille(vivier(), premier, Math.random, etat.piege !== false);
         etat.restant = {
             A: premier === 'A' ? CAMP_PREMIER : CAMP_SECOND,
             B: premier === 'B' ? CAMP_PREMIER : CAMP_SECOND,
@@ -647,7 +678,7 @@ function creerModule(deps) {
     }
 
     // L'espion annonce SON NOMBRE. Le mot, lui, se dit à la voix.
-    function annoncerIndice(gameState, playerId, nombre) {
+    function annoncerIndice(gameState, playerId, nombre, mot) {
         const etat = gameState.codanime;
         if (!etat.active || etat.phase !== 'indice') return { ok: false, raison: 'phase' };
         if (etat.equipes[etat.tourDe].espion !== playerId) return { ok: false, raison: 'pas-espion' };
@@ -660,7 +691,13 @@ function creerModule(deps) {
         const max = Math.min(INDICE_MAX, etat.restant[etat.tourDe]);
         if (n > max) return { ok: false, raison: 'trop-grand', max };
 
-        etat.indice = { nombre: n };
+        // ⚠️ Le MOT est exigé, et nettoyé ici — jamais au client, qui est
+        // justement la pièce qu'on ne contrôle pas. Un indice vide laisserait
+        // l'équipe deviner sans rien, ce qui est pire qu'un tour passé.
+        const m = nettoyerMot(mot);
+        if (!m) return { ok: false, raison: 'mot-vide' };
+
+        etat.indice = { mot: m, nombre: n };
         etat.phase = 'vote';
         etat.finTour = etat.chrono ? Date.now() + etat.dureeTour * 1000 : 0;
         if (etat.chrono) {
@@ -723,6 +760,9 @@ function creerModule(deps) {
 
         etat.historique.push({
             equipe: etat.tourDe,
+            // Le mot aussi : c'est lui qu'on relit pour comprendre où le tour
+            // a dérapé. « 1/3 » tout seul ne raconte rien.
+            mot: etat.indice ? etat.indice.mot : '',
             nombre: etat.indice ? etat.indice.nombre : 0,
             engagees: etat.file.length,
             trouvees: 0,
@@ -856,4 +896,5 @@ module.exports = {
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
     INDICE_MAX, AGENTS_MAX, MAX_PAR_SERIE,
     DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, DUREE_INDICE, dureeValide, BATTEMENT,
+    MOT_MAX, nettoyerMot,
 };

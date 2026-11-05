@@ -257,6 +257,11 @@ createApp({
                 // Réglages du salon
                 chrono: true,
                 dureeTour: 90,
+                // ⚠️ Le piège est là PAR DÉFAUT : c'est lui qui fait qu'un
+                // indice à 4 est un pari et non un calcul. La valeur qui
+                // compte est celle du serveur (`appliquerReglagesSalon`) —
+                // celle-ci n'est que l'affichage avant la première réponse.
+                piege: true,
                 equipes: { A: { espion: null, espionNom: null, agents: [], restant: 0 },
                            B: { espion: null, espionNom: null, agents: [], restant: 0 } },
 
@@ -295,7 +300,11 @@ createApp({
                 intro: false,
                 _introT: null,
 
-                // Le nombre que l'espion s'apprête à annoncer
+                // Ce que l'espion s'apprête à annoncer : son mot et son nombre.
+                // ⚠️ Le mot est TAPÉ et non dit à la voix — l'oral fermait le
+                // mode à tout salon sans vocal, c'est-à-dire à la moitié d'un
+                // public Twitch ou TikTok.
+                saisieMot: '',
                 saisieNombre: 1,
                 refus: '',           // le dernier refus du serveur, à montrer
                 _refusT: null,
@@ -4448,6 +4457,17 @@ createApp({
                 poser(this.ch, 'voirLesAutres', r.choice.voirLesAutres);
                 poser(this.ch, 'serieFiltre', r.choice.serieFiltre);
             }
+            // 🕵️ ⚠️ Codanime MANQUAIT ICI, et c'est exactement la maladie que
+            // la note de CLAUDE.md décrit : `reglagesDuSalon` les envoyait
+            // déjà, mais personne ne les posait. L'hôte qui revenait à
+            // l'accueil puis rouvrait un salon gardait À L'ÉCRAN le chrono et
+            // la durée de la session d'avant pendant que le serveur repartait
+            // de ses défauts.
+            if (r.codanime) {
+                poser(this.cod, 'chrono', r.codanime.chrono);
+                poser(this.cod, 'dureeTour', r.codanime.dureeTour);
+                poser(this.cod, 'piege', r.codanime.piege);
+            }
         },
 
         async applySetting(url, payload, apply) {
@@ -5732,10 +5752,15 @@ createApp({
         // L'espion annonce SON NOMBRE. Le mot se dit à la voix — il est
         // public de toute façon, seule la répartition est secrète, et c'est
         // ce qui évite d'avoir à taper au doigt.
+        // ⚠️ Le mot part AVEC le nombre, et le serveur le nettoie et le borne
+        // lui-même : ce garde-ci n'est là que pour éviter un envoi vide, pas
+        // pour valider quoi que ce soit.
         codAnnoncer() {
             const n = parseInt(this.cod.saisieNombre, 10);
             if (!Number.isInteger(n) || n < 1) return;
-            this.socket.emit('codanime-indice', { nombre: n });
+            const mot = (this.cod.saisieMot || '').trim();
+            if (!mot) return;
+            this.socket.emit('codanime-indice', { nombre: n, mot });
         },
 
         codVoter(i) {
@@ -9018,6 +9043,11 @@ createApp({
                 // « codanime-debut » ne repasse — lui a déjà posé `enCours`,
                 // donc la condition est fausse et l'entrée ne joue pas deux fois.
                 if (data.active && !c.enCours) this.codEntree();
+                // Le champ de l'espion se vide dès que la phase d'indice est
+                // passée. ⚠️ Pas à l'entrée dans la phase : on effacerait ce
+                // qu'il est en train de taper à chaque état reçu, et l'état
+                // arrive à chaque clic de ses agents.
+                if (data.phase !== 'indice') c.saisieMot = '';
                 c.enCours = !!data.active;
                 c.phase = data.phase;
                 c.tourDe = data.tourDe;
@@ -9054,6 +9084,7 @@ createApp({
                 if (!data) return;
                 if (data.chrono !== undefined) this.cod.chrono = data.chrono;
                 if (data.dureeTour !== undefined) this.cod.dureeTour = data.dureeTour;
+                if (data.piege !== undefined) this.cod.piege = data.piege;
                 if (data.equipes) this.cod.equipes = data.equipes;
             });
 
@@ -9126,6 +9157,7 @@ createApp({
                     'pas-espion': 'Seul l’espion de l’équipe annonce.',
                     'trop-grand': 'Trop grand : au plus ' + (data && data.max ? data.max : 4) + '.',
                     'nombre': 'Il faut un nombre.',
+                    'mot-vide': 'Il faut un mot.',
                 };
                 this.cod.refus = dits[data && data.raison] || '';
                 if (this.cod._refusT) clearTimeout(this.cod._refusT);

@@ -85,9 +85,20 @@ const post = async (chemin, corps, jeton) => {
     dire(ag.grille.every(c => /^\/pic\//.test(c.img)),
         'les portraits passent sous JETON — le nom du fichier dirait qui c\'est');
 
+    // ⚠️ `/game/state` s'ouvre avec le SEUL code du salon : un curieux qui
+    // le lit ne doit y trouver ni la grille, ni un camp, ni le piège.
+    //
+    // ⚠️ Le contrôle cherchait la chaîne « assassin », ce qui a fini par
+    // sonner à tort le jour où le RÉGLAGE du piège est arrivé — un booléen
+    // nommé comme la carte. Il porte maintenant sur ce qui fuit vraiment :
+    // la grille et le mot « camp ». Le réglage s'appelle `piege`, la carte
+    // reste `assassin`, et les deux ne se confondent plus.
     const etat = await (await fetch(BASE + '/game/state?code=' + code)).json();
-    dire(!JSON.stringify(etat.codanime || {}).includes('assassin'),
+    const brut = JSON.stringify(etat.codanime || {});
+    dire(!brut.includes('camp') && !brut.includes('grille') && !brut.includes('assassin'),
         '/game/state, qui s\'ouvre avec le seul code du salon, ne porte pas la clef');
+    dire(typeof (etat.codanime || {}).piege === 'boolean',
+        'il porte bien le RÉGLAGE du piège, qui n\'est pas un secret');
 
     titre('Les rôles, tenus côté serveur');
     const premier = eA.tourDe;
@@ -95,20 +106,40 @@ const post = async (chemin, corps, jeton) => {
     const agentDuTour = premier === 'A' ? 'a1' : 'a2';
     const agentAdverse = premier === 'A' ? 'a2' : 'a1';
 
-    socks[agentDuTour].emit('codanime-indice', { nombre: 2 });
+    socks[agentDuTour].emit('codanime-indice', { nombre: 2, mot: 'sabre' });
     await wait(250);
     dire(vu[agentDuTour].refus.some(r => r.raison === 'pas-espion'),
         'un agent ne peut pas annoncer à la place de son espion');
 
-    socks[espionDuTour].emit('codanime-indice', { nombre: 99 });
+    socks[espionDuTour].emit('codanime-indice', { nombre: 99, mot: 'sabre' });
     await wait(250);
     dire(vu[espionDuTour].refus.some(r => r.raison === 'trop-grand'),
         'un nombre au-delà du plafond est refusé');
 
+    // ⚠️ Le MOT est exigé. Un indice sans mot laisserait l'équipe deviner
+    // sans rien, ce qui est pire qu'un tour passé — et c'est exactement ce
+    // qu'envoyait un vieux client, du temps où le mot se disait à la voix.
     socks[espionDuTour].emit('codanime-indice', { nombre: 2 });
+    await wait(250);
+    dire(vu[espionDuTour].refus.some(r => r.raison === 'mot-vide'),
+        'un indice sans mot est refusé');
+    socks[espionDuTour].emit('codanime-indice', { nombre: 2, mot: '   ' });
+    await wait(250);
+    dire(vu[espionDuTour].refus.filter(r => r.raison === 'mot-vide').length >= 2,
+        'et un mot fait d\'espaces aussi');
+
+    // ⚠️ Le mot est NETTOYÉ côté serveur : sauts de ligne écrasés, espaces
+    // en rafale réduits, et 24 signes au plus. C'est un champ libre
+    // rediffusé à huit personnes, il ne part jamais tel quel.
+    socks[espionDuTour].emit('codanime-indice', { nombre: 2, mot: '  lame\n\n   tranchante  ' });
     await wait(300);
     dire(dernier(espionDuTour).phase === 'vote', 'l\'indice ouvre la phase de vote');
     dire(dernier(espionDuTour).indice.nombre === 2, 'le nombre est transmis');
+    dire(dernier(espionDuTour).indice.mot === 'lame tranchante',
+        'le mot est transmis, nettoyé de ses sauts de ligne');
+    // Et il part à TOUT LE MONDE, camp adverse compris — comme dans le vrai jeu.
+    dire(dernier(agentAdverse).indice && dernier(agentAdverse).indice.mot === 'lame tranchante',
+        'et le camp adverse le lit aussi');
 
     socks[espionDuTour].emit('codanime-vote', { i: 0 });
     await wait(200);

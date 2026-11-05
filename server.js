@@ -669,6 +669,7 @@ function reglagesDuSalon(gameState) {
         codanime: {
             chrono: gameState.codanime.chrono,
             dureeTour: gameState.codanime.dureeTour,
+            piege: gameState.codanime.piege,
         },
     };
 }
@@ -1147,6 +1148,7 @@ app.get('/game/state', (req, res) => {
             phase: gameState.codanime.phase,
             chrono: gameState.codanime.chrono,
             dureeTour: gameState.codanime.dureeTour,
+            piege: gameState.codanime.piege,
             manche: gameState.codanime.manche,
         } : null,
         bombanime: gameState.lobbyMode === 'bombanime' ? {
@@ -2998,6 +3000,7 @@ function diffuserReglagesCodanime(gameState) {
     diffuser(gameState, 'codanime-config', {
         chrono: gameState.codanime.chrono,
         dureeTour: gameState.codanime.dureeTour,
+        piege: gameState.codanime.piege,
         equipes: codanime.vueDesEquipes(gameState),
     });
 }
@@ -3025,6 +3028,20 @@ app.post('/admin/codanime/set-duree', (req, res) => {
     gameState.codanime.dureeTour = d;
     diffuserReglagesCodanime(gameState);
     res.json({ success: true, dureeTour: d });
+});
+
+// ⚠️ LE PIEGE. Il est la PAR DEFAUT : c'est lui qui fait qu'un indice a 4
+// est un pari et non un calcul — sans lui, un espion annonce toujours le
+// maximum, puisque se tromper ne coute qu'un tour. L'eteindre ne retire pas
+// une carte, il la change en PASSANT : la grille reste a vingt-cinq et les
+// deux camps gardent leurs 9 et 8, sinon desactiver le piege raccourcirait
+// aussi la partie.
+app.post('/admin/codanime/set-piege', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    gameState.codanime.piege = req.body && req.body.piege === true;
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, piege: gameState.codanime.piege });
 });
 
 // La composition : l'hôte range un joueur dans une équipe, et désigne son
@@ -9407,12 +9424,16 @@ io.on('connection', (socket) => {
         return j ? { gs, playerId: j.playerId } : null;
     };
 
-    // L'espion n'envoie que le NOMBRE : le mot se dit à la voix, et il est
-    // public de toute façon. C'est ce qui évite la saisie de texte au doigt.
+    // ⚠️ L'espion envoie son MOT et son nombre. Le mot etait dit a la voix
+    // au depart, ce qui fermait le mode a tout salon sans vocal — la moitie
+    // d'un public Twitch ou TikTok. Il est NETTOYE et BORNE cote moteur
+    // (`nettoyerMot`), jamais ici : un champ libre rediffuse a huit personnes
+    // est un salon de discussion deguise s'il n'est pas tenu.
     socket.on('codanime-indice', (data) => {
         const q = joueurDe(socket);
         if (!q) return;
-        const r = codanime.annoncerIndice(q.gs, q.playerId, data && data.nombre);
+        const r = codanime.annoncerIndice(q.gs, q.playerId,
+            data && data.nombre, data && data.mot);
         if (!r.ok) socket.emit('codanime-refus', r);
     });
 

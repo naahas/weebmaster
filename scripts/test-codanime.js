@@ -81,6 +81,37 @@ dire(repKo === 0, '9 / 8 / 7 / 1, et les 9 vont bien à l\'équipe qui commence'
 dire(m.CAMP_PREMIER + m.CAMP_SECOND + m.NEUTRES + 1 === m.TAILLE,
     'la répartition fait bien ' + m.TAILLE);
 
+// ⚠️ LE PIÈGE ÉTEINT ne retire pas une carte, il la change en PASSANT. La
+// grille doit rester à vingt-cinq et les deux camps garder leurs 9 et 8 —
+// sinon désactiver le piège raccourcirait aussi la partie, ce que personne
+// ne demande en le faisant.
+let sansKo = 0;
+for (let g = 1; g <= 200; g++) {
+    const grille = m.construireGrille(vivier, g % 2 ? 'A' : 'B', alea(g + 900), false);
+    const c = {};
+    grille.forEach(x => { c[x.camp] = (c[x.camp] || 0) + 1; });
+    const premier = g % 2 ? 'A' : 'B';
+    const second = premier === 'A' ? 'B' : 'A';
+    if (grille.length !== m.TAILLE || c.assassin || c.neutre !== m.NEUTRES + 1
+        || c[premier] !== m.CAMP_PREMIER || c[second] !== m.CAMP_SECOND) sansKo++;
+}
+dire(sansKo === 0, 'piège éteint : plus aucun assassin, un passant de plus, et toujours 25',
+    sansKo + ' ratés');
+dire(m.etatNeuf().piege === true, 'et il est ALLUMÉ par défaut');
+
+titre('Le mot de l\'indice');
+// ⚠️ C'est un champ libre rediffusé à huit personnes : il ne part jamais
+// tel quel. Sauts de ligne et caractères de contrôle écrasés, espaces en
+// rafale réduits, 24 signes au plus.
+dire(m.nettoyerMot('  katana  ') === 'katana', 'il est détouré');
+dire(m.nettoyerMot('lame\n\ntranchante') === 'lame tranchante',
+    'les sauts de ligne deviennent un espace — un indice tient sur une ligne');
+dire(m.nettoyerMot('a\u0007b') === 'a b', 'et les caractères de contrôle aussi');
+dire(m.nettoyerMot('x'.repeat(80)).length === m.MOT_MAX,
+    'il est borné à ' + m.MOT_MAX + ' signes');
+dire(m.nettoyerMot('   ') === '' && m.nettoyerMot(null) === '' && m.nettoyerMot(42) === '',
+    'et ce qui n\'est pas un mot rend une chaîne vide');
+
 titre('⚠️ Ce qu\'un AGENT reçoit — aucune couleur ne doit fuiter');
 {
     const etat = m.etatNeuf();
