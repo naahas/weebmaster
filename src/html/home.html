@@ -1343,14 +1343,11 @@
                 <template v-if="isHost && lobbyMode === 'codanime'">
                     <!-- ⚠️ La bulle dit la CONSÉQUENCE, pas la mécanique : « une
                          carte piégée » n apprend rien à qui ne connaît pas le jeu,
-                         alors que « fait perdre sur-le-champ » suffit à décider.
-                         Et le second cas est utile, parce qu on s attend à ce que
-                         la carte disparaisse — elle devient un passant, la grille
-                         reste à vingt-cinq. -->
+                         alors que « fait perdre instantanément » suffit à décider. -->
                     <span class="v2-set-info" data-pour="cod-assassin" tabindex="0">!
-                        <span class="v2-set-bulle"><b>Oui</b> : une carte de la grille fait
-                            perdre la partie sur-le-champ à qui la retourne.<br><b>Non</b> :
-                            elle devient un simple passant.</span>
+                        <span class="v2-set-bulle">Ajoute ou non une carte assassin sur le
+                            plateau qui fait perdre instantanément l’équipe qui la
+                            retourne.</span>
                     </span>
                 </template>
             </div>
