@@ -488,12 +488,12 @@
        coin haut gauche de sa case. */
     --cod-c: var(--cod-cote);
     width: var(--cod-c);
-    /* ⚠️ DEUX PIXELS DE MOINS EN HAUTEUR, pas en largeur. La grille est
-       contrainte par la hauteur de l'écran sur ordinateur : deux pixels
-       repris sur chaque rangée en rendent dix au plateau, et personne ne
-       voit qu'une carte n'est plus tout à fait carrée. Le cadrage, lui,
-       ne bouge pas — `object-fit: cover` recadre d'un cheveu. */
-    height: calc(var(--cod-c) - 2px);
+    /* ⚠️ CARRÉE, exactement. Elle a eu deux pixels de moins en hauteur
+       pour rendre dix au plateau — la grille est contrainte par la
+       hauteur de l'écran sur ordinateur — et elle les a repris : à cadre
+       épais, un portrait rogné d'un cheveu de plus se voyait. Le budget
+       vertical (17,8 rem) absorbe les dix pixels sans rien déborder. */
+    height: var(--cod-c);
     place-self: center;
     padding: 0;
     border: 2px solid rgba(255, 255, 255, 0.09);
@@ -706,7 +706,15 @@
    partie sur-le-champ. Il remplace donc toute la pile d'ombres. */
 .cod-carte.vue-espion.camp-assassin,
 .cod-carte.revelee.camp-assassin {
-    border-color: #0b0b0f;
+    /* ⚠️ `#000` ET PAS `#0b0b0f`. La bande valait un noir très légèrement
+       relevé, le coin un noir pur : à côté l'un de l'autre, l'œil voyait
+       DEUX formes au lieu d'une — le triangle se détachait du cadre comme
+       une pièce rapportée. Sur toutes les autres cartes la bande et le
+       coin partagent la même teinte, et c'est ce qui fait qu'ils se
+       lisent comme un seul objet ; l'assassin n'a aucune raison d'y
+       échapper. Son contour externe reste CLAIR : c'est lui, et lui seul,
+       qui l'empêche de disparaître dans le fond de la page. */
+    border-color: #000;
     box-shadow: 0 0 0 var(--cod-dehors) rgba(255, 255, 255, 0.4);
 }
 /* Et son filet intérieur est CLAIR, pas noir : c'est la seule carte dont
