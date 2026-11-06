@@ -8758,6 +8758,30 @@ io.on('connection', (socket) => {
                     
                     console.log(`🔄 Auto-remap: ${data.username} ${oldSocketId} → ${socket.id}`);
                     broadcastLobbyUpdate(gameState);
+
+                    // 🕵️ CODANIME : on lui RENVOIE sa vue sur-le-champ.
+                    //
+                    // ⚠️ C'est le serveur qui pousse, et non le client qui
+                    // demande, parce que la demande arrivait trop tôt.
+                    // `codanime-get-state` fait `players.get(socket.id)` : tant
+                    // que la ligne juste au-dessus n'a pas rebranché le joueur
+                    // sur sa socket neuve, elle rend `undefined` et le serveur
+                    // SORT EN SILENCE. Celui qui rafraîchissait en pleine
+                    // partie restait donc sans plateau et sans chrono jusqu'au
+                    // tour suivant — le premier `diffuserEtat` qui passait.
+                    //
+                    // ⚠️ Et le client ne pouvait pas non plus la demander plus
+                    // tard de lui-même : sa demande est gardée par
+                    // `lobbyMode === 'codanime'`, or `lobbyMode` vient de
+                    // `/game/state`, qui est une requête à part. À la course
+                    // entre les deux, un arrivant n'émettait jamais rien.
+                    //
+                    // Ici il n'y a plus de course : le joueur VIENT d'être
+                    // rattaché, à la ligne précédente.
+                    if (gameState.codanime && gameState.codanime.active) {
+                        socket.emit('codanime-etat',
+                            codanime.etatPourLeClient(gameState, data.playerId));
+                    }
                     break;
                 }
             }

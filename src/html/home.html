@@ -2446,7 +2446,7 @@
                                 v-if="cod.jeSuisEspion"
                                 :class="{ on: cod.masquerAdverses }"
                                 @click="cod.masquerAdverses = !cod.masquerAdverses"
-                                :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                :aria-label="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
                                 :aria-pressed="String(cod.masquerAdverses)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
@@ -2572,13 +2572,13 @@
                                          dans le vide. -->
                                     <button class="cod-stop" v-if="codPasseIci('A')"
                                             :class="{ on: codJaiPasse() }" @click="codPasser"
-                                            :title="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
-                                        <span>On s’arrête</span><b>{{ codPasseCompte() }}</b>
+                                            :aria-label="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                                        <span>Skip</span><b>{{ codPasseCompte() }}</b>
                                     </button>
                                     <button class="cod-masque" v-if="codMasqueIci('A')"
                                             :class="{ on: cod.masquerAdverses }"
                                             @click="cod.masquerAdverses = !cod.masquerAdverses"
-                                            :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                            :aria-label="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
                                             :aria-pressed="String(cod.masquerAdverses)">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>
@@ -2704,13 +2704,13 @@
                                     <!-- Le jumeau du bouton d'en face — voir le rang A. -->
                                     <button class="cod-stop" v-if="codPasseIci('B')"
                                             :class="{ on: codJaiPasse() }" @click="codPasser"
-                                            :title="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
-                                        <span>On s’arrête</span><b>{{ codPasseCompte() }}</b>
+                                            :aria-label="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                                        <span>Skip</span><b>{{ codPasseCompte() }}</b>
                                     </button>
                                     <button class="cod-masque" v-if="codMasqueIci('B')"
                                             :class="{ on: cod.masquerAdverses }"
                                             @click="cod.masquerAdverses = !cod.masquerAdverses"
-                                            :title="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
+                                            :aria-label="cod.masquerAdverses ? 'Remontrer les cartes adverses' : 'Assombrir les cartes adverses'"
                                             :aria-pressed="String(cod.masquerAdverses)">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M2.5 12S6.2 5.5 12 5.5 21.5 12 21.5 12 17.8 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/>

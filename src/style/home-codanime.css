@@ -1135,11 +1135,20 @@
    votées afficheraient six têtes pour deux voix.
    ⚠️ Désaturés ET pâles, pas seulement pâles : un portrait d'avatar reste
    très coloré à 35 % d'opacité, et l'on croyait voir une vraie voix. */
+/* ⚠️ L'OPACITÉ VA SUR LE CADRE, PAS SUR L'IMAGE, et c'est une correction.
+   Posée sur l'image, elle ne s'appliquait JAMAIS : celle-ci porte
+   l'animation d'arrivée, dont l'image finale vaut `opacity: 1` — et une
+   animation l'emporte sur une déclaration normale du même élément. Le
+   fantôme sortait donc à pleine opacité, seulement désaturé, et l'on
+   croyait voir deux voix là où un seul agent avait cliqué. Sur le cadre,
+   les deux se multiplient et personne n'écrase personne. */
+.cod-votant.fantome { opacity: 0.26; }
 .cod-votant.fantome img {
-    opacity: 0.34;
-    filter: grayscale(1);
+    /* ⚠️ TRÈS en retrait, et pas « un peu pâle » : il faut qu'on lise
+       « une place vide qui porte un visage », pas « un visage discret ». */
+    filter: grayscale(1) contrast(0.7);
     border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.75);
     box-shadow: none;
 }
 @keyframes codVotantEntre {
@@ -1207,6 +1216,17 @@
    La bordure claire reste : elle dit « celle-ci est à moi » en un coup
    d'œil sur une grille entière. */
 .cod-carte.ma-voix:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.55); }
+
+/* ⚠️ MA CARTE S'ASSOMBRIT, et c'est pour MOI seul : mon avatar est dans
+   l'éventail du haut, mais il y est au milieu des autres, et sur une
+   grille de vingt-cinq on ne retrouve pas « la sienne » en lisant des
+   visages de 35 px. Le portrait baisse donc d'un quart — assez pour la
+   repérer d'un balayage, pas assez pour qu'on cesse de la reconnaître.
+   ⚠️ Le survol la RELÈVE, mais moins qu'une carte libre (0,82 contre
+   1,12) : il faut qu'elle reste la plus sombre des deux, sinon passer la
+   souris dessus efface l'information qu'on vient de poser. */
+.cod-carte.ma-voix .cod-portrait { filter: brightness(0.72) saturate(0.92); }
+.cod-carte.ma-voix:not(:disabled):hover .cod-portrait { filter: brightness(0.86) saturate(1); }
 
 /* ⚠️ LE NUMÉRO ① ② ③ A ÉTÉ RETIRÉ. Il disait l'ordre dans lequel les
    cartes se retourneront. Il a vécu en haut à droite, puis en bas à

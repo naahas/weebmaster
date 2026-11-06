@@ -241,6 +241,45 @@ const post = async (chemin, corps, jeton) => {
     } else {
         socks[espion3].emit('codanime-indice', { nombre: 1, mot: 'piege' });
         await wait(350);
+
+        // ── LE RAFRAÎCHISSEMENT, en plein tour ──────────────────
+        // ⚠️ CELUI QUI RAFRAÎCHIT DOIT TOUT RETROUVER, et sans attendre le
+        // tour suivant. Le client demandait sa vue à la connexion
+        // (`codanime-get-state`), mais cette demande fait
+        // `players.get(socket.id)` : tant que le serveur n'a pas rebranché le
+        // joueur sur sa socket NEUVE, elle rend `undefined` et sort en
+        // silence. Le serveur POUSSE donc l'état au moment du rebranchement,
+        // là où il n'y a plus de course possible.
+        // On rejoue ici ce que fait un onglet rechargé : la socket meurt, une
+        // neuve se présente avec le même playerId, et rien d'autre. ⚠️ On
+        // n'émet VOLONTAIREMENT pas `codanime-get-state` — c'est le serveur
+        // qu'on éprouve, pas la politesse du client.
+        const avantReprise = dernier(agent3);
+        socks[agent3].close();
+        await wait(400);
+        const neuve = io(BASE, { transports: ['websocket'] });
+        await new Promise(r => neuve.on('connect', r));
+        const recu = [];
+        neuve.on('codanime-etat', (d) => { recu.push(d); vu[agent3].etats.push(d); });
+        neuve.on('codanime-carte', (d) => vu[agent3].cartes.push(d));
+        neuve.on('codanime-fin', (d) => { vu[agent3].fin = d; });
+        neuve.emit('register-authenticated', { playerId: agent3, username: 'Repris' });
+        await wait(700);
+        socks[agent3] = neuve;
+
+        dire(recu.length > 0, 'la vue repart TOUTE SEULE au rebranchement, sans rien demander',
+            recu.length + ' état(s)');
+        const rep = recu[recu.length - 1] || {};
+        dire(rep.grille && rep.grille.length === 25, 'il retrouve ses vingt-cinq cartes');
+        dire(rep.phase === avantReprise.phase, 'et la même phase', rep.phase);
+        // ⚠️ LE CHRONO : un `reste` en millisecondes, jamais une échéance.
+        // C'est lui qui manquait — la jauge restait vide jusqu'au tour d'après.
+        dire(typeof rep.reste === 'number' && rep.reste > 0,
+            'le temps restant revient avec, en millisecondes', 'reste=' + rep.reste);
+        dire(rep.indice && rep.indice.mot === 'piege', 'l\'indice aussi');
+        dire(rep.coups === 2, 'et les coups qu\'il reste', 'coups=' + rep.coups);
+        dire(Array.isArray(rep.agentsDuTour), 'et les agents du tour, pour les fantômes');
+
         let tCarte = 0;
         const avant = vu[agent3].cartes.length;
         socks[agent3].emit('codanime-vote', { i: assassin.i });

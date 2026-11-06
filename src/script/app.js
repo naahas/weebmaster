@@ -1190,10 +1190,12 @@ createApp({
                 if (c.tourDe && c.tourDe === c.monEquipe) {
                     return c.jeSuisEspion ? 'Vos partenaires réfléchissent…' : 'À vous de deviner…';
                 }
-                // Le camp adverse joue : rien. Le rang qui s'allume en face
-                // dit déjà à qui c'est, et commenter ce qu'on regarde se
-                // faire n'apprend rien.
-                return '';
+                // ⚠️ ET LE CAMP QUI REGARDE A SA PHRASE AUSSI. Il n'avait
+                // rien : le bandeau se vidait pendant tout le tour adverse,
+                // et un écran où le temps s'écoule sous un espace blanc se
+                // lit comme un écran en panne. Le rang qui s'allume en face
+                // dit À QUI c'est le tour ; cette ligne dit ce qu'on attend.
+                return 'Vos adversaires réfléchissent…';
             }
             return '';
         },
