@@ -62,15 +62,26 @@
     --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
     --cod-cote: min(
         calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
-        /* ⚠️ CE CHIFFRE EST LA TAILLE DES CARTES. Il réserve la hauteur de
-           tout ce qui n'est pas la grille — l'en-tête, le pied et ses
-           retraits — et chaque dixième de rem qu'on lui rend donne
-           0,32 px à chaque carte. Il est passé de 17,8 à 17,2 pour les
-           grossir de deux pixels : relevé, 125 px au lieu de 123, et le
-           hors-grille ne pèse de toute façon que ~16 rem. Le baisser
-           davantage ferait déborder la grille par le bas sur une fenêtre
-           courte, où le pied garde sa hauteur fixe. */
-        calc((100dvh - 17.2rem) / 5)
+        /* ⚠️ CE CHIFFRE EST LA TAILLE DES CARTES, et il doit couvrir TOUT
+           CE QUI N'EST PAS `5 × cote` — l'en-tête, le pied et ses
+           retraits, les deux écarts de la colonne, les marges de `.cod`,
+           ET LES QUATRE ÉCARTS DE RANGÉE DE LA GRILLE. Ces derniers
+           manquaient, et c'est ce qui a fait toute la casse :
+
+           sous-évalué de 40 px, le calcul rendait des cartes trop
+           grandes, la colonne dépassait la hauteur de l'écran, et le pied
+           — simple élément flex — SE LAISSAIT COMPRIMER pour faire tenir
+           le reste. Sa hauteur fixe de 7,4 rem n'y pouvait rien : un
+           `flex-shrink` par défaut vaut 1. Il mesurait 93 px quand le mot
+           était seul et 108 avec la ligne de vote, et le plateau sautait
+           de 8 px à chaque fois — exactement le décalage qu'on
+           pourchassait, et il ne venait pas du pied mais d'ici.
+
+           Relevé : 64 (marges) + 50 (en-tête) + 28,8 (deux écarts) +
+           118,4 (pied) + 39,7 (écarts de rangée) = 301 px ≈ 18,8 rem.
+           On en met 19,3 pour garder un peu de jeu — sans marge, la
+           moindre erreur d'arrondi réveille la compression. */
+        calc((100dvh - 19.3rem) / 5)
     );
     --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour-h));
 
@@ -106,7 +117,11 @@
 }
 
 /* ── L'en-tête : les deux compteurs et l'indice ─────────────────── */
+/* ⚠️ `flex-shrink: 0` ici aussi, et pour la même raison qu'au pied : un
+   en-tête qui se tasse de quelques pixels décale toute la grille sans
+   qu'on sache d'où ça vient. */
 .cod-tete {
+    flex: 0 0 auto;
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -550,7 +565,28 @@
 }
 
 .cod-carte:disabled { cursor: default; }
-.cod-carte:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); }
+/* ⚠️ LE SURVOL SE VOIT. Deux pixels de montée ne disaient rien : sur une
+   grille de vingt-cinq, on ne sait même pas laquelle est sous le curseur.
+   La carte se LÈVE de six pixels, grossit d'un pour cent, et porte une
+   ombre portée — c'est l'ombre qui fait le relief, pas le déplacement.
+   Et le portrait s'éclaircit : une carte vivante sous la main.
+   ⚠️ La transition de SORTIE est plus longue que celle d'entrée (0,26 s
+   contre 0,13) : un survol qui s'allume sec et s'éteint doucement se lit
+   comme une réaction, l'inverse comme un clignotement. */
+.cod-carte { --cod-leve: 0; }
+.cod-carte:not(:disabled):hover {
+    --cod-leve: 1;
+    transform: translateY(-6px) scale(1.012);
+    border-color: color-mix(in srgb, var(--cod-teinte, #fff) 70%, #fff);
+    box-shadow:
+        inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb, 255, 255, 255), 0.45),
+        0 0 0 var(--cod-dehors) #000,
+        0 0.55rem 1.1rem rgba(0, 0, 0, 0.55);
+    transition-duration: 0.13s;
+    z-index: 4;
+}
+.cod-carte:not(:disabled):hover .cod-portrait { filter: brightness(1.12) saturate(1.06); }
+.cod-portrait { transition: filter 0.26s ease; }
 .cod-carte:focus-visible { outline: 2px solid var(--cod-brun); outline-offset: 2px; }
 
 /* ⚠️ `object-position` au QUART HAUT, pas au centre. Les portraits sont
@@ -759,11 +795,48 @@
 
 /* Le battement du retournement : 1,4 s séparent deux cartes, et c'est
    là que vit le suspense. Il faut que ça SE VOIE. */
-.cod-carte.tombe { animation: codTombe 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+/* ⚠️ LE RETOURNEMENT EST LE MOMENT DU MODE. Quatre personnes ont voté,
+   la carte bascule, et sa couleur décide du tour — c'était une bascule de
+   seize degrés en une demi-seconde, qu'on rate si on cligne des yeux.
+
+   Elle fait maintenant un VRAI demi-tour : la carte se soulève vers le
+   lecteur, pivote de bout en bout, et retombe en dépassant un peu. Une
+   lueur de sa couleur s'échappe au milieu de la bascule — c'est elle qui
+   annonce le verdict avant même qu'on lise la face.
+
+   ⚠️ `perspective` sur la GRILLE et non sur la carte : posée sur
+   l'élément qui tourne, chaque carte a son propre point de fuite et la
+   rotation paraît plate. Posée sur le parent, les vingt-cinq partagent le
+   même œil et la carte s'incline vraiment.
+   ⚠️ Et `transform-style: preserve-3d` est INUTILE ici : il n'y a pas de
+   seconde face, c'est la MÊME carte qui change de couleur à mi-course.
+   L'ajouter casserait `overflow: hidden`, donc le recadrage du portrait. */
+.cod-grille { perspective: 1100px; }
+.cod-carte.tombe {
+    animation: codTombe 0.72s cubic-bezier(0.33, 0.1, 0.25, 1);
+    z-index: 5;
+}
+/* ⚠️ UN TOUR ENTIER (−360°), pas un demi. À −180° la carte finirait
+   RETOURNÉE : le portrait en miroir, et le coin plié passé à droite.
+   Il n'y a pas de dos à montrer — c'est la même carte qui change de
+   couleur en chemin — donc elle fait le tour et revient d'aplomb. Les
+   deux passages par la tranche (−90° et −270°) sont les moments où elle
+   disparaît, et c'est exactement là que la couleur bascule. */
 @keyframes codTombe {
-    0%   { transform: scale(1) rotateY(0deg); }
-    45%  { transform: scale(1.09) rotateY(-16deg); }
-    100% { transform: scale(1) rotateY(0deg); }
+    0%   { transform: rotateY(0deg)    scale(1)    translateZ(0); }
+    18%  { transform: rotateY(-55deg)  scale(1.06) translateZ(30px); }
+    50%  { transform: rotateY(-180deg) scale(1.1)  translateZ(44px); }
+    82%  { transform: rotateY(-305deg) scale(1.05) translateZ(20px); }
+    100% { transform: rotateY(-360deg) scale(1)    translateZ(0); }
+}
+/* L'éclat qui s'échappe à mi-bascule, dans la couleur de la carte. */
+.cod-carte.tombe::before {
+    animation: codEclat 0.72s ease-out;
+}
+@keyframes codEclat {
+    0%, 30% { box-shadow: 0 0 0 0 rgba(var(--cod-teinte-rgb, 255, 255, 255), 0); }
+    55%     { box-shadow: 0 0 2.2rem 0.5rem rgba(var(--cod-teinte-rgb, 255, 255, 255), 0.55); }
+    100%    { box-shadow: 0 0 0 0 rgba(var(--cod-teinte-rgb, 255, 255, 255), 0); }
 }
 
 /* ── L'arrivée du plateau ───────────────────────────────────────── */
@@ -833,7 +906,25 @@
    effacerait le camp sous les yeux de l'espion — et c'est la seule chose
    qu'il regarde. Chez lui, l'engagement se lit déjà au numéro ① ② ③, qui
    est brun, gros et posé dans le coin opposé. */
+/* ⚠️ MARQUER UNE CARTE CLAQUE. C'était un simple changement de bordure,
+   et dans une partie à quatre on ne savait pas si son clic était passé —
+   le numéro paraît ailleurs, dans l'autre coin. Un à-coup de 0,3 s part
+   du clic : la carte s'enfonce puis rebondit, et un anneau clair s'ouvre
+   autour d'elle. C'est le retour que le clic n'avait pas.
+   ⚠️ `animation` et non `transition` : il faut que ça rejoue quand on
+   remet sa voix sur la même carte. */
 .cod-carte.ma-voix:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.55); }
+.cod-carte.ma-voix { animation: codMarque 0.34s cubic-bezier(0.22, 1.4, 0.34, 1); }
+@keyframes codMarque {
+    0%   { transform: scale(1); }
+    26%  { transform: scale(0.945); }
+    100% { transform: scale(1); }
+}
+.cod-carte.ma-voix .cod-voix { animation: codVoixPop 0.34s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes codVoixPop {
+    from { transform: scale(0.3); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
 
 /* Le numéro ① ② ③ : gros, en haut à droite, impossible à rater. C'est
    l'ordre dans lequel les cartes se retourneront, et il décide de qui
@@ -887,8 +978,14 @@
        cas le plus chargé, une fois pour toutes.
        ⚠️ `flex-start` et non `center` : centré, l'indice se serait quand
        même déplacé selon qu'une ligne de vote le suive ou non. Aligné en
-       haut, le mot et la barre d'indice tombent toujours au même pixel. */
-    height: 7.4rem; justify-content: flex-start;
+       haut, le mot et la barre d'indice tombent toujours au même pixel.
+       ⚠️ ET `flex: 0 0 auto` : sans lui, la hauteur fixe N'EN EST PAS UNE.
+       Le pied est un élément flex d'une colonne, et dès que celle-ci
+       dépasse l'écran il se laisse comprimer EN SILENCE — c'est ce qui
+       est arrivé, et le plateau sautait de 8 px. Désormais il ne cède
+       plus : un budget mal calculé déborde visiblement au lieu de
+       s'arranger en douce. */
+    height: 7.4rem; flex: 0 0 auto; justify-content: flex-start;
     padding-top: 2.8rem;   /* 3,4 − 0,6 : la moitié du déplacement ci-dessus, ajustée */
     width: var(--cod-plateau); min-width: 17rem;
 }

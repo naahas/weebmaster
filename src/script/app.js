@@ -1133,7 +1133,10 @@ createApp({
             if (!c.enCours) return '';
             if (c.phase === 'indice') return 'Transmission en cours';
             if (c.phase === 'vote') return 'Vos partenaires réfléchissent…';
-            if (c.phase === 'revelation') return 'On retourne…';
+            // ⚠️ Rien pendant la RÉVÉLATION, et c'est voulu : les cartes se
+            // retournent une par une sous les yeux de tout le monde, avec leur
+            // son et leur animation. Écrire « on retourne » par-dessus, c'est
+            // commenter ce qu'on est en train de regarder.
             return '';
         },
 
@@ -9302,9 +9305,9 @@ createApp({
                 if (!data) return;
                 this.cod.derniereCarte = { i: data.i, issue: data.issue };
                 if (this.sounds) {
-                    const s = data.issue === 'bonne' ? this.sounds.correct
-                        : data.issue === 'assassin' ? this.sounds.eliminated
-                            : this.sounds.wrong;
+                    const s = data.issue === 'bonne' ? this.sounds.codBonne
+                        : data.issue === 'assassin' ? this.sounds.codAssassin
+                            : this.sounds.codRatee;
                     if (s) this.playSound(s);
                 }
             });
@@ -10584,6 +10587,24 @@ createApp({
                 // quand on la casse.
                 ascCharge: this.createPreloadedSound('fusion.mp3'),
                 ascJoker: this.createPreloadedSound('bonus1.mp3'),
+                // 🕵️ Codanime. ⚠️ LE MODE ÉTAIT MUET : le client appelait
+                // `sounds.correct`, `sounds.wrong` et `sounds.eliminated`,
+                // trois clefs qui n'ont jamais existé ici. `playSound(undefined)`
+                // sort en silence, donc rien ne le signalait — ni erreur en
+                // console, ni son. On a joué des parties entières en croyant
+                // que les retournements étaient discrets.
+                //
+                // Ils sont fabriqués pour lui (scripts/sons-codanime.js) parce
+                // que le geste n'existe nulle part ailleurs : on ne RÉPOND pas,
+                // on RETOURNE une carte dont on ignorait la couleur.
+                // ⚠️ Et ils s'entendent EN SALVE, à 1,4 s d'intervalle quand une
+                // équipe enchaîne : chacun tient sous une demi-seconde, sinon
+                // deux queues se chevauchent au moment le plus tendu du tour.
+                codBonne: this.createPreloadedSound('cod-bonne.mp3'),
+                codRatee: this.createPreloadedSound('cod-ratee.mp3'),
+                // L'assassin a le SIEN : perdre sur-le-champ et perdre la main
+                // ne se racontent pas pareil.
+                codAssassin: this.createPreloadedSound('cod-assassin.mp3', 0.55),
             };
             
             // 💣 Son tictac en boucle (instance unique, pas cloné)

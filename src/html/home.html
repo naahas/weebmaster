@@ -2712,12 +2712,18 @@
                                     <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
                                 </div>
 
-                                <!-- Les agents du tour votent. -->
+                                <!-- ⚠️ PLUS DE MODE D'EMPLOI SOUS LE PLATEAU.
+                                     « Marque jusqu'à 2 cartes · 2 voix pour en
+                                     engager une » répétait la règle à chaque
+                                     tour, sur la ligne la plus lue de l'écran,
+                                     à des gens qui l'avaient comprise au
+                                     premier retournement. Le nombre est déjà
+                                     dans la pastille de l'indice, et les voix
+                                     se comptent sur les cartes mêmes (« 1/2 »).
+                                     Reste le bouton : s'arrêter est un CHOIX du
+                                     jeu, pas une explication — on le garde,
+                                     mais discret. -->
                                 <div class="cod-actions" v-if="codPeutVoter">
-                                    <span class="cod-aide">
-                                        Marque jusqu’à {{ cod.indice ? cod.indice.nombre : 1 }} carte(s) ·
-                                        {{ cod.seuil }} voix pour en engager une
-                                    </span>
                                     <button class="cod-stop" @click="codPasser">On s’arrête</button>
                                 </div>
                             </template>
