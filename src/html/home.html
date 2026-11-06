@@ -2427,7 +2427,14 @@
                      🕵️ CODANIME
                      ══════════════════════════════════════════════════ -->
                 <template v-if="lobbyMode === 'codanime' && !gameEnded">
-                    <div class="cod" v-if="cod.enCours" :class="{ 'en-entree': cod.intro }">
+                    <!-- ⚠️ `cod.enCours || cod.sortie` : le plateau doit
+                         SURVIVRE à la fin de la partie le temps de s'effacer.
+                         Le serveur arrête `active` dès qu'il annonce le
+                         vainqueur ; sans ce second terme, l'écran
+                         disparaissait d'un coup et il n'y avait rien à faire
+                         fondre. -->
+                    <div class="cod" v-if="cod.enCours || cod.sortie"
+                         :class="{ 'en-entree': cod.intro, sortie: cod.sortie }">
 
                         <!-- ⚠️ LE MASQUE, EN DOUBLE, et il le faut : sur
                              téléphone les deux rangs disparaissent, et avec
@@ -2808,21 +2815,36 @@
                                     <span class="cod-indice-mot">{{ cod.indice.mot }}</span>
                                     <span class="cod-indice-n"
                                           :class="{ inf: codIllimite(cod.indice.nombre) }">{{ codNombreTexte(cod.indice.nombre) }}</span>
-                                    <!-- LES COUPS QU'IL RESTE, en pastilles.
+                                    <!-- LES COUPS QU'IL RESTE, en PERSONNAGES.
                                          ⚠️ Pas un chiffre : c'est la chose
                                          qu'on regarde entre deux cartes, et
-                                         trois points qui s'éteignent se
-                                         comptent d'un coup d'œil là où « 2 »
-                                         demande de se rappeler ce qu'il y
-                                         avait avant. L'indice annonce `n`,
-                                         l'équipe a droit à `n + 1` — le coup
-                                         de rattrapage.
+                                         trois silhouettes se comptent d'un
+                                         coup d'œil là où « 2 » demande de se
+                                         rappeler ce qu'il y avait avant.
+                                         ⚠️ Et pas des points non plus : un
+                                         point ne dit pas ce qu'il compte. La
+                                         même silhouette sert déjà de compteur
+                                         de cartes restantes en haut de
+                                         l'écran — « il reste trois
+                                         personnages à trouver » se lit sans
+                                         qu'on l'explique.
+                                         ⚠️ Elles arrivent APRÈS le rideau,
+                                         l'une après l'autre : posées dès la
+                                         première image, elles traversaient
+                                         toute l'animation d'arrivée et
+                                         volaient la vedette au mot.
                                          ⚠️ À 0 et à ∞ les coups sont
                                          illimités : on montre le signe plutôt
-                                         qu'une file de points sans fin. -->
+                                         qu'une file sans fin. -->
                                     <span class="cod-coups" v-if="cod.phase === 'vote' || cod.phase === 'revelation'">
                                         <i v-if="codIllimite(cod.coups)" class="inf">∞</i>
-                                        <i v-else v-for="k in codCoupsPips()" :key="k"></i>
+                                        <svg v-else v-for="k in codCoupsPips()" :key="k"
+                                             :style="{ '--k': k }"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+                                             aria-hidden="true">
+                                            <circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/>
+                                        </svg>
                                     </span>
                                 </div>
 
@@ -3859,25 +3881,16 @@
                     termine <b>{{ monRangCamp.rang }}<sup>e</sup></b> sur {{ monRangCamp.total }}
                 </div>
 
-                <!-- LE PLATEAU DÉVOILÉ de Codanime, sur demande.
-                     ⚠️ Il n'est plus montré d'office — le podium passe avant,
-                     c'est ce qu'on vient lire — mais il ne pouvait pas
-                     disparaître : les vingt-cinq camps révélés sont le moment
-                     « ahhh c'était ÇA », et la capture que les gens postent. -->
-                <div class="cod-fin-grille" v-if="estFinCodanime && codPlateauFin">
-                    <span class="cod-fin-c" v-for="(c, iC) in (gameEndData.grille || [])" :key="c.i"
-                          :class="'camp-' + c.camp" :style="{ '--k': codDiag(iC) }">
-                        <img :src="c.img" alt="" draggable="false">
-                    </span>
-                </div>
-
+                <!-- ⚠️ PLUS DE « VOIR LE PLATEAU ». Il avait été gardé parce
+                     que les vingt-cinq camps dévoilés sont le moment « ahhh
+                     c'était ÇA ». Mais le plateau reste maintenant à l'écran
+                     deux secondes après la dernière carte, PUIS s'efface en
+                     fondu : on l'a déjà sous les yeux au bon moment, et un
+                     bouton qui le rappelle au milieu du classement n'ajoutait
+                     qu'un troisième choix là où il en faut deux. -->
                 <div class="v2-end-actions" :class="{ vu: endStep >= 4 }">
                     <button class="v2-end-btn" v-if="isHost" :disabled="rejouerBusy"
                             @click="hostRejouerPodium">Rejouer</button>
-                    <button class="v2-end-btn fantome" v-if="estFinCodanime"
-                            @click="codPlateauFin = !codPlateauFin">
-                        {{ codPlateauFin ? 'Masquer le plateau' : 'Voir le plateau' }}
-                    </button>
                     <!-- ⚠️ Le style fantôme n'a de sens que SOUS « Rejouer », pour
                          qu'un bouton prime sur l'autre. Le joueur n'a pas de
                          « Rejouer » : son seul bouton restait en texte nu, et

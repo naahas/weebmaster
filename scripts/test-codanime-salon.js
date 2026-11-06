@@ -226,6 +226,44 @@ const post = async (chemin, corps, jeton) => {
     dire(apresArret.tourDe !== apres.tourDe, 'mais il rend bien la main',
         'tourDe=' + apresArret.tourDe);
 
+    titre('L\'assassin, et le temps qu\'on lui laisse');
+    // ⚠️ LA DERNIÈRE CARTE A DROIT À SON TEMPS. La fin partait à l'instant où
+    // la carte se retournait : on passait au classement sans avoir vu
+    // l'assassin noircir, c'est-à-dire qu'on ratait le seul moment où le mode
+    // fait peur. On mesure ici le délai réel entre les deux événements.
+    const espion3 = apresArret.tourDe === 'A' ? 'e1' : 'e2';
+    const agent3 = apresArret.tourDe === 'A' ? 'a1' : 'a2';
+    const vueE3 = dernier(espion3);
+    const assassin = vueE3.grille.find(c => c.camp === 'assassin');
+
+    if (!assassin) {
+        dire(false, 'le plateau porte un assassin (piège allumé)');
+    } else {
+        socks[espion3].emit('codanime-indice', { nombre: 1, mot: 'piege' });
+        await wait(350);
+        let tCarte = 0;
+        const avant = vu[agent3].cartes.length;
+        socks[agent3].emit('codanime-vote', { i: assassin.i });
+
+        // On attend la carte, puis la fin, en relevant les deux instants.
+        for (let k = 0; k < 60 && !vu[agent3].fin; k++) {
+            if (!tCarte && vu[agent3].cartes.length > avant) tCarte = Date.now();
+            await wait(100);
+        }
+        const tFin = Date.now();
+        const derniereCarte = vu[agent3].cartes[vu[agent3].cartes.length - 1];
+        dire(derniereCarte && derniereCarte.issue === 'assassin',
+            'l\'assassin est bien annoncé comme tel');
+        dire(!!vu[agent3].fin, 'et la partie se termine');
+        const pause = tCarte ? tFin - tCarte : 0;
+        // ⚠️ Au moins une seconde et demie : le balayage dure une demi-seconde,
+        // et il faut ce qui reste pour lire la couleur. Mesuré, pas supposé.
+        dire(pause >= 1500, 'la fin attend ' + pause + ' ms après la carte — pas d\'à-coup',
+            pause + ' ms');
+        dire(vu[agent3].fin && vu[agent3].fin.raison === 'assassin',
+            'et la raison voyage jusqu\'au podium');
+    }
+
     titre('Ménage');
     Object.values(socks).forEach(s => s.close());
     await post('/admin/back-to-lobby', {}, jeton).catch(() => {});

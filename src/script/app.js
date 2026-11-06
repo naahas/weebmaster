@@ -336,6 +336,8 @@ createApp({
                 // carte refusée, elle tremble, et c'est tout. Le texte qui
                 // vivait ici expliquait une règle que les marques posées
                 // disent déjà.
+                sortie: false,       // le plateau s'efface avant le podium
+                _sortieT: null,
                 refusee: null,       // l'index de la dernière carte refusée
                 presse: null,        // la carte qu'on vient d'enfoncer
                 _visee: null,        // la carte qu'on vient de cliquer
@@ -734,7 +736,6 @@ createApp({
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
             endStep: 0,                // 0→4 : avancement de la révélation finale
-            codPlateauFin: false,      // le plateau dévoilé de Codanime, sur demande
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
@@ -5762,6 +5763,7 @@ createApp({
             this.arreterChronoCodanime();
             clearTimeout(this.cod._introT);
             clearTimeout(this.cod._arriveT);
+            clearTimeout(this.cod._sortieT);
             this.cod._introT = null;
             this.cod._arriveT = null;
             Object.assign(this.cod, {
@@ -5769,7 +5771,7 @@ createApp({
                 grille: [], votes: {}, agentsDuTour: [], passe: [], coups: 0, indice: null,
                 historique: [], gagnant: null, derniereCarte: null,
                 restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
-                arrive: false, saut: 0, masquerAdverses: false,
+                arrive: false, saut: 0, masquerAdverses: false, sortie: false,
             });
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -9609,14 +9611,29 @@ createApp({
                 // NOIR — `.cod` se cache dès que `gameEnded` passe, et rien ne
                 // le remplaçait.
                 this.gameEndData = data;
-                this.gameEnded = true;
                 this.gameStartedOnServer = false;
-                // ⚠️ Codanime partage le podium du quiz depuis qu'il a deux
-                // camps à classer : il lui faut donc la même révélation pas
-                // à pas, sans quoi `endStep` reste à zéro et les deux lignes
-                // ne sortent jamais de leur état caché — écran vide.
-                this.codPlateauFin = false;
-                this.$nextTick(() => this.startEndReveal());
+
+                // ⚠️ LE PLATEAU S'EFFACE AVANT LE PODIUM. Le serveur a déjà
+                // laissé deux secondes à la dernière carte ; ici on fond
+                // l'écran de jeu, puis le classement arrive. Passer d'un
+                // coup de l'un à l'autre donnait un à-coup au moment le plus
+                // chargé de la partie — celui où l'on vient de comprendre
+                // qui a gagné.
+                // ⚠️ `enCours` tombe tout de suite pour que plus rien ne
+                // réponde au clic pendant le fondu, et c'est `sortie` qui
+                // garde le plateau à l'écran (voir son `v-if`).
+                this.cod.enCours = false;
+                this.cod.sortie = true;
+                clearTimeout(this.cod._sortieT);
+                this.cod._sortieT = setTimeout(() => {
+                    this.cod.sortie = false;
+                    this.gameEnded = true;
+                    // ⚠️ Codanime partage le podium du quiz depuis qu'il a
+                    // deux camps à classer : il lui faut la même révélation
+                    // pas à pas, sans quoi `endStep` reste à zéro et les deux
+                    // lignes ne sortent jamais de leur état caché.
+                    this.$nextTick(() => this.startEndReveal());
+                }, 520);
             });
 
             // Un refus se MONTRE plutôt que de disparaître dans la console :

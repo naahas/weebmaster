@@ -220,27 +220,36 @@
    milieu du plateau puis descend, et deux pièces séparées se seraient
    déplacées l'une sans l'autre. */
 .cod-coups {
-    display: inline-flex; align-items: center; gap: 0.28rem;
-    margin-left: 0.15rem;
-}
-.cod-coups i {
-    width: 0.42rem; height: 0.42rem;
-    border-radius: 50%;
-    background: var(--cod-brun);
-    box-shadow: 0 0 0.45rem rgba(191, 138, 95, 0.5);
-    /* ⚠️ Un point qui PART, pas un point qui s'éteint : Vue retire
-       l'élément quand le coup est consommé, donc il n'y a rien à griser.
-       L'animation d'entrée suffit à faire sentir qu'il en reste un de
-       moins, parce que les survivants se décalent. */
-    animation: codPipEntre 0.3s cubic-bezier(0.22, 0.85, 0.3, 1) both;
-}
-.cod-coups i.inf {
-    width: auto; height: auto;
-    background: none; box-shadow: none;
+    display: inline-flex; align-items: center; gap: 0.2rem;
+    margin-left: 0.3rem;
     color: var(--cod-brun);
-    font-size: 1.05rem; font-style: normal; line-height: 1;
 }
-@keyframes codPipEntre { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+.cod-coups svg {
+    width: 0.95rem; height: 0.95rem; flex: 0 0 auto;
+    filter: drop-shadow(0 0 0.4rem rgba(191, 138, 95, 0.45));
+    /* ⚠️ APRÈS LE RIDEAU, ET EN CASCADE. Le `0.78s` est l'instant où le
+       nombre a fini d'arriver (son animation part à 0,62 s) : les
+       silhouettes le suivent, décalées de 70 ms chacune, et tout est posé
+       en moins d'un tiers de seconde. Sans ce retard elles existaient dès
+       la première image de l'arrivée et traversaient tout le rideau avec
+       le mot — on ne savait plus quoi regarder.
+       ⚠️ `--k` vient du gabarit : une règle `:nth-child` aurait marché
+       pour trois, pas pour dix (un indice à 9 ouvre dix coups). */
+    animation: codCoupEntre 0.26s cubic-bezier(0.22, 0.85, 0.3, 1) both;
+    animation-delay: calc(0.78s + var(--k, 0) * 0.07s);
+}
+/* ⚠️ Une silhouette qui PART, pas une qui s'éteint : Vue retire l'élément
+   quand le coup est consommé, donc il n'y a rien à griser. Les survivantes
+   se décalent, et c'est ça qu'on sent. */
+.cod-coups i.inf {
+    color: var(--cod-brun);
+    font-size: 1.15rem; font-style: normal; font-weight: 600; line-height: 1;
+    animation: codCoupEntre 0.26s 0.78s cubic-bezier(0.22, 0.85, 0.3, 1) both;
+}
+@keyframes codCoupEntre {
+    from { opacity: 0; transform: scale(0.45) translateY(0.2rem); }
+    to   { opacity: 1; transform: none; }
+}
 
 /* ── L'ARRIVÉE DE L'INDICE ──────────────────────────────────────── */
 /* ⚠️ C'est LE moment du tour : quatre personnes attendaient un mot, il
@@ -1630,33 +1639,30 @@
    Deux listes des mêmes noms obligent à faire le lien entre elles. */
 .cod-equipes-etat { font-variant-numeric: tabular-nums; }
 
-/* ── L'écran de fin ─────────────────────────────────────────────── */
-/* ⚠️ AUCUN CLASSEMENT ICI, et ce n'est pas un oubli : deux camps, un
-   vainqueur, et pas un seul score individuel. Un podium à trois places
-   aurait demandé d'inventer une mesure par joueur que le mode ne produit
-   pas — « qui a trouvé le plus de cartes » récompenserait le plus rapide à
-   cliquer, alors que c'est l'équipe qui désigne.
+/* ⚠️ L'ÉCRAN DE FIN PROPRE À CODANIME EST PARTI, et avec lui ses
+   `.cod-fin*` : le titre, la raison, la grille dévoilée et ses actions.
+   Le mode partage maintenant le podium du quiz en camps (voir plus bas),
+   et le plateau reste à l'écran deux secondes après la dernière carte
+   avant de s'effacer — on voit donc les vingt-cinq camps au bon moment,
+   sans écran séparé pour les redire. */
 
-   Ce qu'on montre à la place, c'est la GRILLE DÉVOILÉE. C'est le moment
-   « ahhh c'était ÇA », et c'est la capture d'écran que les gens postent. */
-.cod-fin {
-    position: fixed; inset: 0; z-index: 60;
-    display: flex; align-items: center; justify-content: center;
-    padding: 1.2rem;
-    background: radial-gradient(70% 60% at 50% 15%, #16121a, #07070a 72%);
+/* ── LA SORTIE DU PLATEAU ───────────────────────────────────────── */
+/* ⚠️ Le classement arrivait À L'INSTANT où la dernière carte se
+   retournait : on passait au podium sans avoir vu l'assassin noircir,
+   c'est-à-dire qu'on ratait le seul moment où le mode fait peur. Le
+   serveur laisse maintenant deux secondes à la carte, puis le plateau
+   s'efface ici avant que le classement ne paraisse.
+   ⚠️ Un fondu ET un recul, pas un fondu seul : à opacité seule, le
+   plateau se superpose au podium qui monte derrière, et les deux se
+   lisent l'un à travers l'autre pendant une demi-seconde. */
+.cod.sortie {
+    animation: codSortie 0.52s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+    pointer-events: none;
 }
-.cod-fin-boite {
-    display: flex; flex-direction: column; align-items: center; gap: 0.55rem;
-    max-width: 30rem; width: 100%;
-    animation: codRemonte 0.5s both cubic-bezier(0.2, 0.8, 0.25, 1);
+@keyframes codSortie {
+    from { opacity: 1; transform: scale(1); filter: blur(0); }
+    to   { opacity: 0; transform: scale(0.97); filter: blur(3px); }
 }
-.cod-fin-titre {
-    font-size: 1.5rem; font-weight: 900; line-height: 1.1; text-align: center;
-    text-wrap: balance;
-}
-.cod-fin-titre.camp-A { color: var(--cod-a); text-shadow: 0 0 1.6rem rgba(47, 155, 255, 0.35); }
-.cod-fin-titre.camp-B { color: var(--cod-b); text-shadow: 0 0 1.6rem rgba(255, 59, 92, 0.35); }
-.cod-fin-raison { font-size: 0.8rem; opacity: 0.6; text-align: center; }
 
 /* ══════════════════════════════════════════════════════════════
    CODANIME SUR LE PODIUM COMMUN
@@ -1690,37 +1696,6 @@
     font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase;
     opacity: 0.45;
 }
-
-/* La grille de fin tient dans une largeur FIXE, pas dans `--cod-cote` :
-   elle ne sert plus à jouer, seulement à se raconter la partie. */
-.cod-fin-grille {
-    display: grid; grid-template-columns: repeat(5, 1fr);
-    gap: 0.3rem;
-    width: 100%; max-width: 22rem;
-    margin: 0.5rem 0 0.3rem;
-}
-/* ⚠️ Un CADRE de couleur, et le portrait intact dedans. Le camp se lit
-   dans le liseré ; l'image garde ses propres couleurs, qui sont justement
-   ce dont on se reparle (« le mec en rouge, c'était à eux ? »). */
-.cod-fin-c {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 0.4rem;
-    border: 2.5px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
-    animation: codPose 0.4s both cubic-bezier(0.18, 0.86, 0.26, 1.12);
-    animation-delay: calc(0.25s + var(--k, 0) * 50ms);
-}
-.cod-fin-c img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
-.cod-fin-c.camp-A { border-color: var(--cod-a); }
-.cod-fin-c.camp-B { border-color: var(--cod-b); }
-.cod-fin-c.camp-neutre { border-color: var(--cod-neutre); }
-/* L'assassin, lui, se COUVRE : c'est la seule carte dont on veut savoir
-   tout de suite où elle était. */
-.cod-fin-c.camp-assassin { border-color: #000; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
-.cod-fin-c.camp-assassin img { filter: brightness(0.3) saturate(0.3); }
-
-.cod-fin-actions { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; }
 
 /* ── Téléphone ──────────────────────────────────────────────────── */
 /* ⚠️ La grille reste à CINQ colonnes, même à 360 px. Passer à quatre
@@ -1823,6 +1798,11 @@
     .cod-votant img { animation: none; }
     .cod-case.presse { animation: none; }
     .cod-onde { display: none; }
+    /* ⚠️ `animation: none` SUR LA SORTIE aussi — mais alors le plateau
+       reste à l'écran pendant la demi-seconde qui précède le podium. On
+       l'efface donc franchement, sans quoi il resterait plein écran. */
+    .cod.sortie { animation: none; opacity: 0; }
+    .cod-coups svg, .cod-coups i.inf { animation: none; }
     /* ⚠️ `animation: none` et non une durée nulle : à 0 s l'animation se
        joue instantanément, et son image finale — retenue par `both` —
        resterait. Sur l'entrée c'est sans effet, mais c'est exactement le
@@ -1831,8 +1811,7 @@
     .cod.en-entree .cod-tete,
     .cod.en-entree .cod-pied,
     .cod.en-entree .cod-histo,
-    .cod.en-entree .cod-rang,
-    .cod-fin-boite, .cod-fin-c { animation: none; }
+    .cod.en-entree .cod-rang { animation: none; }
     .cod-songe i { animation: none; opacity: 0.6; }
     /* L'indice se montre, il n'arrive plus. ⚠️ `animation: none` et non une
        durée nulle : le mot resterait figé sur sa première image, c'est-à-dire

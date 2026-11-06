@@ -86,6 +86,12 @@ const DUREE_INDICE = 30;
 function dureeValide(d) {
     return Number.isInteger(d) && d >= DUREE_MIN && d <= DUREE_MAX && d % DUREE_PAS === 0;
 }
+// Le temps qu'on laisse à la DERNIÈRE carte avant d'annoncer le vainqueur.
+// ⚠️ Deux secondes, et c'est un minimum : le balayage dure une demi-seconde,
+// et il reste une seconde et demie pour lire la couleur. En dessous, on passe
+// au classement sans avoir vu l'assassin noircir.
+const FIN_PAUSE = 2000;
+
 // Le battement entre deux cartes d'une même salve. C'est le suspense : on ne
 // sait pas encore si le tour continue. Trop court, la salve devient un bloc.
 const BATTEMENT = 1400;
@@ -851,10 +857,25 @@ function creerModule(deps) {
         });
         diffuserEtat(gameState);
 
-        if (issue === 'assassin') { terminer(gameState, 'assassin', etat.tourDe); return; }
+        // ⚠️ LA DERNIÈRE CARTE A DROIT À SON TEMPS. La fin partait à
+        // l'instant où la carte se retournait : on passait au classement sans
+        // avoir vu l'assassin noircir, c'est-à-dire qu'on ratait le seul
+        // moment où le mode fait peur. Deux secondes, le temps que le
+        // balayage se joue et qu'on lise la couleur — et le client s'efface
+        // ensuite en fondu avant le podium.
+        // ⚠️ La victoire y a droit aussi : c'est la même carte qui tombe, et
+        // la laisser filer d'un côté pendant qu'on l'attend de l'autre aurait
+        // été un défaut de plus, pas un choix.
+        if (issue === 'assassin') {
+            plusTard(etat, () => terminer(gameState, 'assassin', etat.tourDe), FIN_PAUSE);
+            return;
+        }
 
         const gagne = vainqueur(etat, null);
-        if (gagne) { terminer(gameState, 'complet', null, gagne); return; }
+        if (gagne) {
+            plusTard(etat, () => terminer(gameState, 'complet', null, gagne), FIN_PAUSE);
+            return;
+        }
 
         // ⚠️ UNE SEULE ERREUR ARRÊTE LE TOUR, et c'est tout le sel du mode :
         // une carte adverse, un passant, et la main passe sur-le-champ. Les
