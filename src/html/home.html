@@ -178,8 +178,16 @@
                                 <span class="v2-bigstat-label">modes</span>
                             </div>
                             <span class="v2-bigstat-sep"></span>
+                            <!-- ⚠️ ARRONDI À LA CENTAINE INFÉRIEURE, avec un
+                                 « + ». Le compte exact est une promesse qui
+                                 vieillit : il change à chaque question ajoutée,
+                                 et un visiteur qui revient le mois suivant ne
+                                 lit pas « 2411 » comme un chiffre qui a monté —
+                                 il ne s'en souvenait pas. « +2400 » dit l'ordre
+                                 de grandeur, qui est la seule chose qu'on
+                                 cherche ici, et ne bouge qu'aux vrais paliers. -->
                             <div class="v2-bigstat">
-                                <span class="v2-bigstat-value">{{ homeStats.questionsCount }}</span>
+                                <span class="v2-bigstat-value">{{ questionsArrondies }}</span>
                                 <span class="v2-bigstat-label">questions</span>
                             </div>
                             <span class="v2-bigstat-sep"></span>

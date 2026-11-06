@@ -1069,6 +1069,22 @@ createApp({
             return this.modes.filter(m => !m.soon).length;
         },
 
+        // La banque, arrondie à la CENTAINE INFÉRIEURE : « +2400 » pour 2411,
+        // « +3800 » pour 3899. Le compte exact vieillit mal — il change à
+        // chaque question ajoutée, et personne ne se souvient de l'ancien
+        // pour voir qu'il a monté. L'ordre de grandeur, lui, ne bouge qu'aux
+        // vrais paliers.
+        //
+        // ⚠️ Sous cent, on montre le compte EXACT : un « +0 » annoncerait
+        // une banque vide sur une page qui vient justement vanter sa taille.
+        // Ça n'arrive qu'au démarrage d'un serveur qui n'a rien chargé, et
+        // c'est précisément le moment où l'on ne veut pas mentir.
+        questionsArrondies() {
+            const n = this.homeStats.questionsCount || 0;
+            if (n < 100) return n;
+            return '+' + (Math.floor(n / 100) * 100);
+        },
+
         // 🕵️ Ai-je le droit de marquer une carte en ce moment ?
         //
         // ⚠️ Ce n'est QU'UN CONFORT D'AFFICHAGE : le serveur refuse de toute
