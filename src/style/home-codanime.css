@@ -1000,86 +1000,110 @@
 @keyframes codRangEntre { from { opacity: 0; transform: translateX(var(--cod-vient, 0)); } }
 
 /* ══════════════════════════════════════════════════════════════
-   LA MARQUE — une main qui se pose
+   LA MARQUE — les VISAGES de ceux qui votent
    ══════════════════════════════════════════════════════════════
 
-   Ce qui était là avant : une pastille noire « 1/2 » dans le coin bas
-   gauche, 10 px de haut. Elle disait exactement ce qu'il fallait et
-   personne ne la voyait — sur vingt-cinq portraits très colorés, un
-   rectangle sombre de la taille d'un ongle ne gagne aucun regard.
+   Deux formes ont été essayées avant et aucune ne tenait : une
+   pastille noire « 1/2 » de 10 px, que personne ne voyait sur
+   vingt-cinq portraits colorés ; puis une main avec un nombre à côté,
+   qui se voyait très bien mais faisait deux objets chiffrés dans le
+   même coin — brouillon.
 
-   ⚠️ L'ERREUR N'ÉTAIT PAS LE DESSIN MAIS LA QUESTION. Elle cherchait
-   comment dessiner un COMPTE, alors que marquer une carte est un
-   GESTE : à une table, on pose la main dessus. Personne n'en pose deux
-   pour dire « deux voix » — on pose une main, et on compte les gens.
+   ⚠️ CE N'EST PAS UN COMPTE, CE SONT DES GENS. Un « 3 » demande de se
+   rappeler QUI est dessus, et c'est précisément la question du tour :
+   « t'es dessus toi aussi ? ». Trois visages y répondent sans chiffre,
+   et le compte est toujours là — il se lit au nombre de têtes.
 
-   D'où : UNE main accrochée au coin haut droit, doigts par-dessus le
-   bord, et un nombre à côté SEULEMENT À PARTIR DE DEUX VOIX. Sept
-   arrivées ont été jouées dans /prototypes/codanime-main ; c'est « Se
-   pose » qui tient — elle tombe d'en haut et s'arrête net, avec juste
-   assez de dépassement pour qu'on sente le poids. Changer d'arrivée
-   ne demande que de remplacer les deux `@keyframes` d'en dessous.
+   ⚠️ LE GLISSEMENT EST TOUT LE SUJET. La rangée est ancrée au coin
+   haut droit et pousse vers la gauche : chaque avatar est posé en
+   ABSOLU à droite et décalé de `--i` crans, où `--i` est son rang
+   DEPUIS LA DROITE. Quand quelqu'un marque, tous les autres voient leur
+   `--i` monter d'un cran, leur `transform` change, et la transition les
+   fait glisser — poussés par le nouveau venu, qui entre, lui, en
+   grandissant. Rien n'est calculé en JavaScript : c'est le changement
+   de rang qui porte le mouvement.
 
-   ⚠️ Le coin haut droit était PRIS par le ① ② ③ de l'ordre. Il descend
-   en bas à gauche, à la place qu'occupait la pastille — les deux ne
-   peuvent pas tenir dans le même coin, et c'est la main qui doit être
-   là où l'œil tombe. */
-.cod-main {
+   ⚠️ Et le nouveau venu a sa PROPRE animation, sur l'image, pas sur le
+   cadre : les deux posent un `transform` et une animation remplace une
+   transition. Le cadre glisse, l'image grandit, chacun le sien. */
+.cod {
+    --cod-av: calc(var(--cod-cote) * 0.26);   /* la taille d'un visage */
+    --cod-pasf: 0.155;                        /* de combien il pousse le voisin */
+}
+.cod-votants {
     position: absolute; z-index: 6;
-    top: calc(var(--cod-cote) * -0.085);
-    right: calc(var(--cod-cote) * -0.055);
-    display: flex; align-items: flex-start;
-    gap: calc(var(--cod-cote) * 0.015);
-    /* ⚠️ Elle ne prend aucun clic : la carte est dessous, et c'est elle
-       qu'on vient marquer ou démarquer. */
+    top: calc(var(--cod-cote) * -0.07);
+    right: calc(var(--cod-cote) * -0.04);
+    width: var(--cod-av); height: var(--cod-av);
+    /* ⚠️ Aucun clic : la carte est dessous, et c'est elle qu'on vient
+       marquer ou démarquer. */
     pointer-events: none;
 }
-/* La teinte de MA voix est celle de mon camp. ⚠️ Posée sur la grille et
-   non sur la main : `monEquipe` ne change jamais en cours de partie, et
-   la résoudre vingt-cinq fois n'apporterait rien. */
-.cod-grille.mien-A { --cod-mien: var(--cod-a); --cod-mien-rgb: 47, 155, 255; }
-.cod-grille.mien-B { --cod-mien: var(--cod-b); --cod-mien-rgb: 255, 59, 92; }
-
-.cod-patte {
-    width: calc(var(--cod-cote) * 0.3); height: calc(var(--cod-cote) * 0.3);
-    flex: 0 0 auto;
-    color: #f6f3ec;
-    /* ⚠️ DEUX OMBRES, ET AUCUNE LUEUR. Un halo de la couleur remplit les
-       creux entre les doigts et transforme la main en pâté rond —
-       mesuré sur la page de prototypes. La première ombre est un trait
-       sombre collé sous le dessin, qui le détache de n'importe quel
-       portrait ; la seconde, floue, le pose au-dessus de la carte. */
-    filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, 0.6))
-            drop-shadow(0 calc(var(--cod-cote) * 0.022) calc(var(--cod-cote) * 0.05) rgba(0, 0, 0, 0.65));
-    animation: codMainPose 0.36s cubic-bezier(0.22, 1.35, 0.3, 1) both;
+.cod-votant {
+    position: absolute; right: 0; top: 0;
+    width: var(--cod-av); height: var(--cod-av);
+    /* ⚠️ Le pas se lit ICI et non plus haut. Un `--cod-pas` déclaré sur
+       `.cod` serait calculé là-bas une fois pour toutes, et le
+       resserrement posé par le gabarit sur `.cod-votants` n'y changerait
+       rien — un custom property hérite sa valeur CALCULÉE, pas sa
+       formule. Les deux facteurs sont donc lus au même endroit. */
+    transform: translateX(calc(var(--i, 0) * var(--cod-cote) * var(--cod-pasf, 0.155) * -1));
+    transition: transform 0.34s cubic-bezier(0.25, 0.9, 0.3, 1);
+    /* Le dernier arrivé passe DEVANT : la rangée se lit comme un éventail
+       qu'on étale de droite à gauche. */
+    z-index: calc(9 - var(--i, 0));
 }
-.cod-main.mienne .cod-patte { color: var(--cod-mien, #f6f3ec); transform-origin: 50% 100%; }
-@keyframes codMainPose {
-    from { opacity: 0; transform: translateY(calc(var(--cod-cote) * -0.14)) rotate(-11deg) scale(0.9); }
+.cod-votant img {
+    width: 100%; height: 100%; display: block;
+    border-radius: 50%; object-fit: cover;
+    background: #15171d;
+    border: calc(var(--cod-cote) * 0.018) solid #0c0d11;
+    box-shadow: 0 calc(var(--cod-cote) * 0.012) calc(var(--cod-cote) * 0.03) rgba(0, 0, 0, 0.8);
+    animation: codVotantEntre 0.38s cubic-bezier(0.2, 1.35, 0.35, 1) both;
+}
+/* Le mien porte la couleur de mon camp : sur une rangée de quatre, c'est
+   la seule chose qu'on cherche vraiment. */
+.cod-votant.moi img { border-color: var(--cod-mien, #fff); }
+@keyframes codVotantEntre {
+    from { opacity: 0; transform: translateY(calc(var(--cod-cote) * -0.1)) scale(0.45); }
     to   { opacity: 1; transform: none; }
 }
 
-.cod-nb {
-    display: grid; place-items: center;
-    width: calc(var(--cod-cote) * 0.19); height: calc(var(--cod-cote) * 0.19);
-    margin-top: calc(var(--cod-cote) * -0.045);
-    border-radius: 50%;
-    background: #0c0d11;
-    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22),
-                0 calc(var(--cod-cote) * 0.016) calc(var(--cod-cote) * 0.04) rgba(0, 0, 0, 0.7);
-    color: #f6f3ec;
-    font-size: calc(var(--cod-cote) * 0.098); font-weight: 900; line-height: 1;
-    font-variant-numeric: tabular-nums;
-    animation: codMainNb 0.32s 0.1s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+/* La teinte de MA voix est celle de mon camp. ⚠️ Posée sur la grille et
+   non sur chaque avatar : `monEquipe` ne change jamais en cours de
+   partie, et la résoudre vingt-cinq fois n'apporterait rien. */
+.cod-grille.mien-A { --cod-mien: var(--cod-a); --cod-mien-rgb: 47, 155, 255; }
+.cod-grille.mien-B { --cod-mien: var(--cod-b); --cod-mien-rgb: 255, 59, 92; }
+
+/* ── L'ENFONCEMENT DU CLIC ──────────────────────────────────────── */
+/* ⚠️ SUR LA CASE, JAMAIS SUR LA CARTE. La carte porte déjà un
+   `transform` — le lever du survol, en transition — et une animation
+   qui en pose un second le REMPLACE : la carte retombait de six pixels
+   d'un coup, s'enfonçait, puis resautait à la fin. C'était le « petit
+   saut bizarre » qu'on voyait sans savoir d'où il venait. Deux
+   éléments, deux transforms, ils se composent au lieu de se battre.
+   Et comme la case contient aussi les avatars, ils s'enfoncent avec
+   elle — c'est tout le bloc qu'on presse, pas l'image seule. */
+.cod-case.presse { animation: codPresse 0.42s cubic-bezier(0.22, 1.25, 0.3, 1); }
+@keyframes codPresse {
+    0%   { transform: scale(1); }
+    24%  { transform: scale(0.952); }
+    100% { transform: scale(1); }
 }
-.cod-main.mienne .cod-nb {
-    box-shadow: inset 0 0 0 1.5px var(--cod-mien, rgba(255, 255, 255, 0.22)),
-                0 calc(var(--cod-cote) * 0.016) calc(var(--cod-cote) * 0.04) rgba(0, 0, 0, 0.7);
+/* L'onde qui part du bord. Elle ne grandit que de 13 % : au-delà elle
+   mord sur les cartes voisines et l'on ne sait plus laquelle a été
+   cliquée. */
+.cod-onde {
+    position: absolute; inset: 0; z-index: 5;
+    border-radius: 0.55rem;
+    border: 2px solid rgba(var(--cod-mien-rgb, 255, 255, 255), 0.9);
+    pointer-events: none;
+    animation: codOnde 0.52s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
-/* ⚠️ À UNE VOIX, PAS DE NOMBRE. Il ne dirait rien que la main ne dise
-   déjà, et deux objets valent toujours moins qu'un quand un suffit. */
-.cod-main.seule .cod-nb { display: none; }
-@keyframes codMainNb { from { opacity: 0; transform: scale(0.35); } to { opacity: 1; transform: none; } }
+@keyframes codOnde {
+    0%   { opacity: 0.9; transform: scale(0.97); }
+    100% { opacity: 0;   transform: scale(1.13); }
+}
 
 /* ⚠️ Les trois marques de VOTE ne repeignent la bordure que sur une carte
    SANS couleur de camp. Depuis que le cadre porte la Fusion B, l'écraser
@@ -1101,28 +1125,19 @@
    d'œil sur une grille entière. */
 .cod-carte.ma-voix:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.55); }
 
-/* Le numéro ① ② ③ : gros, en haut à droite, impossible à rater. C'est
-   l'ordre dans lequel les cartes se retourneront, et il décide de qui
-   survit à la chaîne. */
-.cod-num {
-    /* ⚠️ EN BAS À GAUCHE depuis que la main occupe le coin haut droit.
-       Les deux ne peuvent pas y tenir, et c'est la main qui doit être là
-       où l'œil tombe : elle arrive à chaque clic, le numéro ne paraît
-       qu'au franchissement du seuil. En bas à gauche il reprend la place
-       qu'occupait l'ancienne pastille « 1/2 », et il reste à l'opposé du
-       coin plié — qui est en haut à gauche. */
-    position: absolute; left: 0.2rem; bottom: 0.2rem;
-    /* ⚠️ Au-dessus du coin de couleur (z-index 2) et de la teinte (1) :
-       sans ça, le coin plié passait par-dessus le numéro de la carte
-       d'en face dans la vue de l'espion. */
-    z-index: 3;
-    display: grid; place-items: center;
-    width: 1.35rem; height: 1.35rem;
-    border-radius: 50%;
-    background: var(--cod-brun);
-    color: #15171d;
-    font-size: 0.78rem; font-weight: 900; line-height: 1;
-}
+/* ⚠️ LE NUMÉRO ① ② ③ A ÉTÉ RETIRÉ. Il disait l'ordre dans lequel les
+   cartes se retourneront. Il a vécu en haut à droite, puis en bas à
+   gauche quand la marque lui a pris sa place — et il est parti de
+   lui-même : à côté des visages des votants, une seconde pastille
+   chiffrée dans le même coin faisait brouillon, et c'est celle-là qui
+   comptait le moins. Le compte des voix se lit au nombre de têtes.
+
+   ⚠️ CE QUI RESTE DE L'ENGAGEMENT, et il faut le garder : le cadre
+   passe au BRUN quand la carte a franchi le seuil, et grise au-delà du
+   quota. Sans ça, une équipe découvrirait à la clôture qu'une de ses
+   cartes ne sera jamais retournée.
+   ℹ️ L'ORDRE lui-même n'est donc plus affiché nulle part — la chaîne
+   se joue dans l'ordre de franchissement, et il faut s'en souvenir. */
 .cod-carte.engagee:not(.vue-espion):not(.revelee) { border-color: var(--cod-brun); }
 
 /* ⚠️ AU-DELÀ DU QUOTA. Plus de cartes peuvent franchir le seuil que
@@ -1132,7 +1147,6 @@
    plutôt qu'elle ne le découvre à la clôture. */
 .cod-carte.en-trop { opacity: 0.6; }
 .cod-carte.en-trop:not(.vue-espion):not(.revelee) { border-color: rgba(255, 255, 255, 0.16); }
-.cod-carte.en-trop .cod-num { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
 
 /* ── Le pied ────────────────────────────────────────────────────── */
 /* ⚠️ LE RETRAIT EST CALCULÉ POUR QUE LE MOT SOIT AU MILIEU du vide d'en
@@ -1638,11 +1652,10 @@
        TAILLES dans /prototypes/codanime-cadre, 69 px compris : rejouer
        l'épaisseur sur téléphone, c'est expédier autre chose que ce qui a
        été choisi. */
-    .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; left: 0.12rem; bottom: 0.12rem; }
-    /* ⚠️ La main, elle, n'a RIEN à régler ici : tout ce qui la dessine est
-       calculé sur `--cod-cote`, qui vaut déjà 69 px sur téléphone. Lui
-       poser des tailles fixes à côté serait la maladie des défauts écrits
-       deux fois. */
+    /* ⚠️ Les visages des votants n'ont RIEN à régler ici : tout ce qui
+       les dessine est calculé sur `--cod-cote`, qui vaut déjà 69 px sur
+       téléphone. Leur poser des tailles fixes à côté serait la maladie
+       des défauts écrits deux fois. */
     .cod-tete { gap: 0.5rem; }
     .cod-score { min-width: 3.2rem; padding: 0.3rem 0.45rem; }
     .cod-score-n { font-size: 1.25rem; }
@@ -1696,6 +1709,14 @@
     .cod-balai { display: none; }
     .cod-carte.refusee { animation: none; }
     .cod-carte:not(:disabled):hover { transform: none; }
+    /* ⚠️ Les visages restent À LEUR PLACE : c'est leur GLISSEMENT qu'on
+       éteint, pas leur position. `transition: none` suffit — ils sautent
+       d'un cran au lieu d'y aller, ce qui est exactement ce qu'on
+       demande ici. `transform: none` les empilerait tous au même point. */
+    .cod-votant { transition: none; }
+    .cod-votant img { animation: none; }
+    .cod-case.presse { animation: none; }
+    .cod-onde { display: none; }
     /* ⚠️ `animation: none` et non une durée nulle : à 0 s l'animation se
        joue instantanément, et son image finale — retenue par `both` —
        resterait. Sur l'entrée c'est sans effet, mais c'est exactement le

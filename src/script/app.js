@@ -330,8 +330,10 @@ createApp({
                 // vivait ici expliquait une règle que les marques posées
                 // disent déjà.
                 refusee: null,       // l'index de la dernière carte refusée
+                presse: null,        // la carte qu'on vient d'enfoncer
                 _visee: null,        // la carte qu'on vient de cliquer
                 _refusT: null,
+                _presseT: null,
                 derniereCarte: null, // { i, issue } — pour l'animation du retournement
             },
 
@@ -1421,6 +1423,21 @@ createApp({
         // 🕵️ Codanime au podium commun. Deux camps, un vainqueur, et
         // AUCUN score individuel : le mode n'en produit pas, et en
         // inventer un aurait été mentir sur ce qui s'est joué.
+        // Les vignettes de TOUS les joueurs de la partie, par `playerId`.
+        // ⚠️ Une propriété calculée et non un calcul par carte : les avatars
+        // des votants se résolvent vingt-cinq fois par rendu, et `equipes`
+        // ne bouge qu'à l'arrivée ou au départ de quelqu'un.
+        codFiches() {
+            const m = {};
+            const e = this.cod.equipes || {};
+            for (const camp of ['A', 'B']) {
+                const c = e[camp] || {};
+                if (c.espionFiche) m[c.espionFiche.playerId] = c.espionFiche;
+                for (const a of (c.agents || [])) m[a.playerId] = a;
+            }
+            return m;
+        },
+
         estFinCodanime() {
             return !!this.gameEndData && this.gameEndData.gameMode === 'codanime';
         },
@@ -5989,7 +6006,24 @@ createApp({
             // refuse, c'est elle qui doit trembler, et le refus arrive sans
             // dire sur quelle carte il porte.
             this.cod._visee = i;
+            this.enfoncerCarte(i);
             this.socket.emit('codanime-vote', { i });
+        },
+
+        // L'enfoncement du clic. ⚠️ Il vit dans la CASE et non dans la carte :
+        // la carte porte déjà un `transform` (le lever du survol, en
+        // transition), et une animation qui en pose un second le REMPLACE —
+        // c'est ce qui faisait retomber la carte de six pixels d'un coup,
+        // le « petit saut bizarre » qu'on voyait sans savoir d'où il venait.
+        // Deux éléments, deux transforms, ils se composent.
+        // ⚠️ Remis à null d'abord : sans ça, deux clics de suite sur la même
+        // carte ne rejoueraient rien — ni la classe ni l'onde n'auraient
+        // quitté le DOM.
+        enfoncerCarte(i) {
+            clearTimeout(this.cod._presseT);
+            this.cod.presse = null;
+            this.$nextTick(() => { this.cod.presse = i; });
+            this.cod._presseT = setTimeout(() => { this.cod.presse = null; }, 560);
         },
 
         // Le numéro ① ② ③ d'une carte, ou 0 si elle n'a pas franchi le seuil.
@@ -6004,6 +6038,40 @@ createApp({
         codVoix(i) {
             const v = this.cod.votes[i];
             return v ? v.length : 0;
+        },
+
+        // Les VOTANTS d'une carte, dans l'ordre où ils ont marqué.
+        //
+        // ⚠️ `rang` se compte DEPUIS LA DROITE (le dernier arrivé vaut 0) :
+        // la rangée est ancrée au coin haut droit de la carte et pousse vers
+        // la gauche. Quand quelqu'un marque, tous les autres voient leur
+        // rang monter d'un cran — c'est ce changement, et lui seul, qui les
+        // fait glisser en transition.
+        //
+        // ⚠️ Une vignette manquante ne fait pas disparaître le votant : il
+        // garde son identifiant et tombe sur l'avatar par défaut. Un joueur
+        // parti en cours de tour laisse sa voix sur le plateau (règle du
+        // mode), et sa fiche peut ne plus être dans `equipes`.
+        codVotants(i) {
+            const v = (this.cod.votes || {})[i] || [];
+            const f = this.codFiches;
+            const n = v.length;
+            return v.map((id, k) => {
+                const fiche = f[id] || { playerId: id, username: '…', avatar: null };
+                return { ...fiche, rang: n - 1 - k };
+            });
+        },
+
+        // ⚠️ L'ÉCART SE RESSERRE QUAND ILS SONT NOMBREUX. Au pas normal,
+        // sept visages — un salon à seize, donc sept agents par camp —
+        // font 123 px de large sur une carte qui en vaut 118 : l'éventail
+        // sortait par la gauche et recouvrait la carte voisine. Il se tasse
+        // donc pour tenir dans 80 % de la carte, quel que soit le nombre.
+        // Jusqu'à quatre, rien ne change : c'est le cas courant.
+        codEcart(i) {
+            const n = ((this.cod.votes || {})[i] || []).length;
+            if (n < 2) return 0.155;
+            return Math.min(0.155, 0.54 / (n - 1));
         },
 
         // La carte qu'on est en train de révéler, et elle seule : c'est

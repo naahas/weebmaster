@@ -2599,18 +2599,25 @@
                             <div class="cod-grille"
                                  :class="[{ espion: cod.jeSuisEspion, masque: cod.masquerAdverses },
                                           'mien-' + (cod.monEquipe || 'rien')]">
-                                <span class="cod-case" v-for="(c, iC) in cod.grille" :key="c.i">
+                                <span class="cod-case" v-for="(c, iC) in cod.grille" :key="c.i"
+                                      :class="{ presse: cod.presse === c.i }">
                                 <button class="cod-carte" :class="codClasseCarte(c)"
                                         :style="{ '--k': codDiag(iC) }"
                                         :disabled="!codPeutVoter || c.revelee"
                                         @click="codVoter(c.i)">
                                     <img class="cod-portrait" :src="c.img" alt="" draggable="false">
-                                    <!-- Le numéro ① ② ③ : l'ordre dans lequel les
-                                         cartes se retourneront. Il est AFFICHÉ, et
-                                         c'est tout l'intérêt — un ordre invisible
-                                         qui décide de qui survit à la chaîne serait
-                                         inacceptable. -->
-                                    <span class="cod-num" v-if="codNumero(c.i)">{{ codNumero(c.i) }}</span>
+                                    <!-- ⚠️ PLUS DE NUMÉRO ① ② ③ SUR LA CARTE.
+                                         Il disait l'ordre dans lequel les cartes
+                                         se retourneront, et il a été déplacé deux
+                                         fois avant d'être retiré : à côté des
+                                         avatars des votants, deux pastilles
+                                         chiffrées dans le même coin faisaient
+                                         brouillon, et c'est la pastille qui
+                                         comptait le moins. Ce qui reste : le
+                                         cadre passe au BRUN quand la carte est
+                                         engagée, et grise au-delà du quota.
+                                         L'ordre lui-même n'est plus affiché. -->
+
                                     <!-- LE BALAYAGE de la révélation : une lame
                                          de lumière traverse la carte et laisse
                                          la couleur derrière elle.
@@ -2631,33 +2638,39 @@
                                     </span>
                                 </button>
 
-                                <!-- LA MARQUE : une main qui se pose sur la
-                                     carte, et un nombre à côté d'elle.
-                                     ⚠️ UNE SEULE MAIN, jamais une par voix :
-                                     marquer une carte, à une table, c'est
-                                     poser la main dessus — personne n'en pose
-                                     deux pour dire « deux voix ». Le compte se
-                                     lit dans la pastille, et elle n'existe
-                                     qu'À PARTIR DE DEUX : à une, elle ne
-                                     dirait rien que la main ne dise déjà.
-                                     ⚠️ La `key` porte le COMPTE : sans elle
-                                     Vue réutilise le nœud quand une voix
-                                     s'ajoute, l'animation ne repart pas, et
-                                     la deuxième main de la carte arriverait
-                                     sans un geste. -->
-                                <span class="cod-main" v-if="codVoix(c.i) && !c.revelee"
-                                      :key="'m' + c.i + '-' + codVoix(c.i)"
-                                      :class="{ mienne: codJaiVote(c.i), seule: codVoix(c.i) < 2 }">
-                                    <svg class="cod-patte" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                        <rect x="5.5" y="10" width="13" height="11" rx="5.5"/>
-                                        <rect x="6.2" y="4.4" width="2.9" height="9" rx="1.45"/>
-                                        <rect x="9.6" y="2.4" width="2.9" height="10.8" rx="1.45"/>
-                                        <rect x="13" y="3.3" width="2.9" height="9.9" rx="1.45"/>
-                                        <rect x="16.4" y="6.2" width="2.9" height="7.2" rx="1.45"/>
-                                        <rect x="1.9" y="9.6" width="2.7" height="7.8" rx="1.35" transform="rotate(-24 3.25 13.5)"/>
-                                    </svg>
-                                    <span class="cod-nb">{{ codVoix(c.i) }}</span>
+                                <!-- LES VOTANTS : leurs AVATARS, en haut à
+                                     droite, dans l'ordre où ils ont marqué.
+                                     ⚠️ Ce n'est plus un compte mais des GENS.
+                                     Un « 3 » demande de se rappeler qui est
+                                     dessus ; trois visages le disent. Et le
+                                     compte est toujours là — il se lit au
+                                     nombre de têtes, sans chiffre.
+
+                                     ⚠️ LA CLEF EST LE `playerId`, et c'est
+                                     tout le mécanisme : les nœuds déjà là
+                                     survivent au rendu, seul le nouveau est
+                                     créé. Les anciens voient leur rang
+                                     augmenter d'un cran et GLISSENT vers la
+                                     gauche en transition, poussés par le
+                                     nouveau venu. Une clef sur l'index
+                                     réutiliserait les nœuds de travers et
+                                     ferait sauter tout le monde. -->
+                                <span class="cod-votants" v-if="!c.revelee"
+                                      :style="{ '--cod-pasf': codEcart(c.i) }">
+                                    <span class="cod-votant" v-for="v in codVotants(c.i)" :key="v.playerId"
+                                          :class="{ moi: v.playerId === playerId }"
+                                          :style="{ '--i': v.rang }" :title="v.username">
+                                        <img :src="srcAvatar(v.avatar)" alt="" draggable="false">
+                                    </span>
                                 </span>
+
+                                <!-- L'onde du clic : elle part du bord de la
+                                     carte et s'efface. ⚠️ Elle vit dans la
+                                     CASE et non dans la carte — la carte
+                                     porte déjà le `transform` du survol, et
+                                     une animation qui en pose un second le
+                                     remplacerait. -->
+                                <span class="cod-onde" v-if="cod.presse === c.i"></span>
                                 </span>
                             </div>
 
