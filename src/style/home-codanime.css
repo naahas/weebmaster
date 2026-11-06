@@ -597,22 +597,28 @@
     --cod-halo: calc(var(--cod-cote) * 0.2);
 }
 
-/* ⚠️ LE CADRE EST DOUBLE, et ce n'est pas un ornement : il donne à la
-   couleur une surface À ELLE, que le portrait ne peut pas contredire.
-   Quatre anneaux, du dehors vers le dedans — le liseré externe qui
-   détache la carte du fond noir, la bordure pleine, un filet sombre qui
-   empêche la couleur de baver sur l'image, puis un second cerne plus
-   clair. C'est ce dernier qui fait « cadre » plutôt que « bord épais ».
-   Le halo vient en dessous de tout, et se fond dans la teinte. */
+/* ⚠️ LA BANDE DE COULEUR EST CERNÉE DE NOIR DES DEUX CÔTÉS — dehors et
+   dedans. C'est ce qui en fait un CADRE et non un bord épais : sans le
+   trait extérieur, la couleur se perdait dans le fond noir de la page ;
+   sans l'intérieur, elle bavait sur le portrait, et un cadre rouge posé
+   sur une veste rouge n'avait plus de bord.
+
+   Trois couches, du dehors vers le dedans :
+     2 px de noir   le contour externe, qui ferme la bande
+     3,5 px         la couleur du camp (c'est la bordure de l'élément)
+     2,5 px de noir le filet interne, contre le portrait
+   Le halo vient en dessous, et se fond dans la teinte. */
 .cod-carte.vue-espion,
 .cod-carte.revelee {
     border-width: 3.5px;
     border-color: var(--cod-teinte);
     box-shadow:
-        inset 0 0 0 2px rgba(0, 0, 0, 0.92),
-        inset 0 0 0 4.5px rgba(var(--cod-teinte-rgb), 0.9),
+        /* le filet noir INTERNE, entre la couleur et le portrait */
+        inset 0 0 0 2.5px #000,
+        /* le halo, qui déborde sous le filet */
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
-        0 0 0 1.5px rgba(var(--cod-teinte-rgb), 0.32);
+        /* et le contour noir EXTERNE, qui ferme la bande */
+        0 0 0 2px #000;
 }
 
 /* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
@@ -652,7 +658,7 @@
        triangle : le long de l'hypoténuse, ça fait exactement le filet qui
        sépare le coin du portrait. Sans lui, un coin rouge posé sur une
        veste rouge n'a plus de bord. La seconde garde la profondeur. */
-    filter: drop-shadow(1.6px 1.6px 0 rgba(0, 0, 0, 0.92))
+    filter: drop-shadow(2.2px 2.2px 0 #000)
             drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
     pointer-events: none;
 }
@@ -670,9 +676,8 @@
 .cod-carte.revelee.camp-assassin {
     border-color: #0b0b0f;
     box-shadow:
-        inset 0 0 0 2px rgba(0, 0, 0, 0.8),
-        inset 0 0 0 5px rgba(255, 255, 255, 0.72),
-        0 0 0 1.5px rgba(255, 255, 255, 0.35);
+        inset 0 0 0 2.5px rgba(255, 255, 255, 0.72),
+        0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 /* ⚠️ RETOURNÉE, la teinte PERD SON MASQUE et passe en aplat : on veut
@@ -806,9 +811,8 @@
    haut : il restait 33 px au-dessus et 73 en dessous, le mot et la barre
    d'indice collaient aux cartes.
    La colonne étant centrée, ajouter Δ au pied éloigne le mot des cartes
-   de Δ mais ne réduit le vide du bas que de Δ/2 : il fallait donc
-   1,5 Δ = 40, soit ~30 px à ajouter aux 13 déjà là. Relevé après :
-   58 px au-dessus, 58 en dessous.
+   de Δ mais ne réduit le vide du bas que de Δ/2. Relevé après réglage :
+   69 px au-dessus du mot, 69 en dessous.
    ⚠️ `padding-top` et non une marge du plateau : le pied est le dernier
    enfant d'une colonne centrée, et c'est SA hauteur qui entre dans le
    budget vertical de `--cod-cote`. Posé en marge, il aurait poussé la
@@ -818,8 +822,17 @@
    cartes pour rien. */
 .cod-pied {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
-    min-height: 3.4rem; justify-content: center;
-    padding-top: 2.7rem;
+    /* ⚠️ HAUTEUR FIXE, et `flex-start` : le pied change de contenu six fois
+       par tour — le jeton de l'espion, l'indice seul, l'indice plus la
+       ligne de vote, ou rien du tout. Mesuré, il passait de 54 à 107 px,
+       et comme la colonne est centrée TOUT LE PLATEAU montait et
+       descendait de 26 px à chaque bascule. On réserve donc la hauteur du
+       cas le plus chargé, une fois pour toutes.
+       ⚠️ `flex-start` et non `center` : centré, l'indice se serait quand
+       même déplacé selon qu'une ligne de vote le suive ou non. Aligné en
+       haut, le mot et la barre d'indice tombent toujours au même pixel. */
+    height: 7.4rem; justify-content: flex-start;
+    padding-top: 3.4rem;
     width: var(--cod-plateau); min-width: 17rem;
 }
 /* ── LE JETON : la barre d'indice, d'un seul bloc ───────────────── */
