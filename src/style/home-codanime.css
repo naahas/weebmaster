@@ -62,11 +62,15 @@
     --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
     --cod-cote: min(
         calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
-        /* ⚠️ 17,8 rem et non 17 : le pied a pris 0,8 rem de retrait pour que
-           la barre d'indice ne colle plus aux cartes, et ce budget doit
-           sortir de la hauteur disponible — sinon la grille déborde par le
-           bas sur une fenêtre courte. */
-        calc((100dvh - 17.8rem) / 5)
+        /* ⚠️ CE CHIFFRE EST LA TAILLE DES CARTES. Il réserve la hauteur de
+           tout ce qui n'est pas la grille — l'en-tête, le pied et ses
+           retraits — et chaque dixième de rem qu'on lui rend donne
+           0,32 px à chaque carte. Il est passé de 17,8 à 17,2 pour les
+           grossir de deux pixels : relevé, 125 px au lieu de 123, et le
+           hors-grille ne pèse de toute façon que ~16 rem. Le baisser
+           davantage ferait déborder la grille par le bas sur une fenêtre
+           courte, où le pied garde sa hauteur fixe. */
+        calc((100dvh - 17.2rem) / 5)
     );
     --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour-h));
 
@@ -712,10 +716,15 @@
        une pièce rapportée. Sur toutes les autres cartes la bande et le
        coin partagent la même teinte, et c'est ce qui fait qu'ils se
        lisent comme un seul objet ; l'assassin n'a aucune raison d'y
-       échapper. Son contour externe reste CLAIR : c'est lui, et lui seul,
-       qui l'empêche de disparaître dans le fond de la page. */
+       échapper.
+       ⚠️ ET SON CONTOUR EXTERNE EST NOIR AUSSI. Il était clair, pour
+       l'empêcher de disparaître dans le fond de la page — mais ça lui
+       redessinait un liseré gris autour du noir, et le coin se détachait
+       encore. Ce qui le signale, c'est le FILET BLANC autour du portrait,
+       qui lui reste : une carte toute noire avec un trait clair à
+       l'intérieur ne ressemble à aucune autre. */
     border-color: #000;
-    box-shadow: 0 0 0 var(--cod-dehors) rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 var(--cod-dehors) #000;
 }
 /* Et son filet intérieur est CLAIR, pas noir : c'est la seule carte dont
    la bande est déjà noire, un noir sur noir ne délimiterait rien. */
