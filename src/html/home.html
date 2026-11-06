@@ -187,12 +187,16 @@
                                  de grandeur, qui est la seule chose qu'on
                                  cherche ici, et ne bouge qu'aux vrais paliers. -->
                             <div class="v2-bigstat">
-                                <span class="v2-bigstat-value">{{ questionsArrondies }}</span>
+                                <span class="v2-bigstat-value"><i class="v2-bigstat-plus" v-if="questionsArrondies.plus">+</i>{{ questionsArrondies.valeur }}</span>
                                 <span class="v2-bigstat-label">questions</span>
                             </div>
                             <span class="v2-bigstat-sep"></span>
+                            <!-- Les parties s'arrondissent à la DIZAINE et non à
+                                 la centaine : à trente-trois parties, arrondir
+                                 au cent afficherait « +0 ». Le pas suit l'ordre
+                                 de grandeur de ce qu'il compte. -->
                             <div class="v2-bigstat">
-                                <span class="v2-bigstat-value">{{ homeStats.gamesPlayed }}</span>
+                                <span class="v2-bigstat-value"><i class="v2-bigstat-plus" v-if="partiesArrondies.plus">+</i>{{ partiesArrondies.valeur }}</span>
                                 <span class="v2-bigstat-label">parties</span>
                             </div>
                         </div>

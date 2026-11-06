@@ -7004,6 +7004,15 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: transparent;
 }
 
+/* Le « + » des compteurs arrondis (« +2400 », « +30 »). ⚠️ Un élément à
+   lui, et non un caractère dans la chaîne : collé au chiffre il se lisait
+   comme son premier signe, et « +2400 » paraissait être un nombre de cinq
+   caractères. L'écart en `em` suit la taille, qui est fluide ici. */
+.v2-bigstat-plus {
+    font-style: normal;
+    margin-right: 0.11em;
+}
+
 .v2-bigstat-label {
     font-size: 0.66rem;
     font-weight: 700;

@@ -1069,20 +1069,27 @@ createApp({
             return this.modes.filter(m => !m.soon).length;
         },
 
-        // La banque, arrondie à la CENTAINE INFÉRIEURE : « +2400 » pour 2411,
-        // « +3800 » pour 3899. Le compte exact vieillit mal — il change à
-        // chaque question ajoutée, et personne ne se souvient de l'ancien
-        // pour voir qu'il a monté. L'ordre de grandeur, lui, ne bouge qu'aux
-        // vrais paliers.
+        // Les deux compteurs de l'accueil s'arrondissent VERS LE BAS, avec un
+        // « + » : la banque à la centaine (2411 → +2400), les parties à la
+        // dizaine (33 → +30). Le compte exact vieillit mal — il change à
+        // chaque ajout, et personne ne se souvient de l'ancien pour voir
+        // qu'il a monté. L'ordre de grandeur, lui, ne bouge qu'aux vrais
+        // paliers, et c'est la seule chose qu'on cherche à cet endroit.
         //
-        // ⚠️ Sous cent, on montre le compte EXACT : un « +0 » annoncerait
-        // une banque vide sur une page qui vient justement vanter sa taille.
+        // ⚠️ Sous le pas, on montre le compte EXACT : un « +0 » annoncerait
+        // une banque vide sur la page qui vient justement vanter sa taille.
         // Ça n'arrive qu'au démarrage d'un serveur qui n'a rien chargé, et
         // c'est précisément le moment où l'on ne veut pas mentir.
+        //
+        // ⚠️ Ils rendent un OBJET et non une chaîne : le « + » est un
+        // élément à lui dans le gabarit, pour qu'on puisse l'écarter du
+        // chiffre — collé, il se lit comme son premier signe.
         questionsArrondies() {
-            const n = this.homeStats.questionsCount || 0;
-            if (n < 100) return n;
-            return '+' + (Math.floor(n / 100) * 100);
+            return this.arrondiVague(this.homeStats.questionsCount, 100);
+        },
+
+        partiesArrondies() {
+            return this.arrondiVague(this.homeStats.gamesPlayed, 10);
         },
 
         // 🕵️ Ai-je le droit de marquer une carte en ce moment ?
@@ -4331,6 +4338,14 @@ createApp({
         // tiroir ; « avatarsBots » ne sert qu’aux jetons de version des
         // portraits du partenaire, qui ne doivent pas s’y proposer mais dont le
         // cache doit tomber de la meme facon.
+        // L'arrondi vague des compteurs de l'accueil — voir
+        // `questionsArrondies`. Rend `{ plus, valeur }`.
+        arrondiVague(brut, pas) {
+            const n = Number(brut) || 0;
+            if (n < pas) return { plus: false, valeur: n };
+            return { plus: true, valeur: Math.floor(n / pas) * pas };
+        },
+
         srcAvatar(f) {
             const nom = f || 'novice.png';
             const e = this.avatarsListe.find(a => a.f === nom)
