@@ -6070,8 +6070,13 @@ createApp({
         // Jusqu'à quatre, rien ne change : c'est le cas courant.
         codEcart(i) {
             const n = ((this.cod.votes || {})[i] || []).length;
-            if (n < 2) return 0.155;
-            return Math.min(0.155, 0.54 / (n - 1));
+            if (n < 2) return 0.175;
+            // ⚠️ 0,55 et non 0,85 : un visage vaut 0,3 du côté, donc
+            // l'éventail entier mesure 0,3 + (n−1) × pas. C'est cette
+            // SOMME qu'on borne à 0,85 de la carte, et le reste à répartir
+            // vaut donc 0,55. Oublier la largeur du premier visage laissait
+            // la rangée dépasser d'exactement une tête.
+            return Math.min(0.175, 0.55 / (n - 1));
         },
 
         // La carte qu'on est en train de révéler, et elle seule : c'est

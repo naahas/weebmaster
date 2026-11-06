@@ -410,7 +410,17 @@
 .cod-chapeau {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
     min-height: 1.7rem;
-    margin-bottom: 0.1rem;
+    /* ⚠️ IL REMONTE, ET LE PANNEAU NE BOUGE PAS. Le chapeau porte l'œil
+       du masque et les trois points d'attente ; collé au cadre des
+       joueurs, les deux paraissaient accrochés à la boîte alors qu'ils
+       n'en font pas partie — l'un est une commande, l'autre un état.
+       ⚠️ Et les DEUX marges sont là exprès : la colonne est centrée en
+       hauteur, donc ajouter de l'air sous le chapeau aurait grandi le
+       bloc et fait descendre tout le rang. Le retrait du haut rend
+       exactement ce que la marge du bas prend — hauteur totale
+       inchangée, seul l'œil monte. */
+    margin-top: -0.45rem;
+    margin-bottom: 0.55rem;
 }
 
 /* Le bouton de masque : discret au repos, allumé quand il agit. */
@@ -581,18 +591,19 @@
 }
 
 .cod-carte:disabled { cursor: default; }
-/* ⚠️ LE SURVOL SE VOIT. Deux pixels de montée ne disaient rien : sur une
-   grille de vingt-cinq, on ne sait même pas laquelle est sous le curseur.
-   La carte se LÈVE de six pixels, grossit d'un pour cent, et porte une
-   ombre portée — c'est l'ombre qui fait le relief, pas le déplacement.
-   Et le portrait s'éclaircit : une carte vivante sous la main.
+/* ⚠️ LE SURVOL EST UN ZOOM, PLUS UNE MONTÉE. La carte se levait de six
+   pixels, et c'est ce lever qui rendait la sélection brouillonne : au
+   clic, la case s'enfonce — donc la carte REDESCENDAIT en même temps
+   qu'elle rapetissait, deux mouvements sur deux axes pour un seul
+   geste. Et en relâchant, elle remontait. Un zoom seul n'a qu'un axe :
+   le clic le réduit, le relâchement le rend, rien ne se croise.
+   L'ombre portée reste — c'est elle qui fait le relief, pas le
+   déplacement — et le portrait s'éclaircit sous la main.
    ⚠️ La transition de SORTIE est plus longue que celle d'entrée (0,26 s
    contre 0,13) : un survol qui s'allume sec et s'éteint doucement se lit
    comme une réaction, l'inverse comme un clignotement. */
-.cod-carte { --cod-leve: 0; }
 .cod-carte:not(:disabled):hover {
-    --cod-leve: 1;
-    transform: translateY(-6px) scale(1.012);
+    transform: scale(1.035);
     border-color: color-mix(in srgb, var(--cod-teinte, #fff) 70%, #fff);
     box-shadow:
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb, 255, 255, 255), 0.45),
@@ -1027,8 +1038,8 @@
    cadre : les deux posent un `transform` et une animation remplace une
    transition. Le cadre glisse, l'image grandit, chacun le sien. */
 .cod {
-    --cod-av: calc(var(--cod-cote) * 0.26);   /* la taille d'un visage */
-    --cod-pasf: 0.155;                        /* de combien il pousse le voisin */
+    --cod-av: calc(var(--cod-cote) * 0.3);    /* la taille d'un visage */
+    --cod-pasf: 0.175;                        /* de combien il pousse le voisin */
 }
 .cod-votants {
     position: absolute; z-index: 6;
@@ -1059,13 +1070,18 @@
     background: #15171d;
     border: calc(var(--cod-cote) * 0.018) solid #0c0d11;
     box-shadow: 0 calc(var(--cod-cote) * 0.012) calc(var(--cod-cote) * 0.03) rgba(0, 0, 0, 0.8);
-    animation: codVotantEntre 0.38s cubic-bezier(0.2, 1.35, 0.35, 1) both;
+    /* ⚠️ SANS RESSORT. Un `cubic-bezier` à 1,35 faisait dépasser le
+       visage puis revenir : sur une rangée où les voisins GLISSENT au
+       même instant, ce rebond était le seul mouvement qui n'allait pas
+       dans le même sens que les autres — et c'est ce qui faisait
+       brouillon. Il grandit et se pose, point. */
+    animation: codVotantEntre 0.42s cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
 /* Le mien porte la couleur de mon camp : sur une rangée de quatre, c'est
    la seule chose qu'on cherche vraiment. */
 .cod-votant.moi img { border-color: var(--cod-mien, #fff); }
 @keyframes codVotantEntre {
-    from { opacity: 0; transform: translateY(calc(var(--cod-cote) * -0.1)) scale(0.45); }
+    from { opacity: 0; transform: translateY(calc(var(--cod-cote) * -0.06)) scale(0.6); }
     to   { opacity: 1; transform: none; }
 }
 
@@ -1084,10 +1100,15 @@
    éléments, deux transforms, ils se composent au lieu de se battre.
    Et comme la case contient aussi les avatars, ils s'enfoncent avec
    elle — c'est tout le bloc qu'on presse, pas l'image seule. */
-.cod-case.presse { animation: codPresse 0.42s cubic-bezier(0.22, 1.25, 0.3, 1); }
+/* ⚠️ AUCUN REBOND. La première version partait sur un ressort
+   (`cubic-bezier` à 1,25) : le dépassement sautait par-dessus la valeur
+   d'arrivée, et combiné au lever du survol — qui existait encore — ça
+   faisait trois mouvements pour un clic. Une descente et une remontée,
+   toutes deux en sortie douce, et rien d'autre. */
+.cod-case.presse { animation: codPresse 0.44s cubic-bezier(0.33, 0.9, 0.3, 1); }
 @keyframes codPresse {
     0%   { transform: scale(1); }
-    24%  { transform: scale(0.952); }
+    26%  { transform: scale(0.966); }
     100% { transform: scale(1); }
 }
 /* L'onde qui part du bord. Elle ne grandit que de 13 % : au-delà elle
