@@ -2259,6 +2259,14 @@ app.get('/prototypes/codanime-cadre', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-cadre.html');
 });
 
+// La marque d'une carte : sept pistes (l'actuelle comprise) sur une vraie
+// grille de vingt-cinq, CLIQUABLES — on pose sa propre marque, c'est le
+// geste qu'on juge. ⚠️ Et aux deux vues : une marque qui emprunte le cadre
+// marche chez l'agent et disparaît chez l'espion, qui en a le plus besoin.
+app.get('/prototypes/codanime-selection', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-selection.html');
+});
+
 // Le temps en haut du plateau : six pistes jouées sur une seule horloge,
 // et surtout AUX DEUX DURÉES — 30 s pour l'indice, jusqu'à 180 pour le
 // vote. C'est là que la plupart se cassent.

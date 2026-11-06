@@ -55,6 +55,8 @@
     --cod-dehors: 2.5px;        /* le contour noir externe */
     --cod-bande: 5.5px;         /* la couleur du camp */
     --cod-filet: 3px;           /* le filet noir contre le portrait */
+    /* Le MÊME filet, mais pour un trait posé à 45° — voir le coin plié. */
+    --cod-filet-diag: calc(var(--cod-filet) * 0.7071);
     --cod-coin-part: 0.30;      /* le coin, en part du côté */
 
     --cod-rail: 7.6rem;
@@ -732,11 +734,20 @@
     border-width: var(--cod-coin) var(--cod-coin) 0 0;
     border-color: var(--cod-coin-c, var(--cod-teinte)) transparent transparent transparent;
     /* ⚠️ DEUX OMBRES, et la première est un TRAIT, pas un flou. Décalée
-       d'un pixel et demi sans rayon, elle peint une copie noire nette du
-       triangle : le long de l'hypoténuse, ça fait exactement le filet qui
-       sépare le coin du portrait. Sans lui, un coin rouge posé sur une
-       veste rouge n'a plus de bord. La seconde garde la profondeur. */
-    filter: drop-shadow(var(--cod-filet) var(--cod-filet) 0 #000)
+       sans rayon, elle peint une copie noire nette du triangle : le long
+       de l'hypoténuse, ça fait exactement le filet qui sépare le coin du
+       portrait. Sans lui, un coin rouge posé sur une veste rouge n'a plus
+       de bord. La seconde garde la profondeur.
+
+       ⚠️ ET SON DÉCALAGE N'EST PAS SON ÉPAISSEUR. Le filet du coin se
+       pose en DIAGONALE : un décalage de (d, d) éloigne la copie noire de
+       l'hypoténuse de d·√2, pas de d. À `--cod-filet` posé tel quel, ce
+       trait-là mesurait 4,24 px quand celui du portrait en faisait 3 —
+       41 % de plus, et ça se voyait à l'œil nu sur le même cadre. D'où la
+       division par √2, qui les ramène à la même épaisseur RÉELLE.
+       Mesurer l'un des deux en pixels et accorder l'autre dessus ne
+       marche que pour une valeur de `--cod-filet` : le calcul suit. */
+    filter: drop-shadow(var(--cod-filet-diag) var(--cod-filet-diag) 0 #000)
             drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
     pointer-events: none;
 }
@@ -1052,8 +1063,9 @@
 .cod-env:hover:not(:disabled) { filter: brightness(1.08); }
 .cod-env:disabled { opacity: 0.35; cursor: default; }
 
-.cod-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
-.cod-aide { font-size: 0.74rem; opacity: 0.6; }
+/* ⚠️ `.cod-actions`, `.cod-aide` et `.cod-stop` sont partis avec le
+   bouton « On s'arrête » et la ligne de mode d'emploi : il ne reste plus
+   RIEN sous le plateau en dehors de l'indice. */
 
 /* ── « L'espion choisit son indice… » ───────────────────────────── */
 /* ⚠️ TROIS POINTS QUI BATTENT, et pas des points de suspension. C'est le
@@ -1077,18 +1089,21 @@
     0%, 62%, 100% { opacity: 0.22; transform: translateY(0); }
     31%           { opacity: 1;    transform: translateY(-2.5px); }
 }
-.cod-stop {
-    padding: 0.35rem 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.45rem;
-    background: transparent; color: inherit;
-    font-size: 0.74rem; cursor: pointer;
+/* ── Un refus ───────────────────────────────────────────────────── */
+/* Un clic ignoré sans rien à l'écran est le défaut qu'on a déjà payé sur
+   la mèche de BombAnime : il faut que le refus se VOIE.
+   ⚠️ Mais plus avec une phrase. « Tu as déjà marqué autant de cartes que
+   l'indice en annonce » expliquait sous le plateau une règle que les
+   marques posées disent déjà — on les voit, on les compte. La carte
+   refusée tremble un tiers de seconde, et c'est tout : le clic est
+   arrivé, il n'a rien donné, on passe. */
+.cod-carte.refusee { animation: codRefus 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes codRefus {
+    0%, 100% { transform: translateX(0); }
+    18%      { transform: translateX(-4px); }
+    46%      { transform: translateX(4px); }
+    74%      { transform: translateX(-2px); }
 }
-.cod-stop:hover { border-color: rgba(255, 255, 255, 0.45); }
-
-/* Un refus se MONTRE. Un clic ignoré sans rien à l'écran est le défaut
-   qu'on a déjà payé sur la mèche de BombAnime. */
-.cod-refus { font-size: 0.72rem; color: var(--cod-b); }
 
 /* ── L'historique des indices ───────────────────────────────────── */
 /* ⚠️ IL EST À DROITE ET HORS DU FLUX, et c'est tout le sujet. Posé en bas

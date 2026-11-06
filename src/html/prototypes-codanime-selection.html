@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — la marque d'une carte</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LA MARQUE D'UNE CARTE — six pistes
+
+   Ce qui tourne en ligne : une pastille noire « 1/2 » dans le coin bas
+   gauche, 10 px de haut. Elle dit la bonne chose et personne ne la voit.
+   Sur une grille de vingt-cinq portraits très colorés, un rectangle
+   sombre de la taille d'un ongle ne gagne aucun regard.
+
+   ⚠️ TROIS CONTRAINTES, et elles tuent la moitié des idées :
+
+   1. ÇA DOIT TENIR À 69 px. C'est la carte sur téléphone. Tout ce qui
+      demande d'être lu — deux chiffres, un nom — y meurt. Ce qui survit
+      se COMPTE d'un coup d'œil ou se mesure à une longueur.
+
+   2. ÇA DOIT MARCHER DANS LES DEUX VUES. L'agent voit une carte nue ;
+      l'espion voit la même carte avec sa bande de camp, son coin plié et
+      son filet noir. Une marque qui emprunte le cadre marche chez l'un
+      et disparaît chez l'autre — et c'est l'espion qui en a le plus
+      besoin, c'est lui qui regarde son équipe se tromper.
+
+   3. ÇA NE DOIT PAS MANGER LE PORTRAIT. Les indices portent sur ce
+      qu'on voit — une couleur de cheveux, un uniforme, une arme. Une
+      marque qui recouvre le haut du portrait casse le jeu lui-même.
+
+   Et deux coins sont DÉJÀ PRIS : le ① ② ③ en haut à droite, le coin
+   plié en haut à gauche. Il reste le bas, et le cadre.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;  --a-rgb: 47, 155, 255;
+    --b: #ff3b5c;  --b-rgb: 255, 59, 92;
+    --n: #b9a88f;  --n-rgb: 185, 168, 143;
+    --brun: #bf8a5f;
+    --os: #f4f1ea;              /* la voix d'un partenaire */
+    --cote: 126px;
+    --jour: 0.62rem;
+    --seuil: 2;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 56rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; opacity: 0.85; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label {
+    opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 0.58rem; margin-left: 0.6rem;
+}
+.barre label:first-child { margin-left: 0; }
+.barre button {
+    padding: 0.32rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.mode-emploi {
+    flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 0.5rem;
+}
+
+.piste { margin-bottom: 2.6rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.num {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+    border-radius: 50%; background: var(--brun); color: #15171d; font-size: 0.7rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.chiffres { font-size: 0.64rem; opacity: 0.4; }
+.note { font-size: 0.72rem; opacity: 0.52; margin: 0.3rem 0 0.9rem 2.2rem; max-width: 50rem; line-height: 1.55; }
+.note b { opacity: 0.95; }
+
+.grille {
+    display: grid; grid-template-columns: repeat(5, var(--cote));
+    column-gap: calc(var(--jour) + 3px); row-gap: var(--jour);
+    width: max-content;
+}
+
+/* ── La carte, telle qu'elle est construite dans le jeu ─────────── */
+.c {
+    position: relative;
+    width: var(--cote); height: var(--cote);
+    border-radius: 0.55rem;
+    overflow: hidden;
+    background: #15171d;
+    border: 5.5px solid var(--teinte, rgba(255, 255, 255, 0.09));
+    box-shadow:
+        inset 0 0 calc(var(--cote) * 0.2) rgba(var(--teinte-rgb, 255, 255, 255), 0.45),
+        0 0 0 2.5px #000;
+    cursor: pointer; padding: 0;
+    --coin: calc(var(--cote) * 0.3);
+}
+.c img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center 22%;
+    display: block;
+    outline: 3px solid #000;
+    outline-offset: -3px;
+}
+.c::after {
+    content: ''; position: absolute; top: 0; left: 0; z-index: 2;
+    border-style: solid;
+    border-width: var(--coin) var(--coin) 0 0;
+    border-color: var(--coin-c, var(--teinte)) transparent transparent transparent;
+    /* ⚠️ Le décalage du filet diagonal vaut l'épaisseur DIVISÉE PAR √2 :
+       une copie décalée de (d, d) s'éloigne d'une hypoténuse à 45° de
+       d·√2, pas de d. À 3 px posés tels quels, ce trait-là en mesurait
+       4,24 quand celui du portrait en faisait 3. */
+    filter: drop-shadow(2.12px 2.12px 0 #000)
+            drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+}
+.c.a { --teinte: var(--a); --teinte-rgb: var(--a-rgb); }
+.c.b { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
+.c.n { --teinte: var(--n); --teinte-rgb: var(--n-rgb); }
+.c.x { --teinte: #000; --teinte-rgb: 42, 42, 51; --coin-c: #000; box-shadow: 0 0 0 2.5px #000; }
+.c.x img { outline-color: rgba(255, 255, 255, 0.72); }
+/* Les cartes du camp adverse reculent, comme en jeu. */
+.c.b { width: calc(var(--cote) * 0.965); height: calc(var(--cote) * 0.965);
+       justify-self: center; align-self: center; opacity: 0.8; }
+
+/* La vue de l'agent : aucune couleur, aucun coin, aucun filet. C'est la
+   moitié du sujet — une marque doit tenir ici AUSSI. */
+body.agent .c { --teinte: rgba(255, 255, 255, 0.09); box-shadow: none; }
+body.agent .c::after { display: none; }
+body.agent .c img { outline: none; }
+body.agent .c.b { opacity: 1; width: var(--cote); height: var(--cote); }
+
+/* Le ① ② ③ de l'ordre d'engagement, déjà en place et intouchable. */
+.ordre {
+    position: absolute; right: 0.2rem; top: 0.2rem; z-index: 4;
+    display: grid; place-items: center;
+    width: calc(var(--cote) * 0.107); height: calc(var(--cote) * 0.107);
+    border-radius: 50%;
+    background: var(--brun); color: #15171d;
+    font-size: calc(var(--cote) * 0.062); font-weight: 900; line-height: 1;
+}
+.c.trop { opacity: 0.6; }
+.c.trop .ordre { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
+
+/* ── Le socle commun des marques ────────────────────────────────── */
+/* ⚠️ UN VOILE SOUS LA MARQUE, dans toutes les pistes qui posent quelque
+   chose sur le portrait. Sans lui, trois cartes sur vingt-cinq ont un
+   bas clair — un ciel, une chemise blanche — et la marque y disparaît
+   exactement comme la pastille d'aujourd'hui. */
+.mq {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: calc(var(--cote) * 0.038);
+    padding: calc(var(--cote) * 0.05) calc(var(--cote) * 0.04);
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 15%, rgba(0, 0, 0, 0));
+}
+.mq.vide { background: none; }
+
+/* ══ 0 · L'ACTUEL ═══════════════════════════════════════════════ */
+.p0 .mq {
+    justify-content: flex-start; background: none;
+    padding: 0.2rem;
+}
+.p0 .pastille {
+    display: inline-flex; align-items: baseline; gap: 1px;
+    padding: 0.1rem 0.32rem; border-radius: 0.3rem;
+    background: rgba(0, 0, 0, 0.72);
+    /* ⚠️ La pastille SUIT la taille de la carte, bornée aux deux valeurs
+       du jeu (0,54 rem sur téléphone, 0,64 sur ordinateur). Laissée
+       fixe, elle paraissait énorme à 69 px et la comparaison mentait en
+       sa faveur — exactement l'inverse de ce qu'on veut montrer. */
+    font-size: clamp(0.54rem, calc(var(--cote) * 0.085), 0.72rem);
+    font-weight: 800; line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+.p0 .pastille small { font-size: 0.82em; opacity: 0.6; font-weight: 600; }
+.p0 .c.moi { border-color: rgba(255, 255, 255, 0.55); }
+
+/* ══ 1 · LES MAINS LEVÉES ═══════════════════════════════════════ */
+/* Une main par PLACE, pas par voix : les places libres restent en
+   creux. « Deux mains dont une pleine » se lit sans compter, et le
+   dénominateur du « 1/2 » disparaît — il est dessiné. */
+.main {
+    width: calc(var(--cote) * 0.145); height: calc(var(--cote) * 0.145); flex: 0 0 auto;
+    /* ⚠️ UNE OMBRE NETTE, JAMAIS UNE LUEUR. Première version : la main
+       mienne portait un halo de 3 px de sa couleur — le halo a rempli
+       les creux entre les doigts et la main est devenue un PÂTÉ rond.
+       Mesuré à l'œil sur la capture : impossible d'y reconnaître une
+       main. Ce qui la sépare du fond est un trait sombre collé ; ce qui
+       dit qu'elle est mienne est sa COULEUR et sa taille. */
+    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.95));
+}
+.main.creuse { opacity: 0.34; color: #fff; }
+.main.autre  { color: var(--os); }
+.main.mienne { color: var(--mien); transform: scale(1.14); }
+
+/* ══ 2 · LES JETONS ═════════════════════════════════════════════ */
+.jeton {
+    width: calc(var(--cote) * 0.098); height: calc(var(--cote) * 0.098); flex: 0 0 auto;
+    border-radius: 50%;
+    border: calc(var(--cote) * 0.016) solid rgba(255, 255, 255, 0.34);
+}
+.jeton.autre  { background: var(--os); border-color: rgba(0, 0, 0, 0.55); }
+.jeton.mienne {
+    background: var(--mien); border-color: #fff;
+    box-shadow: 0 0 0 calc(var(--cote) * 0.012) rgba(0, 0, 0, 0.7),
+                0 0 calc(var(--cote) * 0.05) rgba(var(--mien-rgb), 0.95);
+}
+
+/* ══ 3 · LE RUBAN ═══════════════════════════════════════════════ */
+/* Rien sur le portrait : une barre contre le bord bas, à l'intérieur du
+   filet. C'est la seule piste qui ne coûte AUCUN pixel d'image, et la
+   seule qui tienne encore à 50 px. */
+.p3 .mq { padding: 0; background: none; }
+.ruban {
+    position: absolute; left: 3px; right: 3px; bottom: 3px;
+    height: calc(var(--cote) * 0.07);
+    display: flex; gap: 2px;
+}
+.ruban i {
+    flex: 1 1 0; border-radius: 1px;
+    /* ⚠️ La place LIBRE doit se voir, sinon « une voix sur deux » et
+       « une voix tout court » se dessinent pareil : une barre à moitié
+       pleine sur fond sombre n'a pas de moitié vide. */
+    background: rgba(0, 0, 0, 0.7);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+.ruban i.autre  { background: var(--os); box-shadow: none; }
+.ruban i.mienne { background: var(--mien); box-shadow: 0 0 calc(var(--cote) * 0.06) rgba(var(--mien-rgb), 1); }
+
+/* ══ 4 · LES VISAGES ════════════════════════════════════════════ */
+/* Ce n'est plus COMBIEN mais QUI. Autour d'une table c'est la question
+   qu'on pose — « t'es dessus toi aussi ? » — et aucun nombre n'y répond.
+   ⚠️ Le prix : ça mange le plus de portrait, et à 69 px deux visages
+   font déjà 36 px de large. */
+.p4 .mq { justify-content: flex-start; gap: 0; padding: calc(var(--cote) * 0.045); }
+/* ⚠️ `.c img.face` ET PAS `.face`. Un visage EST une image dans la carte,
+   donc `.c img { width: 100%; height: 100% }` (0,1,1) l'emporte sur une
+   classe seule (0,1,0) : mesuré, les visages sortaient à 99 px au lieu de
+   26, et ils héritaient en plus du filet noir du portrait. */
+.c img.face {
+    width: calc(var(--cote) * 0.21); height: calc(var(--cote) * 0.21); flex: 0 0 auto;
+    border-radius: 50%; object-fit: cover;
+    border: calc(var(--cote) * 0.015) solid rgba(0, 0, 0, 0.8);
+    outline: none;
+    margin-right: calc(var(--cote) * -0.05);
+    background: #15171d;
+}
+.c img.face.mienne {
+    border-color: var(--mien);
+    box-shadow: 0 0 calc(var(--cote) * 0.06) rgba(var(--mien-rgb), 0.9);
+    z-index: 1;
+}
+
+/* ══ 5 · LE VISEUR ══════════════════════════════════════════════ */
+/* Quatre équerres qui se referment, et RIEN d'autre : aucun pixel de
+   portrait touché, aucun coin disputé au ① ② ③. Une voix les pose en
+   creux, le seuil les allume.
+   ⚠️ La seule piste qui parle la même langue dans les deux vues — elle
+   n'emprunte ni la bande du camp ni le coin plié, elle se pose dessus. */
+.p5 .mq { display: none; }
+.viseur { position: absolute; inset: 5.5px; z-index: 4; pointer-events: none; }
+.viseur i {
+    position: absolute;
+    width: calc(var(--cote) * 0.2); height: calc(var(--cote) * 0.2);
+    border: 0 solid var(--mien);
+    border-width: 0;
+    transition: none;
+}
+.viseur i:nth-child(1) { top: 0; left: 0;  border-top-width: var(--eq); border-left-width: var(--eq);  border-top-left-radius: 3px; }
+.viseur i:nth-child(2) { top: 0; right: 0; border-top-width: var(--eq); border-right-width: var(--eq); border-top-right-radius: 3px; }
+.viseur i:nth-child(3) { bottom: 0; left: 0;  border-bottom-width: var(--eq); border-left-width: var(--eq);  border-bottom-left-radius: 3px; }
+.viseur i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: var(--eq); border-right-width: var(--eq); border-bottom-right-radius: 3px; }
+.viseur { --eq: 0px; }
+.viseur.partiel { --eq: calc(var(--cote) * 0.022); opacity: 0.5; }
+.viseur.plein   { --eq: calc(var(--cote) * 0.038); filter: drop-shadow(0 0 calc(var(--cote) * 0.05) rgba(var(--mien-rgb), 0.9)); }
+/* La voix qui est la MIENNE se dit par un point au centre bas : sans
+   lui, le viseur ne distingue pas « quelqu'un l'a prise » de « je l'ai
+   prise », et c'est la question la plus posée du tour. */
+.p5 .point {
+    position: absolute; left: 50%; bottom: calc(var(--cote) * 0.045); z-index: 5;
+    width: calc(var(--cote) * 0.07); height: calc(var(--cote) * 0.07);
+    margin-left: calc(var(--cote) * -0.035);
+    border-radius: 50%; background: var(--mien);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.75), 0 0 calc(var(--cote) * 0.06) rgba(var(--mien-rgb), 1);
+}
+
+/* ══ 6 · LE TRAIT VIVANT ════════════════════════════════════════ */
+/* Le vocabulaire du « sélectionné » qu'on connaît tous d'ailleurs : un
+   pointillé qui défile. ⚠️ C'est la seule piste qui BOUGE, et c'est à la
+   fois sa force et son risque — vingt-cinq cartes dont cinq grouillent,
+   sur un stream, ça peut fatiguer. À juger sur la grille entière, pas
+   sur une carte. */
+.p6 .mq { padding: 0; background: none; }
+.fourmis { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.fourmis rect {
+    fill: none;
+    stroke: var(--mien);
+    stroke-width: 2.5;
+    stroke-dasharray: 7 5;
+    /* ⚠️ Sans ça, le viewBox étiré écraserait le trait sur deux côtés :
+       la carte n'est pas carrée en vue espion (la carte adverse recule). */
+    vector-effect: non-scaling-stroke;
+    animation: fourmis 0.85s linear infinite;
+}
+.fourmis.autre rect { stroke: var(--os); opacity: 0.8; animation-duration: 1.5s; }
+@keyframes fourmis { to { stroke-dashoffset: -12; } }
+.p6 .compte {
+    position: absolute; left: 50%; bottom: calc(var(--cote) * 0.045); z-index: 5;
+    transform: translateX(-50%);
+    display: flex; gap: calc(var(--cote) * 0.03);
+}
+.p6 .compte i {
+    width: calc(var(--cote) * 0.055); height: calc(var(--cote) * 0.055);
+    border-radius: 50%; background: var(--os);
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.8);
+}
+.p6 .compte i.mienne { background: var(--mien); }
+
+@media (prefers-reduced-motion: reduce) {
+    /* ⚠️ `none`, jamais une durée nulle : à 0 s l'animation se joue
+       d'un coup et sa dernière image reste. */
+    .fourmis rect { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>Codanime — la marque d'une carte</h1>
+<p class="sous">
+    Ce qui tourne en ligne : une pastille noire <code>1/2</code> dans le coin bas gauche,
+    <b>10 px de haut</b>. Elle dit la bonne chose et personne ne la voit — sur vingt-cinq portraits
+    très colorés, un rectangle sombre de la taille d'un ongle ne gagne aucun regard.
+    <br>⚠️ Trois contraintes tuent la moitié des idées : ça doit tenir à <b>69 px</b> (la carte sur
+    téléphone, où deux chiffres ne se lisent plus) ; ça doit marcher <b>dans les deux vues</b>, car
+    l'espion regarde son équipe se tromper et c'est lui qui en a le plus besoin ; et ça ne doit
+    <b>pas manger le portrait</b>, puisque les indices portent sur ce qu'on y voit.
+    <br>⚠️ Et deux coins sont <b>déjà pris</b> : le ① ② ③ en haut à droite, le coin plié en haut à
+    gauche. Il reste le bas, et le cadre.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="69">69 px · téléphone</button>
+    <button data-cote="126" class="on">126 px · ordinateur</button>
+    <button data-cote="150">150 px · loupe</button>
+    <label>Vue</label>
+    <button id="vue">Vue de l’agent</button>
+    <label>Seuil</label>
+    <button data-seuil="2" class="on">2 voix</button>
+    <button data-seuil="3">3 voix</button>
+    <label>Camp</label>
+    <button id="camp">Je suis <b style="color:#2f9bff">bleu</b></button>
+    <button id="retirer" style="margin-left:0.8rem">Rejouer le tirage</button>
+    <p class="mode-emploi">
+        Clique une carte pour y <b>poser ou retirer TA marque</b> — c'est le geste qu'on juge. Les
+        autres voix sont tirées au sort pour que le plateau ressemble à un milieu de tour. L'indice
+        annonce <b>2</b> : au-delà de deux cartes engagées, les suivantes sont grisées et ne seront
+        jamais retournées.
+    </p>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+// ── Les six pistes ────────────────────────────────────────────────
+const PISTES = [
+    ['p0', 'L’actuel', 'pastille noire · 10 px',
+     'Ce qui tourne en ligne, pour la comparaison. La pastille dit exactement ce qu’il faut — combien de voix, sur combien — et c’est précisément ce qu’on ne lit pas : deux chiffres de 10 px dans un coin sombre, sur une grille de vingt-cinq. Ma propre marque n’est qu’une bordure blanchie, invisible chez l’espion où la bordure porte déjà le camp.'],
+    ['p1', 'Les mains levées', 'une main par place',
+     'Une main par <b>place</b>, pas par voix : les places libres restent en creux. « Deux mains dont une pleine » se compte sans lire, et le dénominateur du 1/2 disparaît — il est dessiné. La mienne est colorée et auréolée. ⚠️ À 69 px une main fait 10 px : elle devient une silhouette, pas un dessin. C’est la piste à juger d’abord sur téléphone.'],
+    ['p2', 'Les jetons', 'pastilles rondes',
+     'Le même comptage par places, en plus abstrait et deux fois plus petit : des jetons posés sur la carte. Moins parlant qu’une main — un rond ne dit pas « quelqu’un » — mais il survit mieux à la réduction, et trois jetons tiennent où trois mains débordent.'],
+    ['p3', 'Le ruban', 'barre de bord · 0 px de portrait',
+     'Une barre contre le bord bas, <b>à l’intérieur du filet noir</b>. C’est la seule piste qui ne coûte <b>aucun pixel d’image</b>, et la seule qui tienne encore à 50 px. Elle se lit comme une jauge : un segment allumé sur deux, deux sur deux. ⚠️ Son défaut est l’inverse du nôtre — elle est si discrète qu’elle peut passer pour une décoration du cadre.'],
+    ['p4', 'Les visages', 'qui, et non combien',
+     'Ce n’est plus <b>combien</b> mais <b>qui</b>. Autour d’une table c’est la question qu’on pose — « t’es dessus toi aussi ? » — et aucun nombre n’y répond. ⚠️ Le prix est le plus lourd de la page : à 69 px deux visages font 36 px de large, et à cinq agents la rangée sort de la carte. Vrai confort à cinq joueurs, encombrant à dix.'],
+    ['p5', 'Le viseur', 'quatre équerres · 0 px de portrait',
+     'Quatre équerres qui se referment, et rien d’autre. Une voix les pose en creux, le seuil les allume d’un coup — la carte « se verrouille », ce qui est exactement ce qui se passe. ⚠️ C’est la seule piste qui parle la même langue dans les deux vues : elle n’emprunte ni la bande du camp ni le coin plié, elle se pose par-dessus. Un point au bas dit que la voix est la mienne, sans quoi le viseur ne distingue pas « quelqu’un l’a prise » de « je l’ai prise ».'],
+    ['p6', 'Le trait vivant', 'pointillé animé',
+     'Le vocabulaire du « sélectionné » qu’on connaît tous d’ailleurs : un pointillé qui défile autour de la carte. Rien ne saute à l’œil comme une chose qui bouge au milieu de vingt-quatre immobiles. ⚠️ Et c’est tout le risque : cinq cartes qui grouillent, sur un stream, en boucle pendant trois minutes. À juger sur la grille entière, jamais sur une carte isolée.'],
+];
+
+const MAIN = '<svg class="main {k}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+    + '<rect x="5.5" y="10" width="13" height="11" rx="5.5"/>'
+    + '<rect x="6.2" y="4.4" width="2.9" height="9" rx="1.45"/>'
+    + '<rect x="9.6" y="2.4" width="2.9" height="10.8" rx="1.45"/>'
+    + '<rect x="13" y="3.3" width="2.9" height="9.9" rx="1.45"/>'
+    + '<rect x="16.4" y="6.2" width="2.9" height="7.2" rx="1.45"/>'
+    + '<rect x="1.9" y="9.6" width="2.7" height="7.8" rx="1.35" transform="rotate(-24 3.25 13.5)"/>'
+    + '</svg>';
+
+// ── L'état du plateau ─────────────────────────────────────────────
+const CAMPS = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'), ['x']);
+const QUOTA = 2;              // l'indice annonce 2
+let portraits = [], visages = [], tirage = [], seuil = 2, monCamp = 'a';
+
+const melanger = (t) => {
+    const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c;
+};
+
+function tirer() {
+    const imgs = melanger(portraits).slice(0, 25);
+    const camps = melanger(CAMPS);
+    tirage = imgs.map((img, k) => ({ img, camp: camps[k], moi: false, autres: 0 }));
+    // Un milieu de tour crédible : quelques cartes déjà marquées, de
+    // compositions différentes — une voix seule, deux voix, la mienne
+    // avec un partenaire, et une carte au-delà du quota.
+    const places = melanger([...Array(25).keys()]).slice(0, 5);
+    const mises = [{ moi: false, autres: 1 }, { moi: true, autres: 0 }, { moi: true, autres: 1 },
+                   { moi: false, autres: 2 }, { moi: true, autres: 2 }];
+    places.forEach((p, k) => Object.assign(tirage[p], mises[k]));
+}
+
+const voix = (t) => (t.moi ? 1 : 0) + t.autres;
+
+// L'ordre d'engagement : les cartes qui ont franchi le seuil, dans
+// l'ordre du plateau (en jeu c'est l'ordre de franchissement, mais ici
+// rien ne se joue dans le temps).
+function engagees() {
+    return tirage.map((t, i) => i).filter(i => voix(tirage[i]) >= seuil);
+}
+
+// ── Le dessin d'une marque, piste par piste ───────────────────────
+function marque(piste, t) {
+    const n = voix(t), libres = Math.max(0, seuil - n), autres = t.autres;
+    if (piste === 'p0') {
+        return n ? '<span class="mq"><span class="pastille">' + n + '<small>/' + seuil + '</small></span></span>' : '';
+    }
+    if (piste === 'p1') {
+        if (!n) return '';
+        let h = '';
+        for (let k = 0; k < autres; k++) h += MAIN.replace('{k}', 'autre');
+        if (t.moi) h += MAIN.replace('{k}', 'mienne');
+        for (let k = 0; k < libres; k++) h += MAIN.replace('{k}', 'creuse');
+        return '<span class="mq">' + h + '</span>';
+    }
+    if (piste === 'p2') {
+        if (!n) return '';
+        let h = '';
+        for (let k = 0; k < autres; k++) h += '<i class="jeton autre"></i>';
+        if (t.moi) h += '<i class="jeton mienne"></i>';
+        for (let k = 0; k < libres; k++) h += '<i class="jeton"></i>';
+        return '<span class="mq">' + h + '</span>';
+    }
+    if (piste === 'p3') {
+        if (!n) return '';
+        let h = '';
+        for (let k = 0; k < autres; k++) h += '<i class="autre"></i>';
+        if (t.moi) h += '<i class="mienne"></i>';
+        for (let k = 0; k < libres; k++) h += '<i></i>';
+        return '<span class="ruban">' + h + '</span>';
+    }
+    if (piste === 'p4') {
+        if (!n) return '';
+        let h = '';
+        for (let k = 0; k < autres; k++) h += '<img class="face" src="' + visages[k % visages.length] + '" alt="">';
+        if (t.moi) h += '<img class="face mienne" src="' + visages[visages.length - 1] + '" alt="">';
+        return '<span class="mq">' + h + '</span>';
+    }
+    if (piste === 'p5') {
+        if (!n) return '';
+        const cls = n >= seuil ? 'plein' : 'partiel';
+        return '<span class="viseur ' + cls + '"><i></i><i></i><i></i><i></i></span>'
+             + (t.moi ? '<span class="point"></span>' : '');
+    }
+    if (piste === 'p6') {
+        if (!n) return '';
+        let pts = '';
+        for (let k = 0; k < autres; k++) pts += '<i></i>';
+        if (t.moi) pts += '<i class="mienne"></i>';
+        return '<svg class="fourmis' + (t.moi ? '' : ' autre') + '" viewBox="0 0 100 100" preserveAspectRatio="none">'
+             + '<rect x="1.5" y="1.5" width="97" height="97" rx="4"/></svg>'
+             + '<span class="compte">' + pts + '</span>';
+    }
+    return '';
+}
+
+// ── Le rendu ──────────────────────────────────────────────────────
+function rendre() {
+    const eng = engagees();
+    document.getElementById('pistes').innerHTML = PISTES.map(([cls, nom, chiffres, note], k) =>
+        '<section class="piste ' + cls + '">'
+        + '<div class="tete"><span class="num">' + k + '</span><span class="nom">' + nom
+        + '</span><span class="chiffres">' + chiffres + '</span></div>'
+        + '<p class="note">' + note + '</p>'
+        + '<div class="grille">'
+        + tirage.map((t, i) => {
+            const rang = eng.indexOf(i);
+            const c = ['c', t.camp];
+            if (t.moi) c.push('moi');
+            if (rang >= QUOTA) c.push('trop');
+            return '<button class="' + c.join(' ') + '" data-i="' + i + '">'
+                 + '<img src="' + t.img + '" alt="" draggable="false">'
+                 + (rang >= 0 ? '<span class="ordre">' + (rang + 1) + '</span>' : '')
+                 + marque(cls, t)
+                 + '</button>';
+        }).join('')
+        + '</div></section>').join('');
+}
+
+// ── Les commandes ─────────────────────────────────────────────────
+function appliquerCamp() {
+    const r = document.documentElement.style;
+    r.setProperty('--mien', monCamp === 'a' ? 'var(--a)' : 'var(--b)');
+    r.setProperty('--mien-rgb', monCamp === 'a' ? 'var(--a-rgb)' : 'var(--b-rgb)');
+    document.getElementById('camp').innerHTML = monCamp === 'a'
+        ? 'Je suis <b style="color:#2f9bff">bleu</b>' : 'Je suis <b style="color:#ff3b5c">rouge</b>';
+}
+
+document.getElementById('pistes').addEventListener('click', (e) => {
+    const b = e.target.closest('.c');
+    if (!b) return;
+    const t = tirage[+b.dataset.i];
+    t.moi = !t.moi;
+    rendre();
+});
+
+document.querySelectorAll('[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--cote', b.dataset.cote + 'px');
+}));
+document.querySelectorAll('[data-seuil]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-seuil]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    seuil = +b.dataset.seuil;
+    rendre();
+}));
+document.getElementById('vue').addEventListener('click', (e) => {
+    const agent = document.body.classList.toggle('agent');
+    e.currentTarget.classList.toggle('on', agent);
+    e.currentTarget.textContent = agent ? 'Vue de l’agent' : 'Vue de l’espion';
+});
+document.getElementById('camp').addEventListener('click', () => {
+    monCamp = monCamp === 'a' ? 'b' : 'a';
+    appliquerCamp();
+});
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+
+appliquerCamp();
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu :
+// leur nom de fichier dirait qui est le personnage.
+Promise.all([
+    fetch('/prototypes/codanime-cartes/portraits').then(r => r.json()),
+    // ⚠️ Chemin ABSOLU. Les avatars sont servis À LA RACINE ; sur une page
+    // montée sous /prototypes/, un chemin relatif chercherait
+    // /prototypes/novice.png, qui n'existe pas.
+    fetch('/api/avatars').then(r => r.json()).catch(() => ({ avatars: [] })),
+]).then(([p, a]) => {
+    portraits = p.portraits || [];
+    visages = melanger(a.avatars || []).slice(0, 5).map(x => '/' + x.f + '?v=' + x.v);
+    if (!visages.length) visages = [''];
+    tirer();
+    rendre();
+}).catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+</script>
+</body></html>

@@ -2720,12 +2720,17 @@
                                      premier retournement. Le nombre est déjà
                                      dans la pastille de l'indice, et les voix
                                      se comptent sur les cartes mêmes (« 1/2 »).
-                                     Reste le bouton : s'arrêter est un CHOIX du
-                                     jeu, pas une explication — on le garde,
-                                     mais discret. -->
-                                <div class="cod-actions" v-if="codPeutVoter">
-                                    <button class="cod-stop" @click="codPasser">On s’arrête</button>
-                                </div>
+
+                                     ⚠️ ET PLUS DE BOUTON « On s'arrête » non
+                                     plus. Il avait été gardé comme un choix du
+                                     jeu, mais il ne ressemblait à rien de ce
+                                     qu'on fait ici : tout le tour se joue en
+                                     marquant des cartes, et cette seule ligne
+                                     de texte sous le plateau demandait qu'on
+                                     la lise. Le tour se clôt de lui-même — au
+                                     quota atteint, ou au chrono. L'événement
+                                     `codanime-passer` reste côté serveur, il
+                                     ne coûte rien et les suites s'en servent. -->
                             </template>
 
                             <span class="cod-refus" v-if="cod.refus">{{ cod.refus }}</span>

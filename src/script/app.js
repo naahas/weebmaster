@@ -325,7 +325,12 @@ createApp({
                 // public Twitch ou TikTok.
                 saisieMot: '',
                 saisieNombre: 1,
-                refus: '',           // le dernier refus du serveur, à montrer
+                // ⚠️ Un refus ne se DIT plus, il se VOIT : on retient la
+                // carte refusée, elle tremble, et c'est tout. Le texte qui
+                // vivait ici expliquait une règle que les marques posées
+                // disent déjà.
+                refusee: null,       // l'index de la dernière carte refusée
+                _visee: null,        // la carte qu'on vient de cliquer
                 _refusT: null,
                 derniereCarte: null, // { i, issue } — pour l'animation du retournement
             },
@@ -5606,7 +5611,7 @@ createApp({
                 enCours: false, intro: false, phase: 'repos', tourDe: null,
                 grille: [], votes: {}, ordre: [], retenues: [], indice: null,
                 historique: [], gagnant: null, derniereCarte: null,
-                restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refus: '',
+                restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
                 arrive: false, saut: 0, masquerAdverses: false,
             });
             this.gameEnded = false;
@@ -5875,12 +5880,11 @@ createApp({
 
         codVoter(i) {
             if (!this.codPeutVoter) return;
+            // ⚠️ On retient la carte visée AVANT d'envoyer : si le serveur
+            // refuse, c'est elle qui doit trembler, et le refus arrive sans
+            // dire sur quelle carte il porte.
+            this.cod._visee = i;
             this.socket.emit('codanime-vote', { i });
-        },
-
-        codPasser() {
-            if (!this.codPeutVoter) return;
-            this.socket.emit('codanime-passer');
         },
 
         // Le numéro ① ② ③ d'une carte, ou 0 si elle n'a pas franchi le seuil.
@@ -6037,6 +6041,7 @@ createApp({
                 if (!this.cod.retenues.includes(carte.i)) c.push('en-trop');
             }
             if (this.codJaiVote(carte.i)) c.push('ma-voix');
+            if (this.cod.refusee === carte.i) c.push('refusee');
             if (this.cod.derniereCarte && this.cod.derniereCarte.i === carte.i) c.push('tombe');
             return c;
         },
@@ -9332,22 +9337,30 @@ createApp({
                 this.gameStartedOnServer = false;
             });
 
-            // Un refus se montre deux secondes plutôt que de disparaître dans
-            // la console : un clic ignoré sans rien à l'écran, c'est le
-            // défaut qu'on a déjà payé sur la mèche de BombAnime.
-            this.socket.on('codanime-refus', (data) => {
-                const dits = {
-                    'plafond-atteint': 'Tu as déjà marqué autant de cartes que l’indice en annonce.',
-                    'espion-ne-vote-pas': 'L’espion ne marque pas de carte.',
-                    'pas-ton-tour': 'Ce n’est pas le tour de ton équipe.',
-                    'pas-espion': 'Seul l’espion de l’équipe annonce.',
-                    'trop-grand': 'Trop grand : au plus ' + (data && data.max ? data.max : 4) + '.',
-                    'nombre': 'Il faut un nombre.',
-                    'mot-vide': 'Il faut un mot.',
-                };
-                this.cod.refus = dits[data && data.raison] || '';
+            // Un refus se MONTRE plutôt que de disparaître dans la console :
+            // un clic ignoré sans rien à l'écran, c'est le défaut qu'on a
+            // déjà payé sur la mèche de BombAnime.
+            //
+            // ⚠️ Mais SANS PHRASE. Les sept messages d'ici expliquaient sous
+            // le plateau des règles que l'écran dit déjà : « tu as marqué
+            // autant de cartes que l'indice en annonce » se lit sur les
+            // marques posées, « ce n'est pas le tour de ton équipe » sur le
+            // bandeau du haut. La carte visée tremble un tiers de seconde,
+            // et c'est tout.
+            //
+            // ⚠️ Les refus qui ne portent sur AUCUNE carte (l'annonce de
+            // l'indice : mot vide, nombre trop grand) ne montrent donc rien.
+            // Le champ et la glissière les empêchent déjà à la saisie — le
+            // serveur ne fait que tenir sa porte derrière eux.
+            this.socket.on('codanime-refus', () => {
+                if (this.cod._visee === null || this.cod._visee === undefined) return;
                 if (this.cod._refusT) clearTimeout(this.cod._refusT);
-                this.cod._refusT = setTimeout(() => { this.cod.refus = ''; }, 2600);
+                // ⚠️ Remis à null d'abord : sans ça, deux clics de suite sur
+                // la MÊME carte refusée ne rejoueraient pas l'animation —
+                // la classe n'aurait jamais quitté l'élément.
+                this.cod.refusee = null;
+                this.$nextTick(() => { this.cod.refusee = this.cod._visee; });
+                this.cod._refusT = setTimeout(() => { this.cod.refusee = null; }, 400);
             });
 
             this.socket.on('bombanime-game-ended', (data) => {
