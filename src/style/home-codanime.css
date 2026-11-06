@@ -78,7 +78,16 @@
     align-items: center;
     justify-content: center;
     gap: 0.9rem;
-    padding: 0.6rem 1rem 1.4rem;
+    /* ⚠️ LE RETRAIT DU HAUT DESCEND TOUT LE JEU. La colonne est centrée
+       dans la boîte de contenu : lui ajouter 2 rem en haut la fait
+       descendre d'UNE rem, pas de deux.
+       ⚠️ Et le retrait du pied doit être réduit de la MOITIÉ de ce
+       déplacement pour que le mot reste à mi-chemin entre les cartes et
+       le bas de l'écran : descendre la colonne de δ rapproche le mot du
+       bas de δ sans l'éloigner des cartes, il faut donc lui rendre δ/2
+       de l'autre côté. Les deux valeurs sont liées — en bouger une sans
+       l'autre décentre le mot. */
+    padding: 2.6rem 1rem 1.4rem;
 }
 
 /* ── L'en-tête : les deux compteurs et l'indice ─────────────────── */
@@ -613,12 +622,24 @@
     border-width: 3.5px;
     border-color: var(--cod-teinte);
     box-shadow:
-        /* le filet noir INTERNE, entre la couleur et le portrait */
-        inset 0 0 0 2.5px #000,
-        /* le halo, qui déborde sous le filet */
+        /* le halo, qui déborde sous la bande */
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
         /* et le contour noir EXTERNE, qui ferme la bande */
         0 0 0 2px #000;
+}
+
+/* ⚠️ LE FILET INTERNE EST UN `outline` SUR LE PORTRAIT, pas une ombre
+   intérieure sur la carte. Il était écrit en `inset box-shadow`, et ON NE
+   LE VOYAIT PAS : une ombre intérieure se peint au-dessus du FOND mais
+   SOUS LE CONTENU, et le portrait occupe toute la boîte — il la
+   recouvrait entièrement. Le seul trait visible était donc celui du coin,
+   d'où l'impression qu'il longeait le triangle et rien d'autre.
+   Un `outline` à décalage négatif se peint, lui, par-dessus l'image, et
+   ne prend aucune place dans la mise en page. */
+.cod-carte.vue-espion .cod-portrait,
+.cod-carte.revelee .cod-portrait {
+    outline: var(--cod-filet, 2.5px) solid #000;
+    outline-offset: calc(-1 * var(--cod-filet, 2.5px));
 }
 
 /* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
@@ -832,7 +853,7 @@
        même déplacé selon qu'une ligne de vote le suive ou non. Aligné en
        haut, le mot et la barre d'indice tombent toujours au même pixel. */
     height: 7.4rem; justify-content: flex-start;
-    padding-top: 3.4rem;
+    padding-top: 2.8rem;   /* 3,4 − 0,6 : la moitié du déplacement ci-dessus, ajustée */
     width: var(--cod-plateau); min-width: 17rem;
 }
 /* ── LE JETON : la barre d'indice, d'un seul bloc ───────────────── */
@@ -1236,7 +1257,7 @@
    les colonnes pour se repérer et pour désigner une carte à la voix. Les
    cartes rétrécissent, l'écart se resserre, et les badges suivent. */
 @media (max-width: 640px) {
-    .cod { padding: 0.4rem var(--cod-pad) 1rem; gap: 0.6rem; }
+    .cod { padding: 1.6rem var(--cod-pad) 1rem; gap: 0.6rem; }
     /* ⚠️ L'écart gagne moins sur téléphone qu'ailleurs : quatre fois trois
        pixels se prennent sur des cartes qui n'en font déjà que 72, et un
        portrait d'anime s'y reconnaît mal en dessous de 68. */

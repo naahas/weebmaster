@@ -2253,6 +2253,12 @@ app.get('/prototypes/codanime-indice', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-indice.html');
 });
 
+// L'épaisseur du cadre : cinq dosages de la bande cernée de noir, sur une
+// vraie grille de vingt-cinq et aux trois tailles de carte qui existent.
+app.get('/prototypes/codanime-cadre', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-cadre.html');
+});
+
 // Le temps en haut du plateau : six pistes jouées sur une seule horloge,
 // et surtout AUX DEUX DURÉES — 30 s pour l'indice, jusqu'à 180 pour le
 // vote. C'est là que la plupart se cassent.

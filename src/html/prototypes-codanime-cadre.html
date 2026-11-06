@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — l'épaisseur du cadre</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   L'ÉPAISSEUR DU CADRE
+
+   La construction est arrêtée : la bande de couleur est CERNÉE DE NOIR
+   des deux côtés, et le filet intérieur suit le portrait tout autour —
+   y compris en diagonale sous le coin plié.
+
+   ⚠️ Le filet intérieur est un `outline` SUR LE PORTRAIT, et non une
+   ombre intérieure sur la carte. Écrit en `inset box-shadow`, il était
+   invisible : une ombre intérieure se peint au-dessus du fond mais SOUS
+   le contenu, et l'image occupe toute la boîte. Seul le trait du coin se
+   voyait, d'où l'impression qu'il ne longeait que le triangle.
+
+   Reste le DOSAGE, et il ne se juge qu'à la bonne taille : une carte
+   vaut 126 px sur ordinateur et 69 sur téléphone. Un cadre qui fait
+   « encadré » à 160 px fait « bordure épaisse » à 69, où il mange un
+   dixième du portrait. D'où le réglage de côté, et les deux repères.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;  --a-rgb: 47, 155, 255;
+    --b: #ff3b5c;  --b-rgb: 255, 59, 92;
+    --n: #b9a88f;  --n-rgb: 185, 168, 143;
+    --brun: #bf8a5f;
+    --cote: 126px;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 52rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.barre {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.5; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.6rem; }
+.barre button {
+    padding: 0.32rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+
+.piste { margin-bottom: 2.4rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; }
+.num { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+       border-radius: 50%; background: var(--brun); color: #15171d; font-size: 0.7rem; font-weight: 900; }
+.nom { font-size: 0.95rem; font-weight: 800; }
+.chiffres { font-size: 0.64rem; opacity: 0.4; font-variant-numeric: tabular-nums; }
+.note { font-size: 0.72rem; opacity: 0.5; margin: 0.3rem 0 0.9rem 2.2rem; max-width: 46rem; line-height: 1.5; }
+
+.grille {
+    display: grid; grid-template-columns: repeat(5, var(--cote));
+    column-gap: calc(0.62rem + 3px); row-gap: 0.62rem;
+    width: max-content;
+}
+
+/* ── La carte, telle qu'elle est construite dans le jeu ─────────── */
+.c {
+    position: relative;
+    width: var(--cote); height: calc(var(--cote) - 2px);
+    border-radius: 0.55rem;
+    overflow: hidden;
+    background: #15171d;
+    /* Les trois mesures d'une piste, posées en variables. */
+    border: var(--bande) solid var(--teinte);
+    box-shadow:
+        inset 0 0 calc(var(--cote) * 0.2) rgba(var(--teinte-rgb), 0.8),
+        0 0 0 var(--dehors) #000;
+}
+.c img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center 22%;
+    display: block;
+    /* ⚠️ Le filet intérieur : un `outline` SUR L'IMAGE. Une ombre
+       intérieure sur la carte se peindrait sous elle, donc invisible. */
+    outline: var(--dedans) solid #000;
+    outline-offset: calc(-1 * var(--dedans));
+}
+/* Le coin plié, et son trait noir le long de l'hypoténuse. */
+.c::after {
+    content: ''; position: absolute; top: 0; left: 0; z-index: 2;
+    border-style: solid;
+    border-width: var(--coin) var(--coin) 0 0;
+    border-color: var(--coin-c, var(--teinte)) transparent transparent transparent;
+    filter: drop-shadow(var(--dedans) var(--dedans) 0 #000)
+            drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
+}
+.c { --coin: calc(var(--cote) * var(--coin-part, 0.27)); }
+.c.a { --teinte: var(--a); --teinte-rgb: var(--a-rgb); }
+.c.b { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
+.c.n { --teinte: var(--n); --teinte-rgb: var(--n-rgb); }
+.c.x { --teinte: #2a2a33; --teinte-rgb: 42, 42, 51; --coin-c: #000;
+       border-color: #0b0b0f;
+       box-shadow: inset 0 0 0 var(--dedans) rgba(255,255,255,0.72), 0 0 0 var(--dehors) rgba(255,255,255,0.4); }
+.c.x img { outline-color: rgba(255, 255, 255, 0.72); }
+/* Les cartes du camp adverse reculent, comme dans le jeu. */
+.c.b { width: calc(var(--cote) * 0.965); height: calc(var(--cote) * 0.965 - 2px);
+       justify-self: center; align-self: center; opacity: 0.8; }
+
+/* ── Les cinq dosages ───────────────────────────────────────────── */
+.d1 .c { --dehors: 1.5px; --bande: 3px;   --dedans: 2px;   --coin-part: 0.24; }
+.d2 .c { --dehors: 2px;   --bande: 3.5px; --dedans: 2.5px; --coin-part: 0.27; }
+.d3 .c { --dehors: 2px;   --bande: 4.5px; --dedans: 3px;   --coin-part: 0.27; }
+.d4 .c { --dehors: 2.5px; --bande: 5.5px; --dedans: 3px;   --coin-part: 0.30; }
+.d5 .c { --dehors: 2px;   --bande: 7px;   --dedans: 3px;   --coin-part: 0.27; }
+
+/* Vue de l'agent : aucune carte cachée ne porte sa couleur. */
+body.agent .c { --teinte: rgba(255,255,255,0.09); --teinte-rgb: 255,255,255;
+                --dehors: 0px; box-shadow: none; }
+body.agent .c::after { display: none; }
+body.agent .c img { outline: none; }
+body.agent .c.b { opacity: 1; width: var(--cote); height: calc(var(--cote) - 2px); }
+</style>
+</head>
+<body>
+
+<h1>Codanime — l'épaisseur du cadre</h1>
+<p class="sous">
+    La construction est arrêtée : la bande de couleur est <b>cernée de noir des deux côtés</b>, et le
+    filet intérieur suit le portrait tout autour — <b>y compris en diagonale sous le coin plié</b>.
+    <br>⚠️ Ce filet est un <b>outline sur l'image</b>, pas une ombre intérieure sur la carte. Écrit en
+    <code>inset box-shadow</code> il était invisible : une ombre intérieure se peint au-dessus du
+    fond mais <b>sous le contenu</b>, et l'image occupe toute la boîte. Seul le trait du coin se
+    voyait — d'où l'impression qu'il ne longeait que le triangle.
+    <br>⚠️ Reste le <b>dosage</b>, et il ne se juge qu'à la bonne taille : une carte vaut
+    <b>126 px</b> sur ordinateur et <b>69</b> sur téléphone. Un cadre qui fait « encadré » à 160 px
+    fait « bordure épaisse » à 69, où il mange un dixième du portrait.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="69">69 px · téléphone</button>
+    <button data-cote="126" class="on">126 px · ordinateur</button>
+    <button data-cote="160">160 px · loupe</button>
+    <label style="margin-left:0.8rem">Vue</label>
+    <button id="agent">Vue de l’agent</button>
+    <button id="retirer" style="margin-left:0.8rem">Rejouer le tirage</button>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const CAMPS = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'), ['x']);
+const DOSAGES = [
+    ['d1', 'Fin', '1,5 / 3 / 2 · coin 24 %',
+     'Le plus discret. Le portrait garde tout, mais à 69 px le cerne noir se referme sur la couleur : il reste un trait bicolore, exactement le défaut qu’on corrigeait.'],
+    ['d2', 'Actuel', '2 / 3,5 / 2,5 · coin 27 %',
+     'Ce qui tourne en ligne. Lisible à 126 px, honnête à 69 — c’est le point de départ, pas forcément l’arrivée.'],
+    ['d3', 'Plus épais', '2 / 4,5 / 3 · coin 27 %',
+     'Un pixel de couleur en plus et un demi de filet. L’écart se sent surtout sur une grille entière : les neuf cartes d’un camp se balaient plus vite.'],
+    ['d4', 'Franc', '2,5 / 5,5 / 3 · coin 30 %',
+     'Le cadre devient une pièce à part entière, le portrait un contenu dedans. Le plus lisible de loin — en stream c’est ce qui compte — mais il mange 11 px de portrait par côté à 126.'],
+    ['d5', 'Passe-partout', '2 / 7 / 3 · coin 27 %',
+     'La bande prend le dessus. On ne lit plus une carte bordée mais une carte COLORÉE qui contient une image. À 69 px le portrait n’en vaut plus que 45.'],
+];
+
+let portraits = [], tirage = [];
+const melanger = (t) => { const c = t.slice(); for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; } return c; };
+function tirer() {
+    const imgs = melanger(portraits).slice(0, 25);
+    const camps = melanger(CAMPS);
+    tirage = imgs.map((img, k) => ({ img, camp: camps[k] }));
+}
+function rendre() {
+    document.getElementById('pistes').innerHTML = DOSAGES.map(([cls, nom, chiffres, note], k) =>
+        '<section class="piste ' + cls + '">'
+        + '<div class="tete"><span class="num">' + (k + 1) + '</span><span class="nom">' + nom
+        + '</span><span class="chiffres">' + chiffres + '</span></div>'
+        + '<p class="note">' + note + '</p>'
+        + '<div class="grille">'
+        + tirage.map(t => '<span class="c ' + t.camp + '"><img src="' + t.img + '" alt="" draggable="false"></span>').join('')
+        + '</div></section>').join('');
+}
+
+fetch('/prototypes/codanime-cartes/portraits')
+    .then(r => r.json())
+    .then(d => { portraits = d.portraits || []; tirer(); rendre(); })
+    .catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+
+document.querySelectorAll('[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--cote', b.dataset.cote + 'px');
+}));
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+document.getElementById('agent').addEventListener('click', (e) => {
+    document.body.classList.toggle('agent');
+    e.currentTarget.classList.toggle('on', document.body.classList.contains('agent'));
+    e.currentTarget.textContent = document.body.classList.contains('agent')
+        ? 'Vue de l’espion' : 'Vue de l’agent';
+});
+</script>
+</body></html>
