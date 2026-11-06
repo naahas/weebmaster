@@ -47,11 +47,15 @@
        poussaient hors de l'écran — la grille se calculait sur 62 rem alors
        qu'il n'en restait que 48. Un rang vaut sa largeur plus son écart. */
     --cod-rail: 7.6rem;
-    --cod-rails: calc(2 * (var(--cod-rail) + 3rem));
+    --cod-rails: calc(2 * (var(--cod-rail) + 4rem));
     --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
     --cod-cote: min(
         calc((min(100vw, 70rem) - var(--cod-marges)) / 5),
-        calc((100dvh - 17rem) / 5)
+        /* ⚠️ 17,8 rem et non 17 : le pied a pris 0,8 rem de retrait pour que
+           la barre d'indice ne colle plus aux cartes, et ce budget doit
+           sortir de la hauteur disponible — sinon la grille déborde par le
+           bas sur une fenêtre courte. */
+        calc((100dvh - 17.8rem) / 5)
     );
     --cod-plateau: calc(5 * var(--cod-cote) + 4 * var(--cod-jour-h));
 
@@ -122,7 +126,7 @@
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
 
-.cod-centre { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; min-height: 3.1rem; justify-content: center; }
+.cod-centre { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; min-height: 3.1rem; justify-content: center; }
 
 /* L'indice : LE MOT, puis son nombre dans une pastille.
    ⚠️ Le mot est la pièce principale — c'est ce que les quatre agents
@@ -172,13 +176,17 @@
    de l'un avec le début de l'autre au pixel près, et le moindre écart se
    serait vu comme un saut. */
 .cod-indice { position: relative; }
+/* Le minutage, et `cod._arriveT` dans app.js doit le suivre :
+     0,00 → 0,62 s  le rideau découvre le mot, en grand, au centre
+     0,62 → 1,62 s  il RESTE UNE SECONDE ENTIÈRE là, le temps qu'on le lise
+     1,62 → 2,30 s  il descend, et rétrécit en chemin jusqu'à sa taille */
 .cod-indice.arrive {
     z-index: 30;
-    animation: codIndiceArrive 1.35s cubic-bezier(0.32, 0.9, 0.24, 1) both;
+    animation: codIndiceArrive 2.3s cubic-bezier(0.32, 0.9, 0.24, 1) both;
 }
 @keyframes codIndiceArrive {
-    0%   { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.05)); }
-    52%  { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.05)); }
+    0%   { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.45)); }
+    70%  { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.45)); }
     100% { transform: translateY(0) scale(1); }
 }
 
@@ -274,15 +282,25 @@
     justify-content: center;
     /* Les rangs respirent : collés au plateau, ils se lisaient comme une
        sixième et une septième colonne de cartes. */
-    gap: 3rem;
+    gap: 4rem;
+}
+
+/* ⚠️ LE CHAPEAU EST HORS DE LA BOÎTE DU RANG. Dedans, il en partageait
+   le cadre, le fond ET l'atténuation : le bouton de masque s'éteignait
+   avec le rang quand ce n'était pas mon tour, alors qu'il reste
+   utilisable. Le côté est donc une colonne — le chapeau, puis la boîte. */
+.cod-cote {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.5rem;
+    width: var(--cod-rail);
+    flex: 0 0 var(--cod-rail);
 }
 
 .cod-rang {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 0.62rem;
-    width: var(--cod-rail);
-    flex: 0 0 var(--cod-rail);
+    width: 100%;
     padding: 0.7rem 0.3rem;
     border-radius: 0.7rem;
     /* ⚠️ Le rang au repos garde SON CADRE, en très faible. Sans lui, seul le
@@ -464,11 +482,18 @@
    deviner. Elles cessent seulement de compter dans le balayage.
    ⚠️ Scopé à `.vue-espion` : une carte RETOURNÉE porte aussi son camp, et
    l'éteindre effacerait la moitié du score sous les yeux de tout le monde. */
+/* ⚠️ L'ASSASSIN NE SE MASQUE PAS. C'est la seule carte qui fait perdre
+   sur-le-champ : l'éteindre avec les autres reviendrait à oublier où elle
+   est au moment précis où l'on compose un indice large. Elle reste donc
+   en pleine lumière, seule au milieu des cartes voilées — et ça la rend
+   même plus visible qu'avant. */
 .cod-grille.masque .cod-carte.vue-espion.adverse,
-.cod-grille.masque .cod-carte.vue-espion.camp-neutre,
-.cod-grille.masque .cod-carte.vue-espion.camp-assassin {
-    opacity: 0.2;
-    filter: grayscale(0.6);
+.cod-grille.masque .cod-carte.vue-espion.camp-neutre {
+    /* ⚠️ 0,32 et non 0,2 : à un cinquième, les portraits s'effaçaient tout
+       à fait et l'espion ne savait plus ce qu'il y avait dessous — or ce
+       sont justement les cartes qu'il ne doit PAS faire deviner. */
+    opacity: 0.32;
+    filter: grayscale(0.55);
 }
 
 .cod-carte:disabled { cursor: default; }
@@ -737,9 +762,14 @@
 .cod-carte.en-trop .cod-num { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
 
 /* ── Le pied ────────────────────────────────────────────────────── */
+/* ⚠️ `padding-top` et non une marge du plateau : le pied est le dernier
+   enfant d'une colonne centrée, et c'est SA hauteur qui entre dans le
+   budget vertical de `--cod-cote`. Posé en marge, il aurait poussé la
+   grille vers le haut sans que le calcul des cartes le sache. */
 .cod-pied {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
     min-height: 3.4rem; justify-content: center;
+    padding-top: 0.8rem;
     width: var(--cod-plateau); min-width: 17rem;
 }
 /* ── LE JETON : la barre d'indice, d'un seul bloc ───────────────── */
@@ -876,33 +906,24 @@
 .cod-histo::-webkit-scrollbar { display: none; }
 .cod-histo-t { display: none; }
 
-/* ⚠️ LA COLONNE SE PLACE SUR LE PLATEAU, pas sur le bord de l'écran.
-   Calée à droite de la fenêtre, elle se posait SUR le rang rouge dès que
-   les rangs ont grossi : mesuré, elle commençait à 1126 px pour un rang
-   qui finissait à 1149. Son bord gauche se calcule donc depuis le centre
-   — demi-grille, l'écart, la largeur d'un rang, puis sa propre marge —
-   et il suit tout seul la taille des cartes.
-
-   ⚠️ 1500 px et non 1240. Il faut la place du plateau ENTIER plus deux
-   fois la colonne : le plateau fait 1019 px à carte pleine et peut
-   monter à 1090 sur une fenêtre très haute, la colonne en demande 154.
-   À 1240 px il ne restait que 130 px de marge. En dessous, c'est la
-   bande du bas qui prend le relais. */
-@media (min-width: 1500px) {
+/* ⚠️ EN BAS À DROITE, et non à hauteur des rangs. Posée à mi-plateau
+   elle frôlait les avatars de l'équipe rouge, et deux blocs de texte à
+   la même hauteur de part et d'autre des cartes se lisaient comme deux
+   colonnes de la même liste. Le coin bas droit est le seul endroit de
+   l'écran que rien n'occupe : le pied est centré, et sa demi-largeur
+   (340 px à carte pleine) laisse la place dès 1024 px de fenêtre.
+   En dessous, c'est la bande du bas qui prend le relais.
+   ⚠️ Pas de titre : neuf lignes qui disent « X annonce MOT n » n'ont
+   besoin de personne pour dire que ce sont des indices. */
+@media (min-width: 1024px) {
     .cod-histo {
-        left: calc(50% + var(--cod-plateau) / 2 + 3rem + var(--cod-rail) + 1rem);
-        right: auto; bottom: auto; top: 50%;
-        transform: translateY(-50%);
+        left: auto; right: 1rem; top: auto; bottom: 1rem;
+        transform: none;
         flex-direction: column; gap: 0.22rem;
-        justify-content: flex-start;
+        justify-content: flex-end;
         width: 8.6rem;
-        max-height: 60%;
+        max-height: 45%;
         overflow: hidden;
-    }
-    .cod-histo-t {
-        display: block;
-        font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
-        opacity: 0.32; margin-bottom: 0.1rem; padding-left: 0.1rem;
     }
 }
 /* ⚠️ Sobre : un filet de couleur à GAUCHE, pas un cadre teinté. Neuf
@@ -1189,7 +1210,7 @@
     /* ⚠️ Le saut est mesuré, mais la MISE À L'ÉCHELLE est écrite ici : à
        2,05 sur un téléphone, un mot de vingt-quatre lettres déborde des
        deux côtés. */
-    .cod-indice.arrive { --cod-echelle: 1.6; }
+    .cod-indice.arrive { --cod-echelle: 1.75; }
     .cod-indice-n { width: 1.5rem; height: 1.5rem; font-size: 0.85rem; }
     .cod-jauge { width: 8rem; }
     /* ⚠️ LA LIGNE D'ANNONCE DOIT TENIR SUR UN SEUL RANG. Repliée, elle

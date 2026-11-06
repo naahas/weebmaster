@@ -1109,7 +1109,7 @@ createApp({
             const c = this.cod;
             if (!c.enCours) return '';
             if (c.phase === 'indice') return 'Transmission en cours';
-            if (c.phase === 'vote') return 'Conseil de guerre';
+            if (c.phase === 'vote') return 'Vos partenaires réfléchissent…';
             if (c.phase === 'revelation') return 'On retourne…';
             return '';
         },
@@ -5953,7 +5953,11 @@ createApp({
                 this.cod.arrive = true;
                 // La classe s'éteint une fois le voyage fini : laissée en
                 // place, la moindre remise en page rejouerait la descente.
-                this.cod._arriveT = setTimeout(() => { this.cod.arrive = false; }, 1600);
+                // ⚠️ 2,5 s : ce chiffre SUIT le minutage du CSS — 0,62 s de
+                // rideau, UNE SECONDE ENTIÈRE au centre, puis 0,68 s de
+                // descente. Trop court, la classe s'éteint en plein vol et le
+                // mot se téléporte à sa place.
+                this.cod._arriveT = setTimeout(() => { this.cod.arrive = false; }, 2500);
             });
         },
 

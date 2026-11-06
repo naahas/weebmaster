@@ -2509,7 +2509,7 @@
                              disparaissent — la largeur y va tout entière aux
                              cartes, et l'en-tête porte déjà les deux comptes. -->
                         <div class="cod-plateau">
-                            <div class="cod-rang camp-A" :class="{ actif: cod.tourDe === 'A' }">
+                            <div class="cod-cote">
                                 <!-- ⚠️ LE CHAPEAU DU RANG. Deux choses s'y
                                      posent, et toujours AU-DESSUS DE L'ESPION,
                                      qui est le premier siège :
@@ -2539,6 +2539,7 @@
                                         </svg>
                                     </button>
                                 </span>
+                            <div class="cod-rang camp-A" :class="{ actif: cod.tourDe === 'A' }">
                                 <span class="cod-siege" v-for="j in codRang('A')" :key="j.playerId"
                                       :class="{ espion: j.espion, moi: j.playerId === playerId,
                                                 vote: codAVote(j.playerId) }"
@@ -2553,6 +2554,7 @@
                                     </span>
                                     <span class="cod-siege-n">{{ j.username }}</span>
                                 </span>
+                            </div>
                             </div>
 
                             <!-- La grille. Cinq par cinq.
@@ -2583,7 +2585,7 @@
                                 </button>
                             </div>
 
-                            <div class="cod-rang camp-B" :class="{ actif: cod.tourDe === 'B' }">
+                            <div class="cod-cote">
                                 <!-- Le même chapeau qu'en face — voir le rang A. -->
                                 <span class="cod-chapeau">
                                     <span class="cod-songe" v-if="codRangSonge('B')"><i></i><i></i><i></i></span>
@@ -2598,6 +2600,7 @@
                                         </svg>
                                     </button>
                                 </span>
+                            <div class="cod-rang camp-B" :class="{ actif: cod.tourDe === 'B' }">
                                 <span class="cod-siege" v-for="j in codRang('B')" :key="j.playerId"
                                       :class="{ espion: j.espion, moi: j.playerId === playerId,
                                                 vote: codAVote(j.playerId) }"
@@ -2610,6 +2613,7 @@
                                     </span>
                                     <span class="cod-siege-n">{{ j.username }}</span>
                                 </span>
+                            </div>
                             </div>
                         </div>
 
@@ -2719,7 +2723,6 @@
                              relire quand un tour a mal tourné, mais elle n'a pas
                              à peser sur neuf lignes en permanence. -->
                         <div class="cod-histo" v-if="cod.historique.length">
-                            <span class="cod-histo-t">Indices</span>
                             <span class="cod-histo-l" v-for="(h, k) in cod.historique.slice(-9)" :key="k"
                                   :class="'camp-' + h.equipe"
                                   :title="codNomEquipe(h.equipe) + ' · ' + h.trouvees + ' trouvée(s) sur ' + h.nombre">
