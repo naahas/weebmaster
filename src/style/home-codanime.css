@@ -141,7 +141,9 @@
    été tapée. Un indice est un mot d'ordre, pas une phrase — et en capitales
    il se lit d'un coup à six mètres, ce qui est la distance d'un stream. */
 .cod-indice-mot {
-    font-size: 1.5rem; font-weight: 900; line-height: 1.1;
+    /* 1,44 rem = 23 px : un pixel de moins qu'avant, une fois posé. En
+       grand au centre c'est l'échelle de l'animation qui décide. */
+    font-size: 1.44rem; font-weight: 900; line-height: 1.1;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -175,14 +177,41 @@
    par-dessus. Deux éléments auraient demandé de faire coïncider la fin
    de l'un avec le début de l'autre au pixel près, et le moindre écart se
    serait vu comme un saut. */
+/* ⚠️ LE VOILE : le plateau s'efface le temps qu'on lise le mot. En grand
+   au centre, il se posait sur vingt-cinq portraits colorés et s'y perdait
+   — un fond de visages n'a aucune zone calme où poser du texte, et aucune
+   épaisseur de police n'y change rien.
+   Son minutage suit celui du mot À LA LETTRE : il monte avec le rideau,
+   tient pendant la seconde de lecture, et se retire pendant la descente —
+   le plateau est donc déjà revenu quand le mot se pose. */
+.cod-voile {
+    position: absolute; inset: 0; z-index: 25;
+    background: rgba(5, 5, 8, 0.74);
+    pointer-events: none;
+    animation: codVoile 2.3s linear both;
+}
+@keyframes codVoile {
+    0%   { opacity: 0; }
+    13%  { opacity: 1; }
+    70%  { opacity: 1; }
+    92%  { opacity: 0; }
+    100% { opacity: 0; }
+}
+
 .cod-indice { position: relative; }
 /* Le minutage, et `cod._arriveT` dans app.js doit le suivre :
      0,00 → 0,62 s  le rideau découvre le mot, en grand, au centre
      0,62 → 1,62 s  il RESTE UNE SECONDE ENTIÈRE là, le temps qu'on le lise
      1,62 → 2,30 s  il descend, et rétrécit en chemin jusqu'à sa taille */
 .cod-indice.arrive {
+    /* Au-dessus du voile (25), qui est lui-même au-dessus des cartes. */
     z-index: 30;
     animation: codIndiceArrive 2.3s cubic-bezier(0.32, 0.9, 0.24, 1) both;
+}
+/* Et un halo sous le mot pendant qu'il est grand : le voile pose le calme,
+   le halo pose le mot dessus. Il s'éteint avec la descente. */
+.cod-indice.arrive .cod-indice-mot {
+    text-shadow: 0 0 1.2rem rgba(0, 0, 0, 0.9), 0 0 2.4rem rgba(0, 0, 0, 0.7);
 }
 @keyframes codIndiceArrive {
     0%   { transform: translateY(var(--cod-saut, -8rem)) scale(var(--cod-echelle, 2.45)); }
@@ -548,7 +577,11 @@
 .cod-carte.camp-A { --cod-teinte: var(--cod-a); --cod-teinte-rgb: 47, 155, 255; }
 .cod-carte.camp-B { --cod-teinte: var(--cod-b); --cod-teinte-rgb: 255, 59, 92; }
 .cod-carte.camp-neutre { --cod-teinte: var(--cod-neutre); --cod-teinte-rgb: 185, 168, 143; }
-.cod-carte.camp-assassin { --cod-teinte: #2a2a33; --cod-teinte-rgb: 42, 42, 51; }
+/* ⚠️ Le NOIR de l'assassin est en double : `--cod-teinte` sert au voile
+   posé sur le portrait, où un noir pur écraserait tout, et `--cod-coin-c`
+   au triangle, qui lui doit être franchement NOIR — c'est la seule carte
+   dont le coin ne nomme pas une couleur mais une absence. */
+.cod-carte.camp-assassin { --cod-teinte: #2a2a33; --cod-teinte-rgb: 42, 42, 51; --cod-coin-c: #000; }
 
 /* Le dosage B — « équilibré » : le creux se referme sur le seul visage,
    le halo mord, le coin se voit.
@@ -576,7 +609,7 @@
     border-width: 3.5px;
     border-color: var(--cod-teinte);
     box-shadow:
-        inset 0 0 0 2px rgba(0, 0, 0, 0.72),
+        inset 0 0 0 2px rgba(0, 0, 0, 0.92),
         inset 0 0 0 4.5px rgba(var(--cod-teinte-rgb), 0.9),
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
         0 0 0 1.5px rgba(var(--cod-teinte-rgb), 0.32);
@@ -613,8 +646,14 @@
     content: ''; position: absolute; top: 0; left: 0; z-index: 2;
     border-style: solid;
     border-width: var(--cod-coin) var(--cod-coin) 0 0;
-    border-color: var(--cod-teinte) transparent transparent transparent;
-    filter: drop-shadow(0.12rem 0.12rem 0.35rem rgba(0, 0, 0, 0.55));
+    border-color: var(--cod-coin-c, var(--cod-teinte)) transparent transparent transparent;
+    /* ⚠️ DEUX OMBRES, et la première est un TRAIT, pas un flou. Décalée
+       d'un pixel et demi sans rayon, elle peint une copie noire nette du
+       triangle : le long de l'hypoténuse, ça fait exactement le filet qui
+       sépare le coin du portrait. Sans lui, un coin rouge posé sur une
+       veste rouge n'a plus de bord. La seconde garde la profondeur. */
+    filter: drop-shadow(1.6px 1.6px 0 rgba(0, 0, 0, 0.92))
+            drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
     pointer-events: none;
 }
 
@@ -762,14 +801,25 @@
 .cod-carte.en-trop .cod-num { background: rgba(255, 255, 255, 0.22); color: rgba(255, 255, 255, 0.75); }
 
 /* ── Le pied ────────────────────────────────────────────────────── */
-/* ⚠️ `padding-top` et non une marge du plateau : le pied est le dernier
+/* ⚠️ LE RETRAIT EST CALCULÉ POUR QUE LE MOT SOIT AU MILIEU du vide d'en
+   bas — autant d'air au-dessus de lui que sous lui. Mesuré à 900 px de
+   haut : il restait 33 px au-dessus et 73 en dessous, le mot et la barre
+   d'indice collaient aux cartes.
+   La colonne étant centrée, ajouter Δ au pied éloigne le mot des cartes
+   de Δ mais ne réduit le vide du bas que de Δ/2 : il fallait donc
+   1,5 Δ = 40, soit ~30 px à ajouter aux 13 déjà là. Relevé après :
+   58 px au-dessus, 58 en dessous.
+   ⚠️ `padding-top` et non une marge du plateau : le pied est le dernier
    enfant d'une colonne centrée, et c'est SA hauteur qui entre dans le
    budget vertical de `--cod-cote`. Posé en marge, il aurait poussé la
-   grille vers le haut sans que le calcul des cartes le sache. */
+   grille vers le haut sans que le calcul des cartes le sache.
+   ⚠️ Et le budget (17,8 rem) n'a PAS besoin de bouger : le hors-grille
+   ne pèse que 15,6 rem même avec ce retrait. Le gonfler rognerait les
+   cartes pour rien. */
 .cod-pied {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
     min-height: 3.4rem; justify-content: center;
-    padding-top: 0.8rem;
+    padding-top: 2.7rem;
     width: var(--cod-plateau); min-width: 17rem;
 }
 /* ── LE JETON : la barre d'indice, d'un seul bloc ───────────────── */

@@ -2512,6 +2512,19 @@
                             </div>
                         </div>
 
+                        <!-- ⚠️ LE VOILE DE L'ANNONCE. Le mot paraît en grand au
+                             MILIEU DU PLATEAU, c'est-à-dire sur vingt-cinq
+                             portraits colorés : même en blanc épais, il s'y
+                             perdait — un fond de visages n'a aucune zone calme
+                             où poser du texte. Le plateau s'efface donc le
+                             temps qu'on le lise, puis revient pendant que le
+                             mot descend.
+                             ⚠️ `pointer-events: none` : la phase de vote
+                             commence AVEC l'annonce, et un voile cliquable
+                             volerait les deux premières secondes de chaque
+                             tour aux agents. -->
+                        <div class="cod-voile" v-if="cod.arrive"></div>
+
                         <!-- ⚠️ LES DEUX ÉQUIPES ENCADRENT LE PLATEAU, comme on
                              s'assoit de part et d'autre d'une table. Ce n'est
                              pas décoratif : l'espion doit savoir à QUI il

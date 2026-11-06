@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — le temps en haut</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LE TEMPS, EN HAUT DU PLATEAU
+
+   L'en-tête tient trois choses : le compte de chaque camp aux deux
+   bouts, et au milieu ce qui se passe plus le temps qu'il reste.
+
+   ⚠️ TROIS CONTRAINTES décident, et la troisième est celle qu'on
+   oublie :
+
+   • Il est posé AU-DESSUS de vingt-cinq portraits. Tout ce qui bouge ou
+     brille là-haut vole le regard aux cartes, alors qu'on ne le
+     consulte que deux fois par tour.
+
+   • Il doit se lire DE LOIN. En stream, le viewer regarde l'écran à
+     deux mètres sur un flux compressé : un trait de deux pixels y
+     disparaît, et un chiffre de dix pixels aussi.
+
+   • ⚠️ IL SERT DEUX DURÉES TRÈS DIFFÉRENTES : trente secondes pour
+     l'indice, jusqu'à cent quatre-vingts pour le vote. Une jauge qui
+     vit bien à 30 s paraît FIGÉE à 180 — on ne la voit plus bouger, et
+     elle cesse de dire quoi que ce soit. C'est ce qui départage les
+     pistes ci-dessous, et c'est pour ça que le banc les joue aux deux
+     durées.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --brun: #bf8a5f;
+    --a: #2f9bff;
+    --b: #ff3b5c;
+    --urgence: #ff3b5c;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee;
+    background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 52rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.barre {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.94);
+    backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.5; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.6rem; }
+.barre button {
+    padding: 0.32rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0.45rem;
+    background: transparent; color: inherit;
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.chrono { margin-left: auto; font-variant-numeric: tabular-nums; opacity: 0.45; }
+
+.piste { margin-bottom: 1rem; padding: 1rem 1.2rem 1.3rem;
+         border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 0.8rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; }
+.num { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+       border-radius: 50%; background: var(--brun); color: #15171d; font-size: 0.7rem; font-weight: 900; }
+.nom { font-size: 0.95rem; font-weight: 800; }
+.note { font-size: 0.72rem; opacity: 0.5; margin: 0.3rem 0 0.9rem 2.2rem; max-width: 46rem; line-height: 1.5; }
+
+/* ── Le banc : le VRAI en-tête, avec les deux compteurs ─────────── */
+/* On ne juge pas une jauge toute seule. Posée entre deux pastilles de
+   couleur vive, la même barre peut disparaître ou dominer. */
+.banc {
+    position: relative;
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 1rem;
+    width: 42rem; max-width: 100%;
+    margin: 0 auto;
+    padding: 0.4rem 0;
+}
+.score {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.7rem;
+}
+.score.a { color: var(--a); }
+.score.b { color: var(--b); opacity: 0.45; }
+.score b { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.score svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 2.2; }
+.score.a { box-shadow: 0 0 1.1rem rgba(47, 155, 255, 0.22); border-color: rgba(47, 155, 255, 0.55); }
+
+.centre { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; min-height: 3.1rem; justify-content: center; }
+.etat { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.17em; text-transform: uppercase; opacity: 0.38; }
+
+/* Un faux plateau derrière, pour juger ce qui vole le regard. */
+.fond {
+    position: absolute; left: 50%; top: 3.6rem; transform: translateX(-50%);
+    display: grid; grid-template-columns: repeat(5, 2.6rem); gap: 0.25rem;
+    opacity: 0.5; pointer-events: none;
+}
+.fond i { display: block; height: 2.6rem; border-radius: 0.3rem; border: 2px solid; }
+.fond i:nth-child(3n) { border-color: var(--a); background: rgba(47,155,255,.12); }
+.fond i:nth-child(3n+1) { border-color: var(--b); background: rgba(255,59,92,.12); }
+.fond i:nth-child(3n+2) { border-color: #b9a88f; background: rgba(185,168,143,.1); }
+.piste { padding-bottom: 5.6rem; }
+
+/* ── 1 · LE TRAIT (en place aujourd'hui) ────────────────────────── */
+.t1 { width: 11rem; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.t1 i { display: block; height: 100%; background: var(--brun); }
+.t1.urg i { background: var(--urgence); }
+
+/* ── 2 · LA RÈGLE GRADUÉE ───────────────────────────────────────── */
+/* Le même trait, mais crénelé : les crans donnent un repère fixe, donc
+   on VOIT avancer même quand ça avance lentement. */
+.t2 { position: relative; width: 13rem; height: 7px; }
+.t2 .piste2 {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg,
+        rgba(255,255,255,0.14) 0 1px, transparent 1px 10%);
+}
+.t2 .rem {
+    position: absolute; left: 0; top: 2px; height: 3px;
+    border-radius: 2px; background: var(--brun);
+}
+.t2.urg .rem { background: var(--urgence); }
+
+/* ── 3 · LES DEUX AILES ─────────────────────────────────────────── */
+/* La jauge se vide DU CENTRE vers les bords, en miroir : la symétrie
+   fait d'elle une pièce de l'en-tête et non une barre posée dessus. */
+.t3 { display: flex; align-items: center; gap: 0.3rem; width: 15rem; }
+.t3 span { flex: 1; height: 3px; background: rgba(255,255,255,0.09); border-radius: 2px; overflow: hidden; display: flex; }
+.t3 span:first-child { justify-content: flex-end; }
+.t3 i { display: block; height: 100%; background: var(--brun); }
+.t3.urg i { background: var(--urgence); }
+.t3 em { width: 5px; height: 5px; border-radius: 50%; background: var(--brun); flex: 0 0 auto; }
+.t3.urg em { background: var(--urgence); }
+
+/* ── 4 · L'ANNEAU SUR LE CAMP ───────────────────────────────────── */
+/* Pas de jauge au centre du tout : c'est le COMPTEUR DU CAMP QUI JOUE
+   qui se vide, d'un anneau autour de lui. Le temps est alors attaché à
+   celui qu'il concerne. */
+.t4-vide { height: 3px; }
+/* ⚠️ LARGEUR ET HAUTEUR EXPLICITES, pas un `inset`. Un `<svg>` est un
+   élément REMPLACÉ : en absolu avec `inset` et des dimensions `auto`, il
+   prend sa taille INTRINSÈQUE (300 × 150 par défaut) au lieu de s'étirer
+   sur son conteneur. L'anneau se dessinait en petit dans le coin haut
+   gauche de la pastille. C'est le piège classique du SVG en absolu. */
+/* ⚠️ `.score svg.anneau` et non `.anneau` : la règle de l'icône de
+   silhouette (`.score svg`, 1,05 rem) est PLUS SPÉCIFIQUE et l'écrasait.
+   L'anneau se dessinait en 17 × 17 dans le coin de la pastille. */
+.score svg.anneau {
+    position: absolute;
+    left: -4px; top: -4px;
+    width: calc(100% + 8px); height: calc(100% + 8px);
+    pointer-events: none;
+}
+.anneau circle, .anneau rect { fill: none; }
+.score { position: relative; }
+/* ⚠️ `non-scaling-stroke` : le viewBox est étiré en largeur
+   (`preserveAspectRatio: none`) pour épouser la pastille, et sans ça le
+   trait devenait trois fois plus épais en haut qu'à gauche. */
+.anneau rect {
+    stroke: var(--brun); stroke-width: 2.5;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+.anneau.urg rect { stroke: var(--urgence); }
+
+/* ── 5 · LE COMPTE À REBOURS ────────────────────────────────────── */
+/* Des chiffres. Le plus précis, et le seul qu'on puisse lire de très
+   loin — mais il invite à compter, et à résoudre la manche de tête. */
+.t5 { display: flex; align-items: baseline; gap: 0.25rem; font-variant-numeric: tabular-nums; }
+.t5 b { font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--brun); }
+.t5 small { font-size: 0.6rem; opacity: 0.4; font-weight: 700; }
+.t5.urg b { color: var(--urgence); }
+
+/* ── 6 · LE SOUFFLE ─────────────────────────────────────────────── */
+/* Aucune barre : la LIGNE D'ÉTAT elle-même respire, de plus en plus
+   vite à mesure que le temps tombe. Rien n'est ajouté à l'en-tête. */
+.t6 { height: 3px; width: 11rem; background: rgba(255,255,255,0.06); border-radius: 2px; }
+.souffle { animation: souffle var(--rythme, 2s) ease-in-out infinite; }
+@keyframes souffle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.95; } }
+
+@media (prefers-reduced-motion: reduce) { .souffle { animation: none; opacity: 0.6; } }
+</style>
+</head>
+<body>
+
+<h1>Codanime — le temps en haut</h1>
+<p class="sous">
+    Six façons de montrer le temps qui reste, jouées <b>en vrai sur une seule horloge</b>, dans le
+    vrai en-tête — entre les deux compteurs de camp, et avec un bout de plateau derrière.
+    <br>⚠️ <b>Il sert deux durées très différentes</b> : trente secondes pour l'indice, jusqu'à cent
+    quatre-vingts pour le vote. Une jauge qui vit bien à 30 s paraît <b>figée</b> à 180 — on ne la
+    voit plus bouger, et elle cesse de dire quoi que ce soit. C'est ce qui départage ces pistes,
+    d'où les deux boutons de durée.
+    <br>⚠️ Et il est posé <b>au-dessus de vingt-cinq portraits</b> : tout ce qui bouge là-haut vole
+    le regard aux cartes, alors qu'on ne le consulte que deux fois par tour.
+</p>
+
+<div class="barre">
+    <label>Durée</label>
+    <button data-duree="30" class="on">30 s · indice</button>
+    <button data-duree="90">90 s · vote</button>
+    <button data-duree="180">180 s · vote long</button>
+    <label style="margin-left:1rem">Vitesse</label>
+    <button data-vit="1" class="on">réelle</button>
+    <button data-vit="8">×8</button>
+    <button data-vit="25">×25</button>
+    <button id="rejouer" style="margin-left:1rem">Rejouer</button>
+    <span class="chrono" id="chrono">—</span>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const PISTES = [
+    ['t1', 'Le trait', 'Ce qui tourne aujourd’hui : onze rem de barre pleine qui se vide. Sobre, et c’est sa qualité — mais à 180 s elle avance de un pixel toutes les deux secondes, et on ne la voit plus bouger du tout.'],
+    ['t2', 'La règle graduée', 'Le même trait, sur un fond crénelé. Les crans sont des repères FIXES : le remplissage passe devant eux, donc on voit avancer même quand ça avance lentement. C’est la réponse la plus directe au problème des 180 s.'],
+    ['t3', 'Les deux ailes', 'La jauge se vide du centre vers les bords, en miroir. La symétrie en fait une pièce de l’en-tête et non une barre posée dessus — et deux bouts qui bougent se remarquent mieux qu’un seul.'],
+    ['t4', 'L’anneau sur le camp', 'Rien au centre : c’est le compteur du camp QUI JOUE qui se vide, d’un anneau autour de lui. Le temps est alors attaché à celui qu’il concerne, et l’en-tête ne gagne aucun élément.'],
+    ['t5', 'Le compte à rebours', 'Des chiffres. Le plus précis, le seul lisible de très loin sur un flux compressé — mais il invite à COMPTER, et donc à résoudre le tour de tête. C’est exactement ce qu’on a refusé pour la bombe de BombAnime.'],
+    ['t6', 'Le souffle', 'Aucune jauge : la ligne d’état elle-même respire, de plus en plus vite à mesure que le temps tombe. Rien n’est ajouté en haut — mais on ne sait jamais combien il reste, seulement que ça presse.'],
+];
+
+const ETAT = { 30: 'Transmission en cours', 90: 'Vos partenaires réfléchissent…', 180: 'Vos partenaires réfléchissent…' };
+
+function fond() {
+    return '<span class="fond">' + Array.from({ length: 15 }, () => '<i></i>').join('') + '</span>';
+}
+function jauge(cls) {
+    if (cls === 't1') return '<span class="t1"><i></i></span>';
+    if (cls === 't2') return '<span class="t2"><span class="piste2"></span><span class="rem"></span></span>';
+    if (cls === 't3') return '<span class="t3"><span><i></i></span><em></em><span><i></i></span></span>';
+    if (cls === 't4') return '<span class="t4-vide"></span>';
+    if (cls === 't5') return '<span class="t5"><b>30</b><small>s</small></span>';
+    if (cls === 't6') return '<span class="t6"></span>';
+    return '';
+}
+function score(cote, n, avecAnneau) {
+    const anneau = avecAnneau
+        ? '<svg class="anneau" viewBox="0 0 100 48" preserveAspectRatio="none">'
+          + '<rect x="2" y="2" width="96" height="44" rx="10" pathLength="100"></rect></svg>'
+        : '';
+    return '<span class="score ' + cote + '">' + anneau + '<b>' + n + '</b>'
+        + '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">'
+        + '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20.2a6.5 6.5 0 0 1 13 0"/></svg></span>';
+}
+
+document.getElementById('pistes').innerHTML = PISTES.map(([cls, nom, note], k) =>
+    '<section class="piste ' + cls + '-p">'
+    + '<div class="tete"><span class="num">' + (k + 1) + '</span><span class="nom">' + nom + '</span></div>'
+    + '<p class="note">' + note + '</p>'
+    + '<div class="banc" data-cls="' + cls + '">'
+    +   score('a', 8, cls === 't4')
+    +   '<span class="centre"><span class="etat">Transmission en cours</span>' + jauge(cls) + '</span>'
+    +   score('b', 9, false)
+    +   fond()
+    + '</div></section>').join('');
+
+let duree = 30, vitesse = 1, debut = performance.now();
+
+function peindre(now) {
+    const ecoule = ((now - debut) / 1000) * vitesse;
+    const reste = Math.max(0, duree - ecoule);
+    const part = reste / duree;                 // 1 → 0
+    const urg = reste <= 10;
+    document.getElementById('chrono').textContent = reste.toFixed(1) + ' s';
+
+    for (const banc of document.querySelectorAll('.banc')) {
+        const cls = banc.dataset.cls;
+        banc.querySelector('.etat').textContent = ETAT[duree];
+        const u = (e) => { if (e) e.classList.toggle('urg', urg); };
+
+        if (cls === 't1') { const j = banc.querySelector('.t1'); u(j); j.firstElementChild.style.width = (part * 100) + '%'; }
+        if (cls === 't2') { const j = banc.querySelector('.t2'); u(j); j.querySelector('.rem').style.width = (part * 100) + '%'; }
+        if (cls === 't3') {
+            const j = banc.querySelector('.t3'); u(j);
+            j.querySelectorAll('i').forEach(i => { i.style.width = (part * 100) + '%'; });
+        }
+        if (cls === 't4') {
+            const r = banc.querySelector('.anneau rect');
+            r.style.strokeDasharray = '100';
+            r.style.strokeDashoffset = (100 - part * 100);
+            u(banc.querySelector('.anneau'));
+        }
+        if (cls === 't5') { const j = banc.querySelector('.t5'); u(j); j.querySelector('b').textContent = Math.ceil(reste); }
+        if (cls === 't6') {
+            // Le rythme passe de 2,2 s à 0,35 s à mesure que le temps tombe.
+            const e = banc.querySelector('.etat');
+            e.classList.add('souffle');
+            e.style.setProperty('--rythme', (0.35 + part * 1.85).toFixed(2) + 's');
+            e.style.color = urg ? 'var(--urgence)' : '';
+        }
+    }
+    if (reste <= 0) debut = now;                // on reboucle, pour pouvoir regarder
+    requestAnimationFrame(peindre);
+}
+requestAnimationFrame(peindre);
+
+document.querySelectorAll('[data-duree]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-duree]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); duree = +b.dataset.duree; debut = performance.now();
+}));
+document.querySelectorAll('[data-vit]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-vit]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); vitesse = +b.dataset.vit; debut = performance.now();
+}));
+document.getElementById('rejouer').addEventListener('click', () => { debut = performance.now(); });
+</script>
+</body></html>

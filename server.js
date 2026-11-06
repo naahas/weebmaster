@@ -2253,6 +2253,13 @@ app.get('/prototypes/codanime-indice', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-indice.html');
 });
 
+// Le temps en haut du plateau : six pistes jouées sur une seule horloge,
+// et surtout AUX DEUX DURÉES — 30 s pour l'indice, jusqu'à 180 pour le
+// vote. C'est là que la plupart se cassent.
+app.get('/prototypes/codanime-timer', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-timer.html');
+});
+
 // ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
 // Une page de prototype qui les servirait en clair ne dirait rien du
 // rendu réel — et les noms de fichiers sont justement ce que le mode
