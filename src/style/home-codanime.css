@@ -618,7 +618,13 @@
     --cod-bord: 82%;
     --cod-force: 1;
     --cod-coin: calc(var(--cod-cote) * var(--cod-coin-part));
-    --cod-halo: calc(var(--cod-cote) * 0.2);
+    /* ⚠️ La lueur a BAISSÉ (0,2 → 0,15 du côté, et 0,8 → 0,45 d'opacité
+       plus bas). Depuis que la bande est épaisse et cernée de noir, c'est
+       ELLE qui dit le camp : le halo n'avait plus à le redire, et sa
+       teinte débordait sur le portrait qu'on venait justement de
+       délimiter. Il reste pour donner du relief au cadre, pas pour
+       colorer l'image. */
+    --cod-halo: calc(var(--cod-cote) * 0.15);
 }
 
 /* ⚠️ LA BANDE DE COULEUR EST CERNÉE DE NOIR DES DEUX CÔTÉS — dehors et
@@ -638,7 +644,7 @@
     border-color: var(--cod-teinte);
     box-shadow:
         /* le halo, qui déborde sous la bande */
-        inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
+        inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.45),
         /* et le contour noir EXTERNE, qui ferme la bande */
         0 0 0 var(--cod-dehors) #000;
 }
