@@ -256,9 +256,16 @@ const post = async (chemin, corps, jeton) => {
             'l\'assassin est bien annoncé comme tel');
         dire(!!vu[agent3].fin, 'et la partie se termine');
         const pause = tCarte ? tFin - tCarte : 0;
-        // ⚠️ Au moins une seconde et demie : le balayage dure une demi-seconde,
-        // et il faut ce qui reste pour lire la couleur. Mesuré, pas supposé.
-        dire(pause >= 1500, 'la fin attend ' + pause + ' ms après la carte — pas d\'à-coup',
+        // ⚠️ Le balayage finit à 560 ms : il faut au moins ça, sinon la carte
+        // n'a même pas fini de se retourner quand le classement arrive. On
+        // garde une marge pour la latence du relevé, qui échantillonne toutes
+        // les 100 ms. Mesuré, pas supposé.
+        dire(pause >= 800, 'la fin attend ' + pause + ' ms après la carte — pas d\'à-coup',
+            pause + ' ms');
+        // ⚠️ Et pas plus de deux secondes : essayé en jeu, au-delà on attend
+        // devant une image fixe. La borne haute est là pour que personne ne
+        // rallonge la pause sans s'en rendre compte.
+        dire(pause <= 2000, 'et pas davantage — au-delà on attend devant une image fixe',
             pause + ' ms');
         dire(vu[agent3].fin && vu[agent3].fin.raison === 'assassin',
             'et la raison voyage jusqu\'au podium');

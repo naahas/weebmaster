@@ -87,10 +87,16 @@ function dureeValide(d) {
     return Number.isInteger(d) && d >= DUREE_MIN && d <= DUREE_MAX && d % DUREE_PAS === 0;
 }
 // Le temps qu'on laisse à la DERNIÈRE carte avant d'annoncer le vainqueur.
-// ⚠️ Deux secondes, et c'est un minimum : le balayage dure une demi-seconde,
-// et il reste une seconde et demie pour lire la couleur. En dessous, on passe
-// au classement sans avoir vu l'assassin noircir.
-const FIN_PAUSE = 2000;
+//
+// ⚠️ IL EN FAUT, et il ne faut pas plus. Sans pause, la fin partait à
+// l'instant où la carte se retournait : on passait au classement sans avoir
+// vu l'assassin noircir, c'est-à-dire qu'on ratait le seul moment où le mode
+// fait peur. Mais deux secondes, essayées en jeu, traînaient — le balayage
+// finit à 560 ms, et le reste n'est plus qu'une image fixe sur laquelle on
+// attend. Une seconde laisse l'animation se jouer en entier et un battement
+// pour lire la couleur, puis le plateau s'efface en fondu (520 ms de plus,
+// côté client) et le classement arrive.
+const FIN_PAUSE = 1000;
 
 // Le battement entre deux cartes d'une même salve. C'est le suspense : on ne
 // sait pas encore si le tour continue. Trop court, la salve devient un bloc.
