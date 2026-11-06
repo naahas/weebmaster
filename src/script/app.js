@@ -272,10 +272,17 @@ createApp({
                 jeSuisEspion: false,
                 grille: [],          // 25 × { i, img, revelee, camp }
                 votes: {},           // i -> [playerId]
-                ordre: [],           // les i ayant franchi le seuil, dans l'ordre
-                retenues: [],        // les premiers « nombre » — les autres sont en trop
+                // ⚠️ `seuil` est L'UNANIMITÉ des agents présents du camp qui
+                // joue : il vient du serveur, qui seul sait qui est encore
+                // branché. Le recalculer ici donnerait un chiffre différent
+                // du sien dès qu'un onglet se ferme.
                 seuil: 1,
-                indice: null,        // { nombre }
+                agentsDuTour: [],    // leurs playerId, pour dessiner les absents en creux
+                passe: [],           // qui a voté « on s'arrête »
+                // Les coups qu'il reste sur l'indice. ⚠️ `-1` vaut ILLIMITÉ —
+                // `Infinity` ne traverse pas JSON, il s'y sérialise en `null`.
+                coups: 0,
+                indice: null,        // { mot, nombre } — nombre : 0..9, ou -1 pour ∞
                 historique: [],
                 restant: { A: 0, B: 0 },
                 gagnant: null,
@@ -1125,7 +1132,35 @@ createApp({
         codMaxIndice() {
             const c = this.cod;
             const reste = c.monEquipe ? (c.restant[c.monEquipe] || 0) : 0;
-            return Math.max(1, Math.min(4, reste));
+            return Math.max(0, Math.min(9, reste));
+        },
+
+        // La suite des nombres annonçables, dans l'ordre du sélecteur.
+        // ⚠️ L'∞ est EN BOUT DE COURSE et le 0 au début, parce que c'est
+        // l'ordre de ce qu'ils promettent : rien, une, deux… tout. Les mettre
+        // côte à côte — les deux « illimités » — aurait été vrai
+        // mécaniquement et faux à l'usage : on choisit 0 pour écarter, ∞ pour
+        // tout rouvrir, et ces deux gestes n'arrivent pas au même moment de
+        // la partie.
+        codNombres() {
+            const l = [];
+            for (let n = 0; n <= this.codMaxIndice; n++) l.push(n);
+            l.push(-1);
+            return l;
+        },
+
+        // La carte la mieux placée, et elle seule, montre QUI l'on attend.
+        // ⚠️ Pas toutes : à trois agents sur deux cartes, chacune
+        // afficherait trois visages dont deux en creux — six têtes pour deux
+        // voix. On ne le dit donc que là où ça se joue.
+        codCarteMenee() {
+            if (this.cod.phase !== 'vote') return -1;
+            const v = this.cod.votes || {};
+            let menee = -1, max = 0;
+            for (const k in v) {
+                if ((v[k] || []).length > max) { max = v[k].length; menee = Number(k); }
+            }
+            return max > 0 && max < (this.cod.seuil || 1) ? menee : -1;
         },
 
         codResteSec() {
@@ -5731,7 +5766,7 @@ createApp({
             this.cod._arriveT = null;
             Object.assign(this.cod, {
                 enCours: false, intro: false, phase: 'repos', tourDe: null,
-                grille: [], votes: {}, ordre: [], retenues: [], indice: null,
+                grille: [], votes: {}, agentsDuTour: [], passe: [], coups: 0, indice: null,
                 historique: [], gagnant: null, derniereCarte: null,
                 restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
                 arrive: false, saut: 0, masquerAdverses: false,
@@ -5994,7 +6029,10 @@ createApp({
 
         codAnnoncer() {
             const n = parseInt(this.cod.saisieNombre, 10);
-            if (!Number.isInteger(n) || n < 1) return;
+            // ⚠️ `n < -1` et non `n < 1` : zéro (« évitez tout ça ») et −1
+            // (l'∞) sont des annonces valables, et ce sont justement les deux
+            // plus fortes du jeu.
+            if (!Number.isInteger(n) || n < -1) return;
             const mot = (this.cod.saisieMot || '').trim();
             if (!mot) return;
             this.socket.emit('codanime-indice', { nombre: n, mot });
@@ -6026,15 +6064,6 @@ createApp({
             this.cod._presseT = setTimeout(() => { this.cod.presse = null; }, 560);
         },
 
-        // Le numéro ① ② ③ d'une carte, ou 0 si elle n'a pas franchi le seuil.
-        // ⚠️ Il sort de l'ORDRE DE FRANCHISSEMENT, pas du nombre de voix :
-        // l'ordre décide de qui survit à la chaîne, il ne doit donc pas
-        // bouger à chaque clic.
-        codNumero(i) {
-            const k = this.cod.ordre.indexOf(i);
-            return k < 0 ? 0 : k + 1;
-        },
-
         codVoix(i) {
             const v = this.cod.votes[i];
             return v ? v.length : 0;
@@ -6054,12 +6083,24 @@ createApp({
         // mode), et sa fiche peut ne plus être dans `equipes`.
         codVotants(i) {
             const v = (this.cod.votes || {})[i] || [];
+            if (!v.length) return [];
             const f = this.codFiches;
-            const n = v.length;
-            return v.map((id, k) => {
-                const fiche = f[id] || { playerId: id, username: '…', avatar: null };
-                return { ...fiche, rang: n - 1 - k };
+            const fiche = (id, fantome) => ({
+                ...(f[id] || { playerId: id, username: '…', avatar: null }), fantome,
             });
+            let liste = v.map(id => fiche(id, false));
+            // ⚠️ LES ABSENTS EN CREUX, sur la carte qui mène. L'unanimité ne
+            // dit rien tant qu'on ignore QUI l'on attend : à trois agents,
+            // « 2 voix » et « il manque Yokai » ne demandent pas le même
+            // geste. On les ajoute à droite, donc en TÊTE de l'éventail —
+            // c'est eux qu'on regarde.
+            if (i === this.codCarteMenee) {
+                for (const id of (this.cod.agentsDuTour || [])) {
+                    if (!v.includes(id)) liste.push(fiche(id, true));
+                }
+            }
+            const n = liste.length;
+            return liste.map((x, k) => ({ ...x, rang: n - 1 - k }));
         },
 
         // ⚠️ L'ÉCART SE RESSERRE QUAND ILS SONT NOMBREUX. Au pas normal,
@@ -6069,7 +6110,10 @@ createApp({
         // donc pour tenir dans 80 % de la carte, quel que soit le nombre.
         // Jusqu'à quatre, rien ne change : c'est le cas courant.
         codEcart(i) {
-            const n = ((this.cod.votes || {})[i] || []).length;
+            // ⚠️ Le compte des VIGNETTES RENDUES, pas des voix : la carte qui
+            // mène porte aussi les absents en creux, et c'est l'éventail
+            // entier qui doit tenir dans la carte.
+            const n = this.codVotants(i).length;
             if (n < 2) return 0.175;
             // ⚠️ 0,55 et non 0,85 : un visage vaut 0,3 du côté, donc
             // l'éventail entier mesure 0,3 + (n−1) × pas. C'est cette
@@ -6132,8 +6176,14 @@ createApp({
 
         // Le pas-à-pas du nombre, borné par ce qu'il reste à trouver.
         codPasNombre(pas) {
-            const n = (this.cod.saisieNombre || 1) + pas;
-            this.cod.saisieNombre = Math.min(this.codMaxIndice, Math.max(1, n));
+            // ⚠️ `codNombres` est une propriété CALCULÉE, donc un tableau —
+            // pas une méthode. L'appeler avec des parenthèses lève une
+            // TypeError et blanchit la page, et `check:vue` ne l'aurait pas
+            // vu : il ne lit que les appels du GABARIT, pas ceux du script.
+            const l = this.codNombres;
+            const k = l.indexOf(this.cod.saisieNombre);
+            const j = Math.min(l.length - 1, Math.max(0, (k < 0 ? 1 : k) + pas));
+            this.cod.saisieNombre = l[j];
         },
 
         // Les trois points d'attente se posent dans le rang de l'équipe DONT
@@ -6148,6 +6198,47 @@ createApp({
         // suis espion : un agent n'a aucune couleur à masquer.
         codMasqueIci(camp) {
             return this.cod.jeSuisEspion && this.cod.monEquipe === camp;
+        },
+
+        // ── « On s'arrête » ────────────────────────────────────────
+        //
+        // ⚠️ Il n'est plus facultatif. Avec un indice à 0 ou à ∞, les coups
+        // sont illimités : sans ce bouton, le seul moyen de rendre la main
+        // serait de se tromper ou d'attendre le chrono.
+        //
+        // Il se pose dans MON rang, et seulement si je suis un agent du camp
+        // qui joue : l'espion ne vote pas, et l'autre camp regarde.
+        codPasseIci(camp) {
+            return this.cod.enCours && this.cod.phase === 'vote'
+                && !this.cod.jeSuisEspion
+                && this.cod.monEquipe === camp && this.cod.tourDe === camp;
+        },
+        codJaiPasse() {
+            return (this.cod.passe || []).includes(this.playerId);
+        },
+        // « 1/3 » : où en est l'unanimité. Sans ce compte, on clique dans le
+        // vide sans savoir s'il manque une voix ou deux.
+        codPasseCompte() {
+            return (this.cod.passe || []).length + '/' + (this.cod.seuil || 1);
+        },
+        codPasser() {
+            if (!this.codPeutVoter) return;
+            this.socket.emit('codanime-passer');
+        },
+
+        // ── Les coups qu'il reste ──────────────────────────────────
+        //
+        // ⚠️ `-1` vaut ILLIMITÉ, des deux côtés : `Infinity` ne traverse pas
+        // JSON. Le nombre de l'indice suit la même convention.
+        codIllimite(n) { return n === -1; },
+        codNombreTexte(n) { return n === -1 ? '∞' : String(n); },
+        // Les pastilles de coups : une par coup encore disponible. On en
+        // dessine au plus six — au-delà c'est un indice à 0 ou à ∞, et le
+        // compte n'a plus de sens.
+        codCoupsPips() {
+            const n = this.cod.coups;
+            if (n === -1 || n > 6) return [];
+            return Array.from({ length: Math.max(0, n) }, (_, k) => k);
         },
 
         // ⚠️ L'ARRIVÉE DE L'INDICE SE MESURE. Il paraît au centre du plateau
@@ -6217,13 +6308,12 @@ createApp({
                 if ((carte.camp === 'A' || carte.camp === 'B')
                     && carte.camp !== this.cod.monEquipe) c.push('adverse');
             }
-            if (this.codNumero(carte.i)) {
-                c.push('engagee');
-                // Au-delà du quota, la carte a franchi le seuil mais ne sera
-                // PAS retournée. On la grise pour que l'équipe le voie et
-                // enlève une marque, plutôt que de la découvrir à la clôture.
-                if (!this.cod.retenues.includes(carte.i)) c.push('en-trop');
-            }
+            // ⚠️ PLUS D'« ENGAGÉE » NI D'« EN TROP ». Les deux venaient du
+            // modèle où l'équipe préparait une salve de cartes avant de
+            // l'ouvrir : une carte franchissait le seuil, attendait son tour,
+            // et pouvait se retrouver au-delà du quota. Maintenant elle part
+            // à l'instant où l'unanimité tombe — il n'y a ni file ni
+            // débordement, donc rien à signaler entre les deux.
             if (this.codJaiVote(carte.i)) c.push('ma-voix');
             if (this.cod.refusee === carte.i) c.push('refusee');
             if (this.cod.derniereCarte && this.cod.derniereCarte.i === carte.i) c.push('tombe');
@@ -9432,9 +9522,10 @@ createApp({
                 c.grille = data.grille || [];
                 c.equipes = data.equipes || c.equipes;
                 c.votes = data.votes || {};
-                c.ordre = data.ordre || [];
-                c.retenues = data.retenues || [];
                 c.seuil = data.seuil || 1;
+                c.agentsDuTour = data.agentsDuTour || [];
+                c.passe = data.passe || [];
+                c.coups = data.coups === undefined ? 0 : data.coups;
                 c.indice = data.indice;
                 c.historique = data.historique || [];
                 c.restant = data.restant || { A: 0, B: 0 };

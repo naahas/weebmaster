@@ -2,8 +2,8 @@
 //
 // On vérifie ici ce qu'aucune partie jouée à la main ne montrerait de façon
 // fiable : la répartition des camps, le plafond par série sur des milliers de
-// tirages, l'ordre de franchissement, le débordement du quota — et surtout
-// qu'AUCUNE couleur ne sort vers un agent.
+// tirages, l'unanimité, le barème des coups — et surtout qu'AUCUNE couleur ne
+// sort vers un agent.
 //
 //   npm run test:codanime
 const m = require('../server-codanime');
@@ -27,23 +27,37 @@ function alea(graine) {
     };
 }
 
-titre('Le seuil de voix');
+titre('Le seuil de voix : L\'UNANIMITÉ');
 dire(m.seuil(1) === 1, '1 agent → 1 voix');
 dire(m.seuil(2) === 2, '2 agents → 2 voix');
-dire(m.seuil(3) === 2, '3 agents → 2 voix');
-dire(m.seuil(4) === 3, '4 agents → 3 voix (la majorité STRICTE, pas la moitié)');
+dire(m.seuil(3) === 3, '3 agents → 3 voix — TOUT LE MONDE, plus la majorité');
+// ⚠️ Le plancher n'est pas décoratif : à zéro agent présent, un seuil de 0
+// ferait partir une carte sur la voix d'un fantôme.
+dire(m.seuil(0) === 1, 'à zéro agent présent, le seuil reste à 1 et non à 0');
 
-titre('Le garde-fou de jouabilité');
-dire(m.configJouable(2, 4, 4), '2 agents, plafond 4, indice 4 → jouable');
-dire(!m.configJouable(2, 3, 4), '2 agents, plafond FIXE à 3, indice 4 → injouable, et on le dit');
-for (let a = 1; a <= 3; a++) {
-    for (let n = 1; n <= m.INDICE_MAX; n++) {
-        if (!m.configJouable(a, n, n)) {
-            dire(false, 'plafond = nombre annoncé', a + ' agents, indice ' + n);
-        }
-    }
-}
-dire(true, 'plafond = nombre annoncé → jouable pour tous les couples (agents, indice)');
+titre('Le barème des coups');
+// ⚠️ `n + 1`, et le « +1 » est le coup de rattrapage : c'est lui qui porte
+// toute la stratégie du mode.
+dire(m.coupsPour(1) === 2, 'un indice à 1 donne DEUX coups');
+dire(m.coupsPour(3) === 4, 'un indice à 3 en donne quatre');
+dire(m.coupsPour(9) === 10, 'et un indice à 9 en donne dix');
+// ⚠️ 0 et ∞ sont mécaniquement IDENTIQUES — coups illimités. Seule
+// l'intention diffère, et c'est l'espion qui la porte à la voix.
+dire(m.coupsPour(0) === Infinity, '« 0 » (évitez tout ça) donne des coups ILLIMITÉS, pas un seul');
+dire(m.coupsPour(m.INDICE_INFINI) === Infinity, '« ∞ » aussi');
+dire(m.INDICE_INFINI === -1, 'l\'∞ voyage en −1 : Infinity se sérialise en null à travers JSON');
+
+titre('Ce qu\'un espion a le droit d\'annoncer');
+dire(m.indiceValide(0, 9), '0 passe toujours');
+dire(m.indiceValide(m.INDICE_INFINI, 9), '∞ aussi');
+dire(m.indiceValide(9, 9), 'le plafond est à 9');
+dire(!m.indiceValide(10, 9), 'au-delà, non');
+// ⚠️ Borné par ce qu'il RESTE : annoncer 7 quand il reste 2 cartes ne veut
+// rien dire, et promettrait des coups que l'équipe ne peut pas honorer.
+dire(!m.indiceValide(9, 3), 'et borné par ce qu\'il reste à trouver');
+dire(m.indiceValide(3, 3), 'juste ce qu\'il reste, ça passe');
+dire(m.indiceValide(m.INDICE_INFINI, 1), '∞ passe même avec une seule carte restante');
+dire(!m.indiceValide(-2, 9) && !m.indiceValide(1.5, 9), 'ni un nombre négatif inventé, ni un décimal');
 
 titre('Le vivier');
 dire(vivier.length >= m.TAILLE, vivier.length + ' personnages, il en faut au moins ' + m.TAILLE);
@@ -145,75 +159,70 @@ titre('⚠️ Ce qu\'un AGENT reçoit — aucune couleur ne doit fuiter');
     dire(espion.every(c => c.camp), 'l\'espion, lui, voit les 25 camps');
 }
 
-titre('Les votes : pose, retrait, plafond');
+titre('Les votes : UNE VOIX PAR AGENT, qui se déplace');
 {
     const etat = m.etatNeuf();
     etat.grille = m.construireGrille(vivier, 'A', alea(11));
     etat.phase = 'vote';
     etat.indice = { nombre: 2 };
-    let t = 1000;
-    const vote = (qui, idx) => m.basculerVote(etat, qui, idx, 3, t++);
+    const vote = (qui, idx) => m.basculerVote(etat, qui, idx);
 
-    dire(vote('a', 0).ok, 'un agent pose une marque');
+    dire(vote('a', 0).ok, 'un agent désigne une carte');
     dire(m.voixDe(etat, 0).length === 1, 'la carte porte une voix');
-    dire(vote('a', 0).ok && m.voixDe(etat, 0).length === 0, 're-cliquer retire la marque');
+    dire(vote('a', 0).ok && m.voixDe(etat, 0).length === 0, 're-cliquer retire la voix');
 
-    vote('a', 0); vote('a', 1);
-    const trop = vote('a', 2);
-    dire(!trop.ok && trop.raison === 'plafond-atteint',
-        'au-delà du nombre annoncé, la marque est refusée');
-    dire(m.compterMarques(etat, 'a') === 2, 'il en a bien deux, pas trois');
+    // ⚠️ LE CŒUR DE LA NOUVELLE RÈGLE. On désigne UNE carte ; cliquer
+    // ailleurs DÉPLACE sa voix. Pouvoir en marquer plusieurs n'avait de sens
+    // que dans l'ancien modèle, où l'équipe préparait une salve.
+    vote('a', 3);
+    vote('a', 7);
+    dire(m.voixDe(etat, 3).length === 0, 'cliquer ailleurs vide la carte d\'avant');
+    dire(m.voixDe(etat, 7).length === 1, 'et la voix se retrouve sur la nouvelle');
+    dire(m.voixAilleurs(etat, 'a') === 7, 'un agent n\'a jamais qu\'une voix posée');
+
+    // ⚠️ Sans le retrait AVANT la pose, deux cartes pourraient atteindre
+    // l'unanimité avec le même joueur compté deux fois.
+    vote('b', 7); vote('c', 7);
+    dire(m.voixDe(etat, 7).length === 3, 'trois agents sur la même carte');
+    vote('b', 2);
+    dire(m.voixDe(etat, 7).length === 2 && m.voixDe(etat, 2).length === 1,
+        'celui qui change d\'avis ne laisse rien derrière lui');
 
     etat.phase = 'revelation';
-    dire(!vote('b', 5).ok, 'hors de la phase de vote, aucune marque ne passe');
+    dire(!vote('b', 5).ok, 'hors de la phase de vote, aucune voix ne passe');
+
+    etat.phase = 'vote';
+    etat.grille[4].revelee = true;
+    const dejaVue = vote('a', 4);
+    dire(!dejaVue.ok && dejaVue.raison === 'deja-revelee',
+        'une carte déjà retournée ne se vote pas');
+    dire(!vote('a', 99).ok, 'une carte qui n\'existe pas non plus');
 }
 
-titre('L\'ordre de franchissement');
+titre('L\'unanimité, carte par carte');
 {
     const etat = m.etatNeuf();
     etat.grille = m.construireGrille(vivier, 'A', alea(13));
     etat.phase = 'vote';
     etat.indice = { nombre: 3 };
-    let t = 1000;
-    const vote = (qui, idx) => m.basculerVote(etat, qui, idx, 3, t++);
+    const vote = (qui, idx) => m.basculerVote(etat, qui, idx);
+    const atteinte = (idx, nbAgents) => m.voixDe(etat, idx).length >= m.seuil(nbAgents);
 
-    vote('a', 7); vote('b', 7);          // carte 7 franchit en premier
-    vote('a', 2); vote('c', 2);          // carte 2 en second
-    vote('b', 9); vote('c', 9);          // carte 9 en troisième
-    dire(JSON.stringify(m.ordreFranchissement(etat)) === '[7,2,9]',
-        'l\'ordre suit le franchissement, pas le numéro de carte',
-        JSON.stringify(m.ordreFranchissement(etat)));
-
-    // Une carte qui prend une 3e voix ne remonte pas devant.
+    vote('a', 7); vote('b', 7);
+    dire(!atteinte(7, 3), 'à trois agents, deux voix NE SUFFISENT PLUS');
     vote('c', 7);
-    dire(JSON.stringify(m.ordreFranchissement(etat)) === '[7,2,9]',
-        'une voix de plus ne change pas l\'ordre');
+    dire(atteinte(7, 3), 'la troisième la retourne');
 
-    // On retire une voix de la carte 2 : elle repasse sous le seuil et sort.
-    vote('a', 2);
-    dire(JSON.stringify(m.ordreFranchissement(etat)) === '[7,9]',
-        'sous le seuil, la carte perd sa place', JSON.stringify(m.ordreFranchissement(etat)));
-
-    // Elle revient : elle repart EN DERNIER, pas à son ancienne place.
-    vote('a', 2);
-    dire(JSON.stringify(m.ordreFranchissement(etat)) === '[7,9,2]',
-        'elle revient en dernier, pas à son ancien rang');
-}
-
-titre('Le débordement du quota');
-{
-    const etat = m.etatNeuf();
-    etat.grille = m.construireGrille(vivier, 'A', alea(17));
-    etat.phase = 'vote';
-    etat.indice = { nombre: 2 };     // 3 agents × 2 marques = 6 voix, seuil 2
-    let t = 1000;
-    const vote = (qui, idx) => m.basculerVote(etat, qui, idx, 3, t++);
-    vote('a', 1); vote('b', 1);
-    vote('a', 4); vote('c', 4);
-    vote('b', 8); vote('c', 8);
-    dire(m.ordreFranchissement(etat).length === 3, 'trois cartes ont franchi le seuil');
-    dire(m.engagees(etat).length === 2, 'mais seules DEUX sont engagées — le quota coupe');
-    dire(JSON.stringify(m.engagees(etat)) === '[1,4]', 'et ce sont les deux premières');
+    // ⚠️ Ce sont les PRÉSENTS qui comptent : si l'un part, l'unanimité
+    // retombe sur ceux qui restent, sinon l'équipe ne pourrait plus rien
+    // retourner du tout.
+    const etat2 = m.etatNeuf();
+    etat2.grille = m.construireGrille(vivier, 'A', alea(19));
+    etat2.phase = 'vote';
+    etat2.indice = { nombre: 2 };
+    m.basculerVote(etat2, 'a', 5); m.basculerVote(etat2, 'b', 5);
+    dire(m.voixDe(etat2, 5).length < m.seuil(3), 'à trois présents, deux voix ne suffisent pas');
+    dire(m.voixDe(etat2, 5).length >= m.seuil(2), 'le troisième parti, les deux mêmes voix suffisent');
 }
 
 titre('La révélation et la fin de partie');

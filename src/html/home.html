@@ -1003,16 +1003,18 @@
                                     </span>
                                 </div>
 
-                                <!-- ⚠️ Un seul chrono, pour le TOUR ENTIER, et non un par
-                                     carte : couper une équipe au milieu de sa salve est
-                                     la pire sensation possible.
+                                <!-- ⚠️ C'EST UN TEMPS PAR CARTE, et il l'est devenu avec la
+                                     règle « une carte à la fois ». Un chrono unique pour le
+                                     tour entier étranglait les longues séries : avec `n + 1`
+                                     coups, une équipe qui enchaîne quatre bonnes cartes
+                                     aurait eu le même temps qu'une qui se trompe au premier.
                                      ⚠️ Un CURSEUR et non trois boutons : le temps qu'il
                                      faut à un espion dépend trop du salon — quatre
                                      habitués vont trois fois plus vite que quatre
                                      curieux — pour qu'on devine trois bons crans. -->
                                 <div class="v2-set" v-if="cod.chrono">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-                                    <span class="v2-set-label">Durée</span>
+                                    <span class="v2-set-label">Par carte</span>
                                     <input class="v2-range" type="range" min="30" max="180" step="15"
                                            :value="cod.dureeTour"
                                            @input="cod.dureeTour = parseInt($event.target.value)"
@@ -2553,6 +2555,19 @@
                                        et il est à moi seul. -->
                                 <span class="cod-chapeau">
                                     <span class="cod-songe" v-if="codRangSonge('A')"><i></i><i></i><i></i></span>
+                                    <!-- « ON S'ARRÊTE » : à l'unanimité, comme
+                                         une carte. ⚠️ Il n'est pas facultatif —
+                                         à 0 ou à ∞ les coups sont illimités, et
+                                         sans lui le seul moyen de rendre la
+                                         main serait de se tromper ou d'attendre
+                                         le chrono. Le compte « 1/3 » dit où en
+                                         est l'unanimité : sans lui on clique
+                                         dans le vide. -->
+                                    <button class="cod-stop" v-if="codPasseIci('A')"
+                                            :class="{ on: codJaiPasse() }" @click="codPasser"
+                                            :title="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                                        <span>On s’arrête</span><b>{{ codPasseCompte() }}</b>
+                                    </button>
                                     <button class="cod-masque" v-if="codMasqueIci('A')"
                                             :class="{ on: cod.masquerAdverses }"
                                             @click="cod.masquerAdverses = !cod.masquerAdverses"
@@ -2658,8 +2673,9 @@
                                 <span class="cod-votants" v-if="!c.revelee"
                                       :style="{ '--cod-pasf': codEcart(c.i) }">
                                     <span class="cod-votant" v-for="v in codVotants(c.i)" :key="v.playerId"
-                                          :class="{ moi: v.playerId === playerId }"
-                                          :style="{ '--i': v.rang }" :title="v.username">
+                                          :class="{ moi: v.playerId === playerId, fantome: v.fantome }"
+                                          :style="{ '--i': v.rang }"
+                                          :title="v.fantome ? v.username + ' — on l’attend' : v.username">
                                         <img :src="srcAvatar(v.avatar)" alt="" draggable="false">
                                     </span>
                                 </span>
@@ -2678,6 +2694,12 @@
                                 <!-- Le même chapeau qu'en face — voir le rang A. -->
                                 <span class="cod-chapeau">
                                     <span class="cod-songe" v-if="codRangSonge('B')"><i></i><i></i><i></i></span>
+                                    <!-- Le jumeau du bouton d'en face — voir le rang A. -->
+                                    <button class="cod-stop" v-if="codPasseIci('B')"
+                                            :class="{ on: codJaiPasse() }" @click="codPasser"
+                                            :title="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                                        <span>On s’arrête</span><b>{{ codPasseCompte() }}</b>
+                                    </button>
                                     <button class="cod-masque" v-if="codMasqueIci('B')"
                                             :class="{ on: cod.masquerAdverses }"
                                             @click="cod.masquerAdverses = !cod.masquerAdverses"
@@ -2744,13 +2766,24 @@
                                        placeholder="ton indice"
                                        autocomplete="off" spellcheck="false"
                                        @keyup.enter="codAnnoncer">
+                                <!-- ⚠️ LE NOMBRE VA DE 0 À 9, PUIS À ∞, et les
+                                     deux bouts ne sont pas des curiosités :
+                                     « 0 » veut dire « évitez tout ça » et
+                                     « ∞ » « débrouillez-vous avec tous les
+                                     indices d'avant ». Les deux donnent des
+                                     coups ILLIMITÉS — seule l'intention
+                                     diffère, et c'est l'espion qui la porte.
+                                     ⚠️ Le `−` s'arrête à 0 et le `+` à ∞ : on
+                                     compare donc à la POSITION dans la suite,
+                                     pas à la valeur, puisque −1 est la plus
+                                     grande annonce et le plus petit nombre. -->
                                 <span class="cod-pas">
                                     <button class="cod-pas-b" @click="codPasNombre(-1)"
-                                            :disabled="cod.saisieNombre <= 1"
+                                            :disabled="cod.saisieNombre === 0"
                                             aria-label="Un de moins">−</button>
-                                    <b>{{ cod.saisieNombre }}</b>
+                                    <b :class="{ inf: codIllimite(cod.saisieNombre) }">{{ codNombreTexte(cod.saisieNombre) }}</b>
                                     <button class="cod-pas-b" @click="codPasNombre(1)"
-                                            :disabled="cod.saisieNombre >= codMaxIndice"
+                                            :disabled="codIllimite(cod.saisieNombre)"
                                             aria-label="Un de plus">+</button>
                                 </span>
                                 <button class="cod-env" :disabled="!cod.saisieMot.trim()"
@@ -2773,7 +2806,24 @@
                                      :class="{ arrive: cod.arrive }"
                                      :style="{ '--cod-saut': cod.saut + 'px' }">
                                     <span class="cod-indice-mot">{{ cod.indice.mot }}</span>
-                                    <span class="cod-indice-n">{{ cod.indice.nombre }}</span>
+                                    <span class="cod-indice-n"
+                                          :class="{ inf: codIllimite(cod.indice.nombre) }">{{ codNombreTexte(cod.indice.nombre) }}</span>
+                                    <!-- LES COUPS QU'IL RESTE, en pastilles.
+                                         ⚠️ Pas un chiffre : c'est la chose
+                                         qu'on regarde entre deux cartes, et
+                                         trois points qui s'éteignent se
+                                         comptent d'un coup d'œil là où « 2 »
+                                         demande de se rappeler ce qu'il y
+                                         avait avant. L'indice annonce `n`,
+                                         l'équipe a droit à `n + 1` — le coup
+                                         de rattrapage.
+                                         ⚠️ À 0 et à ∞ les coups sont
+                                         illimités : on montre le signe plutôt
+                                         qu'une file de points sans fin. -->
+                                    <span class="cod-coups" v-if="cod.phase === 'vote' || cod.phase === 'revelation'">
+                                        <i v-if="codIllimite(cod.coups)" class="inf">∞</i>
+                                        <i v-else v-for="k in codCoupsPips()" :key="k"></i>
+                                    </span>
                                 </div>
 
                                 <!-- ⚠️ PLUS DE MODE D'EMPLOI SOUS LE PLATEAU.

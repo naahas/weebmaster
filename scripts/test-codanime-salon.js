@@ -153,38 +153,78 @@ const post = async (chemin, corps, jeton) => {
     dire(vu[agentAdverse].refus.some(r => r.raison === 'pas-ton-tour'),
         'un agent de l\'autre équipe ne vote pas pendant ce tour');
 
-    titre('Le vote et la révélation');
+    titre('Une carte à la fois, et n + 1 coups');
     const vueEspion = dernier(espionDuTour);
     const campDuTour = premier;
     const bonnes = vueEspion.grille.filter(c => c.camp === campDuTour).map(c => c.i);
     const neutre = vueEspion.grille.find(c => c.camp === 'neutre').i;
 
-    // Un seul agent présent dans cette équipe → seuil 1, la carte part seule.
+    // ⚠️ UN SEUL agent présent dans ce camp → l'unanimité vaut 1, la carte
+    // part donc à la première voix. C'est voulu : l'unanimité se compte sur
+    // les PRÉSENTS, pas sur les sièges.
+    dire(dernier(agentDuTour).seuil === 1,
+        'à un seul agent présent, l\'unanimité vaut une voix', 'seuil=' + dernier(agentDuTour).seuil);
+    // L'indice annonce 2 → trois coups, le troisième étant le rattrapage.
+    dire(dernier(agentDuTour).coups === 3,
+        'un indice à 2 ouvre TROIS coups (n + 1)', 'coups=' + dernier(agentDuTour).coups);
+
     socks[agentDuTour].emit('codanime-vote', { i: bonnes[0] });
-    await wait(300);
-    const apresVote = dernier(agentDuTour);
-    dire(apresVote.votes && apresVote.votes[bonnes[0]],
-        'la marque est visible de tous', JSON.stringify(apresVote.votes));
+    await wait(250);
+    const apresVote = vu[agentDuTour].etats.slice(-3).find(e => e.votes && e.votes[bonnes[0]]);
+    dire(!!apresVote, 'la marque est visible de tous');
 
+    // ⚠️ La carte part SEULE, sans clôture : la révélation suit l'unanimité
+    // d'un battement, et le tour CONTINUE puisqu'elle était bonne.
+    await wait(1900);
+    let cartes = vu[agentDuTour].cartes;
+    dire(cartes.length === 1, 'une seule carte s\'est retournée', cartes.length + ' vue(s)');
+    dire(cartes[0] && cartes[0].issue === 'bonne', 'et elle est bonne');
+    const enCours = dernier(agentDuTour);
+    dire(enCours.phase === 'vote' && enCours.tourDe === premier,
+        'le tour continue : la main NE PASSE PAS après une bonne carte',
+        enCours.phase + '/' + enCours.tourDe);
+    dire(enCours.coups === 2, 'et il reste deux coups', 'coups=' + enCours.coups);
+    dire(Object.keys(enCours.votes).length === 0,
+        'les voix du coup précédent sont vidées — on repart d\'une carte vierge');
+
+    // ⚠️ UNE SEULE ERREUR ARRÊTE LE TOUR, et les coups qui restaient sont
+    // perdus. C'est tout le sel du mode : il restait deux coups.
     socks[agentDuTour].emit('codanime-vote', { i: neutre });
-    // ⚠️ Le quota atteint déclenche la clôture après 400 ms, puis chaque
-    // carte se retourne toutes les 1400 ms. Deux cartes demandent donc
-    // 400 + 1400 × 2 = 3,2 s. Attendre 2,5 s faisait échouer quatre
-    // contrôles d'affilée sur une mécanique qui marchait très bien.
-    await wait(4200);
+    await wait(2200);
+    cartes = vu[agentDuTour].cartes;
+    dire(cartes.length === 2, 'la neutre s\'est retournée à son tour', cartes.length + ' vue(s)');
+    dire(cartes[1] && cartes[1].issue === 'neutre', 'et elle est annoncée comme neutre');
 
-    const cartes = vu[agentDuTour].cartes;
-    dire(cartes.length >= 1, cartes.length + ' carte(s) retournée(s)');
-    dire(cartes[0] && cartes[0].issue === 'bonne', 'la première est bonne');
-    const auNeutre = cartes.find(c => c.issue === 'neutre');
-    dire(!!auNeutre, 'la neutre a bien été retournée ensuite');
-
-    await wait(600);
     const apres = dernier(agentDuTour);
-    dire(apres.tourDe !== premier, 'la chaîne cassée rend la main à l\'adversaire',
+    dire(apres.tourDe !== premier, 'une erreur rend la main à l\'adversaire SUR-LE-CHAMP',
         'tourDe=' + apres.tourDe);
     dire(apres.phase === 'indice', 'et l\'autre espion doit annoncer');
     dire(Object.keys(apres.votes).length === 0, 'les marques du tour précédent sont vidées');
+
+    titre('Le 0, l\'∞, et « on s\'arrête »');
+    const espion2 = apres.tourDe === 'A' ? 'e1' : 'e2';
+    const agent2 = apres.tourDe === 'A' ? 'a1' : 'a2';
+
+    // ⚠️ 0 et ∞ sont RECEVABLES et donnent des coups ILLIMITÉS. Le serveur
+    // renvoie -1 pour l'infini : `Infinity` se sérialise en `null` à travers
+    // JSON, et le client recevrait un indice sans nombre.
+    socks[espion2].emit('codanime-indice', { nombre: 0, mot: 'danger' });
+    await wait(350);
+    dire(dernier(agent2).indice && dernier(agent2).indice.nombre === 0,
+        '« 0 » est une annonce recevable — « évitez tout ça »');
+    dire(dernier(agent2).coups === -1,
+        'et il donne des coups ILLIMITÉS, portés par −1', 'coups=' + dernier(agent2).coups);
+
+    // Le bouton d'arrêt : à l'unanimité aussi. Un seul agent présent → une
+    // voix suffit, et la main passe sans qu'aucune carte ne soit retournée.
+    const avantArret = vu[agent2].cartes.length;
+    socks[agent2].emit('codanime-passer');
+    await wait(500);
+    const apresArret = dernier(agent2);
+    dire(vu[agent2].cartes.length === avantArret,
+        '« on s\'arrête » ne retourne aucune carte');
+    dire(apresArret.tourDe !== apres.tourDe, 'mais il rend bien la main',
+        'tourDe=' + apresArret.tourDe);
 
     titre('Ménage');
     Object.values(socks).forEach(s => s.close());

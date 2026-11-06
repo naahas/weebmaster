@@ -42,7 +42,21 @@ const CAMP_PREMIER = 9;
 const CAMP_SECOND = 8;
 const NEUTRES = 7;
 
-const INDICE_MAX = 4;
+// ⚠️ NEUF, et deux valeurs spéciales. L'indice annonce combien de cartes le
+// mot couvre, et l'équipe a droit à `n + 1` coups — le « +1 » sert à rattraper
+// un ancien indice resté en plan, et c'est la meilleure couche de stratégie
+// du jeu. Deux cas donnent des coups ILLIMITÉS :
+//
+//   0  — « évitez tout ça ». L'espion ne couvre aucune carte, il en écarte.
+//   ∞  — « débrouillez-vous avec tous les indices d'avant ». Fin de partie.
+//
+// Les deux sont mécaniquement identiques ; seule l'intention diffère, et
+// c'est l'espion qui la porte à la voix. Le jeu d'origine fait exactement ça.
+const INDICE_MAX = 9;
+// ⚠️ `-1` ET PAS `Infinity` : la valeur traverse une socket, donc JSON, et
+// `Infinity` s'y sérialise en `null`. Le client recevait alors un indice sans
+// nombre, impossible à distinguer d'un indice cassé.
+const INDICE_INFINI = -1;
 const AGENTS_MAX = 3;
 // ⚠️ Au plus trois portraits de la même série dans une grille. Sans ce
 // plafond, Naruto et One Piece pèsent 60 % du vivier et l'on se retrouve avec
@@ -55,10 +69,15 @@ const MAX_PAR_SERIE = 3;
 // espion dépend trop du salon — quatre habitués vont trois fois plus vite que
 // quatre curieux — pour qu'on puisse deviner trois bons crans. Le pas de 15 s
 // garde le curseur lisible sans lui donner 150 positions.
+// ⚠️ C'EST UN TEMPS PAR CARTE, plus par tour. Le défaut est tombé de 90 s
+// à 45 : avec `n + 1` coups, une équipe qui enchaîne quatre bonnes cartes
+// aurait eu quatre fois quatre-vingt-dix secondes, soit six minutes pour un
+// seul tour pendant que l'autre camp regarde. Quarante-cinq secondes pour
+// désigner UNE carte, c'est déjà confortable.
 const DUREE_MIN = 30;
 const DUREE_MAX = 180;
 const DUREE_PAS = 15;
-const DUREE_TOUR_DEFAUT = 90;
+const DUREE_TOUR_DEFAUT = 45;
 // Le temps de reflexion de l espion, avant que la main ne passe. Il est
 // FIXE et non reglable : c est un garde-fou contre un espion absent, pas
 // un parametre de jeu. Trente secondes suffisent a trouver un mot ; au-dela
@@ -71,27 +90,51 @@ function dureeValide(d) {
 // sait pas encore si le tour continue. Trop court, la salve devient un bloc.
 const BATTEMENT = 1400;
 
-// ── Le seuil de voix ───────────────────────────────────────────────
+// ── Le seuil de voix : L'UNANIMITÉ ─────────────────────────────────
 //
-// La majorité STRICTE des agents présents : 1→1, 2→2, 3→2.
+// Tous les agents PRÉSENTS doivent désigner la même carte pour qu'elle se
+// retourne. 1→1, 2→2, 3→3.
 //
-// ⚠️ Pas « la moitié » : à 4 agents, 2 voix laisseraient deux joueurs
-// retourner une carte CONTRE l'avis des deux autres. Une égalité ne tranche
-// pas. (Le mode plafonne à 3 agents, mais la formule doit rester juste si ce
-// plafond bouge un jour.)
+// ⚠️ C'était la majorité stricte (3 agents → 2 voix). L'unanimité est venue
+// avec la règle « une erreur arrête le tour » : quand un clic malheureux
+// coûte le tour ENTIER et non une carte, personne ne doit pouvoir être mis en
+// minorité dessus. Le mode plafonnant à 3 agents, ça ne change le
+// comportement que dans un seul cas — un camp à trois — puisqu'à un et à deux
+// la majorité stricte ÉTAIT déjà l'unanimité.
+//
+// ⚠️ Et ce sont les PRÉSENTS. Les voix d'un joueur parti restent sur le
+// plateau (règle du mode), mais exiger la sienne rendrait l'unanimité
+// inatteignable dès qu'un onglet se ferme — l'équipe ne pourrait plus jamais
+// rien retourner.
+//
+// ⚠️ Le plancher à 1 n'est pas décoratif : à zéro agent présent, `seuil`
+// vaudrait 0 et la première voix venue — celle d'un fantôme — ferait partir
+// une carte.
 function seuil(nbAgents) {
-    return Math.floor(Math.max(1, nbAgents) / 2) + 1;
+    return Math.max(1, nbAgents);
 }
 
-// ⚠️ Le garde-fou qui dit si une configuration est JOUABLE :
-//        agents × plafond ≥ nombre × seuil
-// Avec un plafond de marques égal au nombre annoncé, ça se réduit à
-// « agents ≥ seuil », toujours vrai. Mais si quelqu'un remet un plafond FIXE
-// un jour, à deux agents un indice à 4 deviendrait impossible à honorer : les
-// agents voteraient dans le vide sans que rien ne l'explique. On garde donc
-// la formule sous la main.
-function configJouable(nbAgents, plafondMarques, nombre) {
-    return nbAgents * plafondMarques >= nombre * seuil(nbAgents);
+// Combien de cartes l'équipe a le droit de retourner avec cet indice.
+//
+// ⚠️ `n + 1`, et c'est la règle qui porte tout le mode : le « +1 » est le
+// coup de rattrapage, celui où l'on retente un indice du tour d'avant resté
+// en plan. Sans lui, un indice à 2 n'est qu'une liste de deux cartes.
+// ⚠️ `0` et `∞` donnent des coups ILLIMITÉS, pas `1` et pas `∞+1` : voir
+// INDICE_MAX. Le tour ne s'arrête alors que sur une erreur, sur le chrono, ou
+// parce que l'équipe choisit de s'arrêter — d'où le bouton, qui n'est plus
+// facultatif dans ces deux cas.
+function coupsPour(nombre) {
+    if (nombre === INDICE_INFINI || nombre === 0) return Infinity;
+    return nombre + 1;
+}
+
+// L'indice est-il recevable ? 0 et ∞ passent toujours ; au-delà, on borne au
+// plafond ET à ce qu'il reste à trouver — annoncer 7 quand il reste 2 cartes
+// ne veut rien dire.
+function indiceValide(nombre, restant) {
+    if (nombre === INDICE_INFINI || nombre === 0) return true;
+    if (!Number.isInteger(nombre) || nombre < 0) return false;
+    return nombre <= Math.min(INDICE_MAX, restant);
 }
 
 function melanger(tab, alea) {
@@ -227,11 +270,13 @@ function etatNeuf() {
         restant: { A: 0, B: 0 },
         tourDe: null,
         phase: 'repos',     // repos | indice | vote | revelation | fini
-        indice: null,       // { mot, nombre }
+        indice: null,       // { mot, nombre } — nombre : 0..9 ou INDICE_INFINI
         votes: {},          // idxCarte -> [playerId]
-        franchiA: {},       // idxCarte -> horodatage du franchissement du seuil
-        file: [],           // les cartes engagées, verrouillées à la clôture
-        historique: [],     // { equipe, mot, nombre, trouvees, engagees }
+        // Les coups qu'il reste à l'équipe sur cet indice. `Infinity` pour 0
+        // et ∞. Décompté à chaque carte TROUVÉE, jamais à chaque clic : une
+        // erreur arrête le tour de toute façon.
+        coups: 0,
+        historique: [],     // { equipe, mot, nombre, trouvees }
         gagnant: null,
         finTour: 0,
         manche: 0,
@@ -241,75 +286,49 @@ function etatNeuf() {
 
 // ── Les votes ──────────────────────────────────────────────────────
 //
-// Fluide : on peut poser, retirer et changer sa voix jusqu'à la clôture.
+// UNE CARTE À LA FOIS, et UNE VOIX PAR AGENT.
 //
-// ⚠️ L'ORDRE EST CELUI DU FRANCHISSEMENT, pas celui du nombre de voix. Une
-// carte à 3 voix obtenue en second reste derrière une carte à 2 voix obtenue
-// en premier — sinon l'ordre se remettrait à bouger à chaque clic, et les
-// agents ne sauraient jamais laquelle part en premier. Or l'ordre décide de
-// qui survit à la chaîne.
+// ⚠️ Ce n'est plus un plateau qu'on engage puis qu'on ouvre : on désigne une
+// carte, elle se retourne dès que tout le monde la désigne, et l'on
+// recommence. Un agent ne peut donc pointer qu'une carte — cliquer ailleurs
+// DÉPLACE sa voix. Pouvoir en marquer plusieurs n'avait de sens que dans
+// l'ancien modèle, où l'équipe préparait une salve.
+//
+// ⚠️ Et il n'y a plus d'ordre de franchissement à tenir : la carte part à
+// l'instant où l'unanimité est atteinte, il n'y a jamais de file.
 function voixDe(etat, idx) {
     return etat.votes[idx] || [];
 }
 
-function compterMarques(etat, playerId) {
-    let n = 0;
+// Où se trouve la voix de ce joueur, ou -1.
+function voixAilleurs(etat, playerId) {
     for (const idx of Object.keys(etat.votes)) {
-        if (etat.votes[idx].includes(playerId)) n++;
+        if (etat.votes[idx].includes(playerId)) return Number(idx);
     }
-    return n;
+    return -1;
+}
+
+function retirerVoix(etat, playerId, idx) {
+    const reste = voixDe(etat, idx).filter(p => p !== playerId);
+    if (reste.length) etat.votes[idx] = reste;
+    else delete etat.votes[idx];
 }
 
 // Rend { ok, raison } — jamais d'exception : un clic refusé n'est pas une panne.
-function basculerVote(etat, playerId, idx, nbAgents, maintenant) {
+function basculerVote(etat, playerId, idx) {
     if (etat.phase !== 'vote') return { ok: false, raison: 'pas-en-vote' };
     const carte = etat.grille[idx];
     if (!carte) return { ok: false, raison: 'carte-inconnue' };
     if (carte.revelee) return { ok: false, raison: 'deja-revelee' };
 
-    const voix = voixDe(etat, idx);
-    const dedans = voix.includes(playerId);
-
-    if (!dedans) {
-        // ⚠️ Le plafond de marques vaut LE NOMBRE ANNONCÉ, pas une constante.
-        // Un plafond fixe rendrait certains indices impossibles à honorer —
-        // voir configJouable.
-        const plafond = etat.indice ? etat.indice.nombre : 1;
-        if (compterMarques(etat, playerId) >= plafond) {
-            return { ok: false, raison: 'plafond-atteint' };
-        }
-        etat.votes[idx] = voix.concat([playerId]);
-    } else {
-        const reste = voix.filter(p => p !== playerId);
-        if (reste.length) etat.votes[idx] = reste;
-        else delete etat.votes[idx];
-    }
-
-    // Franchissement, dans les deux sens.
-    const s = seuil(nbAgents);
-    const apres = voixDe(etat, idx).length;
-    if (apres >= s && !etat.franchiA[idx]) etat.franchiA[idx] = maintenant;
-    if (apres < s && etat.franchiA[idx]) delete etat.franchiA[idx];
-
-    return { ok: true, pose: !dedans };
-}
-
-// Les cartes ayant franchi le seuil, dans l'ordre. Non plafonné : c'est
-// `engagees` qui coupe au nombre annoncé.
-function ordreFranchissement(etat) {
-    return Object.keys(etat.franchiA)
-        .map(Number)
-        .sort((a, b) => etat.franchiA[a] - etat.franchiA[b]);
-}
-
-// ⚠️ Plus de cartes peuvent franchir le seuil que l'indice n'en annonce : à
-// 3 agents, un indice à 2 met 6 voix en jeu, de quoi faire passer 3 cartes.
-// On prend les PREMIÈRES dans l'ordre et l'on ignore le reste — la même règle
-// sert donc à l'ordre de révélation ET au débordement, sans départage à
-// inventer. Le client grise celles au-delà du quota pour qu'on le voie.
-function engagees(etat) {
-    const n = etat.indice ? etat.indice.nombre : 0;
-    return ordreFranchissement(etat).slice(0, n);
+    const ou = voixAilleurs(etat, playerId);
+    if (ou === idx) { retirerVoix(etat, playerId, idx); return { ok: true, pose: false }; }
+    // ⚠️ On retire AVANT de poser : sans ça un agent qui change d'avis
+    // laisserait sa voix sur l'ancienne carte, et deux cartes pourraient
+    // atteindre l'unanimité avec le même joueur compté deux fois.
+    if (ou >= 0) retirerVoix(etat, playerId, ou);
+    etat.votes[idx] = voixDe(etat, idx).concat([playerId]);
+    return { ok: true, pose: true };
 }
 
 // ── La révélation ──────────────────────────────────────────────────
@@ -581,8 +600,12 @@ function creerModule(deps) {
         const etat = gameState.codanime;
         const espion = estEspion(etat, playerId);
         const monEquipe = equipeDe(etat, playerId);
-        const ordre = ordreFranchissement(etat);
-        const retenues = engagees(etat);
+        // Les agents PRÉSENTS du camp qui joue. ⚠️ Le client en a besoin pour
+        // deux choses : savoir combien de voix il manque, et dessiner en
+        // creux ceux qui n'ont pas encore cliqué — sans quoi une unanimité
+        // qui n'arrive pas ne dit pas qui l'on attend.
+        const agentsDuTour = etat.tourDe
+            ? agentsPresents(etat, etat.tourDe, estPresent(gameState)) : [];
 
         return {
             active: etat.active,
@@ -597,11 +620,15 @@ function creerModule(deps) {
             // regarde monter, et c'est elle qui remplace les mains tendues
             // autour d'une table.
             votes: etat.votes,
-            // L'ordre affiché ① ② ③ — et les cartes au-delà du quota, que le
-            // client grise pour qu'on voie qu'on s'est trop engagé.
-            ordre,
-            retenues,
-            seuil: seuil(agentsPresents(etat, etat.tourDe || 'A', estPresent(gameState)).length),
+            // Qui a voté « on s'arrête » : le bouton montre où en est
+            // l'unanimité, sinon on clique dans le vide.
+            passe: etat.passe || [],
+            agentsDuTour,
+            seuil: seuil(agentsDuTour.length),
+            // Les coups qu'il reste. ⚠️ `Infinity` ne traverse pas JSON — il
+            // s'y sérialise en `null`. On envoie `-1`, comme pour le nombre
+            // de l'indice, et le client lit les deux de la même façon.
+            coups: etat.coups === Infinity ? INDICE_INFINI : etat.coups,
             historique: etat.historique,
             restant: etat.restant,
             // ⚠️ Un RESTE en millisecondes, jamais une échéance : l'horloge du
@@ -647,8 +674,7 @@ function creerModule(deps) {
         etat.phase = 'indice';
         etat.indice = null;
         etat.votes = {};
-        etat.franchiA = {};
-        etat.file = [];
+        etat.coups = 0;
         etat.passe = [];
         etat.finTour = etat.chrono ? Date.now() + DUREE_INDICE * 1000 : 0;
         if (etat.chrono) {
@@ -697,12 +723,10 @@ function creerModule(deps) {
         if (etat.equipes[etat.tourDe].espion !== playerId) return { ok: false, raison: 'pas-espion' };
 
         const n = parseInt(nombre, 10);
-        if (!Number.isInteger(n) || n < 1) return { ok: false, raison: 'nombre' };
-        // ⚠️ Borné par le plafond ET par ce qu'il reste à trouver : annoncer 4
-        // quand il ne reste que 2 cartes n'a aucun sens, et laisserait engager
-        // plus de cartes que l'équipe n'en possède.
-        const max = Math.min(INDICE_MAX, etat.restant[etat.tourDe]);
-        if (n > max) return { ok: false, raison: 'trop-grand', max };
+        if (!Number.isInteger(n)) return { ok: false, raison: 'nombre' };
+        if (!indiceValide(n, etat.restant[etat.tourDe])) {
+            return { ok: false, raison: 'trop-grand', max: Math.min(INDICE_MAX, etat.restant[etat.tourDe]) };
+        }
 
         // ⚠️ Le MOT est exigé, et nettoyé ici — jamais au client, qui est
         // justement la pièce qu'on ne contrôle pas. Un indice vide laisserait
@@ -711,13 +735,50 @@ function creerModule(deps) {
         if (!m) return { ok: false, raison: 'mot-vide' };
 
         etat.indice = { mot: m, nombre: n };
+        etat.coups = coupsPour(n);
+
+        // ⚠️ LA LIGNE D'HISTORIQUE NAÎT ICI, plus à la fin du tour. Elle était
+        // écrite à la clôture pour citer l'espion même s'il partait en
+        // route ; maintenant qu'il n'y a plus de clôture, l'écrire à
+        // l'annonce est même PLUS juste — celui qui vient d'annoncer est
+        // présent par définition. Et `trouvees` monte carte par carte.
+        etat.historique.push({
+            equipe: etat.tourDe,
+            espion: etat.equipes[etat.tourDe].espion
+                ? nomDe(gameState, etat.equipes[etat.tourDe].espion) : '—',
+            mot: m,
+            nombre: n,
+            trouvees: 0,
+        });
+
+        ouvrirCoup(gameState);
+        return { ok: true, nombre: n };
+    }
+
+    // ── UN COUP ────────────────────────────────────────────────────
+    // Un coup, c'est : les agents désignent une carte, l'unanimité la
+    // retourne. Chaque coup a SON chrono.
+    //
+    // ⚠️ LE CHRONO EST PAR COUP, pas par tour. Un chrono de tour unique
+    // étranglait les longues séries : avec `n + 1` coups, une équipe qui
+    // enchaîne quatre bonnes cartes aurait eu le même temps qu'une qui se
+    // trompe au premier. À l'échéance, le tour s'arrête — un camp qui
+    // n'arrive pas à se mettre d'accord perd son tour, il ne bloque pas la
+    // partie. C'est ce qui rend l'unanimité tenable.
+    function ouvrirCoup(gameState) {
+        const etat = gameState.codanime;
+        nettoyerTimeouts(etat);
         etat.phase = 'vote';
+        etat.votes = {};
+        etat.passe = [];
         etat.finTour = etat.chrono ? Date.now() + etat.dureeTour * 1000 : 0;
         if (etat.chrono) {
-            plusTard(etat, () => cloturer(gameState), etat.dureeTour * 1000);
+            plusTard(etat, () => {
+                if (!etat.active || etat.phase !== 'vote') return;
+                finirTour(gameState);
+            }, etat.dureeTour * 1000);
         }
         diffuserEtat(gameState);
-        return { ok: true, nombre: n };
     }
 
     function voter(gameState, playerId, idx) {
@@ -729,22 +790,25 @@ function creerModule(deps) {
         // du doigt, ce qui est exactement ce que l'indice doit remplacer.
         if (estEspion(etat, playerId)) return { ok: false, raison: 'espion-ne-vote-pas' };
 
-        const nbAgents = agentsPresents(etat, monEquipe, estPresent(gameState)).length;
-        const r = basculerVote(etat, playerId, idx, nbAgents, Date.now());
+        const r = basculerVote(etat, playerId, idx);
         if (!r.ok) return r;
 
         diffuserEtat(gameState);
 
-        // Quota atteint → on résout tout de suite, sans faire attendre une
-        // équipe décidée. C'est « le premier des deux » avec le chrono.
-        if (engagees(etat).length >= etat.indice.nombre) {
-            plusTard(etat, () => cloturer(gameState), 400);
-        }
+        // L'UNANIMITÉ DES PRÉSENTS retourne la carte, sur-le-champ.
+        const nbAgents = agentsPresents(etat, monEquipe, estPresent(gameState)).length;
+        if (voixDe(etat, idx).length >= seuil(nbAgents)) resoudre(gameState, idx);
         return r;
     }
 
-    // Les agents peuvent renoncer : « on s'arrête » se vote comme une carte,
-    // au même seuil. Sans ça l'équipe ne peut jamais choisir de s'arrêter.
+    // « On s'arrête » : à l'unanimité aussi, comme une carte.
+    //
+    // ⚠️ IL N'EST PLUS FACULTATIF. Avec un indice à 0 ou à ∞ les coups sont
+    // illimités : sans ce bouton, le seul moyen de rendre la main serait de
+    // se tromper ou d'attendre le chrono.
+    // ⚠️ Et un veto sur « on s'arrête » ne coûte rien : si l'équipe ne
+    // s'accorde pas, elle continue de jouer, et le chrono finira le tour.
+    // C'est l'inverse d'un veto sur une carte, qui lui gèle tout.
     function passer(gameState, playerId) {
         const etat = gameState.codanime;
         if (!etat.active || etat.phase !== 'vote') return { ok: false, raison: 'phase' };
@@ -757,48 +821,24 @@ function creerModule(deps) {
 
         const nbAgents = agentsPresents(etat, etat.tourDe, estPresent(gameState)).length;
         diffuserEtat(gameState);
-        if (etat.passe.length >= seuil(nbAgents)) cloturer(gameState);
+        if (etat.passe.length >= seuil(nbAgents)) finirTour(gameState);
         return { ok: true };
     }
 
-    function cloturer(gameState) {
+    // ── La résolution d'un coup ────────────────────────────────────
+    //
+    // La carte part TOUT DE SUITE — c'est elle qu'on regarde, et le balayage
+    // joue dessus. Ce qui attend `BATTEMENT`, c'est la SUITE : on laisse le
+    // temps de lire la couleur avant d'enchaîner ou de rendre la main.
+    function resoudre(gameState, idx) {
         const etat = gameState.codanime;
         if (!etat.active || etat.phase !== 'vote') return;
         nettoyerTimeouts(etat);
-
-        etat.file = engagees(etat);
-        etat.passe = [];
         etat.phase = 'revelation';
         etat.finTour = 0;
+        etat.votes = {};
+        etat.passe = [];
 
-        etat.historique.push({
-            equipe: etat.tourDe,
-            // ⚠️ QUI a annoncé, et pas seulement quel camp. L'historique se
-            // lit comme un journal — « Kitsune annonce METAL 3 » — et sans le
-            // nom il manque le sujet de la phrase. Relevé À LA CLÔTURE :
-            // l'espion peut partir avant la fin du tour, et c'est bien celui
-            // qui a parlé qu'on veut citer.
-            espion: etat.equipes[etat.tourDe].espion
-                ? nomDe(gameState, etat.equipes[etat.tourDe].espion) : '—',
-            // Le mot aussi : c'est lui qu'on relit pour comprendre où le tour
-            // a dérapé. « 1/3 » tout seul ne raconte rien.
-            mot: etat.indice ? etat.indice.mot : '',
-            nombre: etat.indice ? etat.indice.nombre : 0,
-            engagees: etat.file.length,
-            trouvees: 0,
-        });
-
-        diffuserEtat(gameState);
-        plusTard(etat, () => revelerSuivante(gameState), BATTEMENT);
-    }
-
-    function revelerSuivante(gameState) {
-        const etat = gameState.codanime;
-        if (!etat.active || etat.phase !== 'revelation') return;
-
-        if (!etat.file.length) { finirTour(gameState); return; }
-
-        const idx = etat.file.shift();
         const issue = revelerCarte(etat, idx);
         const ligne = etat.historique[etat.historique.length - 1];
         if (issue === 'bonne' && ligne) ligne.trouvees++;
@@ -816,13 +856,25 @@ function creerModule(deps) {
         const gagne = vainqueur(etat, null);
         if (gagne) { terminer(gameState, 'complet', null, gagne); return; }
 
-        // ⚠️ La chaîne casse à la PREMIÈRE carte qui n'est pas la leur, et les
-        // cartes engagées restantes ne sont jamais révélées. C'est tout le
-        // prix de la gourmandise : engager trois cartes, c'est accepter de
-        // n'en toucher aucune au-delà de la première erreur.
-        if (issue !== 'bonne') { etat.file = []; finirTour(gameState); return; }
+        // ⚠️ UNE SEULE ERREUR ARRÊTE LE TOUR, et c'est tout le sel du mode :
+        // une carte adverse, un passant, et la main passe sur-le-champ. Les
+        // coups qui restaient sont perdus.
+        if (issue !== 'bonne') {
+            plusTard(etat, () => finirTour(gameState), BATTEMENT);
+            return;
+        }
 
-        plusTard(etat, () => revelerSuivante(gameState), BATTEMENT);
+        // ⚠️ Le décompte se fait sur les cartes TROUVÉES. Une erreur ne
+        // consomme pas un coup — elle les consomme tous.
+        etat.coups--;
+        if (etat.coups <= 0) {
+            plusTard(etat, () => finirTour(gameState), BATTEMENT);
+            return;
+        }
+        plusTard(etat, () => {
+            if (!etat.active || etat.phase !== 'revelation') return;
+            ouvrirCoup(gameState);
+        }, BATTEMENT);
     }
 
     function finirTour(gameState) {
@@ -892,13 +944,12 @@ function creerModule(deps) {
         etat.phase = 'repos';
         etat.grille = [];
         etat.votes = {};
-        etat.franchiA = {};
-        etat.file = [];
+        etat.coups = 0;
         etat.passe = [];
     }
 
     return {
-        demarrer, annoncerIndice, voter, passer, cloturer,
+        demarrer, annoncerIndice, voter, passer,
         quitter, arreter, terminer,
         etatPourLeClient, diffuserEtat, vueDesEquipes,
         composerAuto, compositionValide, placerAuto, retirerDuSalon, synchroniser,
@@ -908,13 +959,13 @@ function creerModule(deps) {
 module.exports = {
     etatNeuf, creerModule,
     // Le moteur, éprouvable sans serveur
-    seuil, configJouable, melanger,
+    seuil, coupsPour, indiceValide, melanger,
     tirerPersonnages, distribuerCamps, construireGrille,
-    basculerVote, ordreFranchissement, engagees, compterMarques, voixDe,
+    basculerVote, voixAilleurs, voixDe,
     revelerCarte, vainqueur, equipeAdverse,
     grillePourAgent, grillePourEspion, estEspion, equipeDe, agentsPresents,
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
-    INDICE_MAX, AGENTS_MAX, MAX_PAR_SERIE,
+    INDICE_MAX, INDICE_INFINI, AGENTS_MAX, MAX_PAR_SERIE,
     DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, DUREE_INDICE, dureeValide, BATTEMENT,
     MOT_MAX, nettoyerMot,
 };
