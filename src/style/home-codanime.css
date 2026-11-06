@@ -46,6 +46,17 @@
        posés de part et d'autre de la grille sans être déduits ici, ils la
        poussaient hors de l'écran — la grille se calculait sur 62 rem alors
        qu'il n'en restait que 48. Un rang vaut sa largeur plus son écart. */
+    /* ⚠️ LES TROIS ÉPAISSEURS DU CADRE, ÉCRITES UNE SEULE FOIS. Dosage
+       « Franc » de /prototypes/codanime-cadre : le cadre devient une pièce
+       à part entière et le portrait un contenu dedans. C'est le plus
+       lisible de loin, et en stream c'est ce qui compte.
+       Les déplier ailleurs, c'est la maladie des défauts écrits deux
+       fois — le coin suivrait une épaisseur et la bande une autre. */
+    --cod-dehors: 2.5px;        /* le contour noir externe */
+    --cod-bande: 5.5px;         /* la couleur du camp */
+    --cod-filet: 3px;           /* le filet noir contre le portrait */
+    --cod-coin-part: 0.30;      /* le coin, en part du côté */
+
     --cod-rail: 7.6rem;
     --cod-rails: calc(2 * (var(--cod-rail) + 4rem));
     --cod-marges: calc(2 * var(--cod-pad) + 4 * var(--cod-jour-h) + var(--cod-rails));
@@ -602,7 +613,7 @@
     --cod-creux: 26%;
     --cod-bord: 82%;
     --cod-force: 1;
-    --cod-coin: calc(var(--cod-cote) * 0.27);
+    --cod-coin: calc(var(--cod-cote) * var(--cod-coin-part));
     --cod-halo: calc(var(--cod-cote) * 0.2);
 }
 
@@ -619,13 +630,13 @@
    Le halo vient en dessous, et se fond dans la teinte. */
 .cod-carte.vue-espion,
 .cod-carte.revelee {
-    border-width: 3.5px;
+    border-width: var(--cod-bande);
     border-color: var(--cod-teinte);
     box-shadow:
         /* le halo, qui déborde sous la bande */
         inset 0 0 var(--cod-halo) rgba(var(--cod-teinte-rgb), 0.8),
         /* et le contour noir EXTERNE, qui ferme la bande */
-        0 0 0 2px #000;
+        0 0 0 var(--cod-dehors) #000;
 }
 
 /* ⚠️ LE FILET INTERNE EST UN `outline` SUR LE PORTRAIT, pas une ombre
@@ -638,8 +649,8 @@
    ne prend aucune place dans la mise en page. */
 .cod-carte.vue-espion .cod-portrait,
 .cod-carte.revelee .cod-portrait {
-    outline: var(--cod-filet, 2.5px) solid #000;
-    outline-offset: calc(-1 * var(--cod-filet, 2.5px));
+    outline: var(--cod-filet) solid #000;
+    outline-offset: calc(-1 * var(--cod-filet));
 }
 
 /* La teinte masquée au centre. ⚠️ `color` et non `normal` : le mélange
@@ -679,7 +690,7 @@
        triangle : le long de l'hypoténuse, ça fait exactement le filet qui
        sépare le coin du portrait. Sans lui, un coin rouge posé sur une
        veste rouge n'a plus de bord. La seconde garde la profondeur. */
-    filter: drop-shadow(2.2px 2.2px 0 #000)
+    filter: drop-shadow(var(--cod-filet) var(--cod-filet) 0 #000)
             drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
     pointer-events: none;
 }
@@ -696,10 +707,12 @@
 .cod-carte.vue-espion.camp-assassin,
 .cod-carte.revelee.camp-assassin {
     border-color: #0b0b0f;
-    box-shadow:
-        inset 0 0 0 2.5px rgba(255, 255, 255, 0.72),
-        0 0 0 2px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 var(--cod-dehors) rgba(255, 255, 255, 0.4);
 }
+/* Et son filet intérieur est CLAIR, pas noir : c'est la seule carte dont
+   la bande est déjà noire, un noir sur noir ne délimiterait rien. */
+.cod-carte.vue-espion.camp-assassin .cod-portrait,
+.cod-carte.revelee.camp-assassin .cod-portrait { outline-color: rgba(255, 255, 255, 0.72); }
 
 /* ⚠️ RETOURNÉE, la teinte PERD SON MASQUE et passe en aplat : on veut
    lire le camp de loin, pour savoir où en est la course sans compter.
@@ -1283,7 +1296,10 @@
     /* ⚠️ 2,5 px et non 2,25 : à deux pixels par pixel CSS, une bordure
        de 2,25 se rend arrondie à 2 — c'est-à-dire la même que sur une
        carte sans camp, et le cadre disparaissait. Mesuré. */
-    .cod-carte.vue-espion, .cod-carte.revelee { border-width: 3px; }
+    /* ⚠️ PLUS D'EXCEPTION ICI. Le dosage « Franc » a été jugé AUX TROIS
+       TAILLES dans /prototypes/codanime-cadre, 69 px compris : rejouer
+       l'épaisseur sur téléphone, c'est expédier autre chose que ce qui a
+       été choisi. */
     .cod-num { width: 1.05rem; height: 1.05rem; font-size: 0.62rem; right: 0.12rem; top: 0.12rem; }
     .cod-voix { font-size: 0.54rem; padding: 0.05rem 0.22rem; left: 0.12rem; bottom: 0.12rem; }
     .cod-voix small { font-size: 0.44rem; }
