@@ -5901,6 +5901,12 @@ createApp({
             return v ? v.length : 0;
         },
 
+        // La carte qu'on est en train de révéler, et elle seule : c'est
+        // la seule qui porte la lame et ses étincelles.
+        codBalaye(i) {
+            return !!(this.cod.derniereCarte && this.cod.derniereCarte.i === i);
+        },
+
         codJaiVote(i) {
             const v = this.cod.votes[i];
             return !!(v && v.includes(this.playerId));

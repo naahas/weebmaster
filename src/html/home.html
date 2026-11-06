@@ -2607,6 +2607,24 @@
                                     <span class="cod-voix" v-if="codVoix(c.i) && !c.revelee">
                                         {{ codVoix(c.i) }}<small>/{{ cod.seuil }}</small>
                                     </span>
+                                    <!-- LE BALAYAGE de la révélation : une lame
+                                         de lumière traverse la carte et laisse
+                                         la couleur derrière elle.
+                                         ⚠️ Il n'existe QUE sur la carte qu'on
+                                         révèle. Sept étincelles par carte
+                                         feraient 175 nœuds de plus sur une
+                                         grille de vingt-cinq, pour une
+                                         animation qui ne joue jamais qu'une
+                                         fois à la fois.
+                                         ⚠️ Et c'est un ÉLÉMENT, pas un
+                                         pseudo : `::before` est le voile de
+                                         couleur, `::after` le coin plié — les
+                                         deux sont pris, et la lame doit passer
+                                         entre eux. -->
+                                    <span class="cod-balai" v-if="codBalaye(c.i)">
+                                        <i class="cod-lame"></i>
+                                        <i class="cod-etin" v-for="k in 7" :key="k"></i>
+                                    </span>
                                 </button>
                             </div>
 
