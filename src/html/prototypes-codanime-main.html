@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — la main qui se pose</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LA MAIN QUI SE POSE
+
+   Les six premières pistes se trompaient de question. Elles cherchaient
+   comment DESSINER un compte — des mains alignées, des jetons, une
+   jauge — alors que ce qui manque est un GESTE. Marquer une carte, à
+   une table, c'est poser la main dessus. Personne ne pose deux mains
+   pour dire « deux voix » : on pose une main, et on compte les gens.
+
+   D'où la forme retenue, qui vient du croquis : UNE main accrochée au
+   coin haut droit, les doigts par-dessus le bord, et un NOMBRE à côté
+   d'elle — seulement à partir de deux voix. À une voix, le nombre ne
+   dirait rien que la main ne dise déjà.
+
+   Ce qui se juge ici n'est donc pas le dessin mais l'ARRIVÉE. Six
+   façons de se poser, de la plus sobre à la plus franche, rejouables
+   ensemble : deux mouvements voisins ne se distinguent qu'enchaînés.
+
+   ⚠️ DEUX CHOSES À RÉGLER AVANT DE CHOISIR, et elles sont dans la barre :
+
+   1. LE COIN HAUT DROIT EST DÉJÀ PRIS par le ① ② ③ de l'ordre
+      d'engagement. L'un des deux doit bouger. Par défaut l'ordre
+      descend en bas à droite — le bouton le remet en place pour qu'on
+      voie la collision de ses yeux.
+
+   2. LES DOIGTS DÉPASSENT du bord haut, et l'écart entre deux rangées
+      ne vaut que 9,9 px. Le bouton « contenue » garde la main dedans.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;  --a-rgb: 47, 155, 255;
+    --b: #ff3b5c;  --b-rgb: 255, 59, 92;
+    --n: #b9a88f;  --n-rgb: 185, 168, 143;
+    --brun: #bf8a5f;
+    --os: #f6f3ec;
+    --cote: 126px;
+    --jour: 0.62rem;
+    --mien: var(--a); --mien-rgb: var(--a-rgb);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 56rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; opacity: 0.85; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label {
+    opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 0.58rem; margin-left: 0.55rem;
+}
+.barre label:first-child { margin-left: 0; }
+.barre button {
+    padding: 0.32rem 0.72rem;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.barre button.gros { background: #1b1d25; border-color: rgba(255, 255, 255, 0.3); }
+.mode-emploi {
+    flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 0.5rem;
+}
+
+.piste { margin-bottom: 2.3rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.numero {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+    border-radius: 50%; background: var(--brun); color: #15171d; font-size: 0.7rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.chiffres { font-size: 0.64rem; opacity: 0.4; }
+.note { font-size: 0.72rem; opacity: 0.52; margin: 0.3rem 0 0.9rem 2.2rem; max-width: 50rem; line-height: 1.55; }
+.note b { opacity: 0.95; }
+
+.rangee {
+    display: flex; gap: calc(var(--jour) + 1.1rem); flex-wrap: wrap;
+    padding-top: calc(var(--cote) * 0.14);   /* la place que les doigts prennent au-dessus */
+}
+.etiq { font-size: 0.58rem; opacity: 0.38; text-align: center; margin-top: 0.35rem; letter-spacing: 0.04em; }
+
+/* ── La carte, telle qu'elle est construite dans le jeu ─────────── */
+/* ⚠️ `display: block` EST OBLIGATOIRE. Un `<span>` reste inline, et la
+   `width` d'un élément inline est ignorée : la boîte qui sert d'ancre à
+   la main n'avait alors pas la largeur de la carte, et `right:` la
+   posait à gauche. Dans le plateau, `.case` est une case de grille donc
+   blockifiée d'office — d'où deux placements différents pour le même
+   code, le genre d'écart qu'on ne voit qu'en rendant. */
+.case { position: relative; display: block; width: var(--cote); flex: 0 0 auto; }
+.c {
+    position: relative; display: block;
+    width: var(--cote); height: var(--cote);
+    border-radius: 0.55rem; overflow: hidden;
+    background: #15171d; padding: 0; cursor: pointer;
+    border: 5.5px solid var(--teinte, rgba(255, 255, 255, 0.09));
+    box-shadow: inset 0 0 calc(var(--cote) * 0.2) rgba(var(--teinte-rgb, 255, 255, 255), 0.45),
+                0 0 0 2.5px #000;
+    --coin: calc(var(--cote) * 0.3);
+}
+.c img {
+    width: 100%; height: 100%; display: block;
+    object-fit: cover; object-position: center 22%;
+    outline: 3px solid #000; outline-offset: -3px;
+}
+.c::after {
+    content: ''; position: absolute; top: 0; left: 0; z-index: 2;
+    border-style: solid;
+    border-width: var(--coin) var(--coin) 0 0;
+    border-color: var(--coin-c, var(--teinte)) transparent transparent transparent;
+    filter: drop-shadow(2.12px 2.12px 0 #000) drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+}
+.c.a { --teinte: var(--a); --teinte-rgb: var(--a-rgb); }
+.c.b { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
+.c.n { --teinte: var(--n); --teinte-rgb: var(--n-rgb); }
+.c.x { --teinte: #000; --teinte-rgb: 42, 42, 51; --coin-c: #000; box-shadow: 0 0 0 2.5px #000; }
+.c.x img { outline-color: rgba(255, 255, 255, 0.72); }
+
+body.agent .c { --teinte: rgba(255, 255, 255, 0.09); box-shadow: none; }
+body.agent .c::after { display: none; }
+body.agent .c img { outline: none; }
+
+/* Le ① ② ③ de l'ordre d'engagement. ⚠️ Il descend EN BAS À DROITE par
+   défaut : la main lui prend sa place historique. Le bouton de la barre
+   le remet en haut pour qu'on voie la collision. */
+.ordre {
+    position: absolute; z-index: 3;
+    right: 0.2rem; bottom: 0.2rem;
+    display: grid; place-items: center;
+    width: calc(var(--cote) * 0.107); height: calc(var(--cote) * 0.107);
+    border-radius: 50%; background: var(--brun); color: #15171d;
+    font-size: calc(var(--cote) * 0.062); font-weight: 900; line-height: 1;
+}
+body.ordre-haut .ordre { top: 0.2rem; bottom: auto; }
+
+/* ══ LA MARQUE ═════════════════════════════════════════════════ */
+/* ⚠️ ELLE VIT HORS DE LA CARTE, dans la case qui la contient. La carte
+   porte `overflow: hidden` pour que le portrait épouse ses angles
+   arrondis : une main posée dedans serait COUPÉE au bord, et c'est
+   justement le débord qui fait le geste. Sœur de la carte, elle passe
+   par-dessus sans rien lui enlever. */
+.marque {
+    position: absolute; z-index: 6;
+    top: calc(var(--cote) * -0.085);
+    right: calc(var(--cote) * -0.055);
+    display: flex; align-items: flex-start;
+    gap: calc(var(--cote) * 0.015);
+    pointer-events: none;
+}
+body.contenue .marque {
+    top: calc(var(--cote) * 0.035);
+    right: calc(var(--cote) * 0.035);
+}
+.marque.cachee { visibility: hidden; }
+
+.patte {
+    width: calc(var(--cote) * 0.3); height: calc(var(--cote) * 0.3);
+    flex: 0 0 auto;
+    color: var(--os);
+    /* ⚠️ DEUX OMBRES, ET AUCUNE LUEUR. Un halo de la couleur remplit les
+       creux entre les doigts et transforme la main en pâté rond —
+       mesuré sur la page précédente. La première ombre est un TRAIT
+       sombre collé sous le dessin, qui le détache de n'importe quel
+       portrait ; la seconde, floue, le pose au-dessus de la carte. */
+    filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, 0.6))
+            drop-shadow(0 calc(var(--cote) * 0.022) calc(var(--cote) * 0.05) rgba(0, 0, 0, 0.65));
+}
+.marque.mienne .patte { color: var(--mien); }
+
+/* Le nombre. ⚠️ IL N'APPARAÎT QU'À PARTIR DE DEUX VOIX : à une, il ne
+   dit rien que la main ne dise déjà, et deux objets valent toujours
+   moins qu'un quand un seul suffit. */
+.badge {
+    display: grid; place-items: center;
+    width: calc(var(--cote) * 0.19); height: calc(var(--cote) * 0.19);
+    margin-top: calc(var(--cote) * -0.045);
+    border-radius: 50%;
+    background: #0c0d11;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22),
+                0 calc(var(--cote) * 0.016) calc(var(--cote) * 0.04) rgba(0, 0, 0, 0.7);
+    color: var(--os);
+    font-size: calc(var(--cote) * 0.098); font-weight: 900; line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.marque.mienne .badge { box-shadow: inset 0 0 0 1.5px var(--mien), 0 calc(var(--cote) * 0.016) calc(var(--cote) * 0.04) rgba(0, 0, 0, 0.7); }
+.marque.seule .badge { display: none; }
+
+/* L'anneau de la piste 4, qui s'ouvre sous la main. */
+.anneau {
+    /* Centré SOUS LA PAUME (la main fait 0,3 côté, donc son milieu est à
+       0,15), et non dans le coin de la marque — l'anneau doit sortir de
+       la main, pas d'à côté. */
+    position: absolute; left: calc(var(--cote) * 0.15); top: calc(var(--cote) * 0.17);
+    width: calc(var(--cote) * 0.2); height: calc(var(--cote) * 0.2);
+    margin: calc(var(--cote) * -0.1) 0 0 calc(var(--cote) * -0.1);
+    border-radius: 50%;
+    border: 2px solid var(--os); opacity: 0;
+}
+.marque.mienne .anneau { border-color: var(--mien); }
+
+/* ══ LES SIX ARRIVÉES ══════════════════════════════════════════ */
+/* Chacune n'est qu'un couple de keyframes : la main, puis le nombre.
+   Le reste du dessin est RIGOUREUSEMENT le même d'une piste à l'autre —
+   sans quoi on jugerait deux choses à la fois. */
+
+/* 1 · Se pose — elle tombe d'en haut et s'arrête net, avec juste assez
+   de dépassement pour qu'on sente le poids. */
+.p1 .marque.pop .patte { animation: poseP 0.36s cubic-bezier(0.22, 1.35, 0.3, 1) both; }
+.p1 .marque.pop .badge { animation: poseB 0.32s 0.1s cubic-bezier(0.2, 1.5, 0.35, 1) both; }
+@keyframes poseP {
+    from { opacity: 0; transform: translateY(calc(var(--cote) * -0.14)) rotate(-11deg) scale(0.9); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes poseB { from { opacity: 0; transform: scale(0.35); } to { opacity: 1; transform: none; } }
+
+/* 2 · Agrippe — elle vient de la droite et PIVOTE pour accrocher le
+   coin. L'origine est au poignet, en bas à droite : c'est ce qui donne
+   le mouvement de prise plutôt qu'un simple glissement. */
+.p2 .marque.pop .patte { transform-origin: 82% 88%; animation: agripP 0.42s cubic-bezier(0.18, 0.92, 0.26, 1) both; }
+.p2 .marque.pop .badge { animation: agripB 0.3s 0.17s cubic-bezier(0.2, 1.3, 0.35, 1) both; }
+@keyframes agripP {
+    from { opacity: 0; transform: translateX(calc(var(--cote) * 0.11)) rotate(32deg); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes agripB { from { opacity: 0; transform: translateX(calc(var(--cote) * 0.06)) scale(0.6); } to { opacity: 1; transform: none; } }
+
+/* 3 · Surgit — elle monte de DERRIÈRE la carte, dépasse d'un cheveu et
+   retombe. La plus physique : on croit voir quelqu'un attraper le bord. */
+.p3 .marque.pop .patte { transform-origin: 50% 100%; animation: surgP 0.46s cubic-bezier(0.25, 0.9, 0.3, 1) both; }
+.p3 .marque.pop .badge { animation: poseB 0.3s 0.2s cubic-bezier(0.2, 1.5, 0.35, 1) both; }
+@keyframes surgP {
+    0%   { opacity: 0; transform: translateY(calc(var(--cote) * 0.16)) scale(0.82); }
+    58%  { opacity: 1; transform: translateY(calc(var(--cote) * -0.025)) scale(1.05); }
+    100% { opacity: 1; transform: none; }
+}
+
+/* 4 · Gonfle — un ressort franc, et un anneau qui s'ouvre sous la
+   paume. La plus voyante de la page ; à juger sur vingt-cinq cartes,
+   pas sur quatre. */
+.p4 .marque.pop .patte  { animation: gonfP 0.5s cubic-bezier(0.18, 1.6, 0.35, 1) both; }
+.p4 .marque.pop .badge  { animation: poseB 0.34s 0.13s cubic-bezier(0.2, 1.6, 0.35, 1) both; }
+.p4 .marque.pop .anneau { animation: gonfA 0.62s cubic-bezier(0.2, 0.75, 0.3, 1) both; }
+@keyframes gonfP {
+    from { opacity: 0; transform: scale(0.25) rotate(-20deg); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes gonfA {
+    0%   { opacity: 0.85; transform: scale(0.35); }
+    100% { opacity: 0;    transform: scale(2.2); }
+}
+
+/* 5 · Fond — la plus sobre. Rien ne saute, rien ne rebondit : la main
+   est simplement là, un cinquième de seconde plus tard. C'est le
+   candidat de ceux qui trouveront les autres trop bavardes sur un
+   plateau où cinq mains se posent par tour. */
+.p5 .marque.pop .patte { animation: fondP 0.22s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.p5 .marque.pop .badge { animation: fondB 0.2s 0.08s ease-out both; }
+@keyframes fondP { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes fondB { from { opacity: 0; } to { opacity: 1; } }
+
+/* 6 · Deux temps — la main se pose VITE, le nombre arrive après, avec
+   son propre ressort. C'est le seul qui raconte quelque chose : « une
+   main s'est posée »… « ah, ils sont deux ». Le plus produit, et le
+   plus long : 0,52 s en tout. */
+.p6 .marque.pop .patte { animation: deuxP 0.17s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.p6 .marque.pop .badge { animation: deuxB 0.38s 0.15s cubic-bezier(0.16, 1.7, 0.36, 1) both; }
+@keyframes deuxP { from { opacity: 0; transform: scale(0.8) translateY(calc(var(--cote) * -0.04)); } to { opacity: 1; transform: none; } }
+@keyframes deuxB {
+    from { opacity: 0; transform: scale(0.2) rotate(-28deg); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* ⚠️ `none`, jamais une durée nulle : à 0 s l'animation se joue d'un
+       coup et sa dernière image, remplie en `both`, resterait. */
+    .marque.pop .patte, .marque.pop .badge, .marque.pop .anneau { animation: none; }
+    .anneau { display: none; }
+}
+
+/* ── Le vrai plateau, en bas ────────────────────────────────────── */
+.plateau {
+    display: grid; grid-template-columns: repeat(5, var(--cote));
+    column-gap: calc(var(--jour) + 3px); row-gap: var(--jour);
+    width: max-content; padding-top: calc(var(--cote) * 0.14);
+}
+.mesures {
+    font-size: 0.68rem; opacity: 0.5; line-height: 1.6; margin: 0.8rem 0 0 2.2rem;
+    font-variant-numeric: tabular-nums;
+}
+.mesures b { opacity: 0.95; }
+</style>
+</head>
+<body class="ordre-bas">
+
+<h1>Codanime — la main qui se pose</h1>
+<p class="sous">
+    Les six pistes d'hier se trompaient de question : elles cherchaient comment <b>dessiner un
+    compte</b> — des mains alignées, des jetons, une jauge — alors que ce qui manque est un
+    <b>geste</b>. Marquer une carte, à une table, c'est poser la main dessus. Personne ne pose deux
+    mains pour dire « deux voix » : on pose une main, et on compte les gens.
+    <br>D'où la forme, qui vient du croquis : <b>une</b> main accrochée au coin haut droit, les
+    doigts par-dessus le bord, et un nombre à côté — <b>seulement à partir de deux voix</b>. À une,
+    il ne dirait rien que la main ne dise déjà.
+    <br>Ce qui se juge ici n'est donc pas le dessin mais <b>l'arrivée</b>. Le dessin est
+    rigoureusement le même d'une piste à l'autre ; seules changent les quelques images du
+    mouvement. ⚠️ Deux mouvements voisins ne se distinguent <b>qu'enchaînés</b> : le bouton
+    « Rejouer les six » est fait pour ça.
+</p>
+
+<div class="barre">
+    <button id="rejouer" class="gros">▶ Rejouer les six</button>
+    <button id="boucle">Boucle</button>
+    <label>Côté</label>
+    <button data-cote="69">69 px</button>
+    <button data-cote="126" class="on">126 px</button>
+    <button data-cote="150">150 px</button>
+    <label>Vue</label>
+    <button id="vue">Vue de l’agent</button>
+    <label>Geste</label>
+    <button data-geste="0" class="on">Paume</button>
+    <button data-geste="1">Agrippée</button>
+    <button data-geste="2">Index</button>
+    <button data-geste="3">Manchette</button>
+    <label>Débord</label>
+    <button id="debord" class="on">La main dépasse</button>
+    <label>Ordre ①②③</label>
+    <button id="ordre">En bas à droite</button>
+    <p class="mode-emploi">
+        Un clic sur une carte rejoue <b>sa</b> piste. ⚠️ Deux réglages à trancher avant de choisir
+        un mouvement, et ils sont dans cette barre : le <b>coin haut droit était déjà pris</b> par
+        le ① ② ③ de l'ordre d'engagement — l'un des deux doit bouger, le bouton remet l'ordre en
+        place pour qu'on voie la collision ; et <b>les doigts dépassent du bord haut</b> alors que
+        l'écart entre deux rangées ne vaut que 9,9 px.
+    </p>
+</div>
+
+<div id="pistes"></div>
+
+<section class="piste" id="vrai">
+    <div class="tete"><span class="numero">✓</span><span class="nom">Sur un vrai plateau</span>
+        <span class="chiffres">la piste choisie, sur vingt-cinq cartes</span></div>
+    <p class="note">
+        C'est ici que ça se décide, pas sur quatre cartes alignées. Choisis une piste ci-dessous et
+        clique les cartes : la main se pose, le nombre monte. ⚠️ Cinq mains se posent par tour dans
+        une vraie partie — un mouvement charmant une fois peut être insupportable cinq fois en
+        quarante secondes.
+    </p>
+    <div class="barre" style="position:static;margin-bottom:1rem">
+        <label>Piste</label>
+        <span id="choix"></span>
+        <button id="vider" style="margin-left:0.8rem">Tout retirer</button>
+        <button id="semer">Semer cinq marques</button>
+    </div>
+    <div class="plateau" id="plateau"></div>
+    <p class="mesures" id="mesures"></p>
+</section>
+
+<script>
+// ── Les quatre gestes ─────────────────────────────────────────────
+// ⚠️ Dessinés en PRIMITIVES (rect arrondis) et non en chemins : un
+// tracé à la main se casse en silence, un rectangle non. À 21 px — la
+// taille réelle sur téléphone — c'est de toute façon la SILHOUETTE
+// qu'on lit, jamais le détail.
+const GESTES = [
+    // Paume ouverte, doigts écartés.
+    '<rect x="5.5" y="10" width="13" height="11" rx="5.5"/>'
+    + '<rect x="6.2" y="4.4" width="2.9" height="9" rx="1.45"/>'
+    + '<rect x="9.6" y="2.4" width="2.9" height="10.8" rx="1.45"/>'
+    + '<rect x="13" y="3.3" width="2.9" height="9.9" rx="1.45"/>'
+    + '<rect x="16.4" y="6.2" width="2.9" height="7.2" rx="1.45"/>'
+    + '<rect x="1.9" y="9.6" width="2.7" height="7.8" rx="1.35" transform="rotate(-24 3.25 13.5)"/>',
+    // Agrippée : quatre doigts serrés qui passent par-dessus le bord.
+    '<rect x="2.2" y="1.2" width="4" height="13" rx="2"/>'
+    + '<rect x="6.8" y="0.4" width="4" height="13.8" rx="2"/>'
+    + '<rect x="11.4" y="0.8" width="4" height="13.4" rx="2"/>'
+    + '<rect x="16" y="2.4" width="4" height="11.8" rx="2"/>'
+    + '<rect x="1.6" y="9.5" width="19.4" height="12.6" rx="5"/>'
+    + '<rect x="19.4" y="10.4" width="3.6" height="8.2" rx="1.8" transform="rotate(20 21.2 14.5)"/>',
+    // Index pointé.
+    '<rect x="9.2" y="0.8" width="4.6" height="14.4" rx="2.3"/>'
+    + '<rect x="5.4" y="11" width="14.4" height="11.4" rx="5"/>'
+    + '<rect x="2.6" y="12.2" width="3.8" height="7.6" rx="1.9" transform="rotate(-22 4.5 16)"/>',
+    // Paume + manchette : la plus « habillée », et la plus lisible en
+    // petit — la barre du bas ferme la silhouette.
+    '<rect x="5.5" y="9.4" width="13" height="10.4" rx="5.2"/>'
+    + '<rect x="6.2" y="3.8" width="2.9" height="9" rx="1.45"/>'
+    + '<rect x="9.6" y="1.8" width="2.9" height="10.8" rx="1.45"/>'
+    + '<rect x="13" y="2.7" width="2.9" height="9.9" rx="1.45"/>'
+    + '<rect x="16.4" y="5.6" width="2.9" height="7.2" rx="1.45"/>'
+    + '<rect x="1.9" y="9" width="2.7" height="7.8" rx="1.35" transform="rotate(-24 3.25 12.9)"/>'
+    + '<rect x="4.6" y="19.4" width="14.8" height="3.6" rx="1.8" opacity="0.6"/>',
+];
+
+const PISTES = [
+    ['p1', 'Se pose', '0,36 s · chute + arrêt net',
+     'Elle tombe d’en haut et s’arrête, avec juste assez de dépassement pour qu’on sente le poids. La plus proche du croquis, et la plus neutre : rien à apprendre, on comprend le geste à la première carte. C’est le candidat par défaut.'],
+    ['p2', 'Agrippe', '0,42 s · pivot depuis la droite',
+     'Elle vient de la droite et <b>pivote</b> pour accrocher le coin, l’origine du mouvement au poignet. Ce n’est plus une main qui se pose mais une main qui <b>prend</b> — et prendre une carte à quelqu’un, c’est exactement ce qui se joue. ⚠️ Le pivot la fait passer sur la carte voisine pendant 0,2 s.'],
+    ['p3', 'Surgit', '0,46 s · monte de derrière',
+     'Elle monte de <b>derrière</b> la carte, dépasse d’un cheveu et retombe. La plus physique des six : on croit voir quelqu’un attraper le bord. ⚠️ Elle démarre invisible sous le portrait, donc elle est aussi la plus lente à se faire remarquer — mauvais signe sur le geste le plus fréquent du jeu.'],
+    ['p4', 'Gonfle', '0,62 s · ressort + anneau',
+     'Un ressort franc, et un anneau qui s’ouvre sous la paume. Impossible de la rater. ⚠️ Et c’est tout le problème : <b>cinq mains se posent par tour</b>, et l’anneau est la seule chose de la page qui attire l’œil loin du plateau. À juger sur les vingt-cinq cartes du bas, jamais ici.'],
+    ['p5', 'Fond', '0,22 s · ni rebond ni ressort',
+     'La plus sobre. Rien ne saute : la main est simplement là, un cinquième de seconde plus tard. C’est le candidat de ceux qui trouveront les cinq autres trop bavardes — mais « sobre » touche vite à « on ne l’a pas vue », et c’est précisément le défaut qu’on est en train de corriger.'],
+    ['p6', 'Deux temps', '0,53 s · la main, puis le nombre',
+     'La main se pose vite ; le nombre arrive après, avec son propre ressort. Le seul qui <b>raconte</b> quelque chose — « une main s’est posée »… « ah, ils sont deux ». ⚠️ Et le seul dont la durée dépend de l’état : à une voix il n’y a pas de second temps, donc il se joue en 0,17 s. Deux rythmes pour un même geste.'],
+];
+
+// Les quatre états montrés en ligne, dans l'ordre où ils arrivent.
+const CAS = [
+    { n: 1, moi: true,  camp: 'a', etiq: 'ma voix, seule' },
+    { n: 2, moi: true,  camp: 'b', etiq: '2 voix, dont la mienne' },
+    { n: 3, moi: false, camp: 'a', etiq: '3 voix, sans moi' },
+    { n: 1, moi: false, camp: 'n', etiq: '1 voix, sans moi' },
+];
+
+const CAMPS = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'), ['x']);
+let portraits = [], plateau = [], geste = 0, pisteChoisie = 'p1', boucle = null;
+
+const melanger = (t) => {
+    const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c;
+};
+
+const svgMain = () => '<svg class="patte" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+    + GESTES[geste] + '</svg>';
+
+function marque(n, moi) {
+    const cl = ['marque'];
+    if (moi) cl.push('mienne');
+    if (n < 2) cl.push('seule');
+    return '<span class="' + cl.join(' ') + '">'
+        + '<span class="anneau"></span>' + svgMain()
+        + '<span class="badge">' + n + '</span></span>';
+}
+
+function rendre() {
+    document.getElementById('pistes').innerHTML = PISTES.map(([cls, nom, chiffres, note], k) =>
+        '<section class="piste ' + cls + '">'
+        + '<div class="tete"><span class="numero">' + (k + 1) + '</span><span class="nom">' + nom
+        + '</span><span class="chiffres">' + chiffres + '</span></div>'
+        + '<p class="note">' + note + '</p>'
+        + '<div class="rangee">'
+        + CAS.map((c, i) => '<span><span class="case" data-piste="' + cls + '">'
+            + '<button class="c ' + c.camp + '"><img src="' + (portraits[(k * 4 + i) % portraits.length] || '') + '" alt="" draggable="false">'
+            + (c.n >= 2 ? '<span class="ordre">' + (i + 1) + '</span>' : '') + '</button>'
+            + marque(c.n, c.moi) + '</span>'
+            + '<span class="etiq">' + c.etiq + '</span></span>').join('')
+        + '</div></section>').join('');
+
+    document.getElementById('choix').innerHTML = PISTES.map(([cls, nom]) =>
+        '<button data-choix="' + cls + '"' + (cls === pisteChoisie ? ' class="on"' : '') + '>' + nom + '</button>').join('');
+
+    document.getElementById('plateau').className = 'plateau ' + pisteChoisie;
+    document.getElementById('plateau').innerHTML = plateau.map((t, i) =>
+        '<span class="case" data-i="' + i + '" data-piste="' + pisteChoisie + '">'
+        + '<button class="c ' + t.camp + '"><img src="' + t.img + '" alt="" draggable="false"></button>'
+        + (t.n ? marque(t.n, t.moi) : '') + '</span>').join('');
+
+    jouer(document);
+    mesurer();
+}
+
+// ⚠️ Rejouer une animation CSS demande de RETIRER la classe, de forcer
+// un reflow, puis de la remettre. Sans le reflow le navigateur groupe
+// les deux changements et ne voit rien à rejouer.
+function jouer(racine) {
+    racine.querySelectorAll('.marque').forEach(m => {
+        m.classList.remove('pop');
+        void m.offsetWidth;
+        m.classList.add('pop');
+    });
+}
+
+function mesurer() {
+    // ⚠️ La PREMIÈRE case qui porte une marque, pas la première case :
+    // cinq cartes sur vingt-cinq en ont une, et la case 0 n'en a presque
+    // jamais — la mesure restait vide sans que rien ne le dise.
+    const c = [...document.querySelectorAll('#plateau .case')].find(x => x.querySelector('.marque'));
+    if (!c) { document.getElementById('mesures').textContent = ''; return; }
+    const m = c.querySelector('.marque');
+    const rc = c.getBoundingClientRect(), rm = m.getBoundingClientRect();
+    const haut = Math.max(0, Math.round(rc.top - rm.top));
+    const droite = Math.max(0, Math.round(rm.right - rc.right));
+    const jour = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--jour')) * 16;
+    document.getElementById('mesures').innerHTML =
+        'La main déborde de <b>' + haut + ' px</b> au-dessus de la carte et de <b>' + droite
+        + ' px</b> à droite, pour un écart entre cartes de <b>' + jour.toFixed(1) + ' px</b>. '
+        + (haut > jour ? '⚠️ Elle mord donc sur la rangée du dessus.' : 'Elle tient dans l’écart.');
+}
+
+// ── Les commandes ─────────────────────────────────────────────────
+document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b && b.dataset.cote) {
+        document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        document.documentElement.style.setProperty('--cote', b.dataset.cote + 'px');
+        mesurer(); return;
+    }
+    if (b && b.dataset.geste) { /* géré plus bas, data-geste="0" est falsy en string ? non */ }
+    if (b && b.hasAttribute('data-geste')) {
+        document.querySelectorAll('[data-geste]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        geste = +b.dataset.geste;
+        rendre(); return;
+    }
+    if (b && b.dataset.choix) {
+        pisteChoisie = b.dataset.choix;
+        rendre();
+        document.getElementById('vrai').scrollIntoView({ block: 'start' });
+        return;
+    }
+    // Un clic sur une carte : au-dessus du plateau on rejoue la piste,
+    // dans le plateau on pose ou on retire sa propre voix.
+    const cas = e.target.closest('.case');
+    if (!cas) return;
+    if (cas.dataset.i !== undefined) {
+        const t = plateau[+cas.dataset.i];
+        if (t.moi) { t.moi = false; t.n = Math.max(0, t.n - 1); }
+        else { t.moi = true; t.n = t.n + 1; }
+        rendre();
+    } else {
+        jouer(cas.closest('.piste'));
+    }
+});
+
+document.getElementById('rejouer').addEventListener('click', () => jouer(document));
+document.getElementById('boucle').addEventListener('click', (e) => {
+    if (boucle) { clearInterval(boucle); boucle = null; e.currentTarget.classList.remove('on'); }
+    else { boucle = setInterval(() => jouer(document), 2200); e.currentTarget.classList.add('on'); jouer(document); }
+});
+document.getElementById('vue').addEventListener('click', (e) => {
+    const agent = document.body.classList.toggle('agent');
+    e.currentTarget.classList.toggle('on', agent);
+    e.currentTarget.textContent = agent ? 'Vue de l’agent' : 'Vue de l’espion';
+});
+document.getElementById('debord').addEventListener('click', (e) => {
+    const dedans = document.body.classList.toggle('contenue');
+    e.currentTarget.classList.toggle('on', !dedans);
+    e.currentTarget.textContent = dedans ? 'La main reste dedans' : 'La main dépasse';
+    mesurer();
+});
+document.getElementById('ordre').addEventListener('click', (e) => {
+    const haut = document.body.classList.toggle('ordre-haut');
+    e.currentTarget.classList.toggle('on', haut);
+    e.currentTarget.textContent = haut ? 'En haut à droite (collision)' : 'En bas à droite';
+});
+document.getElementById('vider').addEventListener('click', () => {
+    plateau.forEach(t => { t.n = 0; t.moi = false; });
+    rendre();
+});
+document.getElementById('semer').addEventListener('click', () => { semer(); rendre(); });
+
+function semer() {
+    plateau.forEach(t => { t.n = 0; t.moi = false; });
+    const places = melanger([...Array(25).keys()]).slice(0, 5);
+    const mises = [{ n: 1, moi: true }, { n: 2, moi: true }, { n: 1, moi: false },
+                   { n: 3, moi: false }, { n: 2, moi: false }];
+    places.forEach((p, k) => Object.assign(plateau[p], mises[k]));
+}
+
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu :
+// leur nom de fichier dirait qui est le personnage.
+fetch('/prototypes/codanime-cartes/portraits')
+    .then(r => r.json())
+    .then(d => {
+        portraits = d.portraits || [];
+        const imgs = melanger(portraits).slice(0, 25);
+        const camps = melanger(CAMPS);
+        plateau = imgs.map((img, k) => ({ img, camp: camps[k], n: 0, moi: false }));
+        semer();
+        rendre();
+    })
+    .catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+</script>
+</body></html>

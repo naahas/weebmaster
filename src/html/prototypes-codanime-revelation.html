@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — la carte se révèle</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LA CARTE SE RÉVÈLE
+
+   ⚠️ POURQUOI LE RETOURNEMENT ACTUEL EST CASSÉ, et pas seulement « de
+   trop » : une carte de Codanime N'A PAS DE DOS. C'est la même face qui
+   change de couleur en chemin. Or `rotateY` montre forcément l'envers
+   entre −90° et −270°, et l'envers d'une face sans dos, c'est la face
+   EN MIROIR : portrait inversé, coin plié passé à droite, et le ① ② ③
+   de l'autre côté. Ça dure 0,32 s des 0,72 — presque la moitié de
+   l'animation — et c'est exactement ce qu'on voit sur la capture.
+
+   Le tour entier (−360° au lieu de −180°) corrigeait l'état FINAL, pas
+   le passage. On ne peut pas le rattraper sans dessiner un dos, et un
+   dos n'aurait aucun sens ici.
+
+   D'où cette page : six révélations SANS rotation. Ce qu'elles doivent
+   toutes faire, c'est annoncer une COULEUR — c'est le verdict du tour,
+   et il tient dans une teinte. Le mouvement n'est là que pour qu'on
+   regarde au bon endroit au bon moment.
+
+   ⚠️ ET ÇA S'ENCHAÎNE. Une chaîne de trois bonnes réponses révèle trois
+   cartes à 1,4 s d'intervalle. Une animation charmante une fois peut
+   être épuisante trois fois de suite : le bouton « chaîne de trois » est
+   là pour ça, et c'est le seul test qui compte.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;  --a-rgb: 47, 155, 255;
+    --b: #ff3b5c;  --b-rgb: 255, 59, 92;
+    --n: #b9a88f;  --n-rgb: 185, 168, 143;
+    --x: #0a0a0d;  --x-rgb: 10, 10, 13;
+    --brun: #bf8a5f;
+    --gris: rgba(255, 255, 255, 0.09);
+    --cote: 150px;
+    --jour: 0.62rem;
+    --vit: 1;                 /* le ralenti multiplie les durées */
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 56rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; opacity: 0.85; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label {
+    opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 0.58rem; margin-left: 0.55rem;
+}
+.barre label:first-child { margin-left: 0; }
+.barre button {
+    padding: 0.32rem 0.72rem;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.barre button.gros { background: #1b1d25; border-color: rgba(255, 255, 255, 0.3); }
+.mode-emploi {
+    flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 0.5rem;
+}
+
+.piste { margin-bottom: 2.4rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.numero {
+    display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: 0 0 auto;
+    border-radius: 50%; background: var(--brun); color: #15171d; font-size: 0.7rem; font-weight: 900;
+}
+.nom { font-size: 0.95rem; font-weight: 800; }
+.chiffres { font-size: 0.64rem; opacity: 0.4; }
+.note { font-size: 0.72rem; opacity: 0.52; margin: 0.3rem 0 0.9rem 2.2rem; max-width: 50rem; line-height: 1.55; }
+.note b { opacity: 0.95; }
+.rangee { display: flex; gap: calc(var(--jour) + 1.2rem); flex-wrap: wrap; }
+.etiq { font-size: 0.58rem; opacity: 0.38; text-align: center; margin-top: 0.35rem; letter-spacing: 0.04em; }
+
+/* ── La carte ───────────────────────────────────────────────────── */
+/* Elle part CACHÉE : cadre gris, portrait en pleine lumière, aucun coin.
+   Tout ce qui suit est ce qui arrive pendant la révélation. */
+.case { flex: 0 0 auto; width: var(--cote); }
+.c {
+    position: relative; display: block;
+    width: var(--cote); height: var(--cote);
+    border-radius: 0.55rem; overflow: hidden;
+    background: #15171d; padding: 0; cursor: pointer;
+    border: 5.5px solid var(--gris);
+    box-shadow: 0 0 0 2.5px #000;
+    --coin: calc(var(--cote) * 0.3);
+    --teinte: var(--a); --teinte-rgb: var(--a-rgb);
+}
+.c.cb { --teinte: var(--b); --teinte-rgb: var(--b-rgb); }
+.c.cn { --teinte: var(--n); --teinte-rgb: var(--n-rgb); }
+.c.cx { --teinte: var(--x); --teinte-rgb: var(--x-rgb); }
+.c img {
+    width: 100%; height: 100%; display: block;
+    object-fit: cover; object-position: center 22%;
+}
+/* Le voile de couleur, posé sur le portrait. */
+.voile {
+    position: absolute; inset: 0; z-index: 1;
+    background: var(--teinte); opacity: 0;
+    pointer-events: none;
+}
+/* Le coin plié, qui n'existe qu'une fois la carte révélée. */
+.coin {
+    position: absolute; top: 0; left: 0; z-index: 2;
+    border-style: solid;
+    border-width: var(--coin) var(--coin) 0 0;
+    border-color: var(--teinte) transparent transparent transparent;
+    filter: drop-shadow(2.12px 2.12px 0 #000) drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
+    opacity: 0; pointer-events: none;
+}
+/* L'état d'arrivée, commun à TOUTES les pistes : c'est la même carte
+   révélée au bout du compte, seul le chemin change. */
+.c.rev { border-color: var(--teinte); }
+.c.rev .voile { opacity: 0.66; }
+.c.rev.cx .voile { opacity: 0.82; }
+.c.rev img { filter: brightness(0.62) saturate(0.55); }
+.c.rev .coin { opacity: 1; }
+.c.rev .filet { outline: 3px solid #000; outline-offset: -3px; }
+.c.rev.cx .filet { outline-color: rgba(255, 255, 255, 0.72); }
+.filet { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+/* ⚠️ LE CADRE, LE VOILE, LE COIN ET LA LUMIÈRE DU PORTRAIT changent dans
+   les six pistes ; ce qui diffère est QUAND et COMMENT. Chaque piste
+   n'écrit donc que des keyframes, sans jamais toucher à l'état final —
+   sans quoi on comparerait deux arrivées au lieu de deux chemins. */
+
+/* ══ 0 · LE RETOURNEMENT ACTUEL ════════════════════════════════ */
+/* Gardé pour la comparaison, et pour qu'on VOIE le défaut : passe en
+   ralenti et regarde le portrait entre le quart et les trois quarts. */
+.p0 .grille3d { perspective: 1100px; }
+.p0 .c.joue { animation: tombe calc(0.72s * var(--vit)) cubic-bezier(0.33, 0.1, 0.25, 1); z-index: 5; }
+@keyframes tombe {
+    0%   { transform: rotateY(0deg)    scale(1)    translateZ(0); }
+    18%  { transform: rotateY(-55deg)  scale(1.06) translateZ(30px); }
+    50%  { transform: rotateY(-180deg) scale(1.1)  translateZ(44px); }
+    82%  { transform: rotateY(-305deg) scale(1.05) translateZ(20px); }
+    100% { transform: rotateY(-360deg) scale(1)    translateZ(0); }
+}
+.p0 .c.joue .voile  { animation: voileSec calc(0.72s * var(--vit)) steps(1) both; }
+.p0 .c.joue .coin   { animation: coinSec  calc(0.72s * var(--vit)) steps(1) both; }
+@keyframes voileSec { 0%, 49% { opacity: 0; } }
+@keyframes coinSec  { 0%, 49% { opacity: 0; } }
+
+/* ══ 1 · LA TEINTE MONTE ═══════════════════════════════════════ */
+/* Aucun mouvement. La couleur monte sur la carte, le cadre s'allume
+   avec elle, le portrait s'assombrit. 0,42 s, et c'est tout. */
+.p1 .c.joue .voile { animation: fondu calc(0.42s * var(--vit)) cubic-bezier(0.25, 0.8, 0.3, 1) both; }
+.p1 .c.joue        { animation: cadre calc(0.42s * var(--vit)) cubic-bezier(0.25, 0.8, 0.3, 1) both; }
+.p1 .c.joue img    { animation: sombre calc(0.42s * var(--vit)) ease-out both; }
+.p1 .c.joue .coin  { animation: fondu calc(0.3s * var(--vit)) calc(0.14s * var(--vit)) ease-out both; }
+@keyframes fondu  { from { opacity: 0; } }
+@keyframes cadre  { from { border-color: var(--gris); } }
+@keyframes sombre { from { filter: none; } }
+
+/* ══ 2 · L'ENCRE ═══════════════════════════════════════════════ */
+/* La couleur s'ouvre en rond depuis le visage et gagne les bords. Le
+   cadre s'allume quand l'encre l'atteint. */
+.p2 .c.joue .voile { animation: encre calc(0.56s * var(--vit)) cubic-bezier(0.3, 0.85, 0.3, 1) both; }
+.p2 .c.joue        { animation: cadre calc(0.4s * var(--vit)) calc(0.2s * var(--vit)) ease-out both; }
+.p2 .c.joue img    { animation: sombre calc(0.56s * var(--vit)) ease-out both; }
+.p2 .c.joue .coin  { animation: fondu calc(0.26s * var(--vit)) calc(0.3s * var(--vit)) ease-out both; }
+@keyframes encre {
+    from { opacity: 0.85; clip-path: circle(0% at 50% 38%); }
+    40%  { opacity: 0.85; }
+    to   { clip-path: circle(142% at 50% 38%); }
+}
+
+/* ══ 3 · LE BALAYAGE ═══════════════════════════════════════════ */
+/* Une lame de lumière traverse la carte en diagonale et laisse la
+   couleur derrière elle. Le seul des six qui ait une DIRECTION, donc le
+   seul qui se lise encore du coin de l'œil sur un plateau de vingt-cinq. */
+.p3 .c.joue .voile { animation: balayVoile calc(0.5s * var(--vit)) cubic-bezier(0.4, 0.1, 0.2, 1) both; }
+.p3 .c.joue        { animation: cadre calc(0.42s * var(--vit)) calc(0.16s * var(--vit)) ease-out both; }
+.p3 .c.joue img    { animation: sombre calc(0.5s * var(--vit)) ease-out both; }
+.p3 .c.joue .coin  { animation: fondu calc(0.26s * var(--vit)) calc(0.26s * var(--vit)) ease-out both; }
+.p3 .c.joue .lame  { animation: lame calc(0.56s * var(--vit)) cubic-bezier(0.35, 0.05, 0.25, 1) both; }
+@keyframes balayVoile {
+    from { opacity: 0.66; clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+.lame {
+    position: absolute; inset: -30% -60%; z-index: 4; opacity: 0;
+    background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.85) 50%, transparent 58%);
+    pointer-events: none;
+}
+@keyframes lame {
+    0%   { opacity: 0;    transform: translateX(-60%); }
+    22%  { opacity: 0.95; }
+    80%  { opacity: 0.5; }
+    100% { opacity: 0;    transform: translateX(60%); }
+}
+
+/* ══ 4 · LE RIDEAU ═════════════════════════════════════════════ */
+/* La couleur descend du bord haut, comme un store qu'on ferme. Le plus
+   calme des six, et celui qui respecte le mieux le portrait : on le voit
+   disparaître par le haut, pas d'un coup. */
+.p4 .c.joue .voile { animation: rideau calc(0.48s * var(--vit)) cubic-bezier(0.3, 0.8, 0.28, 1) both; }
+.p4 .c.joue        { animation: cadre calc(0.46s * var(--vit)) calc(0.1s * var(--vit)) ease-out both; }
+.p4 .c.joue img    { animation: sombre calc(0.48s * var(--vit)) ease-out both; }
+.p4 .c.joue .coin  { animation: fondu calc(0.24s * var(--vit)) calc(0.08s * var(--vit)) ease-out both; }
+@keyframes rideau {
+    from { opacity: 0.66; clip-path: inset(0 0 100% 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+
+/* ══ 5 · LE SOUFFLE ════════════════════════════════════════════ */
+/* La carte inspire : elle grandit d'un souffle, la couleur arrive au
+   sommet du geste, un halo s'échappe et elle retombe. Aucune rotation,
+   donc aucun miroir — mais le mouvement du retournement est là. */
+.p5 .c.joue        { animation: souffle calc(0.58s * var(--vit)) cubic-bezier(0.28, 0.9, 0.3, 1) both; z-index: 5; }
+.p5 .c.joue .voile { animation: fondu calc(0.34s * var(--vit)) calc(0.1s * var(--vit)) ease-out both; }
+.p5 .c.joue img    { animation: sombre calc(0.46s * var(--vit)) ease-out both; }
+.p5 .c.joue .coin  { animation: fondu calc(0.26s * var(--vit)) calc(0.18s * var(--vit)) ease-out both; }
+@keyframes souffle {
+    0%   { transform: scale(1);     border-color: var(--gris); box-shadow: 0 0 0 2.5px #000, 0 0 0 0 rgba(var(--teinte-rgb), 0); }
+    /* ⚠️ Le halo est volontairement CONTENU : à 1,9 rem et 0,6
+       d'opacité, mesuré sur la capture, il débordait sur le titre de la
+       section et sur les cartes voisines — on ne lisait plus une carte
+       qui respire mais un écran qui déraille. */
+    34%  { transform: scale(1.075); border-color: var(--teinte); box-shadow: 0 0 0 2.5px #000, 0 0 1.25rem 0.1rem rgba(var(--teinte-rgb), 0.5); }
+    100% { transform: scale(1);     border-color: var(--teinte); box-shadow: 0 0 0 2.5px #000, 0 0 0 0 rgba(var(--teinte-rgb), 0); }
+}
+
+/* ══ 6 · LA BASCULE COURTE ═════════════════════════════════════ */
+/* ⚠️ Le seul qui garde de la 3D, et il s'arrête à 16° : la carte
+   s'incline, la couleur passe, elle revient. On ne franchit JAMAIS la
+   tranche, donc jamais de miroir. C'est le test de la question « est-ce
+   qu'il reste quelque chose du retournement qui vaille la peine ». */
+.p6 .grille3d { perspective: 900px; }
+.p6 .c.joue        { animation: bascule calc(0.52s * var(--vit)) cubic-bezier(0.3, 0.85, 0.28, 1) both; z-index: 5; }
+.p6 .c.joue .voile { animation: fondu calc(0.3s * var(--vit)) calc(0.12s * var(--vit)) ease-out both; }
+.p6 .c.joue img    { animation: sombre calc(0.42s * var(--vit)) ease-out both; }
+.p6 .c.joue .coin  { animation: fondu calc(0.24s * var(--vit)) calc(0.2s * var(--vit)) ease-out both; }
+@keyframes bascule {
+    0%   { transform: rotateY(0deg)   rotateX(0deg)  translateZ(0);    border-color: var(--gris); }
+    38%  { transform: rotateY(-16deg) rotateX(7deg)  translateZ(26px); border-color: var(--teinte); }
+    72%  { transform: rotateY(6deg)   rotateX(-2deg) translateZ(8px); }
+    100% { transform: rotateY(0deg)   rotateX(0deg)  translateZ(0);    border-color: var(--teinte); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* ⚠️ `none`, jamais une durée nulle : à 0 s la dernière image,
+       remplie en `both`, resterait pour toujours. */
+    .c.joue, .c.joue .voile, .c.joue .coin, .c.joue img, .c.joue .lame { animation: none; }
+}
+
+/* ── Le vrai plateau ────────────────────────────────────────────── */
+.plateau {
+    display: grid; grid-template-columns: repeat(5, var(--cote));
+    column-gap: calc(var(--jour) + 3px); row-gap: var(--jour);
+    width: max-content;
+}
+.plateau .case { width: auto; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — la carte se révèle</h1>
+<p class="sous">
+    ⚠️ Le retournement actuel n'est pas seulement de trop, il est <b>cassé par construction</b> :
+    une carte de Codanime <b>n'a pas de dos</b>, c'est la même face qui change de couleur en
+    chemin. Or <code>rotateY</code> montre forcément l'envers entre −90° et −270°, et l'envers
+    d'une face sans dos, c'est <b>la face en miroir</b> : portrait inversé, coin plié passé à
+    droite, ① ② ③ de l'autre côté. Ça dure <b>0,32 s sur 0,72</b>. Le tour entier (−360° au lieu
+    de −180°) corrigeait l'état final, pas le passage — et on ne peut pas le rattraper sans
+    dessiner un dos, qui n'aurait aucun sens ici.
+    <br>Les six pistes ci-dessous n'ont donc <b>aucune rotation</b>, sauf la dernière qui s'arrête
+    à 16° sans jamais franchir la tranche. Ce qu'elles doivent toutes faire, c'est annoncer une
+    <b>couleur</b> : c'est le verdict du tour, et il tient dans une teinte.
+    <br>⚠️ Et <b>ça s'enchaîne</b> : une chaîne de trois bonnes réponses révèle trois cartes à
+    1,4 s d'intervalle. Une animation charmante une fois peut être épuisante trois fois de suite —
+    le bouton « chaîne de trois » est le seul test qui compte.
+</p>
+
+<div class="barre">
+    <button id="rejouer" class="gros">▶ Rejouer les sept</button>
+    <button id="chaine" class="gros">⛓ Chaîne de trois</button>
+    <label>Ralenti</label>
+    <button data-vit="1" class="on">×1</button>
+    <button data-vit="2">×2</button>
+    <button data-vit="4">×4</button>
+    <label>Côté</label>
+    <button data-cote="126">126 px</button>
+    <button data-cote="150" class="on">150 px</button>
+    <p class="mode-emploi">
+        Un clic sur une carte rejoue <b>sa</b> piste. Les quatre cartes de chaque rangée sont les
+        quatre verdicts possibles — <b>mon camp, le camp adverse, un passant, l'assassin</b> — et
+        ils ne se racontent pas pareil : trouver une des siennes doit réjouir, tomber sur
+        l'assassin doit tomber comme une pierre. ⚠️ Mets le ralenti sur <b>×4</b> et regarde la
+        piste 0 entre le quart et les trois quarts : le portrait y est en miroir.
+    </p>
+</div>
+
+<div id="pistes"></div>
+
+<section class="piste" id="vrai">
+    <div class="tete"><span class="numero">✓</span><span class="nom">Sur un vrai plateau</span>
+        <span class="chiffres">la piste choisie, sur vingt-cinq cartes</span></div>
+    <p class="note">
+        C'est ici que ça se tranche. Clique les cartes une à une, ou lance la <b>chaîne de trois</b>
+        depuis la barre du haut : c'est le rythme réel d'un bon tour, 1,4 s entre deux
+        révélations.
+    </p>
+    <div class="barre" style="position:static;margin-bottom:1rem">
+        <label>Piste</label><span id="choix"></span>
+        <button id="recacher" style="margin-left:0.8rem">Tout recacher</button>
+    </div>
+    <div class="plateau" id="plateau"></div>
+</section>
+
+<script>
+const PISTES = [
+    ['p0', 'Le retournement actuel', '0,72 s · rotateY −360°',
+     '⚠️ Gardé pour la comparaison, et pour qu’on voie le défaut de ses yeux : mets le ralenti sur ×4 et regarde le portrait au milieu de la bascule. Il est <b>en miroir</b> — la carte n’a pas de dos, donc son envers est son recto retourné. Le coin plié passe à droite, et le ① ② ③ avec lui.'],
+    ['p1', 'La teinte monte', '0,42 s · aucun mouvement',
+     'Rien ne bouge. La couleur monte sur la carte, le cadre s’allume avec elle, le portrait s’assombrit. C’est la base : si celle-ci suffit, les cinq autres sont du luxe. ⚠️ Son risque est l’inverse de celui d’aujourd’hui — à vingt-cinq cartes, une qui change de couleur sans bouger peut se rater quand on regarde ailleurs.'],
+    ['p2', 'L’encre', '0,56 s · rond depuis le visage',
+     'La couleur s’ouvre en rond <b>depuis le visage</b> et gagne les bords. Le détail qui compte : le centre du rond est à 38 % de hauteur, là où se trouve la tête — la couleur part donc du personnage, pas du milieu géométrique de la carte.'],
+    ['p3', 'Le balayage', '0,56 s · une lame de lumière',
+     'Une lame de lumière traverse en diagonale et laisse la couleur derrière elle. Le seul des six qui ait une <b>direction</b>, donc le seul qui se lise encore du coin de l’œil sur un plateau de vingt-cinq — c’est précisément ce que le mode demande, puisque personne ne regarde la bonne carte au bon moment.'],
+    ['p4', 'Le rideau', '0,48 s · la couleur descend',
+     'La couleur descend du bord haut, comme un store qu’on ferme. Le plus calme des six, et celui qui respecte le mieux le portrait : on le voit s’assombrir par le haut plutôt que d’un bloc. ⚠️ Il descend dans le même sens que le regard, ce qui le rend très doux — et un peu lent à affirmer son verdict.'],
+    ['p5', 'Le souffle', '0,58 s · la carte inspire',
+     'La carte grandit d’un souffle, la couleur arrive au sommet du geste, un halo de sa teinte s’échappe, elle retombe. <b>Aucune rotation, donc aucun miroir</b>, mais il reste un vrai mouvement — c’est le remplaçant le plus direct du retournement. ⚠️ Le halo sort des bords de la carte : à vérifier sur le plateau, pas ici.'],
+    ['p6', 'La bascule courte', '0,52 s · 16°, jamais la tranche',
+     '⚠️ Le seul qui garde de la 3D, et il s’arrête à <b>16°</b> : la carte s’incline, la couleur passe, elle revient. On ne franchit jamais la tranche, donc jamais de miroir. C’est le test de la vraie question — est-ce qu’il reste quelque chose du retournement qui vaille la peine, ou est-ce que la 3D était l’erreur depuis le début.'],
+];
+
+const CAS = [
+    { cl: '',   etiq: 'mon camp' },
+    { cl: 'cb', etiq: 'le camp adverse' },
+    { cl: 'cn', etiq: 'un passant' },
+    { cl: 'cx', etiq: 'l’assassin' },
+];
+const CAMPS = [].concat(Array(9).fill(''), Array(8).fill('cb'), Array(7).fill('cn'), ['cx']);
+
+let portraits = [], plateau = [], pisteChoisie = 'p5', enChaine = null;
+
+const melanger = (t) => {
+    const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c;
+};
+
+const carte = (img, cl) =>
+    '<button class="c ' + cl + '"><img src="' + img + '" alt="" draggable="false">'
+    + '<span class="voile"></span><span class="lame"></span>'
+    + '<span class="coin"></span><span class="filet"></span></button>';
+
+function rendre() {
+    document.getElementById('pistes').innerHTML = PISTES.map(([cls, nom, chiffres, note], k) =>
+        '<section class="piste ' + cls + '">'
+        + '<div class="tete"><span class="numero">' + k + '</span><span class="nom">' + nom
+        + '</span><span class="chiffres">' + chiffres + '</span></div>'
+        + '<p class="note">' + note + '</p>'
+        + '<div class="rangee grille3d">'
+        + CAS.map((c, i) => '<span class="case">'
+            + carte(portraits[(k * 4 + i) % portraits.length] || '', c.cl)
+            + '<span class="etiq">' + c.etiq + '</span></span>').join('')
+        + '</div></section>').join('');
+
+    document.getElementById('choix').innerHTML = PISTES.map(([cls, nom]) =>
+        '<button data-choix="' + cls + '"' + (cls === pisteChoisie ? ' class="on"' : '') + '>' + nom + '</button>').join('');
+
+    const p = document.getElementById('plateau');
+    p.className = 'plateau grille3d ' + pisteChoisie;
+    p.innerHTML = plateau.map((t, i) =>
+        '<span class="case" data-i="' + i + '">' + carte(t.img, t.camp) + '</span>').join('');
+
+    jouer(document);
+}
+
+// ⚠️ Révéler, c'est DEUX choses : poser l'état final (`rev`, qui reste)
+// et jouer le chemin (`joue`, qu'on retire au bout). Les confondre en
+// une seule classe rendait la carte à son état caché dès la fin de
+// l'animation — elle se révélait puis s'effaçait.
+function reveler(bouton) {
+    bouton.classList.remove('joue');
+    void bouton.offsetWidth;
+    bouton.classList.add('rev', 'joue');
+}
+function jouer(racine) { racine.querySelectorAll('.c').forEach(reveler); }
+function cacher(racine) { racine.querySelectorAll('.c').forEach(b => b.classList.remove('rev', 'joue')); }
+
+document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b && b.dataset.vit) {
+        document.querySelectorAll('[data-vit]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        document.documentElement.style.setProperty('--vit', b.dataset.vit);
+        return;
+    }
+    if (b && b.dataset.cote) {
+        document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        document.documentElement.style.setProperty('--cote', b.dataset.cote + 'px');
+        return;
+    }
+    if (b && b.dataset.choix) {
+        pisteChoisie = b.dataset.choix;
+        rendre();
+        document.getElementById('vrai').scrollIntoView({ block: 'start' });
+        return;
+    }
+    if (b && b.classList.contains('c')) { reveler(b); }
+});
+
+document.getElementById('rejouer').addEventListener('click', () => { cacher(document); setTimeout(() => jouer(document), 60); });
+document.getElementById('recacher').addEventListener('click', () => cacher(document.getElementById('plateau')));
+
+// ⚠️ LA CHAÎNE EST LE VRAI TEST. 1,4 s entre deux cartes, c'est le
+// rythme du jeu : une animation de 0,6 s y occupe presque la moitié du
+// temps d'attente, et trois d'affilée disent tout de suite si elle
+// fatigue.
+document.getElementById('chaine').addEventListener('click', () => {
+    clearInterval(enChaine);
+    const p = document.getElementById('plateau');
+    cacher(p);
+    document.getElementById('vrai').scrollIntoView({ block: 'start' });
+    const cartes = melanger([...p.querySelectorAll('.c')]).slice(0, 3);
+    let k = 0;
+    const pas = () => { if (k < cartes.length) reveler(cartes[k++]); else clearInterval(enChaine); };
+    pas();
+    enChaine = setInterval(pas, 1400);
+});
+
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
+fetch('/prototypes/codanime-cartes/portraits')
+    .then(r => r.json())
+    .then(d => {
+        portraits = d.portraits || [];
+        const imgs = melanger(portraits).slice(0, 25);
+        const camps = melanger(CAMPS);
+        plateau = imgs.map((img, k) => ({ img, camp: camps[k] }));
+        rendre();
+    })
+    .catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+</script>
+</body></html>

@@ -2259,6 +2259,22 @@ app.get('/prototypes/codanime-cadre', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-cadre.html');
 });
 
+// LA MAIN qui se pose sur une carte : six ARRIVÉES du même dessin. Ce
+// n'est plus le compte qu'on dessine mais le geste — une main, et un
+// nombre à côté seulement à partir de deux voix.
+// ⚠️ Deux mouvements voisins ne se distinguent qu'enchaînés : la page
+// les rejoue tous les six d'un bouton, et en boucle.
+app.get('/prototypes/codanime-main', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-main.html');
+});
+
+// La RÉVÉLATION d'une carte : six façons de remplacer le retournement
+// 3D. ⚠️ Lui se voit à mi-course EN MIROIR — il n'a pas de face arrière,
+// et une demi-rotation montre le recto retourné.
+app.get('/prototypes/codanime-revelation', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-revelation.html');
+});
+
 // La marque d'une carte : sept pistes (l'actuelle comprise) sur une vraie
 // grille de vingt-cinq, CLIQUABLES — on pose sa propre marque, c'est le
 // geste qu'on juge. ⚠️ Et aux deux vues : une marque qui emprunte le cadre
