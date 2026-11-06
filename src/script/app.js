@@ -725,6 +725,7 @@ createApp({
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
             endStep: 0,                // 0→4 : avancement de la révélation finale
+            codPlateauFin: false,      // le plateau dévoilé de Codanime, sur demande
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
@@ -1137,11 +1138,25 @@ createApp({
             const c = this.cod;
             if (!c.enCours) return '';
             if (c.phase === 'indice') return 'Transmission en cours';
-            if (c.phase === 'vote') return 'Vos partenaires réfléchissent…';
-            // ⚠️ Rien pendant la RÉVÉLATION, et c'est voulu : les cartes se
-            // retournent une par une sous les yeux de tout le monde, avec leur
-            // son et leur animation. Écrire « on retourne » par-dessus, c'est
-            // commenter ce qu'on est en train de regarder.
+            // ⚠️ LE TEXTE DÉPEND DE QUI REGARDE, et il le faut. « Vos
+            // partenaires réfléchissent » partait à TOUT LE MONDE : les
+            // agents qui étaient justement en train de deviner lisaient
+            // qu'on attendait quelqu'un d'autre, au moment précis où c'était
+            // à eux de cliquer.
+            //
+            // ⚠️ Et il tient pendant la RÉVÉLATION aussi, tant que le tour
+            // leur appartient : après une bonne carte la chaîne continue,
+            // donc ils peuvent encore jouer. Le laisser vide là leur disait
+            // « c'est fini » une seconde avant que ça reparte.
+            if (c.phase === 'vote' || c.phase === 'revelation') {
+                if (c.tourDe && c.tourDe === c.monEquipe) {
+                    return c.jeSuisEspion ? 'Vos partenaires réfléchissent…' : 'À vous de deviner…';
+                }
+                // Le camp adverse joue : rien. Le rang qui s'allume en face
+                // dit déjà à qui c'est, et commenter ce qu'on regarde se
+                // faire n'apprend rien.
+                return '';
+            }
             return '';
         },
 
@@ -1403,9 +1418,63 @@ createApp({
         },
 
         // 🆕 Podium unifié pour le nouveau design
+        // 🕵️ Codanime au podium commun. Deux camps, un vainqueur, et
+        // AUCUN score individuel : le mode n'en produit pas, et en
+        // inventer un aurait été mentir sur ce qui s'est joué.
+        estFinCodanime() {
+            return !!this.gameEndData && this.gameEndData.gameMode === 'codanime';
+        },
+
+        // Les deux camps tels que le podium les demande.
+        // ⚠️ Le « score » d'un camp est le nombre de SES cartes trouvées, et
+        // il n'est pas dans la charge de fin : on le reconstitue depuis la
+        // grille dévoilée — qui y est en entier, la partie est finie — moins
+        // ce qu'il lui restait.
+        codCampsFin() {
+            const d = this.gameEndData;
+            if (!d || d.gameMode !== 'codanime') return [];
+            const grille = d.grille || [];
+            const eq = d.equipes || {};
+            const camps = ['A', 'B'].map(t => {
+                const total = grille.filter(c => c.camp === t).length;
+                const e = eq[t] || {};
+                return {
+                    team: t,
+                    nom: 'Équipe ' + this.codNomEquipe(t).toLowerCase(),
+                    total,
+                    score: Math.max(0, total - (e.restant || 0)),
+                    joueurs: [].concat(
+                        e.espionFiche ? [{ ...e.espionFiche, espion: true }] : [],
+                        e.agents || []
+                    ),
+                };
+            });
+            // ⚠️ LE VAINQUEUR D'ABORD, et surtout PAS un tri par score : sur
+            // l'assassin, le camp qui gagne peut en avoir trouvé MOINS que
+            // l'autre — c'est l'adversaire qui a perdu, pas lui qui a gagné
+            // la course. Trier par cartes trouvées aurait couronné le perdant.
+            const g = d.gagnant;
+            camps.sort((a, b) => (b.team === g ? 1 : 0) - (a.team === g ? 1 : 0));
+            return camps;
+        },
+
+        codRaisonFin() {
+            const r = this.gameEndData && this.gameEndData.raison;
+            if (r === 'assassin') return 'L’assassin a été retourné.';
+            if (r === 'complet') return 'Toutes ses cartes ont été trouvées.';
+            return '';
+        },
+
         podiumPlayers() {
             if (!this.gameEndData) return [];
-            
+
+            if (this.estFinCodanime) {
+                return this.codCampsFin.map((c, i) => ({
+                    username: c.nom, isTeam: true, team: c.team,
+                    points: c.score, total: c.total, rank: i + 1,
+                }));
+            }
+
             // 🆕 Mode Rivalité
             if (this.gameEndData.gameMode === 'rivalry-lives' || this.gameEndData.gameMode === 'rivalry-points') {
                 // ⚠️ ON PREND LE CLASSEMENT DU SERVEUR, on ne le refabrique plus.
@@ -1711,6 +1780,24 @@ createApp({
         // Fin de partie en camps : les trois meilleurs de chaque côté
         campsPodium() {
             if (!this.gameEndData || !this.estFinEnCamps) return [];
+
+            // ⚠️ Codanime n'a pas de valeur par joueur, et on n'en invente
+            // pas : la colonne de droite porte le RÔLE, qui est la seule
+            // chose vraie qu'on puisse dire de quelqu'un à la fin d'une
+            // partie. Quatre noms par camp et non trois — il n'y a que deux
+            // lignes de camp ici, contre trois au quiz, donc la place existe.
+            if (this.estFinCodanime) {
+                return this.codCampsFin.map(c => ({
+                    team: c.team, nom: c.nom, score: c.score,
+                    joueurs: c.joueurs.slice(0, 4).map((p, i) => ({
+                        rang: i + 1,
+                        username: p.username,
+                        playerId: p.playerId,
+                        valeur: p.espion ? 'espion' : '',
+                    })),
+                }));
+            }
+
             const parPoints = this.trioEnPoints;
             const tous = this.gameEndData.playersData || [];
             const scores = this.gameEndData.teamScores || {};
@@ -1747,8 +1834,13 @@ createApp({
         },
 
         // Aux points on affiche le score, aux vies le nombre de coeurs restants
+        // ⚠️ Codanime compte dedans, non parce qu'il a des points mais
+        // parce que cette valeur commande AUSSI le petit cœur à côté de
+        // chaque équipier. Il n'a pas de vies : sans ça, chaque nom
+        // traînait un cœur qui ne voulait rien dire.
         trioEnPoints() {
-            return !!this.gameEndData && this.gameEndData.gameMode === 'rivalry-points';
+            const m = this.gameEndData && this.gameEndData.gameMode;
+            return m === 'rivalry-points' || m === 'codanime';
         },
 
         // Tous les joueurs d'un camp, pour le détail ouvert depuis le podium
@@ -1778,7 +1870,7 @@ createApp({
 
         estFinEnCamps() {
             const m = this.gameEndData && this.gameEndData.gameMode;
-            return m === 'rivalry-lives' || m === 'rivalry-points';
+            return m === 'rivalry-lives' || m === 'rivalry-points' || m === 'codanime';
         },
 
         // Six places au plus : au-delà, la liste déborderait en vertical
@@ -4659,6 +4751,19 @@ createApp({
             return c ? c.joueurs : [];
         },
 
+        // ⚠️ LE PODIUM COMMUN SERT MAINTENANT DEUX FAMILLES : le quiz (solo
+        // et camps) et Codanime. Ses deux boutons doivent donc aiguiller —
+        // sans ça « Rejouer » relançait un QUIZ depuis la fin d'une partie
+        // de Codanime, et « Retour » renvoyait à l'accueil au lieu du salon.
+        hostRejouerPodium() {
+            if (this.estFinCodanime) return this.hostRejouerCodanime();
+            return this.hostRejouer();
+        },
+        retourPodium() {
+            if (this.estFinCodanime) return this.quitterCodanime();
+            return this.backToHome();
+        },
+
         endSlot(rang) {
             if (rang === 3) return 1;
             if (rang === 2) return 2;
@@ -6819,10 +6924,11 @@ createApp({
                             if (fin.gameMode === 'rush') this.startRushReveal();
                             else if (fin.gameMode === 'ascension') this.startAscReveal();
                             else if (fin.gameMode === 'choice') this.startChoiceReveal();
-                            // 🕵️ Codanime n'a pas de classement à dévoiler pas
-                            // à pas : la grille se montre d'un coup, et son
-                            // entrée est tenue par le CSS seul.
-                            else if (fin.gameMode === 'codanime') { /* rien à dévoiler */ }
+                            // 🕵️ Codanime passe par `startEndReveal` comme le
+                            // quiz depuis qu'il partage son podium : ce sont
+                            // ses DEUX CAMPS qui se dévoilent, et sans cette
+                            // ligne `endStep` restait à zéro — les deux lignes
+                            // ne sortaient jamais de leur état caché.
                             else this.startEndReveal();
                         });
                     }
@@ -9341,6 +9447,12 @@ createApp({
                 this.gameEndData = data;
                 this.gameEnded = true;
                 this.gameStartedOnServer = false;
+                // ⚠️ Codanime partage le podium du quiz depuis qu'il a deux
+                // camps à classer : il lui faut donc la même révélation pas
+                // à pas, sans quoi `endStep` reste à zéro et les deux lignes
+                // ne sortent jamais de leur état caché — écran vide.
+                this.codPlateauFin = false;
+                this.$nextTick(() => this.startEndReveal());
             });
 
             // Un refus se MONTRE plutôt que de disparaître dans la console :

@@ -2586,10 +2586,21 @@
                                  ⚠️ Les portraits arrivent SOUS JETON : leur nom de
                                  fichier dirait qui est le personnage, et le mode
                                  n'affiche justement pas les noms. -->
+                            <!-- ⚠️ CHAQUE CARTE EST DANS UNE CASE, et ce n'est
+                                 pas décoratif : la main qui marque DÉBORDE du
+                                 bord haut, et la carte porte `overflow: hidden`
+                                 pour que le portrait épouse ses angles. Posée
+                                 dedans, la main serait coupée net — or c'est
+                                 le débord qui fait le geste. La case est la
+                                 case de la grille, la carte s'y centre comme
+                                 avant (`place-self`), et la main est leur
+                                 sœur : elle passe par-dessus sans rien
+                                 enlever au portrait. -->
                             <div class="cod-grille"
-                                 :class="{ espion: cod.jeSuisEspion, masque: cod.masquerAdverses }">
-                                <button v-for="(c, iC) in cod.grille" :key="c.i"
-                                        class="cod-carte" :class="codClasseCarte(c)"
+                                 :class="[{ espion: cod.jeSuisEspion, masque: cod.masquerAdverses },
+                                          'mien-' + (cod.monEquipe || 'rien')]">
+                                <span class="cod-case" v-for="(c, iC) in cod.grille" :key="c.i">
+                                <button class="cod-carte" :class="codClasseCarte(c)"
                                         :style="{ '--k': codDiag(iC) }"
                                         :disabled="!codPeutVoter || c.revelee"
                                         @click="codVoter(c.i)">
@@ -2600,13 +2611,6 @@
                                          qui décide de qui survit à la chaîne serait
                                          inacceptable. -->
                                     <span class="cod-num" v-if="codNumero(c.i)">{{ codNumero(c.i) }}</span>
-                                    <!-- Les voix, visibles de tous : c'est la
-                                         convergence qu'on regarde monter, et elle
-                                         remplace les mains tendues autour d'une
-                                         table. -->
-                                    <span class="cod-voix" v-if="codVoix(c.i) && !c.revelee">
-                                        {{ codVoix(c.i) }}<small>/{{ cod.seuil }}</small>
-                                    </span>
                                     <!-- LE BALAYAGE de la révélation : une lame
                                          de lumière traverse la carte et laisse
                                          la couleur derrière elle.
@@ -2626,6 +2630,35 @@
                                         <i class="cod-etin" v-for="k in 7" :key="k"></i>
                                     </span>
                                 </button>
+
+                                <!-- LA MARQUE : une main qui se pose sur la
+                                     carte, et un nombre à côté d'elle.
+                                     ⚠️ UNE SEULE MAIN, jamais une par voix :
+                                     marquer une carte, à une table, c'est
+                                     poser la main dessus — personne n'en pose
+                                     deux pour dire « deux voix ». Le compte se
+                                     lit dans la pastille, et elle n'existe
+                                     qu'À PARTIR DE DEUX : à une, elle ne
+                                     dirait rien que la main ne dise déjà.
+                                     ⚠️ La `key` porte le COMPTE : sans elle
+                                     Vue réutilise le nœud quand une voix
+                                     s'ajoute, l'animation ne repart pas, et
+                                     la deuxième main de la carte arriverait
+                                     sans un geste. -->
+                                <span class="cod-main" v-if="codVoix(c.i) && !c.revelee"
+                                      :key="'m' + c.i + '-' + codVoix(c.i)"
+                                      :class="{ mienne: codJaiVote(c.i), seule: codVoix(c.i) < 2 }">
+                                    <svg class="cod-patte" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <rect x="5.5" y="10" width="13" height="11" rx="5.5"/>
+                                        <rect x="6.2" y="4.4" width="2.9" height="9" rx="1.45"/>
+                                        <rect x="9.6" y="2.4" width="2.9" height="10.8" rx="1.45"/>
+                                        <rect x="13" y="3.3" width="2.9" height="9.9" rx="1.45"/>
+                                        <rect x="16.4" y="6.2" width="2.9" height="7.2" rx="1.45"/>
+                                        <rect x="1.9" y="9.6" width="2.7" height="7.8" rx="1.35" transform="rotate(-24 3.25 13.5)"/>
+                                    </svg>
+                                    <span class="cod-nb">{{ codVoix(c.i) }}</span>
+                                </span>
+                                </span>
                             </div>
 
                             <div class="cod-cote">
@@ -3690,6 +3723,11 @@
                 </button>
 
                 <span class="v2-end-title">Classement final</span>
+                <!-- ⚠️ Codanime porte une ligne de plus, et elle n'est pas
+                     décorative : perdre sur l'assassin et perdre à la course
+                     ne se racontent pas pareil, et c'est la première chose
+                     qu'on se dit en fin de partie. -->
+                <span class="cod-end-sous" v-if="estFinCodanime && codRaisonFin">{{ codRaisonFin }}</span>
 
                 <!-- Toutes les lignes sont posées dès le départ, seule leur visibilité
                      change : le titre et la mise en page ne bougent donc jamais. -->
@@ -3704,14 +3742,23 @@
                         <span class="v2-end-sweep"></span>
                         <span class="rk">{{ p.rank }}</span>
                         <span class="nm">{{ p.username }}</span>
-                        <span class="sc" v-if="p.points !== undefined">{{ endScore(p) }}</span>
+                        <!-- Codanime compte des CARTES, et le dénominateur
+                             compte autant que le chiffre : « 9 » tout seul ne
+                             dit pas si c'est tout ou presque. -->
+                        <span class="sc" v-if="estFinCodanime">{{ p.points }}<em> / {{ p.total }}</em></span>
+                        <span class="sc" v-else-if="p.points !== undefined">{{ endScore(p) }}</span>
                         <span class="sc" v-else-if="p.isTeam">{{ p.lives || 0 }}<em> en vie</em></span>
                         <span class="v2-end-hp" v-else>
                             <i v-for="n in gameLives" :key="n" :class="{ off: n > (p.lives || 0) }">
                                 <svg viewBox="0 0 24 24" stroke-linejoin="round"><path d="M12 20.6s-7-4.3-9-8.4A5 5 0 0 1 12 6.6a5 5 0 0 1 9 5.6c-2 4.1-9 8.4-9 8.4z"/></svg>
                             </i>
                         </span>
-                        <button class="v2-end-detail" v-if="p.isTeam" @click="ouvrirCamp(p.team)"
+                        <!-- ⚠️ Pas de détail pour Codanime : la feuille se
+                             bâtit sur `playersData`, que ce mode n'envoie
+                             pas — le bouton n'aurait ouvert qu'un vide. Et
+                             il n'a rien à montrer de plus : les quatre noms
+                             d'un camp tiennent déjà sous sa ligne. -->
+                        <button class="v2-end-detail" v-if="p.isTeam && !estFinCodanime" @click="ouvrirCamp(p.team)"
                                 :title="'Voir tout ' + p.username" aria-label="Détail du camp">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.2"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/>
@@ -3749,15 +3796,31 @@
                     termine <b>{{ monRangCamp.rang }}<sup>e</sup></b> sur {{ monRangCamp.total }}
                 </div>
 
+                <!-- LE PLATEAU DÉVOILÉ de Codanime, sur demande.
+                     ⚠️ Il n'est plus montré d'office — le podium passe avant,
+                     c'est ce qu'on vient lire — mais il ne pouvait pas
+                     disparaître : les vingt-cinq camps révélés sont le moment
+                     « ahhh c'était ÇA », et la capture que les gens postent. -->
+                <div class="cod-fin-grille" v-if="estFinCodanime && codPlateauFin">
+                    <span class="cod-fin-c" v-for="(c, iC) in (gameEndData.grille || [])" :key="c.i"
+                          :class="'camp-' + c.camp" :style="{ '--k': codDiag(iC) }">
+                        <img :src="c.img" alt="" draggable="false">
+                    </span>
+                </div>
+
                 <div class="v2-end-actions" :class="{ vu: endStep >= 4 }">
                     <button class="v2-end-btn" v-if="isHost" :disabled="rejouerBusy"
-                            @click="hostRejouer">Rejouer</button>
+                            @click="hostRejouerPodium">Rejouer</button>
+                    <button class="v2-end-btn fantome" v-if="estFinCodanime"
+                            @click="codPlateauFin = !codPlateauFin">
+                        {{ codPlateauFin ? 'Masquer le plateau' : 'Voir le plateau' }}
+                    </button>
                     <!-- ⚠️ Le style fantôme n'a de sens que SOUS « Rejouer », pour
                          qu'un bouton prime sur l'autre. Le joueur n'a pas de
                          « Rejouer » : son seul bouton restait en texte nu, et
                          l'écran de fin se terminait sur rien. Il prend donc l'or,
                          comme le bouton principal de l'hôte. -->
-                    <button class="v2-end-btn" :class="{ fantome: isHost }" @click="backToHome">Retour</button>
+                    <button class="v2-end-btn" :class="{ fantome: isHost }" @click="retourPodium">Retour</button>
                 </div>
             </div>
         </div>
@@ -3864,49 +3927,15 @@
             </div>
         </div>
 
-        <!-- ============================================
-             🕵️ ÉCRAN DE FIN CODANIME
-             ============================================ -->
-        <!-- ⚠️ Il n'y a RIEN À CLASSER ici : deux camps, un vainqueur, et
-             aucun score individuel. Un podium à trois places aurait demandé
-             d'inventer une mesure par joueur que le mode ne produit pas.
-
-             Ce qu'on montre à la place, c'est LA GRILLE DÉVOILÉE — le moment
-             « ahhh c'était ÇA », qui est aussi la capture d'écran que les gens
-             postent. Le serveur l'envoie avec les vingt-cinq camps : la partie
-             est jouée, il n'y a plus rien à cacher. -->
-        <div class="cod-fin" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'codanime'">
-            <div class="cod-fin-boite">
-                <span class="cod-fin-titre" :class="'camp-' + (gameEndData.gagnant || 'nul')">
-                    <template v-if="gameEndData.gagnant">
-                        L’équipe {{ codNomEquipe(gameEndData.gagnant).toLowerCase() }} gagne
-                    </template>
-                    <template v-else>Partie arrêtée</template>
-                </span>
-                <!-- La raison est la moitié de l'histoire : perdre sur
-                     l'assassin et perdre à la course ne se racontent pas
-                     pareil, et c'est la première chose qu'on se dit. -->
-                <span class="cod-fin-raison" v-if="gameEndData.raison === 'assassin'">
-                    L’assassin a été retourné.
-                </span>
-                <span class="cod-fin-raison" v-else-if="gameEndData.raison === 'complet'">
-                    Toutes ses cartes ont été trouvées.
-                </span>
-
-                <div class="cod-fin-grille">
-                    <span class="cod-fin-c" v-for="(c, iC) in (gameEndData.grille || [])" :key="c.i"
-                          :class="'camp-' + c.camp" :style="{ '--k': codDiag(iC) }">
-                        <img :src="c.img" alt="" draggable="false">
-                    </span>
-                </div>
-
-                <div class="cod-fin-actions">
-                    <button class="winner-replay-btn" v-if="isHost" :disabled="rejouerBusy"
-                            @click="hostRejouerCodanime">Rejouer</button>
-                    <button class="winner-back-btn" @click="quitterCodanime">Retour</button>
-                </div>
-            </div>
-        </div>
+        <!-- ⚠️ CODANIME N'A PLUS SON ÉCRAN DE FIN À LUI. Il avait le sien
+             parce qu'« il n'y a rien à classer » — deux camps, un vainqueur,
+             aucun score individuel. C'était vrai au joueur près, et faux au
+             CAMP près : deux camps, ça se classe très bien, et le podium
+             commun sait déjà le faire puisque le quiz en camps s'en sert.
+             Il porte donc Codanime, avec le nombre de cartes trouvées pour
+             score, les quatre noms de chaque camp sous sa ligne, et le
+             plateau dévoilé derrière un bouton. Deux écrans de fin pour la
+             même chose se seraient mis à diverger. -->
 
         <!-- ============================================
              ÉCRAN DE FIN ASCENSION
