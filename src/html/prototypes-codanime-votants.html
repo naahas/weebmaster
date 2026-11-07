@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — les visages de ceux qui votent</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LES VISAGES DE CEUX QUI VOTENT — six façons de les faire voir
+
+   Ce qui tourne : un visage de 0,30 du côté de la carte, anneau noir,
+   ombre portée. Il se voit, mais il se FOND — sur un portrait clair ou
+   très coloré, l'anneau noir est la seule chose qui le détache, et un
+   anneau noir sur du manga sombre ne détache rien du tout.
+
+   ⚠️ TROIS CONTRAINTES, les mêmes que pour la marque :
+
+   1. ÇA DOIT TENIR À 69 px. C'est la carte sur téléphone. Un visage à
+      0,34 y vaut 23 px : tout ce qui demande deux cercles concentriques
+      lisibles y meurt. D'où le basculeur de côté, et c'est LUI qui
+      tranche — une piste qui ne tient pas à 69 px ne tient pas.
+
+   2. ÇA NE DOIT PAS MANGER LE PORTRAIT. L'indice porte sur ce qu'on
+      voit. Un halo qui déborde de deux crans sur la figure casse le jeu
+      lui-même ; le visage est posé HORS de la carte, en haut à droite,
+      et c'est ce débord qui doit rester petit.
+
+   3. L'ÉVENTAIL DOIT RESTER LISIBLE À TROIS. Un camp de Codanime monte
+      à trois agents. Trois visages qui se chevauchent à moitié sur une
+      carte de 126 px, c'est déjà dense : tout ce qu'on ajoute autour
+      (anneau, halo) s'ajoute AUSSI entre eux.
+
+   ⚠️ ET L'ANCRAGE. Le premier à voter doit se poser DANS LE COIN, et
+   ne se décaler que quand un second arrive. Aujourd'hui le fantôme de
+   l'agent qu'on attend occupe le coin et pousse le votant vers la
+   gauche : on voit la place vide mieux que la voix. Le basculeur
+   « Fantôme » montre les deux ordres.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff;  --a-rgb: 47, 155, 255;
+    --b: #ff3b5c;  --b-rgb: 255, 59, 92;
+    --brun: #bf8a5f;
+    --cote: 126px;
+    --av: 0.34;        /* la taille d'un visage, en part de côté */
+    --pas: 0.175;      /* de combien il pousse son voisin */
+    --camp: var(--a);
+    --camp-rgb: var(--a-rgb);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.5rem 1.4rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.3rem; max-width: 58rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; opacity: 0.85; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 0.7rem;
+    background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label {
+    opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: 0.58rem; margin-left: 0.6rem;
+}
+.barre label:first-child { margin-left: 0; }
+.barre button {
+    padding: 0.32rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.barre input[type=range] { width: 7rem; accent-color: var(--brun); }
+.barre b { font-variant-numeric: tabular-nums; font-size: 0.68rem; min-width: 5.4rem; }
+.mode-emploi {
+    flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 0.5rem;
+}
+
+.piste { margin-bottom: 2.4rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.tete h2 { font-size: 0.9rem; margin: 0 0 0.3rem; }
+.tete .num {
+    font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
+    color: var(--brun); opacity: 0.85;
+}
+.pourquoi { font-size: 0.72rem; opacity: 0.5; margin: 0 0 0.9rem; max-width: 52rem; line-height: 1.5; }
+.rangee { display: flex; gap: 2.1rem; flex-wrap: wrap; padding-top: 1.1rem; }
+
+/* ── LA CARTE, telle qu'en jeu ───────────────────────────────── */
+.carte {
+    position: relative;
+    width: var(--cote); height: var(--cote);
+    border-radius: calc(var(--cote) * 0.085);
+    overflow: visible;
+    flex: 0 0 auto;
+}
+.carte .fond {
+    position: absolute; inset: 0;
+    border-radius: inherit; overflow: hidden;
+    border: 2px solid #0c0d11;
+    background: #15171d;
+}
+.carte .fond img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── L'ÉVENTAIL, copié du jeu ────────────────────────────────── */
+.votants {
+    position: absolute; z-index: 6;
+    top: calc(var(--cote) * -0.07);
+    right: calc(var(--cote) * -0.04);
+    width: calc(var(--cote) * var(--av));
+    height: calc(var(--cote) * var(--av));
+    pointer-events: none;
+}
+.votant {
+    position: absolute; right: 0; top: 0;
+    width: 100%; height: 100%;
+    transform: translateX(calc(var(--i, 0) * var(--cote) * var(--pas) * -1));
+    transition: transform 0.34s cubic-bezier(0.25, 0.9, 0.3, 1);
+    z-index: calc(9 - var(--i, 0));
+}
+.votant img {
+    width: 100%; height: 100%; display: block;
+    border-radius: 50%; object-fit: cover;
+    background: #15171d;
+    animation: entre 0.42s cubic-bezier(0.22, 0.85, 0.3, 1) both;
+}
+@keyframes entre {
+    from { opacity: 0; transform: translateY(calc(var(--cote) * -0.06)) scale(0.6); }
+    to   { opacity: 1; transform: none; }
+}
+/* Le fantôme : l'agent qu'on attend. Même traitement dans toutes les
+   pistes — ce n'est pas lui qu'on juge ici. */
+.votant.fantome { opacity: 0.26; }
+.votant.fantome img {
+    filter: grayscale(1) contrast(0.7);
+    border: calc(var(--cote) * 0.018) dashed rgba(255, 255, 255, 0.75) !important;
+    box-shadow: none !important;
+}
+
+/* ── P0 · AUJOURD'HUI ────────────────────────────────────────── */
+.p0 .votant img {
+    border: calc(var(--cote) * 0.018) solid #0c0d11;
+    box-shadow: 0 calc(var(--cote) * 0.012) calc(var(--cote) * 0.03) rgba(0, 0, 0, 0.8);
+}
+
+/* ── P1 · HALO DE CAMP ───────────────────────────────────────── */
+.p1 .votant img {
+    border: calc(var(--cote) * 0.018) solid #0c0d11;
+    box-shadow:
+        0 0 calc(var(--cote) * 0.07) calc(var(--cote) * 0.012) rgba(var(--camp-rgb), 0.75),
+        0 calc(var(--cote) * 0.012) calc(var(--cote) * 0.03) rgba(0, 0, 0, 0.85);
+}
+
+/* ── P2 · DOUBLE ANNEAU ──────────────────────────────────────── */
+.p2 .votant img {
+    border: calc(var(--cote) * 0.016) solid #0c0d11;
+    box-shadow:
+        0 0 0 calc(var(--cote) * 0.016) var(--camp),
+        0 calc(var(--cote) * 0.014) calc(var(--cote) * 0.035) rgba(0, 0, 0, 0.9);
+}
+
+/* ── P3 · ANNEAU CLAIR ───────────────────────────────────────── */
+.p3 .votant img {
+    border: calc(var(--cote) * 0.022) solid #f4f1ea;
+    box-shadow: 0 calc(var(--cote) * 0.016) calc(var(--cote) * 0.045) rgba(0, 0, 0, 0.95);
+}
+
+/* ── P4 · SOCLE SOMBRE ───────────────────────────────────────── */
+.p4 .votant::before {
+    content: ''; position: absolute; inset: calc(var(--cote) * -0.045);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 7, 10, 0.92) 42%, rgba(6, 7, 10, 0) 72%);
+}
+.p4 .votant img {
+    position: relative;
+    border: calc(var(--cote) * 0.014) solid rgba(var(--camp-rgb), 0.9);
+    box-shadow: none;
+}
+
+/* ── P5 · LE HALO RESPIRE, SUR LE DERNIER SEULEMENT ──────────── */
+.p5 .votant img {
+    border: calc(var(--cote) * 0.018) solid #0c0d11;
+    box-shadow:
+        0 0 calc(var(--cote) * 0.05) rgba(var(--camp-rgb), 0.45),
+        0 calc(var(--cote) * 0.012) calc(var(--cote) * 0.03) rgba(0, 0, 0, 0.85);
+}
+.p5 .votant.dernier img {
+    animation: entre 0.42s cubic-bezier(0.22, 0.85, 0.3, 1) both,
+               respire 2s ease-in-out 0.42s infinite;
+}
+@keyframes respire {
+    0%, 100% { box-shadow: 0 0 calc(var(--cote) * 0.045) rgba(var(--camp-rgb), 0.4),
+                           0 calc(var(--cote) * 0.012) calc(var(--cote) * 0.03) rgba(0, 0, 0, 0.85); }
+    50%      { box-shadow: 0 0 calc(var(--cote) * 0.1) calc(var(--cote) * 0.015) rgba(var(--camp-rgb), 0.95),
+                           0 calc(var(--cote) * 0.012) calc(var(--cote) * 0.03) rgba(0, 0, 0, 0.85); }
+}
+
+/* ⚠️ Jamais une durée à zéro : à 0 s l'animation se joue quand même et
+   sa dernière image, remplie en « forwards », resterait posée. */
+@media (prefers-reduced-motion: reduce) {
+    .votant { transition: none; }
+    .votant img { animation: none !important; }
+}
+
+.legende {
+    font-size: 0.6rem; opacity: 0.4; text-align: center;
+    margin-top: 0.75rem; letter-spacing: 0.04em;
+}
+.mesure { font-size: 0.62rem; opacity: 0.38; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — les visages de ceux qui votent</h1>
+<p class="sous">
+    Six façons de rendre une voix plus visible, posées sur de vraies cartes et de vrais portraits.
+    Ce qui tourne aujourd'hui est la <b>piste 0</b> : anneau noir, ombre portée, 0,30 du côté.
+    <b>Le basculeur « Téléphone » tranche</b> — une piste qui ne tient pas à 69 px ne tient pas.
+    Et « Fantôme » montre l'ancrage : avec lui à droite, c'est la place vide qui occupe le coin.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="126" class="on">Ordinateur</button>
+    <button data-cote="69">Téléphone</button>
+
+    <label>Camp</label>
+    <button data-camp="a" class="on">Bleu</button>
+    <button data-camp="b">Rouge</button>
+
+    <label>Voix</label>
+    <button data-voix="1">1</button>
+    <button data-voix="2" class="on">2</button>
+    <button data-voix="3">3</button>
+
+    <label>Fantôme</label>
+    <button data-fantome="non" class="on">Aucun</button>
+    <button data-fantome="droite">À droite</button>
+    <button data-fantome="gauche">À gauche</button>
+
+    <label>Taille</label>
+    <input type="range" id="taille" min="26" max="46" step="1" value="34">
+    <b id="tailleVal"></b>
+
+    <label>Écart</label>
+    <input type="range" id="ecart" min="10" max="30" step="1" value="18">
+    <b id="ecartVal"></b>
+
+    <button id="rejouer">Rejouer l'arrivée</button>
+    <button id="retirer">Autres portraits</button>
+
+    <div class="mode-emploi">
+        « Rejouer l'arrivée » pose les visages un par un, comme en partie : c'est le
+        <b>glissement</b> qu'on juge, pas la pose. À deux agents on ne voit jamais le second —
+        la carte part à l'unanimité, donc elle se révèle au même instant.
+    </div>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+// ── Les pistes ────────────────────────────────────────────────────
+const PISTES = [
+    { id: 'p0', nom: 'Aujourd’hui', quoi:
+        'Anneau noir et ombre portée. Il se voit sur un portrait clair ; sur du manga sombre, ' +
+        'l’anneau se confond avec le trait et il ne reste que l’ombre.' },
+    { id: 'p1', nom: 'Halo de camp', quoi:
+        'Le même, plus un halo diffus de la couleur du camp. Le halo ne touche pas le portrait — ' +
+        'il rayonne vers le haut et la droite, hors de la carte. ⚠️ Sur trois visages serrés, ' +
+        'les halos se chevauchent et la rangée devient une tache.' },
+    { id: 'p2', nom: 'Double anneau', quoi:
+        'Anneau sombre collé au visage, anneau de camp net par-dessus. Aucun flou, donc rien ne ' +
+        'déborde et rien ne se mélange à trois. ⚠️ C’est deux cercles concentriques : à 69 px, ' +
+        'les voir faire deux demande que chacun garde au moins un pixel plein.' },
+    { id: 'p3', nom: 'Anneau clair', quoi:
+        'Ivoire, sans couleur de camp, avec une ombre franche. Le plus lisible sur n’importe ' +
+        'quel portrait — mais il ne dit plus à quel camp appartient la voix, et tous les visages ' +
+        'd’une carte se ressemblent.' },
+    { id: 'p4', nom: 'Socle sombre', quoi:
+        'Un disque sombre flouté derrière le visage, anneau fin de camp. Le visage se détache de ' +
+        'TOUT portrait, parce qu’il ne pose plus sur lui. ⚠️ Le socle mord sur le coin de la carte.' },
+    { id: 'p5', nom: 'Le halo respire', quoi:
+        'Piste 1, mais seul le DERNIER arrivé pulse. Ce qui attire l’œil, c’est ce qui vient ' +
+        'de changer. ⚠️ Vingt-cinq cartes dont trois pulsent en même temps, c’est un sapin.' },
+];
+
+let portraits = [], visages = [], tirage = [];
+let cote = 126, camp = 'a', voix = 2, fantome = 'non';
+let jeton = 0;   // ⚠️ annule une animation en cours si l'on rejoue
+
+const melanger = (t) => {
+    const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c;
+};
+
+function tirer() { tirage = melanger(portraits).slice(0, 3); }
+
+// ⚠️ L'ORDRE EST TOUT LE SUJET. `rang` se compte DEPUIS LA DROITE, donc
+// le dernier de la liste occupe le coin. Un fantôme en fin de liste prend
+// donc le coin et pousse les votants vers la gauche ; en tête de liste, il
+// reste à gauche et c'est la voix qui tient le coin.
+function rangs(nb) {
+    const gens = [];
+    for (let k = 0; k < nb; k++) gens.push({ fantome: false, visage: visages[k % visages.length] });
+    const creux = { fantome: true, visage: visages[(nb + 1) % visages.length] };
+    let liste = gens;
+    if (fantome === 'droite') liste = gens.concat([creux]);
+    if (fantome === 'gauche') liste = [creux].concat(gens);
+    const n = liste.length;
+    return liste.map((x, k) => Object.assign({}, x, { rang: n - 1 - k, dernier: !x.fantome && k === nb - 1 }));
+}
+
+function dessinerCarte(piste, img, nb) {
+    const gens = rangs(nb).map((v) =>
+        '<span class="votant' + (v.fantome ? ' fantome' : '') + (v.dernier ? ' dernier' : '') + '"' +
+        ' style="--i:' + v.rang + '"><img src="' + v.visage + '" alt=""></span>').join('');
+    return '<div class="carte"><div class="fond"><img src="' + img + '" alt=""></div>' +
+           '<span class="votants">' + gens + '</span></div>';
+}
+
+function rendre() {
+    document.getElementById('pistes').innerHTML = PISTES.map((p, k) =>
+        '<section class="piste ' + p.id + '">' +
+          '<div class="tete"><span class="num">P' + k + '</span><h2>' + p.nom + '</h2></div>' +
+          '<p class="pourquoi">' + p.quoi + '</p>' +
+          '<div class="rangee">' + tirage.map(img => dessinerCarte(p.id, img, voix)).join('') + '</div>' +
+        '</section>').join('');
+}
+
+// « Rejouer l'arrivée » : un visage, puis deux, puis trois — c'est le
+// glissement des anciens qu'on regarde, pas l'entrée du nouveau.
+function rejouer() {
+    const mien = ++jeton;
+    const vise = voix;
+    let n = 1;
+    voix = 1; rendre();
+    const pas = () => {
+        if (mien !== jeton) return;      // quelqu'un a rejoué entre-temps
+        if (n >= vise) { voix = vise; return; }
+        n++; voix = n; rendre();
+        setTimeout(pas, 900);
+    };
+    setTimeout(pas, 900);
+}
+
+function appliquer() {
+    const r = document.documentElement.style;
+    r.setProperty('--cote', cote + 'px');
+    r.setProperty('--camp', 'var(--' + camp + ')');
+    r.setProperty('--camp-rgb', 'var(--' + camp + '-rgb)');
+}
+
+function majMesures() {
+    const av = +document.getElementById('taille').value / 100;
+    const ec = +document.getElementById('ecart').value / 100;
+    document.documentElement.style.setProperty('--av', av);
+    document.documentElement.style.setProperty('--pas', ec);
+    const px = Math.round(cote * av), pxp = Math.round(69 * av);
+    document.getElementById('tailleVal').textContent =
+        av.toFixed(2).replace('.', ',') + ' · ' + px + ' px · ' + pxp + ' sur tél.';
+    // Ce que deux visages se recouvrent : c'est la seule mesure qui dit
+    // si l'éventail reste lisible, et elle dépend des DEUX curseurs.
+    const rec = Math.max(0, Math.round((1 - ec / av) * 100));
+    document.getElementById('ecartVal').textContent =
+        ec.toFixed(3).replace('.', ',') + ' · ' + rec + ' % couverts';
+}
+
+document.querySelectorAll('.barre button[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); cote = +b.dataset.cote; appliquer(); majMesures();
+}));
+document.querySelectorAll('.barre button[data-camp]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-camp]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); camp = b.dataset.camp; appliquer();
+}));
+document.querySelectorAll('.barre button[data-voix]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-voix]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); voix = +b.dataset.voix; jeton++; rendre();
+}));
+document.querySelectorAll('.barre button[data-fantome]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-fantome]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); fantome = b.dataset.fantome; rendre();
+}));
+document.getElementById('taille').addEventListener('input', majMesures);
+document.getElementById('ecart').addEventListener('input', majMesures);
+document.getElementById('rejouer').addEventListener('click', rejouer);
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+
+appliquer(); majMesures();
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu :
+// leur nom de fichier dirait qui est le personnage.
+Promise.all([
+    fetch('/prototypes/codanime-cartes/portraits').then(r => r.json()),
+    // ⚠️ Chemin ABSOLU : les avatars sont servis à la racine, un chemin
+    // relatif chercherait /prototypes/novice.png.
+    fetch('/api/avatars').then(r => r.json()).catch(() => ({ avatars: [] })),
+]).then(([p, a]) => {
+    portraits = p.portraits || [];
+    visages = melanger(a.avatars || []).slice(0, 5).map(x => '/' + x.f + '?v=' + x.v);
+    if (!visages.length) visages = [''];
+    tirer(); rendre();
+}).catch(() => { document.getElementById('pistes').textContent = 'Les portraits ne répondent pas.'; });
+</script>
+</body></html>

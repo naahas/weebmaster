@@ -6092,17 +6092,27 @@ createApp({
             const fiche = (id, fantome) => ({
                 ...(f[id] || { playerId: id, username: '…', avatar: null }), fantome,
             });
-            let liste = v.map(id => fiche(id, false));
+            const votants = v.map(id => fiche(id, false));
             // ⚠️ LES ABSENTS EN CREUX, sur la carte qui mène. L'unanimité ne
             // dit rien tant qu'on ignore QUI l'on attend : à trois agents,
             // « 2 voix » et « il manque Yokai » ne demandent pas le même
-            // geste. On les ajoute à droite, donc en TÊTE de l'éventail —
-            // c'est eux qu'on regarde.
+            // geste.
+            //
+            // ⚠️ ET ILS VONT À GAUCHE, c'est-à-dire en QUEUE de l'éventail.
+            // Ils étaient à droite, et le coin leur revenait donc : à deux
+            // agents — le cas courant — le premier qui votait se faisait
+            // aussitôt pousser par un cercle VIDE, et l'on voyait la place
+            // qui manque mieux que la voix qui vient d'arriver. Le coin
+            // appartient à la dernière voix ; ce qu'on attend patiente
+            // derrière. (`rang` se comptant depuis la droite, être en tête
+            // de liste, c'est être le plus à gauche.)
+            const creux = [];
             if (i === this.codCarteMenee) {
                 for (const id of (this.cod.agentsDuTour || [])) {
-                    if (!v.includes(id)) liste.push(fiche(id, true));
+                    if (!v.includes(id)) creux.push(fiche(id, true));
                 }
             }
+            const liste = creux.concat(votants);
             const n = liste.length;
             return liste.map((x, k) => ({ ...x, rang: n - 1 - k }));
         },

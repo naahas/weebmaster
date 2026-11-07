@@ -2290,6 +2290,14 @@ app.get('/prototypes/codanime-timer', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-timer.html');
 });
 
+// Les visages de ceux qui votent : six façons de les rendre visibles, avec
+// deux curseurs qui décident de tout — la TAILLE du visage et l'ÉCART entre
+// deux. La page affiche ce qu'ils donnent à 69 px, le côté d'une carte sur
+// téléphone : c'est là que la moitié des pistes meurt.
+app.get('/prototypes/codanime-votants', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-votants.html');
+});
+
 // ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu.
 // Une page de prototype qui les servirait en clair ne dirait rien du
 // rendu réel — et les noms de fichiers sont justement ce que le mode
