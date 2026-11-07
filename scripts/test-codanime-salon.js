@@ -68,6 +68,23 @@ const post = async (chemin, corps, jeton) => {
     const inconnu = await post('/admin/codanime/placer', { playerId: 'x', equipe: 'Z', role: 'agent' }, jeton);
     dire(inconnu.statut === 400, 'une équipe inconnue est refusée');
 
+    // ── LE RÉGLAGE « SÉRIE » ────────────────────────────────────
+    // ⚠️ On le pose AVANT le départ, et on vérifie le plateau APRÈS : c'est
+    // le seul moyen de savoir si `demarrer` passe vraiment le réglage au
+    // tirage. Le moteur seul est déjà éprouvé par `test:codanime` ; ce qui se
+    // joue ici, c'est le fil entre la route et la grille.
+    titre('Le réglage « série »');
+    const dispo = await (await fetch(BASE + '/api/codanime-series')).json();
+    dire(Array.isArray(dispo) && dispo[0] && dispo[0].id === 'overall',
+        'la liste des séries s\'ouvre sur Overall', (dispo || []).map(s => s.id).join(', '));
+    dire(dispo.every(s => s.id === 'overall' || s.n >= 25),
+        'aucune série en dessous de vingt-cinq n\'est proposée');
+
+    const refus = await post('/admin/codanime/set-serie', { serie: 'tokyoghoul' }, jeton);
+    dire(refus.statut === 400, 'une série trop courte est refusée par la route');
+    const pris = await post('/admin/codanime/set-serie', { serie: 'naruto' }, jeton);
+    dire(pris.statut === 200 && pris.corps.serie === 'naruto', 'Naruto est accepté');
+
     titre('Le départ');
     const dep = await post('/admin/start-game', {}, jeton);
     dire(dep.statut === 200 && dep.corps.mode === 'codanime', 'la partie démarre → ' + dep.corps.premier);
@@ -76,6 +93,25 @@ const post = async (chemin, corps, jeton) => {
     const dernier = (id) => vu[id].etats[vu[id].etats.length - 1];
     const eA = dernier('e1'), ag = dernier('a1');
     dire(!!eA && eA.grille.length === 25, 'la grille fait 25 cartes');
+
+    // ⚠️ NI L'ESPION NI L'AGENT NE REÇOIVENT L'ANIME d'une carte — c'est
+    // voulu, « nommer une série » est un indice interdit. On retrouve donc la
+    // série par les JETONS : la route des prototypes rend les jetons du vivier
+    // DANS L'ORDRE DU FICHIER, ce qui donne jeton → personnage. C'est le seul
+    // chemin honnête : lire le fichier et croire que la grille lui ressemble
+    // ne prouverait rien.
+    {
+        const vivier = require('../codanimedata.json').personnages;
+        const p = await (await fetch(BASE + '/prototypes/codanime-cartes/portraits')).json();
+        const parJeton = new Map((p.portraits || []).map((u, i) => [u, vivier[i]]));
+        const vus = eA.grille.map(c => parJeton.get(c.img)).filter(Boolean);
+        dire(vus.length === 25, 'les 25 jetons du plateau se retrouvent dans le vivier',
+            vus.length + '/25');
+        const animes = [...new Set(vus.map(x => x.anime))];
+        dire(animes.length === 1 && animes[0] === 'Naruto',
+            'et le plateau ne porte QUE la série demandée', animes.join(', '));
+        dire(new Set(vus.map(x => x.id)).size === 25, 'vingt-cinq personnages différents');
+    }
 
     titre('⚠️ Ce qui voyage sur le fil');
     dire(eA.grille.every(c => c.camp), 'l\'espion reçoit les 25 camps');

@@ -38,7 +38,7 @@ const ATTENDUS = {
     // `reglagesDuSalon` — mais rien ne le tenait : c'est exactement la
     // situation d'avant le défaut de BombAnime, et elle ne se voit pas.
     choice: { vies: 1, duree: 8, voirLesAutres: true, serieFiltre: 'overall' },
-    codanime: { chrono: true, dureeTour: 45, piege: true },
+    codanime: { serie: 'overall', chrono: true, dureeTour: 45, piege: true },
 };
 
 // Les blocs par mode, écrits UNE fois : la boucle les vérifie tous sur
@@ -129,6 +129,10 @@ const fermer = (jeton) => fetch(BASE + '/admin/toggle-game', {
     check('le piège part armé', c.reglages.codanime.piege === true,
         String(c.reglages.codanime.piege));
 
+    check('la série part sur Overall', c.reglages.codanime.serie === 'overall',
+        String(c.reglages.codanime.serie));
+
+    await admin('/admin/codanime/set-serie', c.hostToken, { serie: 'naruto' });
     await admin('/admin/codanime/set-chrono', c.hostToken, { chrono: false });
     await admin('/admin/codanime/set-duree', c.hostToken, { duree: 90 });
     await admin('/admin/codanime/set-piege', c.hostToken, { piege: false });
@@ -137,12 +141,15 @@ const fermer = (jeton) => fetch(BASE + '/admin/toggle-game', {
     // la moitié du test — un salon neuf qui repart au défaut ne prouve rien
     // si les réglages n'avaient jamais bougé.
     const regle = (await etatSalon(c.roomCode || c.code)).codanime || {};
-    check('les trois ont bien changé DANS le salon',
-        regle.chrono === false && regle.dureeTour === 90 && regle.piege === false,
+    check('les quatre ont bien changé DANS le salon',
+        regle.serie === 'naruto' && regle.chrono === false
+        && regle.dureeTour === 90 && regle.piege === false,
         JSON.stringify(regle));
     await fermer(c.hostToken);
 
     c = await ouvrir('codanime');
+    check('un salon neuf revient à Overall', c.reglages.codanime.serie === 'overall',
+        String(c.reglages.codanime.serie) + ' (était naruto)');
     check('un salon neuf rallume le chrono', c.reglages.codanime.chrono === true,
         String(c.reglages.codanime.chrono) + ' (était false)');
     check('et remet 45 s', c.reglages.codanime.dureeTour === 45,

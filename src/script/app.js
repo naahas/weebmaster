@@ -262,6 +262,10 @@ createApp({
             // client ne connaît pas de façon fiable.
             cod: {
                 // Réglages du salon
+                // ⚠️ `overall` comme partout : la valeur qui compte vient du
+                // serveur, celle-ci n'est que l'affichage d'avant la première
+                // réponse.
+                serie: 'overall',
                 chrono: true,
                 dureeTour: 90,
                 // ⚠️ Le piège est là PAR DÉFAUT : c'est lui qui fait qu'un
@@ -512,13 +516,13 @@ createApp({
                 // puis la reculer, parce qu'elle porte des braises jusque
                 // dans son bord gauche — là où Mitsuri n'a que du vide — et
                 // qu'elles passaient sur la description.
-                // ⚠️ `!EN_LOCAL` et non `true` : jouable en local pour qu'on
-                // puisse le finir, « bientôt » en ligne tant que son écran de
-                // jeu n'est pas terminé. Un seul drapeau fait tout — le badge,
-                // le bouton verrouillé et la silhouette noire.
+                // ⚠️ OUVERT AU PUBLIC LE 7 NOVEMBRE 2026. Il a vécu en
+                // `!EN_LOCAL` le temps d'être fini — jouable à la maison,
+                // « bientôt » en ligne. Ce qui a levé la mesure : une partie
+                // à six jouée pour de vrai, et le réglage « série ».
                 // Choice, lui, reste à `true` : il attend des énoncés, pas du
                 // code, et on n'a rien à y éprouver en local pour l'instant.
-                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp', soon: !EN_LOCAL,
+                { id: 'codanime',  name: 'Codanime',  kind: 'Équipe', min: '4', max: '8',  img: 'ranpo3.webp',
                   desc: "Deux équipes, une grille de portraits. L'espion de chaque camp fait deviner les siens avec un seul mot. Toucher l'assassin fait perdre sur-le-champ." },
                 // Cette description est un COUPLET : ses retours à la ligne sont
                 // écrits dans la donnée et rendus tels quels, grâce au
@@ -576,6 +580,12 @@ createApp({
             // pas une barrière.
             estDev: false,
             seriesBombOuvertes: false,
+            // Le tiroir des séries de Codanime. ⚠️ Sa liste est VIDE au départ
+            // et se remplit depuis `/api/codanime-series` : elle se calcule
+            // sur les données, une série y entre le jour où elle atteint
+            // vingt-cinq portraits.
+            seriesCodOuvertes: false,
+            seriesCod: [],
             seriesBombPos: { top: 0, left: 0, width: 0 },
             // Les volumes de chaque serie, charges une fois depuis le serveur.
             seriesBombVolumes: {},
@@ -4618,6 +4628,55 @@ createApp({
             this.applySetting('/admin/bombanime/update-serie', { serie: id }, () => this.bombanime.serie = id);
         },
 
+        // ── Le même tiroir, pour Codanime ──────────────────────────
+        //
+        // ⚠️ SA LISTE VIENT DU SERVEUR, pas d'une constante d'ici. Une série
+        // n'est proposée que si elle a de quoi remplir un plateau — vingt-cinq
+        // portraits — et ce compte vit dans les données. Une liste écrite dans
+        // la page aurait proposé une série incapable de jouer dès le premier
+        // portrait retiré, et oublié celles qu'on vient d'étoffer.
+        ouvrirSeriesCod(e) {
+            if (this.seriesCodOuvertes) { this.seriesCodOuvertes = false; return; }
+            // On se sert du placeur de BombAnime : c'est le même tiroir, au
+            // même endroit de la colonne, avec les mêmes bornes d'écran.
+            this.placerSeriesBomb(e.currentTarget);
+            this.seriesCodOuvertes = true;
+            this.chargerSeriesCod();
+        },
+
+        async chargerSeriesCod() {
+            if (this.seriesCod.length) return;        // une fois suffit
+            try {
+                const r = await fetch('/api/codanime-series');
+                const d = await r.json();
+                if (Array.isArray(d) && d.length) this.seriesCod = d;
+            } catch (e) { /* sans la liste, le réglage reste sur Overall */ }
+        },
+
+        // ⚠️ Le NOM se lit dans la liste du serveur, jamais reconstruit depuis
+        // l'identifiant : « myheroacademia » ne redonne pas « My Hero
+        // Academia », et une table de correspondance ici serait une seconde
+        // écriture des données.
+        nomSerieCod(id) {
+            const s = this.seriesCod.find(x => x.id === id);
+            return s ? s.nom : 'Overall';
+        },
+
+        // Le même arrondi que pour BombAnime : « +50 » se retient, « 36 » non.
+        // ⚠️ Sauf sous cent, où le chiffre exact compte vraiment — à
+        // vingt-cinq près de la barre, l'hôte veut savoir s'il reste du choix.
+        volumeSerieCod(id) {
+            const s = this.seriesCod.find(x => x.id === id);
+            if (!s || !s.n) return '';
+            return s.n >= 100 ? '+' + Math.floor(s.n / 100) * 100 : String(s.n);
+        },
+
+        choisirSerieCod(id) {
+            this.seriesCodOuvertes = false;
+            if (id === this.cod.serie) return;
+            this.applySetting('/admin/codanime/set-serie', { serie: id }, () => this.cod.serie = id);
+        },
+
         // Le tiroir s'ouvre au survol : sans ça il resterait ouvert sous le
         // curseur après le choix, comme si rien n'avait été pris en compte.
         choisirSerie(id) {
@@ -4722,6 +4781,7 @@ createApp({
             // la durée de la session d'avant pendant que le serveur repartait
             // de ses défauts.
             if (r.codanime) {
+                poser(this.cod, 'serie', r.codanime.serie);
                 poser(this.cod, 'chrono', r.codanime.chrono);
                 poser(this.cod, 'dureeTour', r.codanime.dureeTour);
                 poser(this.cod, 'piege', r.codanime.piege);
@@ -5665,6 +5725,10 @@ createApp({
             const calques = [
                 ['confirmAction', null],
                 ['seriesBombOuvertes', false],
+                // ⚠️ Le jumeau de Codanime a sa propre ligne : Échap ne
+                // referme QUE le premier calque trouvé, et sauter celui-ci
+                // aurait laissé un tiroir ouvert qu'Échap ne ferme pas.
+                ['seriesCodOuvertes', false],
                 ['campDetail', null],
                 ['showReport', false],
                 ['showQuestionStats', false],
@@ -9644,6 +9708,7 @@ createApp({
 
             this.socket.on('codanime-config', (data) => {
                 if (!data) return;
+                if (data.serie !== undefined) this.cod.serie = data.serie;
                 if (data.chrono !== undefined) this.cod.chrono = data.chrono;
                 if (data.dureeTour !== undefined) this.cod.dureeTour = data.dureeTour;
                 if (data.piege !== undefined) this.cod.piege = data.piege;

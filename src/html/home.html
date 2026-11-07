@@ -988,6 +988,22 @@
 
                             <!-- 🕵️ Codanime -->
                             <template v-else-if="lobbyMode === 'codanime'">
+                                <!-- LA SÉRIE. Le même tiroir que BombAnime, au même
+                                     endroit de la colonne et avec le même placeur.
+                                     ⚠️ Sa liste vient du SERVEUR : une série n'y entre
+                                     que si elle a de quoi remplir un plateau, soit
+                                     vingt-cinq portraits, et ce compte vit dans les
+                                     données. Écrite ici, elle aurait proposé une série
+                                     incapable de jouer au premier portrait retiré. -->
+                                <button class="v2-set v2-set-porte" :class="{ ouvert: seriesCodOuvertes }" @click="ouvrirSeriesCod">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16"/></svg>
+                                    <span class="v2-set-label">Série</span>
+                                    <span class="v2-set-value">{{ nomSerieCod(cod.serie) }}</span>
+                                    <svg class="v2-set-fleche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 6l6 6-6 6"/>
+                                    </svg>
+                                </button>
+
                                 <!-- Le chrono est ALLUMÉ par défaut : l'espion est le
                                      goulot du mode, une personne réfléchit pendant que
                                      sept attendent. Sans limite, un tour peut durer
@@ -4354,6 +4370,24 @@
                     @click="choisirSerieBomb(s.id)">
                 <span class="nom">{{ s.nom }}</span>
                 <span class="n">{{ volumeSerie(s.id) }}</span>
+            </button>
+        </div>
+
+        <!-- Le jumeau pour Codanime. ⚠️ Deux tiroirs et non un seul partagé :
+             ils ne s'ouvrent jamais ensemble — le salon est d'un mode ou de
+             l'autre — mais un état commun aurait fait qu'un réglage de
+             BombAnime écrive dans Codanime le jour où quelqu'un déplacerait
+             une ligne. Ils partagent le PLACEUR et le CSS, pas l'état. -->
+        <div class="v2-bserie-sortie" v-if="seriesCodOuvertes"
+             @click="seriesCodOuvertes = false"></div>
+        <div class="v2-bserie" v-if="seriesCodOuvertes"
+             :style="{ top: seriesBombPos.top + 'px', left: seriesBombPos.left + 'px',
+                       width: seriesBombPos.width + 'px' }">
+            <button v-for="s in seriesCod" :key="s.id"
+                    class="v2-bserie-opt" :class="{ on: cod.serie === s.id }"
+                    @click="choisirSerieCod(s.id)">
+                <span class="nom">{{ s.nom }}</span>
+                <span class="n">{{ volumeSerieCod(s.id) }}</span>
             </button>
         </div>
 

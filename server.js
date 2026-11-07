@@ -667,6 +667,7 @@ function reglagesDuSalon(gameState) {
             serieFiltre: gameState.choice.serieFiltre,
         },
         codanime: {
+            serie: gameState.codanime.serie,
             chrono: gameState.codanime.chrono,
             dureeTour: gameState.codanime.dureeTour,
             piege: gameState.codanime.piege,
@@ -730,6 +731,7 @@ function reglagesDeLaPartie(gameState) {
         case 'codanime': {
             const c = g.codanime || {};
             return avec({
+                serie: c.serie || 'overall',
                 chrono: !!c.chrono,
                 // ⚠️ Le temps est PAR CARTE, pas par tour, et le nom du champ
                 // le dit mal. On l enregistre tel quel — le libelle se
@@ -1172,6 +1174,10 @@ app.get('/game/state', (req, res) => {
         codanime: gameState.lobbyMode === 'codanime' ? {
             active: gameState.codanime.active,
             phase: gameState.codanime.phase,
+            // ⚠️ La série n'est PAS un secret : elle est annoncée dans le
+            // salon avant la partie, et elle ne dit rien des camps. Ce qui ne
+            // sort pas d'ici, c'est la grille.
+            serie: gameState.codanime.serie,
             chrono: gameState.codanime.chrono,
             dureeTour: gameState.codanime.dureeTour,
             piege: gameState.codanime.piege,
@@ -1268,10 +1274,12 @@ const codanime = codanimeMoteur.creerModule({
     getIo: () => io,
     urlImage: (nom) => jetons.urlImage('rushpic', nom),
     recordFinishedGame: (args) => recordFinishedGame(args),
-    vivier: () => {
-        delete require.cache[require.resolve('./codanimedata.json')];
-        return require('./codanimedata.json').personnages;
-    },
+    // ⚠️ La MÊME fonction que celle dont se servent les routes du réglage
+    // « série », déclarée plus bas (une déclaration de fonction remonte). Deux
+    // lectures du fichier écrites à deux endroits auraient fini par ne plus
+    // lire la même chose — le tiroir proposerait une série que le tirage ne
+    // connaîtrait pas.
+    vivier: () => vivierCodanime(),
 });
 
 // ============================================
@@ -3101,12 +3109,43 @@ app.get('/choice/series', async (req, res) => {
 // ══════════════════════════════════════════════════════════════
 function diffuserReglagesCodanime(gameState) {
     diffuser(gameState, 'codanime-config', {
+        serie: gameState.codanime.serie,
         chrono: gameState.codanime.chrono,
         dureeTour: gameState.codanime.dureeTour,
         piege: gameState.codanime.piege,
         equipes: codanime.vueDesEquipes(gameState),
     });
 }
+
+// Le vivier de Codanime, relu à chaque appel comme ailleurs : on ajoute des
+// portraits dans le fichier sans redémarrer.
+function vivierCodanime() {
+    delete require.cache[require.resolve('./codanimedata.json')];
+    return require('./codanimedata.json').personnages || [];
+}
+
+// Ce que le tiroir a le droit de proposer. ⚠️ CALCULÉ DEPUIS LES DONNÉES, à
+// chaque appel : une série entre dans la liste le jour où elle atteint
+// vingt-cinq portraits, sans qu'on touche au code. Une liste écrite à la main
+// aurait proposé des séries incapables de remplir un plateau.
+app.get('/api/codanime-series', (req, res) => {
+    res.json(codanimeMoteur.seriesJouables(vivierCodanime()));
+});
+
+app.post('/admin/codanime/set-serie', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const serie = String((req.body && req.body.serie) || '');
+    // ⚠️ On valide contre le vivier, pas contre une liste figée : une série
+    // qui n'a plus ses vingt-cinq portraits ne doit plus pouvoir être choisie,
+    // et la route s'appelle à la main aussi bien que depuis l'écran.
+    if (!codanimeMoteur.serieValide(vivierCodanime(), serie)) {
+        return res.status(400).json({ error: 'Série inconnue ou trop courte' });
+    }
+    gameState.codanime.serie = serie;
+    diffuserReglagesCodanime(gameState);
+    res.json({ success: true, serie });
+});
 
 app.post('/admin/codanime/set-chrono', (req, res) => {
     const gameState = req.room;

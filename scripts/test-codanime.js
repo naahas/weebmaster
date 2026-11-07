@@ -263,6 +263,53 @@ titre('Les rôles');
         'un agent parti ne compte plus dans les présents');
 }
 
+titre('Le réglage « série »');
+{
+    const liste = m.seriesJouables(vivier);
+    const ids = liste.map(s => s.id);
+    dire(ids[0] === m.SERIE_DEFAUT, 'Overall ouvre la liste', ids.join(', '));
+    dire(liste.every(s => s.n >= m.TAILLE || s.id === m.SERIE_DEFAUT),
+        'AUCUNE série en dessous de vingt-cinq n\'est proposée',
+        liste.filter(s => s.n < m.TAILLE).map(s => s.nom + ':' + s.n).join(', '));
+    dire(ids.includes('naruto') && ids.includes('big3'),
+        'Naruto et Big 3 y sont, le vivier les porte');
+    // ⚠️ Le compte vient des DONNÉES : la liste doit bouger quand elles
+    // bougent, c'est tout l'intérêt. On le vérifie sur un vivier fabriqué.
+    const faux = [].concat(
+        Array.from({ length: 30 }, (_, i) => ({ id: 'x' + i, nom: 'X' + i, anime: 'Niche', img: 'x.webp' })),
+        Array.from({ length: 4 }, (_, i) => ({ id: 'y' + i, nom: 'Y' + i, anime: 'Trop Peu', img: 'y.webp' })));
+    const l2 = m.seriesJouables(faux).map(s => s.id);
+    dire(l2.includes('niche') && !l2.includes('troppeu'),
+        'une série inventée entre dès qu\'elle atteint la barre, l\'autre non', l2.join(', '));
+
+    dire(m.vivierPour(vivier, 'naruto').every(p => p.anime === 'Naruto'),
+        'le filtre d\'une série ne garde que cette série');
+    dire(m.vivierPour(vivier, 'big3').every(p => ['One Piece', 'Naruto', 'Bleach'].includes(p.anime)),
+        'et Big 3 ses trois séries');
+    dire(m.vivierPour(vivier, 'overall').length === vivier.length, 'Overall ne filtre rien');
+    // ⚠️ LE REPLI. Une série qui n'a plus de quoi jouer ne doit pas rendre un
+    // salon impossible à démarrer — surtout un salon ouvert avant le retrait.
+    dire(m.vivierPour(vivier, 'tokyoghoul').length === vivier.length,
+        'une série trop courte retombe sur tout le vivier');
+    dire(m.serieValide(vivier, 'naruto') && !m.serieValide(vivier, 'tokyoghoul'),
+        'et elle n\'est pas acceptée par la route');
+
+    // ⚠️ LE PLAFOND PAR SÉRIE DOIT SAUTER SUR UN VIVIER D'UNE SEULE SÉRIE.
+    // Sinon le tour de table n'en prend que trois et les vingt-deux autres
+    // tombent dans la voie de secours : le résultat serait bon par accident.
+    const seul = m.vivierPour(vivier, 'naruto');
+    const g = m.tirerPersonnages(seul, alea(7));
+    dire(g.length === m.TAILLE, 'vingt-cinq cartes sur une seule série', String(g.length));
+    dire(new Set(g.map(p => p.id)).size === m.TAILLE, 'toutes différentes');
+    dire(g.every(p => p.anime === 'Naruto'), 'et toutes de la série demandée');
+
+    // Deux plateaux d'affilée ne se ressemblent pas, même sur une série juste
+    // au-dessus de la barre : c'est ce qui rend « 25 pile » acceptable.
+    const a = m.construireGrille(seul, 'A', alea(11), true).map(c => c.id).join();
+    const b = m.construireGrille(seul, 'A', alea(29), true).map(c => c.id).join();
+    dire(a !== b, 'deux tirages de la même série ne donnent pas le même plateau');
+}
+
 console.log('\n' + (ko ? '❌ ' + ko + ' échec(s) sur ' + (ok + ko)
     : '✨ ' + ok + ' contrôles au vert — le moteur de Codanime tient'));
 process.exit(ko ? 1 : 0);

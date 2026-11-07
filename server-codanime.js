@@ -65,6 +65,66 @@ const AGENTS_MAX = 3;
 // muettes. Mesuré sur le vivier d'amorce.
 const MAX_PAR_SERIE = 3;
 
+// ══════════════════════════════════════════════════════════════
+// 🎬 LE RÉGLAGE « SÉRIE »
+// ══════════════════════════════════════════════════════════════
+//
+// ⚠️ UNE SÉRIE N'EST PROPOSÉE QUE SI ELLE A DE QUOI REMPLIR UN PLATEAU, soit
+// vingt-cinq portraits tous différents. Le tiroir se construit donc depuis les
+// DONNÉES, au démarrage : on ajoute des portraits, la série apparaît toute
+// seule. Une liste écrite à la main à côté aurait vieilli au premier ajout, et
+// proposé une série qui n'a pas de quoi jouer.
+//
+// ℹ️ À exactement vingt-cinq, le plateau montre chaque fois les mêmes visages
+// — mais jamais aux mêmes places, et jamais des mêmes couleurs : le tirage
+// mélange les deux séparément. C'est assumé, une série de niche vaut mieux
+// jouée que pas proposée.
+const SERIE_DEFAUT = 'overall';
+// Les agrégats, qui ne sont pas des séries. ⚠️ `big3` est écrit ici et nulle
+// part ailleurs : c'est le même trio que le filtre du quiz et du Rush, et deux
+// définitions auraient fini par diverger.
+const GROUPES = {
+    big3: { nom: 'Big 3', animes: ['One Piece', 'Naruto', 'Bleach'] },
+};
+
+// L'identifiant d'une série, pour l'URL et l'état : « My Hero Academia » →
+// « myheroacademia ». ⚠️ Le NOM reste la vérité, l'identifiant n'est qu'une
+// clef — on ne reconstruit jamais le nom depuis lui.
+const clefSerie = (anime) => String(anime).toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+// Ce que le tiroir a le droit de proposer, vivier en main.
+function seriesJouables(vivier, taille = TAILLE) {
+    const parAnime = new Map();
+    for (const p of vivier) parAnime.set(p.anime, (parAnime.get(p.anime) || 0) + 1);
+
+    const liste = [{ id: SERIE_DEFAUT, nom: 'Overall', n: vivier.length }];
+    for (const [id, g] of Object.entries(GROUPES)) {
+        const n = vivier.filter(p => g.animes.includes(p.anime)).length;
+        if (n >= taille) liste.push({ id, nom: g.nom, n });
+    }
+    // Les séries, de la mieux fournie à la moins fournie : c'est l'ordre dans
+    // lequel on les regarde quand on cherche de la variété.
+    [...parAnime.entries()]
+        .filter(([, n]) => n >= taille)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .forEach(([anime, n]) => liste.push({ id: clefSerie(anime), nom: anime, n }));
+    return liste;
+}
+
+// Le vivier réduit au réglage. ⚠️ Il RETOMBE SUR TOUT si le filtre ne donne
+// pas de quoi jouer : un portrait retiré des données ne doit pas rendre un
+// salon impossible à démarrer, surtout un salon ouvert avant le retrait.
+function vivierPour(vivier, serie, taille = TAILLE) {
+    if (!serie || serie === SERIE_DEFAUT) return vivier;
+    const g = GROUPES[serie];
+    const reduit = g
+        ? vivier.filter(p => g.animes.includes(p.anime))
+        : vivier.filter(p => clefSerie(p.anime) === serie);
+    return reduit.length >= taille ? reduit : vivier;
+}
+
+const serieValide = (vivier, serie) => seriesJouables(vivier).some(s => s.id === serie);
+
 // ⚠️ Un INTERVALLE, pas une liste de trois valeurs. Le temps qu'il faut à un
 // espion dépend trop du salon — quatre habitués vont trois fois plus vite que
 // quatre curieux — pour qu'on puisse deviner trois bons crans. Le pas de 15 s
@@ -176,6 +236,14 @@ function tirerPersonnages(vivier, alea, taille = TAILLE, maxParSerie = MAX_PAR_S
 
     const choisis = [];
     const series = melanger([...parSerie.keys()], alea);
+    // ⚠️ LE PLAFOND SAUTE QUAND IL N'Y A QU'UNE SÉRIE. Il existe pour répartir
+    // — sans lui, Naruto et One Piece pèsent 60 % d'un vivier mélangé. Sur un
+    // vivier d'une seule série il n'a plus rien à répartir : il laissait le
+    // tour de table prendre trois cartes, et les vingt-deux autres tombaient
+    // dans la voie de secours plus bas. Le résultat était bon par accident ;
+    // ici il l'est par construction, et c'est ce que le réglage promet —
+    // vingt-cinq au hasard parmi tous ceux de la série.
+    if (parSerie.size <= 1) maxParSerie = taille;
     // Un tour de table par série, autant de fois qu'il faut : ça répartit au
     // lieu de vider la première série rencontrée.
     for (let passe = 0; passe < maxParSerie && choisis.length < taille; passe++) {
@@ -265,6 +333,7 @@ function etatNeuf() {
     return {
         active: false,
         // Réglages du salon
+        serie: SERIE_DEFAUT,
         chrono: true,
         dureeTour: DUREE_TOUR_DEFAUT,
         // ⚠️ Le piège est là PAR DÉFAUT : c'est lui qui fait qu'un indice à 4
@@ -712,7 +781,11 @@ function creerModule(deps) {
         }
 
         const premier = Math.random() < 0.5 ? 'A' : 'B';
-        etat.grille = construireGrille(vivier(), premier, Math.random, etat.piege !== false);
+        // ⚠️ Le vivier est réduit au réglage ICI et pas à l'ouverture du
+        // salon : l'hôte peut changer de série jusqu'au dernier moment, et
+        // deux manches d'affilée doivent suivre le réglage courant.
+        etat.grille = construireGrille(
+            vivierPour(vivier(), etat.serie), premier, Math.random, etat.piege !== false);
         etat.restant = {
             A: premier === 'A' ? CAMP_PREMIER : CAMP_SECOND,
             B: premier === 'B' ? CAMP_PREMIER : CAMP_SECOND,
@@ -1004,6 +1077,7 @@ module.exports = {
     basculerVote, voixAilleurs, voixDe,
     revelerCarte, vainqueur, equipeAdverse,
     grillePourAgent, grillePourEspion, estEspion, equipeDe, agentsPresents,
+    seriesJouables, vivierPour, serieValide, clefSerie, SERIE_DEFAUT, GROUPES,
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
     INDICE_MAX, INDICE_INFINI, AGENTS_MAX, MAX_PAR_SERIE,
     DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, DUREE_INDICE, dureeValide, BATTEMENT,
