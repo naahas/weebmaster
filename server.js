@@ -2339,14 +2339,26 @@ app.get('/prototypes/codanime-series', (req, res) => {
 
 app.get('/prototypes/codanime-series/data', (req, res) => {
     if (process.env.NODE_ENV === 'production') return res.status(404).end();
-    // ⚠️ Le vivier du RUSH, pas celui de Codanime : c'est le réservoir de
-    // portraits complet (72 séries), là où `codanimedata.json` n'est qu'une
-    // sélection. La question posée ici est « que POURRAIT-ON proposer ».
+    // ⚠️ LES DEUX VIVIERS, et c'est ce qui rend la page utile. Celui de
+    // Codanime dit ce qui se joue ; celui du Rush dit ce qu'on peut encore y
+    // verser SANS PRODUIRE UNE SEULE IMAGE — les portraits sont déjà là, il
+    // ne manque qu'une ligne de données. Sans ce second compte, on croit
+    // devoir dessiner douze personnages pour Jujutsu Kaisen alors que douze
+    // attendent dans le dossier.
     delete require.cache[require.resolve('./rushdata.json')];
+    delete require.cache[require.resolve('./codanimedata.json')];
     const brut = require('./rushdata.json');
-    const liste = Array.isArray(brut) ? brut : (brut.personnages || []);
+    const rush = Array.isArray(brut) ? brut : (brut.personnages || []);
+    const cod = require('./codanimedata.json').personnages || [];
+    const dansCod = new Set(cod.map(p => p.id));
     res.json({
-        personnages: liste.map(p => ({ id: p.id, nom: p.nom, anime: p.anime, img: p.img })),
+        taille: codanimeMoteur.TAILLE,
+        personnages: [].concat(
+            cod.map(p => ({ id: p.id, nom: p.nom, anime: p.anime, img: p.img,
+                            dedans: true, protago: !!p.protago })),
+            rush.filter(p => !dansCod.has(p.id))
+                .map(p => ({ id: p.id, nom: p.nom, anime: p.anime, img: p.img,
+                             dedans: false, protago: false }))),
     });
 });
 
