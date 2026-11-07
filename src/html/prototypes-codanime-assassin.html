@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — marquer l'assassin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   MARQUER L'ASSASSIN — huit pistes
+
+   Ce qui tourne : un voile sombre sur le portrait, un cadre noir, un
+   COIN PLIÉ noir, et un filet blanc autour de l'image. Le coin est ce
+   qu'on remplace ici.
+
+   ⚠️ QUATRE CONTRAINTES, et elles tuent la moitié des idées :
+
+   1. ÇA NE SE JUGE PAS SEUL. L'espion voit VINGT-CINQ cartes d'un
+      coup ; la question n'est pas « est-ce joli » mais « est-ce que
+      mon œil tombe dessus avant les vingt-quatre autres ». D'où les
+      rangées de voisins, et le plateau complet plus bas.
+
+   2. ÇA DOIT RESTER SOMBRE. L'assassin est une ABSENCE — la seule
+      carte qui ne donne rien et fait tout perdre. Une couleur vive en
+      ferait un quatrième camp.
+
+   3. ÇA NE DOIT PAS MANGER LE VISAGE. L'espion doit pouvoir donner un
+      indice dessus pour l'ÉVITER : « pas le roux ». Un voile qui
+      couvre la figure lui retire son seul outil.
+
+   4. ÇA DOIT TENIR À 69 px, le côté d'une carte sur téléphone. Le
+      basculeur est là pour ça, et c'est lui qui tranche.
+
+   ⚠️ ET ÇA NE DOIT PAS RESSEMBLER AU BALAYAGE de la révélation : une
+   carte qui bouge comme une carte qu'on retourne se lit comme une
+   carte qu'on retourne.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff; --b: #ff3b5c; --n: #b9a88f;
+    --brun: #bf8a5f;
+    --cote: 126px;
+    --jour: 0.62rem;
+    --filet: 2.5px;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.3rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.2rem; max-width: 60rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.95); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.58rem; }
+.barre button {
+    padding: 0.32rem 0.75rem; border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 0.45rem; background: transparent; color: inherit;
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.mode-emploi { flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255,255,255,0.07); padding-top: 0.5rem; }
+
+.piste { margin-bottom: 2.2rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.tete h2 { font-size: 0.92rem; margin: 0 0 0.25rem; }
+.tete .num { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; color: var(--brun); }
+.pourquoi { font-size: 0.72rem; opacity: 0.5; margin: 0 0 0.8rem; max-width: 54rem; line-height: 1.5; }
+.rangee { display: flex; gap: var(--jour); flex-wrap: wrap; }
+
+/* ── La carte, telle qu'en jeu (vue de l'espion) ─────────────── */
+.c {
+    position: relative; flex: 0 0 auto;
+    width: var(--cote); height: var(--cote);
+    border-radius: calc(var(--cote) * 0.085);
+    border: calc(var(--cote) * 0.055) solid #0b0b0f;
+    overflow: hidden;
+    background: #0b0b0f;
+}
+.c img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    outline: var(--filet) solid #0b0b0f; outline-offset: calc(var(--filet) * -1);
+}
+/* Le voile de camp : masque radial, creux sur le visage. */
+.c::before {
+    content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: var(--teinte);
+    mix-blend-mode: color;
+    -webkit-mask-image: radial-gradient(circle at 50% 42%, transparent 26%, #000 82%);
+    mask-image: radial-gradient(circle at 50% 42%, transparent 26%, #000 82%);
+}
+.c.a { --teinte: var(--a); border-color: var(--a); }
+.c.b { --teinte: var(--b); border-color: var(--b); }
+.c.n { --teinte: #808080; border-color: var(--n); }
+.c.n::before { mix-blend-mode: saturation; }
+.c.x { --teinte: #2a2a33; border-color: #000; }
+.c.x::before { mix-blend-mode: multiply; background: #2a2a33; }
+.c.x img { outline-color: rgba(255,255,255,0.72); }
+
+/* Le coin plié, l'actuel — seule la piste 0 le garde. */
+.c.coin::after {
+    content: ''; position: absolute; top: 0; left: 0; z-index: 3;
+    border-style: solid;
+    border-width: calc(var(--cote) * 0.3) calc(var(--cote) * 0.3) 0 0;
+    border-color: #000 transparent transparent transparent;
+    filter: drop-shadow(1.77px 1.77px 0 #000);
+    pointer-events: none;
+}
+
+/* ── P1 · LE BATTEMENT ───────────────────────────────────────── */
+/* Rien d'ajouté : c'est le filet blanc DÉJÀ LÀ qui bat. */
+.p1 .c.x img { animation: battement 2.6s ease-in-out infinite; }
+@keyframes battement {
+    0%, 100% { outline-color: rgba(255,255,255,0.22); }
+    50%      { outline-color: rgba(255,255,255,0.95); }
+}
+
+/* ── P2 · LA FUMÉE QUI MONTE ─────────────────────────────────── */
+.p2 .c.x .eff {
+    position: absolute; inset: -30% -10% -10%; z-index: 2; pointer-events: none;
+    background:
+        radial-gradient(60% 45% at 30% 100%, rgba(0,0,0,0.95), transparent 70%),
+        radial-gradient(50% 40% at 72% 100%, rgba(0,0,0,0.9), transparent 70%);
+    animation: fumee 5.5s ease-in-out infinite;
+}
+@keyframes fumee {
+    0%, 100% { transform: translate(0, 6%) scale(1); opacity: 0.85; }
+    50%      { transform: translate(-6%, 0) scale(1.12); opacity: 1; }
+}
+
+/* ── P3 · LES QUATRE SERRES ──────────────────────────────────── */
+.p3 .c.x .eff {
+    position: absolute; inset: calc(var(--cote) * 0.07); z-index: 3; pointer-events: none;
+    animation: serres 3s ease-in-out infinite;
+}
+.p3 .c.x .eff i {
+    position: absolute; width: 26%; height: 26%;
+    border: calc(var(--cote) * 0.022) solid rgba(255,255,255,0.88);
+}
+.p3 .c.x .eff i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.p3 .c.x .eff i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+.p3 .c.x .eff i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+.p3 .c.x .eff i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+@keyframes serres {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50%      { transform: scale(0.9); opacity: 1; }
+}
+
+/* ── P4 · LA FISSURE ─────────────────────────────────────────── */
+.p4 .c.x .eff {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: linear-gradient(118deg, transparent 47.6%, rgba(255,255,255,0.92) 48.4%,
+                rgba(255,255,255,0.92) 49.2%, transparent 50%);
+    filter: drop-shadow(0 0 2px #000);
+    animation: fissure 6s steps(1) infinite;
+}
+@keyframes fissure {
+    0%, 92%   { transform: translateX(0); opacity: 0.9; }
+    93%       { transform: translateX(2px); opacity: 1; }
+    95%       { transform: translateX(-2px); }
+    97%       { transform: translateX(1px); }
+    100%      { transform: translateX(0); opacity: 0.9; }
+}
+
+/* ── P5 · L'ŒIL QUI SE REFERME ───────────────────────────────── */
+/* Le voile sombre RESPIRE : son creux se resserre sur le visage puis
+   s'ouvre. Rien n'est ajouté par-dessus, c'est la couche de camp qui bouge. */
+.p5 .c.x::before { animation: oeil 4s ease-in-out infinite; }
+@keyframes oeil {
+    0%, 100% { -webkit-mask-image: radial-gradient(circle at 50% 42%, transparent 30%, #000 86%);
+               mask-image: radial-gradient(circle at 50% 42%, transparent 30%, #000 86%); }
+    50%      { -webkit-mask-image: radial-gradient(circle at 50% 42%, transparent 12%, #000 58%);
+               mask-image: radial-gradient(circle at 50% 42%, transparent 12%, #000 58%); }
+}
+
+/* ── P6 · LE LISERÉ QUI TOURNE ───────────────────────────────── */
+.p6 .c.x .eff {
+    position: absolute; inset: calc(var(--cote) * -0.055); z-index: 3; pointer-events: none;
+    border-radius: inherit;
+    background: conic-gradient(from 0deg, transparent 0deg, transparent 300deg,
+                rgba(255,255,255,0.85) 345deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    padding: calc(var(--cote) * 0.03);
+    animation: tourne 3.2s linear infinite;
+}
+@keyframes tourne { to { transform: rotate(1turn); } }
+
+/* ── P7 · LE GRAIN ───────────────────────────────────────────── */
+.p7 .c.x .eff {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    opacity: 0.55; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='80' height='80' filter='url(%23b)'/></svg>");
+    animation: grain 0.6s steps(4) infinite;
+}
+@keyframes grain {
+    0%   { transform: translate(0, 0); }
+    25%  { transform: translate(-3%, 2%); }
+    50%  { transform: translate(2%, -3%); }
+    75%  { transform: translate(-2%, -2%); }
+    100% { transform: translate(0, 0); }
+}
+
+/* ── P8 · L'OMBRE QUI DÉBORDE ────────────────────────────────── */
+/* La carte projette une ombre noire AUTOUR d'elle, qui respire. Elle est
+   la seule du plateau à peser sur ses voisines. */
+.p8 .c.x { box-shadow: 0 0 0 0 rgba(0,0,0,0); animation: deborde 3.4s ease-in-out infinite; }
+@keyframes deborde {
+    0%, 100% { box-shadow: 0 0 calc(var(--cote) * 0.12) calc(var(--cote) * 0.02) rgba(0,0,0,0.95); }
+    50%      { box-shadow: 0 0 calc(var(--cote) * 0.3) calc(var(--cote) * 0.09) rgba(0,0,0,1); }
+}
+
+/* ⚠️ `animation: none`, jamais une durée nulle : à 0 s l'animation se joue
+   quand même et sa dernière image reste posée. */
+@media (prefers-reduced-motion: reduce) {
+    .c.x img, .c.x::before, .c.x .eff, .c.x { animation: none !important; }
+}
+
+.plateau { display: grid; grid-template-columns: repeat(5, var(--cote)); gap: var(--jour); }
+.vide { font-size: 0.75rem; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — marquer l'assassin</h1>
+<p class="sous">
+    Huit façons de dire « celle-là fait tout perdre », posées sur de vraies cartes au milieu de
+    leurs voisines. ⚠️ <b>Ça ne se juge pas seul</b> : l'espion voit vingt-cinq cartes d'un coup, et
+    la question n'est pas « est-ce joli » mais <b>« est-ce que mon œil tombe dessus avant les
+    vingt-quatre autres »</b>. Le basculeur <b>Téléphone</b> tranche — une piste qui ne tient pas à
+    69 px ne tient pas. Et le visage doit rester lisible : l'espion donne des indices <b>pour
+    l'éviter</b>.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="126" class="on">Ordinateur</button>
+    <button data-cote="69">Téléphone</button>
+    <label>Vue</label>
+    <button data-vue="rangee" class="on">En rangée</button>
+    <button data-vue="plateau">Plateau complet</button>
+    <button id="retirer">Autres portraits</button>
+    <div class="mode-emploi">
+        En rangée : l'assassin est la <b>troisième</b> carte, entourée de ses voisines des deux
+        camps et d'un passant. En plateau : une grille de vingt-cinq comme en jeu, un seul
+        assassin — c'est là qu'on voit si l'œil le trouve.
+    </div>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const PISTES = [
+    { id: 'p0', nom: 'Aujourd’hui', coin: true, quoi:
+        'Voile sombre, cadre noir, coin plié noir, filet blanc autour du portrait. Le coin se ' +
+        'voit, mais il mange 30 % de la carte et il ressemble à celui des trois autres camps — ' +
+        'c’est la MÊME forme, seule la couleur change.' },
+    { id: 'p1', nom: 'Le battement', quoi:
+        'Rien d’ajouté : c’est le filet blanc DÉJÀ là qui bat, lentement. ⚠️ Le seul mouvement ' +
+        'du plateau attire l’œil tout seul, et il ne coûte pas un pixel au portrait.' },
+    { id: 'p2', nom: 'La fumée qui monte', quoi:
+        'Une noirceur qui remonte du bas de la carte et dérive. Elle dit l’absence plutôt que le ' +
+        'danger. ⚠️ Elle mord sur le bas du portrait — les épaules, pas le visage.' },
+    { id: 'p3', nom: 'Les quatre serres', quoi:
+        'Quatre équerres claires qui se resserrent sur la carte, comme une visée. Lecture ' +
+        'immédiate et rien au centre. ⚠️ À 69 px, quatre traits de 1,5 px : c’est la piste que ' +
+        'le basculeur Téléphone décide.' },
+    { id: 'p4', nom: 'La fissure', quoi:
+        'Un trait clair fendille la carte en diagonale, et tressaille de temps en temps. ' +
+        '⚠️ Il traverse le visage : c’est le prix d’une marque qui se voit de loin.' },
+    { id: 'p5', nom: 'L’œil qui se referme', quoi:
+        'Le voile sombre RESPIRE : son creux se resserre sur le visage puis s’ouvre. Rien n’est ' +
+        'posé par-dessus — c’est la couche de camp elle-même qui bouge, donc zéro élément de plus ' +
+        'sur une grille de vingt-cinq.' },
+    { id: 'p6', nom: 'Le liseré qui tourne', quoi:
+        'Une lueur pâle fait le tour du cadre. ⚠️ C’est la piste la plus proche du BALAYAGE de la ' +
+        'révélation — une carte qui bouge comme une carte qu’on retourne se lit comme une carte ' +
+        'qu’on retourne.' },
+    { id: 'p7', nom: 'Le grain', quoi:
+        'Un bruit sombre grouille sur la carte, comme une image qui ne tient pas. Très lisible de ' +
+        'près. ⚠️ Il salit le portrait, et c’est le seul effet qui ne se calme jamais.' },
+    { id: 'p8', nom: 'L’ombre qui déborde — ne marche pas', quoi:
+        'L’idée : la carte ne change pas, elle projette une ombre noire AUTOUR d’elle, qui ' +
+        'respire. ⚠️ MESURÉE, ELLE NE PEUT RIEN MONTRER : l’ombre vaut rgb(0,0,0) et le fond de ' +
+        'la page rgb(7,7,10). C’est du noir sur du noir, à 3 % près — il n’y a pas d’image à ' +
+        'voir. Pour qu’elle existe, il faudrait qu’elle soit PLUS CLAIRE que le fond, c’est-à-' +
+        'dire qu’elle cesse d’être une ombre. Gardée ici pour que personne ne la repropose.' },
+];
+
+let portraits = [], cote = 126, vue = 'rangee', tirage = [];
+const melanger = (t) => { const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c; };
+
+function tirer() { tirage = melanger(portraits).slice(0, 25); }
+
+const carte = (img, camp, p) =>
+    '<span class="c ' + camp + (camp === 'x' && p.coin ? ' coin' : '') + '">' +
+    '<img src="' + img + '" alt="" draggable="false">' +
+    (camp === 'x' && !p.coin ? '<span class="eff"><i></i><i></i><i></i><i></i></span>' : '') +
+    '</span>';
+
+function rendre() {
+    const camps = ['a', 'b', 'x', 'n', 'a'];
+    document.getElementById('pistes').innerHTML = PISTES.map((p, k) => {
+        let corps;
+        if (vue === 'plateau') {
+            // Une grille de vingt-cinq, un seul assassin, à la 13e place.
+            const cs = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'));
+            const melange = melanger(cs); melange.splice(12, 0, 'x');
+            corps = '<div class="plateau">' + tirage.map((img, i) =>
+                carte(img, melange[i], p)).join('') + '</div>';
+        } else {
+            corps = '<div class="rangee">' + camps.map((c, i) =>
+                carte(tirage[i], c, p)).join('') + '</div>';
+        }
+        return '<section class="piste ' + p.id + '">' +
+            '<div class="tete"><span class="num">P' + k + '</span><h2>' + p.nom + '</h2></div>' +
+            '<p class="pourquoi">' + p.quoi + '</p>' + corps + '</section>';
+    }).join('');
+}
+
+document.querySelectorAll('.barre button[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); cote = +b.dataset.cote;
+    document.documentElement.style.setProperty('--cote', cote + 'px');
+}));
+document.querySelectorAll('.barre button[data-vue]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-vue]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); vue = b.dataset.vue; rendre();
+}));
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+
+// ⚠️ Les portraits passent par la VRAIE route sous jeton, comme en jeu :
+// leur nom de fichier dirait qui est le personnage.
+fetch('/prototypes/codanime-cartes/portraits').then(r => r.json()).then(j => {
+    portraits = j.portraits || [];
+    tirer(); rendre();
+}).catch(() => {
+    document.getElementById('pistes').innerHTML = '<p class="vide">Les portraits ne répondent pas.</p>';
+});
+</script>
+</body></html>

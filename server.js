@@ -2324,6 +2324,14 @@ app.get('/prototypes/codanime-timer', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-timer.html');
 });
 
+// Huit façons de marquer l'assassin, le coin plié d'aujourd'hui compris.
+// ⚠️ Elles se jugent AU MILIEU DES VOISINES, jamais seules : l'espion voit
+// vingt-cinq cartes d'un coup, et la question est de savoir si l'œil tombe
+// dessus avant les vingt-quatre autres. D'où la vue « plateau complet ».
+app.get('/prototypes/codanime-assassin', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-assassin.html');
+});
+
 // Le vivier série par série, pour décider ce qu'un réglage « série » peut
 // proposer : un plateau fait 25 cartes toutes différentes, donc une série en
 // dessous de 25 n'est pas jouable seule.
