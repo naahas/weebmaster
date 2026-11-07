@@ -336,6 +336,15 @@ createApp({
                 // Purement local, comme le masque : rien ne part sur la socket.
                 voirCamps: false,
 
+                // ⚠️ L'HISTORIQUE SUIT LE MÊME CHEMIN, et pour la même raison.
+                // Il vivait en bande au bas de l'écran : cinq annonces y
+                // tenaient, les autres s'éteignaient, et il mangeait le coin
+                // du bouton de sortie. En panneau il les montre TOUTES, avec
+                // le nom de l'espion que la bande devait couper.
+                // ⚠️ Les deux panneaux s'excluent : deux voiles pleins écran
+                // l'un sur l'autre, on ne sait plus lequel on referme.
+                voirHisto: false,
+
                 // Ce que l'espion s'apprête à annoncer : son mot et son nombre.
                 // ⚠️ Le mot est TAPÉ et non dit à la voix — l'oral fermait le
                 // mode à tout salon sans vocal, c'est-à-dire à la moitié d'un
@@ -5798,9 +5807,9 @@ createApp({
                 historique: [], gagnant: null, derniereCarte: null,
                 restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
                 arrive: false, saut: 0, masquerAdverses: false, sortie: false,
-                // ⚠️ Le panneau des camps se referme avec la partie : laissé
-                // ouvert, il couvrirait le podium d'un voile plein écran.
-                voirCamps: false,
+                // ⚠️ Les deux panneaux se referment avec la partie : laissés
+                // ouverts, ils couvriraient le podium d'un voile plein écran.
+                voirCamps: false, voirHisto: false,
             });
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -6270,13 +6279,28 @@ createApp({
             this.socket.emit('codanime-passer');
         },
 
-        // Le panneau des camps se referme en touchant à côté. ⚠️ Posé sur
-        // TOUT le plateau, donc il reçoit aussi les clics sur les cartes :
-        // d'où la sortie immédiate quand il est déjà fermé. Les deux boutons
-        // du coin arrêtent la propagation de leur côté (`@click.stop`), sans
-        // quoi ouvrir le panneau le refermerait dans la foulée.
-        codFermerCamps() {
-            if (this.cod.voirCamps) this.cod.voirCamps = false;
+        // ── Les deux panneaux du téléphone ─────────────────────────
+        //
+        // ⚠️ Ils s'excluent. Deux voiles pleins écran l'un sur l'autre, et
+        // l'on ne sait plus lequel on referme — d'autant que les deux
+        // boutons restent visibles par-dessus.
+        codBasculerCamps() {
+            this.cod.voirHisto = false;
+            this.cod.voirCamps = !this.cod.voirCamps;
+        },
+        codBasculerHisto() {
+            this.cod.voirCamps = false;
+            this.cod.voirHisto = !this.cod.voirHisto;
+        },
+        // On referme en touchant à côté. ⚠️ Posé sur TOUT le plateau, donc il
+        // reçoit aussi les clics sur les cartes : d'où la sortie immédiate
+        // quand rien n'est ouvert. Les boutons du coin arrêtent la
+        // propagation de leur côté (`@click.stop`), sans quoi ouvrir un
+        // panneau le refermerait dans la foulée.
+        codFermerPanneaux() {
+            if (!this.cod.voirCamps && !this.cod.voirHisto) return;
+            this.cod.voirCamps = false;
+            this.cod.voirHisto = false;
         },
 
         // ── Les coups qu'il reste ──────────────────────────────────

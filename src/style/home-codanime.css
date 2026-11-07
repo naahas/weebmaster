@@ -1835,32 +1835,38 @@
        c'est-à-dire la seule chose qu'on vient y relire. Le nom et le verbe
        s'effacent donc, et il reste « KATANA 3 » avec son filet de camp. Le
        nom complet est dans l'infobulle. */
-    .cod-histo-qui { display: none; }
-    .cod-histo-l { max-width: 8rem; font-size: 0.6rem; padding: 0.16rem 0.4rem; }
-    .cod-histo { justify-content: flex-start; }
-
-    /* ── CINQ ANNONCES AU PLUS, ET LES DEUX PLUS VIEILLES S'ÉTEIGNENT ──
-       La bande garde les neuf du gabarit sur un écran large, où elle est
-       une colonne ; ici elle est une LIGNE, et neuf annonces y font
-       552 px pour 374 de large — mesuré. Elle ne montait pas sur le
-       plateau (elle est hors du flux, c'est tout son objet) mais elle
-       défilait, et ce qui dépassait était le plus RÉCENT, c'est-à-dire la
-       seule chose qu'on vient y relire.
-       ⚠️ La coupe se fait en CSS et non dans le gabarit : une seule
-       source pour les deux mises en page, et la colonne de l'ordinateur
-       garde ses neuf lignes sans rien savoir d'ici.
-       ⚠️ Et l'extinction est progressive sur DEUX lignes, pas une
-       coupure nette : une bande qui s'arrête franc se lit comme une
-       bande complète, et l'on croit avoir tout vu. */
-    .cod-histo-l:nth-last-child(n+6) { display: none; }
-    .cod-histo-l:nth-last-child(5) { opacity: 0.16; }
-    .cod-histo-l:nth-last-child(4) { opacity: 0.34; }
-
-    /* ⚠️ Elle laisse le coin au bouton de SORTIE, qui est posé à
-       0,9 rem du bord et mesure 2,4 rem. Les deux se chevauchaient :
-       mesuré, la bande occupait y 876→895 et le bouton 857→895, tous
-       deux à gauche. */
-    .cod-histo { left: 3.6rem; }
+    /* ── PLUS DE BANDE DU BAS : UN PANNEAU, COMME LES CAMPS ──
+       Elle était une LIGNE ici, là où l'ordinateur en fait une colonne :
+       neuf annonces y faisaient 552 px pour 374 de large — mesuré — et ce
+       qui dépassait était le plus RÉCENT, c'est-à-dire la seule chose
+       qu'on vient y relire. Cinq tenaient, à condition d'effacer le nom
+       de l'espion et d'éteindre les plus vieilles ; et elle recouvrait
+       exactement le coin du bouton de sortie.
+       ⚠️ Le panneau les montre TOUTES, avec le nom que la bande coupait.
+       Rien n'est écrit deux fois : c'est la MÊME bande qui se déplie, la
+       colonne de l'ordinateur ne sait rien d'ici.
+       ⚠️ Et le bas de l'écran redevient libre — c'est là que vit le
+       bouton pour quitter la partie. */
+    .cod-histo { display: none; }
+    .cod.histo .cod-histo {
+        display: flex; flex-direction: column;
+        position: fixed; inset: 0; z-index: 40;
+        align-items: center; justify-content: center;
+        gap: 0.4rem; padding: 3.2rem 1.2rem 2rem;
+        /* Opaque, comme le panneau des camps — voir la raison là-bas. */
+        background: #06070a;
+        overflow-y: auto;
+    }
+    /* Il y a la place, ici : le nom de l'espion revient, et le texte
+       reprend sa taille. */
+    .cod.histo .cod-histo-qui { display: flex; }
+    .cod.histo .cod-histo-l {
+        width: 100%; max-width: 17rem;
+        font-size: 0.74rem; padding: 0.3rem 0.55rem 0.34rem 0.65rem;
+        opacity: 0.88; flex: 0 0 auto;
+    }
+    .cod.histo .cod-histo-l em { font-size: 0.66rem; }
+    .cod.histo .cod-histo-v { font-size: 0.62rem; }
 
     /* ── LE CHAPEAU DES RANGS N'EXISTE PAS ICI ──
        ⚠️ Et il ne « n'existait pas » qu'à moitié : les colonnes tombent à
@@ -1923,11 +1929,13 @@
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
         gap: 1rem; padding: 1.4rem;
-        /* ⚠️ Presque opaque, et pas 0,94 : l'en-tête et le pied ne sont PAS
-           dans le plateau, ils sont peints dessous. À 6 % de jour on lisait
-           « À VOUS DE DEVINER » et le mot de l'indice en filigrane derrière
-           les deux camps — un fond sale plutôt qu'un voile. */
-        background: rgba(6, 7, 10, 0.985);
+        /* ⚠️ OPAQUE, pas un voile. L'en-tête et le pied ne sont PAS dans le
+           plateau, ils sont peints dessous : à 6 % de jour on lisait « À VOUS
+           DE DEVINER » et le mot de l'indice en filigrane derrière les deux
+           camps, et même à 1,5 % les vingt-cinq portraits laissaient leurs
+           rectangles. Un fond sale plutôt qu'un voile — et rien, derrière,
+           n'avait à être vu. */
+        background: #06070a;
         overflow-y: auto;
     }
     .cod.camps .cod-grille { display: none; }

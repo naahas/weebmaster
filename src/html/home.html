@@ -2434,8 +2434,9 @@
                          disparaissait d'un coup et il n'y avait rien à faire
                          fondre. -->
                     <div class="cod" v-if="cod.enCours || cod.sortie"
-                         :class="{ 'en-entree': cod.intro, sortie: cod.sortie, camps: cod.voirCamps }"
-                         @click="codFermerCamps">
+                         :class="{ 'en-entree': cod.intro, sortie: cod.sortie,
+                                   camps: cod.voirCamps, histo: cod.voirHisto }"
+                         @click="codFermerPanneaux">
 
                         <!-- ⚠️ LE MASQUE, EN DOUBLE, et il le faut : sur
                              téléphone les deux rangs disparaissent, et avec
@@ -2476,12 +2477,30 @@
                              aucun sens. -->
                         <div class="cod-outils-tel">
                             <button class="cod-outil" :class="{ on: cod.voirCamps }"
-                                    @click.stop="cod.voirCamps = !cod.voirCamps"
+                                    @click.stop="codBasculerCamps"
                                     :aria-label="cod.voirCamps ? 'Masquer les camps' : 'Voir les deux camps'"
                                     :aria-pressed="String(cod.voirCamps)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="9" cy="8" r="3.3"/><path d="M2.8 19.6a6.2 6.2 0 0 1 12.4 0"/>
                                     <path d="M16.2 5.1a3.3 3.3 0 0 1 0 5.9"/><path d="M18 14.4a6.2 6.2 0 0 1 3.2 5.2"/>
+                                </svg>
+                            </button>
+                            <!-- LES ANNONCES PASSÉES. ⚠️ Le bouton n'existe
+                                 que s'il y a quelque chose à montrer : au
+                                 premier tour l'historique est vide, et un
+                                 bouton qui ouvre un voile vide se lit comme
+                                 une panne. Il paraît donc à la première
+                                 annonce et ne repart plus — d'où sa place
+                                 AVANT « Skip » dans la pile : celui-ci va et
+                                 vient à chaque tour, lui non, et c'est à ce
+                                 qui bouge le plus de rester en dernier. -->
+                            <button class="cod-outil" v-if="cod.historique.length"
+                                    :class="{ on: cod.voirHisto }"
+                                    @click.stop="codBasculerHisto"
+                                    :aria-label="cod.voirHisto ? 'Masquer les annonces' : 'Revoir les annonces'"
+                                    :aria-pressed="String(cod.voirHisto)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 6.5h1.2M9 6.5h11"/><path d="M4 12h1.2M9 12h11"/><path d="M4 17.5h1.2M9 17.5h11"/>
                                 </svg>
                             </button>
                             <!-- Le jumeau de « Skip » : même méthode, même
