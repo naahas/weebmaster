@@ -4383,11 +4383,18 @@
         <div class="v2-bserie" v-if="seriesCodOuvertes"
              :style="{ top: seriesBombPos.top + 'px', left: seriesBombPos.left + 'px',
                        width: seriesBombPos.width + 'px' }">
+            <!-- ⚠️ PAS DE COMPTE ICI, à la différence de BombAnime, et c'est
+                 voulu. Là-bas le nombre de personnages est une information de
+                 jeu — citer des noms est TOUT le mode, et une série à 200
+                 noms ne se joue pas comme une à 40. Ici il ne dit rien de la
+                 partie : le plateau fait vingt-cinq cartes quoi qu'il arrive,
+                 et une série n'est proposée que si elle peut les fournir. Le
+                 chiffre ne faisait qu'ajouter du bruit à un choix déjà fait
+                 pour nous. -->
             <button v-for="s in seriesCod" :key="s.id"
                     class="v2-bserie-opt" :class="{ on: cod.serie === s.id }"
                     @click="choisirSerieCod(s.id)">
                 <span class="nom">{{ s.nom }}</span>
-                <span class="n">{{ volumeSerieCod(s.id) }}</span>
             </button>
         </div>
 

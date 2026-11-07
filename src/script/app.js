@@ -4662,15 +4662,13 @@ createApp({
             return s ? s.nom : 'Overall';
         },
 
-        // Le même arrondi que pour BombAnime : « +50 » se retient, « 36 » non.
-        // ⚠️ Sauf sous cent, où le chiffre exact compte vraiment — à
-        // vingt-cinq près de la barre, l'hôte veut savoir s'il reste du choix.
-        volumeSerieCod(id) {
-            const s = this.seriesCod.find(x => x.id === id);
-            if (!s || !s.n) return '';
-            return s.n >= 100 ? '+' + Math.floor(s.n / 100) * 100 : String(s.n);
-        },
-
+        // ⚠️ PAS DE `volumeSerieCod`, et ce n'est pas un oubli : le tiroir de
+        // Codanime n'affiche AUCUN compte. Celui de BombAnime en montre un
+        // parce que là-bas le nombre de noms est une information de jeu ; ici
+        // le plateau fait vingt-cinq cartes quoi qu'il arrive, et une série
+        // n'est proposée que si elle peut les fournir — le chiffre ne faisait
+        // qu'ajouter du bruit. Le serveur le renvoie toujours, il sert à
+        // CHOISIR les séries, pas à les afficher.
         choisirSerieCod(id) {
             this.seriesCodOuvertes = false;
             if (id === this.cod.serie) return;
