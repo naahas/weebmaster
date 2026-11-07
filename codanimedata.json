@@ -1424,6 +1424,12 @@
    "img": "satan.webp"
   },
   {
+   "id": "chichi",
+   "nom": "Chichi",
+   "anime": "Dragon Ball",
+   "img": "chichi.webp"
+  },
+  {
    "id": "enmu",
    "nom": "Enmu",
    "anime": "Demon Slayer",
