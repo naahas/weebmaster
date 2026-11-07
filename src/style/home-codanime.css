@@ -888,6 +888,44 @@
 .cod-carte.vue-espion.camp-assassin .cod-portrait,
 .cod-carte.revelee.camp-assassin .cod-portrait { outline-color: rgba(255, 255, 255, 0.72); }
 
+/* ══════════════════════════════════════════════════════════════
+   L'ASSASSIN CLIGNOTE EN NÉGATIF
+   ══════════════════════════════════════════════════════════════
+
+   ⚠️ IL N'A PLUS DE COIN PLIÉ. Le coin disait le camp par sa COULEUR,
+   et c'est la seule carte qui n'en a pas : il y était donc la MÊME
+   forme que chez les trois autres, en noir — une marque qu'on doit
+   reconnaître à sa teinte sur une carte définie par son absence de
+   teinte. Choisi sur /prototypes/codanime-assassin2 contre sept autres.
+
+   Deux éclairs très brefs toutes les cinq secondes, puis le calme.
+   ⚠️ DEUX, et pas un : un éclair isolé se prend pour un défaut
+   d'affichage ; deux rapprochés se lisent comme un signal. Et quatre
+   secondes et demie de calme entre deux salves, sinon ça clignote —
+   un plateau qui papillote fatigue en trois manches.
+
+   ⚠️ `steps(1)` et non une interpolation : un négatif qui se fond dans
+   l'image traverse tous les gris et donne une bouillie. Il doit
+   claquer.
+
+   ⚠️ L'ANIMATION PORTE SUR `filter`, et `filter` est déjà écrit pour
+   d'autres états du portrait — la carte retournée (0,62), celle que
+   j'ai marquée (0,72), le survol. Une animation l'emporte sur toutes :
+   elle est donc posée sur `.vue-espion`, que `codClasseCarte` rend
+   EXCLUSIF de `revelee` (un `if/else`), et le survol ne s'applique pas
+   à une carte désactivée — ce que sont toutes les cartes de l'espion. */
+.cod-carte.vue-espion.camp-assassin::after { display: none; }
+.cod-carte.vue-espion.camp-assassin .cod-portrait {
+    animation: codAssassin 5s steps(1) infinite;
+}
+@keyframes codAssassin {
+    0%, 90%   { filter: none; }
+    91%, 93%  { filter: invert(1) brightness(0.8); }
+    94%, 96%  { filter: none; }
+    97%, 99%  { filter: invert(1) brightness(0.8); }
+    100%      { filter: none; }
+}
+
 /* ⚠️ RETOURNÉE, la teinte PERD SON MASQUE et passe en aplat : on veut
    lire le camp de loin, pour savoir où en est la course sans compter.
    Le coin, lui, GARDE SA TAILLE.
@@ -2020,6 +2058,14 @@
     .cod-carte.tombe,
     .cod-carte.tombe::before, .cod-carte.tombe::after,
     .cod-carte.tombe .cod-portrait { animation: none; }
+    /* ⚠️ ET LE COIN REVIENT. C'est le seul endroit du fichier où éteindre
+       une animation retire une INFORMATION et non un agrément : sans le
+       clignotement, l'assassin n'a plus aucune marque — la seule carte qui
+       fait perdre la partie sur-le-champ redeviendrait une carte sombre
+       parmi les sept neutres. Le coin plié reprend donc sa place ici, et
+       lui seul. */
+    .cod-carte.vue-espion.camp-assassin .cod-portrait { animation: none; }
+    .cod-carte.vue-espion.camp-assassin::after { display: block; }
     .cod-balai { display: none; }
     .cod-carte.refusee { animation: none; }
     .cod-carte:not(:disabled):hover { transform: none; }
