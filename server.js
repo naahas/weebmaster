@@ -2316,6 +2316,32 @@ app.get('/prototypes/codanime-timer', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-timer.html');
 });
 
+// Le vivier série par série, pour décider ce qu'un réglage « série » peut
+// proposer : un plateau fait 25 cartes toutes différentes, donc une série en
+// dessous de 25 n'est pas jouable seule.
+//
+// ⚠️ FERMÉE EN PRODUCTION, les deux routes. Elle sert les portraits sous leur
+// VRAI NOM de fichier, et ce nom est la réponse du Rush. Publier la
+// correspondance « nom → image » donnerait la table de solution du Rush pour
+// toute la journée : le sel des jetons ne change qu'au redémarrage du dyno.
+app.get('/prototypes/codanime-series', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).send('Introuvable');
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-series.html');
+});
+
+app.get('/prototypes/codanime-series/data', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    // ⚠️ Le vivier du RUSH, pas celui de Codanime : c'est le réservoir de
+    // portraits complet (72 séries), là où `codanimedata.json` n'est qu'une
+    // sélection. La question posée ici est « que POURRAIT-ON proposer ».
+    delete require.cache[require.resolve('./rushdata.json')];
+    const brut = require('./rushdata.json');
+    const liste = Array.isArray(brut) ? brut : (brut.personnages || []);
+    res.json({
+        personnages: liste.map(p => ({ id: p.id, nom: p.nom, anime: p.anime, img: p.img })),
+    });
+});
+
 // Les visages de ceux qui votent : six façons de les rendre visibles, avec
 // deux curseurs qui décident de tout — la TAILLE du visage et l'ÉCART entre
 // deux. La page affiche ce qu'ils donnent à 69 px, le côté d'une carte sur

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — le vivier, série par série</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LE VIVIER, SÉRIE PAR SÉRIE
+
+   Un plateau de Codanime fait 5×5, soit VINGT-CINQ cartes toutes
+   différentes. Un réglage « série » n'est donc possible que pour une
+   série qui en a au moins vingt-cinq — et à exactement vingt-cinq, le
+   plateau serait LE MÊME à chaque partie, seules les couleurs
+   changeraient. Il en faut nettement plus pour que deux parties ne se
+   ressemblent pas.
+
+   ⚠️ CETTE PAGE SERT LES IMAGES EN CLAIR, sous leur vrai nom de
+   fichier, et c'est pour ça que sa route est fermée en production. En
+   jeu les portraits passent sous jeton : le nom du fichier EST la
+   réponse du Rush. Publier ici la correspondance « nom → jeton »
+   donnerait la table de solution du Rush pour toute la journée — le sel
+   des jetons ne change qu'au redémarrage du serveur.
+   ════════════════════════════════════════════════════════════════ */
+:root { --brun: #bf8a5f; --vert: #34d399; --rouge: #ff5f5a; --or: #fbbf24; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.3rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.2rem; max-width: 60rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.2rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.95); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.58rem; }
+.barre button {
+    padding: 0.32rem 0.75rem; border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 0.45rem; background: transparent; color: inherit;
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.barre input[type=number] {
+    width: 3.6rem; padding: 0.28rem 0.4rem; font: inherit; font-weight: 700;
+    color: inherit; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.16); border-radius: 0.4rem;
+}
+.barre .compte { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ── Le verdict, en tête ─────────────────────────────────────── */
+.verdict { margin-bottom: 1.6rem; }
+.verdict h2 { font-size: 0.82rem; margin: 0 0 0.5rem; opacity: 0.8; }
+.liste { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.puce {
+    display: flex; align-items: baseline; gap: 0.4rem;
+    padding: 0.3rem 0.6rem; border-radius: 0.45rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.025); font-size: 0.72rem;
+}
+.puce b { font-variant-numeric: tabular-nums; }
+.puce.ok { border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }
+.puce.ok b { color: var(--vert); }
+.puce.ko { border-color: rgba(255,95,90,0.35); background: rgba(255,95,90,0.07); }
+.puce.ko b { color: var(--rouge); }
+.puce.absent { opacity: 0.5; }
+.puce em { font-style: normal; opacity: 0.55; font-size: 0.66rem; }
+
+/* ── Une série ───────────────────────────────────────────────── */
+.serie { margin-bottom: 1.8rem; }
+.tete { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.tete h3 { font-size: 0.95rem; margin: 0; }
+.jauge {
+    position: relative; flex: 1 1 10rem; max-width: 22rem; height: 5px;
+    border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden;
+}
+.jauge i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--rouge); }
+.serie.ok .jauge i { background: var(--vert); }
+.etat { font-size: 0.7rem; font-variant-numeric: tabular-nums; opacity: 0.75; }
+.serie.ok .etat { color: var(--vert); opacity: 1; }
+.serie.ko .etat { color: var(--rouge); }
+
+.grille { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.perso {
+    width: 5.4rem; cursor: default;
+    border-radius: 0.45rem; overflow: hidden;
+    background: #11131a; border: 1px solid rgba(255,255,255,0.08);
+}
+.perso img { width: 100%; aspect-ratio: 225 / 350; object-fit: cover; display: block; }
+.perso span {
+    display: block; padding: 0.22rem 0.3rem 0.3rem;
+    font-size: 0.6rem; font-weight: 700; text-align: center;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.choix .perso { cursor: pointer; }
+body.choix .perso.pris { border-color: var(--brun); box-shadow: 0 0 0 2px rgba(191,138,95,0.5); }
+body.choix .perso.pris span { color: var(--brun); }
+/* ⚠️ Les vingt-cinq PREMIERS d'une série sont marqués : c'est ce qu'un
+   plateau prendrait si la série n'en avait pas plus. Au-delà de la barre,
+   ce qui donne sa variété d'une partie à l'autre. */
+.perso.sous-barre { opacity: 0.42; }
+.perso.sous-barre::after { content: ''; }
+
+.vide { font-size: 0.75rem; opacity: 0.5; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.92em; opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — le vivier, série par série</h1>
+<p class="sous">
+    Un plateau fait <b>5×5, soit vingt-cinq cartes toutes différentes</b>. Une série ne peut donc
+    devenir un réglage que si elle en a au moins vingt-cinq — et à <em>exactement</em> vingt-cinq,
+    le plateau serait le même à chaque partie, seules les couleurs changeraient. Les vignettes
+    pâles sont celles qui dépassent la barre : c'est elles qui font qu'une partie ne ressemble pas
+    à la précédente.
+</p>
+
+<div class="barre">
+    <label>Barre</label>
+    <input type="number" id="cible" min="9" max="60" step="1" value="25">
+    <button data-vue="toutes" class="on">Toutes les séries</button>
+    <button data-vue="liste">Seulement ma liste</button>
+    <button data-vue="pretes">Seulement celles qui passent</button>
+    <button id="choix">Sélectionner</button>
+    <button id="copier">Copier la sélection</button>
+    <span class="compte" id="compte"></span>
+</div>
+
+<section class="verdict">
+    <h2>Les réglages demandés, et ce que le vivier permet aujourd'hui</h2>
+    <div class="liste" id="demandes"></div>
+</section>
+
+<div id="series"></div>
+
+<script>
+// Les réglages demandés, dans l'ordre où ils s'afficheraient dans le tiroir.
+// ⚠️ « overall » et « big3 » sont des AGRÉGATS, « protagoniste » une étiquette
+// qui n'existe pas encore dans les données — aucun champ ne dit qui est le
+// héros de sa série. Les autres sont des séries au sens strict.
+const DEMANDES = [
+    { clef: 'overall',   nom: 'Overall',        type: 'tout' },
+    { clef: 'big3',      nom: 'Big 3',          type: 'groupe', animes: ['One Piece', 'Naruto', 'Bleach'] },
+    { clef: 'protago',   nom: 'Protagonistes',  type: 'etiquette' },
+    { clef: 'naruto',    nom: 'Naruto',         type: 'serie',  anime: 'Naruto' },
+    { clef: 'dragonball',nom: 'Dragon Ball',    type: 'serie',  anime: 'Dragon Ball' },
+    { clef: 'bleach',    nom: 'Bleach',         type: 'serie',  anime: 'Bleach' },
+    { clef: 'mha',       nom: 'My Hero Academia', type: 'serie', anime: 'My Hero Academia' },
+    { clef: 'fairytail', nom: 'Fairy Tail',     type: 'serie',  anime: 'Fairy Tail' },
+    { clef: 'jjk',       nom: 'Jujutsu Kaisen', type: 'serie',  anime: 'Jujutsu Kaisen' },
+    { clef: 'hxh',       nom: 'Hunter x Hunter', type: 'serie', anime: 'Hunter Hunter' },
+    { clef: 'demonslayer', nom: 'Demon Slayer', type: 'serie',  anime: 'Demon Slayer' },
+    { clef: 'blackclover', nom: 'Black Clover', type: 'serie',  anime: 'Black Clover' },
+    { clef: 'jojo',      nom: 'JoJo',           type: 'serie',  anime: 'JoJo' },
+];
+
+let PERSOS = [], VUE = 'toutes', CIBLE = 25;
+const PRIS = new Set();
+
+const ech = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const parAnime = () => {
+    const m = new Map();
+    for (const p of PERSOS) { if (!m.has(p.anime)) m.set(p.anime, []); m.get(p.anime).push(p); }
+    return [...m.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+};
+
+function combien(d) {
+    if (d.type === 'tout') return PERSOS.length;
+    if (d.type === 'groupe') return PERSOS.filter(p => d.animes.includes(p.anime)).length;
+    if (d.type === 'etiquette') return null;        // rien ne le dit encore
+    return PERSOS.filter(p => p.anime === d.anime).length;
+}
+
+function dessinerDemandes() {
+    document.getElementById('demandes').innerHTML = DEMANDES.map(d => {
+        const n = combien(d);
+        if (n === null) {
+            return '<span class="puce absent"><b>—</b> ' + ech(d.nom) +
+                   ' <em>aucune donnée : à étiqueter à la main</em></span>';
+        }
+        const ok = n >= CIBLE;
+        const manque = CIBLE - n;
+        return '<span class="puce ' + (ok ? 'ok' : 'ko') + '"><b>' + n + '</b> ' + ech(d.nom) +
+               (ok ? '' : ' <em>il en manque ' + manque + '</em>') + '</span>';
+    }).join('');
+}
+
+function dessinerSeries() {
+    const groupes = parAnime().filter(([anime, l]) => {
+        if (VUE === 'pretes') return l.length >= CIBLE;
+        if (VUE === 'liste') return DEMANDES.some(d => d.anime === anime);
+        return true;
+    });
+    if (!groupes.length) {
+        document.getElementById('series').innerHTML = '<p class="vide">Aucune série dans cette vue.</p>';
+        return;
+    }
+    document.getElementById('series').innerHTML = groupes.map(([anime, l]) => {
+        const ok = l.length >= CIBLE;
+        const part = Math.min(100, Math.round(l.length / CIBLE * 100));
+        const etat = ok ? (l.length - CIBLE) + ' de rab' : 'il en manque ' + (CIBLE - l.length);
+        return '<section class="serie ' + (ok ? 'ok' : 'ko') + '">' +
+            '<div class="tete"><h3>' + ech(anime) + '</h3>' +
+            '<span class="etat">' + l.length + ' / ' + CIBLE + ' · ' + etat + '</span>' +
+            '<span class="jauge"><i style="width:' + part + '%"></i></span></div>' +
+            '<div class="grille">' + l.map((p, k) =>
+                '<figure class="perso' + (k >= CIBLE ? ' sous-barre' : '') +
+                (PRIS.has(p.id) ? ' pris' : '') + '" data-id="' + ech(p.id) + '">' +
+                '<img src="/rushpic/' + ech(p.img) + '" alt="" loading="lazy">' +
+                '<span title="' + ech(p.nom) + '">' + ech(p.nom) + '</span></figure>').join('') +
+            '</div></section>';
+    }).join('');
+}
+
+function tout() { dessinerDemandes(); dessinerSeries(); majCompte(); }
+function majCompte() {
+    document.getElementById('compte').textContent =
+        PERSOS.length + ' portraits · ' + parAnime().length + ' séries' +
+        (PRIS.size ? ' · ' + PRIS.size + ' sélectionné(s)' : '');
+}
+
+document.querySelectorAll('.barre button[data-vue]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-vue]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); VUE = b.dataset.vue; dessinerSeries();
+}));
+document.getElementById('cible').addEventListener('input', (e) => {
+    CIBLE = Math.max(1, +e.target.value || 25); tout();
+});
+document.getElementById('choix').addEventListener('click', (e) => {
+    document.body.classList.toggle('choix');
+    e.target.classList.toggle('on', document.body.classList.contains('choix'));
+});
+// ⚠️ La sélection sert à fabriquer une liste à la main — « protagoniste » n'a
+// aucun champ dans les données, il faudra bien l'écrire quelque part. Le bouton
+// rend des identifiants, pas des noms : c'est `id` que le code manipule.
+document.getElementById('copier').addEventListener('click', async () => {
+    const txt = JSON.stringify([...PRIS], null, 0);
+    try { await navigator.clipboard.writeText(txt); } catch (e) { /* tant pis */ }
+    console.log(txt);
+    const b = document.getElementById('copier');
+    const avant = b.textContent; b.textContent = PRIS.size + ' copiés';
+    setTimeout(() => { b.textContent = avant; }, 1200);
+});
+document.getElementById('series').addEventListener('click', (e) => {
+    if (!document.body.classList.contains('choix')) return;
+    const f = e.target.closest('.perso');
+    if (!f) return;
+    const id = f.dataset.id;
+    if (PRIS.has(id)) { PRIS.delete(id); f.classList.remove('pris'); }
+    else { PRIS.add(id); f.classList.add('pris'); }
+    majCompte();
+});
+
+fetch('/prototypes/codanime-series/data').then(r => r.json()).then(j => {
+    PERSOS = j.personnages || [];
+    tout();
+}).catch(() => {
+    document.getElementById('series').innerHTML =
+        '<p class="vide">Le vivier ne répond pas. Cette page est fermée en production — elle sert les images sous leur vrai nom.</p>';
+});
+</script>
+</body></html>
