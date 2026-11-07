@@ -85,12 +85,35 @@ const SERIE_DEFAUT = 'overall';
 // définitions auraient fini par diverger.
 const GROUPES = {
     big3: { nom: 'Big 3', animes: ['One Piece', 'Naruto', 'Bleach'] },
+    // ⚠️ CELUI-CI SE LIT SUR LES PERSONNAGES, pas sur leur série : être le
+    // héros de son manga n'est pas une propriété de la série. Le drapeau vit
+    // donc dans les données, sur l'entrée — une liste d'identifiants écrite
+    // ici aurait été une seconde écriture du vivier, qui aurait silencieusement
+    // désigné des personnages retirés depuis.
+    //
+    // ℹ️ C'est le seul filtre dont les cartes viennent toutes de séries
+    // DIFFÉRENTES. L'indice y change de nature : on ne peut plus s'appuyer sur
+    // un uniforme ou un village commun, il reste la couleur, l'arme, l'âge —
+    // ce qui le rend plus facile pour une table qui ne partage pas les mêmes
+    // lectures, et c'est précisément à ça qu'il sert.
+    protago: { nom: 'Protagonistes', drapeau: 'protago' },
 };
 
 // L'identifiant d'une série, pour l'URL et l'état : « My Hero Academia » →
 // « myheroacademia ». ⚠️ Le NOM reste la vérité, l'identifiant n'est qu'une
 // clef — on ne reconstruit jamais le nom depuis lui.
 const clefSerie = (anime) => String(anime).toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+// ⚠️ UN GROUPE SE DIT DE DEUX FAÇONS, et il faut les deux : par ses SÉRIES
+// (Big 3) ou par un DRAPEAU porté par le personnage (Protagonistes). Écrit
+// deux fois — une fois pour compter, une fois pour filtrer — le jour où l'on
+// ajoute un genre de groupe, le tiroir proposerait une entrée que le tirage ne
+// saurait pas remplir. Une seule fonction, lue par les deux.
+function membresDuGroupe(vivier, g) {
+    if (!g) return [];
+    if (g.drapeau) return vivier.filter(p => p[g.drapeau]);
+    return vivier.filter(p => g.animes.includes(p.anime));
+}
 
 // Ce que le tiroir a le droit de proposer, vivier en main.
 function seriesJouables(vivier, taille = TAILLE) {
@@ -99,7 +122,7 @@ function seriesJouables(vivier, taille = TAILLE) {
 
     const liste = [{ id: SERIE_DEFAUT, nom: 'Overall', n: vivier.length }];
     for (const [id, g] of Object.entries(GROUPES)) {
-        const n = vivier.filter(p => g.animes.includes(p.anime)).length;
+        const n = membresDuGroupe(vivier, g).length;
         if (n >= taille) liste.push({ id, nom: g.nom, n });
     }
     // Les séries, de la mieux fournie à la moins fournie : c'est l'ordre dans
@@ -118,7 +141,7 @@ function vivierPour(vivier, serie, taille = TAILLE) {
     if (!serie || serie === SERIE_DEFAUT) return vivier;
     const g = GROUPES[serie];
     const reduit = g
-        ? vivier.filter(p => g.animes.includes(p.anime))
+        ? membresDuGroupe(vivier, g)
         : vivier.filter(p => clefSerie(p.anime) === serie);
     return reduit.length >= taille ? reduit : vivier;
 }
@@ -1077,7 +1100,8 @@ module.exports = {
     basculerVote, voixAilleurs, voixDe,
     revelerCarte, vainqueur, equipeAdverse,
     grillePourAgent, grillePourEspion, estEspion, equipeDe, agentsPresents,
-    seriesJouables, vivierPour, serieValide, clefSerie, SERIE_DEFAUT, GROUPES,
+    seriesJouables, vivierPour, serieValide, clefSerie, membresDuGroupe,
+    SERIE_DEFAUT, GROUPES,
     TAILLE, CAMP_PREMIER, CAMP_SECOND, NEUTRES,
     INDICE_MAX, INDICE_INFINI, AGENTS_MAX, MAX_PAR_SERIE,
     DUREE_MIN, DUREE_MAX, DUREE_PAS, DUREE_TOUR_DEFAUT, DUREE_INDICE, dureeValide, BATTEMENT,

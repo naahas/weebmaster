@@ -286,6 +286,30 @@ titre('Le réglage « série »');
         'le filtre d\'une série ne garde que cette série');
     dire(m.vivierPour(vivier, 'big3').every(p => ['One Piece', 'Naruto', 'Bleach'].includes(p.anime)),
         'et Big 3 ses trois séries');
+
+    // ⚠️ Protagonistes se lit sur le PERSONNAGE et non sur sa série : c'est
+    // l'autre façon de dire un groupe, et les deux passent par la même
+    // fonction. Si elle divergeait, le tiroir proposerait une entrée que le
+    // tirage ne saurait pas remplir.
+    const heros = m.vivierPour(vivier, 'protago');
+    dire(heros.length >= m.TAILLE && heros.every(p => p.protago),
+        'Protagonistes ne garde que ceux qui portent le drapeau', heros.length + ' héros');
+    // ⚠️ PRESQUE un héros par série, et pas tout à fait : JoJo en a trois,
+    // un par partie, ce qui est juste. Ce qui compte n'est donc pas l'unicité
+    // mais que le plafond par série tienne — sans quoi un plateau
+    // « Protagonistes » pourrait sortir quatre JoJo et perdre ce qui fait ce
+    // filtre : vingt-cinq mangas différents sur la table.
+    {
+        const parSerie = new Map();
+        for (const p of heros) parSerie.set(p.anime, (parSerie.get(p.anime) || 0) + 1);
+        const trop = [...parSerie.entries()].filter(([, n]) => n > m.MAX_PAR_SERIE);
+        dire(trop.length === 0, 'aucune série n\'y dépasse le plafond du tirage',
+            trop.map(([a, n]) => a + ':' + n).join(', '));
+        dire(parSerie.size >= m.TAILLE, 'et il reste assez de séries pour un plateau entier',
+            parSerie.size + ' séries');
+    }
+    dire(m.seriesJouables(vivier).some(s => s.id === 'protago'),
+        'le groupe est proposé dans le tiroir');
     dire(m.vivierPour(vivier, 'overall').length === vivier.length, 'Overall ne filtre rien');
     // ⚠️ LE REPLI. Une série qui n'a plus de quoi jouer ne doit pas rendre un
     // salon impossible à démarrer — surtout un salon ouvert avant le retrait.
