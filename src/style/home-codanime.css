@@ -1085,7 +1085,7 @@
    transition. Le cadre glisse, l'image grandit, chacun le sien. */
 .cod {
     --cod-av: calc(var(--cod-cote) * 0.3);    /* la taille d'un visage */
-    --cod-pasf: 0.175;                        /* de combien il pousse le voisin */
+    --cod-pasf: 0.18;                         /* de combien il pousse le voisin */
 }
 .cod-votants {
     position: absolute; z-index: 6;
@@ -1104,7 +1104,7 @@
        resserrement posé par le gabarit sur `.cod-votants` n'y changerait
        rien — un custom property hérite sa valeur CALCULÉE, pas sa
        formule. Les deux facteurs sont donc lus au même endroit. */
-    transform: translateX(calc(var(--i, 0) * var(--cod-cote) * var(--cod-pasf, 0.155) * -1));
+    transform: translateX(calc(var(--i, 0) * var(--cod-cote) * var(--cod-pasf, 0.18) * -1));
     transition: transform 0.34s cubic-bezier(0.25, 0.9, 0.3, 1);
     /* Le dernier arrivé passe DEVANT : la rangée se lit comme un éventail
        qu'on étale de droite à gauche. */
@@ -1114,8 +1114,25 @@
     width: 100%; height: 100%; display: block;
     border-radius: 50%; object-fit: cover;
     background: #15171d;
-    border: calc(var(--cod-cote) * 0.018) solid #0c0d11;
-    box-shadow: 0 calc(var(--cod-cote) * 0.012) calc(var(--cod-cote) * 0.03) rgba(0, 0, 0, 0.8);
+    /* ── LE DOUBLE ANNEAU ──
+       Anneau sombre collé au visage, anneau du camp qui joue par-dessus.
+       Retenu sur /prototypes/codanime-votants contre un halo flou et un
+       socle sombre, et c'est l'absence de FLOU qui l'emporte : le visage
+       est posé à cheval sur le coin de la carte, donc tout ce qui déborde
+       mord sur le portrait — or l'indice porte sur ce qu'on y voit. Un
+       halo rayonne de six pixels ; un anneau net n'en prend que deux, et
+       il les prend DEHORS, en grandissant le disque de 38 à 42 px sans
+       grandir le visage.
+       ⚠️ À trois voix, les halos de deux visages voisins se touchaient et
+       la rangée devenait une tache bleue. Deux anneaux nets se recouvrent
+       proprement, le plus récent devant — c'est déjà l'ordre de l'éventail.
+       ⚠️ Le second anneau est une OMBRE À ZÉRO FLOU (`0 0 0 Npx`), pas une
+       seconde bordure : une bordure agrandirait la boîte et décalerait
+       l'ancrage au coin, l'ombre se peint hors de la boîte sans la toucher. */
+    border: calc(var(--cod-cote) * 0.016) solid #0c0d11;
+    box-shadow:
+        0 0 0 calc(var(--cod-cote) * 0.016) var(--cod-vote, var(--cod-mien, #f4f1ea)),
+        0 calc(var(--cod-cote) * 0.014) calc(var(--cod-cote) * 0.035) rgba(0, 0, 0, 0.9);
     /* ⚠️ SANS RESSORT. Un `cubic-bezier` à 1,35 faisait dépasser le
        visage puis revenir : sur une rangée où les voisins GLISSENT au
        même instant, ce rebond était le seul mouvement qui n'allait pas
@@ -1123,9 +1140,15 @@
        brouillon. Il grandit et se pose, point. */
     animation: codVotantEntre 0.42s cubic-bezier(0.22, 0.85, 0.3, 1) both;
 }
-/* Le mien porte la couleur de mon camp : sur une rangée de quatre, c'est
-   la seule chose qu'on cherche vraiment. */
-.cod-votant.moi img { border-color: var(--cod-mien, #fff); }
+/* ── MOI, DANS LA RANGÉE ──
+   Sur une rangée de trois, c'est la seule chose qu'on cherche vraiment.
+   ⚠️ Ça ne peut plus être la couleur du camp : depuis le double anneau,
+   l'anneau EXTÉRIEUR la porte déjà, et pour tout le monde — les votants
+   sont tous agents du même camp. Mon visage serait devenu le seul qu'on
+   ne distingue pas. C'est donc l'anneau INTÉRIEUR qui passe à l'ivoire :
+   deux cercles clair-couleur au milieu de cercles sombre-couleur, ça se
+   repère sans rien ajouter autour. */
+.cod-votant.moi img { border-color: #f4f1ea; }
 
 /* LES ABSENTS, EN CREUX. ⚠️ Depuis que la carte part à l'UNANIMITÉ, « deux
    voix » ne dit plus rien tant qu'on ignore qui manque : à trois agents,
@@ -1161,6 +1184,14 @@
    partie, et la résoudre vingt-cinq fois n'apporterait rien. */
 .cod-grille.mien-A { --cod-mien: var(--cod-a); --cod-mien-rgb: 47, 155, 255; }
 .cod-grille.mien-B { --cod-mien: var(--cod-b); --cod-mien-rgb: 255, 59, 92; }
+
+/* La couleur du camp QUI JOUE, pour l'anneau des votants. ⚠️ Ce n'est pas
+   `--cod-mien` : les marques se voient de tous, et pendant le tour d'en
+   face je verrais les voix adverses peintes à MA couleur. Un repli est
+   prévu sur `--cod-mien` puis sur l'ivoire — entre deux tours, `tourDe`
+   vaut `null` et l'anneau ne doit pas disparaître. */
+.cod-grille.tour-A { --cod-vote: var(--cod-a); }
+.cod-grille.tour-B { --cod-vote: var(--cod-b); }
 
 /* ── L'ENFONCEMENT DU CLIC ──────────────────────────────────────── */
 /* ⚠️ SUR LA CASE, JAMAIS SUR LA CARTE. La carte porte déjà un

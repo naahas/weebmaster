@@ -2618,9 +2618,18 @@
                                  avant (`place-self`), et la main est leur
                                  sœur : elle passe par-dessus sans rien
                                  enlever au portrait. -->
+                            <!-- ⚠️ DEUX camps sont posés ici, et ce ne sont pas
+                                 les mêmes. `mien-*` est MON camp : il teinte ce
+                                 que JE fais (l'onde de mon clic, mon visage
+                                 dans l'éventail). `tour-*` est le camp qui
+                                 JOUE : il teinte l'anneau des votants, qui
+                                 sont ses agents. Les marques se voient de
+                                 tous — pendant le tour d'en face, `mien-`
+                                 peindrait les voix adverses à ma couleur. -->
                             <div class="cod-grille"
                                  :class="[{ espion: cod.jeSuisEspion, masque: cod.masquerAdverses },
-                                          'mien-' + (cod.monEquipe || 'rien')]">
+                                          'mien-' + (cod.monEquipe || 'rien'),
+                                          'tour-' + (cod.tourDe || 'rien')]">
                                 <span class="cod-case" v-for="(c, iC) in cod.grille" :key="c.i"
                                       :class="{ presse: cod.presse === c.i }">
                                 <button class="cod-carte" :class="codClasseCarte(c)"

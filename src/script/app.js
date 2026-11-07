@@ -6128,13 +6128,16 @@ createApp({
             // mène porte aussi les absents en creux, et c'est l'éventail
             // entier qui doit tenir dans la carte.
             const n = this.codVotants(i).length;
-            if (n < 2) return 0.175;
-            // ⚠️ 0,55 et non 0,85 : un visage vaut 0,3 du côté, donc
-            // l'éventail entier mesure 0,3 + (n−1) × pas. C'est cette
-            // SOMME qu'on borne à 0,85 de la carte, et le reste à répartir
-            // vaut donc 0,55. Oublier la largeur du premier visage laissait
-            // la rangée dépasser d'exactement une tête.
-            return Math.min(0.175, 0.55 / (n - 1));
+            if (n < 2) return 0.18;
+            // ⚠️ 0,52 et non 0,85 : un visage vaut 0,3 du côté PLUS son
+            // double anneau, deux fois 0,016, soit 0,332 — l'éventail
+            // entier mesure donc 0,332 + (n−1) × pas. C'est cette SOMME
+            // qu'on borne à 0,85 de la carte, et le reste à répartir vaut
+            // 0,52. Oublier la largeur du premier visage laissait la
+            // rangée dépasser d'exactement une tête ; oublier son anneau
+            // la laisse dépasser de deux pixels, ce qui se voit moins mais
+            // se voit quand même sur la carte voisine.
+            return Math.min(0.18, 0.52 / (n - 1));
         },
 
         // La carte qu'on est en train de révéler, et elle seule : c'est
