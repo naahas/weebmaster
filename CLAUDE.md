@@ -99,6 +99,14 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   duels du triangle, et surtout qu aucune main ne sort de chez son proprietaire),
   `npm run test:collect-salon` (Collect de bout en bout : reglages, partie jouee par
   les sockets, le duel, le depart d un joueur),
+  `npm run test:codanime` (le moteur de Codanime sans serveur : l unanimite, les
+  coups `n+1`, le 0 et l infini, et le vote qui SE DEPLACE au lieu de s ajouter),
+  `npm run test:codanime-salon` (Codanime de bout en bout : les roles tenus cote
+  serveur, ce qui voyage sur le fil — l agent ne recoit AUCUN camp —, la chaine
+  `n+1`, Skip, l assassin et sa pause mesuree, le rafraichissement en plein tour,
+  et ce que la partie laisse en base. ⚠️ Ce dernier controle exige
+  `PANEL_ADMIN_CODE` et se passe sans lui : une suite n a pas a dependre d un
+  secret pour faire son metier),
   `npm run test:debit` (le seau a jetons par socket : une brute est bornee a la
   rafale puis coupee, un joueur a cadence normale n en voit rien),
   `npm run test:fuites` (ce qu un curieux muni du seul code du salon peut lire :
@@ -145,6 +153,8 @@ server.js              6.2k lignes — serveur + modes classic / rivalry / bomba
 dbs.js                 client Supabase : questions + suggestions BombAnime uniquement
 pseudos-interdits.js   les pseudos refuses : deux listes, l une cherchee partout,
                        l autre en mot entier. Voir l en-tete du fichier
+server-codanime.js     mode Codanime : le moteur (pur, eprouvable sans serveur) puis son
+                       raccord au salon. Voir la section Codanime plus bas
 server-collect.js      mode Collect : le moteur (pur, eprouvable sans serveur) puis son
                        raccord au salon. Les trois reglages qui comptent viennent de
                        mesures, l en-tete du fichier dit lesquels et pourquoi
@@ -180,6 +190,7 @@ src/img/               avatars, questionpic
   (faire glisser la rangee pour un troc la rendait illisible). Les deux ne se croisent jamais :
   un echange ne renouvelle pas le marche. Reglages : **main** (3, 4 ou 5 — l objectif suit tout seul : 3 paires, 2 sets de 3, ou 3 sets de 3) et **animes** (8/10/12) |
 | `bombanime` | BombAnime | Bombe tournante : citer un perso d'une série, alphabet à compléter, défis + bonus. Réglages du salon : **série** (21 au choix), **temps du tour** (5–10 s, 8 par défaut), **vies** (1 ou 2, 2 par défaut), **bot** (non par défaut — un seul partenaire, qui joue vraiment), **mèche** (*Par tour* par défaut, ou *Continue*), **mouvement** (oui par défaut — la mèche se consume-t-elle à l écran) et **ordre** (*Horaire* par défaut, ou *Aléatoire* — voir plus bas) ; quinze joueurs au plus |
+| `codanime`  | Codanime  | Codenames aux portraits, 4 à 8 joueurs. Deux camps, chacun un **espion** et ses **agents**, une grille de 5×5 portraits. L'espion voit les camps et annonce **un mot et un nombre** ; ses agents désignent les cartes. Réglages : **chrono** (oui par défaut), **temps par carte** (45 s par défaut, par pas de 15) et **piège** (oui par défaut — voir plus bas). Données dans `codanimedata.json`, portraits dans `src/img/rushpic/` sous jeton |
 
 ⚠️ **L'ORDRE de passage.** *Horaire* (le défaut) est l'ordre de toujours : la bombe tourne dans
 le cercle, chacun voit son tour venir et prépare. *Aléatoire* la fait désigner au hasard **parmi
@@ -321,7 +332,58 @@ Palette finale, et le plus petit écart de teinte passe de 30° à **54°** : bl
 il vit dans l'en-tête et ne côtoie jamais une pastille de camp. Deux camps qu'on ne distingue pas
 coûtent plus cher.
 
-Modes retirés en v2 (code en git sur le tag `v1-final`) : Trace (survie), Collect, Poll, Ascension.
+## Codanime
+
+Codenames aux portraits. Grille de 5×5, deux camps, un espion par camp qui voit les couleurs
+et des agents qui ne les voient pas. L'espion annonce **un mot et un nombre**, les agents
+désignent les cartes. Moteur dans `server-codanime.js` — pur, éprouvable sans serveur — puis
+son raccord au salon.
+
+⚠️ **UNE CARTE À LA FOIS, ET À L'UNANIMITÉ DES AGENTS PRÉSENTS.** Ce n'est pas un détail de
+règle, c'est ce qui fait le mode : à la majorité, deux joueurs décident et les autres
+regardent ; à l'unanimité, il faut se convaincre, donc parler — or c'est une partie qui se
+joue en vocal ou en direct. Le seuil vaut le nombre d'agents **présents** (`seuil()`), pas
+celui du départ : un agent qui ferme son onglet bloquerait la manche entière.
+
+⚠️ **UNE ERREUR ARRÊTE LE TOUR, et les coups valent `n + 1`.** Le `+1` est le vieil usage de
+Codenames : il paye les indices d'avant. `0` et `∞` donnent des coups **illimités** —
+`Infinity` ne traverse pas JSON, les deux voyagent donc en **`-1`**, comme le nombre de
+l'indice.
+
+⚠️ **Le chrono est PAR CARTE**, pas par tour. Le champ s'appelle encore `dureeTour` ; le
+renommer demanderait de toucher la base, les réglages enregistrés et le client pour un gain
+nul. À l'échéance, le tour passe à l'adversaire.
+
+⚠️ **Le piège (`piege`, oui par défaut)** est ce qui fait qu'un indice à 4 est un pari et non
+un calcul. Éteint, le mode devient une course au score — plus doux pour un premier salon, et
+c'est le seul usage qu'on lui connaisse.
+
+**Ce qui voyage sur le fil.** L'agent ne reçoit **ni camp, ni nom, ni série** : sa grille est
+fabriquée à part (`grillePourAgent`), et les portraits passent **sous jeton** (`/pic/<jeton>`)
+comme ceux du Rush. ⚠️ Et `/game/state`, qui s'ouvre avec le **seul code du salon**, ne porte
+pas la grille — il porte le réglage `piege`, qui n'est pas un secret. `npm run
+test:codanime-salon` tient les deux.
+
+⚠️ **Le rafraîchissement est POUSSÉ par le serveur**, pas demandé par le client.
+`codanime-get-state` fait `players.get(socket.id)` : tant que le joueur n'est pas rebranché
+sur sa socket neuve, elle rend `undefined` et sort en silence. Le serveur émet donc
+`codanime-etat` depuis `register-authenticated`, juste après le rebranchement, là où il n'y a
+plus de course.
+
+**Sur téléphone, les deux rangs disparaissent** — deux colonnes de portraits ne laisseraient
+que 44 px par carte. Tout ce qui vivait dans leur chapeau a donc un **jumeau dans un coin** :
+le masque et « Skip » en haut à gauche (ils ne s'y croisent jamais, l'un demande
+`jeSuisEspion` et l'autre son contraire), les camps et les annonces en haut à droite, chacun
+ouvrant un panneau plein écran. ⚠️ Ces panneaux sont le **plateau lui-même** replié par le
+CSS, jamais une seconde écriture des rangs dans le gabarit.
+
+Suites : `npm run test:codanime` (le moteur seul — unanimité, `coupsPour`, `indiceValide`,
+vote qui se déplace) et `npm run test:codanime-salon` (de bout en bout : rôles tenus côté
+serveur, chaîne `n+1`, 0 et ∞, Skip, assassin et sa pause, rafraîchissement, et ce que la
+partie laisse en base). Prototypes sous `/prototypes/codanime-*`.
+
+Modes retirés en v2 (code en git sur le tag `v1-final`) : Trace (survie) et Poll.
+⚠️ Collect et Ascension y figuraient aussi — ils sont **revenus** depuis et se jouent.
 Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `archive/ascension`.
 
 ## Fichiers de données
@@ -341,6 +403,9 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
   salons. Le fichier vieillit, donc le serveur ne lui fait pas confiance les yeux fermés : il
   compare le nombre de noms vu à celui qu'il a, et **toute série qui a bougé retombe sur son
   compte brut**, nommée au démarrage. Jamais de chiffre faux, au pire un chiffre trop généreux.
+- `codanimedata.json` — le vivier de Codanime : 183 portraits, tirés à 25 par partie. Ils
+  viennent de `src/img/rushpic/` et sont servis **sous jeton** : le nom du fichier dirait qui
+  c'est, et sur cette grille le portrait EST la carte
 - `collectdata.json` — les cartes de Collect : 385 cartes sur 21 animes, chacune avec son
   portrait, son anime et sa classe. Genere depuis `collect-cards.json` (la source v1, gardee
   comme reference) ; portraits dans `src/img/collectpic/`, en WebP.
@@ -789,6 +854,19 @@ fait que deplacer la fuite. Le client le recoit par `question-results`.
 - ⚠️ Une reconnexion socket passe par `register-authenticated` (qui rebranche l'entrée du joueur sur
   la nouvelle socket) **puis** `join-lobby`. Ne jamais déconnecter « l'ancienne » socket sans
   vérifier qu'elle n'est pas la socket courante.
+- ⚠️ **UN JOUEUR PEUT FIGURER DANS PLUSIEURS SALONS À LA FOIS**, et c'est le cas courant de qui
+  enchaîne deux parties : quitter un salon ne retire pas tout de suite — en partie on le conserve
+  quoi qu'il arrive, en salon un `pendingRemoval` l'efface une minute plus tard, et un salon vide
+  tient dix minutes. Sur une socket neuve, le serveur cherchait son salon par un `.find()` sur la
+  Map, c'est-à-dire **le plus ancien** : il rebranchait le joueur sur la partie qu'il venait de
+  quitter pendant que celle qu'il joue le comptait déconnecté. Le client envoie donc désormais son
+  `roomCode` dans `register-authenticated`, et le serveur le croit **à condition que le joueur y
+  figure déjà** — le code ne donne aucun droit, il ne fait que choisir. Sans code (vieil onglet),
+  on retombe sur la déduction : le salon où il est encore branché, sinon la coupure la plus
+  fraîche. ⚠️ Et quitter un SALON ne pose pas de `disconnectedAt` — ça n'arrive qu'en partie ;
+  l'entrée laissée derrière ressemble donc, champ pour champ, à celle de quelqu'un de branché.
+  C'est `pendingRemoval` qui les sépare. Le symptôme qui a mené là : `test:codanime-salon` ne
+  passait qu'**une fois par démarrage du serveur**, et échouait à toutes les relances suivantes.
 - ⚠️ `home.html` est un template Vue inline : un `v-else` séparé de son `v-if` par un autre
   élément casse toute la page (écran blanc). `npm run check` attrape ce cas, et depuis qu il
   analyse aussi les expressions (`prefixIdentifiers`), il attrape également un `@click` dont

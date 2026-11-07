@@ -723,6 +723,32 @@ function reglagesDeLaPartie(gameState) {
             return avec({ main: g.collect && g.collect.main, animes: g.collect && g.collect.nbAnimes });
         case 'ascension':
             return avec({ etages: g.ascension && g.ascension.floors, temps: g.ascension && g.ascension.timer });
+        // ⚠️ Codanime et Choice tombaient dans le `default` et ne gardaient
+        // donc que le nom de l hote. C est le seul trou de cette fonction qui
+        // ne se rattrape pas : ce qui n est pas ecrit a la fin d une partie
+        // est perdu pour toujours, on ne peut pas y revenir apres coup.
+        case 'codanime': {
+            const c = g.codanime || {};
+            return avec({
+                chrono: !!c.chrono,
+                // ⚠️ Le temps est PAR CARTE, pas par tour, et le nom du champ
+                // le dit mal. On l enregistre tel quel — le libelle se
+                // fabrique dans la page, les valeurs brutes restent justes.
+                dureeTour: c.dureeTour,
+                piege: !!c.piege,
+                // Combien de manches ont ete jouees : une partie de Codanime
+                // en enchaine plusieurs, et c est ce qui dit si le salon est
+                // alle au bout ou s est arrete a la premiere.
+                manches: c.manche || 0,
+            });
+        }
+        case 'choice':
+            return avec({
+                vies: g.choice && g.choice.vies,
+                duree: g.choice && g.choice.duree,
+                voirLesAutres: !!(g.choice && g.choice.voirLesAutres),
+                filtre: g.choice && g.choice.serieFiltre,
+            });
         default:
             // Meme sans reglage connu, l hote vaut la peine d etre garde.
             return hote ? { hote } : null;
@@ -8718,9 +8744,54 @@ io.on('connection', (socket) => {
         // 🔥 FIX: Auto-remap socket.id if player already in gameState.players with old socket
         // La socket est neuve : on ignore encore sa room. On la retrouve par le
         // joueur lui-même, présent dans un salon ou dans aucun.
-        const gameState = roomDeSocket(socket) ||
-            (data.playerId ? [...rooms.values()].find(r =>
-                [...r.players.values()].some(p => p.playerId === data.playerId)) : null);
+        //
+        // ⚠️ IL PEUT ÊTRE DANS PLUSIEURS SALONS À LA FOIS, et c'est le cas
+        // courant, pas un cas tordu : un joueur qui quitte une partie y reste
+        // inscrit — un joueur EN PARTIE est conservé quoi qu'il arrive, et un
+        // salon vide ne se referme qu'au bout de dix minutes. Il ouvre un
+        // autre salon dans la foulée, verrouille son téléphone, et sa socket
+        // revient.
+        //
+        // Un `.find()` rendait alors le PREMIER salon de la Map, c'est-à-dire
+        // le plus ancien : on le rebranchait sur la partie qu'il venait de
+        // quitter, pendant que celle qu'il joue le comptait déconnecté. Mesuré
+        // en rejouant deux fois `test:codanime-salon` sur le même serveur —
+        // la seconde ne retrouvait jamais son plateau.
+        //
+        // On classe donc les candidats : d'abord celui où il est ENCORE
+        // branché (aucun `disconnectedAt`), sinon la coupure la plus FRAÎCHE,
+        // et à égalité le salon le plus récent.
+        const entree = (r) => [...r.players.values()].find(p => p.playerId === data.playerId);
+        const candidats = data.playerId
+            ? [...rooms.values()].filter(r => !!entree(r)) : [];
+
+        // ⚠️ LE CLIENT SAIT, LUI, quel salon il joue : il le porte dans son
+        // `localStorage` et l'envoie désormais ici. On le croit — mais SEULEMENT
+        // s'il y figure déjà : le code ne donne aucun droit nouveau, il ne fait
+        // que choisir parmi les salons où le joueur est DÉJÀ inscrit. Sans ce
+        // garde-fou, une socket bricolée se rattacherait à n'importe quel salon
+        // en citant son code, qui s'affiche à l'écran pendant un direct.
+        const annonce = data.roomCode
+            ? candidats.find(r => r.roomCode === String(data.roomCode).toUpperCase())
+            : null;
+        // ⚠️ TROIS ÉTATS, et le deuxième est celui qui a fait échouer la
+        // première version. Quitter un SALON ne pose pas de `disconnectedAt`
+        // — ça n'arrive qu'en partie ; en salon on arme un `pendingRemoval`
+        // et le joueur s'efface une minute plus tard. L'entrée qu'il laisse
+        // derrière lui ressemble donc, champ pour champ, à celle de quelqu'un
+        // de branché. Sans ce premier test, l'ancien salon repassait devant.
+        const fraicheur = (r) => {
+            const p = entree(r);
+            if (!p) return -1;
+            if (p.pendingRemoval) return 0;          // parti, en sursis
+            if (!p.disconnectedAt) return Infinity;  // encore branché
+            return p.disconnectedAt;                 // coupé : le plus frais gagne
+        };
+        candidats.sort((a, b) => (fraicheur(b) - fraicheur(a)) || ((b.creeA || 0) - (a.creeA || 0)));
+        // L'ordre : ce que la socket dit déjà, ce que le client annonce, puis
+        // la déduction. Le dernier terme reste pour les vieux onglets, qui
+        // n'envoient pas encore de code.
+        const gameState = roomDeSocket(socket) || annonce || candidats[0] || null;
 
         // ⚠️ Pas de « && gameState.isActive » ici. Un salon peut légitimement
         // avoir « isActive » à faux tout en gardant ses joueurs : c'est le cas

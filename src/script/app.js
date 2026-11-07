@@ -7412,7 +7412,16 @@ createApp({
                 if (this.isAuthenticated) {
                     this.socket.emit('register-authenticated', {
                         playerId: this.playerId,
-                        username: this.username
+                        username: this.username,
+                        // ⚠️ LE CODE DU SALON VOYAGE AVEC, et c'est lui qui
+                        // lève une ambiguïté que le serveur ne peut pas
+                        // trancher seul : un joueur reste INSCRIT dans le
+                        // salon qu'il vient de quitter (dix minutes pour un
+                        // salon vide, toujours s'il était en partie). Sur une
+                        // socket neuve, le serveur le cherchait dans tous les
+                        // salons et prenait le premier — le plus ancien. Moi
+                        // je sais lequel je joue.
+                        roomCode: this.roomCode || null
                     });
                     console.log('✅ Authentification enregistrée auprès du serveur');
                 }

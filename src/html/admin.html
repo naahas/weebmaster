@@ -336,6 +336,10 @@ button { font-family: inherit; color: inherit; }
 .mode[data-m="collect"]   .barre > i { background: linear-gradient(90deg, var(--rose), #a855f7); }
 .mode[data-m="ascension"] .barre > i { background: linear-gradient(90deg, var(--cyan), #3b82f6); }
 .mode[data-m="classic"]   .barre > i { background: linear-gradient(90deg, var(--accent-clair), var(--accent)); }
+/* Les deux camps de Codanime, dans leur ordre : le bleu puis le rouge. Aucune
+   autre barre ne va du bleu au rouge, elle se reconnaît sans lire. */
+.mode[data-m="codanime"]  .barre > i { background: linear-gradient(90deg, #2f9bff, #ff3b5c); }
+.mode[data-m="choice"]    .barre > i { background: linear-gradient(90deg, #a3e635, #65a30d); }
 
 /* ── Le tableau ──────────────────────────── */
 .filtres { display: flex; gap: .35rem; flex-wrap: wrap; margin-left: auto; }
@@ -415,6 +419,14 @@ tbody tr.part { opacity: 0; transition: opacity .2s; }
 .etiq[data-m="rush"]      { background: rgba(52,211,153,.13); color: var(--vert); }
 .etiq[data-m="collect"]   { background: rgba(244,114,182,.13); color: var(--rose); }
 .etiq[data-m="ascension"] { background: rgba(34,211,238,.13); color: var(--cyan); }
+/* ⚠️ Ici la couleur ne porte pas l'identité — l'étiquette écrit le nom du
+   mode. Elle sert à retrouver la même ligne d'un bloc à l'autre, d'où le
+   choix des deux creux qui restaient : le vermillon (≈5°, à 40° de l'ambre
+   et 35° du rose) et le lime (82°). Le rouge franc des camps était trop près
+   du rose de Collect — 20° de teinte, la même erreur que la cinquième
+   pastille de camp. */
+.etiq[data-m="codanime"]  { background: rgba(255,95,90,.13);  color: #ff6f66; }
+.etiq[data-m="choice"]    { background: rgba(163,230,53,.13); color: #a3e635; }
 /* ── Le point info des réglages ──────────── */
 /* Une bulle en CSS et non un attribut « title » : le title met une bonne
    seconde à sortir, et on survole ces lignes en les parcourant vite. */
@@ -1555,8 +1567,13 @@ let DERNIERE = null;
 const REPLI = { rivalry: 'classic' };
 const mode = p => REPLI[p.mode] || p.mode || 'inconnu';
 
+// ⚠️ UN MODE AJOUTÉ AU JEU DOIT ÊTRE AJOUTÉ ICI, et à trois endroits de plus :
+// la couleur de sa barre, celle de son étiquette, et ses réglages dans
+// `lignesReglages`. Codanime et Choice ont vécu sans : le panneau les affichait
+// en gris, sous leur identifiant brut, au milieu des autres.
 const NOMS = { classic: 'Classique', bombanime: 'BombAnime', rush: 'Rush',
-               ascension: 'Ascension', collect: 'Collect' };
+               ascension: 'Ascension', collect: 'Collect',
+               codanime: 'Codanime', choice: 'Choice' };
 
 // ── Les formats ─────────────────────────────────────────────────────
 function duree(s) {
@@ -1878,6 +1895,14 @@ function lignesReglages(p) {
         L.push(['Main', g.main + ' cartes']);
     } else if (k === 'ascension' && g.etages) {
         L.push(['Étages', g.etages]);
+    } else if (k === 'codanime') {
+        // Les deux réglages qui changent la partie : le temps par CARTE (et
+        // non par tour, malgré le nom du champ en base) et le piège, qui fait
+        // qu'un indice à 4 est un pari et non un calcul.
+        if (g.dureeTour) L.push(['Par carte', g.chrono === false ? 'sans chrono' : g.dureeTour + 's']);
+        if (g.piege !== undefined) L.push(['Piège', g.piege ? 'oui' : 'non']);
+    } else if (k === 'choice' && g.vies) {
+        L.push(['Vies', g.vies]);
     }
     if (g.hote) L.push(['Hôte', g.hote]);
 

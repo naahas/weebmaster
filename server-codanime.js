@@ -291,6 +291,7 @@ function etatNeuf() {
         historique: [],     // { equipe, mot, nombre, trouvees }
         gagnant: null,
         finTour: 0,
+        debut: 0,           // l'heure du départ de la manche, pour sa durée
         manche: 0,
         timeouts: [],
     };
@@ -720,6 +721,14 @@ function creerModule(deps) {
         etat.gagnant = null;
         etat.manche++;
         etat.active = true;
+        // ⚠️ L'HEURE DU DÉPART, pour la durée enregistrée à la fin. Elle
+        // valait 0 en dur, et ça ne se voyait nulle part dans le jeu : c'est
+        // le panneau qui classe les modes AU TEMPS de jeu, et Codanime y
+        // restait donc à 0 % quoi qu'on joue.
+        // ⚠️ Elle se pose à CHAQUE manche et non à l'ouverture du salon : une
+        // partie, c'est une manche — le salon, lui, peut rester ouvert une
+        // heure entre deux.
+        etat.debut = Date.now();
         gameState.inProgress = true;
         gameState.winnerScreenData = null;
 
@@ -947,7 +956,11 @@ function creerModule(deps) {
                 mode: 'codanime',
                 playersCount: joueurs.length,
                 winnerName: gagnant ? ('Équipe ' + gagnant) : null,
-                duration: 0,
+                // En SECONDES, comme les autres modes. ⚠️ Et jamais négative
+                // si `debut` manque — une partie reprise d'un vieil état, par
+                // exemple : mieux vaut zéro qu'un chiffre absurde dans un
+                // classement qui fait des moyennes.
+                duration: etat.debut ? Math.max(0, Math.round((Date.now() - etat.debut) / 1000)) : 0,
                 gameState,
             });
         }

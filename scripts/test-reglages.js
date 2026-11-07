@@ -33,7 +33,17 @@ const ATTENDUS = {
     rush: { duree: 60, filtre: 'overall', multiplicateur: false, sequencePartagee: true },
     collect: { main: 4, animes: 10 },
     ascension: { etages: 15, timer: 30 },
+    // ⚠️ Deux modes sont arrivés après cette liste et n'y ont jamais été
+    // ajoutés. Rien n'était cassé — leurs réglages sont bien dans
+    // `reglagesDuSalon` — mais rien ne le tenait : c'est exactement la
+    // situation d'avant le défaut de BombAnime, et elle ne se voit pas.
+    choice: { vies: 1, duree: 8, voirLesAutres: true, serieFiltre: 'overall' },
+    codanime: { chrono: true, dureeTour: 45, piege: true },
 };
+
+// Les blocs par mode, écrits UNE fois : la boucle les vérifie tous sur
+// chaque salon, et la liste des manquants se construit à partir d'eux.
+const BLOCS = ['bombanime', 'rush', 'collect', 'ascension', 'choice', 'codanime'];
 
 async function ouvrir(mode) {
     const r = await fetch(BASE + '/admin/toggle-game', {
@@ -51,6 +61,10 @@ const admin = (route, jeton, corps) => fetch(BASE + route, {
     headers: { 'Content-Type': 'application/json', 'X-Host-Token': jeton },
     body: JSON.stringify(corps),
 }).then(r => r.json());
+
+// L'état public du salon : il s'ouvre avec le seul code, et il porte les
+// réglages du mode en cours.
+const etatSalon = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.json());
 
 const fermer = (jeton) => fetch(BASE + '/admin/toggle-game', {
     method: 'POST',
@@ -83,16 +97,15 @@ const fermer = (jeton) => fetch(BASE + '/admin/toggle-game', {
 
     // ── 2. Tous les modes annoncent TOUS leurs réglages ──
     console.log('\n── chaque mode dit ses réglages ──');
-    for (const mode of ['classic', 'bombanime', 'rush', 'collect', 'ascension']) {
+    for (const mode of ['classic', 'bombanime', 'rush', 'collect', 'ascension', 'choice', 'codanime']) {
         const o = await ouvrir(mode);
         const r = o.reglages || {};
 
-        const manquants = ATTENDUS.racine.concat(['bombanime', 'rush', 'collect', 'ascension'])
-            .filter(k => r[k] === undefined);
+        const manquants = ATTENDUS.racine.concat(BLOCS).filter(k => r[k] === undefined);
         check(mode.padEnd(10) + ' : aucun réglage manquant', manquants.length === 0,
             manquants.length ? manquants.join(', ') : Object.keys(r).length + ' champs');
 
-        for (const bloc of ['bombanime', 'rush', 'collect', 'ascension']) {
+        for (const bloc of BLOCS) {
             for (const [k, v] of Object.entries(ATTENDUS[bloc])) {
                 if (r[bloc] && r[bloc][k] !== v) {
                     check('  ' + bloc + '.' + k + ' au défaut', false,
@@ -102,6 +115,41 @@ const fermer = (jeton) => fetch(BASE + '/admin/toggle-game', {
         }
         await fermer(o.hostToken);
     }
+
+    // ── 2 bis. Codanime : régler, fermer, rouvrir ──
+    // Le cas de BombAnime rejoué sur le dernier mode arrivé. ⚠️ Ses deux
+    // booléens partent à VRAI : c'est le sens où le défaut se voit le moins,
+    // puisqu'un client qui ne lit rien les affiche cochés de toute façon.
+    console.log('\n── Codanime : régler, fermer, rouvrir ──');
+    let c = await ouvrir('codanime');
+    check('le chrono part allumé', c.reglages.codanime.chrono === true,
+        String(c.reglages.codanime.chrono));
+    check('le temps par carte part à 45 s', c.reglages.codanime.dureeTour === 45,
+        String(c.reglages.codanime.dureeTour));
+    check('le piège part armé', c.reglages.codanime.piege === true,
+        String(c.reglages.codanime.piege));
+
+    await admin('/admin/codanime/set-chrono', c.hostToken, { chrono: false });
+    await admin('/admin/codanime/set-duree', c.hostToken, { duree: 90 });
+    await admin('/admin/codanime/set-piege', c.hostToken, { piege: false });
+    // ⚠️ On relit l'état RÉEL du salon, pas la réponse des routes : c'est le
+    // seul moyen de savoir si le serveur a vraiment changé d'avis, et c'est
+    // la moitié du test — un salon neuf qui repart au défaut ne prouve rien
+    // si les réglages n'avaient jamais bougé.
+    const regle = (await etatSalon(c.roomCode || c.code)).codanime || {};
+    check('les trois ont bien changé DANS le salon',
+        regle.chrono === false && regle.dureeTour === 90 && regle.piege === false,
+        JSON.stringify(regle));
+    await fermer(c.hostToken);
+
+    c = await ouvrir('codanime');
+    check('un salon neuf rallume le chrono', c.reglages.codanime.chrono === true,
+        String(c.reglages.codanime.chrono) + ' (était false)');
+    check('et remet 45 s', c.reglages.codanime.dureeTour === 45,
+        String(c.reglages.codanime.dureeTour) + ' (était 90)');
+    check('et rearme le piège', c.reglages.codanime.piege === true,
+        String(c.reglages.codanime.piege) + ' (était false)');
+    await fermer(c.hostToken);
 
     // ── 3. Le piège des booléens ──
     // ⚠️ Un réglage à FAUX doit revenir à VRAI sur un salon neuf. Côté client,

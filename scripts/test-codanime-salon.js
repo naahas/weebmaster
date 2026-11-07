@@ -263,12 +263,22 @@ const post = async (chemin, corps, jeton) => {
         neuve.on('codanime-etat', (d) => { recu.push(d); vu[agent3].etats.push(d); });
         neuve.on('codanime-carte', (d) => vu[agent3].cartes.push(d));
         neuve.on('codanime-fin', (d) => { vu[agent3].fin = d; });
-        neuve.emit('register-authenticated', { playerId: agent3, username: 'Repris' });
+        // ⚠️ AVEC SON CODE DE SALON, comme le vrai client. Un joueur reste
+        // inscrit dans les salons qu'il a quittés — en partie on le conserve
+        // quoi qu'il arrive, un salon vide tient dix minutes — et le serveur
+        // ne peut pas deviner lequel il joue. Sans ce code il retombe sur une
+        // déduction (le plus frais), qui est juste mais qui n'est qu'un
+        // dernier recours ; c'est exactement ce que rejoue la suite quand on
+        // la relance deux fois de suite sur le même serveur.
+        neuve.emit('register-authenticated', { playerId: agent3, username: 'Repris', roomCode: code });
         await wait(700);
         socks[agent3] = neuve;
 
         dire(recu.length > 0, 'la vue repart TOUTE SEULE au rebranchement, sans rien demander',
             recu.length + ' état(s)');
+        dire(recu.length > 0 && (recu[0].grille || []).length === 25,
+            'et c\'est bien la vue de SA partie',
+            recu.length ? (recu[0].grille || []).length + ' cartes' : 'aucun état');
         const rep = recu[recu.length - 1] || {};
         dire(rep.grille && rep.grille.length === 25, 'il retrouve ses vingt-cinq cartes');
         dire(rep.phase === avantReprise.phase, 'et la même phase', rep.phase);
@@ -308,6 +318,48 @@ const post = async (chemin, corps, jeton) => {
             pause + ' ms');
         dire(vu[agent3].fin && vu[agent3].fin.raison === 'assassin',
             'et la raison voyage jusqu\'au podium');
+    }
+
+    // ⚠️ CE QUI RESTE DE LA PARTIE EN BASE. `reglagesDeLaPartie()` aiguille
+    // sur le mode, et Codanime y tombait dans le `default` : la partie
+    // entrait bien dans l'historique, mais sans aucun de ses réglages. C'est
+    // le seul trou de cette fonction qui ne se rattrape pas — ce qui n'est
+    // pas écrit à la fin d'une partie est perdu, on ne peut pas y revenir.
+    //
+    // ⚠️ Le contrôle est CONDITIONNEL : il lit une route du panneau, qui
+    // exige `PANEL_ADMIN_CODE`. Sans la variable la suite doit rester
+    // jouable — elle n'a pas à dépendre d'un secret pour faire son métier.
+    if (process.env.PANEL_ADMIN_CODE) {
+        titre('Ce que la partie laisse en base');
+        await wait(900);   // l'écriture part après la fin, sans bloquer le jeu
+        const r = await fetch(BASE + '/admin/site/stats', {
+            headers: { 'X-Admin-Code': process.env.PANEL_ADMIN_CODE },
+        });
+        const j = await r.json().catch(() => ({}));
+        const mienne = (j.parties || []).find(p => p.mode === 'codanime');
+        dire(!!mienne, 'la partie est bien dans l\'historique',
+            mienne ? '#' + mienne.id : 'aucune partie codanime en base');
+        const g = (mienne && mienne.reglages) || null;
+        dire(!!g, 'elle porte ses réglages', g ? JSON.stringify(g) : 'reglages null');
+        dire(!!g && typeof g.piege === 'boolean' && typeof g.dureeTour === 'number',
+            'le piège et le temps par carte y sont, dans leur type',
+            g ? typeof g.piege + ' / ' + typeof g.dureeTour : '—');
+        // ⚠️ `hote` vaut NULL ici, et c'est juste : il se relève dans
+        // `players`, où l'hôte de cette suite n'est jamais entré — il ouvre le
+        // salon par HTTP et n'y pose aucune socket. On vérifie donc que le
+        // champ est là, pas qu'il est rempli ; le remplir demanderait une
+        // cinquième socket qui ne jouerait rien.
+        dire(!!g && 'hote' in g, 'et le champ de l\'hôte, même vide ici',
+            g ? JSON.stringify(g.hote) : '—');
+        dire(!!g && typeof g.manches === 'number', 'avec le compte des manches jouées',
+            g ? String(g.manches) : '—');
+        // ⚠️ LA DURÉE, ET PAS ZÉRO. Elle était écrite en dur à 0 : rien ne le
+        // montrait dans le jeu, mais le panneau classe les modes AU TEMPS —
+        // Codanime y serait resté à 0 % quoi qu'on joue.
+        dire(!!mienne && mienne.duration > 0, 'et la partie a une durée',
+            mienne ? mienne.duration + ' s' : '—');
+    } else {
+        console.log('\n── Ce que la partie laisse en base : passé (PANEL_ADMIN_CODE absent)');
     }
 
     titre('Ménage');
