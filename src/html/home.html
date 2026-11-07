@@ -2503,16 +2503,25 @@
                                     <path d="M4 6.5h1.2M9 6.5h11"/><path d="M4 12h1.2M9 12h11"/><path d="M4 17.5h1.2M9 17.5h11"/>
                                 </svg>
                             </button>
-                            <!-- Le jumeau de « Skip » : même méthode, même
-                                 compte d'unanimité. `cod.monEquipe` suffit en
-                                 argument — la condition exige déjà que ce soit
-                                 mon camp ET que ce soit son tour. -->
-                            <button class="cod-outil cod-outil-stop" v-if="codPasseIci(cod.monEquipe)"
-                                    :class="{ on: codJaiPasse() }" @click.stop="codPasser"
-                                    :aria-label="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
-                                <span>Skip</span><b>{{ codPasseCompte() }}</b>
-                            </button>
                         </div>
+
+                        <!-- Le jumeau de « Skip » : même méthode, même compte
+                             d'unanimité. `cod.monEquipe` suffit en argument —
+                             la condition exige déjà que ce soit mon camp ET
+                             que ce soit son tour.
+
+                             ⚠️ IL PARTAGE LE COIN HAUT GAUCHE AVEC LE MASQUE,
+                             et les deux ne peuvent pas s'y croiser : le masque
+                             demande `jeSuisEspion`, « Skip » demande
+                             `!jeSuisEspion`. C'est le même drapeau, lu dans
+                             les deux sens — un espion n'a jamais de tour à
+                             arrêter, un agent n'a aucune couleur à masquer. -->
+                        <button class="cod-outil cod-outil-stop cod-stop-tel"
+                                v-if="codPasseIci(cod.monEquipe)"
+                                :class="{ on: codJaiPasse() }" @click.stop="codPasser"
+                                :aria-label="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                            <span>Skip</span><b>{{ codPasseCompte() }}</b>
+                        </button>
 
                         <!-- Les deux compteurs, de part et d'autre. Celui de
                              l'équipe qui joue s'allume : à quatre contre

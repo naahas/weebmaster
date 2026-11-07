@@ -499,6 +499,11 @@
    dans le chapeau de mon rang. Deux boutons pour la même chose au même
    moment, c'est la maladie des défauts écrits deux fois. */
 .cod-outils-tel { display: none; }
+/* Le jumeau de « Skip », dans le coin haut GAUCHE, avec le masque — les
+   deux ne s'y croisent jamais, voir le gabarit. Caché partout ailleurs,
+   comme le jumeau du masque : sur un écran large il vit dans le chapeau
+   de mon rang. */
+.cod-stop-tel { display: none; }
 .cod-cote-t { display: none; }
 
 .cod-siege { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.22rem; width: 100%; }
@@ -1905,11 +1910,24 @@
        accrochés au même bord. */
     .cod-outil-stop {
         display: inline-flex; align-items: center; gap: 0.35rem;
-        width: auto; height: 1.9rem; padding: 0 0.5rem;
+        /* 2 rem, exactement la hauteur du masque : ils se relaient dans le
+           même coin selon qu'on est agent ou espion, et deux pixels
+           d'écart se verraient d'une partie à l'autre. */
+        width: auto; height: 2rem; padding: 0 0.5rem;
         font: inherit; font-size: 0.66rem; font-weight: 700; line-height: 1;
         white-space: nowrap;
     }
     .cod-outil-stop b { font-variant-numeric: tabular-nums; font-size: 0.6rem; opacity: 0.6; }
+    /* ⚠️ APRÈS les deux règles ci-dessus, et c'est ce qui le sort de la
+       pile de droite : `.cod-outil` y pose `display: grid`, et les trois
+       sélecteurs pèsent le même poids — c'est donc l'ORDRE qui tranche.
+       Aligné sur le masque au pixel près : les deux occupent le même coin
+       selon qu'on est espion ou agent, et un décalage de deux pixels se
+       verrait d'une partie à l'autre. */
+    .cod-stop-tel {
+        display: inline-flex;
+        position: absolute; left: 0.6rem; top: 0.6rem; z-index: 42;
+    }
     .cod-outil-stop.on {
         border-color: var(--cod-brun);
         background: rgba(191, 138, 95, 0.16);
