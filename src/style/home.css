@@ -8309,41 +8309,39 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 
-/* ── Un mode annoncé se montre en noir et blanc ──
-   L'image est conservée EN COULEUR sur le disque et désaturée ici : le jour où
-   le mode ouvre, il n'y a qu'une ligne à retirer, pas un fichier à réexporter.
-   Le léger gain de contraste rattrape ce que la désaturation fait perdre — une
-   image simplement vidée de sa couleur paraît plate et sale.
+/* ── UN MODE À VENIR EST UNE OMBRE ──
+   On ne veut même pas qu'on sache qui c'est. « brightness(0) » écrase toute
+   l'image sur du noir en gardant sa transparence : il ne reste que la découpe.
+   L'« invert » qui suit relève ce noir d'un cran — à zéro, la silhouette se
+   confondrait avec le panneau ET avec le fond de la page, et il n'y aurait
+   plus rien à voir. C'est le réglage à bouger pour la vouloir plus sombre ou
+   plus présente. (Ce sont les valeurs de l'ancienne carte Chase, éprouvées.)
+
+   L'image reste EN COULEUR sur le disque et c'est ici qu'elle est noircie : le
+   jour où le mode ouvre, le drapeau tombe et elle revient en couleur TOUTE
+   SEULE. Rien à retirer, rien à réexporter — et c'est déjà ce qui se passe en
+   local, où `soon` vaut faux.
+
+   ⚠️ La règle a d'abord été écrite pour Choice SEUL, les autres modes à venir
+   gardant une simple grisaille : on y voyait encore le personnage, et c'était
+   voulu — « on veut qu'on voie ce qui arrive ». Demandé pour Codanime le
+   7 novembre 2026, donc généralisé à tout « .soon ». Une liste de modes ici
+   aurait été un entretien de plus à chaque ajout, pour deux modes sur deux qui
+   la demandent.
+
+   ⚠️ La grisaille n'est pas gardée « au cas où » : deux « filter » ne
+   s'additionnent pas, la seconde règle annulerait purement et simplement la
+   première, et l'ordre de déclaration déciderait alors de tout. Une seule
+   règle, donc une seule chose à lire.
+
+   ⚠️ Elle remplace du même coup l'ombre portée de l'image, posée plus haut par
+   « filter » elle aussi. Sans objet pour une silhouette, qui n'a pas d'ombre à
+   porter — mais c'est à savoir si l'on revient un jour en couleur.
 
    ⚠️ « filter » crée un bloc conteneur pour les descendants en « position:
    fixed ». Ici il porte sur la balise <img> elle-même, qui n'a pas de
    descendant : c'est la seule place où cette règle est sans danger. */
 .v2-mode-char.soon {
-    filter: grayscale(1) contrast(1.06) brightness(0.96);
-}
-
-/* ── CHOICE À VENIR : une OMBRE, pas une image en gris ──
-   Le grayscale ci-dessus montre encore le personnage ; ici on ne veut même
-   pas qu'on sache qui c'est. « brightness(0) » écrase toute l'image sur du
-   noir en gardant sa transparence : il ne reste que la découpe. L'« invert »
-   qui suit relève ce noir d'un cran — à zéro, la silhouette se confondrait
-   avec le panneau ET avec le fond de la page, et il n'y aurait plus rien à
-   voir. C'est le réglage à bouger pour la vouloir plus sombre ou plus
-   présente. (Ce sont les valeurs de l'ancienne carte Chase, déjà éprouvées.)
-
-   ⚠️ Elle est accrochée à « .soon », pas à « .char-choice » seul : le jour où
-   le mode ouvre, le drapeau tombe et l'image revient en couleur TOUTE SEULE.
-   Rien à retirer ici, rien à réexporter — et c'est déjà ce qui se passe en
-   local, où `soon` vaut faux.
-
-   ⚠️ APRÈS « .soon » ci-dessus, toujours : deux « filter » ne s'additionnent
-   pas, et au-delà de la spécificité c'est le dernier déclaré qui gagne. Placée
-   avant, la silhouette serait purement et simplement annulée par la grisaille.
-
-   ⚠️ Et elle ne vaut que pour Choice. Un autre mode « soon » garde le gris :
-   lui, on veut qu'on voie ce qui arrive. Généraliser tiendrait en un
-   sélecteur, mais c'est un choix de produit, pas un oubli. */
-.v2-mode-char.char-choice.soon {
     filter: brightness(0) invert(0.17);
 }
 
