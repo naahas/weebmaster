@@ -741,7 +741,14 @@
 .cod-carte.vue-espion, .cod-carte.revelee {
     --cod-creux: 26%;
     --cod-bord: 82%;
-    --cod-force: 1;
+    /* ⚠️ LA TEINTE NE COUVRE PLUS À FOND. À 1, le mélange `color` remplace
+       ENTIÈREMENT la teinte du portrait là où le masque est opaque : une
+       veste verte devenait bleue, un décor ocre devenait rose. Or la couleur
+       propre de l'image est un crochet d'indice — « le vert », « la robe
+       rouge » — et c'est exactement ce qu'on effaçait.
+       À 0,72 la couleur du camp reste franche sur les bords et la couleur
+       d'origine transparaît dessous. */
+    --cod-force: 0.72;
     --cod-coin: calc(var(--cod-cote) * var(--cod-coin-part));
     /* ⚠️ La lueur a BAISSÉ (0,2 → 0,15 du côté, et 0,8 → 0,45 d'opacité
        plus bas). Depuis que la bande est épaisse et cernée de noir, c'est
@@ -838,6 +845,16 @@
             drop-shadow(0.1rem 0.1rem 0.3rem rgba(0, 0, 0, 0.5));
     pointer-events: none;
 }
+
+/* ⚠️ ET LE ROUGE PÈSE PLUS LOURD QUE LE BLEU, à force égale. Le mélange
+   `color` prend la teinte ET la saturation de la couche du dessus : posé sur
+   un visage, qui est déjà chaud, un rouge saturé ne déplace la teinte que
+   d'un cran mais fait bondir la saturation — la carte vire au fuchsia. Le
+   bleu, lui, lutte contre cette chaleur et se lit comme un voile, pas comme
+   un repeint. Il descend donc plus bas que le réglage commun.
+   ⚠️ Spécificité : `.vue-espion.camp-B` (0,3,0) passe devant
+   `.vue-espion` (0,2,0), qui porte la valeur commune. */
+.cod-carte.vue-espion.camp-B { --cod-force: 0.58; }
 
 /* ⚠️ Le neutre DÉSATURE et l'assassin ASSOMBRIT — voir l'en-tête : le
    mélange `color` ne leur donnait rien, faute de teinte à donner. */
