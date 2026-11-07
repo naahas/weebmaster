@@ -490,6 +490,17 @@
    n'existent plus à cette largeur. Caché partout ailleurs. */
 .cod-masque-tel { display: none; }
 
+/* ── LES OUTILS DE TÉLÉPHONE ────────────────────────────────────── */
+/* Le coin haut droit, en face du masque. Rien d'autre n'y vit : l'en-tête
+   tient sa ligne d'état au centre et ses deux compteurs aux extrémités,
+   sous la barre du navigateur.
+   ⚠️ Caché par défaut, et pas seulement « hors du téléphone » : sur un
+   écran large les deux rangs sont déjà là en permanence, et « Skip » vit
+   dans le chapeau de mon rang. Deux boutons pour la même chose au même
+   moment, c'est la maladie des défauts écrits deux fois. */
+.cod-outils-tel { display: none; }
+.cod-cote-t { display: none; }
+
 .cod-siege { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.22rem; width: 100%; }
 
 /* ⚠️ L'ESPION EST SÉPARÉ DE SES AGENTS PAR UN TRAIT, et pas seulement par
@@ -1827,6 +1838,134 @@
     .cod-histo-qui { display: none; }
     .cod-histo-l { max-width: 8rem; font-size: 0.6rem; padding: 0.16rem 0.4rem; }
     .cod-histo { justify-content: flex-start; }
+
+    /* ── CINQ ANNONCES AU PLUS, ET LES DEUX PLUS VIEILLES S'ÉTEIGNENT ──
+       La bande garde les neuf du gabarit sur un écran large, où elle est
+       une colonne ; ici elle est une LIGNE, et neuf annonces y font
+       552 px pour 374 de large — mesuré. Elle ne montait pas sur le
+       plateau (elle est hors du flux, c'est tout son objet) mais elle
+       défilait, et ce qui dépassait était le plus RÉCENT, c'est-à-dire la
+       seule chose qu'on vient y relire.
+       ⚠️ La coupe se fait en CSS et non dans le gabarit : une seule
+       source pour les deux mises en page, et la colonne de l'ordinateur
+       garde ses neuf lignes sans rien savoir d'ici.
+       ⚠️ Et l'extinction est progressive sur DEUX lignes, pas une
+       coupure nette : une bande qui s'arrête franc se lit comme une
+       bande complète, et l'on croit avoir tout vu. */
+    .cod-histo-l:nth-last-child(n+6) { display: none; }
+    .cod-histo-l:nth-last-child(5) { opacity: 0.16; }
+    .cod-histo-l:nth-last-child(4) { opacity: 0.34; }
+
+    /* ⚠️ Elle laisse le coin au bouton de SORTIE, qui est posé à
+       0,9 rem du bord et mesure 2,4 rem. Les deux se chevauchaient :
+       mesuré, la bande occupait y 876→895 et le bouton 857→895, tous
+       deux à gauche. */
+    .cod-histo { left: 3.6rem; }
+
+    /* ── LE CHAPEAU DES RANGS N'EXISTE PAS ICI ──
+       ⚠️ Et il ne « n'existait pas » qu'à moitié : les colonnes tombent à
+       zéro de large sous 640 px, donc son contenu se rendait HORS DE
+       L'ÉCRAN — « Skip » mesuré à x = −89 px. Un agent ne pouvait pas
+       rendre la main sur téléphone, et rien ne le disait. Ses deux
+       boutons ont leur jumeau dans le coin ; les trois points d'attente,
+       eux, ne manquent pas : la ligne d'état dit déjà qui réfléchit. */
+    .cod-chapeau { display: none; }
+
+    .cod-outils-tel {
+        display: flex; flex-direction: column; align-items: flex-end;
+        gap: 0.4rem;
+        /* ⚠️ AU-DESSUS DU PANNEAU DES CAMPS (40), et c'est nécessaire : à 5,
+           le bouton passait DERRIÈRE le voile qu'il venait d'ouvrir. On
+           pouvait encore refermer en touchant à côté, mais le bouton ne
+           montrait plus son état allumé — un interrupteur qu'on ne voit
+           plus une fois allumé n'est plus un interrupteur. Et « Skip »
+           reste atteignable pendant qu'on regarde les camps. */
+        position: absolute; right: 0.6rem; top: 0.6rem; z-index: 42;
+    }
+    .cod-outil {
+        display: grid; place-items: center;
+        width: 2rem; height: 2rem; padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 0.5rem;
+        background: rgba(13, 14, 19, 0.82);
+        color: rgba(255, 255, 255, 0.55);
+        cursor: pointer;
+        transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    .cod-outil svg { width: 1.1rem; height: 1.1rem; }
+    .cod-outil.on { background: var(--cod-brun); border-color: var(--cod-brun); color: #15171d; }
+    /* Le jumeau de « Skip » : il porte son compte, donc il est plus large
+       que carré. La pile est alignée à DROITE, les deux restent donc
+       accrochés au même bord. */
+    .cod-outil-stop {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        width: auto; height: 1.9rem; padding: 0 0.5rem;
+        font: inherit; font-size: 0.66rem; font-weight: 700; line-height: 1;
+        white-space: nowrap;
+    }
+    .cod-outil-stop b { font-variant-numeric: tabular-nums; font-size: 0.6rem; opacity: 0.6; }
+    .cod-outil-stop.on {
+        border-color: var(--cod-brun);
+        background: rgba(191, 138, 95, 0.16);
+        color: var(--cod-brun);
+    }
+
+    /* ── LE PANNEAU DES DEUX CAMPS ──────────────────────────────────
+       Les rangs reviennent le temps d'un coup d'œil, par-dessus le
+       plateau. ⚠️ C'est le PLATEAU lui-même qui devient le panneau, et
+       non une copie des deux rangs ailleurs dans le gabarit : les sièges
+       portent déjà l'espion, le vote en cours et ma place, et une
+       seconde écriture de tout ça aurait divergé au premier changement.
+       ⚠️ La grille se cache donc pendant ce temps : elle est DEDANS, un
+       voile posé par-dessus la laisserait dans le flux de la colonne. */
+    .cod.camps .cod-plateau {
+        position: fixed; inset: 0; z-index: 40;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 1rem; padding: 1.4rem;
+        /* ⚠️ Presque opaque, et pas 0,94 : l'en-tête et le pied ne sont PAS
+           dans le plateau, ils sont peints dessous. À 6 % de jour on lisait
+           « À VOUS DE DEVINER » et le mot de l'indice en filigrane derrière
+           les deux camps — un fond sale plutôt qu'un voile. */
+        background: rgba(6, 7, 10, 0.985);
+        overflow-y: auto;
+    }
+    .cod.camps .cod-grille { display: none; }
+    .cod.camps .cod-cote { width: 100%; max-width: 19rem; flex: 0 0 auto; }
+    .cod.camps .cod-cote-t {
+        display: block; text-align: center;
+        font-size: 0.62rem; font-weight: 800;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        opacity: 0.55; margin-bottom: 0.3rem;
+    }
+    .cod.camps .cote-A .cod-cote-t { color: var(--cod-a); }
+    .cod.camps .cote-B .cod-cote-t { color: var(--cod-b); }
+    /* ⚠️ Les sièges passent en LIGNE : en colonne, cinq joueurs
+       demandaient 20 rem de haut par camp, soit deux fois la hauteur de
+       l'écran pour les deux. Ils s'enroulent au-delà de quatre. */
+    .cod.camps .cod-rang {
+        display: flex; flex-direction: row; flex-wrap: wrap;
+        gap: 0.5rem 0.9rem; padding: 0.8rem 0.6rem;
+    }
+    /* ⚠️ Une largeur FIXE, et non « auto » : le nom est ce qui décide de
+       la largeur d'un siège, donc « Kitsune239 » en rendait un deux fois
+       plus large que « Moi » et les portraits ne s'alignaient plus. Il
+       est déjà coupé à l'ellipse, il lui fallait seulement une borne. */
+    .cod.camps .cod-siege { width: 4.4rem; }
+    /* ⚠️ LE FILET DE L'ESPION SE REDRESSE. Il sépare l'espion de ses
+       agents ; sous son siège, dans un rang en ligne, il ne séparait plus
+       rien — il soulignait un nom. À la verticale, à sa droite, il
+       retrouve son sens. */
+    .cod.camps .cod-siege.espion { margin-bottom: 0; margin-right: 0.45rem; }
+    .cod.camps .cod-siege.espion::after {
+        left: auto; right: -0.67rem; top: 10%; bottom: 10%;
+        width: 1px; height: auto;
+        background: linear-gradient(180deg, transparent, currentColor, transparent);
+    }
+    /* ⚠️ Le rang qui ne joue pas reste atténué, mais moins : ici on vient
+       justement regarder l'adversaire, et 0,4 le rendait illisible sur
+       un fond devenu presque noir. */
+    .cod.camps .cod-rang:not(.actif) { opacity: 0.62; }
 }
 
 @media (prefers-reduced-motion: reduce) {

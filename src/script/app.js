@@ -326,6 +326,16 @@ createApp({
                 // cartes. C'est un confort de lecture pour l'espion.
                 masquerAdverses: false,
 
+                // ⚠️ LES DEUX CAMPS, SUR DEMANDE, ET SUR TÉLÉPHONE SEULEMENT.
+                // Les deux rangs encadrent le plateau sur un écran large ;
+                // sous 640 px ils disparaissent, parce que deux colonnes de
+                // portraits ne laisseraient que 44 px à chaque carte. On ne
+                // pouvait donc plus savoir qui joue avec qui, ni qui n'a pas
+                // encore voté — or le seuil d'unanimité en dépend. Ce drapeau
+                // les rappelle par-dessus le plateau, le temps d'un coup d'œil.
+                // Purement local, comme le masque : rien ne part sur la socket.
+                voirCamps: false,
+
                 // Ce que l'espion s'apprête à annoncer : son mot et son nombre.
                 // ⚠️ Le mot est TAPÉ et non dit à la voix — l'oral fermait le
                 // mode à tout salon sans vocal, c'est-à-dire à la moitié d'un
@@ -1262,9 +1272,23 @@ createApp({
         // revenait donc pendant ce creux, puis repartait aussitôt : il
         // clignotait à chaque question, et les jetons semblaient attendre
         // qu'il ait fini de sortir. Le coin reste simplement vide.
+        // ⚠️ IL DIT « UNE QUESTION DE QUIZ EST À L'ÉCRAN », et rien d'autre.
+        // Deux choses le lisent : la barre de jetons, qui n'existe que dans le
+        // quiz, et le bouton de SORTIE, qui se range pour lui laisser le coin
+        // bas gauche sur téléphone.
+        //
+        // ⚠️ C'ÉTAIT UNE LISTE NOIRE — « tout sauf BombAnime » — écrite quand
+        // il n'y avait que deux modes. Rush, Collect, Ascension, Choice et
+        // Codanime sont arrivés depuis, et tous y répondaient OUI : sur
+        // téléphone, le bouton pour quitter la partie restait donc caché du
+        // début à la fin dans cinq modes sur sept. Mesuré dans Codanime :
+        // `visibility: hidden`, dans le coin, pendant toute la partie.
+        // La liste blanche ne peut pas vieillir de la même façon — un mode
+        // ajouté demain n'est pas un quiz tant qu'on ne l'a pas écrit ici.
         questionEnCours() {
-            return this.gameInProgress && !this.gameEnded && !this.showResults
-                && this.lobbyMode !== 'bombanime' && this.bonusEnabled && !this.estSpectateur;
+            const quiz = this.lobbyMode === 'classic' || this.lobbyMode === 'rivalry';
+            return quiz && this.gameInProgress && !this.gameEnded && !this.showResults
+                && this.bonusEnabled && !this.estSpectateur;
         },
 
         // ════════════════════════════════════════════
@@ -5774,6 +5798,9 @@ createApp({
                 historique: [], gagnant: null, derniereCarte: null,
                 restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
                 arrive: false, saut: 0, masquerAdverses: false, sortie: false,
+                // ⚠️ Le panneau des camps se referme avec la partie : laissé
+                // ouvert, il couvrirait le podium d'un voile plein écran.
+                voirCamps: false,
             });
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -6241,6 +6268,15 @@ createApp({
         codPasser() {
             if (!this.codPeutVoter) return;
             this.socket.emit('codanime-passer');
+        },
+
+        // Le panneau des camps se referme en touchant à côté. ⚠️ Posé sur
+        // TOUT le plateau, donc il reçoit aussi les clics sur les cartes :
+        // d'où la sortie immédiate quand il est déjà fermé. Les deux boutons
+        // du coin arrêtent la propagation de leur côté (`@click.stop`), sans
+        // quoi ouvrir le panneau le refermerait dans la foulée.
+        codFermerCamps() {
+            if (this.cod.voirCamps) this.cod.voirCamps = false;
         },
 
         // ── Les coups qu'il reste ──────────────────────────────────

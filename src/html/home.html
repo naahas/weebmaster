@@ -2434,7 +2434,8 @@
                          disparaissait d'un coup et il n'y avait rien à faire
                          fondre. -->
                     <div class="cod" v-if="cod.enCours || cod.sortie"
-                         :class="{ 'en-entree': cod.intro, sortie: cod.sortie }">
+                         :class="{ 'en-entree': cod.intro, sortie: cod.sortie, camps: cod.voirCamps }"
+                         @click="codFermerCamps">
 
                         <!-- ⚠️ LE MASQUE, EN DOUBLE, et il le faut : sur
                              téléphone les deux rangs disparaissent, et avec
@@ -2454,6 +2455,45 @@
                             </svg>
                         </button>
 
+                        <!-- ⚠️ LES OUTILS DE TÉLÉPHONE, dans le coin libre en
+                             haut à droite, et ce sont des JUMEAUX — même
+                             action, même état, deux emplacements — comme le
+                             masque en face.
+
+                             ⚠️ « Skip » n'était pas seulement invisible ici :
+                             il se rendait à x = −89 px, HORS DE L'ÉCRAN. Les
+                             deux rangs disparaissent sous 640 px, leurs
+                             colonnes tombent à zéro de large, et tout ce qui
+                             vivait dans leur chapeau partait avec elles. Un
+                             agent ne pouvait donc pas rendre la main sur
+                             téléphone — or à 0 ou à ∞ les coups sont
+                             illimités, et c'est le seul moyen d'en sortir
+                             sans se tromper ni attendre le chrono.
+
+                             ⚠️ Et « voir les camps » n'existe que là : sur un
+                             écran large, les deux rangs sont déjà à l'écran en
+                             permanence, un bouton pour les montrer n'aurait
+                             aucun sens. -->
+                        <div class="cod-outils-tel">
+                            <button class="cod-outil" :class="{ on: cod.voirCamps }"
+                                    @click.stop="cod.voirCamps = !cod.voirCamps"
+                                    :aria-label="cod.voirCamps ? 'Masquer les camps' : 'Voir les deux camps'"
+                                    :aria-pressed="String(cod.voirCamps)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="9" cy="8" r="3.3"/><path d="M2.8 19.6a6.2 6.2 0 0 1 12.4 0"/>
+                                    <path d="M16.2 5.1a3.3 3.3 0 0 1 0 5.9"/><path d="M18 14.4a6.2 6.2 0 0 1 3.2 5.2"/>
+                                </svg>
+                            </button>
+                            <!-- Le jumeau de « Skip » : même méthode, même
+                                 compte d'unanimité. `cod.monEquipe` suffit en
+                                 argument — la condition exige déjà que ce soit
+                                 mon camp ET que ce soit son tour. -->
+                            <button class="cod-outil cod-outil-stop" v-if="codPasseIci(cod.monEquipe)"
+                                    :class="{ on: codJaiPasse() }" @click.stop="codPasser"
+                                    :aria-label="codJaiPasse() ? 'Revenir sur ta décision' : 'Proposer d’arrêter le tour'">
+                                <span>Skip</span><b>{{ codPasseCompte() }}</b>
+                            </button>
+                        </div>
 
                         <!-- Les deux compteurs, de part et d'autre. Celui de
                              l'équipe qui joue s'allume : à quatre contre
@@ -2543,7 +2583,14 @@
                              disparaissent — la largeur y va tout entière aux
                              cartes, et l'en-tête porte déjà les deux comptes. -->
                         <div class="cod-plateau">
-                            <div class="cod-cote">
+                            <div class="cod-cote cote-A">
+                                <!-- ⚠️ Le nom du camp ne paraît QUE dans le
+                                     panneau des camps, sur téléphone. Posé en
+                                     permanence au-dessus d'un rang, il
+                                     répétait ce que la couleur dit déjà ;
+                                     mais sorti de sa colonne, le rang perd son
+                                     côté — on ne sait plus lequel est lequel. -->
+                                <span class="cod-cote-t">{{ codNomEquipe('A') }}</span>
                                 <!-- ⚠️ LE CHAPEAU DU RANG. Deux choses s'y
                                      posent, et toujours AU-DESSUS DE L'ESPION,
                                      qui est le premier siège :
@@ -2706,7 +2753,9 @@
                                 </span>
                             </div>
 
-                            <div class="cod-cote">
+                            <div class="cod-cote cote-B">
+                                <!-- Le jumeau du titre d'en face. -->
+                                <span class="cod-cote-t">{{ codNomEquipe('B') }}</span>
                                 <!-- Le même chapeau qu'en face — voir le rang A. -->
                                 <span class="cod-chapeau">
                                     <span class="cod-songe" v-if="codRangSonge('B')"><i></i><i></i><i></i></span>
