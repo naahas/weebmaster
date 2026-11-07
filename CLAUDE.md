@@ -718,12 +718,18 @@ d extreme, et Bleach n en a AUCUNE — son barème est donc impossible a honorer
 quatre, Naruto et Dragon Ball trois : epuises en une ou deux parties. « Big 3 » reste, il
 reunit 218 questions et sept extreme.
 
-## Le mode Classique et son plancher de dix joueurs
+## Le mode Classique et son plancher de trois joueurs
 
 Le Classique **s'ouvre librement**. Le mot de passe (`ADMIN_PASSWORD`) qui le fermait a été
-retiré le **3 octobre 2026** et remplacé par un **plancher de dix joueurs au lancement** :
-`MIN_CLASSIQUE` dans `app.js`. Le quiz est le mode qui demande du monde — à deux ou trois il se
-joue en quelques questions et donne de lui une idée bien plus pauvre que ce qu'il est à quinze.
+retiré le **3 octobre 2026** et remplacé par un **plancher au lancement** : `MIN_CLASSIQUE`
+dans `app.js`.
+
+⚠️ **Il valait DIX, il vaut TROIS depuis le 7 novembre 2026.** Le raisonnement d'origine tient
+toujours — le quiz est le mode qui demande du monde, à deux ou trois il se joue en quelques
+questions et donne de lui une idée bien plus pauvre que ce qu'il est à quinze. Mais dix, c'est
+un salon qu'on ne remplit pas en montrant le site à un ami : le mode restait injouable pour
+tout le monde sauf un direct bien suivi, et un mode qu'on ne peut pas essayer ne se fait pas
+connaître. Trois garde le garde-fou contre la partie à deux, qui n'a vraiment aucun sens.
 
 ⚠️ **Le plancher vit dans l'INTERFACE, pas dans le serveur**, comme celui de deux joueurs qu'il
 remplace pour ce mode (`canStart` / `minPourDemarrer`). Le serveur accepterait une partie à deux.

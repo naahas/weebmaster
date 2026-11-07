@@ -5,10 +5,17 @@
 const { createApp } = Vue;
 
 // 🎯 Le plancher du mode Classique. Il a remplacé le mot de passe qui fermait
-// le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'à
-// dix. Le quiz est le mode qui demande du monde — à deux ou trois il se joue
-// en quelques questions et donne de lui une idée bien plus pauvre que ce
-// qu'il est à quinze.
+// le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'au
+// plancher.
+//
+// ⚠️ IL VALAIT DIX, IL VAUT TROIS depuis le 7 novembre 2026. Le raisonnement
+// d'origine tient toujours — le quiz est le mode qui demande du monde, à deux
+// ou trois il se joue en quelques questions et donne de lui une idée bien plus
+// pauvre que ce qu'il est à quinze. Mais dix, c'est un salon qu'on ne remplit
+// pas en montrant le site à un ami : le mode restait donc injouable pour tout
+// le monde sauf un direct bien suivi. Un mode qu'on ne peut pas essayer ne se
+// fait pas connaître. Trois garde le garde-fou contre la partie à deux, qui
+// elle n'a vraiment aucun sens, et rend le reste accessible.
 //
 // ⚠️ Écrit UNE fois. La carte du mode sur l'accueil et le bouton Démarrer
 // lisent cette constante, sans quoi la pastille annoncerait un chiffre et le
@@ -20,7 +27,7 @@ const { createApp } = Vue;
 // à deux. C'est délibéré — c'est un garde-fou de produit, pas de sécurité, et
 // le poser côté serveur mettrait toutes les suites à genoux, qui jouent le
 // quiz à deux joueurs.
-const MIN_CLASSIQUE = 10;
+const MIN_CLASSIQUE = 3;
 
 // 🏠 SOMMES-NOUS CHEZ NOUS ? Sert à garder un mode fermé au public tout en le
 // laissant jouable à la maison (voir `soon` sur Choice).
