@@ -137,7 +137,7 @@
    "id": "kyoraku",
    "nom": "Kyoraku",
    "anime": "Bleach",
-   "img": "kyoraku.webp"
+   "img": "kyoraku2.webp"
   },
   {
    "id": "mayuri",
@@ -1098,6 +1098,582 @@
    "nom": "Touka",
    "anime": "Tokyo Ghoul",
    "img": "touka.webp"
+  },
+  {
+   "id": "jotaro",
+   "nom": "Jotaro",
+   "anime": "JoJo",
+   "img": "jotaro.webp"
+  },
+  {
+   "id": "dio",
+   "nom": "Dio",
+   "anime": "JoJo",
+   "img": "dio.webp"
+  },
+  {
+   "id": "giorno",
+   "nom": "Giorno",
+   "anime": "JoJo",
+   "img": "giorno.webp"
+  },
+  {
+   "id": "josuke",
+   "nom": "Josuke",
+   "anime": "JoJo",
+   "img": "josuke.webp"
+  },
+  {
+   "id": "joseph",
+   "nom": "Joseph",
+   "anime": "JoJo",
+   "img": "joseph.webp"
+  },
+  {
+   "id": "jolyne",
+   "nom": "Jolyne",
+   "anime": "JoJo",
+   "img": "jolyne.webp"
+  },
+  {
+   "id": "bruno",
+   "nom": "Bruno",
+   "anime": "JoJo",
+   "img": "bruno.webp"
+  },
+  {
+   "id": "polnareff",
+   "nom": "Polnareff",
+   "anime": "JoJo",
+   "img": "polnareff.webp"
+  },
+  {
+   "id": "johnny",
+   "nom": "Johnny",
+   "anime": "JoJo",
+   "img": "johnny.webp"
+  },
+  {
+   "id": "kira",
+   "nom": "Kira",
+   "anime": "JoJo",
+   "img": "kira.webp"
+  },
+  {
+   "id": "diavolo",
+   "nom": "Diavolo",
+   "anime": "JoJo",
+   "img": "diavolo.webp"
+  },
+  {
+   "id": "gyro",
+   "nom": "Gyro",
+   "anime": "JoJo",
+   "img": "gyro.webp"
+  },
+  {
+   "id": "ff",
+   "nom": "FF",
+   "anime": "JoJo",
+   "img": "ff.webp"
+  },
+  {
+   "id": "koichi",
+   "nom": "Koichi",
+   "anime": "JoJo",
+   "img": "koichi.webp"
+  },
+  {
+   "id": "gon",
+   "nom": "Gon",
+   "anime": "Hunter Hunter",
+   "img": "gon.webp"
+  },
+  {
+   "id": "killua",
+   "nom": "Killua",
+   "anime": "Hunter Hunter",
+   "img": "killua.webp"
+  },
+  {
+   "id": "kurapika",
+   "nom": "Kurapika",
+   "anime": "Hunter Hunter",
+   "img": "kurapika.webp"
+  },
+  {
+   "id": "hisoka",
+   "nom": "Hisoka",
+   "anime": "Hunter Hunter",
+   "img": "hisoka.webp"
+  },
+  {
+   "id": "meruem",
+   "nom": "Meruem",
+   "anime": "Hunter Hunter",
+   "img": "meruem.webp"
+  },
+  {
+   "id": "netero",
+   "nom": "Netero",
+   "anime": "Hunter Hunter",
+   "img": "netero.webp"
+  },
+  {
+   "id": "leorio",
+   "nom": "Leorio",
+   "anime": "Hunter Hunter",
+   "img": "leorio.webp"
+  },
+  {
+   "id": "chrollo",
+   "nom": "Chrollo",
+   "anime": "Hunter Hunter",
+   "img": "chrollo.webp"
+  },
+  {
+   "id": "feitan",
+   "nom": "Feitan",
+   "anime": "Hunter Hunter",
+   "img": "feitan.webp"
+  },
+  {
+   "id": "illumi",
+   "nom": "Illumi",
+   "anime": "Hunter Hunter",
+   "img": "illumi.webp"
+  },
+  {
+   "id": "nobunaga",
+   "nom": "Nobunaga",
+   "anime": "Hunter Hunter",
+   "img": "nobunaga.webp"
+  },
+  {
+   "id": "ging",
+   "nom": "Ging",
+   "anime": "Hunter Hunter",
+   "img": "ging.webp"
+  },
+  {
+   "id": "zushi",
+   "nom": "Zushi",
+   "anime": "Hunter Hunter",
+   "img": "zushi.webp"
+  },
+  {
+   "id": "silva",
+   "nom": "Silva",
+   "anime": "Hunter Hunter",
+   "img": "silva.webp"
+  },
+  {
+   "id": "komugi",
+   "nom": "Komugi",
+   "anime": "Hunter Hunter",
+   "img": "komugi.webp"
+  },
+  {
+   "id": "biscuit",
+   "nom": "Biscuit",
+   "anime": "Hunter Hunter",
+   "img": "biscuit.webp"
+  },
+  {
+   "id": "machi",
+   "nom": "Machi",
+   "anime": "Hunter Hunter",
+   "img": "machi.webp"
+  },
+  {
+   "id": "kite",
+   "nom": "Kite",
+   "anime": "Hunter Hunter",
+   "img": "kite.webp"
+  },
+  {
+   "id": "shizuku",
+   "nom": "Shizuku",
+   "anime": "Hunter Hunter",
+   "img": "shizuku.webp"
+  },
+  {
+   "id": "eren",
+   "nom": "Eren",
+   "anime": "Attack on Titan",
+   "img": "eren.webp"
+  },
+  {
+   "id": "mikasa",
+   "nom": "Mikasa",
+   "anime": "Attack on Titan",
+   "img": "mikasa.webp"
+  },
+  {
+   "id": "armin",
+   "nom": "Armin",
+   "anime": "Attack on Titan",
+   "img": "armin.webp"
+  },
+  {
+   "id": "levi",
+   "nom": "Levi",
+   "anime": "Attack on Titan",
+   "img": "levi.webp"
+  },
+  {
+   "id": "erwin",
+   "nom": "Erwin",
+   "anime": "Attack on Titan",
+   "img": "erwin.webp"
+  },
+  {
+   "id": "reiner",
+   "nom": "Reiner",
+   "anime": "Attack on Titan",
+   "img": "reiner.webp"
+  },
+  {
+   "id": "annie",
+   "nom": "Annie",
+   "anime": "Attack on Titan",
+   "img": "annie.webp"
+  },
+  {
+   "id": "jean",
+   "nom": "Jean",
+   "anime": "Attack on Titan",
+   "img": "jean.webp"
+  },
+  {
+   "id": "sasha",
+   "nom": "Sasha",
+   "anime": "Attack on Titan",
+   "img": "sasha.webp"
+  },
+  {
+   "id": "ymir",
+   "nom": "Ymir",
+   "anime": "Attack on Titan",
+   "img": "ymir.webp"
+  },
+  {
+   "id": "krista",
+   "nom": "Krista",
+   "anime": "Attack on Titan",
+   "img": "krista.webp"
+  },
+  {
+   "id": "hange",
+   "nom": "Hange",
+   "anime": "Attack on Titan",
+   "img": "hange.webp"
+  },
+  {
+   "id": "zeke",
+   "nom": "Zeke",
+   "anime": "Attack on Titan",
+   "img": "zeke.webp"
+  },
+  {
+   "id": "pieck",
+   "nom": "Pieck",
+   "anime": "Attack on Titan",
+   "img": "pieck.webp"
+  },
+  {
+   "id": "nel",
+   "nom": "Nelliel",
+   "anime": "Bleach",
+   "img": "nel.webp"
+  },
+  {
+   "id": "chad",
+   "nom": "Chad",
+   "anime": "Bleach",
+   "img": "chad.webp"
+  },
+  {
+   "id": "yamamoto_bleach",
+   "nom": "Yamamoto",
+   "anime": "Bleach",
+   "img": "yamamoto_bleach.webp"
+  },
+  {
+   "id": "c16",
+   "nom": "Android 16",
+   "anime": "Dragon Ball",
+   "img": "c16.webp"
+  },
+  {
+   "id": "hit",
+   "nom": "Hit",
+   "anime": "Dragon Ball",
+   "img": "hit.webp"
+  },
+  {
+   "id": "gokublack",
+   "nom": "Goku Black",
+   "anime": "Dragon Ball",
+   "img": "gokublack.webp"
+  },
+  {
+   "id": "satan",
+   "nom": "Mr. Satan",
+   "anime": "Dragon Ball",
+   "img": "satan.webp"
+  },
+  {
+   "id": "enmu",
+   "nom": "Enmu",
+   "anime": "Demon Slayer",
+   "img": "enmu.webp"
+  },
+  {
+   "id": "gyokko",
+   "nom": "Gyokko",
+   "anime": "Demon Slayer",
+   "img": "gyokko.webp"
+  },
+  {
+   "id": "hantengu",
+   "nom": "Hantengu",
+   "anime": "Demon Slayer",
+   "img": "hantengu.webp"
+  },
+  {
+   "id": "yushiro",
+   "nom": "Yushiro",
+   "anime": "Demon Slayer",
+   "img": "yushiro.webp"
+  },
+  {
+   "id": "kokushibo",
+   "nom": "Kokushibo",
+   "anime": "Demon Slayer",
+   "img": "kokushibo.webp"
+  },
+  {
+   "id": "kanao",
+   "nom": "Kanao",
+   "anime": "Demon Slayer",
+   "img": "kanao.webp"
+  },
+  {
+   "id": "kaigaku",
+   "nom": "Kaigaku",
+   "anime": "Demon Slayer",
+   "img": "kaigaku.webp"
+  },
+  {
+   "id": "daki",
+   "nom": "Daki",
+   "anime": "Demon Slayer",
+   "img": "daki.webp"
+  },
+  {
+   "id": "makomo",
+   "nom": "Makomo",
+   "anime": "Demon Slayer",
+   "img": "makomo.webp"
+  },
+  {
+   "id": "genya",
+   "nom": "Genya",
+   "anime": "Demon Slayer",
+   "img": "genya.webp"
+  },
+  {
+   "id": "sabito",
+   "nom": "Sabito",
+   "anime": "Demon Slayer",
+   "img": "sabito.webp"
+  },
+  {
+   "id": "diego",
+   "nom": "Diego",
+   "anime": "JoJo",
+   "img": "diego.webp"
+  },
+  {
+   "id": "narrancia",
+   "nom": "Narancia",
+   "anime": "JoJo",
+   "img": "narrancia.webp"
+  },
+  {
+   "id": "weather",
+   "nom": "Weather Report",
+   "anime": "JoJo",
+   "img": "weather.webp"
+  },
+  {
+   "id": "anasui",
+   "nom": "Anasui",
+   "anime": "JoJo",
+   "img": "anasui.webp"
+  },
+  {
+   "id": "wamuu",
+   "nom": "Wamuu",
+   "anime": "JoJo",
+   "img": "wamuu.webp"
+  },
+  {
+   "id": "rohan",
+   "nom": "Rohan",
+   "anime": "JoJo",
+   "img": "rohan.webp"
+  },
+  {
+   "id": "pucci",
+   "nom": "Pucci",
+   "anime": "JoJo",
+   "img": "pucci.webp"
+  },
+  {
+   "id": "kakyoyin",
+   "nom": "Kakyoin",
+   "anime": "JoJo",
+   "img": "kakyoyin.webp"
+  },
+  {
+   "id": "mista",
+   "nom": "Mista",
+   "anime": "JoJo",
+   "img": "mista.webp"
+  },
+  {
+   "id": "trish",
+   "nom": "Trish",
+   "anime": "JoJo",
+   "img": "trish.webp"
+  },
+  {
+   "id": "lisalisa",
+   "nom": "Lisa Lisa",
+   "anime": "JoJo",
+   "img": "lisalisa.webp"
+  },
+  {
+   "id": "avdol",
+   "nom": "Avdol",
+   "anime": "JoJo",
+   "img": "avdol.webp"
+  },
+  {
+   "id": "shoot",
+   "nom": "Shoot",
+   "anime": "Hunter Hunter",
+   "img": "shoot.webp"
+  },
+  {
+   "id": "uvogin",
+   "nom": "Uvogin",
+   "anime": "Hunter Hunter",
+   "img": "uvogin.webp"
+  },
+  {
+   "id": "youpi",
+   "nom": "Youpi",
+   "anime": "Hunter Hunter",
+   "img": "youpi.webp"
+  },
+  {
+   "id": "pufu",
+   "nom": "Pouf",
+   "anime": "Hunter Hunter",
+   "img": "pufu.webp"
+  },
+  {
+   "id": "pamu",
+   "nom": "Palm",
+   "anime": "Hunter Hunter",
+   "img": "pamu.webp"
+  },
+  {
+   "id": "razor",
+   "nom": "Razor",
+   "anime": "Hunter Hunter",
+   "img": "razor.webp"
+  },
+  {
+   "id": "morel",
+   "nom": "Morel",
+   "anime": "Hunter Hunter",
+   "img": "morel.webp"
+  },
+  {
+   "id": "jelena",
+   "nom": "Jelena",
+   "anime": "Attack on Titan",
+   "img": "jelena.webp"
+  },
+  {
+   "id": "bertolt",
+   "nom": "Bertolt",
+   "anime": "Attack on Titan",
+   "img": "bertolt.webp"
+  },
+  {
+   "id": "onyankopon",
+   "nom": "Onyankopon",
+   "anime": "Attack on Titan",
+   "img": "onyankopon.webp"
+  },
+  {
+   "id": "gabi",
+   "nom": "Gabi",
+   "anime": "Attack on Titan",
+   "img": "gabi.webp"
+  },
+  {
+   "id": "kenny",
+   "nom": "Kenny",
+   "anime": "Attack on Titan",
+   "img": "kenny.webp"
+  },
+  {
+   "id": "porco",
+   "nom": "Porco",
+   "anime": "Attack on Titan",
+   "img": "porco.webp"
+  },
+  {
+   "id": "petra",
+   "nom": "Petra",
+   "anime": "Attack on Titan",
+   "img": "petra.webp"
+  },
+  {
+   "id": "hannes",
+   "nom": "Hannes",
+   "anime": "Attack on Titan",
+   "img": "hannes.webp"
+  },
+  {
+   "id": "mike",
+   "nom": "Mike",
+   "anime": "Attack on Titan",
+   "img": "mike.webp"
+  },
+  {
+   "id": "grisha",
+   "nom": "Grisha",
+   "anime": "Attack on Titan",
+   "img": "grisha.webp"
+  },
+  {
+   "id": "pixis",
+   "nom": "Pixis",
+   "anime": "Attack on Titan",
+   "img": "pixis.webp"
+  },
+  {
+   "id": "conny",
+   "nom": "Connie",
+   "anime": "Attack on Titan",
+   "img": "conny.webp"
   }
  ]
 }
