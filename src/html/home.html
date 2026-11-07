@@ -2473,6 +2473,70 @@
                             </svg>
                         </button>
 
+                        <!-- LES RÈGLES, à la demande, comme dans Collect.
+                             ⚠️ Codanime se joue à huit dont la moitié découvre
+                             le mode : les rôles, l'unanimité et le « n + 1 » ne
+                             se devinent pas en regardant le plateau, et
+                             l'espion n'a pas à les réciter à chaque partie.
+                             ⚠️ Il BAT tant qu'on ne l'a pas remarqué — personne
+                             ne cherche un bouton dont il ignore l'existence.
+                             Un survol suffit à le faire taire.
+                             ⚠️ En haut à GAUCHE sur grand écran, où rien ne vit.
+                             Sur téléphone il descend d'un cran : le coin y est
+                             pris par le masque de l'espion et par « Skip ». -->
+                        <button class="cod-regles-bouton"
+                                :class="{ ouvert: cod.regles, appelle: !cod.reglesVues && !cod.regles }"
+                                @click.stop="cod.regles = !cod.regles; codReglesVues()"
+                                @mouseenter="codReglesVues()"
+                                aria-label="Les règles">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 3h9a3 3 0 013 3v13a2 2 0 01-2 2H7a3 3 0 01-3-3V6a3 3 0 013-3z"/>
+                                <path d="M18 3a3 3 0 013 3v1h-4"/>
+                                <path d="M4 18a3 3 0 013-3h10"/>
+                                <path d="M8 8h6M8 11h6"/>
+                            </svg>
+                        </button>
+
+                        <div class="cod-regles-voile" v-if="cod.regles" @click="cod.regles = false">
+                            <div class="cod-regles" @click.stop>
+                                <button class="cod-regles-x" @click="cod.regles = false"
+                                        aria-label="Fermer">&times;</button>
+
+                                <!-- L'objectif d'abord, le tour ensuite : on sait
+                                     ce qu'on cherche avant de savoir comment. -->
+                                <div class="cod-regles-bandeau">
+                                    <h4>Objectif</h4>
+                                    <p>Faire deviner à ton camp <b>tous ses portraits</b> avant l'autre équipe.</p>
+                                </div>
+
+                                <div class="cod-regles-corps">
+                                    <div class="cod-regles-cap">Le tour</div>
+                                    <!-- ⚠️ Chaque ligne dit CE QUI SE PASSE, jamais
+                                         quel bouton presser : le geste se trouve
+                                         tout seul, la règle non. -->
+                                    <div class="cod-regles-rang r-indice">
+                                        <b>Indice</b><span>L'espion annonce <b>un seul mot</b> et un nombre.</span>
+                                    </div>
+                                    <div class="cod-regles-rang r-vote">
+                                        <b>Vote</b><span>Les agents désignent une carte à la fois, <b>à l'unanimité</b>.</span>
+                                    </div>
+                                    <div class="cod-regles-rang r-suite">
+                                        <b>n + 1</b><span>Bonne carte : on continue, jusqu'à une carte de plus que le nombre annoncé.</span>
+                                    </div>
+                                    <div class="cod-regles-rang r-faute">
+                                        <b>Erreur</b><span>Carte neutre ou adverse : le tour s'arrête net.</span>
+                                    </div>
+                                    <div class="cod-regles-rang r-assassin">
+                                        <b>Assassin</b><span>Une seule carte, et elle fait <b>perdre sur-le-champ</b>.</span>
+                                    </div>
+                                </div>
+
+                                <p class="cod-regles-astuce">
+                                    <b>0</b> ou <b>∞</b> donnent des coups illimités. Nommer une série est interdit.
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- ⚠️ LES OUTILS DE TÉLÉPHONE, dans le coin libre en
                              haut à droite, et ce sont des JUMEAUX — même
                              action, même état, deux emplacements — comme le

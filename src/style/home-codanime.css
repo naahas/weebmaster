@@ -498,6 +498,145 @@
    écran large les deux rangs sont déjà là en permanence, et « Skip » vit
    dans le chapeau de mon rang. Deux boutons pour la même chose au même
    moment, c'est la maladie des défauts écrits deux fois. */
+/* ══════════════════════════════════════════════════════════════
+   LES RÈGLES, À LA DEMANDE
+   ══════════════════════════════════════════════════════════════
+   Le même objet que dans Collect, et pour la même raison : le mode se
+   joue à huit dont la moitié le découvre, et les rôles, l'unanimité et
+   le « n + 1 » ne se devinent pas en regardant le plateau. */
+.cod-regles-bouton {
+    position: absolute; top: 0.6rem; left: 0.6rem; z-index: 6;
+    display: grid; place-items: center;
+    width: 2.2rem; height: 2.2rem; padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.6rem;
+    background: rgba(13, 14, 19, 0.82);
+    color: rgba(255, 255, 255, 0.42);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.cod-regles-bouton svg { width: 1.2rem; height: 1.2rem; }
+.cod-regles-bouton:hover,
+.cod-regles-bouton.ouvert {
+    color: var(--cod-brun);
+    border-color: rgba(191, 138, 95, 0.55);
+    background: rgba(191, 138, 95, 0.1);
+}
+/* ⚠️ IL BAT TANT QU'ON NE L'A PAS REMARQUÉ. Une manche qui démarre ne dit
+   nulle part où sont les règles, et personne ne cherche un bouton dont il
+   ignore l'existence. Deux ondes décalées, et ça s'arrête au premier
+   survol — celui qui sait déjà n'a pas à ouvrir le panneau pour avoir la
+   paix. */
+.cod-regles-bouton.appelle { color: var(--cod-brun); border-color: rgba(191, 138, 95, 0.4); }
+.cod-regles-bouton.appelle::before,
+.cod-regles-bouton.appelle::after {
+    content: ''; position: absolute; inset: -1px;
+    border-radius: inherit;
+    border: 1px solid var(--cod-brun);
+    animation: codReglesOnde 2.4s ease-out infinite;
+    pointer-events: none;
+}
+.cod-regles-bouton.appelle::after { animation-delay: 0.3s; }
+@keyframes codReglesOnde {
+    0%   { opacity: 0.6; transform: scale(1); }
+    70%  { opacity: 0; transform: scale(1.45); }
+    100% { opacity: 0; transform: scale(1.45); }
+}
+
+.cod-regles-voile {
+    position: fixed; inset: 0; z-index: 60;
+    display: grid; place-items: center;
+    padding: 1.2rem;
+    background: rgba(4, 5, 8, 0.82);
+    backdrop-filter: blur(3px);
+}
+.cod-regles {
+    position: relative;
+    width: min(32rem, 100%);
+    max-height: 100%; overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.9rem;
+    background: #0e1016;
+    box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.6);
+}
+.cod-regles-x {
+    position: absolute; top: 0.5rem; right: 0.6rem;
+    width: 1.8rem; height: 1.8rem; padding: 0;
+    border: 0; background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 1.2rem; line-height: 1; cursor: pointer;
+}
+.cod-regles-x:hover { color: #fff; }
+
+.cod-regles-bandeau {
+    padding: 1.1rem 1.2rem 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: linear-gradient(160deg, rgba(191, 138, 95, 0.12), transparent 70%);
+}
+.cod-regles-bandeau h4 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem; font-weight: 900; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--cod-brun);
+}
+.cod-regles-bandeau p { margin: 0; font-size: 0.86rem; opacity: 0.82; line-height: 1.5; }
+.cod-regles-bandeau b { color: #fff; }
+
+.cod-regles-corps { padding: 0.9rem 1.2rem 0.5rem; }
+.cod-regles-cap {
+    font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; opacity: 0.4; margin-bottom: 0.5rem;
+}
+/* ⚠️ Chaque ligne porte un filet de la couleur de ce dont elle parle, et
+   ce sont les couleurs DU MODE : bleu pour le vote, rouge pour l'erreur,
+   noir cerclé de blanc pour l'assassin. Une palette inventée ici aurait
+   fait de la modale un objet à part. */
+.cod-regles-rang {
+    display: grid; grid-template-columns: 5.2rem 1fr; gap: 0.7rem;
+    align-items: baseline;
+    padding: 0.5rem 0 0.55rem 0.7rem;
+    border-left: 3px solid rgba(255, 255, 255, 0.18);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cod-regles-rang:last-child { border-bottom: 0; }
+.cod-regles-rang b {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.cod-regles-rang span { font-size: 0.8rem; opacity: 0.72; line-height: 1.45; }
+.cod-regles-rang span b { text-transform: none; letter-spacing: 0; font-size: 1em; color: #fff; opacity: 1; }
+.cod-regles-rang.r-indice { border-left-color: var(--cod-brun); }
+.cod-regles-rang.r-indice > b { color: var(--cod-brun); }
+.cod-regles-rang.r-vote { border-left-color: var(--cod-a); }
+.cod-regles-rang.r-vote > b { color: var(--cod-a); }
+.cod-regles-rang.r-suite { border-left-color: var(--cod-neutre); }
+.cod-regles-rang.r-suite > b { color: var(--cod-neutre); }
+.cod-regles-rang.r-faute { border-left-color: var(--cod-b); }
+.cod-regles-rang.r-faute > b { color: var(--cod-b); }
+/* L'assassin : noir, donc invisible sur ce fond — c'est le filet blanc qui
+   le dit, exactement comme sur sa carte. */
+.cod-regles-rang.r-assassin { border-left-color: rgba(255, 255, 255, 0.85); }
+.cod-regles-rang.r-assassin > b { color: rgba(255, 255, 255, 0.9); }
+
+.cod-regles-astuce {
+    margin: 0; padding: 0.7rem 1.2rem 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 0.74rem; opacity: 0.5; line-height: 1.5;
+}
+.cod-regles-astuce b { opacity: 0.95; color: #fff; }
+
+@media (max-width: 640px) {
+    /* ⚠️ Il descend d'un cran : le coin haut gauche est pris par le masque
+       de l'espion et par « Skip », qui s'y relaient. */
+    .cod-regles-bouton { top: 3.3rem; width: 2rem; height: 2rem; }
+    .cod-regles-bouton svg { width: 1.05rem; height: 1.05rem; }
+    .cod-regles-rang { grid-template-columns: 4.4rem 1fr; gap: 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cod-regles-bouton.appelle::before,
+    .cod-regles-bouton.appelle::after { animation: none; opacity: 0.5; }
+}
+
 .cod-outils-tel { display: none; }
 /* Le jumeau de « Skip », dans le coin haut GAUCHE, avec le masque — les
    deux ne s'y croisent jamais, voir le gabarit. Caché partout ailleurs,

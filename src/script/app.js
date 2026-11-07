@@ -356,6 +356,14 @@ createApp({
                 // l'un sur l'autre, on ne sait plus lequel on referme.
                 voirHisto: false,
 
+                // Les règles, à la demande. ⚠️ `reglesVues` fait battre le
+                // bouton tant que personne ne l'a remarqué : une manche qui
+                // démarre ne dit nulle part où sont les règles, et personne ne
+                // cherche un bouton dont il ignore l'existence. Un survol
+                // suffit à le faire taire — inutile d'ouvrir le panneau.
+                regles: false,
+                reglesVues: false,
+
                 // Ce que l'espion s'apprête à annoncer : son mot et son nombre.
                 // ⚠️ Le mot est TAPÉ et non dit à la voix — l'oral fermait le
                 // mode à tout salon sans vocal, c'est-à-dire à la moitié d'un
@@ -5720,6 +5728,13 @@ createApp({
             const actif = document.activeElement;
             if (actif && /^(INPUT|TEXTAREA)$/.test(actif.tagName)) { actif.blur(); return; }
 
+            // ⚠️ Les règles de Codanime passent AVANT la liste, et pas dedans :
+            // celle-ci lit `this[champ]`, donc un chemin comme « cod.regles »
+            // y vaudrait `undefined` et la ligne ne ferait rien — en silence.
+            // Elles viennent en tête parce qu'elles sont posées par-dessus les
+            // deux autres panneaux du mode.
+            if (this.cod && this.cod.regles) { this.cod.regles = false; return; }
+
             const calques = [
                 ['confirmAction', null],
                 ['seriesBombOuvertes', false],
@@ -5876,9 +5891,9 @@ createApp({
                 historique: [], gagnant: null, derniereCarte: null,
                 restant: { A: 0, B: 0 }, saisieNombre: 1, saisieMot: '', refusee: null,
                 arrive: false, saut: 0, masquerAdverses: false, sortie: false,
-                // ⚠️ Les deux panneaux se referment avec la partie : laissés
+                // ⚠️ Les trois panneaux se referment avec la partie : laissés
                 // ouverts, ils couvriraient le podium d'un voile plein écran.
-                voirCamps: false, voirHisto: false,
+                voirCamps: false, voirHisto: false, regles: false,
             });
             this.gameEnded = false;
             this.gameInProgress = false;
@@ -6371,6 +6386,11 @@ createApp({
             this.cod.voirCamps = false;
             this.cod.voirHisto = false;
         },
+
+        // ⚠️ Le battement s'éteint au SURVOL autant qu'au clic : il est là
+        // pour signaler le bouton, pas pour exiger qu'on l'ouvre. Celui qui
+        // sait déjà où sont les règles n'a pas à les lire pour avoir la paix.
+        codReglesVues() { this.cod.reglesVues = true; },
 
         // ── Les coups qu'il reste ──────────────────────────────────
         //
