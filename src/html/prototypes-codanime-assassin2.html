@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codanime — marquer l'assassin, second tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   MARQUER L'ASSASSIN — SECOND TOUR
+
+   Le premier tour a été jugé tiède, et deux de ses pistes étaient en
+   plus CASSÉES. La cause est la même pour les deux, et elle décide de
+   tout ce qu'on peut proposer ici :
+
+   ⚠️ LA CARTE PORTE `overflow: hidden`. Tout ce qu'on dessine en
+   débordant d'elle — un anneau qui tourne, un halo, une ombre — est
+   COUPÉ NET à son bord. Le liseré tournant du premier tour était donc
+   rogné sur ses quatre côtés : on ne voyait pas une lueur faire le
+   tour, on voyait un quart de lueur apparaître et disparaître.
+
+   La carte ne peut pas perdre ce `overflow` : c'est lui qui arrondit le
+   portrait à ses coins. Ce qui déborde doit donc vivre DANS LA CASE,
+   l'élément qui contient la carte — c'est déjà comme ça que les visages
+   des votants et l'onde du clic sont posés. Les pistes d'ici qui
+   débordent sont donc construites à deux étages, comme en jeu.
+
+   ⚠️ ET UNE OMBRE NOIRE NE SE VOIT PAS sur un fond noir : mesuré au
+   premier tour, l'ombre valait rgb(0,0,0) sur un fond rgb(7,7,10).
+   Ce qui déborde doit être CLAIR pour exister.
+
+   Les quatre contraintes du premier tour tiennent toujours : ça se juge
+   au milieu des vingt-quatre autres, ça reste sombre, ça ne mange pas
+   le visage, ça tient à 69 px.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+    --a: #2f9bff; --b: #ff3b5c; --n: #b9a88f;
+    --brun: #bf8a5f;
+    --cote: 126px;
+    --jour: 0.62rem;
+    --filet: 2.5px;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.3rem 6rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: #07070a;
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.2rem; max-width: 60rem; line-height: 1.55; }
+.sous b { opacity: 0.95; }
+
+.barre {
+    position: sticky; top: 0; z-index: 9;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.4rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.95); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.45; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.58rem; }
+.barre button {
+    padding: 0.32rem 0.75rem; border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 0.45rem; background: transparent; color: inherit;
+    font: inherit; font-weight: 700; cursor: pointer;
+}
+.barre button.on { background: var(--brun); border-color: var(--brun); color: #15171d; }
+.mode-emploi { flex: 1 1 100%; font-size: 0.68rem; opacity: 0.5; line-height: 1.45;
+    border-top: 1px solid rgba(255,255,255,0.07); padding-top: 0.5rem; }
+
+.piste { margin-bottom: 2.2rem; }
+.tete { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+.tete h2 { font-size: 0.92rem; margin: 0 0 0.25rem; }
+.tete .num { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; color: var(--brun); }
+.pourquoi { font-size: 0.72rem; opacity: 0.5; margin: 0 0 0.9rem; max-width: 54rem; line-height: 1.5; }
+.rangee { display: flex; gap: var(--jour); flex-wrap: wrap; }
+.plateau { display: grid; grid-template-columns: repeat(5, var(--cote)); gap: var(--jour); }
+
+/* ── DEUX ÉTAGES, comme en jeu ───────────────────────────────── */
+/* La CASE ne coupe rien : c'est elle qui porte ce qui déborde. */
+.case { position: relative; display: grid; place-items: center; }
+/* La CARTE coupe : c'est elle qui arrondit le portrait. */
+.c {
+    position: relative;
+    width: var(--cote); height: var(--cote);
+    border-radius: calc(var(--cote) * 0.085);
+    border: calc(var(--cote) * 0.055) solid #0b0b0f;
+    overflow: hidden;
+    background: #0b0b0f;
+}
+.c img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    outline: var(--filet) solid #0b0b0f; outline-offset: calc(var(--filet) * -1);
+}
+.c::before {
+    content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: var(--teinte);
+    mix-blend-mode: color;
+    opacity: var(--force, 0.72);
+    -webkit-mask-image: radial-gradient(circle at 50% 38%, transparent 26%, #000 82%);
+    mask-image: radial-gradient(circle at 50% 38%, transparent 26%, #000 82%);
+}
+.c.a { --teinte: var(--a); border-color: var(--a); }
+.c.b { --teinte: var(--b); border-color: var(--b); --force: 0.58; }
+.c.n { --teinte: #808080; border-color: var(--n); }
+.c.n::before { mix-blend-mode: saturation; }
+.c.x { --teinte: #2a2a33; border-color: #000; }
+.c.x::before { mix-blend-mode: multiply; background: #2a2a33; opacity: 1; }
+.c.x img { outline-color: rgba(255,255,255,0.72); }
+
+/* ── V1 · LA BARRE DE CENSURE ────────────────────────────────── */
+.v1 .c.x .dans {
+    position: absolute; left: 0; right: 0; top: 30%; height: 15%; z-index: 3;
+    background: #000; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.14);
+    animation: censure 3.4s ease-in-out infinite;
+}
+@keyframes censure {
+    0%, 100% { transform: scaleX(1); }
+    50%      { transform: scaleX(1.04); }
+}
+
+/* ── V2 · LE TREMBLEMENT ─────────────────────────────────────── */
+/* Rien de dessiné : la carte frissonne, par à-coups irréguliers. */
+.v2 .c.x { animation: tremble 4.4s steps(1) infinite; }
+@keyframes tremble {
+    0%, 86%  { transform: translate(0, 0); }
+    87%      { transform: translate(-1.5px, 0.5px); }
+    89%      { transform: translate(1.5px, -1px); }
+    91%      { transform: translate(-1px, -0.5px); }
+    93%      { transform: translate(1px, 1px); }
+    95%, 100%{ transform: translate(0, 0); }
+}
+
+/* ── V3 · LA COULURE D'ENCRE ─────────────────────────────────── */
+.v3 .c.x .dans {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background:
+        linear-gradient(to bottom, #000 0 12%, transparent 12%),
+        radial-gradient(10% 7% at 24% 0, #000 60%, transparent 62%),
+        radial-gradient(7% 5% at 63% 0, #000 60%, transparent 62%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0 var(--coule, 40%), transparent var(--coule, 40%));
+    mask-image: linear-gradient(to bottom, #000 0 var(--coule, 40%), transparent var(--coule, 40%));
+    animation: coule 6s ease-in-out infinite;
+}
+.v3 .c.x .dans i {
+    position: absolute; top: 0; width: 7%; background: #000;
+    border-radius: 0 0 50% 50%;
+}
+.v3 .c.x .dans i:nth-child(1) { left: 22%; height: 46%; }
+.v3 .c.x .dans i:nth-child(2) { left: 61%; height: 34%; }
+.v3 .c.x .dans i:nth-child(3) { left: 84%; height: 26%; }
+.v3 .c.x .dans i:nth-child(4) { display: none; }
+@keyframes coule {
+    0%, 100% { --coule: 36%; opacity: 0.9; }
+    50%      { --coule: 52%; opacity: 1; }
+}
+
+/* ── V4 · LE NÉGATIF QUI CLIGNOTE ────────────────────────────── */
+.v4 .c.x img { animation: negatif 5s steps(1) infinite; }
+@keyframes negatif {
+    0%, 90%   { filter: none; }
+    91%, 93%  { filter: invert(1) brightness(0.8); }
+    94%, 96%  { filter: none; }
+    97%, 99%  { filter: invert(1) brightness(0.8); }
+    100%      { filter: none; }
+}
+
+/* ── V5 · LE CADRE QUI MANGE ─────────────────────────────────── */
+/* Le noir du cadre avance sur le portrait, puis se retire. */
+.v5 .c.x .dans {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    box-shadow: inset 0 0 0 var(--mord, 6%) #000;
+    animation: mange 3.6s ease-in-out infinite;
+}
+@keyframes mange {
+    0%, 100% { box-shadow: inset 0 0 0 calc(var(--cote) * 0.03) #000; }
+    50%      { box-shadow: inset 0 0 0 calc(var(--cote) * 0.12) #000; }
+}
+
+/* ── V6 · LES BANDES DÉCALÉES ────────────────────────────────── */
+.v6 .c.x img { animation: bandes 5.2s steps(1) infinite; }
+@keyframes bandes {
+    0%, 88%   { clip-path: none; transform: translateX(0); }
+    89%       { clip-path: inset(22% 0 62% 0); transform: translateX(5%); }
+    90%       { clip-path: none; transform: translateX(0); }
+    92%       { clip-path: inset(56% 0 28% 0); transform: translateX(-4%); }
+    93%, 100% { clip-path: none; transform: translateX(0); }
+}
+
+/* ── V7 · LA VIGNETTE QUI BAT ────────────────────────────────── */
+.v7 .c.x .dans {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(circle at 50% 40%, transparent 18%, #000 78%);
+    animation: bat 2.2s ease-in-out infinite;
+}
+@keyframes bat {
+    0%, 100% { opacity: 0.35; transform: scale(1.1); }
+    14%      { opacity: 0.8; transform: scale(1); }
+    28%      { opacity: 0.45; transform: scale(1.06); }
+    42%      { opacity: 0.75; transform: scale(1.01); }
+}
+
+/* ── V8 · L'ANNEAU PÂLE, HORS DE LA CARTE ────────────────────── */
+/* ⚠️ Posé dans la CASE et non dans la carte : dans la carte il serait
+   coupé net, c'est le défaut du liseré tournant du premier tour. Et il
+   est CLAIR — un anneau noir sur un fond noir ne montre rien. */
+.v8 .case.x .hors {
+    position: absolute; z-index: 0; pointer-events: none;
+    width: calc(var(--cote) * 1.1); height: calc(var(--cote) * 1.1);
+    border-radius: calc(var(--cote) * 0.14);
+    border: calc(var(--cote) * 0.016) solid rgba(255,255,255,0.75);
+    animation: anneau 2.8s ease-in-out infinite;
+}
+@keyframes anneau {
+    0%, 100% { transform: scale(0.94); opacity: 0.25; }
+    50%      { transform: scale(1.02); opacity: 0.95; }
+}
+
+/* ⚠️ `animation: none`, jamais une durée nulle : à 0 s l'animation se joue
+   quand même et sa dernière image reste posée. */
+@media (prefers-reduced-motion: reduce) {
+    .c.x, .c.x img, .c.x .dans, .case.x .hors { animation: none !important; }
+}
+.vide { font-size: 0.75rem; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<h1>Codanime — marquer l'assassin, second tour</h1>
+<p class="sous">
+    Huit autres façons, et d'abord le défaut du premier tour : ⚠️ <b>la carte porte
+    <code>overflow: hidden</code></b>, donc tout ce qu'on dessine en débordant d'elle est
+    <b>coupé net</b> à son bord. Le liseré tournant n'était pas mal réglé, il était rogné sur ses
+    quatre côtés. Ce qui déborde vit maintenant dans la <b>case</b>, l'élément qui contient la
+    carte — comme les visages des votants et l'onde du clic en jeu. Et ce qui déborde doit être
+    <b>clair</b> : une ombre noire sur un fond noir ne montre rien, on l'a mesuré.
+</p>
+
+<div class="barre">
+    <label>Côté</label>
+    <button data-cote="126" class="on">Ordinateur</button>
+    <button data-cote="69">Téléphone</button>
+    <label>Vue</label>
+    <button data-vue="rangee" class="on">En rangée</button>
+    <button data-vue="plateau">Plateau complet</button>
+    <button id="retirer">Autres portraits</button>
+    <div class="mode-emploi">
+        En rangée, l'assassin est la <b>troisième</b> carte. En plateau, il est toujours à la
+        <b>même place</b> — ligne 3, colonne 3 — pour qu'on compare des marques et non des
+        positions.
+    </div>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const PISTES = [
+    { id: 'v1', nom: 'La barre de censure', dans: 1, quoi:
+        'Un bandeau noir en travers des yeux, comme un document caviardé. ⚠️ Il cache le REGARD ' +
+        'et rien d’autre : les cheveux, la tenue, la couleur restent, et ce sont eux qui servent ' +
+        'd’indice. C’est la seule piste qui dit « interdit » plutôt que « sombre ».' },
+    { id: 'v2', nom: 'Le tremblement', quoi:
+        'Rien de dessiné : la carte frissonne, par à-coups irréguliers, deux fois toutes les ' +
+        'quatre secondes. ⚠️ Zéro pixel pris au portrait, et le seul mouvement d’un plateau ' +
+        'immobile attire l’œil tout seul. L’irrégularité compte : un battement régulier devient ' +
+        'un décor au bout d’une minute.' },
+    { id: 'v3', nom: 'La coulure d’encre', dans: 4, quoi:
+        'Du noir coule du bord haut et redescend lentement, comme de l’encre. ⚠️ Il mange le ' +
+        'haut du portrait — les cheveux, qui sont un crochet d’indice. C’est le prix d’une marque ' +
+        'qui a une FORME, et pas seulement une intensité.' },
+    { id: 'v4', nom: 'Le négatif qui clignote', quoi:
+        'Le portrait s’inverse deux fois, très brièvement, toutes les cinq secondes. ⚠️ Rien ne ' +
+        'couvre l’image et la lecture est immédiate — mais ça clignote, et c’est le genre d’effet ' +
+        'qui fatigue au bout de trois manches.' },
+    { id: 'v5', nom: 'Le cadre qui mange', dans: 1, quoi:
+        'Le noir du cadre avance sur le portrait puis se retire, comme s’il l’avalait. ⚠️ Il ' +
+        'respire sur les quatre bords à la fois : la carte paraît plus petite que ses voisines, ' +
+        'et c’est exactement ce qu’on veut dire.' },
+    { id: 'v6', nom: 'Les bandes décalées', quoi:
+        'Deux bandes horizontales du portrait glissent d’un cran, un instant, comme une image qui ' +
+        'décroche. ⚠️ C’est le seul effet qui ait l’air d’une PANNE — ce qui est une façon de dire ' +
+        '« cette carte n’est pas comme les autres », mais aussi de faire croire à un bug.' },
+    { id: 'v7', nom: 'La vignette qui bat', dans: 1, quoi:
+        'Une ombre circulaire se referme sur le visage, deux fois par battement, comme un cœur. ' +
+        '⚠️ Elle ne couvre jamais le centre : le visage reste net, c’est le pourtour qui pulse.' },
+    { id: 'v8', nom: 'L’anneau pâle, hors de la carte', hors: true, quoi:
+        'Un anneau clair respire AUTOUR de la carte, posé dans la case pour n’être pas coupé. ' +
+        '⚠️ C’est la piste rendue possible par la correction : au premier tour, le même effet ' +
+        'dessiné dans la carte était rogné sur ses quatre côtés. Et il est CLAIR, parce qu’un ' +
+        'anneau noir sur fond noir ne montre rien.' },
+];
+
+let portraits = [], cote = 126, vue = 'rangee', tirage = [];
+const melanger = (t) => { const c = t.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c; };
+function tirer() { tirage = melanger(portraits).slice(0, 25); }
+
+const carte = (img, camp, p) => {
+    const x = camp === 'x';
+    const dedans = x && p.dans ? '<span class="dans">' + '<i></i>'.repeat(p.dans) + '</span>' : '';
+    const dehors = x && p.hors ? '<span class="hors"></span>' : '';
+    return '<span class="case' + (x ? ' x' : '') + '">' + dehors +
+        '<span class="c ' + camp + '">' +
+        '<img src="' + img + '" alt="" draggable="false">' + dedans + '</span></span>';
+};
+
+function rendre() {
+    const camps = ['a', 'b', 'x', 'n', 'a'];
+    document.getElementById('pistes').innerHTML = PISTES.map((p, k) => {
+        let corps;
+        if (vue === 'plateau') {
+            const cs = [].concat(Array(9).fill('a'), Array(8).fill('b'), Array(7).fill('n'));
+            const melange = melanger(cs); melange.splice(12, 0, 'x');
+            corps = '<div class="plateau">' + tirage.map((img, i) => carte(img, melange[i], p)).join('') + '</div>';
+        } else {
+            corps = '<div class="rangee">' + camps.map((c, i) => carte(tirage[i], c, p)).join('') + '</div>';
+        }
+        return '<section class="piste ' + p.id + '">' +
+            '<div class="tete"><span class="num">V' + (k + 1) + '</span><h2>' + p.nom + '</h2></div>' +
+            '<p class="pourquoi">' + p.quoi + '</p>' + corps + '</section>';
+    }).join('');
+}
+
+document.querySelectorAll('.barre button[data-cote]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cote]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); cote = +b.dataset.cote;
+    document.documentElement.style.setProperty('--cote', cote + 'px');
+}));
+document.querySelectorAll('.barre button[data-vue]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-vue]').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); vue = b.dataset.vue; rendre();
+}));
+document.getElementById('retirer').addEventListener('click', () => { tirer(); rendre(); });
+
+fetch('/prototypes/codanime-cartes/portraits').then(r => r.json()).then(j => {
+    portraits = j.portraits || [];
+    tirer(); rendre();
+}).catch(() => {
+    document.getElementById('pistes').innerHTML = '<p class="vide">Les portraits ne répondent pas.</p>';
+});
+</script>
+</body></html>

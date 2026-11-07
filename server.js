@@ -2332,6 +2332,14 @@ app.get('/prototypes/codanime-assassin', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-codanime-assassin.html');
 });
 
+// Le second tour, et il part d'un DÉFAUT du premier : la carte porte
+// `overflow: hidden`, donc tout ce qui déborde d'elle est coupé net — le
+// liseré tournant n'était pas mal réglé, il était rogné sur ses quatre côtés.
+// Ce qui déborde vit ici dans la CASE, comme les visages des votants en jeu.
+app.get('/prototypes/codanime-assassin2', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-codanime-assassin2.html');
+});
+
 // Le vivier série par série, pour décider ce qu'un réglage « série » peut
 // proposer : un plateau fait 25 cartes toutes différentes, donc une série en
 // dessous de 25 n'est pas jouable seule.
