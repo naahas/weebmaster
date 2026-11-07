@@ -2502,37 +2502,61 @@
                                 <button class="cod-regles-x" @click="cod.regles = false"
                                         aria-label="Fermer">&times;</button>
 
-                                <!-- L'objectif d'abord, le tour ensuite : on sait
-                                     ce qu'on cherche avant de savoir comment. -->
+                                <!-- Le nom du mode en tête, l'objectif juste
+                                     dessous : on sait où on est, puis ce qu'on
+                                     cherche, avant de savoir comment. -->
                                 <div class="cod-regles-bandeau">
-                                    <h4>Objectif</h4>
+                                    <h4>Codanime — Règles</h4>
                                     <p>Faire deviner à ton camp <b>tous ses portraits</b> avant l'autre équipe.</p>
                                 </div>
 
                                 <div class="cod-regles-corps">
-                                    <div class="cod-regles-cap">Le tour</div>
-                                    <!-- ⚠️ Chaque ligne dit CE QUI SE PASSE, jamais
+                                    <div class="cod-regles-cap">Déroulement d'un tour</div>
+                                    <!-- ⚠️ TROIS LIGNES, PAS CINQ. Le « n + 1 » et
+                                         l'erreur avaient chacun la leur : ça faisait
+                                         lire cinq règles pour un tour qui n'en a
+                                         qu'une — l'équipe devine jusqu'à ce qu'elle
+                                         se trompe. Les deux sont rentrés dans le
+                                         vote, à leur place, et la modale respire.
+                                         ⚠️ Chaque ligne dit CE QUI SE PASSE, jamais
                                          quel bouton presser : le geste se trouve
                                          tout seul, la règle non. -->
                                     <div class="cod-regles-rang r-indice">
-                                        <b>Indice</b><span>L'espion annonce <b>un seul mot</b> et un nombre.</span>
+                                        <b>Indice</b>
+                                        <span>L'espion annonce <b>un seul mot</b> et un nombre.</span>
                                     </div>
                                     <div class="cod-regles-rang r-vote">
-                                        <b>Vote</b><span>Les agents désignent une carte à la fois, <b>à l'unanimité</b>.</span>
-                                    </div>
-                                    <div class="cod-regles-rang r-suite">
-                                        <b>n + 1</b><span>Bonne carte : on continue, jusqu'à une carte de plus que le nombre annoncé.</span>
-                                    </div>
-                                    <div class="cod-regles-rang r-faute">
-                                        <b>Erreur</b><span>Carte neutre ou adverse : le tour s'arrête net.</span>
+                                        <b>Vote</b>
+                                        <span>Les agents du camp désignent les cartes <b>une par une</b> et
+                                        <b>à l'unanimité</b>. Ils peuvent en retourner au maximum le nombre
+                                        annoncé <b>+ 1</b>. Si une carte neutre ou adverse est retournée, le
+                                        tour passe au camp d'en face.</span>
                                     </div>
                                     <div class="cod-regles-rang r-assassin">
-                                        <b>Assassin</b><span>Une seule carte, et elle fait <b>perdre sur-le-champ</b>.</span>
+                                        <b>Assassin</b>
+                                        <span>Une seule carte du plateau, et elle fait
+                                        <b>perdre sur-le-champ</b>.</span>
+                                    </div>
+                                </div>
+
+                                <!-- ⚠️ UNE RECOMMANDATION, PAS UNE RÈGLE, et le mot
+                                     compte : le serveur ne voit pas le sens d'un
+                                     indice, il ne peut donc rien refuser ici. C'est
+                                     une convention entre joueurs, et elle est écrite
+                                     parce qu'une table qui ne la connaît pas finit
+                                     par gagner en nommant la série. -->
+                                <div class="cod-regles-corps">
+                                    <div class="cod-regles-cap">Pour bien jouer</div>
+                                    <div class="cod-regles-rang r-fair">
+                                        <b>Évite</b>
+                                        <span>de dire un nom de <b>série</b>, un nom de <b>personnage</b>, ou
+                                        un mot trop proche des noms présents sur le plateau. Rien ne
+                                        l'interdit — c'est ce qui rend la partie intéressante.</span>
                                     </div>
                                 </div>
 
                                 <p class="cod-regles-astuce">
-                                    <b>0</b> ou <b>∞</b> donnent des coups illimités. Nommer une série est interdit.
+                                    Annoncer <b>0</b> ou <b>∞</b> donne des coups illimités.
                                 </p>
                             </div>
                         </div>

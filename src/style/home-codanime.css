@@ -552,7 +552,10 @@
 }
 .cod-regles {
     position: relative;
-    width: min(32rem, 100%);
+    /* ⚠️ 34 rem et non 32 : à 32, la ligne du vote — la seule longue, et
+       c'est elle qui porte la règle — se coupait en quatre lignes serrées.
+       Deux rem de plus la ramènent à trois, et tout le bloc respire. */
+    width: min(34rem, 100%);
     max-height: 100%; overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.9rem;
@@ -568,59 +571,71 @@
 }
 .cod-regles-x:hover { color: #fff; }
 
+/* ⚠️ TOUT RESPIRE PLUS QUE DANS COLLECT, et c'est une correction : les
+   mêmes espacements rendaient ici un bloc compressé. Collect a cinq lignes
+   d'une phrase courte chacune ; Codanime en a trois, dont une qui porte
+   toute la règle du tour. Des lignes inégales demandent plus d'air entre
+   elles, sinon la longue avale les deux autres. */
 .cod-regles-bandeau {
-    padding: 1.1rem 1.2rem 0.9rem;
+    padding: 1.5rem 1.6rem 1.25rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     background: linear-gradient(160deg, rgba(191, 138, 95, 0.12), transparent 70%);
 }
 .cod-regles-bandeau h4 {
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.5rem;
     font-size: 1.15rem; font-weight: 900; letter-spacing: 0.04em;
     text-transform: uppercase; color: var(--cod-brun);
 }
-.cod-regles-bandeau p { margin: 0; font-size: 0.86rem; opacity: 0.82; line-height: 1.5; }
+.cod-regles-bandeau p { margin: 0; font-size: 0.9rem; opacity: 0.82; line-height: 1.6; }
 .cod-regles-bandeau b { color: #fff; }
 
-.cod-regles-corps { padding: 0.9rem 1.2rem 0.5rem; }
+.cod-regles-corps { padding: 1.15rem 1.6rem 0.9rem; }
+/* ⚠️ Deux corps se suivent — le déroulement, puis la recommandation — et le
+   second porte un trait : sans lui, « Pour bien jouer » se lisait comme une
+   quatrième ligne du tour. */
+.cod-regles-corps + .cod-regles-corps {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 1.1rem;
+}
 .cod-regles-cap {
-    font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em;
-    text-transform: uppercase; opacity: 0.4; margin-bottom: 0.5rem;
+    font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; opacity: 0.42; margin-bottom: 0.8rem;
 }
 /* ⚠️ Chaque ligne porte un filet de la couleur de ce dont elle parle, et
    ce sont les couleurs DU MODE : bleu pour le vote, rouge pour l'erreur,
    noir cerclé de blanc pour l'assassin. Une palette inventée ici aurait
    fait de la modale un objet à part. */
 .cod-regles-rang {
-    display: grid; grid-template-columns: 5.2rem 1fr; gap: 0.7rem;
+    display: grid; grid-template-columns: 5.4rem 1fr; gap: 1rem;
     align-items: baseline;
-    padding: 0.5rem 0 0.55rem 0.7rem;
+    padding: 0.8rem 0 0.85rem 0.9rem;
     border-left: 3px solid rgba(255, 255, 255, 0.18);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 .cod-regles-rang:last-child { border-bottom: 0; }
 .cod-regles-rang b {
-    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em;
+    font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em;
     text-transform: uppercase;
 }
-.cod-regles-rang span { font-size: 0.8rem; opacity: 0.72; line-height: 1.45; }
+.cod-regles-rang span { font-size: 0.84rem; opacity: 0.74; line-height: 1.62; }
 .cod-regles-rang span b { text-transform: none; letter-spacing: 0; font-size: 1em; color: #fff; opacity: 1; }
 .cod-regles-rang.r-indice { border-left-color: var(--cod-brun); }
 .cod-regles-rang.r-indice > b { color: var(--cod-brun); }
 .cod-regles-rang.r-vote { border-left-color: var(--cod-a); }
 .cod-regles-rang.r-vote > b { color: var(--cod-a); }
-.cod-regles-rang.r-suite { border-left-color: var(--cod-neutre); }
-.cod-regles-rang.r-suite > b { color: var(--cod-neutre); }
-.cod-regles-rang.r-faute { border-left-color: var(--cod-b); }
-.cod-regles-rang.r-faute > b { color: var(--cod-b); }
+/* La recommandation n'est pas une règle du tour : elle porte le beige du
+   passant, la seule couleur du mode qui ne dise ni « à toi » ni « danger ». */
+.cod-regles-rang.r-fair { border-left-color: var(--cod-neutre); }
+.cod-regles-rang.r-fair > b { color: var(--cod-neutre); }
 /* L'assassin : noir, donc invisible sur ce fond — c'est le filet blanc qui
    le dit, exactement comme sur sa carte. */
 .cod-regles-rang.r-assassin { border-left-color: rgba(255, 255, 255, 0.85); }
 .cod-regles-rang.r-assassin > b { color: rgba(255, 255, 255, 0.9); }
 
 .cod-regles-astuce {
-    margin: 0; padding: 0.7rem 1.2rem 0.9rem;
+    margin: 0; padding: 0.9rem 1.6rem 1.1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
-    font-size: 0.74rem; opacity: 0.5; line-height: 1.5;
+    font-size: 0.78rem; opacity: 0.5; line-height: 1.6;
 }
 .cod-regles-astuce b { opacity: 0.95; color: #fff; }
 
@@ -629,7 +644,13 @@
        de l'espion et par « Skip », qui s'y relaient. */
     .cod-regles-bouton { top: 3.3rem; width: 2rem; height: 2rem; }
     .cod-regles-bouton svg { width: 1.05rem; height: 1.05rem; }
-    .cod-regles-rang { grid-template-columns: 4.4rem 1fr; gap: 0.5rem; }
+    /* ⚠️ LE TITRE PASSE AU-DESSUS du texte, il ne reste pas en colonne. À
+       390 px, deux colonnes laissaient 11 rem à la ligne du vote — elle s'y
+       rendait sur sept lignes de quatre mots. */
+    .cod-regles-rang { grid-template-columns: 1fr; gap: 0.3rem; padding-left: 0.8rem; }
+    .cod-regles-bandeau { padding: 1.2rem 1.1rem 1rem; }
+    .cod-regles-corps { padding: 1rem 1.1rem 0.8rem; }
+    .cod-regles-astuce { padding: 0.8rem 1.1rem 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
