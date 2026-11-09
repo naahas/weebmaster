@@ -3208,9 +3208,7 @@
                                         :class="{ vif: i <= rush.jokersRestants,
                                                   casse: rush.jokerCasse === i - 1 }"
                                         :disabled="i > rush.jokersRestants || !rush.portrait"
-                                        :title="i <= rush.jokersRestants
-                                                ? 'Passer ce personnage sans casser la série'
-                                                : 'Joker déjà utilisé'"
+                                        aria-label="Passer sans casser la série"
                                         @click="utiliserJokerRush">
                                     <svg viewBox="0 0 64 96" aria-hidden="true">
                                         <path class="rush-joker-jus" d="M22 8 Q22 0 32 0 Q42 0 42 8 Q56 14 56 30 Q56 44 46 54 L46 70 Q46 74 42 74 L22 74 Q18 74 18 70 L18 54 Q8 44 8 30 Q8 14 22 8 Z" />

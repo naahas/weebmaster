@@ -268,14 +268,14 @@
 .rush-jokers {
     position: absolute;
     top: calc(var(--cadre) + var(--carte-h) / 2);
-    left: calc(100% + 0.9rem);
+    left: calc(100% + 1.35rem);
     transform: translateY(-50%);
     z-index: 3;
     display: flex;
     flex-direction: column;
     /* De l air entre elles : collees, les deux ampoules se lisaient comme un
        seul objet a deux bosses. */
-    gap: 0.9rem;
+    gap: 1.35rem;
 }
 
 .rush-joker {
