@@ -279,11 +279,12 @@
 }
 
 .rush-joker {
-    /* Exactement la taille de l ampoule d Ascension (1,65 x 2,4) : c est le
-       meme objet, il n a pas de raison de changer de corpulence d un mode a
-       l autre. */
-    width: 1.65rem;
-    height: 2.4rem;
+    /* Un cheveu sous l ampoule d Ascension (1,65 x 2,4) : meme objet, mais
+       elle se pose ici a cote d un cadre bien plus grand que les portraits
+       d un etage, et au meme calibre elle tirait l oeil hors du portrait.
+       Le rapport hauteur/largeur, lui, est inchange. */
+    width: 1.5rem;
+    height: 2.18rem;
     padding: 0;
     background: none;
     border: none;
