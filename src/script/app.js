@@ -5354,7 +5354,7 @@ createApp({
             this.showTopSheet = false;
             this.showQuestionStats = false;
             this.stopTimer();
-            this.clearSeal();
+            this.nettoyerClicReponse();
             this.resetComboSystem();
             this.arreterLesModes();
             document.body.classList.remove('game-active');
@@ -7044,7 +7044,7 @@ createApp({
             // Le sceau de la réponse vit sur <body>, hors de la vue : quitter
             // l'écran ne l'emporte pas. Répondre puis partir le laissait posé
             // sur l'accueil jusqu'au rechargement.
-            this.clearSeal();
+            this.nettoyerClicReponse();
             // Sans ça, le badge de mode gardait « BombAnime » sur l'accueil
             this.lobbyMode = 'classic';
             sessionStorage.removeItem('bombanimeInProgress');
@@ -7719,7 +7719,7 @@ createApp({
                 // fermait le salon : la boite et le titre restaient, les lignes
                 // disparaissaient. Le menage de Collect est descendu plus bas,
                 // avec le reste du demontage.
-                this.clearSeal();
+                this.nettoyerClicReponse();
                 // 🔊 Toujours couper le tictac, même si le reste est ignoré
                 this.stopBombTicking();
                 if (this.bombanime.timerInterval) {
@@ -7947,7 +7947,7 @@ createApp({
                 // Le cadre fixé au doigt porte les réponses de la question
                 // PRÉCÉDENTE : le laisser ouvert afficherait de vieux choix.
                 this.crewVu = null;
-                this.clearSeal();
+                this.nettoyerClicReponse();
                 this.revealQuestionChrome();
                 if (!this.hasJoined) {
                     console.log('❌ Vous devez rejoindre le lobby pour voir les questions');
@@ -7990,7 +7990,7 @@ createApp({
 
             this.socket.on('question-results', (results) => {
                 this.stopTimer();
-                this.clearSeal();
+                this.nettoyerClicReponse();
                 // Lu avant puis après l'affectation : le classement se recalcule
                 // sur les nouveaux résultats dès qu'ils sont posés.
                 if (results.autoDelai) this.autoDelai = results.autoDelai;
@@ -10136,7 +10136,7 @@ createApp({
             // 💥 Son "Shockwave 3D"
             this.playShockwaveSound();
 
-            if (event) this.playSealEffect(event.currentTarget);
+            if (event) this.jouerClicReponse(event.currentTarget);
 
             // Et on lâche le bouton. « :hover » est traité au-dessus, mais
             // « :focus » colle lui aussi après un appui, et survivrait au
@@ -10285,40 +10285,89 @@ createApp({
         // la barre encaisse le choc et un anneau se propage.
         // Les décors sont posés en position fixed sur <body> : Vue repatche la
         // classe du bouton au moment même du clic, tout ce qui vit dedans saute.
-        playSealEffect(bouton) {
+        // Le repère gicle, et huit éclats s'en échappent. Tout part de la
+        // PASTILLE colorée, c'est-à-dire de l'endroit qu'on vient de toucher —
+        // voir le bloc « LE CLIC SUR UNE RÉPONSE » dans home.css pour ce qui
+        // était là avant et pourquoi c'est parti.
+        jouerClicReponse(bouton) {
             if (!bouton) return;
-            const r = bouton.getBoundingClientRect();
+            const marque = bouton.querySelector('.v2q-mark');
+            if (!marque) return;
 
-            // Le choc du bouton passe par l'API d'animation : insensible au repatch
-            if (bouton.animate) {
-                bouton.animate(
-                    [{ transform: 'scale(1)' }, { transform: 'scale(0.968)', offset: 0.35 }, { transform: 'scale(1)' }],
-                    { duration: 300, easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' }
-                );
+            // ⚠️ On mesure la pastille À CHAQUE CLIC plutôt que de la calculer :
+            // elle rétrécit sur un quiz à six réponses et sur téléphone, et une
+            // taille écrite en dur enverrait l'anneau à côté dans ces deux cas.
+            const r = marque.getBoundingClientRect();
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+
+            // ⚠️ ON ANNULE D'ABORD CE QUI TOURNE ENCORE SUR LA PASTILLE, et
+            // c'est à faire AVANT de lire la teinte juste en dessous : au
+            // milieu de son animation, la pastille est à mi-chemin du blanc,
+            // et la lire là donnerait un anneau et des éclats délavés — voire
+            // presque noirs. Mesuré : une pastille reprise 55 ms après un clic
+            // rendait rgb(2, 5, 6) au lieu de son or. Vue refait normalement
+            // les boutons à chaque question (le bloc est keyé sur son numéro),
+            // mais un départage qui rejoue le même numéro, lui, les réutilise.
+            if (marque.getAnimations) marque.getAnimations().forEach(a => a.cancel());
+
+            // ⚠️ La teinte se LIT sur la pastille. Les six couleurs vivent une
+            // seule fois, dans `.v2q-mark.m0` à `.m5` ; les recopier ici serait
+            // exactement la maladie des défauts écrits deux fois.
+            const teinte = getComputedStyle(marque).color;
+            const rgb = teinte.match(/\d+/g) || ['255', '215', '0'];
+            const avec = (a) => `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`;
+
+            // ⚠️ Joué au Web Animations, jamais par une classe posée sur le
+            // bouton : Vue repatche les réponses et l'emporterait en silence.
+            //
+            // ⚠️ Et l'assouplissement est posé SUR CHAQUE IMAGE, pas dans les
+            // options : là, il déformerait la progression D'ENSEMBLE, alors
+            // qu'une animation CSS l'applique segment par segment. Avec un
+            // rebond (0.2, 1.6, …) la différence ne se rattrape pas.
+            if (marque.animate) {
+                const courbe = 'cubic-bezier(0.2, 1.6, 0.35, 1)';
+                marque.animate([
+                    { transform: 'scale(1)', easing: courbe },
+                    { transform: 'scale(1.55)', backgroundColor: '#ffffff', color: '#10100a', offset: 0.22, easing: courbe },
+                    { transform: 'scale(0.96)', offset: 0.45, easing: courbe },
+                    { transform: 'scale(1)' },
+                ], { duration: 460 });
             }
 
+            const calques = [];
             const anneau = document.createElement('div');
-            anneau.className = 'v2q-shock';
-            anneau.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
+            anneau.className = 'v2q-anneau-mark';
+            anneau.style.cssText = `left:${cx}px;top:${cy}px;width:${r.width}px;height:${r.height}px;`
+                + `--c:${avec(0.92)};--lueur:${avec(0.6)};`;
             document.body.appendChild(anneau);
+            calques.push(anneau);
 
-            // Le sceau se cale à gauche du pourcentage, qui n'apparaîtra qu'aux résultats
-            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-            const sceau = document.createElement('div');
-            sceau.className = 'v2q-seal';
-            sceau.textContent = '選';
-            sceau.style.cssText = `left:${r.right - 3.75 * rem}px;top:${r.top + r.height / 2}px;`;
-            document.body.appendChild(sceau);
+            // Huit éclats, dispersés d'un cran au hasard : à angles réguliers
+            // ils dessinent une étoile, et l'on voit la figure au lieu de
+            // l'impact.
+            for (let i = 0; i < 8; i++) {
+                const e = document.createElement('div');
+                e.className = 'v2q-eclat';
+                e.style.cssText = `left:${cx}px;top:${cy}px;`
+                    + `--a:${(i / 8) * 360 + (Math.random() * 26 - 13)}deg;`
+                    + `--d:${Math.round(22 + Math.random() * 28)}px;`
+                    + `--c:${teinte};--lueur:${avec(0.7)};`
+                    + `animation-delay:${Math.round(Math.random() * 35)}ms;`;
+                document.body.appendChild(e);
+                calques.push(e);
+            }
 
-            // L'anneau ne vit que le temps du choc ; le sceau reste jusqu'à la fin du temps
-            setTimeout(() => anneau.remove(), 600);
-            this._sceau = sceau;
+            // 520 ms d'anneau + 35 ms de retard possible, on laisse de la marge.
+            setTimeout(() => calques.forEach(n => n.remove()), 640);
         },
 
-        // Retire le sceau (fin du temps, question suivante, sortie de partie)
-        clearSeal() {
-            if (this._sceau) { this._sceau.remove(); this._sceau = null; }
-            document.querySelectorAll('.v2q-seal, .v2q-shock').forEach(n => n.remove());
+        // Les calques s'effacent seuls en 640 ms ; ce ménage est pour la
+        // question qui change AVANT, sans quoi ils se poseraient sur la
+        // suivante. Appelé à la fin du temps, au changement de question et à
+        // la sortie de partie.
+        nettoyerClicReponse() {
+            document.querySelectorAll('.v2q-anneau-mark, .v2q-eclat').forEach(n => n.remove());
         },
 
         // 💥 Son "Shockwave 3D" — généré via Web Audio API (pas de fichier MP3)

@@ -530,6 +530,14 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   sur une seule horloge. Deux contraintes y decident : la bombe DESIGNE quelqu un
   (d ou le curseur d angle) et elle est PETITE (d ou celui de taille — une piste qui
   ne tient pas a 44 px ne tiendra pas a huit joueurs).
+  Et les deux pages du clic sur une reponse du quiz, qui se lisent dans
+  l ordre : `/prototypes/quiz-clic` (neuf facons de rendre le clic plus
+  franc, l etat d alors en reference) et `/prototypes/quiz-gicle` (la
+  piste retenue — le repere gicle — et huit ajouts possibles). ⚠️ Cette
+  seconde page ne donne pas une liste de pistes fermees mais des
+  INGREDIENTS : le rail propose des dosages, la table du dessous les
+  melange librement, et le melange s ecrit dans l adresse (`#m=…`) pour
+  se renvoyer un choix. Retenu : le socle + les eclats.
   Et `/prototypes/code` : cinq facons de demander le code du salon, avec un
   basculeur ordinateur/telephone.
   Et `/prototypes/rush-multi` : cinq facons d afficher le multiplicateur de Rush,
@@ -847,6 +855,51 @@ occasions de casser le filet. À nettoyer un jour, hors d'un chantier.
 - Les joueurs sont identifiés par `playerId` (pseudo invité) **et** `socket.id` (volatile).
 - Le serveur est **autoritaire** : toute validation de réponse se fait côté serveur, le client
   n'affiche que le résultat.
+
+## Le clic sur une réponse du quiz
+
+⚠️ **Tout part du REPÈRE — la pastille colorée —, et surtout pas d’ailleurs.** Le clic posait
+avant trois choses : le bouton se tassait à 0,968, un anneau grandissait de 7 % **autour** de
+lui, et un sceau « 選 » tombait à sa droite et y restait. Les trois se jouaient loin du doigt ;
+il ne se passait rien là où l’on venait de toucher.
+
+La pastille grossit maintenant, vire au **blanc**, lâche un anneau, et **huit éclats** s’en
+échappent (`jouerClicReponse`, `app.js`). Neuf pistes ont été écartées au banc
+`/prototypes/quiz-clic`, puis huit ajouts au banc `/prototypes/quiz-gicle`.
+
+⚠️ **Le sceau 選 est RETIRÉ**, et ne doit pas revenir : il disait « tu as répondu » une seconde
+fois alors que la bordure or et les autres réponses ternies le disent déjà, et il prenait la
+place du pourcentage. Ses **deux** blocs CSS sont partis avec — il s’en déclarait un second
+cinquante lignes plus bas qui le redimensionnait, on réglait l’un et l’autre gagnait.
+
+Quatre choses à connaître, et chacune a coûté une mesure :
+
+- ⚠️ **La teinte se LIT sur la pastille, elle ne se recopie pas.** Les six couleurs vivent une
+  seule fois, dans `.v2q-mark.m0` à `.m5` ; une seconde copie dans `app.js` serait exactement
+  la maladie des défauts écrits deux fois. L’anneau et les éclats la reçoivent par `--c`.
+- ⚠️ **Et il faut ANNULER ce qui tourne encore sur la pastille avant de la lire.** En pleine
+  animation elle est à mi-chemin du blanc : mesuré, une pastille reprise 55 ms après un clic
+  rendait `rgb(2, 5, 6)` au lieu de son or, et l’effet serait sorti presque noir. Vue refait
+  normalement les boutons à chaque question (le bloc est keyé sur son numéro), mais un
+  départage qui rejoue le même numéro, lui, les réutilise.
+- ⚠️ **La taille de la pastille se MESURE à chaque clic.** Elle vaut 1,75 rem, mais 1,4 rem sur
+  un quiz à six réponses **et seulement sur écran étroit** — relevé : 28 px sur ordinateur,
+  22 px à 390 px. Une taille écrite en dur enverrait l’anneau à côté dans ce cas précis.
+- ⚠️ **L’anneau et les éclats vivent sur `<body>` en `position: fixed`, à `z-index: 800`.**
+  `.v2q-answer` porte un `overflow: hidden` qui les couperait presque aussitôt — la pastille
+  est à 1 rem du bord gauche. Et 800, pas 9997 : c’est la leçon que le sceau avait déjà
+  coûtée, au-dessus de 9000 ces calques passent **par-dessus les modales**. 800 domine le jeu
+  (l’icône des défis est à 600) et s’efface devant les voiles (900) et les modales (1000).
+
+⚠️ **Le pop est joué au Web Animations, jamais par une classe posée sur le bouton** : Vue
+repatche les réponses et l’emporterait en silence. Et **l’assouplissement est posé SUR CHAQUE
+IMAGE**, pas dans les options — là il déformerait la progression *d’ensemble*, alors qu’une
+animation CSS l’applique segment par segment ; avec un rebond (`0.2, 1.6, …`) l’écart ne se
+rattrape pas.
+
+ℹ️ `nettoyerClicReponse()` (cinq appels : fin du temps, question suivante, sortie de partie)
+n’est là que pour la question qui change **avant** les 640 ms, sans quoi les éclats se
+poseraient sur la suivante.
 
 ## Le lien de preuve d’une question
 

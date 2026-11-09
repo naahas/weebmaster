@@ -2404,6 +2404,14 @@ app.get('/prototypes/collect-triangle', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-triangle.html');
 });
 
+app.get('/prototypes/quiz-clic', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-quiz-clic.html');
+});
+
+app.get('/prototypes/quiz-gicle', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-quiz-gicle.html');
+});
+
 app.get('/prototypes/bomb-cadenas', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bomb-cadenas.html');
 });

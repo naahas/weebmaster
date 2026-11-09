@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classique — le clic sur une réponse</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LE CLIC SUR UNE RÉPONSE — mode Classique
+
+   Aujourd'hui : le bouton se tasse à 0,968, un anneau doré grandit de
+   7 % autour de lui, un sceau « 選 » tombe à droite et reste posé
+   jusqu'à la fin du temps, plus un carillon. C'est propre, mais tout se
+   passe AUTOUR du bouton et rien à l'endroit où le doigt a touché.
+
+   ⚠️ QUATRE CONTRAINTES, et elles décident de ce qu'on peut dessiner :
+
+   1. `.v2q-answer` porte `overflow: hidden`. Tout ce qui déborde est
+      COUPÉ NET à son bord. Une onde ou un balayage s'en servent (c'est
+      ce qui les rend propres) ; des éclats doivent vivre AILLEURS —
+      en jeu, posés sur `<body>` en `position: fixed`, comme l'anneau
+      d'aujourd'hui.
+
+   2. Vue REPATCHE les boutons d'une question à la suivante : même
+      position, même nœud. Une classe posée à la main peut donc être
+      effacée par un rendu, et un nœud ajouté dans le bouton disparaître
+      avec lui. D'où, en jeu, l'anneau sur `<body>` et le tassement du
+      bouton en Web Animations — « insensible au repatch », dit le code.
+
+   3. ⚠️ `transform` sur un ancêtre crée un bloc conteneur et casse le
+      `position: fixed` de ses descendants. C'est l'erreur qui revient le
+      plus souvent sur ce projet : une piste qui anime la CARTE entière
+      ferait tomber le sceau et l'anneau à côté.
+
+   4. Le clic a déjà trois suites : la réponse passe en `selected`, les
+      autres en `dim`, et le sceau reste. L'effet ne doit pas lutter
+      contre elles — il doit y MENER.
+
+   ⚠️ Et le vrai juge est le DOIGT, pas l'œil : un effet de clic se juge
+   en cliquant, pas en regardant une vignette. D'où une seule carte, pour
+   de vrai, et neuf pistes qu'on arme au clavier (touches 0 à 9).
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+    --k: 1;
+    --or: #ffd700;
+    --or-doux: rgba(255, 215, 0, 0.75);
+    --fond: #07070a;
+    --texte: #e8e9ee;
+    --succes: #10b981;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.3rem 1.3rem 4rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: var(--texte); background: var(--fond);
+}
+h1 { font-size: 1.1rem; margin: 0 0 0.3rem; }
+.sous { font-size: 0.76rem; opacity: 0.55; margin: 0 0 1rem; max-width: 64rem; line-height: 1.6; }
+.sous b { opacity: 0.95; }
+.sous .av { color: #ffb84d; }
+
+.barre {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.65rem 0.85rem; margin-bottom: 1.2rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.96); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.42; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.57rem; }
+.barre .sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.1); margin: 0 0.25rem; }
+button.cmd {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    color: #d8dae2; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 0.45rem;
+    padding: 0.34rem 0.68rem; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+button.cmd:hover { background: rgba(255,255,255,0.1); }
+button.cmd.on { background: rgba(255,215,0,0.16); border-color: rgba(255,215,0,0.5); color: var(--or); }
+button.cmd:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+
+.plan { display: grid; grid-template-columns: minmax(0,1fr) 23rem; gap: 1.4rem; align-items: start; }
+@media (max-width: 1150px) { .plan { grid-template-columns: 1fr; } }
+
+/* ════════════════════════════════════════════════════════════════
+   LA CARTE — reprise fidèle de home.css (.v2q-*)
+   ════════════════════════════════════════════════════════════════ */
+.scene { display: flex; justify-content: center; }
+.carte {
+    width: 100%; max-width: 30rem;
+    padding: 1.6rem 1.5rem 1.8rem;
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 1rem;
+    background: rgba(255,255,255,0.016);
+}
+.carte.tel { max-width: 20rem; }
+.badges { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 0 0 1.6rem; }
+.serie, .diff {
+    padding: 0.42rem 0.95rem; font-size: 0.74rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; border-radius: 0.32rem;
+}
+.serie { color: #fff; background: rgba(255,255,255,0.08); border: 0.06rem solid rgba(255,255,255,0.15); }
+.diff  { color: #fbbf24; background: rgba(251,191,36,0.1); border: 0.06rem solid rgba(251,191,36,0.25); }
+.question {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.16rem; font-weight: 600;
+    line-height: 1.55; text-align: center; margin: 0 0 1.8rem;
+}
+.reponses { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.rep {
+    position: relative;
+    overflow: hidden;              /* ⚠️ contrainte 1 : tout déborde est coupé */
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 1.35rem 2.6rem 1.35rem 1rem;
+    font-family: inherit;
+    background: rgba(255,255,255,0.03);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease,
+                transform 0.2s ease, opacity 0.3s ease, filter 0.3s ease;
+}
+@media (hover: hover) {
+    .rep:hover:not(.fige) { background: rgba(255,215,0,0.07); border-color: rgba(255,215,0,0.4); transform: translateY(-0.1rem); }
+    .rep:hover:not(.fige) .marque { transform: scale(1.12); }
+}
+.rep-txt {
+    position: relative; z-index: 2; flex: 1;
+    font-size: 0.9rem; font-weight: 500; color: var(--texte); text-align: left;
+}
+.marque {
+    position: relative; z-index: 2; flex: 0 0 auto;
+    display: grid; place-items: center;
+    width: 1.75rem; height: 1.75rem; font-size: 0.72rem; line-height: 1;
+    border-radius: 0.4rem;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+.marque.m0 { color: #ffd24a; background: rgba(255,210,74,0.12); box-shadow: inset 0 0 0 0.06rem rgba(255,210,74,0.35); }
+.marque.m1 { color: #7fb4ff; background: rgba(127,180,255,0.12); box-shadow: inset 0 0 0 0.06rem rgba(127,180,255,0.35); }
+.marque.m2 { color: #6ee7b7; background: rgba(110,231,183,0.12); box-shadow: inset 0 0 0 0.06rem rgba(110,231,183,0.35); }
+.marque.m3 { color: #d8b4fe; background: rgba(216,180,254,0.12); box-shadow: inset 0 0 0 0.06rem rgba(216,180,254,0.35); }
+
+.rep.choisie { border-color: rgba(255,215,0,0.75); background: rgba(255,215,0,0.1); }
+.rep.ternie  { opacity: 0.45; }
+.rep.fige { cursor: default; }
+
+/* ════════════════════════════════════════════════════════════════
+   LES NEUF PISTES
+   Chaque calque est créé au clic puis retiré ; rien ne vit au repos.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─ commun : les calques posés DANS le bouton ─ */
+.fx { position: absolute; pointer-events: none; z-index: 1; }
+
+/* ─ E1 · ONDE AU POINT DE CLIC ─────────────────────────────────── */
+.fx-onde {
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,215,0,0.42) 0%, rgba(255,215,0,0.14) 45%, rgba(255,215,0,0) 70%);
+    animation: qOnde calc(520ms * var(--k)) cubic-bezier(0.15, 0.75, 0.3, 1) forwards;
+}
+@keyframes qOnde {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ─ E2 · BALAYAGE ÉCLAIR ───────────────────────────────────────── */
+.fx-balai {
+    inset: 0 auto 0 0; width: 42%;
+    background: linear-gradient(100deg, rgba(255,215,0,0) 0%, rgba(255,215,0,0.5) 45%,
+                rgba(255,255,255,0.85) 55%, rgba(255,215,0,0.5) 65%, rgba(255,215,0,0) 100%);
+    animation: qBalai calc(300ms * var(--k)) cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
+}
+@keyframes qBalai {
+    0%   { opacity: 1; transform: translateX(-110%); }
+    100% { opacity: 0.2; transform: translateX(290%); }
+}
+
+/* ─ E3 · LE CADRE QUI SE FERME ─────────────────────────────────── */
+.fx-cadre { inset: 0; }
+.fx-cadre svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.fx-cadre rect {
+    fill: none; stroke: var(--or); stroke-width: 2.4;
+    stroke-dasharray: 100; stroke-dashoffset: 100;
+    filter: drop-shadow(0 0 4px rgba(255,215,0,0.6));
+    animation: qCadre calc(380ms * var(--k)) cubic-bezier(0.25, 0.7, 0.3, 1) forwards;
+}
+@keyframes qCadre { to { stroke-dashoffset: 0; } }
+
+/* ─ E4 · ENFONCEMENT (le creux) ────────────────────────────────── */
+/* Aucun calque : c'est le BOUTON qui bouge. Le creux se fait à l'ombre
+   interne, le ressort au Web Animations — voir `pisteEnfoncement`. */
+.rep.creux { box-shadow: inset 0 0.25rem 0.9rem rgba(0,0,0,0.75), inset 0 0 0 0.06rem rgba(255,215,0,0.35); }
+
+/* ─ E5 · ÉCLATS (hors du bouton, sur <body>) ───────────────────── */
+.eclat {
+    position: fixed; z-index: 9997; pointer-events: none;
+    width: 0.42rem; height: 0.12rem; border-radius: 0.1rem;
+    background: linear-gradient(90deg, #fff, var(--or));
+    box-shadow: 0 0 0.5rem rgba(255,215,0,0.8);
+    animation: qEclat calc(520ms * var(--k)) cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+@keyframes qEclat {
+    0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateX(0) scaleX(0.4); }
+    30%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateX(var(--d)) scaleX(1.4); }
+}
+
+/* ─ E6 · LE REPÈRE GICLE ───────────────────────────────────────── */
+.rep.gicle .marque { animation: qMarque calc(460ms * var(--k)) cubic-bezier(0.2, 1.6, 0.35, 1) forwards; }
+@keyframes qMarque {
+    0%   { transform: scale(1); }
+    22%  { transform: scale(1.55); background: #fff; color: #10100a; }
+    45%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+.anneau-marque {
+    position: fixed; z-index: 9997; pointer-events: none;
+    border-radius: 0.4rem; border: 0.12rem solid rgba(255,255,255,0.9);
+    box-shadow: 0 0 0.6rem rgba(255,215,0,0.6);
+    animation: qAnneauMarque calc(520ms * var(--k)) cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+@keyframes qAnneauMarque {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0.7); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(2.6); }
+}
+
+/* ─ E7 · LA MÈCHE ──────────────────────────────────────────────── */
+/* Le langage de BombAnime, rapporté au quiz : un trait part du repère,
+   file sous le texte, et la bordure s'allume à son passage. */
+.fx-meche {
+    left: 0; right: 0; bottom: 0; height: 0.14rem;
+    transform-origin: left center;
+    background: linear-gradient(90deg, rgba(255,215,0,0.25), var(--or) 70%, #fff);
+    box-shadow: 0 0 0.6rem rgba(255,215,0,0.9);
+    animation: qMeche calc(340ms * var(--k)) cubic-bezier(0.25, 0.75, 0.3, 1) forwards;
+}
+@keyframes qMeche {
+    0%   { opacity: 1; transform: scaleX(0); }
+    70%  { opacity: 1; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(1); }
+}
+.rep.mechee { animation: qMecheBord calc(340ms * var(--k)) linear forwards; }
+@keyframes qMecheBord {
+    0%   { border-color: rgba(255,255,255,0.08); }
+    70%  { border-color: rgba(255,215,0,0.85); }
+    100% { border-color: rgba(255,215,0,0.75); }
+}
+
+/* ─ E8 · FLASH NÉGATIF ─────────────────────────────────────────── */
+.rep.negatif { animation: qNegatif calc(300ms * var(--k)) steps(1) forwards; }
+@keyframes qNegatif {
+    0%, 14%  { filter: invert(1) brightness(1.1); }
+    15%, 30% { filter: none; }
+    31%, 42% { filter: invert(1) brightness(1.1); }
+    43%, 100%{ filter: none; }
+}
+
+/* ─ E9 · LES AUTRES RECULENT ───────────────────────────────────── */
+.rep.avancee { transform: translateY(-0.22rem) scale(1.015); border-color: rgba(255,215,0,0.8); }
+.rep.reculee { transform: translateY(0.14rem) scale(0.985); opacity: 0.3; filter: blur(1.2px); }
+
+/* ─ E0 · AUJOURD'HUI ───────────────────────────────────────────── */
+.choc {
+    position: fixed; z-index: 9997; pointer-events: none;
+    border: 0.13rem solid rgba(255,215,0,0.85); border-radius: 0.6rem;
+    animation: qChoc calc(500ms * var(--k)) ease-out forwards;
+}
+@keyframes qChoc { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.07); } }
+
+.sceau {
+    position: fixed; z-index: 800; display: grid; place-items: center;
+    width: 1.6rem; height: 1.6rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.78rem; line-height: 1;
+    color: var(--or); background: rgba(255,215,0,0.08);
+    border: 0.1rem solid rgba(255,215,0,0.9); border-radius: 0.35rem;
+    text-shadow: 0 0 0.7rem rgba(255,215,0,0.6);
+    box-shadow: 0 0 1.4rem rgba(255,215,0,0.35);
+    pointer-events: none;
+    animation: qSceau calc(450ms * var(--k)) cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+}
+@keyframes qSceau {
+    0%   { opacity: 0; transform: translateY(-50%) scale(3.2) rotate(-28deg); }
+    60%  { opacity: 1; transform: translateY(-50%) scale(0.9) rotate(-9deg); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LE RAIL DES PISTES
+   ════════════════════════════════════════════════════════════════ */
+.rail {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.8rem;
+    background: rgba(255,255,255,0.018); padding: 0.75rem;
+    position: sticky; top: 4.4rem;
+}
+.piste {
+    display: block; width: 100%; text-align: left;
+    padding: 0.6rem 0.7rem; margin-bottom: 0.35rem;
+    border: 1px solid transparent; border-radius: 0.55rem;
+    background: transparent; color: inherit; font: inherit; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.piste:hover { background: rgba(255,255,255,0.04); }
+.piste.on { background: rgba(255,215,0,0.08); border-color: rgba(255,215,0,0.45); }
+.piste .t { display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.78rem; font-weight: 700; }
+.piste .t em { font-style: normal; opacity: 0.35; font-weight: 600; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: 0.66rem; line-height: 1.5; opacity: 0.5; margin-top: 0.15rem; }
+.piste.ref .t { color: #ff9b9b; }
+.piste.ref { border-style: dashed; border-color: rgba(255,255,255,0.12); }
+
+.aide-clavier { font-size: 0.62rem; opacity: 0.38; margin: 0.6rem 0 0; line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fx, .eclat, .anneau-marque, .choc { animation: none !important; opacity: 0 !important; }
+}
+</style>
+</head>
+<body>
+
+<h1>Classique — le clic sur une réponse</h1>
+<p class="sous">
+Neuf façons de rendre le clic plus franc. <span class="av">Ça se juge en cliquant</span>, pas en
+regardant : une vignette ne dit rien de ce que ça fait au doigt. Arme une piste à gauche (ou
+tape son chiffre), clique une réponse, puis <b>Rejouer</b>. L'effet doit <b>mener</b> à l'état
+sélectionné, pas lutter contre lui — la réponse choisie vire à l'or et les autres s'éteignent
+de toute façon.
+</p>
+
+<div class="barre">
+    <label>Écran</label>
+    <button class="cmd on" data-tel="0">Ordinateur</button>
+    <button class="cmd" data-tel="1">Téléphone</button>
+    <span class="sep"></span>
+    <label>Vitesse</label>
+    <button class="cmd on" data-k="1">normal</button>
+    <button class="cmd" data-k="2.5">×2,5</button>
+    <button class="cmd" data-k="5">ralenti ×5</button>
+    <span class="sep"></span>
+    <button class="cmd on" id="son">Son</button>
+    <button class="cmd on" id="garde-sceau">Garder le sceau 選</button>
+    <span class="sep"></span>
+    <button class="cmd" id="rejouer">Rejouer (R)</button>
+    <button class="cmd" id="tout">Enchaîner les neuf</button>
+</div>
+
+<div class="plan">
+    <div class="scene">
+        <div class="carte" id="carte">
+            <div class="badges"><span class="serie">Mashle</span><span class="diff">Medium</span></div>
+            <p class="question">Pour quelle raison Lance veut-il devenir un élu divin ?</p>
+            <div class="reponses" id="reponses"></div>
+        </div>
+    </div>
+
+    <div>
+        <div class="rail" id="rail"></div>
+        <p class="aide-clavier">
+            Chiffres <b>0</b> à <b>9</b> : armer une piste. <b>R</b> : rejouer.
+            <b>Échap</b> : remettre la carte à zéro.
+        </p>
+    </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   LES PISTES
+   « corps » reçoit (bouton, x, y) — x et y sont le point touché,
+   relatifs au bouton. Chacune nettoie derrière elle.
+   ════════════════════════════════════════════════════════════════ */
+const REPONSES = [
+    'Pour épouser la reine du royaume',
+    'Pour sauver sa soeur',
+    'Pour prouver sa supériorité',
+    'Pour devenir riche',
+];
+const MARQUES = ['◆', '●', '▲', '■'];
+
+let K = 1;                       // ralenti d'observation
+const ms = (n) => n * K;
+const apres = (n, f) => setTimeout(f, ms(n));
+const poubelle = [];
+function jeter(n, duree) { poubelle.push(n); apres(duree, () => n.remove()); }
+
+/* Un calque DANS le bouton — coupé par son `overflow: hidden`. */
+function dedans(bouton, classe, style, duree) {
+    const d = document.createElement('div');
+    d.className = 'fx ' + classe;
+    if (style) d.style.cssText = style;
+    bouton.appendChild(d);
+    jeter(d, duree);
+    return d;
+}
+/* Un calque SUR <body> — pour ce qui doit déborder. */
+function dehors(classe, style, duree) {
+    const d = document.createElement('div');
+    d.className = classe;
+    if (style) d.style.cssText = style;
+    document.body.appendChild(d);
+    jeter(d, duree);
+    return d;
+}
+
+const PISTES = [
+    {
+        id: 0, ref: true, nom: "Aujourd'hui",
+        note: "Le bouton se tasse à 0,968, un anneau grandit de 7 % autour de lui, le sceau 選 tombe à droite. Tout se passe AUTOUR du bouton, rien là où le doigt a touché.",
+        corps(b) {
+            const r = b.getBoundingClientRect();
+            b.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.968)', offset: 0.35 }, { transform: 'scale(1)' }],
+                { duration: ms(300), easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' });
+            dehors('choc', `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`, 600);
+        },
+    },
+    {
+        id: 1, nom: "Onde au point de clic",
+        note: "Une onde dorée part EXACTEMENT de là où le doigt a touché et couvre le bouton. Le `overflow: hidden` la découpe proprement au bord — c'est lui qui la rend nette.",
+        corps(b, x, y) {
+            const r = b.getBoundingClientRect();
+            const rayon = Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y)) * 2;
+            dedans(b, 'fx-onde', `left:${x}px;top:${y}px;width:${rayon}px;height:${rayon}px;`, 560);
+        },
+    },
+    {
+        id: 2, nom: "Balayage éclair",
+        note: "Une lame de lumière traverse le bouton en 300 ms et laisse l'or derrière elle. Le plus court de tous : on le sent sans l'avoir regardé.",
+        corps(b) { dedans(b, 'fx-balai', '', 340); },
+    },
+    {
+        id: 3, nom: "Le cadre qui se ferme",
+        note: "La bordure se DESSINE autour du bouton, d'un trait, et se referme. Dit « verrouillé » par la structure, sans rien ajouter au milieu du texte.",
+        corps(b) {
+            const c = dedans(b, 'fx-cadre', '', 420);
+            c.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <rect x="1.2" y="1.2" width="97.6" height="97.6" rx="4" pathLength="100"/></svg>`;
+        },
+    },
+    {
+        id: 4, nom: "Enfoncement",
+        note: "Aucun calque : le bouton s'ENFONCE pour de bon — creux à l'ombre interne, puis ressort. Le plus sobre, et le seul qui marche aussi bien à la souris qu'au doigt.",
+        corps(b) {
+            b.classList.add('creux');
+            b.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.952)', offset: 0.28 },
+                       { transform: 'scale(1.014)', offset: 0.62 }, { transform: 'scale(1)' }],
+                { duration: ms(420), easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' });
+            apres(170, () => b.classList.remove('creux'));
+        },
+    },
+    {
+        id: 5, nom: "Éclats",
+        note: "Douze éclats dorés partent du point touché et DÉBORDENT du bouton. Ils doivent donc vivre sur `body` — dans le bouton, ils seraient coupés au bord.",
+        corps(b, x, y) {
+            const r = b.getBoundingClientRect();
+            for (let i = 0; i < 12; i++) {
+                const a = (i / 12) * 360 + (Math.random() * 22 - 11);
+                const d = 34 + Math.random() * 46;
+                dehors('eclat', `left:${r.left + x}px;top:${r.top + y}px;--a:${a}deg;--d:${d}px;`
+                    + `animation-delay:${ms(Math.random() * 40)}ms;`, 620);
+            }
+        },
+    },
+    {
+        id: 6, nom: "Le repère gicle",
+        note: "C'est la pastille colorée qui fait tout le travail : elle grossit, vire au blanc, et lâche un anneau. Le texte ne bouge pas d'un pixel — le plus discret des neuf.",
+        corps(b) {
+            const m = b.querySelector('.marque');
+            const r = m.getBoundingClientRect();
+            b.classList.add('gicle');
+            dehors('anneau-marque', `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;`
+                + `width:${r.width}px;height:${r.height}px;`, 600);
+            apres(500, () => b.classList.remove('gicle'));
+        },
+    },
+    {
+        id: 7, nom: "La mèche",
+        note: "Un trait part du repère, file sous le texte et allume la bordure à son passage. C'est le langage de BombAnime rapporté au quiz — le site le parle déjà.",
+        corps(b) {
+            dedans(b, 'fx-meche', '', 400);
+            b.classList.add('mechee');
+            apres(380, () => b.classList.remove('mechee'));
+        },
+    },
+    {
+        id: 8, nom: "Flash négatif",
+        note: "Deux clignements en négatif, 300 ms en tout. Brutal, gratuit, impossible à rater — et le même langage que la carte assassin de Codanime.",
+        corps(b) {
+            b.classList.add('negatif');
+            apres(320, () => b.classList.remove('negatif'));
+        },
+    },
+    {
+        id: 9, nom: "Les autres reculent",
+        note: "Pas un effet mais une MISE EN SCÈNE : la réponse choisie avance et se durcit, les trois autres reculent et se floutent. Ça remplace le `dim`, ça ne s'y ajoute pas.",
+        scene: true,
+        corps(b) {
+            b.classList.add('avancee');
+            [...document.querySelectorAll('.rep')].forEach(o => { if (o !== b) o.classList.add('reculee'); });
+        },
+    },
+];
+
+/* ─────────── la carte ─────────── */
+const zone = document.getElementById('reponses');
+REPONSES.forEach((txt, i) => {
+    const b = document.createElement('button');
+    b.className = 'rep';
+    b.innerHTML = `<span class="marque m${i}" aria-hidden="true">${MARQUES[i]}</span>
+                   <span class="rep-txt">${txt}</span>`;
+    b.addEventListener('click', (e) => repondre(b, e));
+    zone.appendChild(b);
+});
+
+let armee = 1;
+let derniere = null;
+let avecSon = true;
+let avecSceau = true;
+
+function remise() {
+    poubelle.splice(0).forEach(n => n.remove());
+    document.querySelectorAll('.sceau, .choc, .eclat, .anneau-marque').forEach(n => n.remove());
+    document.querySelectorAll('.rep').forEach(b => {
+        b.className = 'rep ' + [...b.classList].filter(c => c.startsWith('m')).join(' ');
+        b.className = 'rep';
+        b.querySelectorAll('.fx').forEach(n => n.remove());
+        b.getAnimations().forEach(a => a.cancel());
+        b.querySelector('.marque').getAnimations().forEach(a => a.cancel());
+    });
+}
+
+function repondre(b, e) {
+    if (b.classList.contains('fige')) return;
+    remise();
+    derniere = b;
+
+    const r = b.getBoundingClientRect();
+    // Au clavier (`detail === 0`) il n'y a pas de point touché : on vise le centre.
+    const x = e && e.detail > 0 ? e.clientX - r.left : r.width / 2;
+    const y = e && e.detail > 0 ? e.clientY - r.top : r.height / 2;
+
+    const piste = PISTES.find(p => p.id === armee);
+    piste.corps(b, x, y);
+
+    // L'état qui SUIT le clic, et vers lequel l'effet doit mener.
+    document.querySelectorAll('.rep').forEach(o => o.classList.add('fige'));
+    if (!piste.scene) {
+        b.classList.add('choisie');
+        document.querySelectorAll('.rep').forEach(o => { if (o !== b) o.classList.add('ternie'); });
+    }
+
+    if (avecSceau) {
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        const s = dehors('sceau', `left:${r.right - 2.4 * rem}px;top:${r.top + r.height / 2}px;`, 999999);
+        s.textContent = '選';
+    }
+    if (avecSon) carillon();
+}
+
+/* Le carillon du jeu, repris tel quel (Web Audio, aucun fichier). */
+let ctxSon = null;
+function carillon() {
+    try {
+        if (!ctxSon) ctxSon = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctxSon.state === 'suspended') ctxSon.resume();
+        const t = ctxSon.currentTime;
+        [[4400, 0, 0.08, 0.35, 'sine'], [3300, 0.03, 0.07, 0.4, 'sine'], [6600, 0.06, 0.03, 0.25, 'triangle']]
+        .forEach(([f, dec, vol, dur, type]) => {
+            const o = ctxSon.createOscillator(), g = ctxSon.createGain();
+            o.type = type; o.frequency.setValueAtTime(f, t + dec);
+            g.gain.setValueAtTime(0, t + dec);
+            g.gain.linearRampToValueAtTime(vol, t + dec + 0.008);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dec + dur);
+            o.connect(g).connect(ctxSon.destination);
+            o.start(t + dec); o.stop(t + dec + dur);
+        });
+    } catch (err) { /* pas de son, tant pis */ }
+}
+
+/* ─────────── le rail ─────────── */
+const rail = document.getElementById('rail');
+PISTES.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'piste' + (p.ref ? ' ref' : '');
+    b.innerHTML = `<span class="t"><em>${p.id}</em>${p.nom}</span><span class="n">${p.note}</span>`;
+    b.addEventListener('click', () => armer(p.id));
+    rail.appendChild(b);
+    p.bouton = b;
+});
+function armer(id) {
+    armee = id;
+    PISTES.forEach(p => p.bouton.classList.toggle('on', p.id === id));
+    rejouer();
+}
+function rejouer() {
+    const b = derniere || document.querySelectorAll('.rep')[1];
+    remise();
+    derniere = b;
+    b.click();
+}
+
+document.getElementById('rejouer').addEventListener('click', rejouer);
+document.getElementById('son').addEventListener('click', (e) => {
+    avecSon = !avecSon; e.target.classList.toggle('on', avecSon);
+});
+document.getElementById('garde-sceau').addEventListener('click', (e) => {
+    avecSceau = !avecSceau; e.target.classList.toggle('on', avecSceau);
+    if (!avecSceau) document.querySelectorAll('.sceau').forEach(n => n.remove());
+});
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-k]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    K = Number(b.dataset.k);
+    document.documentElement.style.setProperty('--k', K);
+}));
+document.querySelectorAll('[data-tel]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-tel]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('carte').classList.toggle('tel', b.dataset.tel === '1');
+}));
+
+/* « Enchaîner les neuf » : la même réponse, les dix pistes à la suite.
+   Deux secondes entre chaque — assez pour que l'oeil se repose, sinon
+   on compare un effet à l'image rémanente du précédent. */
+let chaine = null;
+document.getElementById('tout').addEventListener('click', (e) => {
+    if (chaine) { clearInterval(chaine); chaine = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    let i = 0;
+    const pas = () => { armer(PISTES[i % PISTES.length].id); i++; };
+    pas();
+    chaine = setInterval(pas, 2000);
+});
+
+document.addEventListener('keydown', (e) => {
+    if (/^[0-9]$/.test(e.key)) armer(Number(e.key));
+    if (e.key === 'r' || e.key === 'R') rejouer();
+    if (e.key === 'Escape') { remise(); derniere = null; }
+});
+
+armer(1);
+</script>
+</body></html>

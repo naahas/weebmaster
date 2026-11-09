@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le repère gicle — les variantes</title>
+<!--
+   ⚠️ LA SUITE DE `/prototypes/quiz-clic`, PISTE 6.
+   Le socle est retenu : la pastille grossit, vire au blanc, lâche un anneau.
+   Il manque UNE chose de plus — huit candidates ici, et surtout de quoi les
+   MÉLANGER : chacune est un ingrédient indépendant, pas une piste fermée.
+   Le rail propose des dosages, les interrupteurs en dessous composent.
+
+   ⚠️ Quatre contraintes décident de ce qui est dessinable, et elles n'ont
+   pas bougé depuis quiz-clic :
+
+   1. `.rep` porte `overflow: hidden`. Ce qui doit DÉBORDER (anneaux, éclats)
+      vit donc sur `<body>` en `position: fixed` ; ce qui doit être COUPÉ net
+      au bord (l'onde, la barre, la traînée) vit dans le bouton.
+
+   2. Deux animations qui écrivent `transform` sur le MÊME élément : la
+      dernière déclarée gagne, l'autre est perdue en silence. D'où la règle
+      ici — un mouvement par élément. L'échelle est sur `.marque`, la secousse
+      sur `.rep`, la poussée sur `.rep-txt`, et les fantômes sont des noeuds
+      à part. Jamais deux sur le même.
+
+   3. `transform` sur un ancêtre casse le `position: fixed` de ses
+      descendants. La « frappe » en pose un sur `.rep` : c'est sans danger
+      UNIQUEMENT parce que les anneaux et les éclats sont sur `<body>`, pas
+      dans le bouton. Les y remettre casserait les deux à la fois.
+
+   4. L'effet doit MENER à l'état sélectionné (bordure or, les autres
+      ternies), pas lutter contre lui.
+
+   ⚠️ LE SCEAU 選 A DISPARU de cette page, volontairement : c'est le choix
+   qu'on est en train de prendre. Il ne reviendra pas par la bande.
+
+   Le mélange s'écrit dans l'adresse (`#m=…`), pour se renvoyer un dosage.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+    --k: 1;                         /* ralenti d'observation */
+    --fond: #07070a;
+    --texte: #e8e8ee;
+    --or: #ffd700;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.6rem 5rem;
+    background: var(--fond); color: var(--texte);
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.04em;
+    margin: 0 0 0.35rem; color: #fff;
+}
+.sous { font-size: 0.78rem; line-height: 1.65; opacity: 0.6; max-width: 54rem; margin: 0 0 1.2rem; }
+.sous b { opacity: 1; color: #fff; font-weight: 600; }
+.sous .av { color: var(--or); font-weight: 600; }
+
+/* ─ la barre de commandes ─ */
+.barre {
+    position: sticky; top: 0; z-index: 900;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    padding: 0.7rem 0.9rem; margin: 0 -0.3rem 1.4rem;
+    background: rgba(10,10,14,0.94); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+}
+.barre label {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
+    opacity: 0.4; margin-right: 0.15rem;
+}
+.cmd {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    padding: 0.42rem 0.75rem; border-radius: 0.45rem; cursor: pointer;
+    color: var(--texte); background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.cmd:hover { background: rgba(255,255,255,0.1); }
+.cmd.on { background: rgba(255,215,0,0.14); border-color: rgba(255,215,0,0.5); color: var(--or); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.12); margin: 0 0.35rem; }
+
+/* ─ la scène ─ */
+.plan { display: grid; grid-template-columns: minmax(0, 1fr) 24rem; gap: 1.4rem; align-items: start; }
+@media (max-width: 1000px) { .plan { grid-template-columns: 1fr; } }
+/* ⚠️ La carte RESTE À L'ÉCRAN pendant qu'on descend dans la table de
+   mélange : cliquer un ingrédient en bas de page sans voir la carte
+   rejouer ne sert à rien. `sticky` ne crée pas de bloc conteneur — à la
+   différence de `transform` —, les anneaux en `position: fixed` tiennent
+   donc toujours, et de toute façon ils vivent sur `<body>`. */
+.scene {
+    display: flex; justify-content: center; padding: 1.2rem 0 3rem;
+    position: sticky; top: 4.6rem;
+}
+@media (max-width: 1000px) { .scene { position: static; } }
+
+.carte {
+    width: 100%; max-width: 44rem;
+    padding: 2rem 2.2rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+}
+.carte.tel { max-width: 22rem; padding: 1.3rem 1.1rem; }
+.badges { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.1rem; }
+.badges span {
+    font-size: 0.62rem; font-weight: 700; padding: 0.3rem 0.65rem;
+    letter-spacing: 0.08em; text-transform: uppercase; border-radius: 0.32rem;
+}
+.serie { color: #fff; background: rgba(255,255,255,0.08); border: 0.06rem solid rgba(255,255,255,0.15); }
+.diff  { color: #fbbf24; background: rgba(251,191,36,0.1); border: 0.06rem solid rgba(251,191,36,0.25); }
+.question {
+    font-family: 'Space Grotesk', sans-serif; font-size: 1.16rem; font-weight: 600;
+    line-height: 1.55; text-align: center; margin: 0 0 1.8rem;
+}
+.reponses { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.rep {
+    position: relative;
+    overflow: hidden;              /* ⚠️ contrainte 1 */
+    display: flex; align-items: center; gap: 0.85rem;
+    padding: 1.35rem 2.6rem 1.35rem 1rem;
+    font-family: inherit;
+    background: rgba(255,255,255,0.03);
+    border: 0.06rem solid rgba(255,255,255,0.08);
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease, opacity 0.3s ease;
+}
+@media (hover: hover) {
+    .rep:hover:not(.fige) { background: rgba(255,215,0,0.07); border-color: rgba(255,215,0,0.4); }
+    .rep:hover:not(.fige) .marque { transform: scale(1.12); }
+}
+.rep-txt {
+    position: relative; z-index: 2; flex: 1;
+    font-size: 0.9rem; font-weight: 500; color: var(--texte); text-align: left;
+}
+.marque {
+    position: relative; z-index: 2; flex: 0 0 auto;
+    display: grid; place-items: center;
+    width: 1.75rem; height: 1.75rem; font-size: 0.72rem; line-height: 1;
+    border-radius: 0.4rem;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+.marque.m0 { color: #ffd24a; background: rgba(255,210,74,0.12); box-shadow: inset 0 0 0 0.06rem rgba(255,210,74,0.35); }
+.marque.m1 { color: #7fb4ff; background: rgba(127,180,255,0.12); box-shadow: inset 0 0 0 0.06rem rgba(127,180,255,0.35); }
+.marque.m2 { color: #6ee7b7; background: rgba(110,231,183,0.12); box-shadow: inset 0 0 0 0.06rem rgba(110,231,183,0.35); }
+.marque.m3 { color: #d8b4fe; background: rgba(216,180,254,0.12); box-shadow: inset 0 0 0 0.06rem rgba(216,180,254,0.35); }
+
+.rep.choisie { border-color: rgba(255,215,0,0.75); background: rgba(255,215,0,0.1); }
+.rep.ternie  { opacity: 0.45; }
+.rep.fige { cursor: default; }
+
+/* ════════════════════════════════════════════════════════════════
+   LE SOCLE — la piste 6 telle quelle, jouée dans TOUS les mélanges
+   ════════════════════════════════════════════════════════════════ */
+.rep.gicle .marque { animation: gMarque calc(460ms * var(--k)) cubic-bezier(0.2, 1.6, 0.35, 1) forwards; }
+@keyframes gMarque {
+    0%   { transform: scale(1); }
+    22%  { transform: scale(1.55); background: #fff; color: #10100a; }
+    45%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+/* ⚠️ Le blanc du pic ne prend JAMAIS la couleur du repère : c'est le
+   contraste avec le fond sombre qui fait le pop, pas la teinte. La
+   couleur, elle, part dans l'anneau, les éclats et l'onde. */
+
+.anneau {
+    position: fixed; z-index: 9997; pointer-events: none;
+    border-radius: 0.4rem; border: 0.12rem solid var(--c);
+    box-shadow: 0 0 0.6rem var(--lueur);
+    animation: gAnneau calc(520ms * var(--k)) cubic-bezier(0.1, 0.7, 0.3, 1) both;
+}
+@keyframes gAnneau {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0.7); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(2.6); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LES HUIT AJOUTS — un mouvement par élément (⚠️ contrainte 2)
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─ A · LA BAGUE RETARDÉE ──────────────────────────────────────── */
+/* Un second anneau 90 ms derrière, plus carré, plus lent. Deux temps
+   au lieu d'un : c'est le rythme qui porte, pas la taille. */
+.anneau.bague {
+    border-radius: 0.16rem; border-width: 0.09rem;
+    animation-name: gBague;
+    animation-duration: calc(640ms * var(--k));
+    animation-delay: calc(90ms * var(--k));
+}
+@keyframes gBague {
+    0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.6); }
+    14%  { opacity: 0.8;  transform: translate(-50%, -50%) scale(0.95); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(2.15); }
+}
+
+/* ─ B · LE SIGNE CHANGE ────────────────────────────────────────── */
+/* Le seul ajout qui dit QUELQUE CHOSE : le losange devient une coche,
+   et la coche se DESSINE. Information, pas décoration. */
+.marque .coche { display: block; width: 70%; height: 70%; overflow: visible; }
+.marque .coche path {
+    fill: none; stroke: currentColor; stroke-width: 3.4;
+    stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 100; stroke-dashoffset: 100;
+    animation: gCoche calc(230ms * var(--k)) cubic-bezier(0.3, 0.8, 0.3, 1) both;
+}
+@keyframes gCoche { to { stroke-dashoffset: 0; } }
+
+/* ─ C · LES ÉCLATS ─────────────────────────────────────────────── */
+/* Huit, courts, serrés autour de la pastille. ⚠️ Sur `<body>` : dans
+   le bouton ils seraient coupés au bord, c'est-à-dire presque tout de
+   suite — la pastille est à 1 rem du bord gauche. */
+.eclat {
+    position: fixed; z-index: 9997; pointer-events: none;
+    width: 0.34rem; height: 0.1rem; border-radius: 0.1rem;
+    background: linear-gradient(90deg, #fff, var(--c));
+    box-shadow: 0 0 0.45rem var(--lueur);
+    animation: gEclat calc(480ms * var(--k)) cubic-bezier(0.1, 0.7, 0.3, 1) both;
+}
+@keyframes gEclat {
+    0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateX(5px) scaleX(0.4); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateX(var(--d)) scaleX(1.3); }
+}
+
+/* ─ D · LA TRAÎNÉE ─────────────────────────────────────────────── */
+/* Trois fantômes de la pastille, décalés de 70 ms. Ils restent DANS
+   le bouton : à 1,75× d'une pastille de 1,75 rem, ils tiennent dans
+   les 4,45 rem de hauteur sans toucher le bord. */
+.fx-fantome {
+    border-radius: 0.4rem; border: 0.1rem solid var(--c);
+    animation: gFantome calc(520ms * var(--k)) cubic-bezier(0.15, 0.8, 0.3, 1) both;
+}
+@keyframes gFantome {
+    0%   { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.75); }
+}
+
+/* ─ E · L'ONDE DU REPÈRE ───────────────────────────────────────── */
+/* Le BOUTON participe, au lieu de regarder sa pastille travailler.
+   Elle part de la pastille, pas du doigt : la pastille est le point
+   fixe, on sait toujours où regarder. */
+.fx-onde {
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--c1) 0%, var(--c2) 45%, rgba(0,0,0,0) 70%);
+    animation: gOnde calc(560ms * var(--k)) cubic-bezier(0.15, 0.75, 0.3, 1) both;
+}
+@keyframes gOnde {
+    0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0); }
+    100% { opacity: 0;   transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ─ F · LE TEXTE ENCAISSE ──────────────────────────────────────── */
+/* Une demi-mesure plus tard, le texte est poussé puis revient. C'est
+   la LIGNE entière qui a réagi, plus seulement sa pastille. Joué au
+   Web Animations sur `.rep-txt` — ⚠️ contrainte 2, c'est le seul
+   mouvement de cet élément. */
+
+/* ─ G · LA FRAPPE ──────────────────────────────────────────────── */
+/* Le bouton encaisse un coup sec. ⚠️ Pose un `transform` sur `.rep`,
+   donc un bloc conteneur : sans danger seulement parce qu'aucun
+   `position: fixed` ne vit DANS le bouton. */
+
+/* ─ H · LA BARRE ───────────────────────────────────────────────── */
+/* Une colonne de lumière traverse le bouton à la hauteur de la
+   pastille et s'élargit en s'effaçant. Coupée net en haut et en bas
+   par l'`overflow: hidden` — c'est lui qui en fait un trait. */
+.fx-barre {
+    top: 0; bottom: 0; width: 0.55rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--c) 50%, rgba(255,255,255,0) 100%);
+    filter: blur(2px);
+    animation: gBarre calc(420ms * var(--k)) cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes gBarre {
+    0%   { opacity: 0;   transform: translateX(-50%) scale(0.4, 0.2); }
+    22%  { opacity: 0.9; transform: translateX(-50%) scale(1, 1); }
+    100% { opacity: 0;   transform: translateX(-50%) scale(2.4, 1); }
+}
+
+/* ─ commun : les calques posés DANS le bouton ─ */
+.fx { position: absolute; pointer-events: none; z-index: 1; }
+
+/* ════════════════════════════════════════════════════════════════
+   LE RAIL ET LA TABLE DE MÉLANGE
+   ════════════════════════════════════════════════════════════════ */
+.rail, .table {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.8rem;
+    background: rgba(255,255,255,0.018); padding: 0.75rem;
+}
+.rail { margin-bottom: 0.8rem; }
+.piste {
+    display: block; width: 100%; text-align: left;
+    padding: 0.55rem 0.7rem; margin-bottom: 0.3rem;
+    border: 1px solid transparent; border-radius: 0.55rem;
+    background: transparent; color: inherit; font: inherit; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.piste:hover { background: rgba(255,255,255,0.04); }
+.piste.on { background: rgba(255,215,0,0.08); border-color: rgba(255,215,0,0.45); }
+.piste .t { display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.78rem; font-weight: 700; }
+.piste .t em { font-style: normal; opacity: 0.35; font-weight: 600; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { display: block; font-size: 0.66rem; line-height: 1.5; opacity: 0.5; margin-top: 0.12rem; }
+.piste.ref .t { color: #ff9b9b; }
+.piste.ref { border-style: dashed; border-color: rgba(255,255,255,0.12); }
+.piste.reco .t { color: var(--or); }
+
+.table h2 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 0.92rem; letter-spacing: 0.06em;
+    margin: 0.15rem 0 0.1rem; color: #fff;
+}
+.table .intro { font-size: 0.64rem; line-height: 1.5; opacity: 0.45; margin: 0 0 0.6rem; }
+.ing {
+    display: flex; align-items: center; gap: 0.55rem; width: 100%;
+    padding: 0.45rem 0.55rem; margin-bottom: 0.22rem;
+    border: 1px solid transparent; border-radius: 0.45rem;
+    background: transparent; color: inherit; font: inherit; cursor: pointer; text-align: left;
+    transition: background 0.15s ease;
+}
+.ing:hover { background: rgba(255,255,255,0.04); }
+.ing .case {
+    flex: 0 0 auto; width: 0.95rem; height: 0.95rem; border-radius: 0.28rem;
+    border: 1px solid rgba(255,255,255,0.25); position: relative;
+}
+.ing.on .case { background: var(--or); border-color: var(--or); }
+.ing.on .case::after {
+    content: ''; position: absolute; left: 0.3rem; top: 0.12rem;
+    width: 0.22rem; height: 0.44rem; border: solid #10100a;
+    border-width: 0 0.1rem 0.1rem 0; transform: rotate(42deg);
+}
+.ing .lib { font-size: 0.73rem; font-weight: 600; }
+.ing.on .lib { color: var(--or); }
+.ing .lib small { display: block; font-size: 0.62rem; font-weight: 500; opacity: 0.45; color: var(--texte); margin-top: 0.1rem; line-height: 1.45; }
+
+.aide-clavier { font-size: 0.62rem; opacity: 0.38; margin: 0.6rem 0 0; line-height: 1.5; }
+.lien-mix {
+    display: block; font-size: 0.6rem; opacity: 0.35; margin-top: 0.5rem;
+    word-break: break-all; font-family: 'Space Grotesk', monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fx, .eclat, .anneau { animation: none !important; opacity: 0 !important; }
+    .rep.gicle .marque { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<h1>Le repère gicle — et quoi de plus</h1>
+<p class="sous">
+Le socle est pris : la pastille grossit, vire au blanc, lâche un anneau. Il manque
+<b>une</b> chose de plus — huit candidates. Le rail les essaie une par une, puis la table
+du dessous les <b>mélange</b> : ce ne sont pas des pistes fermées, ce sont des ingrédients.
+<span class="av">Ça se juge en cliquant</span>, pas en regardant. Le sceau 選 n'est plus là,
+c'est voulu.
+</p>
+
+<div class="barre">
+    <label>Écran</label>
+    <button class="cmd on" data-tel="0">Ordinateur</button>
+    <button class="cmd" data-tel="1">Téléphone</button>
+    <span class="sep"></span>
+    <label>Vitesse</label>
+    <button class="cmd on" data-k="1">normal</button>
+    <button class="cmd" data-k="2.5">×2,5</button>
+    <button class="cmd" data-k="5">ralenti ×5</button>
+    <span class="sep"></span>
+    <button class="cmd on" id="son">Son</button>
+    <button class="cmd on" id="couleur">Couleur du repère</button>
+    <span class="sep"></span>
+    <button class="cmd" id="rejouer">Rejouer (R)</button>
+    <button class="cmd" id="tout">Enchaîner</button>
+</div>
+
+<div class="plan">
+    <div class="scene">
+        <div class="carte" id="carte">
+            <div class="badges"><span class="serie">Mashle</span><span class="diff">Medium</span></div>
+            <p class="question">Pour quelle raison Lance veut-il devenir un élu divin ?</p>
+            <div class="reponses" id="reponses"></div>
+        </div>
+    </div>
+
+    <div>
+        <div class="rail" id="rail"></div>
+        <div class="table">
+            <h2>Composer</h2>
+            <p class="intro">
+                Les mêmes ingrédients, librement. Le socle est toujours joué.
+            </p>
+            <div id="ingredients"></div>
+        </div>
+        <p class="aide-clavier">
+            Chiffres <b>0</b> à <b>9</b> : un dosage du rail. <b>R</b> : rejouer.
+            <b>Échap</b> : remettre la carte à zéro.
+        </p>
+        <span class="lien-mix" id="lien-mix"></span>
+    </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   LES INGRÉDIENTS
+   `joue(bouton, marque, rect, c)` — `rect` est la pastille à l'écran,
+   `c` le jeu de couleurs. Chacun nettoie derrière lui.
+   ════════════════════════════════════════════════════════════════ */
+const REPONSES = [
+    'Pour épouser la reine du royaume',
+    'Pour sauver sa soeur',
+    'Pour prouver sa supériorité',
+    'Pour devenir riche',
+];
+const MARQUES = ['◆', '●', '▲', '■'];
+const TEINTES = ['#ffd24a', '#7fb4ff', '#6ee7b7', '#d8b4fe'];
+const OR = '#ffd700';
+
+/* Une coche DESSINÉE : un glyphe « ✓ » dépendrait de la police du
+   système et sauterait d'un appareil à l'autre. `pathLength="100"`
+   rend le tracé mesurable sans calculer sa longueur réelle. */
+const COCHE = '<svg class="coche" viewBox="0 0 24 24" aria-hidden="true">'
+            + '<path d="M4.5 12.4 L9.6 17.5 L19.5 6.8" pathLength="100"/></svg>';
+
+let K = 1;
+const ms = (n) => n * K;
+
+/* ⚠️ LES MINUTEURS SE RETIENNENT ET S'ANNULENT.
+   Sans ça, celui du clic PRÉCÉDENT vient retirer le socle au milieu de
+   la lecture courante — on rejoue trois fois de suite et la pastille
+   s'éteint en cours de route, sans rien pour le dire. Même chose pour
+   la coche : posée à 95 ms, elle réapparaissait après qu'on ait éteint
+   l'ingrédient. Mesuré, pas supposé. */
+const minuteurs = [];
+function apres(n, f) { const t = setTimeout(f, ms(n)); minuteurs.push(t); return t; }
+const poubelle = [];
+function jeter(n, duree) { poubelle.push(n); apres(duree, () => n.remove()); }
+
+function dedans(bouton, classe, style, duree) {
+    const d = document.createElement('div');
+    d.className = 'fx ' + classe;
+    if (style) d.style.cssText = style;
+    bouton.appendChild(d);
+    jeter(d, duree);
+    return d;
+}
+function dehors(classe, style, duree) {
+    const d = document.createElement('div');
+    d.className = classe;
+    if (style) d.style.cssText = style;
+    document.body.appendChild(d);
+    jeter(d, duree);
+    return d;
+}
+/* `#rrggbb` + alpha → rgba(). Les ingrédients ont besoin de la même
+   teinte à plusieurs opacités ; la recalculer à la main à chaque
+   endroit, c'est la garantie qu'une des copies finira par diverger. */
+function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16 & 255}, ${n >> 8 & 255}, ${n & 255}, ${a})`;
+}
+
+const AJOUTS = [
+    {
+        cle: 'bague', nom: 'La bague retardée',
+        note: "Un second anneau 90 ms derrière le premier, plus carré et plus lent. Deux temps au lieu d'un : c'est le rythme qui porte, pas la taille.",
+        joue(b, m, r, c) {
+            dehors('anneau bague', `left:${r.cx}px;top:${r.cy}px;width:${r.w}px;height:${r.h}px;`
+                + `--c:${rgba(c.t, 0.75)};--lueur:${rgba(c.t, 0.35)};`, 760);
+        },
+    },
+    {
+        cle: 'signe', nom: 'Le signe change',
+        note: "Le losange devient une coche, et la coche SE DESSINE. Le seul ajout qui dit quelque chose — les sept autres ne font que le dire plus fort.",
+        joue(b, m) {
+            apres(95, () => { if (m.isConnected) m.innerHTML = COCHE; });
+        },
+    },
+    {
+        cle: 'eclats', nom: 'Les éclats',
+        note: "Huit éclats partent de la pastille et débordent du bouton. Ça donne de la MATIÈRE à ce qui n'est sinon qu'un changement de taille.",
+        joue(b, m, r, c) {
+            for (let i = 0; i < 8; i++) {
+                const a = (i / 8) * 360 + (Math.random() * 26 - 13);
+                const d = 22 + Math.random() * 28;
+                dehors('eclat', `left:${r.cx}px;top:${r.cy}px;--a:${a}deg;--d:${d}px;`
+                    + `--c:${c.t};--lueur:${rgba(c.t, 0.7)};`
+                    + `animation-delay:${ms(Math.random() * 35)}ms;`, 560);
+            }
+        },
+    },
+    {
+        cle: 'trainee', nom: 'La traînée',
+        note: "Trois fantômes de la pastille, décalés de 70 ms, qui s'ouvrent derrière elle. Le vocabulaire de l'anime : la vitesse se dessine, elle ne se joue pas.",
+        joue(b, m, r, c) {
+            for (let i = 0; i < 3; i++) {
+                dedans(b, 'fx-fantome',
+                    `left:${r.ox}px;top:${r.oy}px;width:${r.w}px;height:${r.h}px;`
+                    + `--c:${rgba(c.t, 0.7 - i * 0.18)};animation-delay:${ms(i * 70)}ms;`, 640);
+            }
+        },
+    },
+    {
+        cle: 'onde', nom: "L'onde du repère",
+        note: "Une onde part de la pastille et lave tout le bouton. Le BOUTON participe, au lieu de regarder sa pastille travailler — et elle part d'un point fixe, pas du doigt.",
+        joue(b, m, r, c) {
+            const rb = b.getBoundingClientRect();
+            const rayon = Math.hypot(Math.max(r.ox, rb.width - r.ox),
+                                     Math.max(r.oy, rb.height - r.oy)) * 2;
+            dedans(b, 'fx-onde', `left:${r.ox}px;top:${r.oy}px;width:${rayon}px;height:${rayon}px;`
+                + `--c1:${rgba(c.t, 0.34)};--c2:${rgba(c.t, 0.11)};`, 600);
+        },
+    },
+    {
+        cle: 'texte', nom: 'Le texte encaisse',
+        note: "Une demi-mesure plus tard, le texte est poussé puis revient. C'est la LIGNE entière qui a réagi, plus seulement sa pastille — et rien n'a bougé de place.",
+        joue(b) {
+            const t = b.querySelector('.rep-txt');
+            t.animate([{ transform: 'translateX(0)' },
+                       { transform: 'translateX(0.24rem)', offset: 0.3 },
+                       { transform: 'translateX(0)' }],
+                { duration: ms(440), delay: ms(60), easing: 'cubic-bezier(0.2, 0.9, 0.3, 1)' });
+        },
+    },
+    {
+        cle: 'frappe', nom: 'La frappe',
+        note: "Le bouton entier encaisse un coup sec, 300 ms. Le plus physique des huit — et celui qui se sent le mieux au doigt, où l'écran bouge vraiment.",
+        joue(b) {
+            b.animate([{ transform: 'translateX(0)' },
+                       { transform: 'translateX(-0.15rem)', offset: 0.18 },
+                       { transform: 'translateX(0.1rem)', offset: 0.44 },
+                       { transform: 'translateX(-0.04rem)', offset: 0.7 },
+                       { transform: 'translateX(0)' }],
+                { duration: ms(300), easing: 'cubic-bezier(0.25, 0.8, 0.35, 1)' });
+        },
+    },
+    {
+        cle: 'barre', nom: 'La barre',
+        note: "Une colonne de lumière traverse le bouton à la hauteur de la pastille, puis s'élargit en s'effaçant. L'`overflow: hidden` la coupe net en haut et en bas.",
+        joue(b, m, r, c) {
+            dedans(b, 'fx-barre', `left:${r.ox}px;--c:${rgba(c.t, 0.8)};`, 520);
+        },
+    },
+];
+
+/* ─────────── les dosages du rail ─────────── */
+const DOSAGES = [
+    { id: 0, ref: true, nom: 'Le socle seul', m: [],
+      note: "La piste 6 telle quelle, pour comparer. Elle n'est pas mauvaise — elle est juste un peu seule." },
+    { id: 1, nom: '+ la bague', m: ['bague'] },
+    { id: 2, nom: '+ le signe', m: ['signe'] },
+    { id: 3, nom: '+ les éclats', m: ['eclats'] },
+    { id: 4, nom: '+ la traînée', m: ['trainee'] },
+    { id: 5, nom: "+ l'onde", m: ['onde'] },
+    { id: 6, nom: '+ le texte', m: ['texte'] },
+    { id: 7, nom: '+ la frappe', m: ['frappe'] },
+    { id: 8, nom: '+ la barre', m: ['barre'] },
+    { id: 9, reco: true, nom: 'Le mélange', m: ['signe', 'onde', 'eclats'],
+      note: "Les trois qui ne font pas le même métier : le signe DIT (information), l'onde fait participer la SURFACE, les éclats donnent la MATIÈRE. Aucun des trois n'écrit sur le même élément — c'est ce qui permet de les empiler sans qu'un seul en perde." },
+];
+DOSAGES.forEach(d => {
+    if (d.note) return;
+    const a = AJOUTS.find(x => x.cle === d.m[0]);
+    d.note = a ? a.note : '';
+});
+
+/* ─────────── la carte ─────────── */
+const zone = document.getElementById('reponses');
+REPONSES.forEach((txt, i) => {
+    const b = document.createElement('button');
+    b.className = 'rep';
+    b.dataset.i = i;
+    b.innerHTML = `<span class="marque m${i}" aria-hidden="true">${MARQUES[i]}</span>
+                   <span class="rep-txt">${txt}</span>`;
+    b.addEventListener('click', () => repondre(b));
+    zone.appendChild(b);
+});
+
+let melange = new Set(['signe', 'onde', 'eclats']);
+let derniere = null;
+let avecSon = true;
+let avecCouleur = true;
+
+function remise() {
+    minuteurs.splice(0).forEach(clearTimeout);
+    poubelle.splice(0).forEach(n => n.remove());
+    document.querySelectorAll('.anneau, .eclat').forEach(n => n.remove());
+    document.querySelectorAll('.rep').forEach(b => {
+        b.className = 'rep';
+        b.querySelectorAll('.fx').forEach(n => n.remove());
+        b.getAnimations({ subtree: true }).forEach(a => a.cancel());
+        // ⚠️ Le signe doit REVENIR : sans ça, un second clic sur la même
+        // réponse part d'une coche et l'ingrédient ne montre plus rien.
+        const m = b.querySelector('.marque');
+        m.innerHTML = MARQUES[Number(b.dataset.i)];
+    });
+}
+
+function repondre(b) {
+    if (b.classList.contains('fige')) return;
+    remise();
+    derniere = b;
+
+    const i = Number(b.dataset.i);
+    const m = b.querySelector('.marque');
+    const rm = m.getBoundingClientRect();
+    const r = {
+        cx: rm.left + rm.width / 2, cy: rm.top + rm.height / 2,   // à l'écran
+        ox: m.offsetLeft + m.offsetWidth / 2,                      // dans le bouton
+        oy: m.offsetTop + m.offsetHeight / 2,
+        w: rm.width, h: rm.height,
+    };
+    const c = { t: avecCouleur ? TEINTES[i] : OR };
+
+    // Le socle, toujours.
+    b.classList.add('gicle');
+    dehors('anneau', `left:${r.cx}px;top:${r.cy}px;width:${r.w}px;height:${r.h}px;`
+        + `--c:${avecCouleur ? rgba(c.t, 0.92) : 'rgba(255,255,255,0.9)'};`
+        + `--lueur:${rgba(c.t, 0.6)};`, 600);
+    apres(500, () => b.classList.remove('gicle'));
+
+    // Puis le mélange, dans l'ordre de la table.
+    AJOUTS.forEach(a => { if (melange.has(a.cle)) a.joue(b, m, r, c); });
+
+    // L'état qui SUIT le clic, et vers lequel tout ça doit mener.
+    document.querySelectorAll('.rep').forEach(o => o.classList.add('fige'));
+    b.classList.add('choisie');
+    document.querySelectorAll('.rep').forEach(o => { if (o !== b) o.classList.add('ternie'); });
+
+    if (avecSon) carillon();
+}
+
+/* Le carillon du jeu, repris tel quel (Web Audio, aucun fichier). */
+let ctxSon = null;
+function carillon() {
+    try {
+        if (!ctxSon) ctxSon = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctxSon.state === 'suspended') ctxSon.resume();
+        const t = ctxSon.currentTime;
+        [[4400, 0, 0.08, 0.35, 'sine'], [3300, 0.03, 0.07, 0.4, 'sine'], [6600, 0.06, 0.03, 0.25, 'triangle']]
+        .forEach(([f, dec, vol, dur, type]) => {
+            const o = ctxSon.createOscillator(), g = ctxSon.createGain();
+            o.type = type; o.frequency.setValueAtTime(f, t + dec);
+            g.gain.setValueAtTime(0, t + dec);
+            g.gain.linearRampToValueAtTime(vol, t + dec + 0.008);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dec + dur);
+            o.connect(g).connect(ctxSon.destination);
+            o.start(t + dec); o.stop(t + dec + dur);
+        });
+    } catch (err) { /* pas de son, tant pis */ }
+}
+
+/* ─────────── le rail ─────────── */
+const rail = document.getElementById('rail');
+DOSAGES.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'piste' + (d.ref ? ' ref' : '') + (d.reco ? ' reco' : '');
+    b.innerHTML = `<span class="t"><em>${d.id}</em>${d.nom}</span><span class="n">${d.note}</span>`;
+    b.addEventListener('click', () => doser(d.id));
+    rail.appendChild(b);
+    d.bouton = b;
+});
+
+/* ─────────── la table de mélange ─────────── */
+const tableIng = document.getElementById('ingredients');
+AJOUTS.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'ing';
+    b.innerHTML = `<span class="case"></span><span class="lib">${a.nom}<small>${a.note}</small></span>`;
+    b.addEventListener('click', () => {
+        if (melange.has(a.cle)) melange.delete(a.cle); else melange.add(a.cle);
+        peindre();
+        rejouer();
+    });
+    tableIng.appendChild(b);
+    a.bouton = b;
+});
+
+function doser(id) {
+    const d = DOSAGES.find(x => x.id === id);
+    melange = new Set(d.m);
+    peindre();
+    rejouer();
+}
+
+/* Le rail s'allume quand le mélange courant EST exactement un dosage.
+   Composer à la main éteint donc tout le rail — c'est juste : on n'est
+   plus sur une proposition, on est sur la sienne. */
+function peindre() {
+    AJOUTS.forEach(a => a.bouton.classList.toggle('on', melange.has(a.cle)));
+    const liste = AJOUTS.filter(a => melange.has(a.cle)).map(a => a.cle);
+    DOSAGES.forEach(d => {
+        const meme = d.m.length === liste.length && d.m.every(c => melange.has(c));
+        d.bouton.classList.toggle('on', meme);
+    });
+    const h = `#m=${liste.join(',') || 'socle'}&c=${avecCouleur ? 1 : 0}`;
+    history.replaceState(null, '', h);
+    document.getElementById('lien-mix').textContent = h;
+}
+
+function rejouer() {
+    const b = derniere || document.querySelectorAll('.rep')[1];
+    remise();
+    derniere = b;
+    b.click();
+}
+
+document.getElementById('rejouer').addEventListener('click', rejouer);
+document.getElementById('son').addEventListener('click', (e) => {
+    avecSon = !avecSon; e.target.classList.toggle('on', avecSon);
+});
+document.getElementById('couleur').addEventListener('click', (e) => {
+    avecCouleur = !avecCouleur; e.target.classList.toggle('on', avecCouleur);
+    peindre(); rejouer();
+});
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-k]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    K = Number(b.dataset.k);
+    document.documentElement.style.setProperty('--k', K);
+}));
+document.querySelectorAll('[data-tel]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-tel]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('carte').classList.toggle('tel', b.dataset.tel === '1');
+}));
+
+/* « Enchaîner » : les dix dosages à la suite, deux secondes chacun —
+   assez pour que l'oeil se repose, sinon on compare un ajout à
+   l'image rémanente du précédent. */
+let chaine = null;
+document.getElementById('tout').addEventListener('click', (e) => {
+    if (chaine) { clearInterval(chaine); chaine = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    let i = 0;
+    const pas = () => { doser(DOSAGES[i % DOSAGES.length].id); i++; };
+    pas();
+    chaine = setInterval(pas, 2000);
+});
+
+document.addEventListener('keydown', (e) => {
+    if (/^[0-9]$/.test(e.key)) doser(Number(e.key));
+    if (e.key === 'r' || e.key === 'R') rejouer();
+    if (e.key === 'Escape') { remise(); derniere = null; }
+});
+
+/* Un mélange reçu dans l'adresse l'emporte sur le défaut. */
+(function depart() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    const m = h.get('m');
+    if (m !== null) {
+        melange = new Set(m === 'socle' ? [] : m.split(',').filter(c => AJOUTS.some(a => a.cle === c)));
+    }
+    if (h.get('c') === '0') {
+        avecCouleur = false;
+        document.getElementById('couleur').classList.remove('on');
+    }
+    peindre();
+    rejouer();
+})();
+</script>
+</body></html>

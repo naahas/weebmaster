@@ -9691,75 +9691,83 @@ input, textarea,
 }
 
 /* ============================================
-   🆕 v2 — SCEAU NINJA (sélection d'une réponse)
+   🆕 v2 — LE CLIC SUR UNE RÉPONSE : le repère gicle
    ============================================ */
-.v2q-seal {
+/* ⚠️ CE QUI ÉTAIT LÀ AVANT, ET POURQUOI C'EST PARTI. Le clic posait trois
+   choses : le bouton se tassait à 0,968, un anneau grandissait de 7 %
+   AUTOUR de lui, et un sceau « 選 » tombait à sa droite et y restait.
+   Les trois se jouaient loin du doigt — rien ne se passait là où l'on
+   venait de toucher — et le sceau disait « tu as répondu » une seconde
+   fois, alors que la bordure or et les autres réponses ternies le disent
+   déjà. Il prenait en plus la place du pourcentage.
+
+   Tout part maintenant du REPÈRE, la pastille colorée : elle grossit,
+   vire au blanc, lâche un anneau, et huit éclats s'en échappent. Neuf
+   autres pistes ont été écartées au banc /prototypes/quiz-clic, puis
+   huit ajouts au banc /prototypes/quiz-gicle.
+
+   ⚠️ L'anneau et les éclats vivent sur <body> en « position: fixed » :
+   `.v2q-answer` porte un `overflow: hidden` qui les couperait au bord,
+   c'est-à-dire presque tout de suite — la pastille est à 1 rem du bord
+   gauche du bouton.
+
+   ⚠️ Et le z-index vaut 800, pas 9997 comme l'ancien anneau. C'est la
+   leçon que le sceau avait déjà coûtée : au-dessus de 9000 ces calques
+   passent PAR-DESSUS les modales, et l'on ouvrait les défis avec des
+   éclats plantés sur le voile. 800 domine le jeu (l'icône des défis est
+   à 600) et s'efface devant ce qui s'ouvre (voiles à 900, modales à
+   1000).
+
+   ⚠️ La TEINTE n'est pas écrite ici : elle est lue sur la pastille au
+   moment du clic et arrive par `--c`. Les six couleurs vivent une seule
+   fois, dans `.v2q-mark.m0` à `.m5` ci-dessus ; une seconde copie
+   finirait par en diverger. */
+
+.v2q-anneau-mark {
     position: fixed;
-    /* ⚠️ 800, et surtout pas 9998 comme avant. Le sceau est posé en « fixed »
-       sur la réponse choisie : à 9998 il passait PAR-DESSUS les modales —
-       on ouvrait les défis et le petit cachet doré restait planté sur le
-       voile. Il doit dominer le jeu (l icône des défis est à 600) mais
-       s effacer devant tout ce qui s ouvre par-dessus (voiles à 900,
-       modale des défis à 1000). */
     z-index: 800;
-    display: grid;
-    place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    font-family: 'Bebas Neue', 'Russo One', sans-serif;
-    font-size: 1.2rem;
-    line-height: 1;
-    color: var(--neon-primary);
-    background: rgba(255, 215, 0, 0.08);
-    border: 0.13rem solid rgba(255, 215, 0, 0.9);
-    border-radius: 0.35rem;
-    text-shadow: 0 0 0.7rem rgba(255, 215, 0, 0.6);
-    box-shadow: 0 0 1.4rem rgba(255, 215, 0, 0.35);
+    border-radius: 0.4rem;
+    border: 0.12rem solid var(--c, rgba(255, 255, 255, 0.9));
+    box-shadow: 0 0 0.6rem var(--lueur, rgba(255, 215, 0, 0.6));
     pointer-events: none;
-    animation: v2qSeal 1.3s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+    animation: v2qAnneauMark 0.52s cubic-bezier(0.1, 0.7, 0.3, 1) both;
 }
 
-@keyframes v2qSeal {
-    0%   { opacity: 0; transform: translateY(-50%) scale(3.2) rotate(-28deg); }
-    18%  { opacity: 1; transform: translateY(-50%) scale(0.9) rotate(-9deg); }
-    30%  { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
-    78%  { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
-    100% { opacity: 0; transform: translateY(-50%) scale(1.18) rotate(-11deg); }
+@keyframes v2qAnneauMark {
+    0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0.7); }
+    100% { opacity: 0;    transform: translate(-50%, -50%) scale(2.6); }
 }
 
-.v2q-shock {
+.v2q-eclat {
     position: fixed;
-    z-index: 9997;
-    border: 0.13rem solid rgba(255, 215, 0, 0.85);
-    border-radius: 0.6rem;
+    z-index: 800;
+    width: 0.34rem;
+    height: 0.1rem;
+    border-radius: 0.1rem;
+    background: linear-gradient(90deg, #fff, var(--c, #ffd700));
+    box-shadow: 0 0 0.45rem var(--lueur, rgba(255, 215, 0, 0.7));
     pointer-events: none;
-    animation: v2qShock 0.5s ease-out forwards;
+    animation: v2qEclat 0.48s cubic-bezier(0.1, 0.7, 0.3, 1) both;
 }
 
-@keyframes v2qShock {
-    0%   { opacity: 0.9; transform: scale(1); }
-    100% { opacity: 0;   transform: scale(1.07); }
+/* ⚠️ `translateX` est APRÈS `rotate` : c'est la rotation qui oriente
+   l'axe, donc l'ordre donne l'angle de départ. Les inverser enverrait
+   les huit éclats dans la même direction. */
+@keyframes v2qEclat {
+    0%   { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateX(5px) scaleX(0.4); }
+    25%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateX(var(--d)) scaleX(1.3); }
 }
 
 /* ============================================
    🆕 v2 — CORRECTIFS DU PANEL DE JEU
    ============================================ */
 
-/* Le sceau tient jusqu'à la fin du temps : plus de fondu final. Il reste posé
-   à l'écran, donc il doit se faire oublier — il prenait la place d'une réponse. */
-.v2q-seal {
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.78rem;
-    border-width: 0.1rem;
-    animation: v2qSealHold 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
-}
-
-@keyframes v2qSealHold {
-    0%   { opacity: 0; transform: translateY(-50%) scale(3.2) rotate(-28deg); }
-    60%  { opacity: 1; transform: translateY(-50%) scale(0.9) rotate(-9deg); }
-    100% { opacity: 1; transform: translateY(-50%) scale(1) rotate(-11deg); }
-}
+/* ⚠️ Ici vivait un second bloc `.v2q-seal` qui RÉDUISAIT le sceau et
+   remplaçait son animation. Deux déclarations du même sceau à cinquante
+   lignes d'écart : on en réglait une et l'autre gagnait. Le sceau est
+   parti, les deux avec — ne pas reposer de calque du clic ailleurs qu'au
+   bloc « LE CLIC SUR UNE RÉPONSE » ci-dessus. */
 
 
 /* Passage d'une question à la suivante : l'ancien panel s'efface vers le haut,
