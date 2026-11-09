@@ -268,7 +268,7 @@
 .rush-jokers {
     position: absolute;
     top: calc(var(--cadre) + var(--carte-h) / 2);
-    left: calc(100% + 1.35rem);
+    left: calc(100% + 2.2rem);
     transform: translateY(-50%);
     z-index: 3;
     display: flex;
