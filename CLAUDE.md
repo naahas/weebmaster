@@ -342,7 +342,8 @@ faire changer le mot selon un réglage embrouillait plus qu il ne renseignait. V
   sur le vrai feutre, parce qu elle s ouvre en pleine partie.
 ## Les jokers du Rush
 
-**Deux ampoules à gauche du portrait**, qui passent un personnage **sans casser la série**.
+**Deux ampoules à droite du portrait**, centrées sur lui, qui passent un personnage **sans
+casser la série**.
 Réglage **Jokers**, oui par défaut ; sur *Non*, elles ne s'affichent pas du tout — pas une
 ampoule grisée, rien. `RUSH_CONFIG.JOKERS` vaut 2, et il s'écrit à cet endroit seul : le
 client reçoit le total du serveur (`jokersTotal`) pour dessiner ses douilles.
@@ -378,9 +379,12 @@ portrait sortant à chaque changement — c'est-à-dire à chaque fois qu'on s'e
 dans le flux, elles pousseraient le portrait de côté. Mesuré : le cadre ne bouge pas d'un
 pixel selon que le réglage est allumé ou non.
 
-ℹ️ Elles sont **à gauche**, le bouton « passer » étant déjà à droite contre le champ : les
-deux gestes avancent d'un portrait, l'un en cassant la série et l'autre non. Côte à côte, on
-se tromperait. Et le son est **`ascJoker`**, celui de l'ampoule d'Ascension — même dessin,
+⚠️ Et elles sont centrées sur l'**IMAGE**, pas sur la carte : celle-ci porte en plus le
+bandeau du bas (`--cartouche`), qui tirerait le centre d'une douzaine de pixels vers le bas —
+elles paraîtraient mal calées sans qu'on sache dire pourquoi. D'où le calcul explicite,
+`top: calc(var(--cadre) + var(--carte-h) / 2)`.
+
+ℹ️ Le son est **`ascJoker`**, celui de l'ampoule d'Ascension — même dessin,
 même son, même sens ; inventer une clef `rushJoker` l'aurait rendu muet, `playSound(undefined)`
 sortant en silence.
 

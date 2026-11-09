@@ -260,17 +260,22 @@
    une colonne en plus y aurait pousse le portrait de cote, et le portrait est
    ce sur quoi l oeil est fixe. Il ne bouge pas d un pixel.
 
-   ⚠️ Et elles sont a GAUCHE, pas a droite : le bouton « passer » vit deja a
-   droite, contre le champ de saisie. Les deux gestes passent au suivant, l un
-   en cassant la serie et l autre non — cote a cote, on se tromperait. */
+   ⚠️ Centrees sur l IMAGE, pas sur la scene. La scene porte en plus le bandeau
+   du bas (--cartouche), qui tirerait le centre d une douzaine de pixels vers
+   le bas : les ampoules paraitraient alors mal calees sans qu on sache dire
+   pourquoi. D ou le calcul explicite — le haut du cadre, plus la moitie de la
+   hauteur de l image. */
 .rush-jokers {
     position: absolute;
-    top: 0;
-    right: calc(100% + 0.7rem);
+    top: calc(var(--cadre) + var(--carte-h) / 2);
+    left: calc(100% + 0.9rem);
+    transform: translateY(-50%);
     z-index: 3;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    /* De l air entre elles : collees, les deux ampoules se lisaient comme un
+       seul objet a deux bosses. */
+    gap: 0.9rem;
 }
 
 .rush-joker {
