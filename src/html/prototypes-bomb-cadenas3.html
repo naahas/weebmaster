@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — régler la dilatation</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   RÉGLER LA DILATATION — F2 SEULE, CHAQUE NOMBRE SUR UN CURSEUR
+
+   F2 est retenue : le cadenas naît petit et se dilate sans jamais
+   s'arrêter. Reste à en régler les temps, et cette page ne sert qu'à ça.
+
+   ⚠️ POURQUOI PAS DES @keyframes CSS ICI. Les pourcentages d'une règle
+   @keyframes ne peuvent pas être des variables : impossible de déplacer
+   « le moment où il devient plein » à la souris. Les animations sont donc
+   fabriquées en JS (Web Animations API), à partir des valeurs des
+   curseurs — et la page RECRACHE le CSS équivalent, prêt à coller dans
+   home-bombanime.css. C'est le CSS qui partira en jeu, pas ce JS.
+
+   ⚠️ DEUX ANIMATIONS, PAS UNE. L'opacité vit sur le calque, l'échelle sur
+   le dessin à l'intérieur. Les mêler obligerait à placer les deux sur les
+   mêmes images-clefs : on ne pourrait plus décaler le fondu sans décaler
+   aussi la dilatation, qui est tout l'intérêt du réglage.
+
+   ⚠️ LA VITESSE DE LECTURE N'EST PAS LA DURÉE. Le ralenti multiplie ce
+   qui est joué à l'écran et ne touche à AUCUNE valeur exportée — sans
+   quoi on réglerait au ralenti et on livrerait du ralenti.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+    --k: 1;
+    --hex: 70px;
+    --part: 40;          /* part de l'hexagone prise par le cadenas, en % */
+    --onde-e: 5;         /* épaisseur de l'anneau, en unités du viewBox (= %) */
+    --or: #f0c040;
+    --fond: #07070a;
+    --froid: #e8eef7;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.3rem 1.3rem 4rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: var(--fond);
+}
+h1 { font-size: 1.1rem; margin: 0 0 0.3rem; }
+.sous { font-size: 0.76rem; opacity: 0.55; margin: 0 0 1.1rem; max-width: 64rem; line-height: 1.6; }
+.sous b { opacity: 0.95; }
+.sous .av { color: #ffb84d; }
+
+.barre {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.65rem 0.85rem; margin-bottom: 1.1rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.96); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.42; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.57rem; }
+.barre .sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.1); margin: 0 0.25rem; }
+button {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    color: #d8dae2; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 0.45rem;
+    padding: 0.34rem 0.68rem; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+button:hover { background: rgba(255,255,255,0.1); }
+button.on { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.5); color: var(--or); }
+button.rouge { border-color: rgba(239,68,68,0.4); color: #ff9b9b; }
+button:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+
+/* ─────────── mise en page : la scène à gauche, la table à droite ─────────── */
+.plan { display: grid; grid-template-columns: minmax(0,1fr) 22rem; gap: 1.2rem; align-items: start; }
+@media (max-width: 1100px) { .plan { grid-template-columns: 1fr; } }
+
+/* ─────────── la pastille, reprise de home-bombanime.css ─────────── */
+.slot { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; position: relative; }
+.slot .nom {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: 0.55rem; font-size: calc(var(--hex) * 0.21); font-weight: 500;
+    color: rgba(255,255,255,0.56); white-space: nowrap;
+}
+.slot.actif .nom { color: var(--or); }
+.hexbox { position: relative; display: flex; align-items: center; justify-content: center; }
+.hex { width: var(--hex); height: var(--hex); position: relative; overflow: visible; }
+.hex svg.cadre { width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(240,192,64,0.3)); }
+.hex svg.cadre polygon { fill: #101018; stroke: rgba(255,255,255,0.14); stroke-width: 2; }
+.slot.actif .hex svg.cadre { filter: drop-shadow(0 0 10px rgba(240,192,64,0.5)); }
+.slot.actif .hex svg.cadre polygon { stroke: var(--or); }
+.hex svg.anneau { position: absolute; top: -9%; left: -9%; width: 118%; height: 118%; overflow: visible; filter: none; }
+.hex svg.anneau polygon { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 1.6; }
+.slot.actif .hex svg.anneau polygon { stroke: rgba(240,192,64,0.45); }
+.avatar {
+    position: absolute; left: 0; bottom: 0; width: 100%; height: 100%;
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+    object-fit: cover; filter: grayscale(20%) brightness(0.85); opacity: 0.78;
+}
+.slot.actif .avatar { filter: grayscale(0%) brightness(1.1); opacity: 1; }
+.vies {
+    position: absolute; right: -8%; bottom: 2%; display: flex; gap: 3px;
+    background: rgba(0,0,0,0.88); padding: 3px 5px; border-radius: 1rem; z-index: 5;
+}
+.vies svg { width: calc(var(--hex) * 0.25); height: calc(var(--hex) * 0.25); fill: #ef4444; }
+.reponse {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 0.85rem; font-size: calc(var(--hex) * 0.185); font-weight: 600;
+    color: rgba(255,255,255,0.42); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.slot.actif .reponse { color: var(--or); text-shadow: 0 0 10px rgba(240,192,64,0.5); }
+
+.fx {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0; z-index: 8;
+}
+.voile {
+    position: absolute; inset: 0; z-index: 6; opacity: 0; pointer-events: none;
+    background: rgba(4,5,9,0.9);
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+}
+/* ⚠️ TROIS ÉTAGES, UN SEUL MOUVEMENT CHACUN : le calque a l'opacité,
+   l'enveloppe a le tremblement, le dessin a l'échelle. Deux d'entre eux
+   écrivent `transform` — sur un même élément, le dernier gagnerait et
+   l'autre serait perdu sans rien dire.
+   Et la TAILLE vit sur l'enveloppe, en pourcentage de l'hexagone : posée
+   sur le dessin, elle se résoudrait contre une enveloppe de largeur
+   automatique, c'est-à-dire contre elle-même. */
+.tremble {
+    display: block;
+    width: calc(1% * var(--part));
+    height: calc(1% * var(--part));
+}
+.cad {
+    display: block; width: 100%; height: 100%; overflow: visible;
+    filter: drop-shadow(0 0 calc(var(--hex)*0.09) rgba(0,0,0,0.95));
+}
+.cad .corps { fill: var(--froid); }
+.cad .anse { fill: none; stroke: var(--froid); stroke-width: 2.4; }
+/* ⚠️ Un TRACÉ SVG, pas une bordure CSS : une bordure se donne en pixels,
+   et pèse donc le double en proportion sur l'hexagone de 44 px d'un
+   téléphone que sur les 150 px d'un écran 2K. En unités du `viewBox`,
+   l'épaisseur vaut toujours un pourcentage de la pastille. */
+.fx-onde svg {
+    position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.45));
+}
+.fx-onde circle { fill: none; stroke: rgba(255,255,255,0.92); stroke-width: var(--onde-e); }
+
+@keyframes secousse-arene {
+    0%,100% { transform: translate(-50%,-50%) translateX(0); }
+    15% { transform: translate(-50%,-50%) translateX(-6px); } 30% { transform: translate(-50%,-50%) translateX(6px); }
+    45% { transform: translate(-50%,-50%) translateX(-5px); } 60% { transform: translate(-50%,-50%) translateX(5px); }
+    75% { transform: translate(-50%,-50%) translateX(-3px); } 90% { transform: translate(-50%,-50%) translateX(3px); }
+}
+.arene .slot.secoue { animation: secousse-arene calc(400ms * var(--k)) ease; }
+
+/* ─────────── arène ─────────── */
+.arene {
+    position: relative; height: 26rem; margin: 0 0 0.6rem;
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem;
+    background: radial-gradient(ellipse at 50% 45%, rgba(240,192,64,0.045), transparent 62%);
+}
+.arene .slot { position: absolute; transform: translate(-50%,-50%); }
+.bombe {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 5.2rem; height: 5.2rem; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #4a3a26, #1a1410 62%, #0d0a08);
+    box-shadow: inset 0 0 1.4rem rgba(0,0,0,0.9), 0 0 2rem rgba(0,0,0,0.6);
+}
+.meche {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%) translateX(-4.5rem);
+    display: flex; align-items: center; gap: 0.2rem;
+}
+.meche .fil { width: 2rem; height: 3px; background: #7a5a3a; border-radius: 2px; }
+.meche .flamme {
+    width: 0.6rem; height: 0.6rem; border-radius: 50%;
+    background: radial-gradient(circle, #ffd27a, #ff8a1f 55%, transparent 72%);
+    animation: vacille 0.5s ease-in-out infinite alternate;
+}
+@keyframes vacille { from { transform: scale(0.85); } to { transform: scale(1.15); } }
+
+.saisie {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.75rem 1rem; border-radius: 0.7rem; margin-bottom: 1rem;
+    border: 1px solid rgba(240,192,64,0.3); background: rgba(240,192,64,0.05);
+}
+.saisie .champ { flex: 1; font-size: 1rem; font-weight: 600; letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.75); text-transform: uppercase; }
+.saisie .curseur { display: inline-block; width: 2px; height: 1.05em; background: var(--or);
+    vertical-align: -0.17em; margin-left: 2px; animation: clignote 1s steps(1) infinite; }
+@keyframes clignote { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+.saisie .aide { font-size: 0.64rem; opacity: 0.42; text-align: right; line-height: 1.4; }
+
+/* ─────────── la table de réglage ─────────── */
+.table {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.8rem;
+    background: rgba(255,255,255,0.018); padding: 0.9rem 1rem 1.1rem;
+    position: sticky; top: 4.6rem;
+}
+.table h3 {
+    font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.4; margin: 1.1rem 0 0.6rem; font-weight: 700;
+}
+.table h3:first-child { margin-top: 0; }
+.reglage { margin-bottom: 0.75rem; }
+.reglage .tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.22rem; }
+.reglage .nomr { font-size: 0.71rem; opacity: 0.78; }
+.reglage .val {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600;
+    color: var(--or); font-variant-numeric: tabular-nums;
+}
+input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 1rem;
+    background: transparent; cursor: pointer; margin: 0; display: block;
+}
+input[type=range]::-webkit-slider-runnable-track {
+    height: 3px; border-radius: 3px; background: rgba(255,255,255,0.13);
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; margin-top: -5.5px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--or); border: none;
+    box-shadow: 0 0 0 3px rgba(240,192,64,0.18);
+}
+input[type=range]::-moz-range-track { height: 3px; border-radius: 3px; background: rgba(255,255,255,0.13); }
+input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border: none; border-radius: 50%;
+    background: var(--or); box-shadow: 0 0 0 3px rgba(240,192,64,0.18);
+}
+input[type=range]:focus-visible { outline: 2px solid var(--or); outline-offset: 3px; }
+.indice { font-size: 0.62rem; opacity: 0.35; line-height: 1.45; margin: -0.35rem 0 0.8rem; }
+
+/* ─────────── la frise des temps ─────────── */
+/* Deux pistes empilées sur la MÊME échelle de temps : le cadenas
+   au-dessus, l'anneau en dessous. C'est le seul endroit où l'on voit
+   si l'anneau part pendant que le cadenas monte, ou bien après. */
+.frise { margin: 0.3rem 0 0.5rem; }
+.frise .piste {
+    position: relative; height: 1.2rem; margin-bottom: 0.25rem;
+    border-radius: 0.3rem; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07); overflow: hidden;
+}
+.frise .zone { position: absolute; top: 0; bottom: 0; }
+.frise .z-mont  { background: rgba(143,180,232,0.42); }
+.frise .z-tenu  { background: rgba(240,192,64,0.42); }
+.frise .z-fondu { background: rgba(232,238,247,0.11); }
+.frise .z-onde  { background: rgba(255,255,255,0.3); border-left: 2px solid rgba(255,255,255,0.75); }
+.frise .etiq {
+    display: flex; gap: 0.9rem; flex-wrap: wrap;
+    font-size: 0.6rem; opacity: 0.6; font-variant-numeric: tabular-nums;
+}
+.frise .etiq b { font-weight: 600; opacity: 0.85; }
+.frise .etiq i { font-style: normal; display: inline-block;
+    width: 0.5rem; height: 0.5rem; border-radius: 2px; margin-right: 0.3rem; }
+
+/* ─────────── le CSS produit ─────────── */
+.sortie { margin-top: 2rem; max-width: 72rem; }
+.sortie .tete { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+.sortie h2 { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.4; margin: 0; font-weight: 700; flex: 1; }
+pre {
+    margin: 0; padding: 1rem 1.1rem; border-radius: 0.7rem;
+    border: 1px solid rgba(255,255,255,0.09); background: rgba(255,255,255,0.022);
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; line-height: 1.65;
+    color: #cfd6e4; overflow-x: auto; white-space: pre;
+}
+pre .c { color: #6f7a8c; }
+
+@media (prefers-reduced-motion: reduce) {
+    .meche .flamme, .saisie .curseur { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>BombAnime — régler la dilatation (F2)</h1>
+<p class="sous">
+Chaque nombre de F2 est sur un curseur, au millième près, et la page recrache le
+<b>CSS équivalent</b> en bas, prêt à coller. <span class="av">Attention</span> : la
+<b>vitesse de lecture</b> de la barre ne touche à aucune valeur — elle ne fait que ralentir ce
+qui est joué, pour voir. Les flèches du clavier avancent un curseur d'un cran.
+Les réglages s'écrivent dans l'adresse : copie l'URL pour me renvoyer ton choix.
+</p>
+
+<div class="barre">
+    <label>Taille</label>
+    <button data-taille="44">44 px · tél.</button>
+    <button data-taille="56">56 px</button>
+    <button data-taille="70" class="on">70 px · jeu</button>
+    <button data-taille="92">92 px</button>
+    <span class="sep"></span>
+    <label>Lecture</label>
+    <button data-k="1" class="on">normal</button>
+    <button data-k="2">×2</button>
+    <button data-k="4">×4</button>
+    <button data-k="8">×8</button>
+    <span class="sep"></span>
+    <button id="rejouer">Rejouer (R)</button>
+    <button id="boucle">En boucle</button>
+    <button id="inconnu" class="rouge">Jouer « nom inconnu »</button>
+    <button id="defaut">Revenir au réglage du jeu</button>
+</div>
+
+<div class="plan">
+    <div>
+        <div class="arene" id="arene"></div>
+        <div class="saisie">
+            <span class="champ">madara<span class="curseur"></span></span>
+            <span class="aide">Regardez ICI, pas le cercle.<br>Puis appuyez sur <b>R</b>.</span>
+        </div>
+        <div class="frise" id="frise"></div>
+        <p class="indice" style="margin-top:-0.6rem">
+            La frise montre la vraie durée : <b style="color:#8fb4e8">montée</b> jusqu'au plein,
+            <b style="color:#f0c040">tenue</b> à pleine opacité, puis <b>fondu</b> pendant que la
+            dilatation continue. Le trait blanc en bas est l'anneau.
+        </p>
+    </div>
+
+    <div class="table" id="table"></div>
+</div>
+
+<div class="sortie">
+    <div class="tete">
+        <h2>Le CSS équivalent — à coller dans home-bombanime.css</h2>
+        <button id="copier">Copier</button>
+    </div>
+    <pre id="css"></pre>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   LES RÉGLAGES
+   `pas` sert aussi au clavier : une flèche = un cran.
+   Les valeurs par défaut SONT celles de F2, au nombre près.
+   ════════════════════════════════════════════════════════════════ */
+const REGLAGES = [
+    { grp: 'Le cadenas' },
+    { c: 'duree',  nom: 'Durée totale',          min: 240, max: 1400, pas: 10,   def: 480,  u: ' ms' },
+    { c: 'plein',  nom: 'Plein à',               min: 10,  max: 400,  pas: 2,    def: 146,  u: ' ms',
+      aide: "Le moment où il atteint toute son opacité. C'est ce chiffre qui décide si on reconnaît un cadenas ou si on voit juste une onde." },
+    { c: 'tenue',  nom: 'Tenue à plein',         min: 0,   max: 600,  pas: 10,   def: 180,  u: ' ms',
+      aide: "Zéro = F2 d'origine : il commence à s'effacer dès qu'il est plein. Monter ce chiffre le rapproche de F1." },
+    { c: 's0',     nom: 'Échelle à la naissance', min: 0.08, max: 1.0, pas: 0.01, def: 0.08, u: '×' },
+    { c: 'sm',     nom: 'Échelle au plein',       min: 0.30, max: 1.8, pas: 0.02, def: 1.28, u: '×' },
+    { c: 's1',     nom: 'Échelle finale',         min: 1.2,  max: 4.0, pas: 0.05, def: 1.95, u: '×' },
+    { c: 'part',   nom: 'Taille au repos',        min: 24,   max: 72,  pas: 1,    def: 40,   u: ' % de l hexagone',
+      aide: "La part de l'hexagone que prend le cadenas AVANT toute échelle. C'est elle qui fixe sa taille maximale : à 40 %, l'échelle finale de 1,95 le mène à 78 % de l'hexagone." },
+    { c: 'elan',   nom: 'Élan de la courbe',      min: 0,    max: 100, pas: 1,    def: 34,   u: ' %',
+      aide: "À 0 la dilatation est régulière ; à 100 elle part d'un coup puis s'étire. C'est ce qui donne l'impression de « vite »." },
+    { grp: 'Le tremblement' },
+    { c: 'trem',   nom: 'Amplitude',   min: 0, max: 8, pas: 0.1, def: 2.6, u: ' %',
+      aide: "En pourcentage de la taille du cadenas, donc il suit l'hexagone. À zéro, pas de tremblement du tout." },
+    { c: 'batt',   nom: 'Battements',  min: 2, max: 8, pas: 1,   def: 5,   u: '',
+      aide: "Chaque battement vaut 62 % du précédent : il s'amortit et meurt de lui-même au lieu de s'arrêter net. Il ne commence qu'AU PLEIN — plus tôt, il secouerait un cadenas encore minuscule." },
+    { grp: "L'anneau" },
+    { c: 'ondeD',  nom: 'Départ',      min: 0,   max: 500, pas: 10,   def: 50,   u: ' ms' },
+    { c: 'ondeT',  nom: 'Durée',       min: 150, max: 1200, pas: 10,  def: 320,  u: ' ms',
+      aide: "C'est le levier qui décide s'il se voit : à 210 ms il passait trop vite pour qui regarde ailleurs — et celui qui vient de taper regarde son champ de saisie." },
+    { c: 'ondeDeb', nom: 'Diamètre au départ', min: 0.2, max: 1.2, pas: 0.05, def: 0.50, u: '×' },
+    { c: 'ondeS',  nom: 'Écartement',  min: 1.2, max: 3.2, pas: 0.05, def: 1.80, u: '×' },
+    { c: 'ondeE',  nom: 'Épaisseur',   min: 1,   max: 12,  pas: 0.5,  def: 5,    u: ' % de l hexagone',
+      aide: "En unités du viewBox, donc toujours la même part de la pastille — une bordure en pixels pesait deux fois plus sur un téléphone que sur un grand écran." },
+    { c: 'ondeO',  nom: 'Force',       min: 0,   max: 1,   pas: 0.02, def: 0.95, u: '' },
+    { grp: 'Le voile' },
+    { c: 'voile',  nom: 'Force',       min: 0,   max: 0.95, pas: 0.02, def: 0.90, u: '',
+      aide: "Le fond sombre sous le cadenas. À zéro, le portrait reste entier — la version la plus légère." },
+];
+const CHAMPS = REGLAGES.filter(r => r.c);
+const P = {};
+CHAMPS.forEach(r => { P[r.c] = r.def; });
+
+/* L'élan devient une courbe de Bézier : plus il est haut, plus le
+   mouvement part fort pour s'étirer ensuite. */
+function bezier(elan) {
+    const v = elan / 100;
+    const x1 = (0.45 - 0.40 * v).toFixed(3);
+    const y1 = (0.20 + 0.75 * v).toFixed(3);
+    return `cubic-bezier(${x1}, ${y1}, 0.3, 1)`;
+}
+
+/* Le tremblement, fabriqué à partir de deux nombres.
+   ⚠️ Il ne commence qu'AU PLEIN : plus tôt, il secouerait un cadenas
+   encore à 8 % de sa taille et toute l'amplitude serait dépensée pour
+   rien. Chaque battement vaut 62 % du précédent, pour qu'il MEURE de
+   lui-même — un tremblement coupé net se remarque plus que lui.
+   Rend une liste [part du temps (0 à 1), transform]. */
+const AMORTI = 0.62;
+function tremblements(p) {
+    const d = p.duree;
+    const debut = Math.min(p.plein, d) / d;
+    const n = Math.round(p.batt);
+    if (p.trem <= 0 || n < 1 || debut >= 1) return [];
+    const liste = [[0, 'translateX(0) rotate(0deg)']];
+    if (debut > 0) liste.push([debut, 'translateX(0) rotate(0deg)']);
+    for (let i = 1; i <= n; i++) {
+        const o = debut + (1 - debut) * (i / (n + 1));
+        const a = p.trem * Math.pow(AMORTI, i - 1) * (i % 2 ? -1 : 1);
+        liste.push([o, `translateX(${+a.toFixed(2)}%) rotate(${+(a * 0.5).toFixed(2)}deg)`]);
+    }
+    liste.push([1, 'translateX(0) rotate(0deg)']);
+    return liste;
+}
+
+const CAD = `<svg class="cad" viewBox="0 0 24 24" aria-hidden="true">
+    <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/>
+    <path class="anse" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const HEXA = '50,3 97,25 97,75 50,97 3,75 3,25';
+
+function slot(pseudo, avatar, mot, actif) {
+    const d = document.createElement('div');
+    d.className = 'slot' + (actif ? ' actif' : '');
+    d.innerHTML = `
+      <div class="nom">${pseudo}</div>
+      <div class="hexbox">
+        <div class="hex">
+          <svg class="anneau" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <svg class="cadre" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <img class="avatar" src="/${avatar}" alt="">
+          <div class="voile"></div>
+          <div class="fx fx-onde"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg></div>
+          <div class="fx fx-cadenas"><span class="tremble">${CAD}</span></div>
+        </div>
+        <div class="vies">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+      </div>
+      <div class="reponse">${mot}</div>`;
+    return d;
+}
+
+const TABLE = [
+    ['nahass',  'sasuke.webp', 'MADARA',  true ],
+    ['Master',  'rukia.webp',  'YAGURA',  false],
+    ['kenzo',   'levi.webp',   'KISAME',  false],
+    ['lina',    'erza.webp',   'JIRAIYA', false],
+    ['tomo',    'zoro.webp',   'HASHIRAMA', false],
+];
+const arene = document.getElementById('arene');
+arene.innerHTML = '<div class="bombe"></div><div class="meche"><div class="flamme"></div><div class="fil"></div></div>';
+const slotsArene = TABLE.map(([p, a, m, actif], i) => {
+    const s = slot(p, a, m, actif);
+    const ang = (-90 + i * (360 / TABLE.length)) * Math.PI / 180;
+    s.style.left = (50 + 38 * Math.cos(ang)) + '%';
+    s.style.top  = (50 + 33 * Math.sin(ang)) + '%';
+    arene.appendChild(s);
+    return s;
+});
+const cible = slotsArene[0];
+
+/* ════════════════════════════════════════════════════════════════
+   JOUER — en Web Animations, pour que les temps soient des nombres
+   et non des pourcentages figés dans une feuille de style.
+   ════════════════════════════════════════════════════════════════ */
+let lecture = 1;
+function jouer() {
+    const k = lecture;
+    const cad   = cible.querySelector('.fx-cadenas');
+    const enve  = cible.querySelector('.fx-cadenas .tremble');
+    const dess  = cible.querySelector('.fx-cadenas .cad');
+    const onde  = cible.querySelector('.fx-onde');
+    const ondeI = cible.querySelector('.fx-onde svg');
+    const voile = cible.querySelector('.voile');
+    [cad, enve, dess, onde, ondeI, voile, cible].forEach(e => e.getAnimations().forEach(a => a.cancel()));
+    cible.classList.remove('secoue');
+    document.documentElement.style.setProperty('--part', P.part);
+    document.documentElement.style.setProperty('--onde-e', P.ondeE);
+
+    const d = P.duree;
+    const tPlein = Math.min(P.plein, d);
+    const tFondu = Math.min(tPlein + P.tenue, d);
+    const courbe = bezier(P.elan);
+
+    // L'opacité, sur le calque.
+    cad.animate([
+        { offset: 0,            opacity: 0 },
+        { offset: tPlein / d,   opacity: 1 },
+        { offset: tFondu / d,   opacity: 1 },
+        { offset: 1,            opacity: 0 },
+    ], { duration: d * k, easing: 'linear', fill: 'forwards' });
+
+    // L'échelle, sur le dessin : trois points, la même courbe sur chaque segment.
+    dess.animate([
+        { offset: 0,          transform: `scale(${P.s0})`, easing: courbe },
+        { offset: tPlein / d, transform: `scale(${P.sm})`, easing: courbe },
+        { offset: 1,          transform: `scale(${P.s1})` },
+    ], { duration: d * k, fill: 'forwards' });
+
+    // Le tremblement, sur l'enveloppe — jamais sur le dessin, qui a déjà
+    // son échelle sur la même propriété `transform`.
+    // ⚠️ L'adoucissement se pose sur CHAQUE image-clef, pas dans les
+    // options : là, il déformerait la progression d'ensemble et tasserait
+    // les premiers battements. En CSS, `ease-in-out` s'applique déjà
+    // segment par segment — on reproduit donc ce comportement-là.
+    const trem = tremblements(P);
+    if (trem.length) {
+        enve.animate(trem.map(([o, t]) => ({ offset: o, transform: t, easing: 'ease-in-out' })),
+            { duration: d * k, fill: 'forwards' });
+    }
+
+    // L'anneau.
+    if (P.ondeO > 0) {
+        onde.style.opacity = 1;
+        ondeI.animate([
+            { opacity: P.ondeO, transform: `scale(${P.ondeDeb})` },
+            { opacity: 0,       transform: `scale(${P.ondeS})` },
+        ], { duration: P.ondeT * k, delay: P.ondeD * k,
+             easing: 'cubic-bezier(0.1, 0.7, 0.3, 1)', fill: 'both' });
+    } else {
+        onde.style.opacity = 0;
+    }
+
+    // Le voile suit la fenêtre d'opacité du cadenas.
+    if (P.voile > 0) {
+        voile.animate([
+            { offset: 0,          opacity: 0 },
+            { offset: tPlein / d, opacity: P.voile },
+            { offset: tFondu / d, opacity: P.voile },
+            { offset: 1,          opacity: 0 },
+        ], { duration: d * k, easing: 'linear', fill: 'forwards' });
+    }
+}
+function jouerInconnu() {
+    cible.querySelectorAll('.fx, .voile').forEach(e => e.getAnimations().forEach(a => a.cancel()));
+    cible.classList.remove('secoue');
+    void cible.offsetWidth;
+    cible.classList.add('secoue');
+}
+
+/* ─────────── la table de réglage ─────────── */
+const table = document.getElementById('table');
+REGLAGES.forEach(r => {
+    if (r.grp) { const h = document.createElement('h3'); h.textContent = r.grp; table.appendChild(h); return; }
+    const bloc = document.createElement('div');
+    bloc.className = 'reglage';
+    bloc.innerHTML = `<div class="tete"><span class="nomr">${r.nom}</span>
+        <span class="val" id="v-${r.c}"></span></div>
+        <input type="range" id="r-${r.c}" min="${r.min}" max="${r.max}" step="${r.pas}" value="${r.def}"
+               aria-label="${r.nom}">`;
+    table.appendChild(bloc);
+    if (r.aide) {
+        const p = document.createElement('p');
+        p.className = 'indice'; p.textContent = r.aide;
+        table.appendChild(p);
+    }
+    bloc.querySelector('input').addEventListener('input', (e) => {
+        P[r.c] = Number(e.target.value);
+        majValeur(r); majFrise(); majCss(); majHash(); jouer();
+    });
+});
+function majValeur(r) {
+    const v = P[r.c];
+    const txt = r.pas < 1 ? v.toFixed(2) : String(v);
+    document.getElementById('v-' + r.c).textContent = txt + r.u;
+}
+function majTout() {
+    CHAMPS.forEach(r => { document.getElementById('r-' + r.c).value = P[r.c]; majValeur(r); });
+    majFrise(); majCss(); majHash();
+}
+
+/* ─────────── la frise ─────────── */
+function majFrise() {
+    const d = P.duree;
+    const total = Math.max(d, P.ondeD + P.ondeT);
+    const l = (ms) => (ms / total * 100) + '%';
+    const tPlein = Math.min(P.plein, d);
+    const tFondu = Math.min(tPlein + P.tenue, d);
+    document.getElementById('frise').innerHTML = `
+      <div class="piste">
+        <div class="zone z-mont"  style="left:0;width:${l(tPlein)}"></div>
+        <div class="zone z-tenu"  style="left:${l(tPlein)};width:${l(tFondu - tPlein)}"></div>
+        <div class="zone z-fondu" style="left:${l(tFondu)};width:${l(d - tFondu)}"></div>
+      </div>
+      <div class="piste">
+        <div class="zone z-onde" style="left:${l(P.ondeD)};width:${l(P.ondeT)};opacity:${Math.max(0.12, P.ondeO)}"></div>
+      </div>
+      <div class="etiq">
+        <span><i style="background:rgba(143,180,232,0.6)"></i>montée <b>${tPlein} ms</b></span>
+        <span><i style="background:rgba(240,192,64,0.6)"></i>tenue <b>${tFondu - tPlein} ms</b></span>
+        <span><i style="background:rgba(232,238,247,0.2)"></i>fondu <b>${d - tFondu} ms</b></span>
+        <span><i style="background:rgba(255,255,255,0.5)"></i>anneau <b>${P.ondeD} → ${P.ondeD + P.ondeT} ms</b></span>
+        <span style="margin-left:auto;opacity:0.8">tout est fini à <b>${total} ms</b></span>
+      </div>`;
+}
+
+/* ─────────── le CSS produit ─────────── */
+function pc(ms, d) {
+    const v = Math.min(100, ms / d * 100);
+    return v.toFixed(2).replace(/\.?0+$/, '') + '%';
+}
+/* ⚠️ Deux images-clefs au MÊME pourcentage, c'est ce que produit une
+   tenue à zéro — et la seconde écrase la première en silence. On ne
+   garde donc que la DERNIÈRE de chaque instant : à l'autre bout, une
+   tenue qui va jusqu'au bout ferait sinon disparaître le « 100 % »
+   qui éteint le cadenas, qui resterait affiché pour toujours. */
+function clefs(liste, d) {
+    const parInstant = new Map();
+    liste.forEach(([ms, decl]) => parInstant.set(pc(ms, d), decl));
+    return [...parInstant].map(([p, decl]) => `    ${p} { ${decl} }`).join('\n');
+}
+function majCss() {
+    const d = P.duree;
+    const tPlein = Math.min(P.plein, d);
+    const tFondu = Math.min(tPlein + P.tenue, d);
+    const trem = tremblements(P);
+    const c = (s) => `<span class="c">${s}</span>`;
+    const css =
+`${c('/* ⚠️ « deja-cite » NE DOIT PLUS partager « avatar-shake » avec')}
+${c('   « shake-error » : c\'est cette secousse commune qui faisait lire')}
+${c('   « nom inconnu » là où le jeu voulait dire « nom déjà cité ». */')}
+.player-lock-tremble { display: block; width: ${P.part}%; height: ${P.part}%; }
+.player-lock-centre svg { display: block; width: 100%; height: 100%; }
+.player-lock-onde circle { fill: none; stroke: rgba(255, 255, 255, 0.92); stroke-width: ${P.ondeE}; }
+
+.bombanime-player-slot.deja-cite .player-lock-centre {
+    animation: cadenas-opacite ${d}ms linear forwards;
+}
+.bombanime-player-slot.deja-cite .player-lock-centre svg {
+    animation: cadenas-echelle ${d}ms ${bezier(P.elan)} forwards;
+}${trem.length ? `
+.bombanime-player-slot.deja-cite .player-lock-tremble {
+    animation: cadenas-tremble ${d}ms ease-in-out forwards;
+}` : ''}
+.bombanime-player-slot.deja-cite .player-lock-onde svg {
+    animation: cadenas-onde ${P.ondeT}ms cubic-bezier(0.1, 0.7, 0.3, 1) ${P.ondeD}ms both;
+}
+.bombanime-player-slot.deja-cite .player-lock-voile {
+    animation: cadenas-voile ${d}ms linear forwards;
+}
+
+@keyframes cadenas-opacite {
+${clefs([[0, 'opacity: 0;'], [tPlein, 'opacity: 1;'], [tFondu, 'opacity: 1;'], [d, 'opacity: 0;']], d)}
+}
+
+@keyframes cadenas-echelle {
+${clefs([[0, `transform: scale(${P.s0.toFixed(2)});`],
+         [tPlein, `transform: scale(${P.sm.toFixed(2)});`],
+         [d, `transform: scale(${P.s1.toFixed(2)});`]], d)}
+}
+
+${trem.length ? `@keyframes cadenas-tremble {
+${clefs(trem.map(([o, t]) => [o * d, `transform: ${t};`]), d)}
+}
+
+` : ''}@keyframes cadenas-onde {
+    0% { opacity: ${P.ondeO.toFixed(2)}; transform: scale(${P.ondeDeb.toFixed(2)}); }
+    100% { opacity: 0; transform: scale(${P.ondeS.toFixed(2)}); }
+}
+
+@keyframes cadenas-voile {
+${clefs([[0, 'opacity: 0;'], [tPlein, `opacity: ${P.voile.toFixed(2)};`],
+         [tFondu, `opacity: ${P.voile.toFixed(2)};`], [d, 'opacity: 0;']], d)}
+}`;
+    document.getElementById('css').innerHTML = css;
+}
+document.getElementById('copier').addEventListener('click', async (e) => {
+    const txt = document.getElementById('css').textContent;
+    try { await navigator.clipboard.writeText(txt); e.target.textContent = 'Copié'; }
+    catch (err) {
+        const r = document.createRange();
+        r.selectNodeContents(document.getElementById('css'));
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        e.target.textContent = 'Sélectionné — Ctrl+C';
+    }
+    setTimeout(() => { e.target.textContent = 'Copier'; }, 1600);
+});
+
+/* ─────────── l'adresse retient les réglages ─────────── */
+function majHash() {
+    const h = CHAMPS.map(r => r.c + '=' + P[r.c]).join('&');
+    history.replaceState(null, '', '#' + h);
+}
+function lireHash() {
+    const h = location.hash.replace(/^#/, '');
+    if (!h) return;
+    new URLSearchParams(h).forEach((v, k) => {
+        if (k in P && !Number.isNaN(Number(v))) P[k] = Number(v);
+    });
+}
+
+/* ─────────── barre ─────────── */
+document.querySelectorAll('[data-taille]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-taille]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--hex', b.dataset.taille + 'px');
+    jouer();
+}));
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-k]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    lecture = Number(b.dataset.k);
+    document.documentElement.style.setProperty('--k', lecture);
+    jouer();
+}));
+document.getElementById('rejouer').addEventListener('click', jouer);
+document.getElementById('inconnu').addEventListener('click', jouerInconnu);
+document.getElementById('defaut').addEventListener('click', () => {
+    CHAMPS.forEach(r => { P[r.c] = r.def; });
+    majTout(); jouer();
+});
+let boucle = null;
+document.getElementById('boucle').addEventListener('click', (e) => {
+    if (boucle) { clearInterval(boucle); boucle = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    boucle = setInterval(jouer, 2000);
+});
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'r' || e.key === 'R') jouer();
+    if (e.key === 'i' || e.key === 'I') jouerInconnu();
+});
+
+lireHash();
+majTout();
+jouer();
+</script>
+</body></html>

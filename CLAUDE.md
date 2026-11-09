@@ -285,6 +285,40 @@ ces deux règles.
 presque tout le temps et qui explose. Assumé — le partenaire sert à s'entraîner à trouver
 des noms, pas à être battu.
 
+⚠️ **« Nom déjà cité » et « nom inconnu » ne doivent JAMAIS se ressembler.** Les deux refus
+jouaient la même secousse (`already-used` et `shake-error` partageaient `avatar-shake`), et
+c'est la secousse qu'on voit en premier : elle dit « raté », donc on lisait « pas dans la
+banque » — la question revenait en partie **malgré** le cadenas, qui était gris, large de
+24 px et posé à 40 px SUR LE CÔTÉ, c'est-à-dire là où personne ne regarde (les yeux sont sur
+la bombe, sur le joueur actif, ou — pour celui qui vient de taper — sur SON CHAMP DE SAISIE).
+
+Depuis : la secousse appartient au seul nom inconnu, et le nom déjà cité a un **cadenas blanc
+au centre de la pastille** qui naît minuscule, tremble doucement et se dilate en s'effaçant,
+avec une onde et un voile sombre (classe `deja-cite`, `home-bombanime.css`). Le son n'a pas
+bougé.
+
+Trois choses à connaître :
+- **Les tailles sont en POURCENTAGE de l'hexagone**, dont la taille est calculée en JS selon
+  le nombre de joueurs et l'écran. L'ancien cadenas était en pixels et se redéfinissait dans
+  **trois** blocs responsive, tous supprimés : il n'y en a plus aucun à tenir à jour. La
+  taille de départ vit sur l'ENVELOPPE (`player-lock-tremble`, 40 %) ; posée sur le dessin,
+  elle se résoudrait contre une enveloppe de largeur automatique, donc contre elle-même.
+  Et l'anneau est un **tracé SVG**, plus une bordure CSS : une bordure se donne en pixels,
+  donc elle pesait deux fois plus, en proportion, sur l'hexagone de 44 px d'un téléphone à
+  huit joueurs que sur les 150 px d'un écran 2K — et c'est sur le petit qu'on la voyait le
+  moins. En unités du `viewBox`, elle vaut toujours 5 % de la pastille.
+- **Trois étages, un seul mouvement chacun** : l'opacité sur le calque, le tremblement sur
+  l'enveloppe, l'échelle sur le dessin. Tremblement et échelle écrivent tous deux `transform` :
+  sur un même élément, le dernier déclaré gagnerait et l'autre serait perdu en silence. Et le
+  tremblement ne commence **qu'au plein** — plus tôt, il secouerait un cadenas encore à 8 % de
+  sa taille.
+- ⚠️ **Rejouer l'animation demande un calcul de style FORCÉ** entre le retrait et la repose de
+  la classe (`void slot.offsetWidth` dans le `$nextTick`). Sans lui, les deux écritures tombent
+  dans la même image, le navigateur ne voit rien bouger, et **un second refus d'affilée passe
+  sans rien à l'écran**. Mesuré — `$nextTick` seul ne suffit pas.
+
+Réglé au banc `/prototypes/bomb-cadenas3`, qui recrache le CSS exact.
+
 ⚠️ **Le multiplicateur du Rush compte les RÉPONSES, jamais les points.** Un cran toutes les dix
 bonnes réponses d'affilée : dix réponses valent dix points et ouvrent le ×2, dix de plus en valent
 vingt — on est donc à **trente points quand le ×3 s'ouvre**, soixante pour le ×4. Compter le palier
@@ -522,6 +556,16 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   de ses vols contre 86 % de reussite pour celui qui choisit sa classe.
   Et `/prototypes/bomb-ellipse` : le cercle de BombAnime contre l ellipse,
   avec un curseur de joueurs et les mesures sous chaque telephone.
+  Et les trois pages du cadenas « deja cite », qui se lisent dans l ordre :
+  `/prototypes/bomb-cadenas` (huit facons de le dire, et l etat des lieux en
+  reference), `/prototypes/bomb-cadenas2` (six dilatations, ce qui les separe
+  etant la longueur du PALIER a l echelle 1), et surtout
+  `/prototypes/bomb-cadenas3` — **un banc de reglage**, chaque nombre sur un
+  curseur, qui RECRACHE LE CSS a coller. Les animations y sont fabriquees en JS
+  parce qu un pourcentage de `@keyframes` ne peut pas etre une variable ; c est
+  le CSS produit qui part en jeu, jamais ce JS. ⚠️ Le ralenti de la barre ne
+  touche a aucune valeur exportee, sinon on regle au ralenti et on livre du
+  ralenti. Les reglages s ecrivent dans l adresse, pour se renvoyer un choix.
 - `/admin` : **le panneau du site**, pour Adem seul. Trois onglets — **Vue d ensemble**,
   **Questions** (la banque : ajouter, lister, modifier, supprimer) et **Suggestions**
   (les personnages proposes depuis BombAnime). Chaque onglet ne va chercher ses donnees

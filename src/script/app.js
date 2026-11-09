@@ -907,6 +907,8 @@ createApp({
                 mobileAlphabetPulse: false, // 📱 Animation bouton alphabet mobile
                 successPlayerId: null,
                 lifeGainedPlayerId: null,
+                dejaCitePlayerId: null,   // le cadenas « nom déjà cité »
+                dejaCiteTimer: null,
                 // Debug
                 debugInfo: null,
                 debugMs: null, // 🆕 Timer en millisecondes pour debug
@@ -6975,6 +6977,8 @@ createApp({
                 mobileAlphabetPulse: false,
                 successPlayerId: null,
                 lifeGainedPlayerId: null,
+                dejaCitePlayerId: null,   // le cadenas « nom déjà cité »
+                dejaCiteTimer: null,
                 introPhase: null,
                 introPlayersRevealed: 0,
                 bombPointingUp: true,
@@ -8682,23 +8686,43 @@ createApp({
                 // Trouver le slot du joueur actuel (visible par tous)
                 const playerSlot = document.querySelector('.bombanime-player-slot.active');
                 
-                // Si c'est "already_used", afficher le cadenas et shake
+                // Nom déjà cité : le cadenas au centre de la pastille.
+                // ⚠️ PAS DE SECOUSSE ICI. Elle appartient au nom INCONNU, juste
+                // en dessous. Les deux refus la partageaient, et comme elle
+                // arrive en premier et dit « raté », on lisait « pas dans la
+                // banque » là où le jeu disait « déjà cité » — c'est la question
+                // qui revenait en partie malgré le cadenas.
                 if (data.reason === 'already_used') {
                     // 🔊 Son "déjà utilisé"
                     this.playSound(this.sounds.bombanimeUsed);
-                    
-                    const lock = document.getElementById('lock-' + this.bombanime.currentPlayerId);
-                    
-                    if (playerSlot) {
-                        playerSlot.classList.add('already-used');
-                        setTimeout(() => playerSlot.classList.remove('already-used'), 400);
-                    }
-                    
-                    if (lock) {
-                        lock.classList.add('show');
-                        setTimeout(() => lock.classList.remove('show'), 600);
-                    }
-                    
+
+                    // ⚠️ On repasse par null avant de poser l'identifiant : si le
+                    // même joueur redit un nom déjà cité, réécrire la même valeur
+                    // ne changerait pas la classe, donc n'EN REJOUERAIT PAS
+                    // l'animation — et le second refus passerait sans rien à
+                    // l'écran, ce qui est le défaut qu'on vient de corriger.
+                    //
+                    // ⚠️ ET LE `nextTick` NE SUFFIT PAS. Il garantit que le DOM a
+                    // reçu le retrait, pas que le NAVIGATEUR l'a vu : les deux
+                    // écritures tombent dans la même image, où seul l'état final
+                    // compte — soit aucun changement du tout. Il faut donc lire
+                    // une mesure de l'élément ENTRE les deux, ce qui force le
+                    // calcul des styles et fait exister l'instant sans la classe.
+                    // Mesuré : sans cette ligne, l'animation ne repart pas.
+                    this.bombanime.dejaCitePlayerId = null;
+                    this.$nextTick(() => {
+                        const slot = document.querySelector(
+                            '.bombanime-player-slot[data-player-id="' + data.playerId + '"]');
+                        if (slot) void slot.offsetWidth;
+                        this.bombanime.dejaCitePlayerId = data.playerId;
+                    });
+                    clearTimeout(this.bombanime.dejaCiteTimer);
+                    // 480 ms d'animation ; on laisse une marge avant de retirer
+                    // la classe, sinon la dernière image est coupée.
+                    this.bombanime.dejaCiteTimer = setTimeout(() => {
+                        this.bombanime.dejaCitePlayerId = null;
+                    }, 600);
+
                     // Clear l'input seulement si c'est moi
                     if (data.playerId === this.playerId) {
                         this.bombanime.inputValue = '';

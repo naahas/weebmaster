@@ -3256,7 +3256,8 @@
                                     'success': player.playerId === bombanime.successPlayerId,
                                     'intro-hidden': bombanime.introPhase === 'players' && index >= bombanime.introPlayersRevealed,
                                     'intro-reveal': bombanime.introPhase === 'players' && index < bombanime.introPlayersRevealed,
-                                    'life-gained': bombanime.lifeGainedPlayerId === player.playerId
+                                    'life-gained': bombanime.lifeGainedPlayerId === player.playerId,
+                                    'deja-cite': bombanime.dejaCitePlayerId === player.playerId
                                 }"
                                 :style="getBombanimePlayerStyle(index, bombanime.playersData.length)"
                             >
@@ -3286,16 +3287,27 @@
                                             <div class="particle"></div><div class="particle"></div><div class="particle"></div>
                                             <div class="particle"></div><div class="particle"></div><div class="particle"></div>
                                         </div>
+                                        <!-- Cadenas « déjà cité » : voile, onde, puis le cadenas
+                                             au centre. Ils vivent DANS l'hexagone pour que leurs
+                                             tailles en % suivent celle du joueur. -->
+                                        <div class="player-lock-voile"></div>
+                                        <div class="player-lock-onde">
+                                            <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="45"/></svg>
+                                        </div>
+                                        <div class="player-lock-centre">
+                                            <span class="player-lock-tremble">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                    <rect class="cad-corps" x="3" y="11" width="18" height="11" rx="2"/>
+                                                    <path class="cad-anse" d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
                                     <!-- Badge cœurs -->
                                     <div class="player-lives">
                                         <svg v-for="n in 2" :key="'heart-' + player.playerId + '-' + n + '-' + player.lives" class="player-life" :class="{ lost: n > player.lives }" viewBox="0 0 24 24">
                                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                         </svg>
-                                    </div>
-                                    <!-- Cadenas (déjà utilisé) -->
-                                    <div class="player-lock" :id="'lock-' + player.playerId">
-                                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
                                     </div>
                                     <!-- Particules alphabet complet -->
                                     <div class="alphabet-particles">

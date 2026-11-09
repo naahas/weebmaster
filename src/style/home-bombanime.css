@@ -871,10 +871,12 @@
 .success-particle:nth-child(3) { top: 50%; left: 50%; --px: -22px; --py: 12px; animation-delay: 100ms; }
 .success-particle:nth-child(4) { top: 50%; left: 50%; --px: 18px; --py: 15px; animation-delay: 75ms; }
 
-/* Already used - shake avatar + cadenas */
-.bombanime-player-slot.already-used {
-    animation: avatar-shake 0.4s ease;
-}
+/* ⚠️ `already-used` A DISPARU, et il ne faut pas la remettre. Elle jouait
+   `avatar-shake`, EXACTEMENT comme `shake-error` juste en dessous : les
+   deux refus se ressemblaient donc trait pour trait, et c'est ce qui
+   faisait demander en partie si le personnage était bien dans la banque.
+   La secousse appartient maintenant au seul nom inconnu ; le nom déjà
+   cité a son cadenas, plus haut. */
 
 /* Shake error - nom invalide (visible par tous) */
 .bombanime-player-slot.shake-error {
@@ -1087,38 +1089,187 @@
 .alphabet-particle:nth-child(5) { top: 50%; left: 50%; --px: 0px; --py: -38px; animation-delay: 20ms; }
 .alphabet-particle:nth-child(6) { top: 50%; left: 50%; --px: -38px; --py: -10px; animation-delay: 100ms; }
 
-/* ============================================
-   LE CADENAS
-   Signale un personnage déjà cité par quelqu'un.
-   ============================================ */
-.player-lock {
+/* ════════════════════════════════════════════════════════════════
+   LE CADENAS — « ce nom a déjà été cité »
+
+   Il était gris, large de 24 px, posé à 40 px SUR LE CÔTÉ de la
+   pastille, et il s'affichait quand même : des joueurs demandaient
+   en pleine partie si le personnage était bien dans la banque. Quatre
+   raisons, et la première explique tout :
+
+   ⚠️ 1. LES DEUX REFUS JOUAIENT LA MÊME ANIMATION. « already-used » et
+   « shake-error » déclenchaient tous deux `avatar-shake`. Un nom inconnu
+   et un nom déjà cité secouaient le joueur à l'identique. La secousse
+   arrive en premier et dit « raté » — le joueur en concluait « pas dans
+   la banque », ce qui est EXACTEMENT l'autre refus. Le cadenas passait
+   ensuite pour corriger, trop tard et hors du regard. La secousse est
+   donc désormais réservée au nom inconnu, et « deja-cite » ne l'a plus.
+
+   ⚠️ 2. IL ÉTAIT HORS DU REGARD. `right: -40px` le posait dans le vide
+   entre deux joueurs. Pendant un tour les yeux sont sur la bombe, sur le
+   joueur actif — et, pour celui qui vient de taper, SUR SON CHAMP DE
+   SAISIE. Il est maintenant au centre de la pastille.
+
+   ⚠️ 3. IL ÉTAIT GRIS, la seule couleur du mode qui ne veuille rien dire :
+   l'actif est doré, la vie perdue rouge, la réussite verte. Il est
+   désormais d'un blanc froid, qui n'appartient à aucun autre message.
+
+   ⚠️ 4. SES TAILLES ÉTAIENT EN PIXELS, redéfinies dans trois blocs
+   responsive. Tout est désormais en POURCENTAGE de l'hexagone, dont la
+   taille est calculée en JS selon le nombre de joueurs et l'écran
+   (`getBombanimeHexSize`) : le cadenas suit tout seul, de 44 px sur
+   téléphone à 150 px sur un 2K, sans une seule règle de plus.
+
+   Réglé au banc `/prototypes/bomb-cadenas3`, qui recrache ce CSS.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Les trois calques vivent DANS `.player-hex`, qui porte déjà
+   `overflow: visible` : l'onde peut donc déborder du cadre. */
+.player-lock-voile,
+.player-lock-onde,
+.player-lock-centre {
     position: absolute;
-    /* Deux pixels de plus vers l'extérieur : il mordait sur la pastille */
-    right: -40px;
-    top: 50%;
-    transform: translateY(-50%) rotate(8deg);
+    inset: 0;
     opacity: 0;
     pointer-events: none;
-    color: #888888;
 }
 
-.player-lock svg {
-    width: 24px;
-    height: 24px;
-    fill: #888888;
-    stroke: #aaaaaa;
-    filter: drop-shadow(0 0 4px rgba(150, 150, 150, 0.5));
+/* Le voile assombrit le portrait sous le cadenas — même découpe que
+   l'avatar, sinon il baverait sur les six pans de l'hexagone. */
+.player-lock-voile {
+    z-index: 6;
+    background: rgba(4, 5, 9, 0.9);
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%,
+                       50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
 }
 
-.player-lock.show {
-    animation: lock-popup 0.6s ease-out forwards;
+/* ⚠️ L'anneau est un TRACÉ SVG, plus une bordure CSS de 2 px. Une
+   bordure se donne en pixels : sur l'hexagone de 44 px d'un téléphone à
+   huit joueurs elle pesait le double, en proportion, de ce qu'elle pèse
+   sur les 150 px d'un écran 2K — et c'est sur le petit qu'on la voyait
+   le moins, parce que tout y est petit. En unités du `viewBox`, elle
+   vaut toujours 5 % de la pastille. */
+.player-lock-onde { z-index: 7; }
+.player-lock-onde svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    opacity: 0;
+    /* Sur fond noir, un trait fin ne tient pas tout seul. */
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+}
+.player-lock-onde circle {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.92);
+    stroke-width: 5;
 }
 
-@keyframes lock-popup {
-    0% { opacity: 0; transform: translateY(-40%) rotate(8deg); }
-    25% { opacity: 1; transform: translateY(-50%) rotate(8deg); }
-    65% { opacity: 1; transform: translateY(-55%) rotate(8deg); }
-    100% { opacity: 0; transform: translateY(-60%) rotate(8deg); }
+.player-lock-centre {
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ⚠️ TROIS ÉTAGES, ET CHACUN PORTE UN SEUL MOUVEMENT : le calque a
+   l'opacité, l'enveloppe a le tremblement, le dessin a l'échelle. Tout
+   mettre sur un seul élément les mettrait sur la même propriété
+   `transform` — le dernier déclaré gagnerait et les autres seraient
+   perdus en silence.
+   Et c'est l'ENVELOPPE qui porte la taille, en pourcentage de
+   l'hexagone : le dessin la remplit. Poser la taille sur le dessin la
+   ferait résoudre contre une enveloppe de largeur automatique, donc
+   contre lui-même. */
+.player-lock-tremble {
+    display: block;
+    width: 40%;
+    height: 40%;
+}
+
+.player-lock-centre svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.95));
+}
+
+.player-lock-centre .cad-corps { fill: #e8eef7; }
+.player-lock-centre .cad-anse { fill: none; stroke: #e8eef7; stroke-width: 2.4; }
+
+/* ⚠️ DEUX ANIMATIONS, PAS UNE : l'opacité sur le calque, l'échelle sur
+   le dessin. Les mêler les mettrait sur les mêmes images-clefs — on ne
+   pourrait plus décaler le fondu sans décaler la dilatation, qui est
+   tout le mouvement. */
+.bombanime-player-slot.deja-cite .player-lock-centre {
+    animation: cadenas-opacite 480ms linear forwards;
+}
+.bombanime-player-slot.deja-cite .player-lock-centre svg {
+    animation: cadenas-echelle 480ms cubic-bezier(0.314, 0.455, 0.3, 1) forwards;
+}
+.bombanime-player-slot.deja-cite .player-lock-tremble {
+    animation: cadenas-tremble 480ms ease-in-out forwards;
+}
+.bombanime-player-slot.deja-cite .player-lock-onde {
+    opacity: 1;
+}
+.bombanime-player-slot.deja-cite .player-lock-onde svg {
+    animation: cadenas-onde 320ms cubic-bezier(0.1, 0.7, 0.3, 1) 50ms both;
+}
+.bombanime-player-slot.deja-cite .player-lock-voile {
+    animation: cadenas-voile 480ms linear forwards;
+}
+
+@keyframes cadenas-opacite {
+    0% { opacity: 0; }
+    30.42% { opacity: 1; }
+    67.92% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes cadenas-echelle {
+    0% { transform: scale(0.08); }
+    30.42% { transform: scale(1.28); }
+    100% { transform: scale(1.95); }
+}
+
+/* ⚠️ Le tremblement NE COMMENCE QU'AU PLEIN (30.42 %). Plus tôt, il
+   secouerait un cadenas encore à 8 % de sa taille : on ne verrait rien
+   bouger, et toute l'amplitude serait dépensée pour rien. Il s'AMORTIT
+   ensuite — chaque battement vaut 62 % du précédent — pour mourir de
+   lui-même au lieu de s'arrêter net. Et il est en POURCENTAGE : le
+   tremblement suit la taille du cadenas, donc celle de l'hexagone. */
+@keyframes cadenas-tremble {
+    0%, 30.42% { transform: translateX(0) rotate(0deg); }
+    42.01% { transform: translateX(-2.6%) rotate(-1.3deg); }
+    53.61% { transform: translateX(1.61%) rotate(0.81deg); }
+    65.21% { transform: translateX(-1%) rotate(-0.5deg); }
+    76.81% { transform: translateX(0.62%) rotate(0.31deg); }
+    88.4% { transform: translateX(-0.38%) rotate(-0.19deg); }
+    100% { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes cadenas-onde {
+    0% { opacity: 0.95; transform: scale(0.5); }
+    100% { opacity: 0; transform: scale(1.8); }
+}
+
+@keyframes cadenas-voile {
+    0% { opacity: 0; }
+    30.42% { opacity: 0.90; }
+    67.92% { opacity: 0.90; }
+    100% { opacity: 0; }
+}
+
+/* ⚠️ Sous « mouvement réduit », on coupe la DILATATION et l'onde, pas le
+   cadenas : il porte une information que rien d'autre ne dit. Le calque
+   garde donc son fondu, et le dessin reste à sa taille de repos. */
+@media (prefers-reduced-motion: reduce) {
+    .bombanime-player-slot.deja-cite .player-lock-centre svg { animation: none; }
+    .bombanime-player-slot.deja-cite .player-lock-tremble { animation: none; }
+    .bombanime-player-slot.deja-cite .player-lock-onde svg { animation: none; }
 }
 
 /* ============================================
@@ -3154,16 +3305,6 @@
         max-width: 175px;
     }
     
-    /* Cadenas */
-    .player-lock {
-        right: -36px;
-    }
-    
-    .player-lock svg {
-        width: 18px;
-        height: 18px;
-    }
-    
     /* Winner screen mobile */
     .crown-svg {
         width: 55px;
@@ -3244,15 +3385,6 @@
     
     .player-answer {
         max-width: 140px;
-    }
-    
-    .player-lock {
-        right: -24px;
-    }
-    
-    .player-lock svg {
-        width: 14px;
-        height: 14px;
     }
     
     /* Drawer plus compact */
@@ -3400,16 +3532,6 @@
     .player-answer {
         max-width: 230px;
         font-size: 0.95rem;
-    }
-
-    /* Cadenas */
-    .player-lock {
-        right: -38px;
-    }
-
-    .player-lock svg {
-        width: 26px;
-        height: 26px;
     }
 
     /* Challenges panel */

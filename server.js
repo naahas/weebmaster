@@ -2404,6 +2404,18 @@ app.get('/prototypes/collect-triangle', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-collect-triangle.html');
 });
 
+app.get('/prototypes/bomb-cadenas', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-cadenas.html');
+});
+
+app.get('/prototypes/bomb-cadenas2', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-cadenas2.html');
+});
+
+app.get('/prototypes/bomb-cadenas3', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-bomb-cadenas3.html');
+});
+
 app.get('/prototypes/bomb-ellipse', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-bomb-ellipse.html');
 });

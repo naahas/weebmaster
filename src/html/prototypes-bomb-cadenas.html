@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — dire « déjà cité »</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   DIRE « CE NOM A DÉJÀ ÉTÉ CITÉ »
+
+   Le constat du salon : des joueurs demandent « il est pas dans la
+   banque ? » ALORS QUE le cadenas s'est affiché. Ce n'est pas qu'il
+   est trop petit — c'est qu'il dit la MAUVAISE CHOSE. Quatre raisons,
+   dans l'ordre d'importance :
+
+   ⚠️ 1. LES DEUX REFUS JOUENT LA MÊME ANIMATION. Dans home-bombanime.css,
+   `.already-used` et `.shake-error` déclenchent le MÊME `avatar-shake
+   0.4s`. Un nom inconnu et un nom déjà dit secouent donc le joueur à
+   l'identique. Or la secousse est ce qu'on voit en premier, et elle dit
+   « raté ». Le joueur lit « raté », en conclut « pas dans la banque »,
+   et c'est exactement la question qu'il pose. Le cadenas arrive après,
+   sur le côté, pour corriger — trop tard.
+
+   ⚠️ 2. IL EST HORS DU REGARD. `right: -40px` le pose dans le vide entre
+   deux joueurs. Pendant un tour, les yeux sont sur la bombe, sur le
+   joueur actif, et — pour celui qui tape — SUR SON CHAMP DE SAISIE. Le
+   cadenas est le seul élément de l'écran posé là où personne ne regarde.
+
+   ⚠️ 3. IL EST GRIS. Tout ce qui compte dans ce mode est doré (actif),
+   rouge (vie perdue) ou vert (réussite). Le gris, partout ailleurs sur
+   le site, veut dire « éteint, inactif » — pas « interdit ».
+
+   ⚠️ 4. IL NE DÉSIGNE PAS LE MOT. Le nom tapé reste affiché sous le
+   joueur comme si de rien n'était. Rien ne relie le refus AU NOM.
+
+   D'où les huit pistes : elles sont au CENTRE du joueur, elles ne sont
+   pas grises, et plusieurs nomment le mot fautif. Le bouton « inconnu »
+   de la barre rejoue l'autre refus : une piste ne vaut que si les deux
+   ne peuvent plus être confondus.
+
+   Le vrai test est en bas de l'arène : un faux champ de saisie. C'est
+   là que regarde celui qui vient de taper. Fixez-le et déclenchez —
+   une piste qui ne s'attrape pas du coin de l'œil ne sert à rien.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+    --k: 1;              /* multiplicateur de durée (ralenti) */
+    --hex: 70px;         /* taille de l'hexagone, comme en jeu */
+    --or: #f0c040;
+    --fond: #07070a;
+    --froid: #e8eef7;    /* le blanc-acier des pistes : ni or, ni rouge, ni vert */
+    --bleu: rgba(130, 172, 230, 0.55);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.3rem 5rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: var(--fond);
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 0.9rem; max-width: 62rem; line-height: 1.6; }
+.sous b { opacity: 0.95; }
+.sous .av { color: #ffb84d; }
+
+/* ─────────── le diagnostic, en haut, parce qu'il décide de tout ─────────── */
+.diag {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.6rem; margin: 0 0 1.4rem; max-width: 72rem;
+}
+.diag div {
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 0.6rem;
+    padding: 0.65rem 0.8rem; background: rgba(255,255,255,0.016);
+    font-size: 0.72rem; line-height: 1.5; opacity: 0.82;
+}
+.diag b { display: block; font-size: 0.6rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #ffb84d; margin-bottom: 0.25rem; opacity: 0.9; }
+
+/* ─────────── barre ─────────── */
+.barre {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.3rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.96); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.42; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.57rem; }
+.barre .sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.1); margin: 0 0.3rem; }
+button {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    color: #d8dae2; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 0.45rem;
+    padding: 0.36rem 0.7rem; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+button:hover { background: rgba(255,255,255,0.1); }
+button.on { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.5); color: var(--or); }
+button.rouge { border-color: rgba(239,68,68,0.4); color: #ff9b9b; }
+button:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+
+/* ════════════════════════════════════════════════════════════════
+   LA PASTILLE DU JOUEUR — reprise fidèle de home-bombanime.css
+   (hexagone à double bordure, avatar découpé au même tracé, cœurs
+   dans l'encoche basse droite, pseudo au-dessus, réponse en dessous)
+   ════════════════════════════════════════════════════════════════ */
+.slot {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.2rem; position: relative;
+}
+.slot .nom {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: 0.55rem; font-size: calc(var(--hex) * 0.21); font-weight: 500;
+    color: rgba(255,255,255,0.56); white-space: nowrap;
+}
+.slot.actif .nom { color: var(--or); }
+.hexbox { position: relative; display: flex; align-items: center; justify-content: center; }
+.hex { width: var(--hex); height: var(--hex); position: relative; overflow: visible; }
+.hex svg.cadre { width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(240,192,64,0.3)); }
+.hex svg.cadre polygon { fill: #101018; stroke: rgba(255,255,255,0.14); stroke-width: 2; transition: stroke 0.2s ease; }
+.slot.actif .hex svg.cadre { filter: drop-shadow(0 0 10px rgba(240,192,64,0.5)); }
+.slot.actif .hex svg.cadre polygon { stroke: var(--or); }
+.hex svg.anneau {
+    position: absolute; top: -9%; left: -9%; width: 118%; height: 118%;
+    overflow: visible; filter: none;
+}
+.hex svg.anneau polygon { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 1.6; }
+.slot.actif .hex svg.anneau polygon { stroke: rgba(240,192,64,0.45); }
+.avatar {
+    position: absolute; left: 0; bottom: 0; width: 100%; height: 100%;
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+    object-fit: cover;
+    filter: grayscale(20%) brightness(0.85); opacity: 0.78;
+}
+.slot.actif .avatar { filter: grayscale(0%) brightness(1.1); opacity: 1; }
+.vies {
+    position: absolute; right: -8%; bottom: 2%; display: flex; gap: 3px;
+    background: rgba(0,0,0,0.88); padding: 3px 5px; border-radius: 1rem; z-index: 5;
+}
+.vies svg { width: calc(var(--hex) * 0.25); height: calc(var(--hex) * 0.25); fill: #ef4444; }
+.reponse {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 0.85rem; font-size: calc(var(--hex) * 0.185); font-weight: 600;
+    color: rgba(255,255,255,0.42); white-space: nowrap; text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.slot.actif .reponse { color: var(--or); text-shadow: 0 0 10px rgba(240,192,64,0.5); }
+
+/* ─────────── couches d'effet (toutes éteintes au repos) ─────────── */
+.fx {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0; z-index: 8;
+}
+.fx svg, .fx i { display: block; }
+.voile {
+    position: absolute; inset: 0; z-index: 6; opacity: 0; pointer-events: none;
+    background: rgba(4,5,9,0.78);
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+}
+.cad { width: calc(var(--hex) * 0.56); height: calc(var(--hex) * 0.56); }
+.cad .corps { fill: var(--froid); }
+.cad .anse { fill: none; stroke: var(--froid); stroke-width: 2.4; }
+
+/* le cadenas ACTUEL, pour comparaison : gris, hors du cadre, à droite */
+.cadenas-actuel {
+    position: absolute; right: calc(var(--hex) * -0.57); top: 50%;
+    transform: translateY(-50%) rotate(8deg);
+    opacity: 0; pointer-events: none; z-index: 8;
+}
+.cadenas-actuel svg {
+    width: calc(var(--hex) * 0.34); height: calc(var(--hex) * 0.34);
+    fill: #888; stroke: #aaa;
+    filter: drop-shadow(0 0 4px rgba(150,150,150,0.5));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LA SECOUSSE — la même pour les deux refus, c'est tout le problème.
+   Deux jeux de clefs : dans l'arène le slot est déjà translaté de
+   -50%/-50%, pas dans les vignettes.
+   ════════════════════════════════════════════════════════════════ */
+@keyframes secousse {
+    0%,100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); } 30% { transform: translateX(6px); }
+    45% { transform: translateX(-5px); } 60% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); } 90% { transform: translateX(3px); }
+}
+@keyframes secousse-arene {
+    0%,100% { transform: translate(-50%,-50%) translateX(0); }
+    15% { transform: translate(-50%,-50%) translateX(-6px); } 30% { transform: translate(-50%,-50%) translateX(6px); }
+    45% { transform: translate(-50%,-50%) translateX(-5px); } 60% { transform: translate(-50%,-50%) translateX(5px); }
+    75% { transform: translate(-50%,-50%) translateX(-3px); } 90% { transform: translate(-50%,-50%) translateX(3px); }
+}
+.vignette .slot.secoue { animation-name: secousse; animation-duration: calc(400ms * var(--k)); animation-timing-function: ease; }
+.arene .slot.secoue { animation-name: secousse-arene; animation-duration: calc(400ms * var(--k)); animation-timing-function: ease; }
+
+/* ─────── e0 · ACTUEL ─────── */
+.slot.e0 .cadenas-actuel {
+    animation-name: a-actuel; animation-duration: calc(600ms * var(--k));
+    animation-timing-function: ease-out; animation-fill-mode: forwards;
+}
+@keyframes a-actuel {
+    0% { opacity: 0; transform: translateY(-40%) rotate(8deg); }
+    25% { opacity: 1; transform: translateY(-50%) rotate(8deg); }
+    65% { opacity: 1; transform: translateY(-55%) rotate(8deg); }
+    100% { opacity: 0; transform: translateY(-60%) rotate(8deg); }
+}
+
+/* ─────── e1 · CADENAS PLEIN CADRE ─────── */
+.slot.e1 .fx-cadenas {
+    animation-name: a1; animation-duration: calc(640ms * var(--k));
+    animation-timing-function: cubic-bezier(0.2,1.25,0.4,1); animation-fill-mode: forwards;
+}
+@keyframes a1 {
+    0% { opacity: 0; transform: scale(2.2); }
+    16% { opacity: 1; transform: scale(0.88); }
+    26% { transform: scale(1.04); }
+    34% { transform: scale(1); }
+    66% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.2); }
+}
+.slot.e1 .voile {
+    animation-name: a1-voile; animation-duration: calc(640ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a1-voile { 0% { opacity: 0; } 16%,66% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ─────── e2 · TAMPON « DÉJÀ DIT » ─────── */
+.fx-tampon { overflow: visible; }
+.fx-tampon span {
+    font-weight: 900; font-size: max(9px, calc(var(--hex) * 0.195));
+    letter-spacing: 0.04em; white-space: nowrap;
+    color: #fff; background: rgba(8,9,14,0.9);
+    border: calc(var(--hex) * 0.035) solid #fff;
+    border-radius: 0.25rem; padding: 0.18em 0.42em;
+    box-shadow: 0 0 calc(var(--hex)*0.2) rgba(0,0,0,0.9);
+}
+.slot.e2 .fx-tampon {
+    animation-name: a2; animation-duration: calc(720ms * var(--k));
+    animation-timing-function: cubic-bezier(0.25,0.9,0.3,1); animation-fill-mode: forwards;
+}
+@keyframes a2 {
+    0% { opacity: 0; transform: rotate(-11deg) scale(2.6); }
+    11% { opacity: 1; transform: rotate(-11deg) scale(0.92); }
+    19% { transform: rotate(-11deg) scale(1.05); }
+    27% { transform: rotate(-11deg) scale(1); }
+    72% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(-11deg) scale(1.05); }
+}
+.fx-onde i {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.75);
+}
+.slot.e2 .fx-onde {
+    opacity: 1;
+    animation-name: a2-onde; animation-duration: calc(460ms * var(--k));
+    animation-timing-function: cubic-bezier(0.1,0.7,0.3,1); animation-fill-mode: forwards;
+}
+@keyframes a2-onde {
+    0% { opacity: 0.85; transform: scale(0.55); }
+    100% { opacity: 0; transform: scale(2.1); }
+}
+.slot.e2 .voile {
+    animation-name: a2-voile; animation-duration: calc(720ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a2-voile { 0% { opacity: 0; } 11% { opacity: 0.75; } 72% { opacity: 0.75; } 100% { opacity: 0; } }
+
+/* ─────── e3 · LE NOM BARRÉ ─────── */
+.reponse .trait {
+    position: absolute; left: -0.15em; right: -0.15em; top: 52%; height: 2px;
+    background: var(--froid); box-shadow: 0 0 6px var(--bleu);
+    transform: scaleX(0); transform-origin: left center; opacity: 0;
+}
+.reponse .mini {
+    width: 0.95em; height: 0.95em; vertical-align: -0.14em; margin-right: 0.25em;
+    opacity: 0; display: inline-block;
+}
+.reponse .mini .corps { fill: var(--froid); }
+.reponse .mini .anse { fill: none; stroke: var(--froid); stroke-width: 2.4; }
+.slot.e3 .reponse {
+    animation-name: a3-mot; animation-duration: calc(1000ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a3-mot {
+    0% { color: var(--or); text-shadow: 0 0 10px rgba(240,192,64,0.5); }
+    10% { color: #fff; text-shadow: 0 0 12px var(--bleu); }
+    60% { color: #fff; text-shadow: 0 0 12px var(--bleu); }
+    100% { color: rgba(255,255,255,0.34); text-shadow: none; }
+}
+.slot.e3 .reponse .trait {
+    animation-name: a3-trait; animation-duration: calc(1000ms * var(--k));
+    animation-timing-function: cubic-bezier(0.2,0.75,0.3,1); animation-fill-mode: forwards;
+}
+@keyframes a3-trait {
+    0% { transform: scaleX(0); opacity: 0; }
+    6% { opacity: 1; }
+    26% { transform: scaleX(1); opacity: 1; }
+    100% { transform: scaleX(1); opacity: 0.55; }
+}
+.slot.e3 .reponse .mini {
+    animation-name: a3-mini; animation-duration: calc(1000ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a3-mini { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 0.55; } }
+
+/* ─────── e4 · L'HEXAGONE VERROUILLÉ ─────── */
+.fx-hex svg { width: 118%; height: 118%; overflow: visible; }
+.fx-hex polygon { fill: none; stroke: var(--froid); stroke-width: 3; }
+.slot.e4 .fx-hex {
+    animation-name: a4; animation-duration: calc(680ms * var(--k));
+    animation-timing-function: cubic-bezier(0.18,0.9,0.3,1); animation-fill-mode: forwards;
+}
+@keyframes a4 {
+    0% { opacity: 0; transform: scale(1.8) rotate(55deg); }
+    28% { opacity: 1; transform: scale(1) rotate(0deg); }
+    70% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(1) rotate(0deg); }
+}
+.slot.e4 .fx-cadenas {
+    animation-name: a4-cad; animation-duration: calc(680ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a4-cad {
+    0%, 20% { opacity: 0; transform: scale(0.7); }
+    34% { opacity: 1; transform: scale(1); }
+    70% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+}
+.slot.e4 .voile {
+    animation-name: a4-voile; animation-duration: calc(680ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a4-voile { 0% { opacity: 0; } 28%,70% { opacity: 0.68; } 100% { opacity: 0; } }
+
+/* ─────── e5 · L'ÉCHO ─────── */
+/* ⚠️ Les anneaux sont des TRACÉS SVG, pas des blocs découpés au clip-path :
+   un hexagone en clip-path est PLEIN, et le remplir de la couleur du fond
+   pour creuser le centre masquait le portrait et le pseudo dessous. Un
+   `fill: none` ne masque rien, par construction. */
+.fx-echo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.fx-echo polygon { fill: none; stroke: rgba(232,238,247,0.9); stroke-width: 3; }
+.slot.e5 .fx-echo { opacity: 1; }
+.slot.e5 .fx-echo svg {
+    animation-name: a5; animation-duration: calc(760ms * var(--k));
+    animation-timing-function: cubic-bezier(0.12,0.7,0.3,1); animation-fill-mode: forwards;
+}
+.slot.e5 .fx-echo svg:nth-child(2) { animation-delay: calc(170ms * var(--k)); }
+.slot.e5 .fx-echo svg:nth-child(3) { animation-delay: calc(340ms * var(--k)); }
+@keyframes a5 {
+    0% { opacity: 0; transform: scale(0.85); }
+    12% { opacity: 0.9; }
+    100% { opacity: 0; transform: scale(2.3); }
+}
+.slot.e5 .fx-cadenas {
+    animation-name: a5-cad; animation-duration: calc(760ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a5-cad {
+    0% { opacity: 0; transform: scale(1.5); }
+    12% { opacity: 1; transform: scale(1); }
+    66% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+}
+.slot.e5 .voile {
+    animation-name: a5-voile; animation-duration: calc(760ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a5-voile { 0% { opacity: 0; } 12%,66% { opacity: 0.72; } 100% { opacity: 0; } }
+
+/* ─────── e6 · LA RATURE ─────── */
+.fx-rature svg { width: 112%; height: 112%; overflow: visible; }
+.fx-rature path {
+    fill: none; stroke: var(--froid); stroke-width: 7; stroke-linecap: round;
+    stroke-dasharray: 160; stroke-dashoffset: 160;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.95));
+}
+.slot.e6 .fx-rature {
+    opacity: 1;
+    animation-name: a6-fondu; animation-duration: calc(820ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a6-fondu { 0%,62% { opacity: 1; } 100% { opacity: 0; } }
+.slot.e6 .fx-rature path {
+    animation-name: a6-trace; animation-duration: calc(170ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.6,0.3,1); animation-fill-mode: forwards;
+}
+.slot.e6 .fx-rature path:nth-child(2) { animation-delay: calc(130ms * var(--k)); }
+@keyframes a6-trace { to { stroke-dashoffset: 0; } }
+.slot.e6 .voile {
+    animation-name: a6-voile; animation-duration: calc(820ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a6-voile { 0% { opacity: 0; } 14%,62% { opacity: 0.6; } 100% { opacity: 0; } }
+
+/* ─────── e7 · LE NÉGATIF ─────── */
+/* ⚠️ L'animation REMPLACE le filtre de base : la dernière clef doit
+   donc REPOSER exactement sur celui du joueur actif, sinon l'avatar
+   reste éclairci ou grisé après coup. */
+.slot.e7 .avatar {
+    animation-name: a7; animation-duration: calc(620ms * var(--k));
+    animation-timing-function: steps(1); animation-fill-mode: forwards;
+}
+@keyframes a7 {
+    0% { filter: grayscale(0%) brightness(1.1); }
+    6%, 14% { filter: invert(1) brightness(0.85); }
+    15%, 25% { filter: grayscale(0%) brightness(1.1); }
+    26%, 34% { filter: invert(1) brightness(0.85); }
+    35%, 100% { filter: grayscale(0%) brightness(1.1); }
+}
+.slot.e7 .fx-cadenas {
+    animation-name: a7-cad; animation-duration: calc(620ms * var(--k));
+    animation-timing-function: ease-out; animation-fill-mode: forwards;
+}
+@keyframes a7-cad {
+    0% { opacity: 0; transform: scale(1.35); }
+    12% { opacity: 1; transform: scale(1); }
+    64% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+}
+
+/* ─────── e8 · LE VERROU QUI SE FERME ─────── */
+.fx-ferme .cad { width: calc(var(--hex) * 0.62); height: calc(var(--hex) * 0.62); overflow: visible; }
+.fx-ferme .anse-mobile { transform-origin: 7px 11px; }
+.slot.e8 .fx-ferme {
+    animation-name: a8; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a8 {
+    0% { opacity: 0; transform: scale(1.5); }
+    14% { opacity: 1; transform: scale(1); }
+    72% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.08); }
+}
+.slot.e8 .fx-ferme .anse-mobile {
+    animation-name: a8-anse; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: cubic-bezier(0.5,0,0.75,0); animation-fill-mode: forwards;
+}
+@keyframes a8-anse {
+    0%, 14% { transform: rotate(-118deg); }
+    40% { transform: rotate(6deg); }
+    46% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+}
+.slot.e8 .fx-onde {
+    opacity: 1;
+    animation-name: a8-onde; animation-duration: calc(420ms * var(--k));
+    animation-delay: calc(340ms * var(--k));
+    animation-timing-function: cubic-bezier(0.1,0.7,0.3,1); animation-fill-mode: both;
+}
+@keyframes a8-onde { 0% { opacity: 0.8; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.9); } }
+.slot.e8 .voile {
+    animation-name: a8-voile; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes a8-voile { 0% { opacity: 0; } 14%,72% { opacity: 0.74; } 100% { opacity: 0; } }
+
+/* ════════════════════════════════════════════════════════════════
+   L'ARÈNE — cinq joueurs sur une ellipse, la bombe au milieu.
+   Une piste ne se juge pas sur une pastille isolée : elle se juge
+   au milieu des autres, pendant qu'il se passe autre chose.
+   ════════════════════════════════════════════════════════════════ */
+.arene {
+    position: relative; height: 27rem; max-width: 60rem; margin: 0 auto 0.6rem;
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem;
+    background: radial-gradient(ellipse at 50% 45%, rgba(240,192,64,0.045), transparent 62%);
+}
+.arene .slot { position: absolute; transform: translate(-50%,-50%); }
+.bombe {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 5.4rem; height: 5.4rem; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #4a3a26, #1a1410 62%, #0d0a08);
+    box-shadow: inset 0 0 1.4rem rgba(0,0,0,0.9), 0 0 2rem rgba(0,0,0,0.6);
+}
+.bombe::before {
+    content: ''; position: absolute; left: 20%; top: 14%; width: 46%; height: 26%;
+    border-radius: 50%; background: rgba(255,255,255,0.07);
+    transform: rotate(-28deg);
+}
+.meche {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%) translateX(-4.6rem);
+    display: flex; align-items: center; gap: 0.2rem;
+}
+.meche .fil { width: 2.1rem; height: 3px; background: #7a5a3a; border-radius: 2px; }
+.meche .flamme {
+    width: 0.6rem; height: 0.6rem; border-radius: 50%;
+    background: radial-gradient(circle, #ffd27a, #ff8a1f 55%, transparent 72%);
+    animation: vacille 0.5s ease-in-out infinite alternate;
+}
+@keyframes vacille { from { transform: scale(0.85); } to { transform: scale(1.15); } }
+
+/* le faux champ de saisie — c'est LÀ que regarde celui qui vient de taper */
+.saisie {
+    max-width: 60rem; margin: 0 auto 1.6rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.8rem 1rem; border-radius: 0.7rem;
+    border: 1px solid rgba(240,192,64,0.3); background: rgba(240,192,64,0.05);
+}
+.saisie .champ {
+    flex: 1; font-size: 1rem; font-weight: 600; letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.75); text-transform: uppercase;
+}
+.saisie .curseur {
+    display: inline-block; width: 2px; height: 1.05em; background: var(--or);
+    vertical-align: -0.17em; margin-left: 2px; animation: clignote 1s steps(1) infinite;
+}
+@keyframes clignote { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+.saisie .aide { font-size: 0.64rem; opacity: 0.42; text-align: right; line-height: 1.4; }
+
+/* ─────────── les vignettes ─────────── */
+h2 { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+     opacity: 0.4; margin: 2.2rem 0 1rem; font-weight: 700; }
+.grille {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    gap: 1rem; max-width: 72rem;
+}
+.vignette {
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.8rem;
+    background: rgba(255,255,255,0.016); padding: 0.9rem 0.9rem 1rem;
+    display: flex; flex-direction: column; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.vignette:hover { border-color: rgba(240,192,64,0.35); background: rgba(240,192,64,0.035); }
+.vignette.choisi { border-color: var(--or); background: rgba(240,192,64,0.07); }
+.vignette .scene {
+    height: 9.5rem; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0.7rem;
+}
+.vignette .titre { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+.vignette .titre em { font-style: normal; opacity: 0.35; font-weight: 600; margin-right: 0.35rem; }
+.vignette .note { font-size: 0.68rem; line-height: 1.5; opacity: 0.55; }
+.vignette.ref { border-style: dashed; opacity: 0.8; }
+.vignette.ref .titre { color: #ff9b9b; }
+
+@media (prefers-reduced-motion: reduce) {
+    .meche .flamme, .saisie .curseur { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>BombAnime — dire « ce nom a déjà été cité »</h1>
+<p class="sous">
+Le cadenas s'affiche, et des joueurs demandent quand même si le personnage est dans la banque.
+<b>Ce n'est pas un problème de taille.</b> Les quatre causes sont en dessous ; les huit pistes
+y répondent. <span class="av">Le vrai test</span> : fixez le faux champ de saisie sous l'arène —
+c'est là que regarde celui qui vient de taper — et déclenchez sans regarder le cercle.
+</p>
+
+<div class="diag">
+    <div><b>1 · même animation que « inconnu »</b>
+        <code>.already-used</code> et <code>.shake-error</code> jouent le MÊME <code>avatar-shake</code>.
+        La secousse arrive en premier et dit « raté » — d'où la question posée.</div>
+    <div><b>2 · hors du regard</b>
+        <code>right: -40px</code>, dans le vide entre deux joueurs. Les yeux sont sur la bombe,
+        sur le joueur actif, ou sur le champ de saisie.</div>
+    <div><b>3 · gris</b>
+        Partout ailleurs sur le site, le gris veut dire « éteint ». Ce qui compte ici est doré,
+        rouge ou vert.</div>
+    <div><b>4 · ne désigne pas le mot</b>
+        Le nom tapé reste affiché sous le joueur comme si de rien n'était. Rien ne relie le refus
+        AU NOM.</div>
+</div>
+
+<div class="barre">
+    <label>Taille</label>
+    <button data-taille="44">44 px · tél.</button>
+    <button data-taille="56">56 px</button>
+    <button data-taille="70" class="on">70 px · jeu</button>
+    <button data-taille="92">92 px</button>
+    <span class="sep"></span>
+    <label>Vitesse</label>
+    <button data-k="1" class="on">normal</button>
+    <button data-k="2.5">×2,5</button>
+    <button data-k="5">ralenti ×5</button>
+    <span class="sep"></span>
+    <button id="rejouer">Rejouer (R)</button>
+    <button id="boucle">En boucle</button>
+    <button id="inconnu" class="rouge">Jouer « nom inconnu »</button>
+</div>
+
+<div class="arene" id="arene"></div>
+
+<div class="saisie">
+    <span class="champ" id="champSaisie">madara<span class="curseur"></span></span>
+    <span class="aide">Regardez ICI, pas le cercle.<br>Puis appuyez sur <b>R</b>.</span>
+</div>
+
+<h2>Les huit pistes — même horloge, rejouées ensemble</h2>
+<div class="grille" id="grille"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Les huit pistes. L'ordre va du plus illustratif (une icône) au
+   plus explicite (le mot lui-même).
+   ════════════════════════════════════════════════════════════════ */
+const EFFETS = [
+    { id: 'e1', nom: 'Cadenas plein cadre',
+      note: "Le cadenas au CENTRE du joueur, large comme la moitié de l'hexagone. Zoom rapide, pause, fondu. La piste la plus simple, et déjà dix fois la surface d'aujourd'hui." },
+    { id: 'e2', nom: 'Tampon « DÉJÀ DIT »',
+      note: "Des mots plutôt qu'une icône : rien à décoder. Il déborde du cadre et claque avec une onde de choc. Le plus lisible de tous — et le plus bruyant." },
+    { id: 'e3', nom: 'Le nom barré',
+      note: "La seule piste qui DÉSIGNE LE MOT : le nom tapé passe en blanc, un trait le raye, il retombe en gris. Le serveur envoie déjà le nom refusé." },
+    { id: 'e4', nom: "L'hexagone verrouillé",
+      note: "Pas d'icône : un second hexagone blanc vient se plaquer en tournant, la case s'éteint. Dit « cette case est fermée » par la structure." },
+    { id: 'e5', nom: "L'écho",
+      note: "Trois hexagones qui s'écartent en fondu, cadenas fixe au milieu. La plus grande emprise à l'écran, donc la plus visible du coin de l'œil." },
+    { id: 'e6', nom: 'La rature',
+      note: "Deux traits tracés en croix sur le portrait, comme on raye une réponse. Tient à 44 px là où une icône fine se perd." },
+    { id: 'e7', nom: 'Le négatif',
+      note: "Le portrait vire en négatif deux fois, le cadenas s'y pose. Même langage que la carte assassin de Codanime — le site le parle déjà." },
+    { id: 'e8', nom: 'Le verrou qui se ferme',
+      note: "L'anse retombe et claque, puis une onde part. La plus soignée, mais le message n'est complet qu'après 350 ms." },
+];
+
+const CAD = `<svg class="cad" viewBox="0 0 24 24" aria-hidden="true">
+    <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/>
+    <path class="anse" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const CAD_FERME = `<svg class="cad" viewBox="0 0 24 24" aria-hidden="true">
+    <path class="anse anse-mobile" d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/></svg>`;
+const CAD_GRIS = `<svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+const HEXA = '50,3 97,25 97,75 50,97 3,75 3,25';
+
+/* Une pastille complète : les couches d'effet sont toutes présentes,
+   c'est la classe posée sur le slot qui en réveille une. */
+function slot(pseudo, avatar, mot, actif) {
+    const d = document.createElement('div');
+    d.className = 'slot' + (actif ? ' actif' : '');
+    d.innerHTML = `
+      <div class="nom">${pseudo}</div>
+      <div class="hexbox">
+        <div class="hex">
+          <svg class="anneau" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <svg class="cadre" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <img class="avatar" src="/${avatar}" alt="">
+          <div class="voile"></div>
+          <div class="fx fx-echo">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+              <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+              <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg></div>
+          <div class="fx fx-hex"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg></div>
+          <div class="fx fx-onde"><i></i></div>
+          <div class="fx fx-rature"><svg viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M14 20 L86 80"/><path d="M86 22 L14 78"/></svg></div>
+          <div class="fx fx-cadenas">${CAD}</div>
+          <div class="fx fx-ferme">${CAD_FERME}</div>
+          <div class="fx fx-tampon"><span>DÉJÀ DIT</span></div>
+        </div>
+        <div class="vies">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="cadenas-actuel">${CAD_GRIS}</div>
+      </div>
+      <div class="reponse"><svg class="mini" viewBox="0 0 24 24" aria-hidden="true">
+            <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/>
+            <path class="anse" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${mot}<span class="trait"></span></div>`;
+    return d;
+}
+
+/* ─────────── l'arène ─────────── */
+const TABLE = [
+    ['nahass',  'sasuke.webp', 'MADARA',  true ],
+    ['Master',  'rukia.webp',  'YAGURA',  false],
+    ['kenzo',   'levi.webp',   'KISAME',  false],
+    ['lina',    'erza.webp',   'JIRAIYA', false],
+    ['tomo',    'zoro.webp',   'HASHIRAMA', false],
+];
+/* ⚠️ Chemins ABSOLUS (`/sasuke.webp`) : la page est servie sous
+   `/prototypes/`, un chemin relatif chercherait `/prototypes/sasuke.webp`,
+   qui n'existe pas. Le dossier des avatars est monté à la racine. */
+const arene = document.getElementById('arene');
+arene.innerHTML = '<div class="bombe"></div><div class="meche"><div class="flamme"></div><div class="fil"></div></div>';
+const slotsArene = TABLE.map(([p, a, m, actif], i) => {
+    const s = slot(p, a, m, actif);
+    const ang = (-90 + i * (360 / TABLE.length)) * Math.PI / 180;
+    s.style.left = (50 + 38 * Math.cos(ang)) + '%';
+    s.style.top  = (50 + 33 * Math.sin(ang)) + '%';
+    arene.appendChild(s);
+    return s;
+});
+const cible = slotsArene[0];   // le joueur actif, celui qui vient de taper
+
+/* ─────────── les vignettes ─────────── */
+const grille = document.getElementById('grille');
+const vignettes = [];
+function carte(id, nom, note, ref) {
+    const c = document.createElement('div');
+    c.className = 'vignette' + (ref ? ' ref' : '');
+    c.innerHTML = `<div class="scene"></div>
+        <div class="titre"><em>${ref ? '·' : id.toUpperCase()}</em>${nom}</div>
+        <div class="note">${note}</div>`;
+    const s = slot('nahass', 'sasuke.webp', 'MADARA', true);
+    c.querySelector('.scene').appendChild(s);
+    c.addEventListener('click', () => choisir(id));
+    grille.appendChild(c);
+    vignettes.push({ id, slot: s, carte: c });
+    return c;
+}
+carte('e0', 'Aujourd\'hui', "Le cadenas gris de 24 px, posé à 40 px sur le côté, avec la secousse. C'est l'état des lieux, pas une piste.", true);
+EFFETS.forEach(e => carte(e.id, e.nom, e.note, false));
+
+/* ════════════════════════════════════════════════════════════════
+   Le jeu des classes. Une piste se rejoue en retirant la classe,
+   forçant un reflow, puis en la reposant : sans le reflow le
+   navigateur ne voit aucun changement et l'animation ne repart pas.
+   ════════════════════════════════════════════════════════════════ */
+const TOUTES = ['e0', ...EFFETS.map(e => e.id)];
+function jouer(s, id, secouer) {
+    TOUTES.forEach(c => s.classList.remove(c));
+    s.classList.remove('secoue');
+    void s.offsetWidth;
+    if (id) s.classList.add(id);
+    if (secouer) s.classList.add('secoue');
+}
+
+let choix = 'e1';
+function choisir(id) {
+    choix = id;
+    vignettes.forEach(v => v.carte.classList.toggle('choisi', v.id === id));
+    jouerArene();
+}
+/* La secousse reste sur « aujourd'hui » et sur « inconnu » : c'est elle
+   qu'on cherche à ne plus confondre. Les pistes s'en passent. */
+function jouerArene() { jouer(cible, choix, choix === 'e0'); }
+function jouerInconnu() { jouer(cible, null, true); }
+function jouerVignettes() { vignettes.forEach(v => jouer(v.slot, v.id, v.id === 'e0')); }
+
+document.getElementById('rejouer').addEventListener('click', () => { jouerArene(); jouerVignettes(); });
+document.getElementById('inconnu').addEventListener('click', jouerInconnu);
+
+let boucle = null;
+document.getElementById('boucle').addEventListener('click', (e) => {
+    if (boucle) { clearInterval(boucle); boucle = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    boucle = setInterval(() => { jouerArene(); jouerVignettes(); }, 2400);
+});
+
+document.querySelectorAll('[data-taille]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-taille]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--hex', b.dataset.taille + 'px');
+}));
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-k]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--k', b.dataset.k);
+}));
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') { jouerArene(); jouerVignettes(); }
+    if (e.key === 'i' || e.key === 'I') jouerInconnu();
+});
+
+choisir('e1');
+jouerVignettes();
+setTimeout(jouerVignettes, 400);
+</script>
+</body></html>

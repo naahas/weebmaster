@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BombAnime — le cadenas qui se dilate</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════
+   LE CADENAS QUI SE DILATE — SECOND TOUR
+
+   Retenu du premier tour : l'ONDE DISCRÈTE de E8 (un anneau clair qui
+   s'écarte et s'efface) et l'idée d'un cadenas AU CENTRE. Mais dans
+   l'autre sens que E1 : au lieu de tomber de haut et de se poser, il
+   NAÎT PETIT, se pose, puis se DILATE en s'effaçant.
+
+   ⚠️ Ce sens-là porte un risque qu'il faut voir à l'œil : un objet qui
+   grandit en pâlissant se lit comme une ONDE, pas comme un objet. S'il
+   n'a aucun palier à l'échelle 1, on ne reconnaît plus un cadenas — on
+   voit « quelque chose a pulsé ». Les six pistes se distinguent donc
+   presque toutes par la LONGUEUR DE CE PALIER, et c'est lui qu'il faut
+   juger, pas la dilatation :
+
+     F2 n'en a aucun · F1 en a 205 ms · F3 en a 360 ms
+
+   Deux réglages sont sortis des pistes pour pouvoir se juger à part,
+   parce qu'ils s'appliquent à toutes : la force de l'ANNEAU et celle du
+   VOILE sombre sous le cadenas. Les éteindre tous les deux donne la
+   version la plus légère possible.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+    --k: 1;              /* multiplicateur de durée (ralenti) */
+    --hex: 70px;         /* taille de l'hexagone, comme en jeu */
+    --onde-op: 0.8;      /* force de l'anneau */
+    --voile-op: 0.72;    /* force du voile sombre sous le cadenas */
+    --or: #f0c040;
+    --fond: #07070a;
+    --froid: #e8eef7;
+    --bleu: rgba(130, 172, 230, 0.55);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.3rem 5rem;
+    font-family: 'Poppins', system-ui, sans-serif;
+    color: #e8e9ee; background: var(--fond);
+}
+h1 { font-size: 1.15rem; margin: 0 0 0.35rem; }
+.sous { font-size: 0.78rem; opacity: 0.55; margin: 0 0 1.2rem; max-width: 62rem; line-height: 1.6; }
+.sous b { opacity: 0.95; }
+.sous .av { color: #ffb84d; }
+
+.barre {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.3rem;
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+    background: rgba(10,10,14,0.96); backdrop-filter: blur(6px);
+    font-size: 0.72rem;
+}
+.barre label { opacity: 0.42; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.57rem; }
+.barre .sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.1); margin: 0 0.3rem; }
+button {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    color: #d8dae2; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 0.45rem;
+    padding: 0.36rem 0.7rem; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+button:hover { background: rgba(255,255,255,0.1); }
+button.on { background: rgba(240,192,64,0.16); border-color: rgba(240,192,64,0.5); color: var(--or); }
+button.rouge { border-color: rgba(239,68,68,0.4); color: #ff9b9b; }
+button:focus-visible { outline: 2px solid var(--or); outline-offset: 2px; }
+
+/* ─────────── la pastille, reprise de home-bombanime.css ─────────── */
+.slot { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; position: relative; }
+.slot .nom {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: 0.55rem; font-size: calc(var(--hex) * 0.21); font-weight: 500;
+    color: rgba(255,255,255,0.56); white-space: nowrap;
+}
+.slot.actif .nom { color: var(--or); }
+.hexbox { position: relative; display: flex; align-items: center; justify-content: center; }
+.hex { width: var(--hex); height: var(--hex); position: relative; overflow: visible; }
+.hex svg.cadre { width: 100%; height: 100%; filter: drop-shadow(0 0 6px rgba(240,192,64,0.3)); }
+.hex svg.cadre polygon { fill: #101018; stroke: rgba(255,255,255,0.14); stroke-width: 2; }
+.slot.actif .hex svg.cadre { filter: drop-shadow(0 0 10px rgba(240,192,64,0.5)); }
+.slot.actif .hex svg.cadre polygon { stroke: var(--or); }
+.hex svg.anneau { position: absolute; top: -9%; left: -9%; width: 118%; height: 118%; overflow: visible; filter: none; }
+.hex svg.anneau polygon { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 1.6; }
+.slot.actif .hex svg.anneau polygon { stroke: rgba(240,192,64,0.45); }
+.avatar {
+    position: absolute; left: 0; bottom: 0; width: 100%; height: 100%;
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+    object-fit: cover; filter: grayscale(20%) brightness(0.85); opacity: 0.78;
+}
+.slot.actif .avatar { filter: grayscale(0%) brightness(1.1); opacity: 1; }
+.vies {
+    position: absolute; right: -8%; bottom: 2%; display: flex; gap: 3px;
+    background: rgba(0,0,0,0.88); padding: 3px 5px; border-radius: 1rem; z-index: 5;
+}
+.vies svg { width: calc(var(--hex) * 0.25); height: calc(var(--hex) * 0.25); fill: #ef4444; }
+.reponse {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: 0.85rem; font-size: calc(var(--hex) * 0.185); font-weight: 600;
+    color: rgba(255,255,255,0.42); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.slot.actif .reponse { color: var(--or); text-shadow: 0 0 10px rgba(240,192,64,0.5); }
+
+.fx {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0; z-index: 8;
+}
+.voile {
+    position: absolute; inset: 0; z-index: 6; opacity: 0; pointer-events: none;
+    background: rgba(4,5,9,0.9);
+    clip-path: polygon(50% 5.8%, 94.2% 26.5%, 94.2% 73.5%, 50% 94.2%, 5.8% 73.5%, 5.8% 26.5%);
+}
+.cad { width: calc(var(--hex) * 0.56); height: calc(var(--hex) * 0.56); overflow: visible; }
+.cad .corps { fill: var(--froid); }
+.cad .anse { fill: none; stroke: var(--froid); stroke-width: 2.4; }
+.fx-cadenas .cad { filter: drop-shadow(0 0 calc(var(--hex)*0.09) rgba(0,0,0,0.95)); }
+
+/* L'ANNEAU retenu de E8 : un cercle clair qui s'écarte et s'efface.
+   Sa force est un réglage de la page, pas une piste. */
+.fx-onde i {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.78);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LES SIX PISTES
+   Toutes : le cadenas NAÎT PETIT, puis se DILATE en s'effaçant.
+   Ce qui change d'une à l'autre, c'est le palier à l'échelle 1.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─ réglages communs, posés sur toutes les pistes ─ */
+/* ⚠️ Les six classes sont citées une à une. Un raccourci `[class*="f"]`
+   attraperait aussi `actif`, que PORTE le joueur de la pastille : l'anneau
+   serait alors allumé en permanence sur tout le monde. */
+.slot.f1 .fx-onde, .slot.f2 .fx-onde, .slot.f3 .fx-onde,
+.slot.f4 .fx-onde, .slot.f5 .fx-onde, .slot.f6 .fx-onde { opacity: 1; }
+.slot.f1 .fx-onde, .slot.f2 .fx-onde, .slot.f3 .fx-onde,
+.slot.f4 .fx-onde, .slot.f5 .fx-onde, .slot.f6 .fx-onde {
+    animation-name: onde; animation-duration: calc(440ms * var(--k));
+    animation-delay: calc(50ms * var(--k));
+    animation-timing-function: cubic-bezier(0.1,0.7,0.3,1); animation-fill-mode: both;
+}
+@keyframes onde {
+    0% { opacity: var(--onde-op); transform: scale(0.55); }
+    100% { opacity: 0; transform: scale(1.95); }
+}
+.slot.f1 .voile, .slot.f2 .voile, .slot.f3 .voile,
+.slot.f4 .voile, .slot.f5 .voile, .slot.f6 .voile {
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+
+/* ─ F1 · POP, PALIER COURT, DILATATION (560 ms) ─ */
+.slot.f1 .fx-cadenas {
+    animation-name: f1; animation-duration: calc(560ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.8,0.4,1); animation-fill-mode: forwards;
+}
+@keyframes f1 {
+    0%   { opacity: 0; transform: scale(0.35); }
+    10%  { opacity: 1; transform: scale(1.08); }
+    17%  { opacity: 1; transform: scale(1); }
+    54%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.3); }
+}
+.slot.f1 .voile { animation-name: v1; animation-duration: calc(560ms * var(--k)); }
+@keyframes v1 { 0% { opacity: 0; } 10%,54% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─ F2 · DILATATION CONTINUE, AUCUN PALIER (520 ms) ─ */
+/* La plus proche d'une onde pure : on sent qu'il s'est passé quelque
+   chose, on ne jurerait pas avoir vu un cadenas. */
+.slot.f2 .fx-cadenas {
+    animation-name: f2; animation-duration: calc(520ms * var(--k));
+    animation-timing-function: cubic-bezier(0.15,0.75,0.3,1); animation-fill-mode: forwards;
+}
+@keyframes f2 {
+    0%   { opacity: 0; transform: scale(0.3); }
+    12%  { opacity: 1; transform: scale(0.82); }
+    100% { opacity: 0; transform: scale(2.6); }
+}
+.slot.f2 .voile { animation-name: v2; animation-duration: calc(520ms * var(--k)); }
+@keyframes v2 { 0% { opacity: 0; } 12% { opacity: var(--voile-op); } 45% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─ F3 · POP, PALIER LONG, DILATATION DOUCE (820 ms) ─ */
+.slot.f3 .fx-cadenas {
+    animation-name: f3; animation-duration: calc(820ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.75,0.35,1); animation-fill-mode: forwards;
+}
+@keyframes f3 {
+    0%   { opacity: 0; transform: scale(0.25); }
+    7%   { opacity: 1; transform: scale(1.12); }
+    13%  { transform: scale(0.97); }
+    19%  { transform: scale(1); }
+    63%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.85); }
+}
+.slot.f3 .voile { animation-name: v3; animation-duration: calc(820ms * var(--k)); }
+@keyframes v3 { 0% { opacity: 0; } 7%,63% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─ F4 · DOUBLE DILATATION (620 ms) ─ */
+/* Le cadenas reste net à l'échelle 1 pendant qu'un SECOND, fantôme,
+   se détache de lui et s'écarte. L'objet reste lisible tout du long,
+   la dilatation est portée par la copie. */
+.slot.f4 .fx-cadenas {
+    animation-name: f4; animation-duration: calc(620ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.8,0.4,1); animation-fill-mode: forwards;
+}
+@keyframes f4 {
+    0%   { opacity: 0; transform: scale(0.35); }
+    10%  { opacity: 1; transform: scale(1.08); }
+    17%  { opacity: 1; transform: scale(1); }
+    66%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.25); }
+}
+.slot.f4 .fx-fantome {
+    animation-name: f4b; animation-duration: calc(620ms * var(--k));
+    animation-delay: calc(130ms * var(--k));
+    animation-timing-function: cubic-bezier(0.1,0.7,0.3,1); animation-fill-mode: both;
+}
+@keyframes f4b {
+    0%   { opacity: 0.55; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.5); }
+}
+.slot.f4 .voile { animation-name: v4; animation-duration: calc(620ms * var(--k)); }
+@keyframes v4 { 0% { opacity: 0; } 10%,66% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─ F5 · POP VRILLÉ (560 ms) ─ */
+/* Il arrive de biais et se redresse en se posant, puis part droit.
+   La rotation donne du poids à l'arrivée sans rien coûter en lisibilité. */
+.slot.f5 .fx-cadenas {
+    animation-name: f5; animation-duration: calc(560ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.8,0.4,1); animation-fill-mode: forwards;
+}
+@keyframes f5 {
+    0%   { opacity: 0; transform: scale(0.3) rotate(-30deg); }
+    10%  { opacity: 1; transform: scale(1.08) rotate(5deg); }
+    18%  { opacity: 1; transform: scale(1) rotate(0deg); }
+    54%  { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(2.25) rotate(11deg); }
+}
+.slot.f5 .voile { animation-name: v5; animation-duration: calc(560ms * var(--k)); }
+@keyframes v5 { 0% { opacity: 0; } 10%,54% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─ F6 · LE MÊME, EN CONTOUR (560 ms) ─ */
+/* Mêmes temps que F1, mais le cadenas est creux : le visage reste
+   visible dessous. La piste la plus légère — et la première à se
+   perdre si le portrait est clair. */
+.slot.f6 .fx-cadenas .cad .corps { fill: none; stroke: var(--froid); stroke-width: 2.6; }
+.slot.f6 .fx-cadenas {
+    animation-name: f1; animation-duration: calc(560ms * var(--k));
+    animation-timing-function: cubic-bezier(0.3,0.8,0.4,1); animation-fill-mode: forwards;
+}
+.slot.f6 .voile { animation-name: v1; animation-duration: calc(560ms * var(--k)); }
+
+/* ─ RAPPEL · E8 et E1 du premier tour, pour comparer ─ */
+.slot.r8 .fx-ferme {
+    animation-name: r8; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes r8 {
+    0% { opacity: 0; transform: scale(1.5); }
+    14% { opacity: 1; transform: scale(1); }
+    72% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.08); }
+}
+.fx-ferme .cad { width: calc(var(--hex) * 0.62); }
+.fx-ferme .anse-mobile { transform-origin: 7px 11px; }
+.slot.r8 .fx-ferme .anse-mobile {
+    animation-name: r8-anse; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: cubic-bezier(0.5,0,0.75,0); animation-fill-mode: forwards;
+}
+@keyframes r8-anse {
+    0%, 14% { transform: rotate(-118deg); }
+    40% { transform: rotate(6deg); }
+    46%, 100% { transform: rotate(0deg); }
+}
+.slot.r8 .fx-onde {
+    opacity: 1;
+    animation-name: onde; animation-duration: calc(420ms * var(--k));
+    animation-delay: calc(340ms * var(--k));
+    animation-timing-function: cubic-bezier(0.1,0.7,0.3,1); animation-fill-mode: both;
+}
+.slot.r8 .voile {
+    animation-name: v8; animation-duration: calc(860ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards;
+}
+@keyframes v8 { 0% { opacity: 0; } 14%,72% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+.slot.r1 .fx-cadenas {
+    animation-name: r1; animation-duration: calc(640ms * var(--k));
+    animation-timing-function: cubic-bezier(0.2,1.25,0.4,1); animation-fill-mode: forwards;
+}
+@keyframes r1 {
+    0% { opacity: 0; transform: scale(2.2); }
+    16% { opacity: 1; transform: scale(0.88); }
+    26% { transform: scale(1.04); }
+    34% { transform: scale(1); }
+    66% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.2); }
+}
+.slot.r1 .voile { animation-name: v1b; animation-duration: calc(640ms * var(--k));
+    animation-timing-function: ease; animation-fill-mode: forwards; }
+@keyframes v1b { 0% { opacity: 0; } 16%,66% { opacity: var(--voile-op); } 100% { opacity: 0; } }
+
+/* ─────────── la secousse — celle qu'on cherche à ne plus confondre ─────────── */
+@keyframes secousse {
+    0%,100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); } 30% { transform: translateX(6px); }
+    45% { transform: translateX(-5px); } 60% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); } 90% { transform: translateX(3px); }
+}
+@keyframes secousse-arene {
+    0%,100% { transform: translate(-50%,-50%) translateX(0); }
+    15% { transform: translate(-50%,-50%) translateX(-6px); } 30% { transform: translate(-50%,-50%) translateX(6px); }
+    45% { transform: translate(-50%,-50%) translateX(-5px); } 60% { transform: translate(-50%,-50%) translateX(5px); }
+    75% { transform: translate(-50%,-50%) translateX(-3px); } 90% { transform: translate(-50%,-50%) translateX(3px); }
+}
+.vignette .slot.secoue { animation-name: secousse; animation-duration: calc(400ms * var(--k)); animation-timing-function: ease; }
+.arene .slot.secoue { animation-name: secousse-arene; animation-duration: calc(400ms * var(--k)); animation-timing-function: ease; }
+
+/* ─────────── arène ─────────── */
+.arene {
+    position: relative; height: 27rem; max-width: 60rem; margin: 0 auto 0.6rem;
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem;
+    background: radial-gradient(ellipse at 50% 45%, rgba(240,192,64,0.045), transparent 62%);
+}
+.arene .slot { position: absolute; transform: translate(-50%,-50%); }
+.bombe {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 5.4rem; height: 5.4rem; border-radius: 50%;
+    background: radial-gradient(circle at 36% 30%, #4a3a26, #1a1410 62%, #0d0a08);
+    box-shadow: inset 0 0 1.4rem rgba(0,0,0,0.9), 0 0 2rem rgba(0,0,0,0.6);
+}
+.meche {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%) translateX(-4.6rem);
+    display: flex; align-items: center; gap: 0.2rem;
+}
+.meche .fil { width: 2.1rem; height: 3px; background: #7a5a3a; border-radius: 2px; }
+.meche .flamme {
+    width: 0.6rem; height: 0.6rem; border-radius: 50%;
+    background: radial-gradient(circle, #ffd27a, #ff8a1f 55%, transparent 72%);
+    animation: vacille 0.5s ease-in-out infinite alternate;
+}
+@keyframes vacille { from { transform: scale(0.85); } to { transform: scale(1.15); } }
+
+.saisie {
+    max-width: 60rem; margin: 0 auto 1.6rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.8rem 1rem; border-radius: 0.7rem;
+    border: 1px solid rgba(240,192,64,0.3); background: rgba(240,192,64,0.05);
+}
+.saisie .champ {
+    flex: 1; font-size: 1rem; font-weight: 600; letter-spacing: 0.03em;
+    color: rgba(255,255,255,0.75); text-transform: uppercase;
+}
+.saisie .curseur {
+    display: inline-block; width: 2px; height: 1.05em; background: var(--or);
+    vertical-align: -0.17em; margin-left: 2px; animation: clignote 1s steps(1) infinite;
+}
+@keyframes clignote { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+.saisie .aide { font-size: 0.64rem; opacity: 0.42; text-align: right; line-height: 1.4; }
+
+/* ─────────── vignettes ─────────── */
+h2 { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+     opacity: 0.4; margin: 2.2rem 0 1rem; font-weight: 700; }
+.grille {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    gap: 1rem; max-width: 72rem;
+}
+.vignette {
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.8rem;
+    background: rgba(255,255,255,0.016); padding: 0.9rem 0.9rem 1rem;
+    display: flex; flex-direction: column; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.vignette:hover { border-color: rgba(240,192,64,0.35); background: rgba(240,192,64,0.035); }
+.vignette.choisi { border-color: var(--or); background: rgba(240,192,64,0.07); }
+.vignette .scene { height: 9.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.7rem; }
+.vignette .titre { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+.vignette .titre em { font-style: normal; opacity: 0.35; font-weight: 600; margin-right: 0.35rem; }
+.vignette .palier {
+    font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #8fb4e8; opacity: 0.75; margin-bottom: 0.3rem;
+}
+.vignette .note { font-size: 0.68rem; line-height: 1.5; opacity: 0.55; }
+.vignette.ref { border-style: dashed; opacity: 0.8; }
+.vignette.ref .titre { color: #9fd6b5; }
+
+@media (prefers-reduced-motion: reduce) {
+    .meche .flamme, .saisie .curseur { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>BombAnime — le cadenas qui se dilate</h1>
+<p class="sous">
+L'onde discrète de <b>E8</b> est gardée sur les six pistes, et le cadenas joue désormais dans
+l'autre sens que E1 : <b>il naît petit, se pose, puis se dilate en s'effaçant.</b>
+<span class="av">Ce qu'il faut juger</span> : la longueur du <b>palier</b> — le temps où il tient
+l'échelle 1. Sans palier, on ne voit plus un cadenas mais une onde de plus. L'anneau et le voile
+sont sortis des pistes, en réglages à part : ils valent pour toutes.
+</p>
+
+<div class="barre">
+    <label>Taille</label>
+    <button data-taille="44">44 px · tél.</button>
+    <button data-taille="56">56 px</button>
+    <button data-taille="70" class="on">70 px · jeu</button>
+    <button data-taille="92">92 px</button>
+    <span class="sep"></span>
+    <label>Vitesse</label>
+    <button data-k="1" class="on">normal</button>
+    <button data-k="2.5">×2,5</button>
+    <button data-k="5">ralenti ×5</button>
+    <span class="sep"></span>
+    <label>Anneau</label>
+    <button data-onde="0.8" class="on">net</button>
+    <button data-onde="0.42">discret</button>
+    <button data-onde="0">aucun</button>
+    <span class="sep"></span>
+    <label>Voile</label>
+    <button data-voile="0.72" class="on">oui</button>
+    <button data-voile="0.4">léger</button>
+    <button data-voile="0">aucun</button>
+    <span class="sep"></span>
+    <button id="rejouer">Rejouer (R)</button>
+    <button id="boucle">En boucle</button>
+    <button id="inconnu" class="rouge">Jouer « nom inconnu »</button>
+</div>
+
+<div class="arene" id="arene"></div>
+
+<div class="saisie">
+    <span class="champ">madara<span class="curseur"></span></span>
+    <span class="aide">Regardez ICI, pas le cercle.<br>Puis appuyez sur <b>R</b>.</span>
+</div>
+
+<h2>Six dilatations — même horloge, rejouées ensemble</h2>
+<div class="grille" id="grille"></div>
+
+<script>
+const EFFETS = [
+    { id: 'f1', nom: 'Pop, palier court, dilatation', palier: 'palier 205 ms · 560 ms en tout',
+      note: "Il naît à un tiers de sa taille, dépasse d'un cheveu, tient, puis s'ouvre en grand en s'effaçant. Le compromis : assez de palier pour qu'on lise un cadenas, assez de dilatation pour qu'on la sente." },
+    { id: 'f2', nom: 'Dilatation continue', palier: 'aucun palier · 520 ms',
+      note: "Jamais d'arrêt : il grandit du début à la fin. C'est la plus fluide — et celle qui risque de ne plus se lire comme un cadenas mais comme une seconde onde." },
+    { id: 'f3', nom: 'Palier long, dilatation douce', palier: 'palier 360 ms · 820 ms',
+      note: "Un rebond à l'arrivée, un long temps d'arrêt, puis une ouverture lente et sans bruit. La plus lisible des six, et la plus lente à libérer l'écran." },
+    { id: 'f4', nom: 'Double dilatation', palier: 'palier 305 ms · 620 ms',
+      note: "Le cadenas reste NET à l'échelle 1 ; c'est un second, fantôme, qui se détache de lui et s'écarte. On garde l'objet lisible tout du long et le mouvement par-dessus." },
+    { id: 'f5', nom: 'Pop vrillé', palier: 'palier 200 ms · 560 ms',
+      note: "Mêmes temps que F1, mais il arrive de biais et se redresse en se posant, puis repart en vrillant. La rotation donne du poids à l'arrivée sans coûter en lisibilité." },
+    { id: 'f6', nom: 'Le même, en contour', palier: 'palier 205 ms · 560 ms',
+      note: "F1 avec un cadenas creux : le visage reste visible dessous. La plus légère — et la première à se perdre sur un portrait clair ou à 44 px." },
+];
+
+const CAD = `<svg class="cad" viewBox="0 0 24 24" aria-hidden="true">
+    <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/>
+    <path class="anse" d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const CAD_FERME = `<svg class="cad" viewBox="0 0 24 24" aria-hidden="true">
+    <path class="anse anse-mobile" d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <rect class="corps" x="3" y="11" width="18" height="11" rx="2"/></svg>`;
+const HEXA = '50,3 97,25 97,75 50,97 3,75 3,25';
+
+function slot(pseudo, avatar, mot, actif) {
+    const d = document.createElement('div');
+    d.className = 'slot' + (actif ? ' actif' : '');
+    d.innerHTML = `
+      <div class="nom">${pseudo}</div>
+      <div class="hexbox">
+        <div class="hex">
+          <svg class="anneau" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <svg class="cadre" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${HEXA}"/></svg>
+          <img class="avatar" src="/${avatar}" alt="">
+          <div class="voile"></div>
+          <div class="fx fx-onde"><i></i></div>
+          <div class="fx fx-fantome">${CAD}</div>
+          <div class="fx fx-cadenas">${CAD}</div>
+          <div class="fx fx-ferme">${CAD_FERME}</div>
+        </div>
+        <div class="vies">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+      </div>
+      <div class="reponse">${mot}</div>`;
+    return d;
+}
+
+/* ─────────── l'arène ─────────── */
+const TABLE = [
+    ['nahass',  'sasuke.webp', 'MADARA',  true ],
+    ['Master',  'rukia.webp',  'YAGURA',  false],
+    ['kenzo',   'levi.webp',   'KISAME',  false],
+    ['lina',    'erza.webp',   'JIRAIYA', false],
+    ['tomo',    'zoro.webp',   'HASHIRAMA', false],
+];
+const arene = document.getElementById('arene');
+arene.innerHTML = '<div class="bombe"></div><div class="meche"><div class="flamme"></div><div class="fil"></div></div>';
+const slotsArene = TABLE.map(([p, a, m, actif], i) => {
+    const s = slot(p, a, m, actif);
+    const ang = (-90 + i * (360 / TABLE.length)) * Math.PI / 180;
+    s.style.left = (50 + 38 * Math.cos(ang)) + '%';
+    s.style.top  = (50 + 33 * Math.sin(ang)) + '%';
+    arene.appendChild(s);
+    return s;
+});
+const cible = slotsArene[0];
+
+/* ─────────── vignettes ─────────── */
+const grille = document.getElementById('grille');
+const vignettes = [];
+function carte(id, nom, palier, note, ref) {
+    const c = document.createElement('div');
+    c.className = 'vignette' + (ref ? ' ref' : '');
+    c.innerHTML = `<div class="scene"></div>
+        <div class="titre"><em>${id.toUpperCase()}</em>${nom}</div>
+        <div class="palier">${palier}</div>
+        <div class="note">${note}</div>`;
+    const s = slot('nahass', 'sasuke.webp', 'MADARA', true);
+    c.querySelector('.scene').appendChild(s);
+    c.addEventListener('click', () => choisir(id));
+    grille.appendChild(c);
+    vignettes.push({ id, slot: s, carte: c });
+}
+EFFETS.forEach(e => carte(e.id, e.nom, e.palier, e.note, false));
+carte('r8', 'E8 · le verrou qui se ferme', 'rappel du premier tour',
+      "Celui que tu as retenu pour son onde. L'anse retombe et claque avant que l'anneau ne parte : le message n'est complet qu'après 350 ms.", true);
+carte('r1', 'E1 · cadenas plein cadre', 'rappel du premier tour',
+      "Le sens INVERSE : il tombe de haut, rapetisse et se pose. À comparer avec F1, qui fait exactement le contraire.", true);
+
+const TOUTES = [...EFFETS.map(e => e.id), 'r8', 'r1'];
+function jouer(s, id, secouer) {
+    TOUTES.forEach(c => s.classList.remove(c));
+    s.classList.remove('secoue');
+    void s.offsetWidth;
+    if (id) s.classList.add(id);
+    if (secouer) s.classList.add('secoue');
+}
+
+let choix = 'f1';
+function choisir(id) {
+    choix = id;
+    vignettes.forEach(v => v.carte.classList.toggle('choisi', v.id === id));
+    jouerArene();
+}
+function jouerArene() { jouer(cible, choix, false); }
+function jouerInconnu() { jouer(cible, null, true); }
+function jouerVignettes() { vignettes.forEach(v => jouer(v.slot, v.id, false)); }
+
+document.getElementById('rejouer').addEventListener('click', () => { jouerArene(); jouerVignettes(); });
+document.getElementById('inconnu').addEventListener('click', jouerInconnu);
+
+let boucle = null;
+document.getElementById('boucle').addEventListener('click', (e) => {
+    if (boucle) { clearInterval(boucle); boucle = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    boucle = setInterval(() => { jouerArene(); jouerVignettes(); }, 2400);
+});
+
+/* Les quatre réglages de la barre ne sont que des variables CSS :
+   ils s'appliquent donc à toutes les pistes d'un coup. */
+[['data-taille', '--hex', 'px'], ['data-k', '--k', ''],
+ ['data-onde', '--onde-op', ''], ['data-voile', '--voile-op', '']]
+.forEach(([attr, prop, unite]) => {
+    document.querySelectorAll('[' + attr + ']').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('[' + attr + ']').forEach(o => o.classList.remove('on'));
+        b.classList.add('on');
+        document.documentElement.style.setProperty(prop, b.getAttribute(attr) + unite);
+        jouerArene(); jouerVignettes();
+    }));
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') { jouerArene(); jouerVignettes(); }
+    if (e.key === 'i' || e.key === 'I') jouerInconnu();
+});
+
+choisir('f1');
+jouerVignettes();
+setTimeout(jouerVignettes, 400);
+</script>
+</body></html>
