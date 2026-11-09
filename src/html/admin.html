@@ -453,6 +453,26 @@ tbody tr.part { opacity: 0; transition: opacity .2s; }
 .info:hover > span, .info:focus > span { opacity: 1; visibility: visible; }
 .info:focus { outline: none; border-color: var(--accent); color: var(--accent-clair); }
 .info b { font-weight: 600; color: var(--doux); }
+
+/* Les réglages d'une partie, appariés sur deux colonnes — voir le commentaire
+   de « bulleReglages ». Quatre pistes : libellé, valeur, libellé, valeur. */
+.reg {
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    column-gap: .55rem; row-gap: .12rem;
+    align-items: baseline;
+}
+.reg > b { white-space: nowrap; }
+/* La valeur colle à son libellé, et c'est la paire SUIVANTE qui prend l'air :
+   sans cette marge, « Vies 2 Temps 15s » se lisait comme une seule phrase. */
+.reg > i {
+    font-style: normal; white-space: nowrap;
+    color: var(--texte); padding-right: .5rem;
+}
+.reg > i:last-of-type { padding-right: 0; }
+/* L'hôte prend la ligne entière : ce n'est pas un réglage. */
+.reg > .pleine:nth-last-child(2) { grid-column: 1; margin-top: .22rem; }
+.reg > .pleine:last-child { grid-column: 2 / -1; margin-top: .22rem; }
 /* ⚠️ Les premières lignes du tableau n'ont pas de place au-dessus : leur
    bulle passe dessous. */
 tbody tr:nth-child(-n+3) .info > span { bottom: auto; top: calc(100% + 7px); }
@@ -922,6 +942,11 @@ body:not(.entre) { overflow: hidden; }
     /* La bulle des réglages tenait sur UNE ligne (`nowrap`) : large de
        300 px, elle sortait du cadre défilant qui la coupe. */
     .info > span { white-space: normal; width: max-content; max-width: 62vw; }
+    /* ⚠️ Une seule paire par ligne : à 62vw, quatre colonnes ne tiennent pas
+       et la grille déborderait de la bulle au lieu de se replier. */
+    .reg { grid-template-columns: auto auto; }
+    .reg > i { padding-right: 0; }
+    .reg > .pleine:last-child { grid-column: 2; }
 }
 
 /* ════════════════════════════════════════════
@@ -1878,31 +1903,79 @@ const FILTRES = {
     onepiece: 'One Piece', naruto: 'Naruto', dbz: 'Dragon Ball', bleach: 'Bleach',
 };
 
+const MECHES = { tour: 'Par tour', continue: 'Continue' };
+const ORDRES = { horaire: 'Horaire', aleatoire: 'Aléatoire' };
+const BAREMES = { lives: 'Vies', points: 'Points' };
+// ⚠️ Pas « DIFFS » : ce nom est déjà pris plus bas par les NIVEAUX d'une
+// question (veryeasy, easy…). Ici il s'agit de l'ordre dans lequel le quiz
+// les sert. Deux `const` du même nom dans un script, et tout meurt — c'est
+// `npm run check:vue` qui l'a arrêté.
+const ORDRE_DIFF = { croissante: 'Croissante', aleatoire: 'Aléatoire' };
+
+// ⚠️ TOUT ce que la partie a enregistré, et rien de plus. Les valeurs sont
+// brutes en base — le libellé se fabrique ICI : un texte figé à
+// l'enregistrement vieillirait mal, les valeurs, elles, restent justes.
+//
+// ⚠️ Et chaque ligne est conditionnée au champ : les parties d'AVANT l'ajout
+// d'un réglage ne le portent pas, et afficher « Jokers — » ferait croire que
+// la partie s'est jouée sans. Absent veut dire « on ne sait pas », pas « non ».
+// D'où le test sur `undefined` partout, jamais sur la vérité de la valeur :
+// un `g.jokers &&` mangerait un faux légitime.
+const oui = (v) => v ? 'oui' : 'non';
+
 function lignesReglages(p) {
     const g = p.reglages;
     if (!g) return null;
     const L = [];
     const k = mode(p);
+    const met = (lib, v, fmt) => { if (v !== undefined && v !== null && v !== '') L.push([lib, fmt ? fmt(v) : v]); };
 
-    // Volontairement court : la série (ou le filtre, selon le mode) et l'hôte.
-    // Le reste des réglages est bien enregistré en base, il suffira de le
-    // rajouter ici le jour où il servira.
-    if (k === 'bombanime' && g.serie) {
-        L.push(['Série', SERIES_BOMB[g.serie] || g.serie]);
-    } else if ((k === 'rush' || k === 'classic') && g.filtre) {
-        L.push(['Filtre', FILTRES[g.filtre] || g.filtre]);
-    } else if (k === 'collect' && g.main) {
-        L.push(['Main', g.main + ' cartes']);
-    } else if (k === 'ascension' && g.etages) {
-        L.push(['Étages', g.etages]);
+    if (k === 'bombanime') {
+        met('Série', g.serie, v => SERIES_BOMB[v] || v);
+        met('Tour', g.temps, v => v + 's');
+        met('Vies', g.vies);
+        met('Mèche', g.meche, v => MECHES[v] || v);
+        met('Mouvement', g.mecheVisuelle, oui);
+        met('Ordre', g.ordre, v => ORDRES[v] || v);
+        met('Bot', g.bot, oui);
+    } else if (k === 'rush') {
+        met('Filtre', g.filtre, v => FILTRES[v] || v);
+        met('Durée', g.duree, v => v + 's');
+        // 0 est une valeur LÉGITIME : « aucune limite par portrait ».
+        met('Par portrait', g.limite, v => v ? v + 's' : 'aucune');
+        met('Multiplicateur', g.multiplicateur, oui);
+        met('Séquence', g.sequence, v => v ? 'commune' : 'propre');
+        met('Jokers', g.jokers, oui);
+    } else if (k === 'classic') {
+        met('Filtre', g.filtre, v => FILTRES[v] || v);
+        met('Format', g.equipes, v => v ? 'Équipes' : 'Solo');
+        met('Barème', g.bareme, v => BAREMES[v] || v);
+        met('Vies', g.vies);
+        met('Temps', g.temps, v => v + 's');
+        met('Réponses', g.reponses);
+        met('Questions', g.questions);
+        met('Difficulté', g.difficulte, v => ORDRE_DIFF[v] || v);
+        met('Spoil', g.spoil, oui);
+        met('Rapidité', g.rapidite, oui);
+        met('Bonus', g.bonus, oui);
+    } else if (k === 'collect') {
+        met('Main', g.main, v => v + ' cartes');
+        met('Animes', g.animes);
+    } else if (k === 'ascension') {
+        met('Étages', g.etages);
+        met('Temps', g.temps, v => v + 's');
     } else if (k === 'codanime') {
-        // Les deux réglages qui changent la partie : le temps par CARTE (et
-        // non par tour, malgré le nom du champ en base) et le piège, qui fait
-        // qu'un indice à 4 est un pari et non un calcul.
-        if (g.dureeTour) L.push(['Par carte', g.chrono === false ? 'sans chrono' : g.dureeTour + 's']);
-        if (g.piege !== undefined) L.push(['Piège', g.piege ? 'oui' : 'non']);
-    } else if (k === 'choice' && g.vies) {
-        L.push(['Vies', g.vies]);
+        met('Série', g.serie, v => FILTRES[v] || v);
+        // ⚠️ Le temps est PAR CARTE, pas par tour, malgré le nom du champ en
+        // base (`dureeTour`). Le renommer couterait une migration pour rien.
+        met('Par carte', g.dureeTour, v => g.chrono === false ? 'sans chrono' : v + 's');
+        met('Piège', g.piege, oui);
+        met('Manches', g.manches);
+    } else if (k === 'choice') {
+        met('Vies', g.vies);
+        met('Durée', g.duree, v => v + 's');
+        met('Voir les autres', g.voirLesAutres, oui);
+        met('Filtre', g.filtre, v => FILTRES[v] || v);
     }
     if (g.hote) L.push(['Hôte', g.hote]);
 
@@ -1917,9 +1990,21 @@ function bulleReglages(p) {
     // ⚠️ `tabindex` : la bulle ne s'ouvrait qu'au SURVOL, donc jamais au
     // doigt — les réglages d'une partie étaient illisibles sur téléphone.
     // Rendu focusable, un appui l'ouvre et un appui à côté la referme.
-    return '<span class="info" tabindex="0" role="button" aria-label="Réglages">i<span>' +
-        L.map(x => '<b>' + ech(x[0]) + '</b> ' + ech(x[1])).join('<br>') +
-        '</span></span>';
+    // ⚠️ DEUX COLONNES, et ce n'est pas un choix de forme. Le tableau défile
+    // dans un cadre en « overflow-y: auto » : une bulle posée en absolu y est
+    // COUPÉE dès qu'elle dépasse. À onze réglages en Classique, une liste d'une
+    // colonne faisait deux cents pixels de haut et se perdait hors du cadre.
+    // Appariées, les mêmes tiennent en six lignes — la hauteur d'avant.
+    //
+    // L'hôte reste SEUL sur la dernière ligne : ce n'est pas un réglage, et
+    // l'apparier avec un en ferait lire deux de la même nature.
+    const hote = (L[L.length - 1] || [])[0] === 'Hôte' ? L.pop() : null;
+    const cases = L.map(x => '<b>' + ech(x[0]) + '</b><i>' + ech(x[1]) + '</i>').join('');
+    const pied = hote
+        ? '<b class="pleine">' + ech(hote[0]) + '</b><i class="pleine">' + ech(hote[1]) + '</i>'
+        : '';
+    return '<span class="info" tabindex="0" role="button" aria-label="Réglages">i'
+        + '<span><span class="reg">' + cases + pied + '</span></span></span>';
 }
 
 function leTableau() {

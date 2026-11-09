@@ -677,9 +677,24 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 
   Chaque partie garde ses **reglages** (`game_history.reglages`, jsonb) :
   `reglagesDeLaPartie()` les releve A LA FIN — l hote a pu les changer entre
-  l ouverture et le depart — et un point info les montre a cote du mode. La
-  bulle n affiche que la serie et l hote ; le reste est enregistre et attend
-  d etre utile.
+  l ouverture et le depart — et un point info les montre TOUS a cote du mode,
+  mode par mode.
+  ⚠️ **La bulle est une grille a DEUX COLONNES, et ce n est pas un choix de
+  forme.** Le tableau defile dans un cadre en `overflow-y: auto` : une bulle
+  posee en absolu y est COUPEE des qu elle depasse. A onze reglages en
+  Classique, une liste d une seule colonne faisait deux cents pixels de haut
+  et se perdait hors du cadre ; appariees, les memes tiennent en six lignes.
+  L hote garde la derniere ligne pour lui seul — ce n est pas un reglage.
+  ⚠️ **Une ligne absente veut dire « on ne sait pas », pas « non ».** Les
+  parties d avant l ajout d un reglage ne le portent pas : on saute la ligne
+  plutot que d afficher un vide, qui ferait croire que la partie s est jouee
+  sans. D ou le test sur `undefined`, jamais sur la verite de la valeur — un
+  `g.jokers &&` mangerait un faux legitime, et `limite: 0` veut dire « aucune
+  limite par portrait », pas « pas de reglage ».
+  ⚠️ **Ce qui n est pas ecrit a la fin d une partie est perdu pour toujours** :
+  on ne peut pas y revenir apres coup. Un reglage ajoute a un mode doit donc
+  etre ajoute a `reglagesDeLaPartie` LE MEME JOUR, sinon les parties de
+  l intervalle ne l auront jamais.
   ⚠️ Trois pieges ici :
   - La colonne est arrivee APRES la table. Sans elle, l insertion entiere
     echouait et l on perdait TOUT l historique, pas seulement les reglages. Le

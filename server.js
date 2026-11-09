@@ -704,6 +704,8 @@ function reglagesDeLaPartie(gameState) {
                 temps: b.timer,
                 vies: b.lives,
                 meche: b.meche,
+                mecheVisuelle: b.mecheVisuelle !== false,
+                ordre: b.ordre,
                 // Le bot ne se lit pas dans un réglage : il EST un joueur.
                 bot: [...g.players.values()].some(p => p.estBot),
             });
@@ -715,6 +717,8 @@ function reglagesDeLaPartie(gameState) {
                 duree: x.duree,
                 limite: x.tempsParPerso,
                 multiplicateur: !!x.multiplicateur,
+                sequence: x.sequencePartagee !== false,
+                jokers: !!x.jokers,
             });
         }
         case 'classic':
@@ -725,6 +729,11 @@ function reglagesDeLaPartie(gameState) {
                 vies: g.lives,
                 temps: g.questionTime,
                 reponses: g.answersCount,
+                questions: g.questionsCount,
+                difficulte: g.difficultyMode,
+                spoil: !g.noSpoil,         // on enregistre ce qui est MONTRÉ
+                rapidite: !!g.speedBonus,
+                bonus: !!g.bonusEnabled,
                 equipes: g.lobbyMode === 'rivalry',
             });
         case 'collect':
