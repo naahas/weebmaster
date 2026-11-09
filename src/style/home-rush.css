@@ -118,6 +118,10 @@
 /* La scène garde la taille du cadre même pendant le remplacement d'un
    portrait : sans elle, la page sauterait à chaque changement. */
 .rush-scene {
+    /* Le repere des ampoules, qui se posent en absolu a sa gauche. Sans lui
+       elles se caleraient sur un ancetre lointain et partiraient au bord de
+       l ecran. */
+    position: relative;
     display: grid;
     place-items: center;
     width: calc(var(--carte-l) + var(--cadre) * 2);
@@ -245,6 +249,113 @@
 .rush-carte-leave-active { transition: opacity 0.12s ease, transform 0.15s cubic-bezier(0.5, 0, 0.9, 0.3); }
 .rush-carte-enter-from   { opacity: 0; transform: translateX(115%) rotate(4deg); }
 .rush-carte-leave-to     { opacity: 0; transform: translateX(-115%) rotate(-6deg); }
+
+/* ══════════ 💡 Les jokers ══════════
+   Deux ampoules a gauche du cadre : elles passent un portrait SANS casser la
+   serie. Le dessin est celui d Ascension — c est deja le signe du joker dans
+   le jeu, et on ne lui en apprend pas un second.
+
+   ⚠️ POSEES EN ABSOLU, hors du flux de la scene. La scene est une grille d une
+   seule case ou les deux cartes se superposent pendant qu elles se croisent :
+   une colonne en plus y aurait pousse le portrait de cote, et le portrait est
+   ce sur quoi l oeil est fixe. Il ne bouge pas d un pixel.
+
+   ⚠️ Et elles sont a GAUCHE, pas a droite : le bouton « passer » vit deja a
+   droite, contre le champ de saisie. Les deux gestes passent au suivant, l un
+   en cassant la serie et l autre non — cote a cote, on se tromperait. */
+.rush-jokers {
+    position: absolute;
+    top: 0;
+    right: calc(100% + 0.7rem);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.rush-joker {
+    /* Exactement la taille de l ampoule d Ascension (1,65 x 2,4) : c est le
+       meme objet, il n a pas de raison de changer de corpulence d un mode a
+       l autre. */
+    width: 1.65rem;
+    height: 2.4rem;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: default;
+    /* Eteinte : une douille vide, qui garde sa place. On voit ce qu il reste
+       sans compter, et la rangee ne saute pas d un cran quand une part. */
+    opacity: 0.28;
+    transition: opacity 0.3s ease, transform 0.25s ease;
+}
+
+.rush-joker svg { width: 100%; height: 100%; overflow: visible; }
+
+.rush-joker-verre {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 3;
+}
+
+/* Le verre est rempli ou vide, jamais entre les deux : un joker de Rush ne se
+   charge pas, on l a ou on l a brule. C est ce qui le distingue de l ampoule
+   d Ascension, qui monte par tiers. */
+.rush-joker-jus {
+    fill: none;
+    transition: fill 0.3s ease;
+}
+
+.rush-joker-fil {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.32);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+.rush-joker-culot {
+    stroke: rgba(255, 255, 255, 0.28);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+/* Allumee : elle respire, et c est le seul mouvement de ce coin de l ecran */
+.rush-joker.vif {
+    cursor: pointer;
+    opacity: 1;
+    animation: rushJokerVif 1.9s ease-in-out infinite;
+}
+
+.rush-joker.vif .rush-joker-jus { fill: #ffd700; }
+.rush-joker.vif .rush-joker-verre { stroke: rgba(255, 215, 0, 0.85); }
+.rush-joker.vif .rush-joker-fil { stroke: rgba(70, 50, 0, 0.6); }
+.rush-joker.vif svg { filter: drop-shadow(0 0 0.4rem rgba(255, 215, 0, 0.6)); }
+.rush-joker.vif:hover:not(:disabled) { transform: scale(1.18); }
+.rush-joker.vif:disabled { cursor: default; animation: none; }
+
+@keyframes rushJokerVif {
+    0%, 100% { filter: brightness(0.9); }
+    50%      { filter: brightness(1.25); }
+}
+
+/* On s en sert : un eclat, puis elle retombe en douille vide. C est la seule
+   fois du mode ou l on garde une serie sans avoir reconnu — autant que ca se
+   voie, puisque le portrait, lui, glisse comme d habitude.
+   ⚠️ Declaree APRES « vif » : a poids egal, c est l ordre qui tranche. */
+.rush-joker.casse {
+    pointer-events: none;
+    animation: rushJokerCasse 0.62s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes rushJokerCasse {
+    0%   { opacity: 1; transform: scale(1); }
+    20%  { opacity: 1; transform: scale(1.45); filter: brightness(2.6); }
+    100% { opacity: 0.28; transform: scale(1) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rush-joker.vif { animation: none; }
+    .rush-joker.casse { animation: none; }
+}
 
 /* ══════════ La série et le record ══════════ */
 .rush-serie, .rush-record {

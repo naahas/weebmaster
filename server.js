@@ -203,6 +203,12 @@ const RUSH_CONFIG = {
     // ouvert le ×3 après quinze réponses, puis le ×4 après quatre de plus —
     // l'emballement se serait mangé lui-même.
     MULT_PALIER: 10,
+    // Les jokers d'une manche : passer un portrait SANS casser la série.
+    // Deux, et pas trois — la série est tout ce que le mode compte, et un
+    // joker est la seule façon d'en garder une sans reconnaître. Trop
+    // nombreux, ils feraient du Rush un mode où l'on esquive ce qu'on ne sait
+    // pas ; deux couvrent le coup de malchance, pas une stratégie.
+    JOKERS: 2,
 };
 
 const BOMBANIME_CONFIG = {
@@ -647,6 +653,7 @@ function reglagesDuSalon(gameState) {
             limite: gameState.rush.tempsParPerso,
             filtre: gameState.rush.filtre,
             multiplicateur: gameState.rush.multiplicateur,
+            jokers: gameState.rush.jokers,
             sequencePartagee: gameState.rush.sequencePartagee,
         },
         collect: {
@@ -1149,6 +1156,9 @@ app.get('/game/state', (req, res) => {
             limite: gameState.rush.tempsParPerso,
             filtre: gameState.rush.filtre,
             multiplicateur: gameState.rush.multiplicateur,
+            // Le réglage, pas le compte de quiconque : `/game/state` s'ouvre
+            // avec le seul code du salon, il n'a rien à dire d'un joueur.
+            jokers: gameState.rush.jokers,
             sequencePartagee: gameState.rush.sequencePartagee,
             filtres: Object.entries(RUSH_FILTRES).map(([id, f]) => ({
                 id, label: f.label, compte: f.compte,
@@ -1536,6 +1546,9 @@ function etatNeuf() {
         tempsParPerso: RUSH_CONFIG.PERSO_DEFAUT,  // 0 = pas de limite par portrait
         filtre: 'overall',                        // cle dans RUSH_FILTRES
         multiplicateur: false,                    // par defaut non : le mode reste une pure course a la serie
+        // Les jokers : OUI par defaut. Reglage eteint, ils ne sont pas
+        // seulement inutilisables — ils ne s affichent pas du tout.
+        jokers: true,
         sequencePartagee: true,                   // meme ordre pour tous, sinon le classement ne compare rien
         sequence: [],                             // les portraits de la manche, dans l ordre
         sequencesJoueur: new Map(),               // Map<playerId, string[]> quand chacun a la sienne
@@ -2996,6 +3009,18 @@ app.post('/admin/rush/set-multiplicateur', (req, res) => {
     gameState.rush.multiplicateur = on;
     diffuser(gameState, 'rush-config', { multiplicateur: on });
     res.json({ success: true, multiplicateur: on });
+});
+
+// 💡 Les jokers : deux par manche, pour passer un portrait sans casser sa
+// série. Éteint, ils ne s'affichent pas du tout — et le serveur refuse
+// l'événement, le réglage n'est donc pas qu'un habillage.
+app.post('/admin/rush/set-jokers', (req, res) => {
+    const gameState = req.room;
+    if (gameState.inProgress) return res.status(400).json({ error: 'Partie en cours' });
+    const on = !!(req.body && req.body.actif);
+    gameState.rush.jokers = on;
+    diffuser(gameState, 'rush-config', { jokers: on });
+    res.json({ success: true, jokers: on });
 });
 
 app.post('/admin/rush/set-sequence', (req, res) => {
@@ -8635,17 +8660,25 @@ function rushArmerLimite(gameState, playerId) {
     if (etat) etat.limiteA = Date.now() + gameState.rush.tempsParPerso * 1000;
     const t = setTimeout(() => {
         if (!gameState.rush.active) return;
-        rushAvancer(gameState, playerId, false);
+        rushAvancer(gameState, playerId, 'rate');
     }, gameState.rush.tempsParPerso * 1000);
     gameState.rush.timeoutsPerso.set(playerId, t);
 }
 
-// Avance d un portrait. « reussi » decide du sort de la serie en cours.
-function rushAvancer(gameState, playerId, reussi) {
+// Avance d un portrait. « issue » decide du sort de la serie en cours :
+//   'trouve' — nomme, la serie monte
+//   'rate'   — passe ou laisse expirer, la serie casse
+//   'joker'  — passe SANS casser : rien ne bouge que le curseur
+//
+// ⚠️ Un joker n incremente NI `serie` NI `trouves`. `serie` nourrit le
+// multiplicateur : l avancer donnerait un cran gagne sans rien reconnaitre.
+// Et `trouves` departage le classement a record egal — on y grimperait en
+// esquivant, ce qui est l exact inverse de ce que le mode recompense.
+function rushAvancer(gameState, playerId, issue) {
     const etat = gameState.rush.joueurs.get(playerId);
     if (!etat) return;
 
-    if (reussi) {
+    if (issue === 'trouve') {
         // Le multiplicateur se lit AVANT d'incrémenter : la dixième réponse
         // vaut encore un point, et c'est la onzième qui en vaut deux. Sinon le
         // palier s'appliquerait à la réponse qui l'ouvre.
@@ -8653,7 +8686,7 @@ function rushAvancer(gameState, playerId, reussi) {
         etat.serie++;
         etat.trouves++;
         if (etat.score > etat.record) etat.record = etat.score;
-    } else {
+    } else if (issue === 'rate') {
         etat.serie = 0;
         etat.score = 0;
         etat.rates++;
@@ -8669,7 +8702,20 @@ function rushAvancer(gameState, playerId, reussi) {
         serie: etat.score,
         mult: rushMultiplicateur(gameState, etat),
         record: etat.record,
-        reussi,
+        // ⚠️ `reussi` garde ses DEUX valeurs d'avant, et vaut `null` pour un
+        // joker — comme au tout premier portrait. Le client teste `=== true`
+        // et `=== false` : un joker ne tombe donc dans aucune des deux
+        // branches, et c'est `joker` qui lui donne la sienne. Y faire passer
+        // une troisième valeur aurait joué le son de l'échec sur un client
+        // qui n'avait pas encore rechargé.
+        reussi: issue === 'trouve' ? true : (issue === 'rate' ? false : null),
+        joker: issue === 'joker',
+        // ⚠️ `jokersRestants` (un compte) et `jokers` (le réglage, booléen) ne
+        // doivent JAMAIS porter le même nom sur le fil : `rush-config` arrive
+        // par un `Object.assign` côté client, et le réglage écraserait le
+        // compte en silence — deux ampoules qui redeviennent allumées sans
+        // que rien ne le dise.
+        jokersRestants: etat.jokers,
         limite: gameState.rush.tempsParPerso,
     });
 
@@ -8698,6 +8744,11 @@ function demarrerRush(gameState) {
             // « serie » compte les bonnes réponses d'affilée et ne sert qu'au
             // multiplicateur ; « score » est ce qu'on affiche et ce qui classe.
             curseur: 0, serie: 0, score: 0, record: 0, trouves: 0, rates: 0, limiteA: null,
+            // ⚠️ Les jokers se rechargent A CHAQUE MANCHE, et c'est ici qu'ils
+            // naissent : `demarrerRush` refait les états de zéro, donc une
+            // seconde manche repart avec les deux. Réglage éteint, on en pose
+            // zéro — le serveur refuse alors même un événement forgé.
+            jokers: gameState.rush.jokers ? RUSH_CONFIG.JOKERS : 0,
         });
         if (!gameState.rush.sequencePartagee) {
             gameState.rush.sequencesJoueur.set(joueur.playerId,
@@ -8721,14 +8772,24 @@ function demarrerRush(gameState) {
         limite: gameState.rush.tempsParPerso,
         filtre: gameState.rush.filtre,
         multiplicateur: gameState.rush.multiplicateur,
+        // Le RÉGLAGE, pas le compte : au départ tout le monde en a autant, et
+        // c'est `rush-portrait` juste en dessous qui donne à chacun le sien.
+        jokers: gameState.rush.jokers,
+        // ⚠️ Le TOTAL vient d'ici et pas d'une constante du client : c'est lui
+        // qui dessine les douilles, y compris celles déjà brûlées. Recopier le
+        // 2 dans `app.js` ferait deux endroits à tenir, et le jour où il passe
+        // à trois l'écran en annoncerait deux.
+        jokersTotal: RUSH_CONFIG.JOKERS,
         classement: rushClassement(gameState),
     });
 
     // Chacun recoit son premier portrait, et sa limite demarre
     for (const joueur of joueurs) {
         const portrait = rushPortrait(gameState, joueur.playerId);
+        const etat = gameState.rush.joueurs.get(joueur.playerId);
         rushVersJoueur(gameState, joueur.playerId, 'rush-portrait', {
             portrait, serie: 0, record: 0, mult: 1, reussi: null,
+            joker: false, jokersRestants: etat ? etat.jokers : 0,
             limite: gameState.rush.tempsParPerso,
         });
         rushArmerLimite(gameState, joueur.playerId);
@@ -9802,7 +9863,7 @@ io.on('connection', (socket) => {
 
         const tape = rushNormaliser(data && data.texte);
         if (tape && rushFormes(perso).includes(tape)) {
-            rushAvancer(gameState, joueur.playerId, true);
+            rushAvancer(gameState, joueur.playerId, 'trouve');
         }
     });
 
@@ -9840,6 +9901,13 @@ io.on('connection', (socket) => {
             mult: rushMultiplicateur(gameState, etat),
             multiplicateur: gameState.rush.multiplicateur,
             record: etat.record,
+            // ⚠️ Les jokers DÉJÀ BRÛLÉS restent brûlés après un
+            // rafraîchissement : sans cette ligne, le client repartait de son
+            // défaut et en affichait deux. Recharger la page aurait été la
+            // façon la plus simple d'en avoir autant qu'on veut.
+            jokers: gameState.rush.jokers,
+            jokersRestants: etat.jokers,
+            jokersTotal: RUSH_CONFIG.JOKERS,
             classement: rushClassement(gameState),
             limiteA: etat.limiteA || null,
         });
@@ -9855,7 +9923,30 @@ io.on('connection', (socket) => {
         if (!gameState || !gameState.rush.active) return;
         const joueur = gameState.players.get(socket.id);
         if (!joueur) return;
-        rushAvancer(gameState, joueur.playerId, false);
+        rushAvancer(gameState, joueur.playerId, 'rate');
+    });
+
+    // 💡 Brûler un joker : on passe SANS casser la série. Deux par manche.
+    //
+    // ⚠️ Le compte est tenu par le SERVEUR et nulle part ailleurs. Le client
+    // n'affiche que ce qu'on lui dit : une page bricolée qui enverrait cet
+    // événement cent fois ne doit pas pouvoir traverser la manche entière
+    // sans jamais casser sa série.
+    socket.on('rush-joker', () => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState || !gameState.rush.active) return;
+        if (!gameState.rush.jokers) return;          // réglage éteint
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+        const etat = gameState.rush.joueurs.get(joueur.playerId);
+        if (!etat || etat.jokers <= 0) return;
+        // ⚠️ Et il n'y a pas de portrait à passer entre la dernière réponse et
+        // la fin de manche : sans ce garde, le dernier joker partait dans le
+        // vide une fois la séquence épuisée.
+        if (!rushPortrait(gameState, joueur.playerId)) return;
+
+        etat.jokers--;
+        rushAvancer(gameState, joueur.playerId, 'joker');
     });
 
     // Soumettre un nom de personnage

@@ -132,6 +132,10 @@ en-tête `X-Host-Token`. Le jeton désigne aussi **le salon** : le middleware po
   `npm run test:meche` (la mèche continue : le réglage, et surtout qu'elle NE REPART PAS
   après une bonne réponse — mesuré, pas supposé),
   `npm run test:rush` (le mode Rush de bout en bout),
+  `npm run test:rush-joker` (les deux jokers : le defaut, la serie qui NE CASSE
+  PAS, le troisieme refuse, le reglage eteint qui ferme aussi l evenement, et
+  surtout qu un RAFRAICHISSEMENT ne les recharge pas — ~1 min 45, trois manches
+  de 30 s, il n existe pas de route pour arreter une manche),
   `npm run test:rush-mult` (le barème du multiplicateur : le palier se compte en
   réponses et non en points, la casse sur une erreur, et le réglage éteint rend
   exactement le mode d'avant),
@@ -181,7 +185,7 @@ src/img/               avatars, questionpic
 |-------------|-----------|----------|
 | `classic`   | Classique | Quiz QCM en solo. Réglage **Mode** : `lives` (vies) ou `points` (score + bonus rapidité) |
 | `rivalry`   | Classique | Le même quiz en deux camps. Ce n'est **pas un mode à part** : c'est le réglage **Format** du quiz |
-| `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3), **séquence** commune ou propre à chacun, et **multiplicateur** (non par défaut — voir plus bas). Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
+| `rush`      | Rush      | Un portrait, un nom, sans touche Entrée. La plus longue série de la manche gagne. Réglages : **durée** (30/60/90 s), **limite par portrait** (5–12 s ou aucune), **filtre** (Tout, Mainstream, Big 3), **séquence** commune ou propre à chacun, **multiplicateur** (non par défaut — voir plus bas) et **jokers** (oui par défaut — deux ampoules qui passent un portrait sans casser la série, voir plus bas). Jouable seul. Données dans `rushdata.json`, portraits dans `src/img/rushpic/` |
 | `collect`   | Collect   | Jeu de cartes, 2 a 5 joueurs. Reunir **deux sets de trois** personnages du meme anime. A son tour, une action : piocher, echanger au marche, scanner une main, **voler** (deux temps de 7 s : on annonce sa cible, puis on designe une carte DE DOS chez elle ; elle se retourne au milieu du feutre. Si l on a la MEME CLASSE en main, on la garde en lachant une carte de cette classe ; sinon LE VOL ECHOUE — la carte retourne a sa place — et l on paie deux cartes d avoir tente a l aveugle. C est ce qui donne son prix au scan) ou poser un set. Poser ne refait PAS la main : on repart avec ce qui reste, et la pioche ajoute une carte tant que la main n est pas pleine. Le marche est une FILE : a chaque fin de tour celle de gauche part SOUS le paquet (jamais melee au
   hasard, sinon elle reviendrait aussitot), tout glisse d un cran et une neuve entre par la droite —
   la position d une carte est donc son compte a rebours. Une fleche marquait celle qui s en va :
@@ -336,6 +340,50 @@ faire changer le mot selon un réglage embrouillait plus qu il ne renseignait. V
   Et `/prototypes/collect-regles` : quatre mises en page de la modale des regles.
   Le contenu est le meme partout — c est la mise en page seule qui se juge, et
   sur le vrai feutre, parce qu elle s ouvre en pleine partie.
+## Les jokers du Rush
+
+**Deux ampoules à gauche du portrait**, qui passent un personnage **sans casser la série**.
+Réglage **Jokers**, oui par défaut ; sur *Non*, elles ne s'affichent pas du tout — pas une
+ampoule grisée, rien. `RUSH_CONFIG.JOKERS` vaut 2, et il s'écrit à cet endroit seul : le
+client reçoit le total du serveur (`jokersTotal`) pour dessiner ses douilles.
+
+**Deux et pas trois.** La série est tout ce que le mode compte, et un joker est la seule
+façon d'en garder une sans reconnaître. Trop nombreux, ils feraient du Rush un mode où l'on
+esquive ce qu'on ne sait pas ; deux couvrent le coup de malchance, pas une stratégie.
+
+⚠️ **Un joker n'incrémente NI `serie` NI `trouves`.** `serie` nourrit le multiplicateur :
+l'avancer donnerait un cran gagné sans rien reconnaître. Et `trouves` départage le classement
+à record égal — on y grimperait en esquivant, l'exact inverse de ce que le mode récompense.
+Seul `curseur` bouge.
+
+⚠️ **`rushAvancer` prend une ISSUE, plus un booléen** : `'trouve'`, `'rate'` ou `'joker'`.
+Sur le fil, en revanche, `reussi` garde ses deux valeurs d'avant et vaut **`null`** pour un
+joker — comme au tout premier portrait. Le client teste `=== true` et `=== false` : y faire
+passer une troisième valeur aurait joué le son de l'échec sur un onglet pas encore rechargé.
+C'est le champ `joker` qui porte le cas.
+
+⚠️ **`jokers` et `jokersRestants` ne doivent JAMAIS porter le même nom.** Le premier est le
+réglage (booléen), le second le compte de ce joueur. `rush-config` arrive par un
+`Object.assign` côté client : un nom commun et le réglage écraserait le compte, rallumant les
+deux ampoules sans que rien ne le dise.
+
+⚠️ **La reprise renvoie le compte, sinon recharger la page les recharge.** `rush-get-state`
+porte `jokersRestants` ; sans lui le client repartait de son défaut, et un F5 était la façon
+la plus simple d'en avoir autant qu'on veut. `npm run test:rush-joker` le tient, avec le
+refus du troisième et le fait que la manche suivante, elle, repart bien avec les deux.
+
+⚠️ **Les ampoules vivent HORS de la transition de carte** (dans `.rush-scene`, pas dans
+`.rush-carte`) et en `position: absolute` : dedans, elles partiraient à gauche avec le
+portrait sortant à chaque changement — c'est-à-dire à chaque fois qu'on s'en sert. Et posées
+dans le flux, elles pousseraient le portrait de côté. Mesuré : le cadre ne bouge pas d'un
+pixel selon que le réglage est allumé ou non.
+
+ℹ️ Elles sont **à gauche**, le bouton « passer » étant déjà à droite contre le champ : les
+deux gestes avancent d'un portrait, l'un en cassant la série et l'autre non. Côte à côte, on
+se tromperait. Et le son est **`ascJoker`**, celui de l'ampoule d'Ascension — même dessin,
+même son, même sens ; inventer une clef `rushJoker` l'aurait rendu muet, `playSound(undefined)`
+sortant en silence.
+
 ⚠️ `classic` et `rivalry` sont **un seul mode pour le joueur**. Le réglage *Format* (Solo / Équipe)
 bascule `lobbyMode` de l'un à l'autre en cours de salon (`POST /admin/set-teams`). Le badge de mode
 affiche « Classique » dans les deux cas. C'est l'hôte qui attribue les camps (pastille sur chaque

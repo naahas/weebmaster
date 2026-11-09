@@ -470,6 +470,20 @@ createApp({
                 filtre: 'overall',
                 multiplicateur: false, // le réglage du salon
                 mult: 1,            // le multiplicateur en cours, 1 = aucun
+                // ⚠️ DEUX champs, et surtout pas un seul : `jokers` est le
+                // RÉGLAGE du salon (affiche-t-on les ampoules ?), tandis que
+                // `jokersRestants` est ce qu'il reste à CE joueur dans la
+                // manche. Le premier arrive par `rush-config`, qui fait un
+                // Object.assign — un nom commun et le réglage écraserait le
+                // compte, rallumant les ampoules sans rien dire.
+                jokers: true,
+                jokersRestants: 0,
+                // Le total vient du serveur : il dessine les douilles, celles
+                // déjà brûlées comprises. Zéro tant qu'aucune manche n'a
+                // commencé, donc rien à l'écran.
+                jokersTotal: 0,
+                jokerCasse: -1,     // l'index de l'ampoule qui éclate, le temps de l'animation
+                _jokerT: null,
                 sequencePartagee: true,
                 filtres: [],        // annoncés par le serveur avec leur effectif
                 portrait: null,     // { img, anime, position }
@@ -4766,6 +4780,7 @@ createApp({
                 poser(this.rush, 'limite', r.rush.limite);
                 poser(this.rush, 'filtre', r.rush.filtre);
                 poser(this.rush, 'multiplicateur', r.rush.multiplicateur);
+                poser(this.rush, 'jokers', r.rush.jokers);
                 poser(this.rush, 'sequencePartagee', r.rush.sequencePartagee);
             }
             if (r.collect) {
@@ -6009,6 +6024,33 @@ createApp({
             if (this.socket && this.rush.portrait) this.socket.emit('rush-passer');
             // Cliquer sur le bouton retire le curseur du champ : sans ça, il
             // fallait recliquer dedans avant de pouvoir taper le nom suivant.
+            this.focusRush();
+        },
+
+        // 💡 Brûler un joker : on passe le portrait sans casser sa série.
+        //
+        // ⚠️ Le client ne décrémente RIEN de lui-même — le compte redescend
+        // quand le serveur le dit, dans `rush-portrait`. Le faire ici aussi
+        // aurait retiré deux ampoules pour un seul joker à la moindre
+        // latence, et surtout fait mentir l'écran à un refus du serveur.
+        utiliserJokerRush() {
+            if (!this.rush.jokers || this.rush.jokersRestants <= 0) return;
+            if (!this.rush.portrait || !this.socket) return;
+
+            // L'ampoule qui part est celle du BOUT de la rangée : on vide la
+            // réserve par la droite, donc l'index est le dernier allumé.
+            this.rush.jokerCasse = this.rush.jokersRestants - 1;
+            clearTimeout(this.rush._jokerT);
+            this.rush._jokerT = setTimeout(() => { this.rush.jokerCasse = -1; }, 620);
+
+            // ⚠️ `ascJoker`, le son de l'ampoule d'Ascension — pas une clef
+            // neuve. Même dessin, même son, même sens : c'est ce qui fait
+            // qu'on comprend le geste sans l'avoir appris. Et inventer
+            // `rushJoker` ici aurait été muet, `playSound(undefined)` sortant
+            // en silence — c'est ce qui a rendu Codanime sans bruit pendant
+            // des parties entières.
+            this.playSound(this.sounds.ascJoker);
+            this.socket.emit('rush-joker');
             this.focusRush();
         },
 
@@ -8951,6 +8993,9 @@ createApp({
                     duree: data.duree, limite: data.limite, filtre: data.filtre,
                     portrait: null, texte: '', serie: 0, record: 0,
                     multiplicateur: !!data.multiplicateur, mult: 1,
+                    // Le réglage seul : le COMPTE de chacun arrive avec son
+                    // premier portrait, que le serveur envoie juste après.
+                    jokers: !!data.jokers, jokersTotal: data.jokersTotal || 0, jokerCasse: -1,
                     classement: data.classement || [], fini: false, flash: null,
                 });
                 this.gameInProgress = true;
@@ -9420,6 +9465,7 @@ createApp({
                 this.rush.record = data.record;
                 if (data.mult !== undefined) this.rush.mult = data.mult;
                 if (data.limite !== undefined) this.rush.limite = data.limite;
+                if (data.jokersRestants !== undefined) this.rush.jokersRestants = data.jokersRestants;
                 this.rush.limiteA = this.rush.limite ? Date.now() + this.rush.limite * 1000 : 0;
                 if (data.reussi === true) {
                     this.flashRush('juste');
@@ -9430,6 +9476,12 @@ createApp({
                     // Casser une série de plusieurs, ce n'est pas passer un
                     // portrait qu'on ne connaissait pas : le son le dit.
                     this.playSound(avantSerie > 1 ? this.sounds.rushCasse : this.sounds.rushPasse);
+                } else if (data.joker) {
+                    // ⚠️ Le portrait glisse comme pour un passage, mais SANS la
+                    // secousse du raté : c'est tout l'intérêt du joker, et si
+                    // l'écran jouait la même chose on croirait avoir cassé sa
+                    // série. Seule l'ampoule qui éclate dit ce qui s'est passé.
+                    this.playSound(this.sounds.rushPasse);
                 }
                 if (!data.portrait) this.rush.fini = true;
             });
@@ -9457,6 +9509,12 @@ createApp({
                     portrait: data.portrait, texte: '',
                     serie: data.serie, record: data.record,
                     multiplicateur: !!data.multiplicateur, mult: data.mult || 1,
+                    // ⚠️ Le compte vient du SERVEUR, jamais du défaut : un
+                    // rafraîchissement aurait sinon rendu les deux ampoules
+                    // déjà brûlées. Recharger la page aurait été la façon la
+                    // plus simple d'en avoir autant qu'on veut.
+                    jokers: !!data.jokers, jokersRestants: data.jokersRestants || 0,
+                    jokersTotal: data.jokersTotal || 0, jokerCasse: -1,
                     classement: data.classement || [], fini: false, flash: null,
                     limiteA: data.limiteA || 0,
                 });
