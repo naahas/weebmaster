@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les deux dossiers de portraits</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+   ⚠️ DEUX DOSSIERS, DEUX CADRAGES, ET C'EST LE CADRAGE QUI DÉCIDE.
+   `rushpic` sert Rush, Ascension et Codanime : le HAUT DU CORPS.
+   `collectpic` sert Collect : le personnage EN ENTIER.
+   Les deux sont en 225×350, donc aucun chiffre ne les sépare — c'est
+   pour ça que cette page existe, et pour ça qu'elle ne compte rien.
+
+   279 fichiers portent le même nom dans les deux dossiers, et seuls 86
+   sont le même fichier : les 193 autres sont les deux cadrages du même
+   personnage. La section 1 les met face à face, et c'est elle qui dit
+   à quoi ressemble l'écart.
+
+   ⚠️ LA VRAIE QUESTION N'EST PAS « est-ce le même format » — il ne l'est
+   pas — MAIS « un plan pied se recadre-t-il en plan taille ». Codanime
+   est un jeu de RECONNAISSANCE sur une grille de 5×5 : à 70 px de large,
+   un personnage en pied réduit son visage à une dizaine de pixels, et la
+   carte ne se joue plus. La section 3 montre donc chaque portrait de
+   Collect tel quel ET recadré sur son haut, à la taille d'une vraie
+   carte. Un portrait qui tient dans la seconde vignette est récupérable
+   sans rien reproduire ; les autres sont à refaire.
+
+   ⚠️ Le recadrage montré ici est un `object-position`, pas un fichier :
+   la page ne produit rien, elle sert à TRIER. Ce qui part en jeu doit
+   être une vraie image recoupée, sinon on sert 350 px de hauteur pour
+   n'en montrer que 150.
+
+   ⚠️ ELLE SERT LES IMAGES EN CLAIR, sous leur vrai nom de fichier, et
+   c'est pour ça que sa route est fermée en production : ce nom EST la
+   réponse du Rush et de Codanime.
+-->
+<style>
+:root { --or: #fbbf24; --vert: #34d399; --rouge: #ff5f5a; --bleu: #2f9bff; --violet: #a855f7; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 1.4rem 1.6rem 5rem;
+    background: #07070a; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 0.3rem; }
+.sous { font-size: 0.78rem; line-height: 1.65; opacity: 0.6; max-width: 58rem; margin: 0 0 1.2rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--or); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    padding: 0.7rem 0.9rem; margin: 0 -0.3rem 1.4rem;
+    background: rgba(10,10,14,0.95); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 0.7rem;
+}
+.cmd {
+    font: inherit; font-size: 0.72rem; font-weight: 600;
+    padding: 0.42rem 0.75rem; border-radius: 0.45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.cmd:hover { background: rgba(255,255,255,0.1); }
+.cmd.on { background: rgba(251,191,36,0.14); border-color: rgba(251,191,36,0.5); color: var(--or); }
+.barre label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.4; }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,0.12); margin: 0 0.35rem; }
+
+h2 {
+    font-size: 0.95rem; font-weight: 800; margin: 2.2rem 0 0.2rem;
+    display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+}
+h2 em { font-style: normal; font-size: 0.72rem; font-weight: 600; opacity: 0.45; }
+.note { font-size: 0.72rem; line-height: 1.6; opacity: 0.5; max-width: 54rem; margin: 0.3rem 0 1rem; }
+.note b { opacity: 1; color: #fff; }
+
+/* ─ les paires ─ */
+.paires { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1rem; }
+.paire {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.7rem;
+    background: rgba(255,255,255,0.02); padding: 0.6rem;
+}
+.paire.ecart { border-color: rgba(255,95,90,0.45); }
+.paire .nom { font-size: 0.74rem; font-weight: 700; margin-bottom: 0.45rem; }
+.paire .nom small { font-weight: 500; opacity: 0.45; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.duo figure { margin: 0; }
+.duo img {
+    display: block; width: 100%; aspect-ratio: 225 / 350;
+    object-fit: cover; border-radius: 0.4rem; background: #15151c;
+}
+.duo figcaption {
+    font-size: 0.6rem; margin-top: 0.3rem; display: flex;
+    justify-content: space-between; gap: 0.3rem;
+}
+.duo .d-rush figcaption { color: var(--bleu); }
+.duo .d-col figcaption { color: var(--violet); }
+.duo figcaption span { opacity: 0.6; font-weight: 600; }
+.duo figcaption b { font-weight: 700; }
+
+/* ─ les orphelins de Collect : l'entier, puis le recadrage ─ */
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.8rem; }
+.carte {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.6rem;
+    background: rgba(255,255,255,0.02); padding: 0.45rem;
+}
+.carte .n { font-size: 0.68rem; font-weight: 700; text-align: center; }
+.carte .s { font-size: 0.57rem; opacity: 0.4; text-align: center; margin-bottom: 0.4rem; }
+.carte.vedette { border-color: rgba(52,211,153,0.5); }
+.carte .duo2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; align-items: start; }
+.carte figure { margin: 0; }
+.carte figcaption { font-size: 0.55rem; opacity: 0.45; text-align: center; margin-top: 0.25rem; }
+/* L'entier, tel qu'il est dans Collect. */
+.carte .entier {
+    display: block; width: 100%; aspect-ratio: 225 / 350;
+    object-fit: contain; border-radius: 0.35rem; background: #15151c;
+}
+/* ⚠️ La vignette de DROITE est la vraie mesure : un carré, large comme
+   une carte de Codanime sur telephone (69 px), cadre sur le HAUT de
+   l'image. Si le visage n'y est pas lisible, le portrait est a refaire. */
+.carte .haut {
+    display: block; width: 100%; max-width: 69px; margin: 0 auto;
+    aspect-ratio: 1 / 1; object-fit: cover; object-position: center 12%;
+    border-radius: 0.35rem; background: #15151c;
+    outline: 1px solid rgba(255,255,255,0.14);
+}
+.carte .haut.zoom { object-position: center 4%; }
+
+.chiffres { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 0.6rem; }
+.chiffre {
+    border: 1px solid rgba(255,255,255,0.09); border-radius: 0.6rem;
+    padding: 0.5rem 0.8rem; background: rgba(255,255,255,0.02);
+}
+.chiffre b { display: block; font-size: 1.15rem; font-weight: 800; line-height: 1.2; }
+.chiffre span { font-size: 0.62rem; opacity: 0.5; }
+.chiffre.rouge b { color: var(--rouge); }
+.chiffre.vert b { color: var(--vert); }
+.vide { font-size: 0.75rem; opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<h1>Les deux dossiers de portraits</h1>
+<p class="sous">
+<b>rushpic</b> (Rush, Ascension, Codanime) cadre le <b>haut du corps</b> ; <b>collectpic</b>
+(Collect) prend le personnage <b>en entier</b>. Les deux sont en 225×350, donc aucun chiffre
+ne les sépare. <span class="av">La seule question qui compte</span> : un plan pied se
+recadre-t-il en plan taille, ou faut-il le refaire ? Ça se juge à l'œil, et à la taille
+d'une vraie carte.
+</p>
+
+<div class="barre">
+    <label>Trier</label>
+    <button class="cmd on" data-tri="nom">Alphabétique</button>
+    <button class="cmd" data-tri="ecart">Écart de poids d'abord</button>
+    <button class="cmd" data-tri="taille">Tailles différentes d'abord</button>
+    <span class="sep"></span>
+    <button class="cmd" id="limiter">Ne montrer que les 24 premières</button>
+    <span class="sep"></span>
+    <label>Recadrage</label>
+    <button class="cmd" id="haut">Viser plus haut</button>
+</div>
+
+<div class="chiffres" id="chiffres"></div>
+
+<h2>1 · Les paires <em id="n-paires"></em></h2>
+<p class="note">
+    À gauche <b style="color:#2f9bff">rushpic</b>, à droite <b style="color:#a855f7">collectpic</b>.
+    Un cadre rouge signale un écart de poids d'au moins 40 % — c'est là que les deux images ont
+    le plus de chances d'être vraiment différentes.
+</p>
+<div class="paires" id="paires"></div>
+
+<h2>2 · Celles où Collect a la meilleure version <em id="n-petites"></em></h2>
+<p class="note">
+    Ici <b>rushpic est plus petit et presque carré</b> — un vieux format. La version de Collect
+    est en 225×350 propre. Ce ne sont pas des doublons à arbitrer, ce sont des remplacements.
+</p>
+<div class="paires" id="petites"></div>
+
+<h2>3 · Recadrables, ou à refaire ? <em id="n-seuls"></em></h2>
+<p class="note">
+    Ces portraits n'ont <b>aucune version concurrente dans rushpic</b>. À gauche l'image de
+    Collect telle quelle, à droite <b>ce qu'en montrerait une carte de Codanime</b> : un carré
+    de 69 px cadré sur le haut, la taille réelle sur téléphone. Si le visage y est lisible, le
+    portrait est récupérable ; sinon il est à refaire. Les
+    <b style="color:#34d399">encadrés en vert</b> sont ceux de My Hero Academia.
+    <br>⚠️ Le recadrage est simulé par un <b>object-position</b> : la page trie, elle ne
+    produit rien. Ce qui partirait en jeu doit être une vraie image recoupée.
+</p>
+<div class="grille" id="seuls"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let D = null, tri = 'nom', limite = false, haut = false;
+
+// ⚠️ Un ecart de poids est le seul indice MESURABLE que deux images de
+// meme taille ne sont pas la meme. Il ne prouve rien — une compression
+// differente suffit a l'expliquer — mais il dit ou regarder en premier.
+const ecart = (p) => Math.abs(p.rk - p.ck) / Math.max(p.rk, p.ck);
+
+function paire(p) {
+    const gros = ecart(p) >= 0.4;
+    return `<div class="paire${gros ? ' ecart' : ''}">
+        <div class="nom">${p.f.replace('.webp', '')}
+            ${p.rw !== p.cw || p.rh !== p.ch ? '<small>— tailles differentes</small>' : ''}</div>
+        <div class="duo">
+            <figure class="d-rush"><img src="/rushpic/${p.f}" alt="" loading="lazy">
+                <figcaption><span>rush</span><b>${p.rw}×${p.rh} · ${p.rk} Ko</b></figcaption></figure>
+            <figure class="d-col"><img src="/collectpic/${p.f}" alt="" loading="lazy">
+                <figcaption><span>collect</span><b>${p.cw}×${p.ch} · ${p.ck} Ko</b></figcaption></figure>
+        </div></div>`;
+}
+
+function peindre() {
+    const petites = D.paires.filter(p => p.rw !== p.cw || p.rh !== p.ch);
+    const memes = D.paires.filter(p => p.rw === p.cw && p.rh === p.ch);
+
+    const trieur = {
+        nom: (a, b) => a.f.localeCompare(b.f),
+        ecart: (a, b) => ecart(b) - ecart(a),
+        taille: (a, b) => (b.rw !== b.cw) - (a.rw !== a.cw) || a.f.localeCompare(b.f),
+    }[tri];
+
+    const liste = [...memes].sort(trieur);
+    const montres = limite ? liste.slice(0, 24) : liste;
+    $('#paires').innerHTML = montres.map(paire).join('');
+    $('#n-paires').textContent = montres.length + ' sur ' + liste.length
+        + ' · même taille des deux côtés, fichiers différents';
+
+    $('#petites').innerHTML = petites.sort(trieur).map(paire).join('')
+        || '<p class="vide">aucune</p>';
+    $('#n-petites').textContent = petites.length;
+
+    const mha = (c) => /hero/i.test(c.anime);
+    const seuls = [...D.seulsCollect].sort((a, b) => (mha(b) - mha(a)) || a.anime.localeCompare(b.anime));
+    $('#seuls').innerHTML = seuls.map(c => `<div class="carte${mha(c) ? ' vedette' : ''}">
+        <div class="n">${c.nom}</div><div class="s">${c.anime}</div>
+        <div class="duo2">
+            <figure><img class="entier" src="/collectpic/${c.img}" alt="" loading="lazy">
+                <figcaption>Collect, entier</figcaption></figure>
+            <figure><img class="haut${haut ? ' zoom' : ''}" src="/collectpic/${c.img}" alt="" loading="lazy">
+                <figcaption>recadré, 69 px</figcaption></figure>
+        </div></div>`).join('');
+    $('#n-seuls').textContent = seuls.length + ' portraits, dont '
+        + seuls.filter(mha).length + ' pour My Hero Academia';
+
+    const gros = memes.filter(p => ecart(p) >= 0.4).length;
+    $('#chiffres').innerHTML = [
+        ['', D.identiques, 'fichiers identiques au bit près'],
+        ['rouge', D.paires.length, 'mêmes noms, fichiers différents'],
+        ['rouge', gros, 'dont un écart de poids ≥ 40 %'],
+        ['', petites.length, 'où rushpic a l\'ancien petit format'],
+        ['vert', D.seulsCollect.length, 'versables sans arbitrage'],
+    ].map(([c, n, t]) => `<div class="chiffre ${c}"><b>${n}</b><span>${t}</span></div>`).join('');
+}
+
+document.querySelectorAll('[data-tri]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-tri]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on'); tri = b.dataset.tri; peindre();
+}));
+$('#limiter').addEventListener('click', (e) => {
+    limite = !limite; e.target.classList.toggle('on', limite);
+    e.target.textContent = limite ? 'Tout montrer' : 'Ne montrer que les 24 premières';
+    peindre();
+});
+$('#haut').addEventListener('click', (e) => {
+    haut = !haut; e.target.classList.toggle('on', haut);
+    peindre();
+});
+
+fetch('/prototypes/portraits-compare/data')
+    .then(r => r.json())
+    .then(d => { D = d; peindre(); })
+    .catch(() => { $('#paires').innerHTML = '<p class="vide">Les données ne répondent pas.</p>'; });
+</script>
+</body></html>

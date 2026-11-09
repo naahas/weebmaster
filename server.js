@@ -2378,6 +2378,63 @@ app.get('/prototypes/codanime-series/data', (req, res) => {
     });
 });
 
+// ⚠️ LES DEUX DOSSIERS DE PORTRAITS, MIS FACE A FACE. `rushpic` sert Rush,
+// Ascension et Codanime ; `collectpic` sert Collect. 279 fichiers y portent
+// le MEME NOM, et seuls 86 sont le meme fichier — les 193 autres sont deux
+// images differentes du meme personnage. La question « est-ce le meme
+// format ? » ne se tranche pas au chiffre, elle se regarde : cette route
+// donne la matiere, la page les affiche cote a cote.
+app.get('/prototypes/portraits-compare/data', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    const fs = require('fs');
+    const crypto = require('crypto');
+    const dim = (p) => {
+        const b = fs.readFileSync(p);
+        const t = b.toString('ascii', 12, 16);
+        if (t === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+        if (t === 'VP8L') { const n = b.readUInt32LE(21); return [1 + (n & 0x3FFF), 1 + ((n >> 14) & 0x3FFF)]; }
+        if (t === 'VP8 ') return [b.readUInt16LE(26) & 0x3FFF, b.readUInt16LE(28) & 0x3FFF];
+        return [0, 0];
+    };
+    const sha = (p) => crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex');
+    const lis = (d) => fs.readdirSync('src/img/' + d).filter(f => f.endsWith('.webp'));
+    const rush = lis('rushpic');
+    const col = new Set(lis('collectpic'));
+    const fiche = (f) => {
+        const pr = 'src/img/rushpic/' + f, pc = 'src/img/collectpic/' + f;
+        const [rw, rh] = dim(pr), [cw, ch] = dim(pc);
+        return { f, rw, rh, cw, ch,
+                 rk: Math.round(fs.statSync(pr).size / 1024),
+                 ck: Math.round(fs.statSync(pc).size / 1024) };
+    };
+    const paires = rush.filter(f => col.has(f) && sha('src/img/rushpic/' + f) !== sha('src/img/collectpic/' + f))
+                       .map(fiche);
+
+    // Ce que Collect pourrait verser a Codanime : present chez lui, nulle
+    // part dans `rushpic`. Aucune version concurrente, donc aucun arbitrage.
+    delete require.cache[require.resolve('./codanimedata.json')];
+    delete require.cache[require.resolve('./collectdata.json')];
+    const cod = require('./codanimedata.json').personnages || [];
+    const cartes = require('./collectdata.json').cartes || [];
+    const nz = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const dejaNom = new Set(cod.map(p => nz(p.nom)));
+    const seulsCollect = cartes
+        .filter(c => !rush.includes(c.img) && !dejaNom.has(nz(c.nom)))
+        .map(c => ({ nom: c.nom, anime: c.anime, img: c.img,
+                     ...(() => { const [w, h] = dim('src/img/collectpic/' + c.img);
+                                 return { cw: w, ch: h }; })() }));
+
+    res.json({
+        identiques: rush.filter(f => col.has(f) && sha('src/img/rushpic/' + f) === sha('src/img/collectpic/' + f)).length,
+        paires, seulsCollect,
+    });
+});
+
+app.get('/prototypes/portraits-compare', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).send('Introuvable');
+    res.sendFile(__dirname + '/src/html/prototypes-portraits-compare.html');
+});
+
 // Les visages de ceux qui votent : six façons de les rendre visibles, avec
 // deux curseurs qui décident de tout — la TAILLE du visage et l'ÉCART entre
 // deux. La page affiche ce qu'ils donnent à 69 px, le côté d'une carte sur
