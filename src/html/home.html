@@ -90,6 +90,39 @@
                  ============================================ -->
             <div class="v2-home" v-if="!booting && !hasJoined && !(isHost && isGameActive) && !gameInProgress && !gameEnded">
 
+                <!-- ✨ L'ANNONCE D'UN MODE A VENIR.
+                     Elle se nourrit du drapeau « soon » des modes : en ajouter un
+                     suffit a changer l annonce, il n y a pas de second endroit a
+                     tenir. Aucun mode a venir, aucune banniere.
+
+                     ⚠️ Sur le HUB seulement. Sur l ecran des modes elle doublerait
+                     le badge « bientot » de la carte, et sur celui du code elle
+                     distrairait de la seule chose a y faire.
+
+                     ⚠️ DEUX LIBELLES, un par largeur. La phrase longue passait a la
+                     ligne sur telephone et la banniere prenait trois etages, juste
+                     au-dessus du titre. -->
+                <button class="v2-annonce" type="button"
+                        v-if="homeScreen === 'hub' && modeAVenir"
+                        @click="allerAuModeAVenir">
+                    <span class="v2-annonce-point" aria-hidden="true"></span>
+                    <span class="v2-annonce-sur">Nouveau mode</span>
+                    <!-- ⚠️ LE NOM DU MODE NE PARAIT PAS ICI, et c'est voulu : sa
+                         carte cache deja son portrait derriere une silhouette noire
+                         pour qu'on ne sache meme pas qui c'est. L'annoncer en toutes
+                         lettres sur l'accueil defairait ce travail. La banniere dit
+                         qu'il se prepare quelque chose, rien de plus. -->
+                    <span class="v2-annonce-txt">
+                        <span class="v2-annonce-long">arrive bientôt</span>
+                        <span class="v2-annonce-court">bientôt</span>
+                    </span>
+                    <svg class="v2-annonce-fleche" viewBox="0 0 24 24" aria-hidden="true"
+                         fill="none" stroke="currentColor" stroke-width="2.4"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 6l6 6-6 6"/>
+                    </svg>
+                </button>
+
                 <header class="v2-topbar">
                     <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du
                          coin ferait doublon. Il reprend sa place des qu'on entre dans
@@ -465,7 +498,11 @@
                                 En attente du lancement par l'hôte…
                             </p>
                             <p class="v2-room-guest-count">
-                                <b>{{ playerCount }}</b> joueur<span v-if="playerCount > 1">s</span> dans le salon
+                                <b>{{ playerCount }}</b> joueur<span v-if="playerCount > 1">s</span> dans le salon<!--
+                                ⚠️ L'invité aussi : c'est lui qui attend sans savoir
+                                pourquoi rien ne démarre. Le bouton gris de l'hôte, il
+                                ne le voit même pas.
+                           --><span class="v2-room-min" v-if="joueursManquants"> · {{ minPourDemarrer }} minimum</span>
                             </p>
                         </div>
 
@@ -478,7 +515,12 @@
                                          les deux ont un plafond dur, et un salon qui
                                          refuse une entrée sans l'avoir annoncée est un
                                          salon qui a l'air cassé. -->
-                                    joueur<span v-if="playerCount > 1">s</span> dans le salon<span v-if="maxPlayers && (lobbyMode === 'bombanime' || lobbyMode === 'codanime')"> · {{ maxPlayers }} max</span>
+                                    joueur<span v-if="playerCount > 1">s</span> dans le salon<!--
+                                    ⚠️ LE MINIMUM AVANT LE MAXIMUM : c'est celui des
+                                    deux sur lequel il faut agir. Et il ne paraît que
+                                    tant qu'il manque du monde — atteint, il n'apprend
+                                    plus rien et encombrerait la ligne pour toujours.
+                               --><span class="v2-room-min" v-if="joueursManquants"> · {{ minPourDemarrer }} minimum</span><span v-if="maxPlayers && (lobbyMode === 'bombanime' || lobbyMode === 'codanime')"> · {{ maxPlayers }} max</span>
                                 </span>
                                 <span class="v2-camps-compte" v-if="lobbyMode === 'rivalry'">
                                     <span v-for="c in campsDuSalon" :key="c.team" :class="'team-' + c.team" :title="c.nom">

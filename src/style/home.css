@@ -6853,6 +6853,117 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* « flex-end » plutot que « space-between », et c'est le logo qui pousse le
    reste a droite. Sans lui — sur l'accueil — le pseudo reste donc a sa place,
    la ou « space-between » l'aurait ramene a gauche. */
+/* ══════════ ✨ L'annonce d'un mode à venir ══════════
+   Une pastille fine, centrée tout en haut de l'accueil. Elle mène à la carte
+   du mode, qui porte déjà sa description et son badge « bientôt ».
+
+   ⚠️ Posée AVANT la barre du haut, pas dedans. Dans la barre, elle aurait
+   pris la place laissée libre par le logotype — qui se cache sur le hub — et
+   serait retombée sur la pastille d'avatar dès qu'on rétrécit. Au-dessus,
+   elle a toute la largeur et ne dispute rien à personne.
+
+   ⚠️ Et elle ne se ferme pas. Une annonce qu'on peut écarter n'annonce plus
+   rien au visiteur qui revient le lendemain — or c'est exactement lui qu'on
+   veut prévenir. */
+.v2-annonce {
+    flex: 0 0 auto;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 1.1rem;
+    padding: 0.42rem 0.85rem 0.42rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.74rem;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.72);
+    background: linear-gradient(100deg,
+        rgba(255, 215, 0, 0.1) 0%,
+        rgba(255, 215, 0, 0.045) 45%,
+        rgba(255, 255, 255, 0.03) 100%);
+    border: 1px solid rgba(255, 215, 0, 0.26);
+    border-radius: 99px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 1.6rem rgba(255, 215, 0, 0.08);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease,
+                color 0.25s ease, transform 0.25s ease;
+}
+
+@media (hover: hover) {
+    .v2-annonce:hover {
+        color: #fff;
+        border-color: rgba(255, 215, 0, 0.55);
+        box-shadow: 0 0 2.2rem rgba(255, 215, 0, 0.18);
+        transform: translateY(-0.08rem);
+    }
+    .v2-annonce:hover .v2-annonce-fleche { transform: translateX(0.18rem); }
+}
+
+/* La pastille qui bat : le seul mouvement de ce coin de l'écran, et il dit
+   « il se passe quelque chose » sans un mot de plus. */
+.v2-annonce-point {
+    flex: 0 0 auto;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--neon-primary);
+    box-shadow: 0 0 0.5rem rgba(255, 215, 0, 0.9);
+    animation: annoncePoint 2.1s ease-in-out infinite;
+}
+
+@keyframes annoncePoint {
+    0%, 100% { opacity: 1;    transform: scale(1); }
+    50%      { opacity: 0.45; transform: scale(0.78); }
+}
+
+.v2-annonce-sur {
+    flex: 0 0 auto;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--neon-primary);
+}
+
+/* Le filet qui sépare le chapeau du texte : il tient lieu de ponctuation,
+   là où un tiret aurait pesé plus que les mots autour. */
+.v2-annonce-sur::after {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 0.72rem;
+    margin-left: 0.55rem;
+    vertical-align: -0.14rem;
+    background: rgba(255, 215, 0, 0.3);
+}
+
+.v2-annonce-txt { font-weight: 500; color: rgba(255, 255, 255, 0.86); }
+.v2-annonce-court { display: none; }
+
+.v2-annonce-fleche {
+    flex: 0 0 auto;
+    width: 0.78rem;
+    height: 0.78rem;
+    opacity: 0.55;
+    transition: transform 0.25s ease;
+}
+
+@media (max-width: 768px) {
+    /* ⚠️ La phrase courte prend le relais : « arrive bientôt » passait à la
+       ligne et la bannière faisait trois étages juste au-dessus du titre. */
+    .v2-annonce { font-size: 0.68rem; padding: 0.38rem 0.7rem 0.38rem 0.62rem; gap: 0.45rem; margin-bottom: 0.9rem; }
+    .v2-annonce-long { display: none; }
+    .v2-annonce-court { display: inline; }
+    .v2-annonce-sur { font-size: 0.55rem; }
+    .v2-annonce-sur::after { margin-left: 0.45rem; height: 0.64rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .v2-annonce-point { animation: none; }
+    .v2-annonce, .v2-annonce-fleche { transition: none; }
+}
+
 .v2-topbar {
     display: flex;
     align-items: center;
@@ -8518,6 +8629,17 @@ input, textarea,
     font-weight: 600;
     letter-spacing: 0.06em;
     color: var(--text-secondary);
+}
+
+/* Le plancher du mode, tant qu'il n'est pas atteint. En doré, parce que c'est
+   la seule chose de cette ligne sur laquelle on peut agir — le reste constate.
+   ⚠️ Il vit DANS le libellé, et pas sur sa propre ligne : un salon à moitié
+   plein n'a pas d'alerte à donner, seulement un chiffre à rappeler. Une
+   bannière rouge au-dessus de la liste aurait dit « ça ne va pas » alors que
+   tout va bien, il manque juste du monde. */
+.v2-room-min {
+    color: var(--neon-primary);
+    opacity: 0.85;
 }
 
 .v2-room-players-grid {

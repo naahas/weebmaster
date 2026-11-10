@@ -1148,6 +1148,16 @@ createApp({
             return this.modes.filter(m => !m.soon).length;
         },
 
+        // Le mode à venir qu'annonce la bannière de l'accueil : le PREMIER
+        // marqué « soon ». Aucun, et la bannière n'existe pas — il n'y a rien
+        // à défaire le jour où le mode s'ouvre, il suffit de retirer son
+        // drapeau et l'annonce disparaît avec le badge de sa carte.
+        // ⚠️ S'il y en avait deux un jour, c'est le premier de la liste qui
+        // passe : une bannière qui annonce deux choses n'en annonce aucune.
+        modeAVenir() {
+            return this.modes.find(m => m.soon) || null;
+        },
+
         // Les deux compteurs de l'accueil s'arrondissent VERS LE BAS, avec un
         // « + » : la banque à la centaine (2411 → +2400), les parties à la
         // dizaine (33 → +30). Le compte exact vieillit mal — il change à
@@ -5451,6 +5461,16 @@ createApp({
         goToModes() {
             this.createError = '';
             this.homeScreen = 'modes';
+        },
+
+        // La bannière mène à la carte du mode, déjà sélectionnée : on y lit sa
+        // description et son badge « bientôt ». Elle n'ouvre rien de plus —
+        // le bouton de la carte reste verrouillé, c'est le drapeau qui décide.
+        allerAuModeAVenir() {
+            const m = this.modeAVenir;
+            if (!m) return;
+            this.lockMode(m.id);
+            this.goToModes();
         },
 
         // Code refusé : une secousse rouge vaut mieux qu'un message
