@@ -2561,6 +2561,10 @@ app.get('/prototypes/rush-ajouts', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-rush-ajouts.html');
 });
 
+app.get('/prototypes/badge-compte', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-badge-compte.html');
+});
+
 app.get('/prototypes/annonce', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-annonce.html');
 });

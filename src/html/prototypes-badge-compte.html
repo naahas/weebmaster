@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le badge d'un compte</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   ⚠️ COMMENT MARQUER UN JOUEUR INSCRIT, SOBREMENT.
+   Le pseudo reste libre : n'importe qui peut taper « Naahas ». C'est donc le
+   badge qui distingue — on peut usurper le nom, pas le statut. Et il doit
+   rester discret : ce n'est pas une décoration, c'est une mention.
+
+   ⚠️ QUATRE COLLISIONS INTERDISENT LA MOITIÉ DES IDÉES ÉVIDENTES, et aucune
+   ne se devine — elles ont été relevées dans le vrai CSS :
+
+   1. LA COULEUR EST PRISE. Cinq camps (`team-1` à `team-5`) portent bleu,
+      DORÉ, rose, vert et violet. Et sur l'hexagone de BombAnime le pseudo
+      vire déjà au doré quand c'est le tour du joueur (`.active`) ou quand
+      c'est soi (`.is-me`). Un badge coloré dirait donc autre chose selon le
+      mode et selon le tour.
+
+   2. LE ROUGE EST PRIS : c'est l'armement de l'exclusion (`.arme`).
+
+   3. `::after` DU PSEUDO EST PRIS. `.v2-room-player-name::after` est la mèche
+      de l'exclusion, calée sur la largeur exacte du pseudo. Il reste le
+      `::before`, qui est libre.
+
+   4. LA PASTILLE D'AVATAR EST PRISE : la pastille de camp y est posée.
+
+   Reste donc : le `::before` du nom, la TYPOGRAPHIE, et le cadre de la carte.
+
+   ⚠️ ET C'EST L'HEXAGONE À 44 px QUI TRANCHE, pas la liste du salon. À huit
+   joueurs sur téléphone, un badge qui ne survit pas là n'existe pas la moitié
+   du temps. Les trois tailles sont donc montrées ensemble, et il faut juger
+   la plus petite en premier.
+-->
+<style>
+:root { --or: #ffd700; --camp2: #f0c040; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 0 0 5rem;
+    background: #07070a; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
+.sous { font-size: .78rem; line-height: 1.65; opacity: .6; max-width: 60rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--or); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem; margin-bottom: 1.2rem;
+    background: rgba(8,8,11,.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; }
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--or); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+
+.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.3rem 1.4rem .4rem; }
+.piste h2 { font-size: .95rem; font-weight: 800; margin: 0 0 .15rem; display: flex; align-items: baseline; gap: .5rem; }
+.piste h2 em { font-style: normal; font-size: .72rem; opacity: .35; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: .72rem; line-height: 1.6; opacity: .5; max-width: 54rem; margin: 0 0 1rem; }
+.piste.reco h2 { color: var(--or); }
+
+.rangee { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2.4rem 2.8rem; }
+.cas { display: flex; flex-direction: column; gap: .5rem; }
+.cas > span.lib { font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; opacity: .32; }
+/* ⚠️ Le pseudo de l'hexagone est en « position: absolute ; bottom: 100% » :
+   il SORT de la boîte du slot et venait écraser l'étiquette du cas voisin —
+   justement sur le cas à 44 px, celui qui décide. On lui réserve sa hauteur
+   au-dessus plutôt que de le remettre dans le flux, ce qui changerait le
+   centrage de l'hexagone et donc ce qu'on est en train de juger. */
+/* L'étiquette passe SOUS l'hexagone (`column-reverse`) : au-dessus, elle
+   occupait la bande où le pseudo vient se poser, et les cas se chevauchaient
+   d'autant plus qu'ils sont serrés — à 44 px le nom est plus large que
+   l'hexagone lui-même. Le `min-width` empêche deux cas voisins de se toucher
+   quand leur étiquette est courte. */
+.cas.hex { flex-direction: column-reverse; padding-top: 1.9rem; min-width: 9rem; }
+.cas.hex .hex-bloc { align-items: center; }
+
+/* ══════════ La carte joueur du salon, reprise au trait près ══════════ */
+.v2-room-player {
+    position: relative;
+    display: flex; align-items: center; gap: .55rem;
+    padding: .72rem 1.25rem;
+    font-size: 1.15rem; font-weight: 600; color: #fff;
+    background: rgba(255,255,255,.04);
+    border: .06rem solid rgba(255,255,255,.08);
+    border-radius: 2rem;
+    font-family: inherit;
+}
+.v2-room-player-name { position: relative; }
+/* ⚠️ La mèche de l'exclusion : c'est elle qui occupe le `::after` du pseudo. */
+.v2-room-player.arme .v2-room-player-name::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -.28rem;
+    height: 2px; border-radius: 2px; background: #ff5f5a;
+}
+
+/* ══════════ L'hexagone de BombAnime ══════════ */
+.hex-bloc { position: relative; display: flex; flex-direction: column; align-items: center; }
+.player-hex { position: relative; overflow: visible; }
+.player-hex i {
+    display: block; width: 100%; height: 100%;
+    background: linear-gradient(140deg,#2a2a33,#15151c);
+    clip-path: polygon(50% 2%, 95% 26%, 95% 74%, 50% 98%, 5% 74%, 5% 26%);
+    box-shadow: inset 0 0 0 2px rgba(240,192,64,.35);
+}
+.player-name {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    margin-bottom: .7rem;
+    font-size: 1rem; color: rgba(255,255,255,.56); font-weight: 500;
+    white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+}
+/* ⚠️ Le pseudo vire au doré quand c'est le tour du joueur : la couleur est
+   donc déjà porteuse de sens ici. */
+.slot.active .player-name { color: var(--camp2); }
+
+/* Les trois tailles. 44 px est celle d'un téléphone à huit joueurs. */
+.hex-44 .player-hex { width: 44px; height: 44px; }
+.hex-44 .player-name { font-size: .62rem; margin-bottom: .4rem; }
+.hex-70 .player-hex { width: 70px; height: 70px; }
+.hex-110 .player-hex { width: 110px; height: 110px; }
+.hex-110 .player-name { font-size: 1.15rem; }
+
+/* ══════════════════════════════════════════════════════════════
+   LES PISTES — toutes sur `::before` du nom, la typo, ou le cadre
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─ 1 · LE POINT ─ un rond plein avant le pseudo, couleur du texte ─ */
+.b1 .v2-room-player-name::before,
+.b1 .player-name::before {
+    content: ''; display: inline-block; vertical-align: middle;
+    width: .34em; height: .34em; margin-right: .42em;
+    border-radius: 50%; background: currentColor; opacity: .75;
+}
+
+/* ─ 2 · LE LOSANGE ─ le même point, tourné : plus « jeu », moins « statut » ─ */
+.b2 .v2-room-player-name::before,
+.b2 .player-name::before {
+    content: ''; display: inline-block; vertical-align: middle;
+    width: .32em; height: .32em; margin-right: .45em;
+    background: currentColor; opacity: .8; transform: rotate(45deg);
+}
+
+/* ─ 3 · LE FILET AU-DESSUS ─ un trait court posé SUR le pseudo ─
+   ⚠️ Au-dessus et non en dessous : en dessous il se confondrait avec la
+   mèche de l'exclusion, qui a exactement la même largeur. */
+.b3 .v2-room-player-name::before,
+.b3 .player-name::before {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    top: -.3em; width: 1.1em; height: 1.5px; border-radius: 2px;
+    background: currentColor; opacity: .55;
+}
+.b3 .player-name { position: relative; }
+
+/* ─ 4 · LES PETITES CAPITALES ─ aucun signe ajouté, que de la typographie ─ */
+.b4 .v2-room-player-name,
+.b4 .player-name {
+    font-variant-caps: all-small-caps;
+    letter-spacing: .06em;
+    font-weight: 700;
+}
+
+/* ─ 5 · LE CADRE ─ la carte s'éclaircit d'un cran, rien sur le pseudo ─
+   ⚠️ N'existe PAS sur l'hexagone : il n'y a pas de cadre à éclaircir. */
+.b5 .v2-room-player {
+    background: rgba(255,255,255,.085);
+    border-color: rgba(255,255,255,.2);
+}
+
+/* ─ 6 · RIEN EN JEU ─ le badge ne vit que dans la liste du salon ─
+   L'hypothèse honnête : à 44 px, peut-être que rien ne doit être là. */
+.b6 .v2-room-player-name::before {
+    content: ''; display: inline-block; vertical-align: middle;
+    width: .34em; height: .34em; margin-right: .42em;
+    border-radius: 50%; background: currentColor; opacity: .75;
+}
+</style>
+</head>
+<body>
+
+<h1>Le badge d'un compte</h1>
+<p class="sous">
+Le pseudo reste libre : n'importe qui peut taper « Naahas ». C'est le badge qui distingue —
+<b>on usurpe le nom, pas le statut</b>. <span class="av">Et c'est l'hexagone à 44 px qui
+tranche</span>, pas la liste du salon : à huit joueurs sur téléphone, un badge qui n'y
+survit pas n'existe pas la moitié du temps. Juge la plus petite d'abord.
+</p>
+
+<div class="barre">
+    <label>Comparer</label>
+    <button class="cmd on" data-cmp="duo">Inscrit vs invité</button>
+    <button class="cmd" data-cmp="seul">Inscrit seul</button>
+    <span class="sep"></span>
+    <label>Contexte</label>
+    <button class="cmd on" data-ctx="tout">Tout</button>
+    <button class="cmd" data-ctx="hex">Hexagone seul</button>
+    <span class="sep"></span>
+    <button class="cmd" id="actif">Montrer « c'est son tour »</button>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+const PISTES = [
+    { id: 1, nom: 'Le point', reco: true,
+      n: "Un rond plein avant le pseudo, de la couleur du texte — donc jamais en conflit avec les camps ni avec le doré du tour. Le plus petit signe qui se voie encore à 44 px." },
+    { id: 2, nom: 'Le losange',
+      n: "Le même point, tourné de 45°. Plus « jeu » et moins « statut » — à cette taille, le losange et le rond se distinguent à peine, c'est le même coût pour un ton différent." },
+    { id: 3, nom: 'Le filet au-dessus',
+      n: "Un trait court posé au-dessus du pseudo. ⚠️ Au-dessus et non en dessous : en dessous il se confondrait avec la mèche de l'exclusion, qui a exactement la même largeur." },
+    { id: 4, nom: 'Les petites capitales',
+      n: "Aucun signe ajouté : le pseudo change de graisse et passe en petites capitales. Le plus sobre de tous, et le seul qui ne coûte pas un pixel de largeur — mais il se confond avec un pseudo déjà écrit en majuscules." },
+    { id: 5, nom: 'Le cadre',
+      n: "La carte s'éclaircit d'un cran, rien ne touche au pseudo. ⚠️ N'existe pas sur l'hexagone : il n'y a pas de cadre à éclaircir, donc le badge disparaît en jeu." },
+    { id: 6, nom: 'Rien en jeu',
+      n: "Le badge ne vit que dans la liste du salon. L'hypothèse honnête : à 44 px, peut-être que rien ne doit être là — c'est dans le salon qu'on lit les noms, pas en pleine manche." },
+];
+
+let cmp = 'duo', ctx = 'tout', actif = false;
+
+function carteSalon(b, inscrit, arme) {
+    return `<div class="${inscrit ? 'b' + b : ''}">
+        <div class="v2-room-player${arme ? ' arme' : ''}">
+            <span class="v2-room-player-name">Naahas</span>
+        </div></div>`;
+}
+function hexagone(b, inscrit, taille) {
+    return `<div class="hex-${taille} ${inscrit ? 'b' + b : ''}">
+        <div class="hex-bloc slot${actif ? ' active' : ''}">
+            <span class="player-hex"><i></i></span>
+            <span class="player-name">Naahas</span>
+        </div></div>`;
+}
+
+function peindre() {
+    document.getElementById('pistes').innerHTML = PISTES.map(p => {
+        const duo = cmp === 'duo';
+        const cases = [];
+        if (ctx === 'tout') {
+            cases.push(['Salon · inscrit', carteSalon(p.id, true, false)]);
+            if (duo) cases.push(['Salon · invité', carteSalon(p.id, false, false)]);
+            // ⚠️ Avec l'exclusion armée : c'est là qu'un badge posé sous le
+            // pseudo se confondrait avec la mèche rouge.
+            cases.push(['Exclusion armée', carteSalon(p.id, true, true)]);
+        }
+        cases.push(['Hexagone · 110', hexagone(p.id, true, 110)]);
+        cases.push(['Hexagone · 70', hexagone(p.id, true, 70)]);
+        cases.push(['⚠️ Hexagone · 44', hexagone(p.id, true, 44)]);
+        if (duo) cases.push(['44 · invité', hexagone(p.id, false, 44)]);
+        return `<section class="piste${p.reco ? ' reco' : ''}">
+            <h2><em>${p.id}</em>${p.nom}</h2>
+            <p class="n">${p.n}</p>
+            <div class="rangee">${cases.map(([l, h]) =>
+                `<div class="cas${h.includes('hex-bloc') ? ' hex' : ''}"><span class="lib">${l}</span>${h}</div>`).join('')}</div>
+        </section>`;
+    }).join('');
+}
+
+document.querySelectorAll('[data-cmp]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-cmp]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on'); cmp = b.dataset.cmp; peindre();
+}));
+document.querySelectorAll('[data-ctx]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-ctx]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on'); ctx = b.dataset.ctx; peindre();
+}));
+document.getElementById('actif').addEventListener('click', (e) => {
+    actif = !actif; e.target.classList.toggle('on', actif); peindre();
+});
+peindre();
+</script>
+</body></html>
