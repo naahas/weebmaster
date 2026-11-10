@@ -2487,6 +2487,10 @@ app.get('/prototypes/quiz-clic', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-quiz-clic.html');
 });
 
+app.get('/prototypes/annonce', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-annonce.html');
+});
+
 app.get('/prototypes/quiz-gicle', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-quiz-gicle.html');
 });

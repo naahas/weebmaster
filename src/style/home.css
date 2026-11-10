@@ -8638,6 +8638,9 @@ input, textarea,
    bannière rouge au-dessus de la liste aurait dit « ça ne va pas » alors que
    tout va bien, il manque juste du monde. */
 .v2-room-min {
+    /* Un cheveu d'air avant le point separateur : colle au compte, les deux
+       se lisaient comme une seule phrase. */
+    margin-left: 0.22rem;
     color: var(--neon-primary);
     opacity: 0.85;
 }

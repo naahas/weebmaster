@@ -1418,8 +1418,18 @@ createApp({
         // échappe par le bot, qui compte comme joueur : un humain plus le
         // partenaire font deux.
         minPourDemarrer() {
-            return (this.lobbyMode === 'classic' || this.lobbyMode === 'rivalry')
-                ? MIN_CLASSIQUE : 2;
+            // ⚠️ Chaque plancher a SA raison, d'où la table plutôt qu'un
+            // ternaire — et surtout, il doit s'accorder au `min` écrit sur la
+            // carte du mode, que le joueur a lu avant d'ouvrir le salon.
+            if (this.lobbyMode === 'classic' || this.lobbyMode === 'rivalry') return MIN_CLASSIQUE;
+            // ⚠️ CODANIME EN DEMANDE QUATRE, et ce n'est pas cosmétique : il
+            // faut un espion ET un agent de chaque côté, sinon personne ne peut
+            // voter et la manche ne peut pas se jouer. Sa carte annonce 4
+            // depuis toujours ; ce calcul, lui, rendait 2 — le salon se
+            // lançait donc à deux, injouable, et l'écran annonçait
+            // « 2 minimum » juste en dessous d'une carte qui disait 4.
+            if (this.lobbyMode === 'codanime') return 4;
+            return 2;
         },
 
         // Ce qu il manque pour démarrer, pour le dire à l hôte plutôt que de

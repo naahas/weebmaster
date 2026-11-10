@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'annonce du mode à venir</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   ⚠️ HUIT FAÇONS D'ANNONCER UN MODE À VENIR, posées sur le VRAI fond de
+   l'accueil — aurore dorée, grille en perspective, poussières. Jugées
+   ailleurs, elles seraient toutes jolies : c'est sur ce fond-là qu'une
+   lueur dorée disparaît et qu'un contour clair saute aux yeux.
+
+   ⚠️ CINQ CONTRAINTES décident de ce qui tient, et aucune ne se devine :
+
+   1. LE NOM DU MODE NE S'ÉCRIT PAS. Sa carte cache déjà son portrait
+      derrière une silhouette noire pour qu'on ne sache pas qui c'est.
+      Toutes les pistes disent « il arrive », aucune ne dit quoi.
+
+   2. ELLE VIT AU-DESSUS DE LA BARRE DU HAUT, pas dedans : la pastille
+      d'avatar occupe le coin droit, et la bannière lui retombait dessus
+      dès qu'on rétrécit. Elle a donc toute la largeur, et rien à sa
+      droite.
+
+   3. LE TITRE EST JUSTE EN DESSOUS. Une annonce trop haute ou trop
+      contrastée lui vole la vedette — or le logotype est la première
+      chose qu'un streamer doit voir. C'est la limite qui a écarté les
+      pistes pleine largeur.
+
+   4. ELLE NE SE FERME PAS. Une annonce qu'on écarte n'annonce plus rien
+      au visiteur qui revient le lendemain — or c'est lui qu'on veut
+      prévenir.
+
+   5. ⚠️ ELLE TOURNE EN PERMANENCE, sur la page la plus vue du site. Un
+      mouvement qui se remarque la première fois fatigue à la dixième :
+      le curseur de vitesse est là pour ça, et le bouton « une heure
+      plus tard » rejoue la piste comme on la verra en vrai.
+
+   Le choix s'écrit dans l'adresse (#p=3), pour se renvoyer une piste.
+-->
+<style>
+:root {
+    --or: #ffd700;
+    --k: 1;                /* ralenti d'observation */
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    background: #07070a;
+    color: #e8e8ee;
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* ══════════ Le fond de l'accueil, repris ══════════
+   ⚠️ Sans lui le banc ne sert à rien : l'aurore dorée monte exactement là
+   où la bannière se pose, et c'est elle qui mange les lueurs faibles. */
+.fond {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+        radial-gradient(120% 70% at 50% -10%, rgba(255, 196, 0, 0.16) 0%, rgba(255, 170, 0, 0.05) 38%, transparent 70%),
+        linear-gradient(180deg, #0b0a0e 0%, #0a0a12 45%, #0d0a18 100%);
+}
+.fond::after {
+    content: ''; position: absolute; inset: 42% -20% -20%;
+    background:
+        repeating-linear-gradient(to right, rgba(255,255,255,0.045) 0 1px, transparent 1px 7%),
+        repeating-linear-gradient(to bottom, rgba(255,255,255,0.045) 0 1px, transparent 1px 13%);
+    transform: perspective(44rem) rotateX(62deg);
+    transform-origin: top center;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+}
+
+/* ══════════ La barre de commandes ══════════ */
+.barre {
+    position: sticky; top: 0; z-index: 90;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem;
+    background: rgba(8,8,11,.94); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label {
+    font-size: .6rem; text-transform: uppercase; letter-spacing: .1em;
+    opacity: .4; margin-right: .15rem;
+}
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--or); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+
+/* ══════════ La scène : un bout d'accueil grandeur nature ══════════ */
+.plan { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0,1fr) 25rem; gap: 1.4rem; padding: 1.2rem 1.4rem 5rem; }
+@media (max-width: 1060px) { .plan { grid-template-columns: 1fr; } }
+
+.scene { padding: .6rem 0 2rem; }
+.ecran {
+    position: relative;
+    margin: 0 auto;
+    width: 100%; max-width: 62rem;
+    min-height: 23rem;
+    padding: 1.9rem clamp(1.5rem, 2.4vw, 2.6rem);
+    display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+.ecran.tel { max-width: 24.4rem; padding: 1.2rem 1rem; }
+
+/* La barre du haut de l'accueil, avec sa pastille d'avatar : c'est elle que
+   la bannière ne doit jamais toucher. */
+.topbar { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; }
+.pill {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .35rem .7rem .35rem .4rem;
+    font-size: .74rem; font-weight: 600;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 99px;
+}
+.pill i { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #2a2a33; display: block; }
+.pill s { width: .4rem; height: .4rem; border-radius: 50%; background: #34d399; display: block; }
+
+.titre { margin: 2.4rem auto 0; max-width: 32rem; }
+.titre img { display: block; width: 100%; height: auto; }
+.ecran.tel .titre { margin-top: 1.6rem; max-width: 18rem; }
+.stats {
+    display: flex; align-items: baseline; justify-content: center; gap: 1.6rem;
+    margin-top: 1.6rem; font-family: 'Bebas Neue', sans-serif;
+}
+.stats b { font-size: 1.5rem; color: var(--or); letter-spacing: .02em; }
+.stats span { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; opacity: .45; font-family: 'Poppins', sans-serif; font-weight: 600; }
+.stats div { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+
+/* L'emplacement de l'annonce : centré, au-dessus de la barre. */
+.creneau { flex: 0 0 auto; display: flex; justify-content: center; margin-bottom: 1.1rem; min-height: 2rem; }
+
+/* ══════════ LES HUIT PISTES ══════════ */
+
+/* ─ commun ─ */
+.a {
+    position: relative;
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .42rem .85rem .42rem .75rem;
+    font: inherit; font-size: .74rem; line-height: 1;
+    color: rgba(255,255,255,.78);
+    border-radius: 99px;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid rgba(255,215,0,.26);
+    background: rgba(255,215,0,.055);
+}
+.a b { color: #fff; font-weight: 700; }
+.a .sur {
+    font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--or); white-space: nowrap;
+}
+.a .fl { width: .78rem; height: .78rem; opacity: .55; flex: 0 0 auto; }
+.ecran.tel .a { font-size: .68rem; padding: .38rem .7rem .38rem .62rem; }
+.ecran.tel .a .sur { font-size: .55rem; }
+
+/* ─ 0 · AUJOURD'HUI — la pastille en place, pour comparer ─ */
+.a0 { backdrop-filter: blur(6px); box-shadow: 0 0 1.6rem rgba(255,215,0,.08); }
+.a0 .pt {
+    width: .42rem; height: .42rem; border-radius: 50%; background: var(--or);
+    box-shadow: 0 0 .5rem rgba(255,215,0,.9);
+    animation: ptBat calc(2.1s * var(--k)) ease-in-out infinite;
+}
+@keyframes ptBat { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.45; transform:scale(.78); } }
+
+/* ─ 1 · LE BALAYAGE — une lueur traverse la pastille, sans fin ─
+   Le geste des bannières d'offre : discret au repos, il attire l'oeil au
+   passage de la lumière et le rend aussitôt. */
+.a1 {
+    overflow: hidden;
+    border-color: rgba(255,215,0,.34);
+    background: linear-gradient(100deg, rgba(255,215,0,.11), rgba(255,215,0,.04));
+    box-shadow: 0 0 1.8rem rgba(255,215,0,.1);
+}
+.a1::before {
+    content: ''; position: absolute; inset: 0 auto 0 0; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255,235,150,.26) 45%, rgba(255,255,255,.4) 55%, transparent);
+    animation: balaye calc(4.6s * var(--k)) cubic-bezier(.5,0,.5,1) infinite;
+}
+@keyframes balaye {
+    0%, 62%  { transform: translateX(-130%); }
+    100%     { transform: translateX(330%); }
+}
+
+/* ─ 2 · LE COMPTE À REBOURS — un ruban qui se remplit sous le texte ─
+   Il ne dit pas « bientôt », il le MONTRE : la jauge avance, donc quelque
+   chose arrive. ⚠️ Elle ne promet aucune date — elle boucle. */
+.a2 {
+    flex-direction: column; align-items: stretch; gap: .32rem;
+    padding: .46rem .9rem .4rem;
+    border-color: rgba(255,215,0,.3);
+    background: rgba(255,215,0,.06);
+}
+.a2 .haut { display: flex; align-items: center; gap: .55rem; }
+.a2 .rail { height: 2px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
+.a2 .rail i {
+    display: block; height: 100%; width: 100%;
+    background: linear-gradient(90deg, rgba(255,215,0,.35), var(--or));
+    transform-origin: left center;
+    animation: remplit calc(5.2s * var(--k)) cubic-bezier(.4,0,.5,1) infinite;
+}
+@keyframes remplit {
+    0%   { transform: scaleX(0);   opacity: .5; }
+    70%  { transform: scaleX(1);   opacity: 1; }
+    100% { transform: scaleX(1);   opacity: 0; }
+}
+
+/* ─ 3 · LE CARTOUCHE — un bloc net, langage d'affiche ─
+   Pas une pastille : un rectangle à filet doré et chapeau plein, comme un
+   bandeau de sortie. Le plus « pub » des huit, et le plus assumé. */
+.a3 {
+    gap: 0; padding: 0;
+    border-radius: .4rem;
+    border-color: rgba(255,215,0,.45);
+    background: rgba(12,10,6,.72);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 2rem rgba(255,215,0,.12), inset 0 0 0 1px rgba(255,215,0,.07);
+    overflow: hidden;
+}
+.a3 .sur {
+    padding: .5rem .7rem; color: #0d0b05; background: var(--or);
+    font-size: .58rem; letter-spacing: .14em;
+}
+.a3 .txt { padding: .5rem .9rem; letter-spacing: .02em; }
+.a3 .fl { margin-right: .7rem; }
+/* La barre dorée respire, le cadre ne bouge pas : c'est ce qui le garde net. */
+.a3 .sur { animation: cartouche calc(3.4s * var(--k)) ease-in-out infinite; }
+@keyframes cartouche { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.22); } }
+
+/* ─ 4 · LES MOTS QUI TOURNENT — un seul emplacement, trois promesses ─
+   « arrive bientôt », « un nouveau mode », « reste à l'affût ». On lit la
+   bannière une fois, puis on la relit parce qu'elle a changé. */
+.a4 {
+    border-color: rgba(255,215,0,.3);
+    background: linear-gradient(100deg, rgba(255,215,0,.1), rgba(255,255,255,.03));
+    box-shadow: 0 0 1.6rem rgba(255,215,0,.09);
+}
+.a4 .roule { position: relative; height: 1rem; overflow: hidden; min-width: 9.2rem; }
+.ecran.tel .a4 .roule { min-width: 7.4rem; }
+.a4 .roule u {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    text-decoration: none; white-space: nowrap;
+    animation: roule calc(9s * var(--k)) ease-in-out infinite;
+}
+.a4 .roule u:nth-child(2) { animation-delay: calc(-6s * var(--k)); }
+.a4 .roule u:nth-child(3) { animation-delay: calc(-3s * var(--k)); }
+@keyframes roule {
+    0%, 2%   { opacity: 0; transform: translateY(70%); }
+    8%, 30%  { opacity: 1; transform: translateY(0); }
+    36%, 100%{ opacity: 0; transform: translateY(-70%); }
+}
+
+/* ─ 5 · L'AURA — pas de contour, une lueur qui enfle ─
+   La plus discrète : rien ne borde le texte, c'est le halo derrière lui qui
+   le désigne. Elle ne dispute rien au titre. */
+.a5 {
+    border-color: transparent;
+    background: none;
+    padding: .5rem 1.1rem;
+}
+.a5::before {
+    content: ''; position: absolute; inset: -40% -8%;
+    border-radius: 99px;
+    background: radial-gradient(60% 100% at 50% 50%, rgba(255,215,0,.26), transparent 72%);
+    animation: aura calc(3.8s * var(--k)) ease-in-out infinite;
+    z-index: -1;
+}
+@keyframes aura {
+    0%, 100% { opacity: .5; transform: scale(.92); }
+    50%      { opacity: 1;  transform: scale(1.06); }
+}
+.a5 .sur { color: var(--or); }
+.a5 .txt { color: rgba(255,255,255,.9); }
+
+/* ─ 6 · LE LISERÉ QUI COURT — un trait doré fait le tour du cadre ─
+   ⚠️ Un tracé SVG, pas une bordure : une bordure animée se redessine en
+   entier à chaque image et scintille. Le `stroke-dashoffset`, lui, glisse. */
+.a6 {
+    border-color: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.03);
+    backdrop-filter: blur(6px);
+}
+.a6 svg.cadre {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    overflow: visible; pointer-events: none;
+}
+.a6 svg.cadre rect {
+    fill: none; stroke: var(--or); stroke-width: 2;
+    stroke-dasharray: 22 178; stroke-dashoffset: 0;
+    filter: drop-shadow(0 0 3px rgba(255,215,0,.8));
+    animation: court calc(5.4s * var(--k)) linear infinite;
+}
+@keyframes court { to { stroke-dashoffset: -200; } }
+
+/* ─ 7 · LE VERROU — un cadenas qui tremble, puis s'ouvre ─
+   Le vocabulaire du mode verrouillé, repris en annonce : ce qui est fermé
+   va s'ouvrir. ⚠️ Le seul des huit qui raconte quelque chose. */
+.a7 {
+    border-color: rgba(255,215,0,.3);
+    background: rgba(255,215,0,.06);
+}
+.a7 .cad { width: .8rem; height: .8rem; flex: 0 0 auto; color: var(--or); }
+.a7 .cad svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.a7 .cad .anse {
+    fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round;
+    transform-origin: 12px 11px;
+    animation: anse calc(5s * var(--k)) ease-in-out infinite;
+}
+.a7 .cad .corps { fill: currentColor; }
+@keyframes anse {
+    0%, 70%  { transform: rotate(0deg) translateY(0); }
+    76%      { transform: rotate(-3deg) translateY(-.5px); }
+    82%      { transform: rotate(3deg) translateY(-.5px); }
+    88%      { transform: rotate(-16deg) translateY(-1.5px); }
+    96%,100% { transform: rotate(0deg) translateY(0); }
+}
+
+/* ─ 8 · LE DOUBLE TRAIT — deux filets qui encadrent, à l'ancienne ─
+   Ni pastille ni cadre : deux traits dorés au-dessus et en dessous, qui se
+   rétractent et reviennent. Le plus typographique, et il ne pèse rien. */
+.a8 {
+    border: none; background: none; border-radius: 0;
+    padding: .55rem .2rem;
+    gap: .6rem;
+}
+.a8::before, .a8::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,215,0,.75), transparent);
+    animation: filets calc(4.2s * var(--k)) ease-in-out infinite;
+}
+.a8::before { top: 0; }
+.a8::after  { bottom: 0; animation-delay: calc(.35s * var(--k)); }
+@keyframes filets {
+    0%, 100% { transform: scaleX(.55); opacity: .5; }
+    50%      { transform: scaleX(1);   opacity: 1; }
+}
+
+/* ══════════ Le rail ══════════ */
+.rail { border: 1px solid rgba(255,255,255,.09); border-radius: .8rem; background: rgba(255,255,255,.018); padding: .75rem; position: sticky; top: 4rem; }
+.piste { display: block; width: 100%; text-align: left; padding: .55rem .7rem; margin-bottom: .3rem; border: 1px solid transparent; border-radius: .55rem; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.piste:hover { background: rgba(255,255,255,.04); }
+.piste.on { background: rgba(255,215,0,.08); border-color: rgba(255,215,0,.45); }
+.piste .t { display: flex; align-items: baseline; gap: .45rem; font-size: .78rem; font-weight: 700; }
+.piste .t em { font-style: normal; opacity: .35; font-weight: 600; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { display: block; font-size: .66rem; line-height: 1.5; opacity: .5; margin-top: .12rem; }
+.piste.ref .t { color: #ff9b9b; }
+.piste.ref { border-style: dashed; border-color: rgba(255,255,255,.12); }
+.piste.reco .t { color: var(--or); }
+.aide { font-size: .62rem; opacity: .38; margin: .6rem 0 0; line-height: 1.5; }
+.lien { display: block; font-size: .6rem; opacity: .35; margin-top: .5rem; font-family: monospace; }
+
+h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .25rem; padding: 1.2rem 1.4rem 0; position: relative; z-index: 1; }
+.sous { font-size: .78rem; line-height: 1.65; opacity: .6; max-width: 56rem; margin: 0 0 .6rem; padding: 0 1.4rem; position: relative; z-index: 1; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--or); font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+    .a *, .a::before, .a::after { animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="fond"></div>
+
+<h1>L'annonce du mode à venir</h1>
+<p class="sous">
+Huit façons de dire qu'un mode se prépare, posées sur le <b>vrai fond de l'accueil</b> — c'est
+lui qui décide : une lueur dorée s'y noie, un contour clair y saute aux yeux.
+<span class="av">Aucune ne nomme le mode</span> : sa carte cache déjà son portrait derrière une
+silhouette noire. Et elle tourne en permanence sur la page la plus vue du site — d'où
+<b>« une heure plus tard »</b>, qui la rejoue comme on la verra à la dixième visite.
+</p>
+
+<div class="barre">
+    <label>Écran</label>
+    <button class="cmd on" data-tel="0">Ordinateur</button>
+    <button class="cmd" data-tel="1">Téléphone</button>
+    <span class="sep"></span>
+    <label>Vitesse</label>
+    <button class="cmd on" data-k="1">normal</button>
+    <button class="cmd" data-k="2.5">×2,5</button>
+    <button class="cmd" data-k="6">ralenti ×6</button>
+    <span class="sep"></span>
+    <button class="cmd" id="plus-tard">Une heure plus tard</button>
+    <button class="cmd" id="rejouer">Rejouer (R)</button>
+    <button class="cmd" id="tout">Enchaîner</button>
+</div>
+
+<div class="plan">
+    <div class="scene">
+        <div class="ecran" id="ecran">
+            <div class="creneau" id="creneau"></div>
+            <div class="topbar">
+                <span class="pill"><i></i><s></s>nahaass</span>
+            </div>
+            <div class="titre"><img src="/titre-sm.webp" alt="ShonenMaster"></div>
+            <div class="stats">
+                <div><b>6</b><span>modes</span></div>
+                <div><b>+2400</b><span>questions</span></div>
+                <div><b>+70</b><span>parties</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="rail" id="rail"></div>
+        <p class="aide">Chiffres <b>0</b> à <b>8</b> : une piste. <b>R</b> : rejouer.</p>
+        <span class="lien" id="lien"></span>
+    </div>
+</div>
+
+<script>
+/* La flèche et le cadenas, une fois pour toutes. */
+const FL = '<svg class="fl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"'
+         + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+const SUR = '<span class="sur">Nouveau mode</span>';
+
+const PISTES = [
+    {
+        id: 0, ref: true, nom: "Aujourd'hui",
+        note: "La pastille en place : un point qui bat, le chapeau, « arrive bientôt ». Juste, sobre — et elle ne se remarque pas une fois qu'on a vu la page deux fois.",
+        html: `<a class="a a0" href="#"><span class="pt"></span>${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 1, nom: 'Le balayage',
+        note: "Une lueur traverse la pastille toutes les quatre secondes et demie. C'est le geste des bannières d'offre : elle attire l'oeil au passage puis le rend aussitôt.",
+        html: `<a class="a a1" href="#">${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 2, nom: 'Le compte à rebours',
+        note: "Un ruban se remplit sous le texte. Elle ne dit pas « bientôt », elle le MONTRE — et sans promettre de date, puisqu'elle boucle.",
+        html: `<a class="a a2" href="#"><span class="haut">${SUR}<span class="txt">arrive bientôt</span>${FL}</span><span class="rail"><i></i></span></a>`,
+    },
+    {
+        id: 3, reco: true, nom: 'Le cartouche',
+        note: "Un bloc net à filet doré et chapeau plein, comme un bandeau de sortie. Le plus « pub » des huit — et le cadre ne bouge pas, c'est la barre dorée qui respire : net et vivant à la fois.",
+        html: `<a class="a a3" href="#">${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 4, nom: 'Les mots qui tournent',
+        note: "Un seul emplacement, trois promesses qui défilent. On lit la bannière une fois, puis on la relit parce qu'elle a changé — c'est ce qui la fait survivre à la dixième visite.",
+        html: `<a class="a a4" href="#">${SUR}<span class="roule">`
+            + `<u>arrive bientôt</u><u>quelque chose se prépare</u><u>reste à l'affût</u>`
+            + `</span>${FL}</a>`,
+    },
+    {
+        id: 5, nom: "L'aura",
+        note: "Aucun contour : c'est le halo derrière le texte qui le désigne, et il enfle lentement. La plus discrète des huit, et la seule qui ne dispute rien au titre juste en dessous.",
+        html: `<a class="a a5" href="#">${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 6, nom: 'Le liseré qui court',
+        note: "Un trait doré fait le tour du cadre, sans fin. Tracé SVG et non bordure : une bordure animée se redessine en entier à chaque image et scintille.",
+        html: `<a class="a a6" href="#">`
+            + `<svg class="cadre" viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true">`
+            + `<rect x="1" y="1" width="198" height="32" rx="16" pathLength="200"/></svg>`
+            + `${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 7, nom: 'Le verrou',
+        note: "Un cadenas tremble puis s'entrouvre, toutes les cinq secondes. Le vocabulaire du mode verrouillé repris en annonce — le seul des huit qui raconte quelque chose.",
+        html: `<a class="a a7" href="#"><span class="cad">`
+            + `<svg viewBox="0 0 24 24" aria-hidden="true">`
+            + `<path class="anse" d="M7.5 11V7.5a4.5 4.5 0 0 1 9 0V11"/>`
+            + `<rect class="corps" x="4" y="11" width="16" height="10" rx="2.2"/></svg>`
+            + `</span>${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+    {
+        id: 8, nom: 'Le double trait',
+        note: "Deux filets dorés au-dessus et en dessous, qui se rétractent et reviennent. Le plus typographique : il ne pèse rien et vieillit bien, mais il se voit le moins au premier coup d'oeil.",
+        html: `<a class="a a8" href="#">${SUR}<span class="txt">arrive bientôt</span>${FL}</a>`,
+    },
+];
+
+const $ = (s) => document.querySelector(s);
+let armee = 3;
+
+function poser(id) {
+    armee = id;
+    const p = PISTES.find(x => x.id === id);
+    $('#creneau').innerHTML = p.html;
+    $('#creneau').querySelectorAll('a').forEach(a => a.addEventListener('click', e => e.preventDefault()));
+    PISTES.forEach(x => x.bouton.classList.toggle('on', x.id === id));
+    const h = '#p=' + id;
+    history.replaceState(null, '', h);
+    $('#lien').textContent = h;
+}
+
+/* « Une heure plus tard » : on avance les animations d'une heure pour voir la
+   piste comme on la verra a la dixieme visite — en plein milieu de sa boucle,
+   et non au premier battement, qui flatte toujours. */
+$('#plus-tard').addEventListener('click', () => {
+    document.querySelectorAll('#creneau *').forEach(n => {
+        n.getAnimations().forEach(a => { a.currentTime = 3600000; });
+    });
+});
+$('#rejouer').addEventListener('click', () => poser(armee));
+document.addEventListener('keydown', (e) => {
+    if (/^[0-8]$/.test(e.key)) poser(Number(e.key));
+    if (e.key === 'r' || e.key === 'R') poser(armee);
+});
+
+const rail = $('#rail');
+PISTES.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'piste' + (p.ref ? ' ref' : '') + (p.reco ? ' reco' : '');
+    b.innerHTML = `<span class="t"><em>${p.id}</em>${p.nom}</span><span class="n">${p.note}</span>`;
+    b.addEventListener('click', () => poser(p.id));
+    rail.appendChild(b);
+    p.bouton = b;
+});
+
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-k]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.style.setProperty('--k', b.dataset.k);
+    poser(armee);
+}));
+document.querySelectorAll('[data-tel]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-tel]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on');
+    $('#ecran').classList.toggle('tel', b.dataset.tel === '1');
+}));
+
+let chaine = null;
+$('#tout').addEventListener('click', (e) => {
+    if (chaine) { clearInterval(chaine); chaine = null; e.target.classList.remove('on'); return; }
+    e.target.classList.add('on');
+    let i = 0;
+    const pas = () => { poser(PISTES[i % PISTES.length].id); i++; };
+    pas();
+    chaine = setInterval(pas, 3200);
+});
+
+/* Une piste recue dans l adresse l emporte sur le defaut. */
+(function depart() {
+    const n = Number(new URLSearchParams(location.hash.slice(1)).get('p'));
+    poser(PISTES.some(p => p.id === n) ? n : 3);
+})();
+</script>
+</body></html>

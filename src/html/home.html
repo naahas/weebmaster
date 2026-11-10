@@ -516,11 +516,16 @@
                                          refuse une entrée sans l'avoir annoncée est un
                                          salon qui a l'air cassé. -->
                                     joueur<span v-if="playerCount > 1">s</span> dans le salon<!--
-                                    ⚠️ LE MINIMUM AVANT LE MAXIMUM : c'est celui des
-                                    deux sur lequel il faut agir. Et il ne paraît que
-                                    tant qu'il manque du monde — atteint, il n'apprend
-                                    plus rien et encombrerait la ligne pour toujours.
-                               --><span class="v2-room-min" v-if="joueursManquants"> · {{ minPourDemarrer }} minimum</span><span v-if="maxPlayers && (lobbyMode === 'bombanime' || lobbyMode === 'codanime')"> · {{ maxPlayers }} max</span>
+                                    ⚠️ LE PLAFOND A ETE RETIRE de cette ligne. Deux
+                                    chiffres cote a cote — « 2 minimum · 8 max » — on
+                                    les lit comme une fourchette, alors qu'un seul des
+                                    deux demande quelque chose. Le refus d'une entree
+                                    de trop se dit au moment ou il arrive, pas en
+                                    permanence a qui remplit son salon.
+
+                                    Et il ne parait que tant qu'il manque du monde :
+                                    atteint, il n'apprend plus rien.
+                               --><span class="v2-room-min" v-if="joueursManquants"> · {{ minPourDemarrer }} minimum</span>
                                 </span>
                                 <span class="v2-camps-compte" v-if="lobbyMode === 'rivalry'">
                                     <span v-for="c in campsDuSalon" :key="c.team" :class="'team-' + c.team" :title="c.nom">
