@@ -2487,6 +2487,64 @@ app.get('/prototypes/quiz-clic', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-quiz-clic.html');
 });
 
+// ⚠️ CE QU'ON POURRAIT VERSER AU RUSH, dans le vrai cadre du mode.
+// Trois gisements, et ils ne coutent pas le meme travail :
+//   · « surPlace »  — le fichier est DEJA dans rushpic (ajoute pour Codanime,
+//                     jamais verse au Rush) : une ligne de donnees suffit ;
+//   · « aCopier »   — il est dans collectpic : une copie de fichier en plus ;
+//   · « orphelins » — le fichier existe dans collectpic et AUCUNE donnee ne le
+//                     cite : ni nom ni serie, tout est a saisir a la main.
+//
+// ⚠️ La route sert les images EN CLAIR, sous leur vrai nom de fichier — ce nom
+// EST la reponse du Rush. Elle est donc fermee en production.
+app.get('/prototypes/rush-ajouts/data', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    const fs = require('fs');
+    ['./rushdata.json', './codanimedata.json', './collectdata.json']
+        .forEach(f => delete require.cache[require.resolve(f)]);
+    const brut = require('./rushdata.json');
+    const rush = Array.isArray(brut) ? brut : (brut.personnages || []);
+    const cod = require('./codanimedata.json').personnages || [];
+    const col = require('./collectdata.json').cartes || [];
+    const lis = (d) => new Set(fs.readdirSync('src/img/' + d).filter(f => f.endsWith('.webp')));
+    const R = lis('rushpic'), C = lis('collectpic');
+    const nz = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Qui est deja jouable : par nom, par ALIAS declare, et par fichier.
+    const parNom = new Set();
+    const parFichier = new Set(rush.map(p => p.img));
+    rush.forEach(p => { parNom.add(nz(p.nom)); (p.alias || []).forEach(a => parNom.add(nz(a))); });
+
+    // ⚠️ Un meme personnage arrive des DEUX viviers (chad.webp est dans
+    // rushpic et dans collectpic) : on deduplique par fichier ET par nom,
+    // sans quoi la page l'afficherait deux fois et le compte mentirait.
+    const vus = new Set();
+    const cands = [];
+    const ajoute = (nom, anime, img, ou, dossier) => {
+        if (parNom.has(nz(nom)) || parFichier.has(img)) return;
+        if (vus.has('f:' + img) || vus.has('n:' + nz(nom))) return;
+        vus.add('f:' + img); vus.add('n:' + nz(nom));
+        cands.push({ nom, anime, img, ou, url: '/' + dossier + '/' + img });
+    };
+    cod.forEach(p => { if (R.has(p.img)) ajoute(p.nom, p.anime, p.img, 'surPlace', 'rushpic'); });
+    col.forEach(c => { if (C.has(c.img)) ajoute(c.nom, c.anime, c.img, 'aCopier', 'collectpic'); });
+
+    // Les orphelins : un fichier, rien d'autre. Le nom affiche est celui du
+    // fichier — c'est tout ce qu'on sait de lui.
+    const citesCol = new Set(col.map(c => c.img));
+    const orphelins = [...C]
+        .filter(f => !citesCol.has(f) && !R.has(f) && !parFichier.has(f))
+        .map(f => ({ nom: f.replace('.webp', ''), anime: '—', img: f,
+                     ou: 'orphelin', url: '/collectpic/' + f }));
+
+    res.json({ dansLeRush: rush.length, candidats: cands, orphelins });
+});
+
+app.get('/prototypes/rush-ajouts', (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).send('Introuvable');
+    res.sendFile(__dirname + '/src/html/prototypes-rush-ajouts.html');
+});
+
 app.get('/prototypes/annonce', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-annonce.html');
 });

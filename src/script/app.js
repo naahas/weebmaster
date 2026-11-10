@@ -5473,15 +5473,9 @@ createApp({
             this.homeScreen = 'modes';
         },
 
-        // La bannière mène à la carte du mode, déjà sélectionnée : on y lit sa
-        // description et son badge « bientôt ». Elle n'ouvre rien de plus —
-        // le bouton de la carte reste verrouillé, c'est le drapeau qui décide.
-        allerAuModeAVenir() {
-            const m = this.modeAVenir;
-            if (!m) return;
-            this.lockMode(m.id);
-            this.goToModes();
-        },
+        // ⚠️ `allerAuModeAVenir` vivait ici : la bannière de l'accueil menait à
+        // la carte du mode. Elle ne mène plus nulle part — y aller donnait le
+        // nom du mode une touche plus loin, ce que l'accueil tait exprès.
 
         // Code refusé : une secousse rouge vaut mieux qu'un message
         signalJoinError(message) {

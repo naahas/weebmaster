@@ -102,9 +102,12 @@
                      ⚠️ DEUX LIBELLES, un par largeur. La phrase longue passait a la
                      ligne sur telephone et la banniere prenait trois etages, juste
                      au-dessus du titre. -->
-                <button class="v2-annonce" type="button"
-                        v-if="homeScreen === 'hub' && modeAVenir"
-                        @click="allerAuModeAVenir">
+                <!-- ⚠️ UN SIMPLE BLOC, PLUS UN BOUTON : elle ne mène nulle part.
+                     Un clic qui emmenait vers la carte du mode donnait son nom une
+                     touche plus loin, ce que l'accueil tait exprès. Et la flèche est
+                     partie avec le lien — une flèche promet une destination. -->
+                <div class="v2-annonce"
+                     v-if="homeScreen === 'hub' && modeAVenir">
                     <!-- Le point et son onde : deux calques, UN mouvement chacun.
                          Le noyau respire, l anneau s ouvre et s efface — voir le
                          CSS, qui dit pourquoi ils ne peuvent pas partager
@@ -117,12 +120,7 @@
                          lettres sur l'accueil defairait ce travail. La banniere dit
                          qu'il se prepare quelque chose, rien de plus. -->
                     <span class="v2-annonce-txt">bientôt disponible</span>
-                    <svg class="v2-annonce-fleche" viewBox="0 0 24 24" aria-hidden="true"
-                         fill="none" stroke="currentColor" stroke-width="2.4"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 6l6 6-6 6"/>
-                    </svg>
-                </button>
+                </div>
 
                 <header class="v2-topbar">
                     <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du

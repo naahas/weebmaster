@@ -6894,8 +6894,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: rgba(255, 255, 255, 0.78);
     background: none;
     border: none;
-    cursor: pointer;
-    transition: color 0.25s ease;
+    /* ⚠️ Elle ne se clique pas : ni curseur de main, ni survol, ni flèche.
+       Promettre une destination qu'on ne donne pas vaut moins que ne rien
+       promettre — et la carte du mode, elle, nommerait le mode. */
+    cursor: default;
+    user-select: none;
 }
 
 /* Les deux filets. Le dégradé les fait naître et mourir dans le fond plutôt
@@ -6916,11 +6919,6 @@ body.game-active:has(.poll-game-container) #particles-js {
 @keyframes annonceFilets {
     0%, 100% { transform: scaleX(0.55); opacity: 0.5; }
     50%      { transform: scaleX(1);    opacity: 1; }
-}
-
-@media (hover: hover) {
-    .v2-annonce:hover { color: #fff; }
-    .v2-annonce:hover .v2-annonce-fleche { transform: translateX(0.18rem); opacity: 0.85; }
 }
 
 /* ── Le point qui pulse ──
@@ -6979,14 +6977,6 @@ body.game-active:has(.poll-game-container) #particles-js {
    L'espace suffit à séparer les deux. */
 .v2-annonce-txt { font-weight: 500; color: rgba(255, 255, 255, 0.86); }
 
-.v2-annonce-fleche {
-    flex: 0 0 auto;
-    width: 0.78rem;
-    height: 0.78rem;
-    opacity: 0.55;
-    transition: transform 0.25s ease;
-}
-
 /* ⚠️ RIEN SUR TÉLÉPHONE. Deux filets pleine largeur juste au-dessus du titre
    y faisaient un bandeau de plus, sur l'écran qui en a le moins la place. */
 @media (max-width: 768px) {
@@ -6999,7 +6989,6 @@ body.game-active:has(.poll-game-container) #particles-js {
        l'onde ne fait que le souligner. */
     .v2-annonce-point { animation: none; transform: scale(1); }
     .v2-annonce-point::after { display: none; }
-    .v2-annonce, .v2-annonce-fleche { transition: none; }
 }
 
 .v2-topbar {

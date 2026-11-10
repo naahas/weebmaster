@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush — les portraits qu'on pourrait ajouter</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   ⚠️ CE QU'ON POURRAIT VERSER AU RUSH, DANS LE VRAI CADRE DU MODE.
+   Un portrait ne se juge pas en vignette : il se juge dans son cadre, à la
+   taille où on le verra, sur le fond noir du jeu. C'est pour ça que chaque
+   carte reprend ici le dessin exact de `.rush-carte` — le filet, le fond
+   #131217, le bandeau du bas et sa jauge.
+
+   ⚠️ UNE SEULE DIFFÉRENCE AVEC LE JEU, et elle est volontaire : LE NOM EST
+   ÉCRIT SOUS LA CARTE. En partie il ne l'est jamais — c'est la réponse. Ici
+   on trie, donc il faut savoir qui on regarde.
+
+   Trois gisements, qui ne coûtent pas le même travail :
+   · SUR PLACE — le fichier est déjà dans `rushpic`, ajouté pour Codanime et
+     jamais versé au Rush. Une ligne de données suffit.
+   · À COPIER — il est dans `collectpic`. Une copie de fichier en plus.
+   · ORPHELIN — le fichier existe, et AUCUNE donnée ne le cite : ni nom ni
+     série. Le nom affiché est celui du fichier, c'est tout ce qu'on sait.
+
+   ⚠️ DEUX CHOSES À REGARDER, et aucune ne se mesure :
+   1. le CADRAGE — un plan trop large rend le visage illisible dans la vitre ;
+   2. la LISIBILITÉ DU PERSONNAGE — s'il n'est pas reconnaissable, la carte
+      n'est pas jouable, quelle que soit la qualité du dessin.
+
+   ⚠️ ELLE SERT LES IMAGES EN CLAIR, sous leur vrai nom de fichier, et c'est
+   pour ça que sa route est fermée en production : ce nom EST la réponse.
+-->
+<style>
+:root { --or: #ffd700; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 0 0 5rem;
+    background: #07070a; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
+.sous { font-size: .78rem; line-height: 1.65; opacity: .6; max-width: 60rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--or); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem; margin-bottom: 1.2rem;
+    background: rgba(8,8,11,.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; margin-right: .15rem; }
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--or); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+.barre input[type=range] { width: 8rem; accent-color: var(--or); }
+.barre select {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .4rem .6rem; border-radius: .45rem;
+    color: #e8e8ee; background: #15151c; border: 1px solid rgba(255,255,255,.12);
+}
+.compte { font-size: .72rem; opacity: .55; margin-left: auto; }
+.compte b { color: var(--or); font-weight: 700; }
+
+/* ══════════ LA CARTE DU RUSH, reprise au trait près ══════════
+   Les 416 portraits font tous 225 × 350 : la vitre prend ce format, le cadre
+   l'entoure d'un filet fin, et le bandeau du bas porte le minuteur du tour.
+   ⚠️ Toutes les tailles descendent de --carte-h : elle seule se règle, ici
+   par le curseur. */
+.mur { --carte-h: 15rem; }
+.mur {
+    --carte-l: calc(var(--carte-h) * 225 / 350);
+    --cadre: 0.4rem;
+    --cartouche: 1.4rem;
+    display: flex; flex-wrap: wrap; gap: 1.5rem 1.1rem;
+    padding: 0 1.4rem;
+    align-items: flex-start;
+}
+
+/* ⚠️ LA CARTE FAIT `carte-l + 2 × cadre`, ET NON `carte-l`. En jeu c'est la
+   scène qui porte cette largeur, et la VITRE qui vaut `carte-l` tout juste :
+   le portrait y garde donc exactement le rapport 225/350 de son fichier.
+   Donner `carte-l` à la carte retirait le filet à la vitre — mesuré, elle
+   sortait en 1,696 au lieu de 1,556, et le cadrage jugé ici n'aurait pas été
+   celui du jeu. */
+.item { width: calc(var(--carte-l) + var(--cadre) * 2); }
+
+.rush-carte {
+    --porte: 0 1.2rem 3rem rgba(0, 0, 0, .5);
+    --filet: inset 0 0 0 .06rem rgba(255, 255, 255, .09);
+    position: relative;
+    width: 100%;
+    height: calc(var(--carte-h) + var(--cadre) + var(--cartouche));
+    padding: var(--cadre) var(--cadre) var(--cartouche);
+    border-radius: .55rem;
+    background: #131217;
+    box-shadow: var(--porte), var(--filet);
+}
+.rush-vitre {
+    display: block; width: 100%; height: 100%;
+    border-radius: .28rem; overflow: hidden;
+    background: #0d0c11;
+}
+.rush-vitre img {
+    display: block; width: 100%; height: 100%;
+    object-fit: cover;
+}
+/* Le bandeau et sa jauge, figés à mi-course : c'est ce qui fait reconnaître
+   la carte du Rush au premier coup d'oeil. */
+.rush-limite-rail {
+    position: absolute; left: var(--cadre); right: var(--cadre);
+    bottom: calc(var(--cartouche) / 2 - 1px);
+    height: 2px; border-radius: 99px;
+    background: rgba(255,255,255,.07); overflow: hidden;
+}
+.rush-limite-rail i {
+    display: block; height: 100%; width: 55%;
+    background: linear-gradient(90deg, #ff8a3d, var(--or));
+    border-radius: 99px;
+}
+
+/* ⚠️ Le nom : SOUS la carte, jamais dessus. En partie il n'existe pas — c'est
+   la réponse. Ici on trie, donc on le montre, mais hors du cadre pour que la
+   carte reste exactement ce qu'elle sera en jeu. */
+.nom { margin-top: .45rem; font-size: .72rem; font-weight: 700; line-height: 1.25; }
+.serie { font-size: .6rem; opacity: .42; }
+.ou {
+    display: inline-block; margin-top: .2rem;
+    font-size: .54rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    padding: .12rem .34rem; border-radius: .25rem;
+}
+.ou.surPlace { color: #6ee7b7; background: rgba(110,231,183,.12); }
+.ou.aCopier  { color: #7fb4ff; background: rgba(127,180,255,.12); }
+.ou.orphelin { color: #fca5a5; background: rgba(252,165,165,.12); }
+
+h2 {
+    font-size: .95rem; font-weight: 800;
+    margin: 2.2rem 0 .2rem; padding: 0 1.4rem;
+    display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+}
+h2 em { font-style: normal; font-size: .72rem; font-weight: 600; opacity: .45; }
+.note { font-size: .72rem; line-height: 1.6; opacity: .5; max-width: 58rem; margin: .3rem 0 1rem; padding: 0 1.4rem; }
+.note b { opacity: 1; color: #fff; }
+.vide { font-size: .78rem; opacity: .4; padding: 0 1.4rem; }
+</style>
+</head>
+<body>
+
+<h1>Rush — les portraits qu'on pourrait ajouter</h1>
+<p class="sous">
+Chaque portrait est posé dans <b>le vrai cadre du Rush</b> : même filet, même fond, même
+bandeau. <span class="av">Un portrait ne se juge pas en vignette</span> — il se juge à la
+taille où on le verra. Deux choses à regarder : le <b>cadrage</b> (un plan trop large rend le
+visage illisible) et la <b>reconnaissance</b> (s'il n'est pas identifiable, la carte n'est pas
+jouable). Le nom est écrit <b>sous</b> la carte ; en partie il n'existe pas, c'est la réponse.
+</p>
+
+<div class="barre">
+    <label>Gisement</label>
+    <button class="cmd on" data-ou="tout">Tout</button>
+    <button class="cmd" data-ou="surPlace">Sur place</button>
+    <button class="cmd" data-ou="aCopier">À copier</button>
+    <button class="cmd" data-ou="orphelin">Orphelins</button>
+    <span class="sep"></span>
+    <label>Série</label>
+    <select id="serie"><option value="">toutes</option></select>
+    <span class="sep"></span>
+    <label>Taille</label>
+    <input type="range" id="taille" min="7" max="24" step="1" value="15">
+    <span class="compte" id="compte"></span>
+</div>
+
+<div id="sections"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let D = null, ou = 'tout', serie = '';
+
+const LIB = {
+    surPlace: { t: 'Sur place', n: "Le fichier est DÉJÀ dans <b>rushpic</b> — ajouté pour Codanime et jamais versé au Rush. Une ligne de données suffit, il n'y a aucune image à produire ni même à déplacer." },
+    aCopier:  { t: 'À copier', n: "Le fichier vit dans <b>collectpic</b>. Il est au même format (225 × 350 WebP), il faut seulement le copier dans <b>rushpic</b> et écrire sa ligne." },
+    orphelin: { t: 'Orphelins', n: "Le fichier existe et <b>aucune donnée ne le cite</b> : ni nom, ni série. Le nom affiché est celui du fichier — c'est tout ce qu'on sait de lui, le reste est à saisir." },
+};
+
+function carte(c) {
+    return `<div class="item">
+        <div class="rush-carte">
+            <span class="rush-vitre"><img src="${c.url}" alt="" loading="lazy" draggable="false"></span>
+            <span class="rush-limite-rail"><i></i></span>
+        </div>
+        <div class="nom">${c.nom}</div>
+        <div class="serie">${c.anime}</div>
+        <span class="ou ${c.ou}">${LIB[c.ou].t}</span>
+    </div>`;
+}
+
+function peindre() {
+    const tous = [...D.candidats, ...D.orphelins];
+    const vus = tous.filter(c => (ou === 'tout' || c.ou === ou) && (!serie || c.anime === serie));
+
+    // Groupés par gisement : c'est lui qui dit le travail que ça coûte, et
+    // c'est la seule chose qu'on ne voit pas sur l'image.
+    const ordre = ['surPlace', 'aCopier', 'orphelin'];
+    $('#sections').innerHTML = ordre.map(k => {
+        const l = vus.filter(c => c.ou === k);
+        if (!l.length) return '';
+        // Dans un gisement, on range par série : on juge mieux un cadrage en
+        // comparant des portraits du même dessinateur.
+        l.sort((a, b) => a.anime.localeCompare(b.anime) || a.nom.localeCompare(b.nom));
+        return `<h2>${LIB[k].t} <em>${l.length} portrait${l.length > 1 ? 's' : ''}</em></h2>`
+            + `<p class="note">${LIB[k].n}</p>`
+            // ⚠️ La valeur du curseur EST la hauteur en rem. Elle était divisée
+            // par vingt : les cartes sortaient à 13 px de large, la vitre à
+            // zéro, et le rapport 225/350 n'avait plus aucun sens.
+            + `<div class="mur" style="--carte-h:${$('#taille').value}rem">`
+            + l.map(carte).join('') + '</div>';
+    }).join('') || '<p class="vide">Rien dans cette sélection.</p>';
+
+    $('#compte').innerHTML = `<b>${vus.length}</b> affiché${vus.length > 1 ? 's' : ''}`
+        + ` · le Rush en a <b>${D.dansLeRush}</b>`
+        + ` · il passerait à <b>${D.dansLeRush + D.candidats.length}</b> avec les fiches connues`;
+}
+
+document.querySelectorAll('[data-ou]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-ou]').forEach(o => o.classList.remove('on'));
+    b.classList.add('on'); ou = b.dataset.ou; peindre();
+}));
+$('#serie').addEventListener('change', (e) => { serie = e.target.value; peindre(); });
+$('#taille').addEventListener('input', peindre);
+
+fetch('/prototypes/rush-ajouts/data')
+    .then(r => r.json())
+    .then(d => {
+        D = d;
+        // ⚠️ Les séries viennent des DONNÉES, pas d'une liste écrite ici : un
+        // anime ajouté demain apparaît tout seul dans le tiroir.
+        const series = [...new Set(d.candidats.map(c => c.anime))].sort();
+        $('#serie').innerHTML = '<option value="">toutes</option>'
+            + series.map(s => `<option value="${s}">${s}</option>`).join('');
+        peindre();
+    })
+    .catch(() => { $('#sections').innerHTML = '<p class="vide">Les données ne répondent pas.</p>'; });
+</script>
+</body></html>
