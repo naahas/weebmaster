@@ -608,7 +608,8 @@
                                          ⚠️ Et pas de croix à côté du nom : elle élargissait la
                                          vignette en apparaissant, et toute la rangée glissait
                                          au moment précis où il faut viser. -->
-                                    <span class="v2-room-player-name">{{ p.username }}</span>
+                                    <span class="v2-room-player-name"
+                                          :class="{ compte: p.compte }">{{ p.username }}</span>
                                 </button>
                                 <!-- ⚠️ La pastille BASCULAIT entre deux camps. Avec cinq, une
                                      bascule n a plus de sens : elle ouvre un choix.
@@ -3358,7 +3359,9 @@
                                 :style="getBombanimePlayerStyle(index, bombanime.playersData.length)"
                             >
                                 <!-- Nom au-dessus -->
-                                <div class="player-name">{{ player.username }}</div>
+                                <!-- 💠 Le losange du compte : voir le CSS, qui dit
+                                     pourquoi ce n est NI une couleur NI un `::after`. -->
+                                <div class="player-name" :class="{ compte: player.compte }">{{ player.username }}</div>
                                 
                                 <!-- Container hexagone -->
                                 <div class="player-hex-container">

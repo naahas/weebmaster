@@ -1899,6 +1899,13 @@ function broadcastLobbyUpdate(gameState) {
             // Le client en déduit l'état du réglage « Bot » : pas besoin
             // d'un second champ à tenir synchronisé.
             estBot: !!p.estBot,
+            // 💠 Joueur inscrit : le client en tire le losange devant le pseudo.
+            // ⚠️ C'est le SERVEUR qui le dit, et ce sera un jeton Supabase
+            // vérifié — jamais une affirmation du client. Sans ça, une page
+            // bricolée se décernerait le badge toute seule, et le signe ne
+            // vaudrait plus rien. Vaut `false` partout tant que la connexion
+            // n'est pas branchée.
+            compte: !!p.compte,
             isLastGlobalWinner: p.playerId === gameState.lastGlobalWinner,
         }))
     });

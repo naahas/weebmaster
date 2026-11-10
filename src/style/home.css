@@ -8802,6 +8802,42 @@ input, textarea,
    ensemble, 3 s. */
 .v2-room-player-name { position: relative; }
 
+/* ══════════ 💠 Le losange d'un compte ══════════
+   Un joueur inscrit porte un petit losange avant son pseudo. Le pseudo, lui,
+   reste LIBRE : n'importe qui peut taper « Naahas ». C'est le losange qui
+   distingue — on usurpe le nom, pas le statut.
+
+   ⚠️ POURQUOI UN SIGNE ET PAS UNE COULEUR. Les cinq camps portent déjà bleu,
+   DORÉ, rose, vert et violet (`team-1` à `team-5`), et sur l'hexagone de
+   BombAnime le pseudo vire au doré quand c'est le tour du joueur ou quand
+   c'est soi. Un badge coloré aurait donc dit autre chose selon le mode et
+   selon le tour. Le losange prend `currentColor` : il suit la couleur du nom
+   au lieu de la contredire, et ne peut entrer en conflit avec rien.
+
+   ⚠️ ET POURQUOI `::before` ET PAS `::after` : le `::after` du pseudo est
+   déjà la mèche de l'exclusion, calée sur sa largeur exacte.
+
+   ⚠️ Le rouge est pris lui aussi — c'est l'armement de l'exclusion — et la
+   pastille d'avatar porte déjà celle du camp. Il ne restait que ça.
+
+   Éprouvé au banc /prototypes/badge-compte, qui le montre à 110, 70 et 44 px :
+   c'est l'hexagone à 44 px qui décide, pas la liste du salon. */
+.v2-room-player-name.compte::before,
+.player-name.compte::before {
+    content: '';
+    display: inline-block;
+    vertical-align: middle;
+    /* En `em` : le losange suit la taille du pseudo, qui va de 1,15 rem dans
+       le salon à 0,62 rem sur un hexagone de téléphone. En pixels, il aurait
+       fallu le redéfinir à chaque palier. */
+    width: 0.32em;
+    height: 0.32em;
+    margin-right: 0.45em;
+    background: currentColor;
+    opacity: 0.8;
+    transform: rotate(45deg);
+}
+
 .v2-room-player-name::after {
     content: '';
     position: absolute;
