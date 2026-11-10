@@ -204,7 +204,10 @@
       "nom": "Doflamingo",
       "anime": "One Piece",
       "img": "doflamingo.webp",
-      "alias": []
+      "alias": [
+        "Joker",
+        "Doffy"
+      ]
     },
     {
       "id": "boa_hancock",

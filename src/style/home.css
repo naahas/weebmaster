@@ -6878,15 +6878,21 @@ body.game-active:has(.poll-game-container) #particles-js {
    rien au visiteur qui revient le lendemain — or c'est exactement lui qu'on
    veut prévenir. */
 .v2-annonce {
-    position: relative;
-    flex: 0 0 auto;
-    align-self: center;
+    /* ⚠️ HORS DU FLUX, et c'est obligatoire. Posée dans la colonne de
+       `.v2-home`, elle POUSSAIT tout ce qui la suit : la barre du haut, donc
+       l'avatar et le pseudo, descendaient de sa hauteur. En absolu elle garde
+       exactement la même place à l'écran et ne coûte sa hauteur à personne.
+
+       `top` se mesure depuis le bord de la boîte, padding compris : les
+       2,45 rem valent les 1,9 rem de marge de `.v2-home` plus le cheveu d'air
+       qu'on voulait au-dessus. */
+    position: absolute;
+    top: 2.45rem;
+    left: 50%;
+    transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    /* Un cheveu d'air au-dessus : collée au bord, elle avait l'air posée là
-       par accident plutôt que placée. */
-    margin: 0.55rem 0 1.1rem;
     padding: 0.55rem 0.2rem;
     font-family: inherit;
     font-size: 0.74rem;
