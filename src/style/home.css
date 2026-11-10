@@ -6884,7 +6884,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    margin: 0 0 1.1rem;
+    /* Un cheveu d'air au-dessus : collée au bord, elle avait l'air posée là
+       par accident plutôt que placée. */
+    margin: 0.55rem 0 1.1rem;
     padding: 0.55rem 0.2rem;
     font-family: inherit;
     font-size: 0.74rem;
@@ -6921,6 +6923,48 @@ body.game-active:has(.poll-game-container) #particles-js {
     .v2-annonce:hover .v2-annonce-fleche { transform: translateX(0.18rem); opacity: 0.85; }
 }
 
+/* ── Le point qui pulse ──
+   Un noyau doré qui respire, et une onde qui s'en échappe — le signal « c'est
+   vivant », en deux temps plutôt qu'un simple clignotement.
+
+   ⚠️ DEUX CALQUES, UN MOUVEMENT CHACUN : le noyau sur l'élément, l'onde sur
+   son `::after`. Les deux animent `transform` ; sur un seul élément, la
+   dernière déclarée gagnerait et l'autre serait perdue en silence. C'est le
+   piège qui a déjà coûté le cadenas de BombAnime. */
+.v2-annonce-point {
+    position: relative;
+    flex: 0 0 auto;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--neon-primary);
+    box-shadow: 0 0 0.45rem rgba(255, 215, 0, 0.85);
+    animation: annoncePoint 2.6s ease-in-out infinite;
+}
+
+/* ⚠️ L'onde part en RETARD sur le noyau (0,25 s) : lancés ensemble, le
+   gonflement du point et l'ouverture de l'anneau se confondaient en un seul
+   écart flou. Décalés, on voit le point pousser PUIS l'onde partir. */
+.v2-annonce-point::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 215, 0, 0.85);
+    animation: annonceOnde 2.6s cubic-bezier(0.2, 0.7, 0.3, 1) 0.25s infinite;
+}
+
+@keyframes annoncePoint {
+    0%, 100% { transform: scale(0.88); }
+    18%      { transform: scale(1.12); }
+    55%      { transform: scale(0.92); }
+}
+
+@keyframes annonceOnde {
+    0%        { opacity: 0.85; transform: scale(1); }
+    65%, 100% { opacity: 0;    transform: scale(3.6); }
+}
+
 .v2-annonce-sur {
     flex: 0 0 auto;
     font-size: 0.6rem;
@@ -6951,6 +6995,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 @media (prefers-reduced-motion: reduce) {
     .v2-annonce::before, .v2-annonce::after { animation: none; opacity: 0.8; transform: scaleX(1); }
+    /* ⚠️ Le point RESTE, seule son onde part : c'est lui qui dit « nouveau »,
+       l'onde ne fait que le souligner. */
+    .v2-annonce-point { animation: none; transform: scale(1); }
+    .v2-annonce-point::after { display: none; }
     .v2-annonce, .v2-annonce-fleche { transition: none; }
 }
 

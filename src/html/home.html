@@ -105,9 +105,11 @@
                 <button class="v2-annonce" type="button"
                         v-if="homeScreen === 'hub' && modeAVenir"
                         @click="allerAuModeAVenir">
-                    <!-- ⚠️ Plus de point qui bat : ce sont les deux FILETS qui
-                         portent le mouvement, et un seul geste suffit. Deux
-                         animations a cet endroit se seraient disputees l oeil. -->
+                    <!-- Le point et son onde : deux calques, UN mouvement chacun.
+                         Le noyau respire, l anneau s ouvre et s efface — voir le
+                         CSS, qui dit pourquoi ils ne peuvent pas partager
+                         d element. -->
+                    <span class="v2-annonce-point" aria-hidden="true"></span>
                     <span class="v2-annonce-sur">Nouveau mode</span>
                     <!-- ⚠️ LE NOM DU MODE NE PARAIT PAS ICI, et c'est voulu : sa
                          carte cache deja son portrait derriere une silhouette noire
