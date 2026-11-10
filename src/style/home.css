@@ -6854,67 +6854,71 @@ body.game-active:has(.poll-game-container) #particles-js {
    reste a droite. Sans lui — sur l'accueil — le pseudo reste donc a sa place,
    la ou « space-between » l'aurait ramene a gauche. */
 /* ══════════ ✨ L'annonce d'un mode à venir ══════════
-   Une pastille fine, centrée tout en haut de l'accueil. Elle mène à la carte
-   du mode, qui porte déjà sa description et son badge « bientôt ».
+   DEUX FILETS dorés, l'un au-dessus et l'autre en dessous du texte, qui se
+   rétractent et reviennent. Rien d'autre : ni pastille, ni cadre, ni point
+   qui bat — le mouvement des filets EST l'annonce, et c'est le seul.
 
-   ⚠️ Posée AVANT la barre du haut, pas dedans. Dans la barre, elle aurait
-   pris la place laissée libre par le logotype — qui se cache sur le hub — et
-   serait retombée sur la pastille d'avatar dès qu'on rétrécit. Au-dessus,
-   elle a toute la largeur et ne dispute rien à personne.
+   ⚠️ Pourquoi celle-là, sur les huit éprouvées au banc /prototypes/annonce :
+   le logotype est JUSTE EN DESSOUS. Un bloc contrasté à cet endroit lui
+   volait la vedette, or c'est lui que le visiteur doit voir en premier.
+   Celle-ci ne pèse rien et se remarque quand même, parce qu'elle bouge.
+
+   ⚠️ Le DÉCALAGE des deux filets (0,35 s) compte : lancés ensemble, ils
+   battaient comme un seul objet qui respire. Décalés, l'oeil suit l'un puis
+   l'autre, et le geste dure plus longtemps qu'il ne coûte.
+
+   ⚠️ Posée AVANT la barre du haut, pas dedans : dans la barre elle serait
+   retombée sur la pastille d'avatar dès qu'on rétrécit.
+
+   ⚠️ MASQUÉE SUR TÉLÉPHONE. Deux filets pleine largeur juste au-dessus du
+   titre y faisaient un bandeau de plus, sur un écran qui n'en a pas la
+   hauteur — et une annonce n'a pas à en coûter à ce qui se joue.
 
    ⚠️ Et elle ne se ferme pas. Une annonce qu'on peut écarter n'annonce plus
    rien au visiteur qui revient le lendemain — or c'est exactement lui qu'on
    veut prévenir. */
 .v2-annonce {
+    position: relative;
     flex: 0 0 auto;
     align-self: center;
     display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.6rem;
     margin: 0 0 1.1rem;
-    padding: 0.42rem 0.85rem 0.42rem 0.75rem;
+    padding: 0.55rem 0.2rem;
     font-family: inherit;
     font-size: 0.74rem;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.72);
-    background: linear-gradient(100deg,
-        rgba(255, 215, 0, 0.1) 0%,
-        rgba(255, 215, 0, 0.045) 45%,
-        rgba(255, 255, 255, 0.03) 100%);
-    border: 1px solid rgba(255, 215, 0, 0.26);
-    border-radius: 99px;
+    color: rgba(255, 255, 255, 0.78);
+    background: none;
+    border: none;
     cursor: pointer;
-    backdrop-filter: blur(6px);
-    box-shadow: 0 0 1.6rem rgba(255, 215, 0, 0.08);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease,
-                color 0.25s ease, transform 0.25s ease;
+    transition: color 0.25s ease;
+}
+
+/* Les deux filets. Le dégradé les fait naître et mourir dans le fond plutôt
+   que de s'arrêter net : c'est ce qui les empêche de ressembler à un cadre. */
+.v2-annonce::before,
+.v2-annonce::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.75), transparent);
+    animation: annonceFilets 4.2s ease-in-out infinite;
+}
+.v2-annonce::before { top: 0; }
+.v2-annonce::after  { bottom: 0; animation-delay: 0.35s; }
+
+@keyframes annonceFilets {
+    0%, 100% { transform: scaleX(0.55); opacity: 0.5; }
+    50%      { transform: scaleX(1);    opacity: 1; }
 }
 
 @media (hover: hover) {
-    .v2-annonce:hover {
-        color: #fff;
-        border-color: rgba(255, 215, 0, 0.55);
-        box-shadow: 0 0 2.2rem rgba(255, 215, 0, 0.18);
-        transform: translateY(-0.08rem);
-    }
-    .v2-annonce:hover .v2-annonce-fleche { transform: translateX(0.18rem); }
-}
-
-/* La pastille qui bat : le seul mouvement de ce coin de l'écran, et il dit
-   « il se passe quelque chose » sans un mot de plus. */
-.v2-annonce-point {
-    flex: 0 0 auto;
-    width: 0.42rem;
-    height: 0.42rem;
-    border-radius: 50%;
-    background: var(--neon-primary);
-    box-shadow: 0 0 0.5rem rgba(255, 215, 0, 0.9);
-    animation: annoncePoint 2.1s ease-in-out infinite;
-}
-
-@keyframes annoncePoint {
-    0%, 100% { opacity: 1;    transform: scale(1); }
-    50%      { opacity: 0.45; transform: scale(0.78); }
+    .v2-annonce:hover { color: #fff; }
+    .v2-annonce:hover .v2-annonce-fleche { transform: translateX(0.18rem); opacity: 0.85; }
 }
 
 .v2-annonce-sur {
@@ -6926,20 +6930,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: var(--neon-primary);
 }
 
-/* Le filet qui sépare le chapeau du texte : il tient lieu de ponctuation,
-   là où un tiret aurait pesé plus que les mots autour. */
-.v2-annonce-sur::after {
-    content: '';
-    display: inline-block;
-    width: 1px;
-    height: 0.72rem;
-    margin-left: 0.55rem;
-    vertical-align: -0.14rem;
-    background: rgba(255, 215, 0, 0.3);
-}
-
+/* ⚠️ Plus de filet vertical entre le chapeau et le texte : avec les deux
+   filets horizontaux, un troisième trait faisait un cadre à moitié dessiné.
+   L'espace suffit à séparer les deux. */
 .v2-annonce-txt { font-weight: 500; color: rgba(255, 255, 255, 0.86); }
-.v2-annonce-court { display: none; }
 
 .v2-annonce-fleche {
     flex: 0 0 auto;
@@ -6949,18 +6943,14 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: transform 0.25s ease;
 }
 
+/* ⚠️ RIEN SUR TÉLÉPHONE. Deux filets pleine largeur juste au-dessus du titre
+   y faisaient un bandeau de plus, sur l'écran qui en a le moins la place. */
 @media (max-width: 768px) {
-    /* ⚠️ La phrase courte prend le relais : « arrive bientôt » passait à la
-       ligne et la bannière faisait trois étages juste au-dessus du titre. */
-    .v2-annonce { font-size: 0.68rem; padding: 0.38rem 0.7rem 0.38rem 0.62rem; gap: 0.45rem; margin-bottom: 0.9rem; }
-    .v2-annonce-long { display: none; }
-    .v2-annonce-court { display: inline; }
-    .v2-annonce-sur { font-size: 0.55rem; }
-    .v2-annonce-sur::after { margin-left: 0.45rem; height: 0.64rem; }
+    .v2-annonce { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .v2-annonce-point { animation: none; }
+    .v2-annonce::before, .v2-annonce::after { animation: none; opacity: 0.8; transform: scaleX(1); }
     .v2-annonce, .v2-annonce-fleche { transition: none; }
 }
 
