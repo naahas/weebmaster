@@ -571,8 +571,14 @@ createApp({
                 // SILHOUETTE NOIRE — on ne doit même pas savoir qui c'est.
                 // En local il vaut faux : le mode est ouvert et l'image rend
                 // en couleur, sans rien avoir à défaire pour jouer.
-                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true,
-                  desc: "Chaque joueur doit répondre à une affirmation par vrai ou faux en choisissant un camp. Le dernier survivant l'emporte." },
+                // ⚠️ PAS DE `desc` TANT QU'IL EST « soon », et c'est volontaire :
+                // la carte cache déjà son portrait derrière une silhouette noire,
+                // et l'annonce de l'accueil tait son nom. Décrire la règle en
+                // toutes lettres juste en dessous défaisait les deux. Le gabarit
+                // porte un `v-if` sur `desc` — sans elle le paragraphe n'existe
+                // pas, il ne laisse pas un trou. À réécrire le jour de
+                // l'ouverture, en même temps qu'on retire le drapeau.
+                { id: 'choice',    name: 'Choice',    kind: 'Solo',   min: '2', max: '∞',  img: 'mitsuri3.webp', soon: true },
                 // Les modes a venir se rajoutent ici avec « soon: true » : le badge
                 // « bientot » et le bouton verrouille sont deja cables pour eux.
             ],
