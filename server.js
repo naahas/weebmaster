@@ -183,6 +183,22 @@ const RUSH_DATA = require('./rushdata.json');
 const RUSH_PERSOS = RUSH_DATA.personnages;
 const RUSH_FILTRES = RUSH_DATA.filtres;
 
+// ⚠️ LE COMPTE DE CHAQUE FILTRE SE CALCULE ICI, il n'est plus lu du fichier.
+// `rushdata.json` le portait EN DUR à côté de la liste des personnages : deux
+// écritures de la même chose, et la première qui bouge fait mentir l'autre en
+// silence. Mesuré le jour où 115 portraits ont été versés — le tiroir
+// annonçait « Tout (366) » alors que le vivier en comptait 481.
+//
+// Compter coûte une boucle sur quelques centaines d'entrées, une fois, au
+// démarrage : il n'y a aucune raison de le retenir à la main. ⚠️ Et le calcul
+// reprend EXACTEMENT la règle de `rushPiocher` — une liste d'animes vide veut
+// dire « tout le vivier », pas « aucun personnage ».
+for (const f of Object.values(RUSH_FILTRES)) {
+    f.compte = (f.animes && f.animes.length)
+        ? RUSH_PERSOS.filter(p => f.animes.includes(p.anime)).length
+        : RUSH_PERSOS.length;
+}
+
 const RUSH_CONFIG = {
     MIN_PLAYERS: 1,             // jouable seul : c'est une course contre soi
     // Pas de plafond : le mode est solo-simultane, personne n attend son tour.
