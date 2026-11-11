@@ -2265,8 +2265,16 @@ app.get('/prototypes/connexion', (req, res) => {
 });
 
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
+// ⚠️ Ecarte — les deux chargeaient la barre. Garde comme trace du pourquoi.
 app.get('/prototypes/compte-place', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-place.html');
+});
+
+// 🔑 La piste retenue : la barre retombe a DEUX elements (pseudo + avatar),
+// et l avatar ouvre un panneau qui remplace a lui seul le tiroir des avatars,
+// la modale du pseudo et la connexion. Trois formes de panneau.
+app.get('/prototypes/compte-modal', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-modal.html');
 });
 
 app.get('/prototypes/signalement', (req, res) => {

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le panneau du profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ UN SEUL PANNEAU REMPLACE TROIS ENDROITS.
+
+        Aujourd hui : l avatar ouvre un tiroir de vignettes, le pseudo ouvre
+        une modale, et la connexion aurait fait un TROISIEME endroit. Trois
+        portes pour une seule question — « qui je suis ». Le panneau les
+        reunit, et la barre du haut retombe a DEUX elements : le pseudo, et
+        l icone d avatar qui ouvre tout.
+
+        ⚠️ LES STATISTIQUES SONT CE QU ON GAGNE EN SE CONNECTANT, et c est le
+        seul argument honnete du compte. Un invite n en a aucune — rien n est
+        garde de lui hors de son navigateur. On montre donc l emplacement
+        VERROUILLE plutot que des zeros : un zero dit « tu n as rien joue »,
+        un cadenas dit « connecte-toi pour que ca compte ». C est la meme
+        chose que fait Kyara avec sa collection.
+
+        ⚠️ Aucun compte n est JAMAIS requis pour jouer. Le panneau ne s ouvre
+        que si on le demande, et il n y a pas d appel a l inscription ailleurs
+        sur l accueil.
+
+        ⚠️ Chemins d images en ABSOLU (/novice.png) : servie sous /prototypes/,
+        la page chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --vert: #10b981;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ⚠️ `hidden` ne pose qu un display:none de feuille par defaut, qu un
+           display pose ailleurs ecrase sans bruit. Une regle, une fois. */
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a;
+            color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.55;
+            padding-bottom: 6rem;
+        }
+
+        /* ───── Rail ───── */
+        .rail {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.93);
+            backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.4rem 0.8rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 600;
+            color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 64rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; max-width: 46rem; }
+
+        .piste { margin-top: 3rem; }
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.3rem; }
+        .piste-code {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #0b0b0e; background: var(--or); padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+        }
+        .piste-nom { font-size: 1.02rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.85rem; margin-bottom: 1rem; max-width: 46rem; }
+
+        .scene {
+            position: relative;
+            background: #0a0a0a;
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.055) 0%, transparent 62%);
+            border: 1px solid #1d1d26; border-radius: 0.75rem;
+            padding: 1.1rem 1.25rem 1.25rem;
+            overflow: hidden;
+        }
+        .scene.tel { max-width: 390px; }
+
+        .avis {
+            margin-top: 1rem; padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 2px solid #2b2b36;
+            font-size: 0.8rem; color: #8b8b96;
+        }
+        .avis b { color: #cfcfd8; }
+
+        /* ════════════ LA NOUVELLE BARRE DU HAUT ════════════ */
+        /* Deux elements : le pseudo, puis l icone d avatar qui ouvre tout. */
+        .v2-topbar { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; }
+        .v2-topbar .v2-logo { margin-right: auto; }
+        .v2-logo {
+            display: grid; place-items: center; width: 2.9rem; height: 2.9rem;
+            padding: 0; background: none; border: none; cursor: pointer;
+        }
+        .v2-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+        .tb-pseudo {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.85rem; font-weight: 600; color: var(--txt);
+            white-space: nowrap;
+        }
+        .tb-pseudo .four { width: 0.95rem; height: 0.95rem; border-radius: 50%; display: inline-grid; place-items: center; }
+        .tb-pseudo .four.discord { background: var(--discord); padding: 0.15rem; }
+        .tb-pseudo .four.discord svg { fill: #fff; }
+        .tb-pseudo .four.google { background: #fff; padding: 0.13rem; }
+        .tb-pseudo .four svg { width: 100%; height: 100%; display: block; }
+
+        /* Le losange de l inscrit, deja pose dans le jeu */
+        .tb-pseudo .nom.compte::before {
+            content: ''; display: inline-block; vertical-align: middle;
+            width: 0.32em; height: 0.32em; margin-right: 0.45em;
+            background: currentColor; opacity: 0.8; transform: rotate(45deg);
+        }
+
+        .tb-avatar {
+            position: relative;
+            width: 2.6rem; height: 2.6rem; padding: 0; flex: 0 0 auto;
+            border-radius: 50%; overflow: visible; cursor: pointer;
+            background: none; border: 0;
+        }
+        .tb-avatar img {
+            width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
+            border: 0.11rem solid rgba(255, 255, 255, 0.14);
+            transition: border-color 0.25s ease;
+        }
+        .tb-avatar:hover img { border-color: rgba(255, 215, 0, 0.55); }
+        /* La pastille du fournisseur, posee sur l avatar — c est la que l oeil
+           est deja, et ca evite une troisieme chose dans la barre. */
+        .tb-avatar .coin {
+            position: absolute; right: -0.1rem; bottom: -0.1rem;
+            width: 1rem; height: 1rem; border-radius: 50%;
+            display: grid; place-items: center;
+            border: 0.11rem solid #0a0a0a;
+        }
+        .tb-avatar .coin.discord { background: var(--discord); }
+        .tb-avatar .coin.discord svg { width: 0.6rem; height: 0.6rem; fill: #fff; }
+        .tb-avatar .coin.google { background: #fff; }
+        .tb-avatar .coin.google svg { width: 0.6rem; height: 0.6rem; }
+
+        /* ════════════ LE PANNEAU — tronc commun ════════════ */
+        .pn {
+            display: flex; flex-direction: column;
+            background: linear-gradient(165deg, #1a1710 0%, #111013 45%, #0d0d10 100%);
+            border: 0.08rem solid rgba(255, 215, 0, 0.2);
+            border-radius: 1rem;
+            box-shadow: 0 1.6rem 4rem rgba(0, 0, 0, 0.65), 0 0 3rem rgba(255, 180, 0, 0.07);
+            overflow: hidden;
+        }
+
+        /* L en-tete : avatar + identite */
+        .pn-tete { display: flex; align-items: center; gap: 0.85rem; padding: 1.25rem 1.25rem 1rem; }
+        .pn-av {
+            position: relative; width: 3.6rem; height: 3.6rem; flex: 0 0 auto;
+            padding: 0; background: none; border: 0; cursor: pointer;
+        }
+        .pn-av img {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+            border: 0.13rem solid rgba(255, 215, 0, 0.4);
+        }
+        .pn-av .crayon {
+            position: absolute; right: -0.15rem; bottom: -0.15rem;
+            width: 1.35rem; height: 1.35rem; border-radius: 50%;
+            display: grid; place-items: center;
+            background: #26231a; border: 0.11rem solid #15130e; color: var(--or);
+            font-size: 0.62rem;
+        }
+        .pn-av:hover img { border-color: var(--or); }
+
+        .pn-ident { min-width: 0; flex: 1; }
+        .pn-nom { font-size: 1.05rem; font-weight: 700; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pn-rang { display: flex; align-items: center; gap: 0.4rem; font-size: 0.74rem; color: var(--doux); margin-top: 0.1rem; }
+        .pn-rang .four { width: 0.85rem; height: 0.85rem; border-radius: 50%; display: inline-grid; place-items: center; flex: 0 0 auto; }
+        .pn-rang .four.discord { background: var(--discord); padding: 0.13rem; }
+        .pn-rang .four.discord svg { fill: #fff; }
+        .pn-rang .four.google { background: #fff; padding: 0.11rem; }
+        .pn-rang .four svg { width: 100%; height: 100%; display: block; }
+
+        .pn-fermer {
+            width: 1.9rem; height: 1.9rem; flex: 0 0 auto;
+            border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.05);
+            color: var(--doux); font-size: 0.9rem; cursor: pointer; line-height: 1;
+        }
+        .pn-fermer:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+        .pn-corps { padding: 0 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
+
+        /* Le champ pseudo */
+        .pn-champ { display: flex; gap: 0.45rem; }
+        .pn-champ input {
+            flex: 1; min-width: 0; padding: 0.6rem 0.85rem;
+            font-family: inherit; font-size: 0.88rem; font-weight: 600; color: var(--txt);
+            background: rgba(0, 0, 0, 0.4);
+            border: 0.08rem solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.5rem; outline: none;
+        }
+        .pn-champ input:focus { border-color: rgba(255, 215, 0, 0.55); }
+        .pn-champ button {
+            padding: 0 0.95rem; border: 0; border-radius: 0.5rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 700;
+            color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre)); cursor: pointer;
+        }
+        .pn-etiq {
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; color: #6e6e7b; margin-bottom: 0.4rem;
+        }
+
+        /* L appel a la connexion */
+        .pn-appel {
+            padding: 0.95rem;
+            background: rgba(88, 101, 242, 0.09);
+            border: 0.08rem solid rgba(88, 101, 242, 0.3);
+            border-radius: 0.7rem;
+        }
+        .pn-appel p { font-size: 0.8rem; color: #c9c9d8; margin-bottom: 0.7rem; line-height: 1.45; }
+        .pn-appel p b { color: #fff; font-weight: 600; }
+
+        .four-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            width: 100%; padding: 0.68rem 1rem;
+            border: 0; border-radius: 0.55rem;
+            font-family: inherit; font-size: 0.84rem; font-weight: 600;
+            color: #fff; background: var(--discord); cursor: pointer;
+            transition: filter 0.18s ease;
+        }
+        .four-btn:hover { filter: brightness(1.1); }
+        .four-btn svg { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; fill: #fff; }
+        .four-btn.g { background: #fff; color: #1f1f1f; margin-top: 0.45rem; }
+        .four-btn.g svg { fill: none; }
+
+        /* Les statistiques */
+        .pn-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+        .stat {
+            padding: 0.7rem 0.5rem; text-align: center;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 0.6rem;
+        }
+        .stat .v { font-size: 1.05rem; font-weight: 800; color: var(--or); line-height: 1.2; }
+        .stat .n { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #7d7d8a; margin-top: 0.1rem; }
+        /* ⚠️ Verrouille pour un invite : un ZERO dit « tu n as rien joue »,
+           un cadenas dit « connecte-toi pour que ca compte ». */
+        .pn-stats.verrou .stat { opacity: 0.45; }
+        .pn-stats.verrou .stat .v { color: #6e6e7b; }
+
+        /* Les liens */
+        .pn-liens { display: flex; flex-direction: column; gap: 0.1rem; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 0.7rem; }
+        .lien {
+            display: flex; align-items: center; gap: 0.65rem;
+            padding: 0.55rem 0.5rem; border: 0; border-radius: 0.45rem;
+            background: none; cursor: pointer;
+            font-family: inherit; font-size: 0.83rem; font-weight: 500; color: #c3c3cf;
+            text-align: left; width: 100%;
+        }
+        .lien:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .lien svg { width: 1rem; height: 1rem; fill: currentColor; opacity: 0.7; flex: 0 0 auto; }
+        .lien.danger { color: #8b8b96; }
+        .lien.danger:hover { color: #f87171; }
+
+        /* ════════ M1 — panneau ancre sous l avatar ════════ */
+        .ancre { position: relative; display: flex; justify-content: flex-end; margin-top: 0.75rem; }
+        .ancre .pn { width: min(20rem, 100%); }
+
+        /* ════════ M2 — modale centree ════════ */
+        .voile {
+            margin-top: 0.75rem; padding: 1.75rem 1rem;
+            display: grid; place-items: center;
+            background: rgba(4, 4, 6, 0.75);
+            border-radius: 0.6rem;
+        }
+        .voile .pn { width: min(21rem, 100%); }
+
+        /* ════════ M3 — modale large, deux colonnes ════════ */
+        /* ⚠️ 37rem et non 34 : mesure au rendu, « Continuer avec Discord »
+           passait sur DEUX LIGNES dans la colonne de droite. Un bouton de
+           connexion qui se casse en deux a l air d un defaut, pas d un choix,
+           et c est le seul element qu on veut voir clique. */
+        .voile.large .pn { width: min(37rem, 100%); }
+        .pn.deux .pn-corps { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.1rem; align-items: start; }
+        .pn.deux .pn-col { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
+        .pn.deux .pn-liens { border-top: 0; padding-top: 0; }
+        @media (max-width: 620px) {
+            .pn.deux .pn-corps { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 700px) {
+            .rail { gap: 0.9rem; padding: 0.75rem 1rem; }
+            .page { padding: 1.75rem 1rem 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>État</span>
+            <div class="seg" id="segEtat">
+                <button data-v="off" class="on">Invité</button>
+                <button data-v="discord">Discord</button>
+                <button data-v="google">Google</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <span>Largeur</span>
+            <div class="seg" id="segLarge">
+                <button data-v="pc" class="on">Ordinateur</button>
+                <button data-v="tel">Téléphone</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Le panneau du profil</h1>
+        <p class="sous">La barre retombe à deux éléments : le pseudo, et l'icône d'avatar qui ouvre tout. Le panneau
+            remplace à lui seul le tiroir des avatars, la modale du pseudo et la connexion.</p>
+
+        <!-- ════════ M1 ════════ -->
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">M1</span><span class="piste-nom">Panneau ancré — la
+                    façon Kyara</span></div>
+            <p class="piste-dit">Tombe sous l'avatar, collé au bord droit. On ne quitte jamais la page : le fond
+                reste visible, et un clic à côté referme.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar" data-barre></header>
+                <div class="ancre" data-panneau data-variante="ancre"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> léger, rapide, on garde le contexte. <b>Contre :</b> sur téléphone il
+                occupe presque tout l'écran de toute façon — l'ancrage n'apporte alors plus rien.</p>
+        </div>
+
+        <!-- ════════ M2 ════════ -->
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">M2</span><span class="piste-nom">Modale centrée</span>
+            </div>
+            <p class="piste-dit">Le site assombrit le fond et met le profil au centre. Même carte, plus de présence.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar" data-barre></header>
+                <div class="voile" data-panneau data-variante="centre"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> c'est le geste le plus premium des trois, et c'est déjà la forme de la
+                modale du pseudo — rien de nouveau à apprendre. <b>Contre :</b> ça coupe la page pour un geste
+                parfois minuscule (changer deux lettres à son pseudo).</p>
+        </div>
+
+        <!-- ════════ M3 ════════ -->
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">M3</span><span class="piste-nom">Modale large, deux
+                    colonnes</span></div>
+            <p class="piste-dit">Identité et réglages à gauche, compte et statistiques à droite. Se replie en une
+                colonne sur téléphone.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar" data-barre></header>
+                <div class="voile large" data-panneau data-variante="deux"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> tout se voit sans défiler, même connecté. <b>Contre :</b> une grande carte
+                à moitié vide pour un invité qui n'a ni statistiques ni historique — bascule l'état pour juger.</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ TOUT EST FABRIQUE ICI, et pas ecrit trois fois dans le gabarit.
+        // Les trois pistes montrent le MEME panneau a une enveloppe pres :
+        // le recopier serait se condamner a reporter chaque retouche trois
+        // fois, et a se retrouver avec trois versions qui divergent — c est
+        // exactement la maladie des reglages ecrits a deux endroits.
+
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24">'
+                + '<path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>'
+                + '<path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>'
+                + '<path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>'
+                + '<path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            stats: '<svg viewBox="0 0 24 24"><path d="M4 20h16v-2H4v2zM6 16h2V9H6v7zm5 0h2V5h-2v11zm5 0h2v-5h-2v5z"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+            bug: '<svg viewBox="0 0 24 24"><path d="M20 8h-2.8a5.9 5.9 0 0 0-1.6-1.7L17 4.4 15.6 3l-2 2a6 6 0 0 0-3.2 0l-2-2L7 4.4l1.4 1.9A5.9 5.9 0 0 0 6.8 8H4v2h2.1v1H4v2h2.1v1H4v2h2.8a6 6 0 0 0 10.4 0H20v-2h-2.1v-1H20v-2h-2.1v-1H20V8z"/></svg>',
+            sortie: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>',
+        };
+
+        const NOMS = { discord: 'Discord', google: 'Google' };
+        const PSEUDO_INVITE = 'Invité-7F2K';
+        const PSEUDO_COMPTE = 'Naahas';
+
+        function barre(etat) {
+            const co = etat !== 'off';
+            return `
+                <button class="v2-logo"><img src="/logo-sm.png" alt=""></button>
+                <span class="tb-pseudo">
+                    <span class="nom${co ? ' compte' : ''}">${co ? PSEUDO_COMPTE : PSEUDO_INVITE}</span>
+                </span>
+                <button class="tb-avatar" title="Mon profil">
+                    <img src="/novice.png" alt="">
+                    ${co ? `<span class="coin ${etat}">${SVG[etat]}</span>` : ''}
+                </button>`;
+        }
+
+        // Les morceaux du panneau, assembles differemment selon la variante.
+        const morceaux = {
+            tete(etat) {
+                const co = etat !== 'off';
+                return `
+                <div class="pn-tete">
+                    <button class="pn-av" title="Changer d'avatar">
+                        <img src="/novice.png" alt="">
+                        <span class="crayon">✎</span>
+                    </button>
+                    <div class="pn-ident">
+                        <div class="pn-nom">${co ? PSEUDO_COMPTE : PSEUDO_INVITE}</div>
+                        <div class="pn-rang">
+                            ${co
+                        ? `<span class="four ${etat}">${SVG[etat]}</span> Connecté avec ${NOMS[etat]}`
+                        : 'Compte invité'}
+                        </div>
+                    </div>
+                    <button class="pn-fermer">✕</button>
+                </div>`;
+            },
+
+            pseudo(etat) {
+                return `
+                <div>
+                    <div class="pn-etiq">Pseudo</div>
+                    <div class="pn-champ">
+                        <input value="${etat !== 'off' ? PSEUDO_COMPTE : PSEUDO_INVITE}" maxlength="16">
+                        <button>OK</button>
+                    </div>
+                </div>`;
+            },
+
+            appel(etat) {
+                if (etat !== 'off') return '';
+                // ⚠️ Le texte dit ce qu on GAGNE, pas ce qu on fait. « Se
+                // connecter » ne repond pas a « pourquoi je ferais ca ».
+                return `
+                <div class="pn-appel">
+                    <p><b>Garde ta progression.</b> Tes statistiques et tes avatars débloqués te suivent
+                        d'un appareil à l'autre. Facultatif — tu peux jouer sans.</p>
+                    <button class="four-btn">${SVG.discord} Continuer avec Discord</button>
+                    <button class="four-btn g">${SVG.google} Continuer avec Google</button>
+                </div>`;
+            },
+
+            stats(etat) {
+                const co = etat !== 'off';
+                return `
+                <div>
+                    <div class="pn-etiq">Statistiques</div>
+                    <div class="pn-stats${co ? '' : ' verrou'}">
+                        <div class="stat"><div class="v">${co ? '47' : '—'}</div><div class="n">Parties</div></div>
+                        <div class="stat"><div class="v">${co ? '1 280' : '—'}</div><div class="n">XP</div></div>
+                        <div class="stat"><div class="v">${co ? '12' : '—'}</div><div class="n">Victoires</div></div>
+                    </div>
+                </div>`;
+            },
+
+            liens(etat) {
+                const co = etat !== 'off';
+                return `
+                <div class="pn-liens">
+                    <button class="lien">${SVG.stats} Mes statistiques</button>
+                    <button class="lien">${SVG.image} Choisir mon avatar</button>
+                    <button class="lien">${SVG.bug} Signaler un problème</button>
+                    ${co ? `<button class="lien danger">${SVG.sortie} Se déconnecter</button>` : ''}
+                </div>`;
+            },
+        };
+
+        function panneau(etat, variante) {
+            const m = morceaux;
+            if (variante === 'deux') {
+                return `
+                <div class="pn deux">
+                    ${m.tete(etat)}
+                    <div class="pn-corps">
+                        <div class="pn-col">${m.pseudo(etat)}${m.liens(etat)}</div>
+                        <div class="pn-col">${m.appel(etat)}${m.stats(etat)}</div>
+                    </div>
+                </div>`;
+            }
+            return `
+                <div class="pn">
+                    ${m.tete(etat)}
+                    <div class="pn-corps">
+                        ${m.pseudo(etat)}
+                        ${m.appel(etat)}
+                        ${m.stats(etat)}
+                        ${m.liens(etat)}
+                    </div>
+                </div>`;
+        }
+
+        function appliquer(etat) {
+            document.querySelectorAll('[data-barre]').forEach(e => { e.innerHTML = barre(etat); });
+            document.querySelectorAll('[data-panneau]').forEach(e => {
+                e.innerHTML = panneau(etat, e.dataset.variante);
+            });
+        }
+
+        document.getElementById('segEtat').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            appliquer(b.dataset.v);
+        });
+
+        document.getElementById('segLarge').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelectorAll('[data-scene]').forEach(s => s.classList.toggle('tel', b.dataset.v === 'tel'));
+        });
+
+        appliquer('off');
+    </script>
+</body>
+
+</html>
