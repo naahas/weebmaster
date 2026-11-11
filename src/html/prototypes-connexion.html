@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — la connexion de bout en bout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!--
+        ⚠️ CE BANC NE DESSINE RIEN. Il ne sert qu a repondre a une question :
+        la chaine de connexion marche-t-elle ?
+
+        Elle a SIX maillons — provider declare chez Supabase, URL de retour
+        chez Discord/Google, liste blanche des redirections, jeton rendu au
+        navigateur, jeton verifie par le serveur, ligne ecrite dans
+        « comptes ». Un seul qui casse donne le MEME symptome a l ecran :
+        « ca marche pas ». Cette page dit LEQUEL, et c est tout son interet.
+
+        Le bouton definitif se dessinera ailleurs, une fois qu on saura que
+        le tuyau est perce de bout en bout.
+
+        ⚠️ La route /api/auth-essai qu elle interroge est FERMEE en
+        production. Ce banc ne sert donc qu en local.
+    -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #07070a;
+            color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            padding: 2.5rem 1.5rem 5rem;
+            line-height: 1.6;
+        }
+
+        .enveloppe { max-width: 44rem; margin: 0 auto; }
+
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.35rem; }
+
+        /* ───── Les deux boutons ───── */
+        .boutons { display: flex; gap: 0.9rem; flex-wrap: wrap; margin: 2rem 0; }
+
+        .b {
+            display: inline-flex; align-items: center; gap: 0.6rem;
+            padding: 0.8rem 1.4rem;
+            border: 0; border-radius: 0.6rem;
+            font-family: inherit; font-size: 0.95rem; font-weight: 600;
+            color: #fff; cursor: pointer;
+            transition: filter 0.15s ease, transform 0.1s ease;
+        }
+        .b:hover { filter: brightness(1.12); }
+        .b:active { transform: translateY(1px); }
+        .b:disabled { opacity: 0.4; cursor: not-allowed; }
+        /* ⚠️ SANS CETTE LIGNE, l attribut `hidden` ne cache RIEN : il ne pose
+           qu un `display: none` de feuille par defaut, que le `display:
+           inline-flex` de `.b` ecrase. Le bouton « Se deconnecter » restait
+           donc visible sans session. C est le piege classique de `hidden`
+           sur un element a qui l on a donne un display. */
+        .b[hidden] { display: none; }
+        .b svg { width: 1.15em; height: 1.15em; fill: currentColor; }
+
+        .b-discord { background: #5865F2; }
+        .b-google { background: #fff; color: #1f1f1f; }
+        .b-sortir { background: #2a2a33; color: #c9c9d4; }
+
+        /* ───── La chaine ───── */
+        .chaine { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 2rem; }
+
+        .maillon {
+            display: grid;
+            grid-template-columns: 1.6rem 1fr;
+            gap: 0.85rem;
+            align-items: start;
+            padding: 0.85rem 1rem;
+            background: #101016;
+            border: 1px solid #1e1e28;
+            border-radius: 0.5rem;
+        }
+        .maillon.ok { border-color: rgba(16, 185, 129, 0.4); }
+        .maillon.ko { border-color: rgba(239, 68, 68, 0.45); }
+
+        .pastille {
+            width: 1.6rem; height: 1.6rem; border-radius: 50%;
+            display: grid; place-items: center;
+            font-size: 0.8rem; font-weight: 700;
+            background: #23232d; color: #6e6e7b;
+        }
+        .maillon.ok .pastille { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+        .maillon.ko .pastille { background: rgba(239, 68, 68, 0.18); color: #f87171; }
+
+        .titre { font-weight: 600; font-size: 0.92rem; }
+        .detail { color: #8b8b96; font-size: 0.83rem; margin-top: 0.15rem; word-break: break-word; }
+        .maillon.ko .detail { color: #f8a5a5; }
+
+        .note {
+            margin-top: 2rem; padding: 1rem 1.2rem;
+            background: rgba(255, 193, 7, 0.07);
+            border: 1px solid rgba(255, 193, 7, 0.25);
+            border-radius: 0.5rem;
+            font-size: 0.86rem; color: #d9c9a0;
+        }
+        .note b { color: #ffd77a; }
+
+        @media (max-width: 600px) {
+            body { padding: 1.75rem 1.1rem 4rem; }
+            .b { flex: 1 1 100%; justify-content: center; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="enveloppe">
+        <h1>La connexion, de bout en bout</h1>
+        <p class="sous">Cinq maillons. Si l'un casse, ils donnent tous le même « ça marche pas » — celui-ci dit
+            lequel.</p>
+
+        <div class="boutons">
+            <button class="b b-discord" id="bDiscord" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z" />
+                </svg>
+                Discord
+            </button>
+            <button class="b b-google" id="bGoogle" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>
+                    <path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>
+                    <path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>
+                    <path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/>
+                </svg>
+                Google
+            </button>
+            <button class="b b-sortir" id="bSortir" hidden>Se déconnecter</button>
+        </div>
+
+        <div class="chaine" id="chaine"></div>
+
+        <div class="note">
+            ⚠️ <b>Ce banc ne marche qu'en local.</b> La route qu'il interroge est fermée quand
+            <code>NODE_ENV=production</code>, comme les bots de mise au point.
+        </div>
+    </div>
+
+    <script type="module">
+        // ⚠️ Version EPINGLEE. « @latest » ferait dependre la connexion du site
+        // d une publication npm faite pendant la nuit par quelqu un d autre.
+        const CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
+
+        const MAILLONS = [
+            ['config', 'La configuration arrive du serveur', '/api/auth-config'],
+            ['lib', 'La bibliothèque Supabase se charge', 'depuis le CDN, version épinglée'],
+            ['session', 'Une session existe dans le navigateur', 'après le retour du fournisseur'],
+            ['jeton', 'Le serveur accepte le jeton', 'il le fait vérifier par Supabase'],
+            ['profil', 'La ligne de profil est écrite', 'table « comptes »'],
+        ];
+
+        const etat = {};
+        const chaine = document.getElementById('chaine');
+
+        function dessiner() {
+            chaine.innerHTML = '';
+            MAILLONS.forEach(([clef, titre, aide], i) => {
+                const e = etat[clef];
+                const d = document.createElement('div');
+                d.className = 'maillon' + (e ? (e.ok ? ' ok' : ' ko') : '');
+                d.innerHTML = `
+                    <div class="pastille">${e ? (e.ok ? '✓' : '✕') : i + 1}</div>
+                    <div>
+                        <div class="titre">${titre}</div>
+                        <div class="detail">${e ? e.detail : aide}</div>
+                    </div>`;
+                chaine.appendChild(d);
+            });
+        }
+
+        const poser = (clef, ok, detail) => { etat[clef] = { ok, detail }; dessiner(); };
+        dessiner();
+
+        let sb = null;
+
+        (async () => {
+            // ── 1. la configuration
+            let cfg;
+            try {
+                cfg = await (await fetch('/api/auth-config')).json();
+            } catch (e) {
+                return poser('config', false, 'la route ne répond pas : ' + e.message);
+            }
+            if (!cfg.actif) {
+                return poser('config', false,
+                    'le serveur répond « actif: false ». Clef publique absente, ou c’est la service_role '
+                    + '— dans ce cas le garde-fou l’a refusée, et c’est tant mieux.');
+            }
+            poser('config', true, cfg.url);
+
+            // ── 2. la bibliotheque
+            let createClient;
+            try {
+                ({ createClient } = await import(CDN));
+            } catch (e) {
+                return poser('lib', false, 'le CDN ne répond pas : ' + e.message);
+            }
+            poser('lib', true, 'supabase-js 2.118.0');
+
+            sb = createClient(cfg.url, cfg.cle);
+            document.getElementById('bDiscord').disabled = false;
+            document.getElementById('bGoogle').disabled = false;
+
+            // ── 3. la session
+            // ⚠️ Au retour du fournisseur, supabase-js lit tout seul ce qui est
+            // dans l adresse et le range. D ou l attente ici plutot qu une
+            // lecture immediate.
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) {
+                return poser('session', false, 'aucune — clique sur Discord ou Google au-dessus');
+            }
+            poser('session', true,
+                'fournisseur : ' + (session.user.app_metadata?.provider || '?')
+                + ' · e-mail reçu : ' + (session.user.email ? 'oui' : 'NON'));
+            document.getElementById('bSortir').hidden = false;
+
+            // ── 4 et 5. le serveur
+            let r;
+            try {
+                r = await (await fetch('/api/auth-essai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jeton: session.access_token, pseudo: 'Essai' }),
+                })).json();
+            } catch (e) {
+                return poser('jeton', false, 'la route ne répond pas (fermée en production ?)');
+            }
+            if (!r.ok) return poser('jeton', false, r.ou || 'refusé');
+
+            poser('jeton', true, 'playerId : ' + r.playerId + ' · fournisseur vu du serveur : ' + r.fournisseur);
+            // ⚠️ Le test porte sur ce que le serveur DIT avoir fait, pas sur
+            // `r.xp` : une ligne neuve vaut xp 0, et `!!0` est faux — le
+            // maillon serait passe au rouge pour une ecriture parfaitement
+            // reussie.
+            poser('profil', r.profil.startsWith('ligne'),
+                r.profil + (r.xp !== null ? ` · xp ${r.xp} · parties ${r.parties}` : ''));
+        })();
+
+        // ⚠️ `location.origin + pathname` et non `location.href` : l adresse
+        // porte encore le code de retour du tour precedent, qu on renverrait
+        // au fournisseur.
+        const retour = location.origin + location.pathname;
+        const entrer = (provider) => sb.auth.signInWithOAuth({ provider, options: { redirectTo: retour } });
+
+        document.getElementById('bDiscord').onclick = () => entrer('discord');
+        document.getElementById('bGoogle').onclick = () => entrer('google');
+        document.getElementById('bSortir').onclick = async () => {
+            await sb.auth.signOut();
+            location.href = retour;
+        };
+    </script>
+</body>
+
+</html>

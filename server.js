@@ -624,6 +624,37 @@ app.get('/api/auth-config', (req, res) => {
     res.json(comptes.configPourNavigateur());
 });
 
+// 🧪 Banc d essai de la connexion — MISE AU POINT SEULEMENT.
+//
+// ⚠️ FERMEE EN PRODUCTION, comme les bots de mise au point et
+// /admin/ascension/solution. Elle rend le fournisseur et le debut de
+// l identifiant : rien de secret, mais c est une surface d examen qui n a
+// aucune raison d etre ouverte en ligne.
+//
+// Elle existe parce que la chaine a SIX maillons — provider declare, URL de
+// retour, liste blanche, jeton rendu, jeton verifie, ligne ecrite — et qu un
+// seul qui casse donne le meme symptome a l ecran : « ca marche pas ». Celle-ci
+// dit LEQUEL.
+app.post('/api/auth-essai', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') return res.status(404).end();
+    const u = await comptes.verifierJeton(req.body && req.body.jeton);
+    if (!u) return res.json({ ok: false, ou: 'le jeton n est pas valide pour Supabase' });
+    const r = await comptes.identifier(req.body.jeton, {
+        pseudo: req.body.pseudo, avatar: req.body.avatar,
+    });
+    res.json({
+        ok: true,
+        fournisseur: u.fournisseur,
+        // ⚠️ On ne renvoie que le DEBUT de l identifiant : il sert de playerId,
+        // et le journal d un direct n a pas a le porter en entier.
+        playerId: String(r.playerId).slice(0, 8) + '…',
+        aUnEmail: !!u.email,
+        profil: r.profil ? 'ligne ecrite dans « comptes »' : 'pas de ligne (table absente ?)',
+        xp: r.profil ? r.profil.xp : null,
+        parties: r.profil ? r.profil.parties : null,
+    });
+});
+
 app.get('/api/avatars', (req, res) => {
     res.set('Cache-Control', 'no-cache');
     res.json({
@@ -2225,6 +2256,11 @@ app.get('/prototypes', (req, res) => {
 });
 
 // Le drapeau de signalement : six poses sur le vrai panneau de question.
+// 🧪 Le banc de la connexion : il ne dessine rien, il dit QUEL maillon casse.
+app.get('/prototypes/connexion', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-connexion.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });
