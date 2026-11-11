@@ -9,6 +9,10 @@ const { randomUUID } = require('crypto');
 const { Server } = require('socket.io');
 const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque, toutesLesLignes,
         assurerBanqueVF, invaliderBanqueVF } = require('./dbs');
+// 🔑 La connexion Discord / Google. ⚠️ Tout y est facultatif : sans clef
+// publique, `comptes.ACTIF` vaut false et le jeu tourne exactement comme
+// avant, sans bouton de connexion. Un compte n est JAMAIS requis pour jouer.
+const comptes = require('./server-comptes');
 
 const app = express();
 
@@ -599,6 +603,25 @@ app.get('/api/bombanime-series', (req, res) => {
     // Des PERSONNAGES, pas des noms : voir BOMBANIME_VOLUMES plus haut.
     res.json(Object.keys(BOMBANIME_CHARACTERS)
         .map(id => ({ id, n: BOMBANIME_VOLUMES[id] })));
+});
+
+// 🔑 De quoi ouvrir une connexion depuis le navigateur.
+//
+// ⚠️ La clef publique n est PAS ecrite en dur dans app.js. Elle est publique
+// par conception — RLS la borne, et la seule politique de `comptes` est
+// « chacun lit sa ligne » —, mais LE DEPOT EST PUBLIC : une clef commitee ne
+// se change plus sans reecrire l historique. Servie depuis l environnement,
+// elle se fait tourner sans toucher au code.
+//
+// ⚠️ Et `server-comptes.js` REFUSE de la servir si elle se trouve etre la
+// service_role : une confusion entre les deux ne casserait rien a l ecran et
+// ouvrirait la base entiere a qui ouvre l onglet reseau.
+//
+// Sans configuration, rend `{ actif: false }` : le client n affiche alors
+// aucun bouton de connexion, plutot que d en montrer un qui echoue.
+app.get('/api/auth-config', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.json(comptes.configPourNavigateur());
 });
 
 app.get('/api/avatars', (req, res) => {
