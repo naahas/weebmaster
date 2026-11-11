@@ -1910,6 +1910,45 @@ function classementCamps(gameState) {
         : classementCampsPoints(gameState);
 }
 
+// ════════════════════════════════════════════════════════════════
+// 👤 Les comptes dont le jeton a DÉJÀ été vérifié, par playerId
+// ════════════════════════════════════════════════════════════════
+// ⚠️ EN MÉMOIRE DU PROCESSUS, comme les salons. Un recyclage du dyno l'oublie,
+// et c'est sans conséquence : le client renvoie son jeton à chaque
+// reconnexion de socket. Supabase tient la vérité ; cet ensemble n'est qu'un
+// relevé de ce qui a déjà été vérifié, pour ne pas redemander un aller-retour
+// à chaque jointure de salon.
+//
+// ⚠️ On n'y entre QUE par `identifier()`, c'est-à-dire après qu'un jeton a été
+// validé par Supabase ET que son porteur correspond au playerId annoncé. Rien
+// de ce qui vient du client n'y arrive directement.
+const comptesVerifies = new Set();
+
+function estUnCompte(playerId) {
+    return !!playerId && comptesVerifies.has(playerId);
+}
+
+// Le jeton vient d'être vérifié : on allume le losange partout où ce joueur
+// figure déjà. ⚠️ Il PEUT figurer dans plusieurs salons à la fois — c'est le
+// cas courant de qui enchaîne deux parties —, donc on les parcourt tous
+// plutôt que de chercher « son » salon, qui n'existe pas toujours.
+function marquerCompte(playerId) {
+    if (!playerId || comptesVerifies.has(playerId)) {
+        if (playerId) comptesVerifies.add(playerId);
+        return;
+    }
+    comptesVerifies.add(playerId);
+    for (const gs of rooms.values()) {
+        let touche = false;
+        for (const p of gs.players.values()) {
+            if (p.playerId === playerId && !p.compte) { p.compte = true; touche = true; }
+        }
+        // On ne rediffuse que les salons qui ont vraiment bougé : à cinquante
+        // salons ouverts, une diffusion par connexion coûterait pour rien.
+        if (touche) broadcastLobbyUpdate(gs);
+    }
+}
+
 function broadcastLobbyUpdate(gameState) {
     // Mettre à jour les compteurs d'équipe
     if (gameState.lobbyMode === 'rivalry') {
@@ -2282,6 +2321,20 @@ app.get('/prototypes/compte-modal', (req, res) => {
 // trois endroits — le choix se reduisait a « ou » au lieu de « quoi ».
 app.get('/prototypes/compte-formes', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-formes.html');
+});
+
+// 🔑 La forme RETENUE — une petite carte ancree sous l avatar — en cinq
+// densites. Ce qui s y juge n est plus « ou » mais COMBIEN on retire sans
+// qu elle cesse d etre comprehensible. Et plus une seule phrase d explication.
+app.get('/prototypes/compte-carte', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-carte.html');
+});
+
+// 🔑 Six CADRES pour la carte retenue, et la ligne qui dit ce qu on est.
+// ⚠️ Poses sur une maquette de l accueil : un fond noir uni ne permet pas de
+// juger une transparence — le verre depoli et le plein y rendent pareil.
+app.get('/prototypes/compte-cadre', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-cadre.html');
 });
 
 app.get('/prototypes/signalement', (req, res) => {
@@ -9175,7 +9228,33 @@ io.on('connection', (socket) => {
             username: data.username,
             avatar: data.avatar || null
         });
-        
+
+        // 👤 LE COMPTE — vérifié à part, et JAMAIS cru sur parole.
+        //
+        // ⚠️ Le reste de ce gestionnaire est SYNCHRONE et doit le rester : il
+        // rebranche la socket du joueur sur son entrée de salon, et tout ce
+        // qui suit en dépend. La vérification du jeton, elle, demande un
+        // aller-retour à Supabase. On la lance donc à côté et on applique le
+        // résultat quand il arrive — le joueur est simplement un invité
+        // pendant les deux cents millisecondes que ça prend.
+        //
+        // ⚠️ ET LE playerId DOIT CORRESPONDRE AU PORTEUR DU JETON. Sans ce
+        // contrôle, un client bricolé annoncerait l'identifiant d'un inscrit
+        // avec SON propre jeton et porterait le losange de quelqu'un d'autre.
+        // Le jeton dit qui l'on est ; le champ `playerId` n'est qu'une
+        // déclaration.
+        if (data && data.jeton && comptes.ACTIF) {
+            comptes.identifier(data.jeton, {
+                avatar: data.avatar || null,
+                // Le pseudo du fournisseur ne sert qu'au tout premier login ;
+                // ensuite c'est celui du jeu qui gagne (server-comptes.js).
+                nettoyer: pseudoPropre,
+            }).then((r) => {
+                if (!r || r.playerId !== data.playerId) return;
+                marquerCompte(data.playerId);
+            }).catch(() => { /* réseau coupé : il reste un invité */ });
+        }
+
         // 🔥 FIX: Auto-remap socket.id if player already in gameState.players with old socket
         // La socket est neuve : on ignore encore sa room. On la retrouve par le
         // joueur lui-même, présent dans un salon ou dans aucun.
@@ -9435,6 +9514,11 @@ io.on('connection', (socket) => {
             // Après un refresh on reprend son camp : le retirer au hasard
             // ferait sauter les joueurs d'un côté à l'autre à chaque rechargement.
             team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni(gameState)) : null,
+            // ⚠️ Le losange vient de ce que le SERVEUR a déjà vérifié, jamais
+            // d'un champ envoyé par le client. `data` arrive du navigateur :
+            // y lire un `compte: true` reviendrait à laisser chacun se
+            // décerner le signe, et il ne vaudrait plus rien.
+            compte: estUnCompte(data.playerId),
             isAdmin: data.isAdmin || false
         });
 

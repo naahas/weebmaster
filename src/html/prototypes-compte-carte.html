@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — la carte ancrée, cinq densités</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ UNE SEULE FORME, CINQ DENSITES. La carte tombe sous l avatar, collee
+        au bord droit : c est acte. Ce qui se juge ici, c est COMBIEN on en
+        retire sans que la carte cesse d etre comprehensible.
+
+        ⚠️ LA PHRASE DE PUB EST PARTIE, et elle ne revient pas. « Garde ta
+        progression. Facultatif — tu peux jouer sans. » expliquait a quelqu un
+        qui n avait rien demande. Deux boutons aux couleurs de Discord et de
+        Google se passent de legende : personne n a besoin qu on lui dise ce
+        qu est un bouton Discord. Et le mot « facultatif » defendait le site
+        contre un reproche que PERSONNE n avait formule — un panneau qui ne
+        s ouvre qu au clic ne force rien, il n a pas a s en excuser.
+
+        ⚠️ Les statistiques d un invite restent VERROUILLEES et non a zero :
+        un zero dit « tu n as rien joue », un tiret grise dit « ca ne compte
+        pas encore ». C est le seul argument qui reste, et il ne coute pas une
+        ligne de texte.
+
+        ⚠️ Chemins d images en ABSOLU — servie sous /prototypes/, la page
+        chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.4rem 0.8rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 600;
+            color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 66rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; max-width: 48rem; }
+
+        .piste { margin-top: 2.75rem; }
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.25rem; }
+        .piste-code {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #0b0b0e; background: var(--or); padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+        }
+        .piste-nom { font-size: 1.02rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.85rem; margin-bottom: 0.9rem; max-width: 48rem; }
+
+        .scene {
+            position: relative; overflow: hidden;
+            background: #0a0a0a;
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.05) 0%, transparent 62%);
+            border: 1px solid #1d1d26; border-radius: 0.75rem;
+            padding: 1.1rem 1.25rem 1.5rem;
+            display: flex; flex-direction: column;
+        }
+        .scene.tel { max-width: 390px; }
+
+        .avis {
+            margin-top: 0.9rem; padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 2px solid #2b2b36; font-size: 0.79rem; color: #8b8b96;
+        }
+        .avis b { color: #cfcfd8; }
+        .mesure { color: #6e6e7b; font-size: 0.74rem; margin-top: 0.35rem; }
+
+        /* ════════ La barre ════════ */
+        .tb { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; flex: 0 0 auto; }
+        .tb .logo { margin-right: auto; width: 2.9rem; height: 2.9rem; padding: 0; background: none; border: 0; cursor: pointer; }
+        .tb .logo img { width: 100%; height: 100%; object-fit: contain; }
+        .tb .nom { font-size: 0.85rem; font-weight: 600; color: var(--txt); white-space: nowrap; }
+        .tb .nom.compte::before {
+            content: ''; display: inline-block; vertical-align: middle;
+            width: 0.32em; height: 0.32em; margin-right: 0.45em;
+            background: currentColor; opacity: 0.8; transform: rotate(45deg);
+        }
+        .tb .av { position: relative; width: 2.6rem; height: 2.6rem; padding: 0; background: none; border: 0; cursor: pointer; flex: 0 0 auto; }
+        .tb .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+        .tb .av .coin {
+            position: absolute; right: -0.1rem; bottom: -0.1rem;
+            width: 1rem; height: 1rem; border-radius: 50%;
+            display: grid; place-items: center; border: 0.11rem solid #0a0a0a;
+        }
+        .coin.discord { background: var(--discord); } .coin.discord svg { fill: #fff; }
+        .coin.google { background: #fff; }
+        .coin svg { width: 0.6rem; height: 0.6rem; }
+
+        /* ════════ L ancrage ════════ */
+        .ancre { display: flex; justify-content: flex-end; margin-top: 0.6rem; }
+
+        /* ════════ La carte, tronc commun ════════ */
+        .c {
+            width: 17.5rem; max-width: 100%;
+            background: linear-gradient(170deg, #17150f 0%, #101013 48%, #0c0c0f 100%);
+            border: 0.08rem solid rgba(255, 215, 0, 0.22);
+            border-radius: 0.85rem;
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.62), 0 0 2rem rgba(255, 180, 0, 0.06);
+            padding: 0.95rem;
+            display: flex; flex-direction: column; gap: 0.75rem;
+        }
+
+        .c-tete { display: flex; align-items: center; gap: 0.65rem; }
+        .c-av { position: relative; width: 2.9rem; height: 2.9rem; flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+        .c-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+        .c-av .crayon {
+            position: absolute; right: -0.18rem; bottom: -0.18rem;
+            width: 1.15rem; height: 1.15rem; border-radius: 50%;
+            display: grid; place-items: center;
+            background: #26231a; border: 0.09rem solid #101013; color: var(--or); font-size: 0.55rem;
+        }
+        .c-id { flex: 1; min-width: 0; }
+        /* Le nom EST le champ : pas de boite, pas de bouton « OK ». */
+        .c-nom {
+            width: 100%; font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            color: var(--txt); background: none; border: 0;
+            border-bottom: 0.07rem dashed rgba(255, 215, 0, 0.3);
+            outline: none; padding: 0 0 0.1rem; cursor: text;
+        }
+        .c-nom:focus { border-bottom-color: var(--or); border-bottom-style: solid; }
+        .c-rang { display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; color: var(--doux); margin-top: 0.2rem; }
+        .c-rang .four { width: 0.78rem; height: 0.78rem; border-radius: 50%; display: inline-grid; place-items: center; flex: 0 0 auto; }
+        .c-rang .four.discord { background: var(--discord); padding: 0.11rem; } .c-rang .four.discord svg { fill: #fff; }
+        .c-rang .four.google { background: #fff; padding: 0.1rem; }
+        .c-rang .four svg { width: 100%; height: 100%; display: block; }
+        .c-fermer {
+            width: 1.6rem; height: 1.6rem; flex: 0 0 auto; border: 0; border-radius: 50%;
+            background: rgba(255,255,255,0.06); color: var(--doux); cursor: pointer; font-size: 0.75rem; line-height: 1;
+        }
+        .c-fermer:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+        .c-trait { height: 1px; background: rgba(255,255,255,0.08); }
+
+        /* Boutons de fournisseur */
+        .fb {
+            display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+            width: 100%; padding: 0.56rem 0.7rem; border: 0; border-radius: 0.45rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 600;
+            color: #fff; background: var(--discord); cursor: pointer; white-space: nowrap;
+        }
+        .fb:hover { filter: brightness(1.12); }
+        .fb svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; fill: #fff; }
+        .fb.g { background: #fff; color: #1f1f1f; } .fb.g svg { fill: none; }
+        .c-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+        .c-pile { display: flex; flex-direction: column; gap: 0.4rem; }
+
+        /* Fournisseurs en pastilles rondes */
+        .c-ronds { display: flex; gap: 0.45rem; }
+        .rond {
+            flex: 1; display: grid; place-items: center; height: 2.3rem;
+            border: 0; border-radius: 0.5rem; cursor: pointer;
+        }
+        .rond.d { background: var(--discord); } .rond.d svg { fill: #fff; }
+        .rond.g { background: #fff; }
+        .rond svg { width: 1.15rem; height: 1.15rem; }
+        .rond:hover { filter: brightness(1.12); }
+
+        /* Statistiques — trois mises */
+        .st-boites { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+        .st-boites > div { text-align: center; padding: 0.45rem 0.2rem; background: rgba(255,255,255,0.035); border-radius: 0.45rem; }
+        .st-ligne { display: flex; justify-content: space-between; text-align: center; padding: 0 0.2rem; }
+        .st-ligne > div { flex: 1; }
+        .st-menu { display: flex; flex-direction: column; gap: 0.15rem; }
+        .st-menu > div { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.75rem; }
+        .st-menu .n { color: #8b8b96; }
+        .v { font-size: 0.95rem; font-weight: 800; color: var(--or); line-height: 1.15; }
+        .n { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7d7d8a; }
+        .st-menu .v { font-size: 0.85rem; }
+        .verrou { opacity: 0.5; } .verrou .v { color: #6e6e7b; }
+
+        /* Liens */
+        .c-liens { display: flex; flex-direction: column; gap: 0.05rem; }
+        .lien {
+            display: flex; align-items: center; gap: 0.55rem; width: 100%;
+            padding: 0.42rem 0.4rem; border: 0; border-radius: 0.38rem; background: none;
+            font-family: inherit; font-size: 0.78rem; font-weight: 500; color: #b9b9c6;
+            cursor: pointer; text-align: left;
+        }
+        .lien:hover { background: rgba(255,255,255,0.055); color: #fff; }
+        .lien svg { width: 0.9rem; height: 0.9rem; fill: currentColor; opacity: 0.65; flex: 0 0 auto; }
+        .lien.danger:hover { color: #f87171; }
+        /* Les liens en rangee d icones, pour les variantes les plus serrees */
+        .c-icones { display: flex; gap: 0.25rem; justify-content: space-around; }
+        .c-icones .lien { width: auto; flex-direction: column; gap: 0.2rem; padding: 0.35rem 0.4rem; font-size: 0.6rem; text-align: center; }
+        .c-icones .lien svg { width: 1rem; height: 1rem; opacity: 0.8; }
+
+        .etiq { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e7b; }
+
+        @media (max-width: 700px) {
+            .rail { gap: 0.9rem; padding: 0.75rem 1rem; }
+            .page { padding: 1.75rem 1rem 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>État</span>
+            <div class="seg" id="segEtat">
+                <button data-v="off" class="on">Invité</button>
+                <button data-v="discord">Discord</button>
+                <button data-v="google">Google</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <span>Largeur</span>
+            <div class="seg" id="segLarge">
+                <button data-v="pc" class="on">Ordinateur</button>
+                <button data-v="tel">Téléphone</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>La carte ancrée, cinq densités</h1>
+        <p class="sous">La forme est actée : une petite carte qui tombe sous l'avatar, collée à droite. Ce qui se
+            juge ici, c'est <b>combien on en retire</b> sans qu'elle cesse d'être compréhensible. Plus aucune phrase
+            d'explication dans aucune des cinq.</p>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">C1</span><span class="piste-nom">Pleine</span></div>
+            <p class="piste-dit">Tout y est, rien n'est expliqué. Les deux boutons empilés, les stats en boîtes, les
+                liens en liste.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="ancre" data-carte data-v="1"></div>
+            </div>
+            <p class="avis"><b>Le repère.</b> C'est la carte d'avant moins la phrase de pub — tout le reste des
+                variantes se mesure à celle-ci.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">C2</span><span class="piste-nom">Boutons jumeaux</span>
+            </div>
+            <p class="piste-dit">Discord et Google côte à côte au lieu d'empilés. Le nom du fournisseur suffit —
+                « Continuer avec » ne disait rien.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="ancre" data-carte data-v="2"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> une rangée gagnée, et les deux choix se lisent d'un coup au lieu de se
+                suivre. <b>Contre :</b> deux boutons de même taille ne disent plus lequel on conseille.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">C3</span><span class="piste-nom">Fournisseurs en
+                    pastilles</span></div>
+            <p class="piste-dit">Plus de mots du tout : les deux logos, et c'est tout. Le logo Discord est connu de
+                tous ceux que le site vise.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="ancre" data-carte data-v="3"></div>
+            </div>
+            <p class="avis">⚠️ <b>Le pari :</b> un logo sans légende ne dit pas ce qu'il FAIT. On reconnaît Discord,
+                on ne devine pas qu'il sert à se connecter. L'étiquette « Connexion » au-dessus est tout ce qui
+                reste pour le dire.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">C4</span><span class="piste-nom">Stats dans
+                    l'en-tête</span></div>
+            <p class="piste-dit">Les trois chiffres passent sous le nom, sans boîtes ni titre. La carte perd un bloc
+                entier.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="ancre" data-carte data-v="4"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> la plus courte des cinq, et l'identité tient d'un seul regard — avatar,
+                nom, chiffres. <b>Contre :</b> des chiffres collés au nom se lisent moins bien qu'isolés.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">C5</span><span class="piste-nom">Au plus court</span>
+            </div>
+            <p class="piste-dit">Stats en lignes de menu, liens en rangée d'icônes. Tout ce qui pouvait tomber est
+                tombé.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="ancre" data-carte data-v="5"></div>
+            </div>
+            <p class="avis">⚠️ <b>La limite :</b> des icônes sans mot sous elles redeviennent des devinettes. Ici
+                elles gardent une légende minuscule — sans elle, personne ne trouverait « Signaler ».</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ Les cinq cartes partagent leurs BRIQUES, pas leur assemblage :
+        // chacune choisit sa mise de statistiques, sa mise de boutons et sa
+        // mise de liens. Recopier la carte cinq fois condamnerait a reporter
+        // chaque retouche cinq fois — et a se retrouver avec cinq versions
+        // qui divergent.
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24">'
+                + '<path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>'
+                + '<path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>'
+                + '<path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>'
+                + '<path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            stats: '<svg viewBox="0 0 24 24"><path d="M4 20h16v-2H4v2zM6 16h2V9H6v7zm5 0h2V5h-2v11zm5 0h2v-5h-2v5z"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+            bug: '<svg viewBox="0 0 24 24"><path d="M20 8h-2.8a5.9 5.9 0 0 0-1.6-1.7L17 4.4 15.6 3l-2 2a6 6 0 0 0-3.2 0l-2-2L7 4.4l1.4 1.9A5.9 5.9 0 0 0 6.8 8H4v2h2.1v1H4v2h2.1v1H4v2h2.8a6 6 0 0 0 10.4 0H20v-2h-2.1v-1H20v-2h-2.1v-1H20V8z"/></svg>',
+            sortie: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>',
+        };
+        const NOMS = { discord: 'Discord', google: 'Google' };
+        const INVITE = 'Invité-7F2K', COMPTE = 'Naahas';
+
+        const co = (e) => e !== 'off';
+        const nom = (e) => co(e) ? COMPTE : INVITE;
+        const S = (e) => co(e) ? ['47', '1 280', '12'] : ['—', '—', '—'];
+        const LAB = ['Parties', 'XP', 'Victoires'];
+
+        const tete = (e) => `
+            <div class="c-tete">
+                <button class="c-av" title="Changer d'avatar"><img src="/novice.png" alt=""><span class="crayon">✎</span></button>
+                <div class="c-id">
+                    <input class="c-nom" value="${nom(e)}" maxlength="16">
+                    <div class="c-rang">${co(e)
+                ? `<span class="four ${e}">${SVG[e]}</span> ${NOMS[e]}`
+                : 'Compte invité'}</div>
+                </div>
+                <button class="c-fermer">✕</button>
+            </div>`;
+
+        // Les statistiques, trois mises possibles
+        const stats = {
+            boites: (e) => `<div class="st-boites${co(e) ? '' : ' verrou'}">${S(e).map((v, i) =>
+                `<div><div class="v">${v}</div><div class="n">${LAB[i]}</div></div>`).join('')}</div>`,
+            ligne: (e) => `<div class="st-ligne${co(e) ? '' : ' verrou'}">${S(e).map((v, i) =>
+                `<div><div class="v">${v}</div><div class="n">${LAB[i]}</div></div>`).join('')}</div>`,
+            menu: (e) => `<div class="st-menu${co(e) ? '' : ' verrou'}">${S(e).map((v, i) =>
+                `<div><span class="n" style="text-transform:none;letter-spacing:0;font-size:0.75rem;font-weight:500">${LAB[i]}</span><span class="v">${v}</span></div>`).join('')}</div>`,
+        };
+
+        // Les fournisseurs, trois mises possibles
+        const fourn = {
+            pile: () => `<div class="c-pile">
+                <button class="fb">${SVG.discord} Discord</button>
+                <button class="fb g">${SVG.google} Google</button></div>`,
+            duo: () => `<div class="c-duo">
+                <button class="fb">${SVG.discord} Discord</button>
+                <button class="fb g">${SVG.google} Google</button></div>`,
+            ronds: () => `<div><div class="etiq" style="margin-bottom:0.35rem">Connexion</div>
+                <div class="c-ronds">
+                    <button class="rond d">${SVG.discord}</button>
+                    <button class="rond g">${SVG.google}</button>
+                </div></div>`,
+        };
+
+        // Les liens, deux mises possibles
+        const liens = {
+            liste: (e) => `<div class="c-liens">
+                <button class="lien">${SVG.stats} Mes statistiques</button>
+                <button class="lien">${SVG.image} Mon avatar</button>
+                <button class="lien">${SVG.bug} Signaler</button>
+                ${co(e) ? `<button class="lien danger">${SVG.sortie} Se déconnecter</button>` : ''}</div>`,
+            icones: (e) => `<div class="c-icones">
+                <button class="lien">${SVG.stats}<span>Stats</span></button>
+                <button class="lien">${SVG.image}<span>Avatar</span></button>
+                <button class="lien">${SVG.bug}<span>Signaler</span></button>
+                ${co(e) ? `<button class="lien danger">${SVG.sortie}<span>Sortir</span></button>` : ''}</div>`,
+        };
+
+        const trait = '<div class="c-trait"></div>';
+
+        const CARTES = {
+            1: (e) => `<div class="c">${tete(e)}${trait}${co(e) ? '' : fourn.pile() + trait}${stats.boites(e)}${trait}${liens.liste(e)}</div>`,
+            2: (e) => `<div class="c">${tete(e)}${trait}${co(e) ? '' : fourn.duo() + trait}${stats.boites(e)}${trait}${liens.liste(e)}</div>`,
+            3: (e) => `<div class="c">${tete(e)}${trait}${co(e) ? '' : fourn.ronds() + trait}${stats.boites(e)}${trait}${liens.liste(e)}</div>`,
+            // ── C4 : les chiffres remontent dans l en-tete, le bloc disparait
+            4: (e) => `<div class="c">${tete(e)}${stats.ligne(e)}${trait}${co(e) ? '' : fourn.duo() + trait}${liens.liste(e)}</div>`,
+            // ── C5 : tout ce qui pouvait tomber est tombe
+            5: (e) => `<div class="c">${tete(e)}${trait}${co(e) ? '' : fourn.duo() + trait}${stats.menu(e)}${trait}${liens.icones(e)}</div>`,
+        };
+
+        const barre = (e) => `
+            <button class="logo"><img src="/logo-sm.png" alt=""></button>
+            <span class="nom${co(e) ? ' compte' : ''}">${nom(e)}</span>
+            <button class="av" title="Mon profil">
+                <img src="/novice.png" alt="">
+                ${co(e) ? `<span class="coin ${e}">${SVG[e]}</span>` : ''}
+            </button>`;
+
+        function appliquer(e) {
+            document.querySelectorAll('[data-barre]').forEach(x => { x.innerHTML = barre(e); });
+            document.querySelectorAll('[data-carte]').forEach(x => { x.innerHTML = CARTES[x.dataset.v](e); });
+            // La hauteur de chaque carte, mesuree et affichee : c est le seul
+            // chiffre qui separe vraiment ces cinq variantes.
+            requestAnimationFrame(() => {
+                document.querySelectorAll('[data-carte]').forEach((x) => {
+                    const c = x.querySelector('.c'); if (!c) return;
+                    const m = x.closest('.piste').querySelector('.mesure');
+                    if (m) m.textContent = 'Hauteur : ' + Math.round(c.getBoundingClientRect().height) + ' px';
+                });
+            });
+        }
+
+        // Une ligne de mesure sous chaque avis
+        document.querySelectorAll('.piste .avis').forEach((a) => {
+            const d = document.createElement('div'); d.className = 'mesure'; a.appendChild(d);
+        });
+
+        document.getElementById('segEtat').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on'); appliquer(b.dataset.v);
+        });
+        document.getElementById('segLarge').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelectorAll('[data-scene]').forEach(s => s.classList.toggle('tel', b.dataset.v === 'tel'));
+        });
+
+        appliquer('off');
+    </script>
+</body>
+
+</html>

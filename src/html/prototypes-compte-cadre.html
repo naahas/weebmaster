@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le cadre de la carte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ LA CARTE EST ACTEE : celle aux fournisseurs en pastilles (C3 du banc
+        precedent). Ce qui se juge ici, c est son CADRE — et la ligne qui dit
+        ce qu on est.
+
+        ⚠️ « Invité-7F2K » N EXISTE PAS SUR LE SITE, c etait une invention du
+        banc precedent, et c est de la que venait toute la ressemblance avec
+        Kyara. `randomPseudo()` (app.js) tire un mot d une liste de vingt-quatre
+        — Shinobi, Kitsune, Hokage, Zanpakuto… — et y colle un nombre. Le banc
+        tire donc maintenant dans la VRAIE liste.
+
+        ⚠️ ET UN FOND NOIR UNI NE PERMET PAS DE JUGER UNE TRANSPARENCE. Les six
+        cadres sont donc poses sur une maquette de l accueil : sans quelque
+        chose derriere, le verre depoli et le plein rendent exactement pareil,
+        et l on choisirait a l aveugle.
+
+        ⚠️ Chemins d images en ABSOLU — servie sous /prototypes/, la page
+        chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span {
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.38rem 0.7rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.78rem; font-weight: 600;
+            color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; max-width: 48rem; }
+
+        .piste { margin-top: 2.6rem; }
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.25rem; }
+        .piste-code {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #0b0b0e; background: var(--or); padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+        }
+        .piste-nom { font-size: 1.02rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.85rem; margin-bottom: 0.9rem; max-width: 48rem; }
+
+        .avis {
+            margin-top: 0.9rem; padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 2px solid #2b2b36; font-size: 0.79rem; color: #8b8b96;
+        }
+        .avis b { color: #cfcfd8; }
+
+        /* ════════════════════════════════════════════
+           LA MAQUETTE D ACCUEIL, DERRIERE
+           ⚠️ Elle n est pas decorative : sans elle on ne peut pas juger une
+           transparence. Un verre depoli pose sur du noir uni rend exactement
+           comme un fond plein.
+           ════════════════════════════════════════════ */
+        .scene {
+            position: relative; overflow: hidden;
+            border: 1px solid #1d1d26; border-radius: 0.75rem;
+            background:
+                radial-gradient(ellipse at 22% 30%, rgba(140, 70, 220, 0.16) 0%, transparent 55%),
+                radial-gradient(ellipse at 78% 80%, rgba(255, 180, 80, 0.13) 0%, transparent 58%),
+                linear-gradient(180deg, #0c0a14 0%, #0f0c1a 50%, #08080c 100%);
+            padding: 1.1rem 1.25rem 1.6rem;
+            display: flex; flex-direction: column;
+            /* ⚠️ La carte est en POSITION ABSOLUE : elle ne pousse donc pas la
+               scene, qui se dimensionnait sur la seule maquette — plus courte
+               qu elle. Les six cartes se coupaient en bas. Le plancher vaut la
+               hauteur de la plus haute (≈ 345 px) plus son decalage du haut. */
+            min-height: 28rem;
+        }
+        .scene.tel { max-width: 390px; }
+
+        /* La grille de fond de l accueil */
+        .scene::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+            background-size: 2.6rem 2.6rem;
+        }
+
+        .faux { position: relative; z-index: 1; margin-top: 1.6rem; padding-left: 0.5rem; max-width: 22rem; }
+        .faux-titre { width: 13rem; max-width: 70%; opacity: 0.92; }
+        .faux-btns { display: flex; gap: 0.6rem; margin-top: 1.1rem; flex-wrap: wrap; }
+        .faux-b {
+            padding: 0.6rem 1.1rem; border-radius: 0.55rem;
+            font-size: 0.8rem; font-weight: 700; white-space: nowrap;
+        }
+        .faux-b.or { color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre)); }
+        .faux-b.gris { color: #cfcfd8; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255,255,255,0.12); }
+        .faux-stats { display: flex; gap: 1.6rem; margin-top: 1.4rem; }
+        .faux-stats .v { font-size: 1.3rem; font-weight: 900; color: var(--or); line-height: 1; }
+        .faux-stats .n { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #7d7d8a; margin-top: 0.2rem; }
+
+        /* ════════ La barre ════════ */
+        .tb { position: relative; z-index: 3; display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; flex: 0 0 auto; }
+        .tb .logo { margin-right: auto; width: 2.9rem; height: 2.9rem; padding: 0; background: none; border: 0; cursor: pointer; }
+        .tb .logo img { width: 100%; height: 100%; object-fit: contain; }
+        .tb .nom { font-size: 0.85rem; font-weight: 600; color: var(--txt); white-space: nowrap; }
+        .tb .av { position: relative; width: 2.6rem; height: 2.6rem; padding: 0; background: none; border: 0; cursor: pointer; flex: 0 0 auto; }
+        .tb .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+
+        /* ════════ La carte, posée sur la maquette ════════ */
+        .ancre {
+            position: absolute; z-index: 4;
+            top: 4.4rem; right: 1.25rem;
+            width: 17.5rem; max-width: calc(100% - 2.5rem);
+        }
+
+        .c {
+            padding: 0.95rem;
+            display: flex; flex-direction: column; gap: 0.7rem;
+            border-radius: 0.85rem;
+        }
+
+        /* ── K1 · plein : le repère ── */
+        .c.k1 {
+            background: linear-gradient(170deg, #17150f 0%, #101013 48%, #0c0c0f 100%);
+            border: 0.08rem solid rgba(255, 215, 0, 0.22);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.62);
+        }
+
+        /* ── K2 · fondu à gauche ──
+           ⚠️ Le fond s efface vers la GAUCHE : la carte parait sortir du bord
+           droit au lieu d etre posee dessus. La bordure doit suivre le meme
+           fondu, sinon un trait net ferme une carte qui, elle, s ouvre —
+           d ou le masque applique a la bordure. */
+        .c.k2 {
+            position: relative;
+            background: linear-gradient(90deg,
+                rgba(16, 16, 19, 0.18) 0%,
+                rgba(16, 16, 19, 0.78) 34%,
+                rgba(20, 18, 14, 0.97) 100%);
+            backdrop-filter: blur(0.45rem);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.45);
+        }
+        .c.k2::after {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+            border: 0.08rem solid rgba(255, 215, 0, 0.3);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+        }
+
+        /* ── K3 · verre dépoli ── */
+        .c.k3 {
+            background: rgba(22, 20, 26, 0.55);
+            backdrop-filter: blur(1.1rem) saturate(1.3);
+            border: 0.08rem solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.45), inset 0 0.06rem 0 rgba(255, 255, 255, 0.09);
+        }
+
+        /* ── K4 · sans bordure, ombre seule ── */
+        .c.k4 {
+            background: #0d0d11;
+            border: 0;
+            box-shadow: 0 1.6rem 3.5rem rgba(0, 0, 0, 0.8), 0 0.2rem 0.6rem rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── K5 · filet doré en haut ──
+           Toute la couleur tient sur une ligne de 2 px. Le reste est mat. */
+        .c.k5 {
+            position: relative; overflow: hidden;
+            background: #100f14;
+            border: 0.08rem solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.6);
+        }
+        .c.k5::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 0.13rem;
+            background: linear-gradient(90deg, transparent, var(--or) 25%, var(--ambre) 75%, transparent);
+        }
+
+        /* ── K6 · coin chanfreiné ──
+           ⚠️ Le chanfrein se fait au `clip-path`, donc PAS de border : une
+           bordure CSS suit le rectangle et serait coupee par le masque. Le
+           trait est un second calque decoupe de la meme facon. */
+        .c.k6 {
+            position: relative;
+            background: linear-gradient(165deg, #1a1710 0%, #101013 55%, #0c0c0f 100%);
+            border: 0; border-radius: 0;
+            clip-path: polygon(1.1rem 0, 100% 0, 100% calc(100% - 1.1rem), calc(100% - 1.1rem) 100%, 0 100%, 0 1.1rem);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.62);
+        }
+        .c.k6::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: rgba(255, 215, 0, 0.3);
+            clip-path: polygon(
+                1.1rem 0, 100% 0, 100% calc(100% - 1.1rem), calc(100% - 1.1rem) 100%, 0 100%, 0 1.1rem,
+                0.08rem 1.14rem, 0.08rem calc(100% - 0.08rem), calc(100% - 1.14rem) calc(100% - 0.08rem),
+                calc(100% - 0.08rem) calc(100% - 1.14rem), calc(100% - 0.08rem) 0.08rem, 1.14rem 0.08rem);
+        }
+
+        /* ════════ Le contenu de la carte (identique partout) ════════ */
+        .c-tete { display: flex; align-items: center; gap: 0.65rem; }
+        .c-av { position: relative; width: 2.9rem; height: 2.9rem; flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+        .c-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+        .c-av .crayon {
+            position: absolute; right: -0.18rem; bottom: -0.18rem;
+            width: 1.15rem; height: 1.15rem; border-radius: 50%;
+            display: grid; place-items: center;
+            background: #26231a; border: 0.09rem solid #101013; color: var(--or); font-size: 0.55rem;
+        }
+        .c-id { flex: 1; min-width: 0; }
+        .c-nom {
+            width: 100%; font-family: inherit; font-size: 0.95rem; font-weight: 700;
+            color: var(--txt); background: none; border: 0;
+            border-bottom: 0.07rem dashed rgba(255, 215, 0, 0.3);
+            outline: none; padding: 0 0 0.1rem; cursor: text;
+        }
+        .c-nom:focus { border-bottom-color: var(--or); border-bottom-style: solid; }
+        .c-rang { display: flex; align-items: center; gap: 0.32rem; font-size: 0.68rem; color: var(--doux); margin-top: 0.2rem; }
+        .c-rang .pt { width: 0.34rem; height: 0.34rem; border-radius: 50%; background: #6e6e7b; flex: 0 0 auto; }
+        .c-fermer {
+            width: 1.6rem; height: 1.6rem; flex: 0 0 auto; border: 0; border-radius: 50%;
+            background: rgba(255,255,255,0.08); color: var(--doux); cursor: pointer; font-size: 0.75rem; line-height: 1;
+        }
+        .c-trait { height: 1px; background: rgba(255,255,255,0.09); }
+        .etiq { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e7b; margin-bottom: 0.35rem; }
+
+        .c-ronds { display: flex; gap: 0.45rem; }
+        .rond { flex: 1; display: grid; place-items: center; height: 2.3rem; border: 0; border-radius: 0.5rem; cursor: pointer; }
+        .rond.d { background: var(--discord); } .rond.d svg { fill: #fff; }
+        .rond.g { background: #fff; }
+        .rond svg { width: 1.15rem; height: 1.15rem; }
+
+        .st { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; opacity: 0.5; }
+        .st > div { text-align: center; padding: 0.42rem 0.2rem; background: rgba(255,255,255,0.05); border-radius: 0.45rem; }
+        .st .v { font-size: 0.95rem; font-weight: 800; color: #6e6e7b; line-height: 1.15; }
+        .st .n { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7d7d8a; }
+
+        .c-liens { display: flex; flex-direction: column; gap: 0.05rem; }
+        .lien {
+            display: flex; align-items: center; gap: 0.55rem; width: 100%;
+            padding: 0.4rem 0.4rem; border: 0; border-radius: 0.38rem; background: none;
+            font-family: inherit; font-size: 0.78rem; font-weight: 500; color: #b9b9c6;
+            cursor: pointer; text-align: left;
+        }
+        .lien:hover { background: rgba(255,255,255,0.07); color: #fff; }
+        .lien svg { width: 0.9rem; height: 0.9rem; fill: currentColor; opacity: 0.65; flex: 0 0 auto; }
+
+        @media (max-width: 700px) {
+            .rail { gap: 0.8rem; padding: 0.75rem 1rem; }
+            .page { padding: 1.75rem 1rem 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>Ligne de statut</span>
+            <div class="seg" id="segStatut">
+                <button data-v="rien" class="on">Rien</button>
+                <button data-v="nonco">Non connecté</button>
+                <button data-v="local">Sur ce navigateur</button>
+                <button data-v="pasgarde">Progression non gardée</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <span>Largeur</span>
+            <div class="seg" id="segLarge">
+                <button data-v="pc" class="on">Ordinateur</button>
+                <button data-v="tel">Téléphone</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <button class="seg" id="retirer" style="border:0;padding:0">
+                <span style="padding:0.38rem 0.7rem;font-size:0.78rem;font-weight:600;color:#8b8b96;">Retirer un
+                    pseudo</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Le cadre de la carte</h1>
+        <p class="sous">La carte est actée — celle aux fournisseurs en pastilles. Six cadres, posés sur une maquette
+            de ton accueil : <b>un fond noir uni ne permet pas de juger une transparence</b>, le verre et le plein y
+            rendraient pareil.</p>
+        <p class="sous" style="margin-top:0.6rem">⚠️ Et le pseudo vient maintenant de la <b>vraie</b> liste du site
+            (<code style="color:#FFD700">randomPseudo</code>, 24 mots) : <i>Shinobi427</i>, <i>Kitsune88</i>,
+            <i>Zanpakuto301</i>. « Invité-7F2K » était une invention de mon banc — c'est de là que venait toute la
+            ressemblance avec Kyara.</p>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K1</span><span class="piste-nom">Plein</span></div>
+            <p class="piste-dit">Fond opaque, filet doré tout autour. Le repère.</p>
+            <div class="scene" data-scene><div data-carte data-k="k1"></div></div>
+            <p class="avis"><b>Le plus lisible des six</b>, et le plus ordinaire. Rien ne distrait du contenu, rien
+                ne surprend non plus.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K2</span><span class="piste-nom">Fondu à gauche</span>
+            </div>
+            <p class="piste-dit">Le fond s'efface vers la gauche : la carte paraît <i>sortir</i> du bord droit au
+                lieu d'être posée dessus. La bordure suit le même fondu.</p>
+            <div class="scene" data-scene><div data-carte data-k="k2"></div></div>
+            <p class="avis">⚠️ <b>Ce qu'il a fallu régler :</b> une bordure nette autour d'un fond qui s'efface
+                <i>ferme</i> une carte qui, elle, s'ouvre — les deux se contredisaient. Le trait est donc masqué par
+                le même dégradé. <b>Le risque :</b> le texte de gauche repose sur un fond presque transparent, et
+                sa lisibilité dépend de ce qu'il y a derrière.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K3</span><span class="piste-nom">Verre dépoli</span>
+            </div>
+            <p class="piste-dit">On voit le jeu derrière, flouté. Bordure claire plutôt que dorée.</p>
+            <div class="scene" data-scene><div data-carte data-k="k3"></div></div>
+            <p class="avis"><b>Pour :</b> moderne, et la carte ne coupe pas la page. <b>Contre :</b> le flou coûte
+                cher sur téléphone, et surtout — c'est le cadre que tout le monde utilise depuis cinq ans.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K4</span><span class="piste-nom">Sans bordure</span>
+            </div>
+            <p class="piste-dit">Aucun trait. C'est l'ombre, très marquée, qui détache la carte du fond.</p>
+            <div class="scene" data-scene><div data-carte data-k="k4"></div></div>
+            <p class="avis"><b>Le plus sobre.</b> Mais sans or nulle part, la carte pourrait appartenir à n'importe
+                quel site — c'est exactement le reproche que tu faisais au volet.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K5</span><span class="piste-nom">Filet doré en
+                    haut</span></div>
+            <p class="piste-dit">Toute la couleur tient sur une ligne de 2 px, qui s'éteint aux deux bouts. Le reste
+                est mat.</p>
+            <div class="scene" data-scene><div data-carte data-k="k5"></div></div>
+            <p class="avis"><b>Pour :</b> l'or est là mais ne cerne rien — la carte reste calme et garde sa
+                signature. C'est le compromis entre K1 et K4.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">K6</span><span class="piste-nom">Coin
+                    chanfreiné</span></div>
+            <p class="piste-dit">Deux angles coupés en diagonale. Une forme, pas un rectangle — plus « jeu » que
+                « application ».</p>
+            <div class="scene" data-scene><div data-carte data-k="k6"></div></div>
+            <p class="avis">⚠️ <b>Ce qu'il a fallu régler :</b> le chanfrein se fait au <code>clip-path</code>, donc
+                aucune <code>border</code> possible — elle suit le rectangle et serait tranchée par le masque. Le
+                trait doré est un second calque découpé de la même façon.</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ LA VRAIE LISTE DU SITE, copiee de randomPseudo() dans app.js.
+        // Le banc d avant inventait « Invité-7F2K », et c est de la que venait
+        // la ressemblance avec Kyara : le site ne nomme PAS ses invites comme
+        // des invites, il leur donne un nom d anime.
+        const MOTS = ['Shinobi', 'Kitsune', 'Senpai', 'Hokage', 'Samurai', 'Ronin', 'Yokai', 'Nakama',
+            'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Mecha', 'Tanuki',
+            'Bushido', 'Shogun', 'Kunai', 'Sakura', 'Tengu', 'Oni', 'Zanpakuto', 'Haki'];
+        const tirer = () => MOTS[Math.floor(Math.random() * MOTS.length)] + Math.floor(10 + Math.random() * 990);
+
+        const STATUTS = {
+            rien: null,
+            nonco: 'Non connecté',
+            local: 'Sur ce navigateur',
+            pasgarde: 'Progression non gardée',
+        };
+
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24">'
+                + '<path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>'
+                + '<path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>'
+                + '<path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>'
+                + '<path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            stats: '<svg viewBox="0 0 24 24"><path d="M4 20h16v-2H4v2zM6 16h2V9H6v7zm5 0h2V5h-2v11zm5 0h2v-5h-2v5z"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+            bug: '<svg viewBox="0 0 24 24"><path d="M20 8h-2.8a5.9 5.9 0 0 0-1.6-1.7L17 4.4 15.6 3l-2 2a6 6 0 0 0-3.2 0l-2-2L7 4.4l1.4 1.9A5.9 5.9 0 0 0 6.8 8H4v2h2.1v1H4v2h2.1v1H4v2h2.8a6 6 0 0 0 10.4 0H20v-2h-2.1v-1H20v-2h-2.1v-1H20V8z"/></svg>',
+        };
+
+        let pseudo = tirer();
+        let statut = 'rien';
+
+        const fond = () => `
+            <header class="tb">
+                <button class="logo"><img src="/logo-sm.png" alt=""></button>
+                <span class="nom">${pseudo}</span>
+                <button class="av"><img src="/novice.png" alt=""></button>
+            </header>
+            <div class="faux">
+                <img class="faux-titre" src="/titre-sm.webp" alt="">
+                <div class="faux-btns">
+                    <span class="faux-b or">Créer une partie</span>
+                    <span class="faux-b gris">Rejoindre</span>
+                </div>
+                <div class="faux-stats">
+                    <div><div class="v">1 247</div><div class="n">Parties</div></div>
+                    <div><div class="v">1 006</div><div class="n">Questions</div></div>
+                </div>
+            </div>`;
+
+        const carte = (k) => {
+            const s = STATUTS[statut];
+            return `
+            <div class="ancre">
+                <div class="c ${k}">
+                    <div class="c-tete">
+                        <button class="c-av"><img src="/novice.png" alt=""><span class="crayon">✎</span></button>
+                        <div class="c-id">
+                            <input class="c-nom" value="${pseudo}" maxlength="16">
+                            ${s ? `<div class="c-rang"><span class="pt"></span>${s}</div>` : ''}
+                        </div>
+                        <button class="c-fermer">✕</button>
+                    </div>
+                    <div class="c-trait"></div>
+                    <div>
+                        <div class="etiq">Connexion</div>
+                        <div class="c-ronds">
+                            <button class="rond d">${SVG.discord}</button>
+                            <button class="rond g">${SVG.google}</button>
+                        </div>
+                    </div>
+                    <div class="c-trait"></div>
+                    <div class="st">
+                        <div><div class="v">—</div><div class="n">Parties</div></div>
+                        <div><div class="v">—</div><div class="n">XP</div></div>
+                        <div><div class="v">—</div><div class="n">Victoires</div></div>
+                    </div>
+                    <div class="c-trait"></div>
+                    <div class="c-liens">
+                        <button class="lien">${SVG.stats} Mes statistiques</button>
+                        <button class="lien">${SVG.image} Mon avatar</button>
+                        <button class="lien">${SVG.bug} Signaler</button>
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        function dessiner() {
+            document.querySelectorAll('[data-scene]').forEach((s) => {
+                const porte = s.querySelector('[data-carte]');
+                const k = porte.dataset.k;
+                s.innerHTML = fond();
+                const d = document.createElement('div');
+                d.setAttribute('data-carte', ''); d.dataset.k = k;
+                d.innerHTML = carte(k);
+                s.appendChild(d);
+            });
+        }
+
+        document.getElementById('segStatut').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on'); statut = b.dataset.v; dessiner();
+        });
+        document.getElementById('segLarge').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelectorAll('[data-scene]').forEach(s => s.classList.toggle('tel', b.dataset.v === 'tel'));
+        });
+        document.getElementById('retirer').addEventListener('click', () => { pseudo = tirer(); dessiner(); });
+
+        dessiner();
+    </script>
+</body>
+
+</html>

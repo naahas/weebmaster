@@ -7086,6 +7086,317 @@ body.game-active:has(.poll-game-container) #particles-js {
     transition: color 0.2s ease, opacity 0.2s ease;
 }
 
+/* ════════════════════════════════════════════════════════════
+   👤 LA BARRE DU HAUT, DEUX ELEMENTS — puis le panneau du profil
+   ════════════════════════════════════════════════════════════
+   Il y avait avant une pastille d avatar ET une pastille de pseudo avec son
+   crayon. Ajouter la connexion aurait fait un TROISIEME bouton dans le coin,
+   et sur telephone la barre ne suivait plus. Les trois gestes — avatar,
+   pseudo, connexion — repondent a la meme question (qui je suis) : ils
+   vivent donc dans un seul panneau, ouvert par l avatar. */
+
+.v2-moi-nom {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Le losange de l inscrit. ⚠️ Il prend `currentColor` : il SUIT la couleur du
+   pseudo au lieu de la contredire — les cinq camps et le dore du tour passent
+   tous dessus sans conflit. Et il est en `em`, parce que le pseudo va de
+   1,15 rem dans le salon a 0,62 rem sur un hexagone de telephone. */
+.v2-moi-nom.compte::before {
+    content: '';
+    display: inline-block;
+    vertical-align: middle;
+    width: 0.32em;
+    height: 0.32em;
+    margin-right: 0.45em;
+    background: currentColor;
+    opacity: 0.8;
+    transform: rotate(45deg);
+}
+
+.v2-moi-av {
+    position: relative;
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0;
+    flex: 0 0 auto;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+.v2-moi-av img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 0.11rem solid rgba(255, 255, 255, 0.14);
+    transition: border-color 0.25s ease;
+}
+.v2-moi-av:hover img,
+.v2-moi-av.ouvert img { border-color: rgba(255, 215, 0, 0.6); }
+
+/* La marque du fournisseur se pose SUR l avatar : l oeil y est deja, et ca
+   evite une troisieme chose dans la barre. */
+.v2-moi-coin {
+    position: absolute;
+    right: -0.1rem;
+    bottom: -0.1rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 0.11rem solid var(--bg-primary);
+}
+.v2-moi-coin.discord { background: #5865F2; }
+.v2-moi-coin.discord svg { fill: #fff; }
+.v2-moi-coin.google { background: #fff; }
+.v2-moi-coin svg { width: 0.6rem; height: 0.6rem; display: block; }
+
+/* ───── Le panneau ───── */
+.v2-profil-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+}
+
+.v2-profil {
+    position: fixed;
+    z-index: 901;
+    top: 4.6rem;
+    right: 1.25rem;
+    width: 17.5rem;
+    max-width: calc(100vw - 2.5rem);
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    border-radius: 0.85rem;
+    /* ⚠️ LE FOND S EFFACE VERS LA GAUCHE : la carte parait SORTIR du bord
+       droit au lieu d etre posee dessus. C est tout le parti pris de ce
+       panneau, et il ne tient qu a ce degrade. */
+    background: linear-gradient(90deg,
+        rgba(16, 16, 19, 0.18) 0%,
+        rgba(16, 16, 19, 0.78) 34%,
+        rgba(20, 18, 14, 0.97) 100%);
+    backdrop-filter: blur(0.45rem);
+    box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.45);
+    /* ⚠️ SES PROPRES KEYFRAMES, et surtout pas `v2AvatarsIn`. Celles du
+       tiroir des avatars portent son centrage — `translateY(-50%)` —, parce
+       qu'il est calé au milieu de la hauteur. Reprises ici, elles remontaient
+       le panneau de la moitié de sa hauteur : mesuré à `top: -67px` pour un
+       panneau de 280 px haut posé à 73,6 px du haut. Le style calculé, lui,
+       disait `fixed` et `top: 73.6px` — on cherche donc le coupable partout
+       sauf dans l'animation. */
+    animation: v2ProfilIn 0.18s ease both;
+}
+
+@keyframes v2ProfilIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ⚠️ LA BORDURE SUIT LE MEME FONDU, et ce n est pas un detail de finition :
+   un trait net tout autour d un fond qui s efface FERME une carte qui, elle,
+   s ouvre — les deux se contredisent a l oeil. D ou le masque, qui efface la
+   bordure exactement la ou le fond disparait.
+   Et c est un calque separe : une `border` sur l element lui-meme ne peut pas
+   recevoir de masque sans masquer aussi le contenu. */
+.v2-profil::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    border: 0.08rem solid rgba(255, 215, 0, 0.3);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+}
+
+.v2-profil-tete { display: flex; align-items: center; gap: 0.65rem; }
+
+.v2-profil-av {
+    position: relative;
+    width: 2.9rem;
+    height: 2.9rem;
+    flex: 0 0 auto;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+.v2-profil-av img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 0.11rem solid rgba(255, 215, 0, 0.45);
+}
+.v2-profil-av:hover img { border-color: var(--neon-primary); }
+.v2-profil-crayon {
+    position: absolute;
+    right: -0.18rem;
+    bottom: -0.18rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #26231a;
+    border: 0.09rem solid #101013;
+    color: var(--neon-primary);
+    font-size: 0.55rem;
+}
+
+.v2-profil-id { flex: 1; min-width: 0; }
+
+/* Le nom EST le champ : pas de boite, pas de bouton « Valider ». */
+.v2-profil-nom {
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: none;
+    border: 0;
+    border-bottom: 0.07rem dashed rgba(255, 215, 0, 0.3);
+    outline: none;
+    padding: 0 0 0.1rem;
+    cursor: text;
+}
+.v2-profil-nom:focus {
+    border-bottom-color: var(--neon-primary);
+    border-bottom-style: solid;
+}
+
+.v2-profil-rang {
+    display: flex;
+    align-items: center;
+    gap: 0.32rem;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+.v2-profil-four {
+    width: 0.78rem;
+    height: 0.78rem;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+.v2-profil-four.discord { background: #5865F2; padding: 0.11rem; }
+.v2-profil-four.discord svg { fill: #fff; }
+.v2-profil-four.google { background: #fff; padding: 0.1rem; }
+.v2-profil-four svg { width: 100%; height: 100%; display: block; }
+
+.v2-profil-fermer {
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+.v2-profil-fermer:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+.v2-profil-err {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--error-color);
+}
+
+.v2-profil-bloc { display: flex; flex-direction: column; gap: 0.7rem; }
+.v2-profil-trait { height: 1px; background: rgba(255, 255, 255, 0.09); }
+.v2-profil-etiq {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6e6e7b;
+    margin-bottom: -0.25rem;
+}
+
+.v2-profil-ronds { display: flex; gap: 0.45rem; }
+.v2-profil-rond {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    height: 2.3rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: filter 0.18s ease;
+}
+.v2-profil-rond:hover { filter: brightness(1.12); }
+.v2-profil-rond.d { background: #5865F2; }
+.v2-profil-rond.d svg { fill: #fff; }
+.v2-profil-rond.g { background: #fff; }
+.v2-profil-rond svg { width: 1.15rem; height: 1.15rem; display: block; }
+
+.v2-profil-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
+.v2-profil-stats > div {
+    text-align: center;
+    padding: 0.45rem 0.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.45rem;
+}
+.v2-profil-stats .v {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--neon-primary);
+    line-height: 1.15;
+}
+.v2-profil-stats .n {
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7d7d8a;
+}
+/* ⚠️ Verrouillees pour un invite, pas a zero : un « 0 » dit « tu n as rien
+   joue », un tiret grise dit « ca ne compte pas encore ». C est le seul
+   argument du compte, et il ne coute pas une ligne de texte. */
+.v2-profil-stats.verrou { opacity: 0.5; }
+.v2-profil-stats.verrou .v { color: #6e6e7b; }
+
+.v2-profil-liens { display: flex; flex-direction: column; gap: 0.05rem; }
+.v2-profil-lien {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.42rem 0.4rem;
+    border: 0;
+    border-radius: 0.38rem;
+    background: none;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #b9b9c6;
+    cursor: pointer;
+    text-align: left;
+}
+.v2-profil-lien:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.v2-profil-lien svg { width: 0.9rem; height: 0.9rem; fill: currentColor; opacity: 0.65; flex: 0 0 auto; }
+.v2-profil-lien.danger:hover { color: var(--error-color); }
+
+/* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
+@media (max-width: 480px) {
+    .v2-profil { top: 4.2rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+}
+
 /* ── Écran 1 : pseudo ─────────────────────── */
 
 @keyframes v2Rise {

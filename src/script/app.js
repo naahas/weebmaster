@@ -147,6 +147,39 @@ createApp({
             // 🖼️ L'avatar : le fichier courant, le tiroir, et sa place à l'écran.
             avatar: 'novice.png',
             avatarsOuverts: false,
+
+            // ════════════════════════════════════════════════
+            // 👤 Le panneau du profil, et le compte
+            // ════════════════════════════════════════════════
+            // ⚠️ UN COMPTE N EST JAMAIS REQUIS POUR JOUER. Tout ce bloc doit
+            // pouvoir rester a `false` sans qu une seule partie en patisse :
+            // c est la these de la v2 et l avantage du site sur ses
+            // concurrents. `authActive` vaut faux tant que le serveur n a pas
+            // dit qu il savait ouvrir une connexion — un bouton qui echoue
+            // vaut moins que pas de bouton.
+            profilOuvert: false,
+            authActive: false,
+            estConnecte: false,
+            fournisseur: null,      // 'discord' | 'google'
+            compteParties: 0,
+            compteXp: 0,
+            // ⚠️ La bibliotheque Supabase n est PAS chargee au demarrage. Elle
+            // ne sert qu a qui ouvre le panneau ou revient deja connecte — soit
+            // une minorite —, et l accueil est le premier contact d un viewer
+            // avec le site. On la va chercher au moment ou elle sert.
+            _sb: null,
+            _authCfg: null,
+            // ⚠️ Declaree ici et pas posee a la volee sur `this` : le chargement
+            // est asynchrone et deux clics rapides sur l avatar le lanceraient
+            // DEUX fois, donc deux clients Supabase pour une seule session.
+            // Garder la promesse en cours sert d unique verrou.
+            _chargementAuth: null,
+            // Le jeton courant. ⚠️ Il doit repartir A CHAQUE reconnexion de
+            // socket, pas seulement au moment de la connexion : une socket
+            // neuve ne sait rien de ce qui a ete dit sur l ancienne, et le
+            // joueur redeviendrait un invite au premier passage en veille.
+            _jeton: null,
+
             // Peuplée par /api/avatars au démarrage. Le chevalier seul en
             // attendant : si l'appel échoue, le tiroir montre au moins le
             // défaut plutôt qu'un panneau vide.
@@ -1029,6 +1062,14 @@ createApp({
         this.initSocket();
         await this.initTabGuard();
         if (!this.tabConflict) this.socket.connect();
+
+        // 👤 La session d un joueur deja connecte, et le retour du fournisseur.
+        // ⚠️ On ne charge Supabase QUE si l un des deux est en vue : l accueil
+        // est le premier contact d un viewer avec le site, et la grande
+        // majorite ne se connectera jamais. Qui clique sur son avatar
+        // declenche le meme chargement a ce moment-la.
+        // Pas de `await` : la connexion ne doit RIEN retarder de l affichage.
+        if (this.sessionPossible()) this.chargerAuth();
         
         // 🆕 Restaurer l'équipe sélectionnée après refresh
         const savedTeam = localStorage.getItem('selectedTeam');
@@ -4624,6 +4665,146 @@ createApp({
             try { localStorage.setItem('avatar', f); } catch (e) {}
         },
 
+        // ════════════════════════════════════════════════════════
+        // 👤 LE PANNEAU DU PROFIL ET LA CONNEXION
+        // ════════════════════════════════════════════════════════
+        // ⚠️ UN COMPTE N EST JAMAIS REQUIS POUR JOUER. Tout ce bloc peut
+        // echouer de bout en bout sans qu une seule partie en patisse.
+
+        basculerProfil() {
+            this.profilOuvert = !this.profilOuvert;
+            if (!this.profilOuvert) return;
+            // Le champ repart du pseudo courant, et l erreur d une tentative
+            // precedente ne doit pas accueillir le joueur.
+            this.pseudoInput = this.username;
+            this.pseudoError = '';
+            // ⚠️ C est ICI qu on va chercher la bibliotheque, pas au demarrage :
+            // l accueil est le premier contact d un viewer avec le site, et la
+            // grande majorite ne se connectera jamais.
+            this.chargerAuth();
+        },
+
+        fermerProfil() {
+            this.profilOuvert = false;
+            this.pseudoError = '';
+        },
+
+        // Les deux panneaux sont colles au meme bord droit : ouvrir l un sans
+        // fermer l autre les superposerait.
+        avatarsDepuisProfil() {
+            this.profilOuvert = false;
+            this.avatarsOuverts = true;
+        },
+
+        // ⚠️ Faut-il charger Supabase AVANT que le joueur demande quoi que ce
+        // soit ? Oui dans deux cas seulement, et les reconnaitre coute trois
+        // lignes : il revient du fournisseur (l adresse porte le code), ou il
+        // a deja une session rangee par la bibliotheque. Dans tous les autres,
+        // on ne telecharge rien du tout.
+        sessionPossible() {
+            try {
+                if (/[?&]code=|access_token=/.test(location.href)) return true;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('sb-') && k.includes('-auth-token')) return true;
+                }
+            } catch (e) { /* localStorage ferme : on ne charge rien */ }
+            return false;
+        },
+
+        async chargerAuth() {
+            if (this._sb) return this._sb;
+            if (this._chargementAuth) return this._chargementAuth;
+
+            this._chargementAuth = (async () => {
+                try {
+                    const cfg = await (await fetch('/api/auth-config')).json();
+                    // Pas de clef publique posee, ou le serveur a refuse de
+                    // servir une clef dangereuse : on n affiche aucun bouton.
+                    if (!cfg || !cfg.actif) return null;
+                    this._authCfg = cfg;
+                    // ⚠️ Version EPINGLEE. « @latest » ferait dependre la
+                    // connexion du site d une publication npm faite pendant la
+                    // nuit par quelqu un d autre.
+                    const { createClient } = await import(
+                        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm');
+                    this._sb = createClient(cfg.url, cfg.cle);
+                    this.authActive = true;
+                    const { data } = await this._sb.auth.getSession();
+                    if (data && data.session) this.appliquerSession(data.session);
+                    return this._sb;
+                } catch (e) {
+                    // CDN injoignable, reseau coupe : le jeu continue sans
+                    // connexion, exactement comme avant qu elle existe.
+                    this.authActive = false;
+                    return null;
+                }
+            })();
+            return this._chargementAuth;
+        },
+
+        appliquerSession(session) {
+            if (!session || !session.user) return;
+            this.estConnecte = true;
+            this.fournisseur = (session.user.app_metadata || {}).provider || 'discord';
+            this._jeton = session.access_token;
+
+            // ⚠️ L IDENTIFIANT DU COMPTE DEVIENT LE playerId — c est ce qui fait
+            // qu un joueur retrouve sa progression d un appareil a l autre, le
+            // moteur ne connaissant que `playerId`.
+            //
+            // ⚠️ MAIS JAMAIS EN PLEIN SALON. Le serveur indexe les joueurs par
+            // leur playerId : le changer sous ses pieds ferait de lui un
+            // inconnu dans la partie en cours — il resterait affiche, muet,
+            // jusqu a la fin. On attend donc d etre revenu a l accueil.
+            const id = session.user.id;
+            if (!this.roomCode && this.playerId !== id) {
+                this.playerId = id;
+                try { localStorage.setItem('playerId', id); } catch (e) {}
+            }
+
+            // ⚠️ Le jeton part au serveur, qui le fait VERIFIER par Supabase.
+            // C est lui qui decide du losange, jamais le client : sans ca une
+            // page bricolee se le decernerait toute seule.
+            if (this.socket && this.socket.connected) {
+                this.socket.emit('register-authenticated', {
+                    playerId: this.playerId,
+                    username: this.username,
+                    avatar: this.avatar,
+                    roomCode: this.roomCode || null,
+                    jeton: session.access_token,
+                });
+            }
+        },
+
+        async connecterAvec(fournisseur) {
+            const sb = await this.chargerAuth();
+            if (!sb) { this.pseudoError = 'Connexion indisponible pour le moment.'; return; }
+            // ⚠️ `origin + pathname`, jamais `href` : l adresse porte encore le
+            // code de retour du tour precedent, qu on renverrait au fournisseur.
+            // Le pathname, lui, garde le code du salon (shonenmaster.com/XYZW),
+            // donc un viewer venu par le lien d un streamer y revient.
+            const retour = location.origin + location.pathname;
+            await sb.auth.signInWithOAuth({
+                provider: fournisseur,
+                options: { redirectTo: retour },
+            });
+        },
+
+        async deconnecterCompte() {
+            const sb = this._sb;
+            this.estConnecte = false;
+            this.fournisseur = null;
+            this.compteParties = 0;
+            this.compteXp = 0;
+            this.profilOuvert = false;
+            // ⚠️ On ne reprend PAS un playerId d invite : le joueur garderait
+            // son pseudo mais deviendrait quelqu un d autre pour le serveur,
+            // en plein salon le cas echeant. Il en reprendra un au prochain
+            // chargement s il n est plus connecte.
+            if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+        },
+
         // Le panneau se pose SOUS la ligne qui l ouvre, sur toute sa largeur.
         //
         // ⚠️ Il est en position FIXE, donc hors de la colonne des reglages. Pose
@@ -7589,7 +7770,15 @@ createApp({
                         // socket neuve, le serveur le cherchait dans tous les
                         // salons et prenait le premier — le plus ancien. Moi
                         // je sais lequel je joue.
-                        roomCode: this.roomCode || null
+                        roomCode: this.roomCode || null,
+                        // ⚠️ Le jeton repart ICI AUSSI, et pas seulement au
+                        // moment ou l on se connecte : une socket neuve ne
+                        // sait rien de ce qui a ete dit sur l ancienne. Sans
+                        // lui, un simple passage en veille du telephone
+                        // ramenerait le joueur au rang d invite — losange
+                        // eteint, statistiques verrouillees — sans que rien
+                        // ne l explique.
+                        jeton: this._jeton || null
                     });
                     console.log('✅ Authentification enregistrée auprès du serveur');
                 }
