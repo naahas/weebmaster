@@ -641,6 +641,9 @@ app.post('/api/auth-essai', async (req, res) => {
     if (!u) return res.json({ ok: false, ou: 'le jeton n est pas valide pour Supabase' });
     const r = await comptes.identifier(req.body.jeton, {
         pseudo: req.body.pseudo, avatar: req.body.avatar,
+        // ⚠️ Le pseudo venu de Discord passe par le MEME tamis que les autres :
+        // il s affichera sur l ecran d un streamer devant son audience.
+        nettoyer: pseudoPropre,
     });
     res.json({
         ok: true,
@@ -2259,6 +2262,11 @@ app.get('/prototypes', (req, res) => {
 // 🧪 Le banc de la connexion : il ne dessine rien, il dit QUEL maillon casse.
 app.get('/prototypes/connexion', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-connexion.html');
+});
+
+// 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
+app.get('/prototypes/compte-place', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-place.html');
 });
 
 app.get('/prototypes/signalement', (req, res) => {

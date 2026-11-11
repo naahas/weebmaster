@@ -131,16 +131,39 @@ async function verifierJeton(jeton) {
         if (!r.ok) return null;
         const u = await r.json();
         if (!u || !u.id) return null;
+        const m = u.user_metadata || {};
         return {
             id: u.id,                                   // ⚠️ DEVIENT le playerId
             email: u.email || null,
             fournisseur: (u.app_metadata && u.app_metadata.provider) || null,
+            // Le nom affiche chez le fournisseur. Les deux n emploient pas le
+            // meme champ, et Discord en remplit plusieurs : on prend le
+            // premier qui existe. ⚠️ Il sort d ici BRUT — c est l appelant qui
+            // le passe au tamis, voir `identifier`.
+            nomFournisseur: m.full_name || m.name || m.user_name || m.preferred_username || null,
         };
     } catch (e) {
         // Reseau coupe, Supabase en vrac : on refuse la connexion, on ne
         // casse pas la partie. Le joueur reste un invite.
         return null;
     }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ✍️ La regle du pseudo, isolee pour etre eprouvable sans base
+// ════════════════════════════════════════════════════════════════
+// « Sème au premier login, ne reprends jamais ensuite. »
+//
+// Elle tient en une ligne mais c est elle qui decide de ce que le joueur VOIT
+// s afficher a chaque reconnexion, donc elle vit a part plutot qu enfouie dans
+// une requete : on peut la lire, et `npm run test:comptes` peut la rejouer
+// sans toucher a la base de production.
+function pseudoAPoser(demande, existant) {
+    // Rien a proposer : on ne touche a rien.
+    if (!demande) return false;
+    // Le compte a DEJA un pseudo — celui du jeu. Il gagne toujours.
+    if (existant) return false;
+    return true;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -156,10 +179,24 @@ async function toucherCompte(idCompte, { pseudo, avatar } = {}) {
     if (!ACTIF || !tableComptesOk || !idCompte) return null;
 
     const ligne = { id: idCompte, vu_le: new Date().toISOString() };
-    if (pseudo) ligne.pseudo = pseudo;
     if (avatar) ligne.avatar = avatar;
 
     try {
+        // ⚠️ ON LIT AVANT D ECRIRE, et uniquement pour savoir si le compte est
+        // NEUF. Sans cette lecture, l upsert reposerait le pseudo a chaque
+        // connexion — « nahass#0 » reviendrait ecraser le pseudo choisi dans
+        // le jeu, a chaque fois, sans que rien ne l explique au joueur.
+        // Un aller-retour de plus, une seule fois par connexion : c est le
+        // prix d un pseudo qui ne bouge pas tout seul.
+        const { data: deja, error: eLecture } = await supabase
+            .from('comptes').select('pseudo').eq('id', idCompte).maybeSingle();
+        if (eLecture && eLecture.code === '42P01') {
+            tableComptesOk = false;
+            console.error('🚨 La table « comptes » n existe pas — passe docs/comptes.sql. Connexion sans profil.');
+            return null;
+        }
+        if (pseudoAPoser(pseudo, deja && deja.pseudo)) ligne.pseudo = pseudo;
+
         const { data, error } = await supabase
             .from('comptes')
             .upsert(ligne, { onConflict: 'id' })
@@ -189,10 +226,38 @@ async function toucherCompte(idCompte, { pseudo, avatar } = {}) {
 // joueur connecte est l identifiant Supabase, et il vient du JETON VERIFIE,
 // jamais du champ `playerId` annonce par le client. Les croire egaux sur
 // parole suffirait a se faire passer pour n importe quel inscrit.
-async function identifier(jeton, { pseudo, avatar } = {}) {
+// ════════════════════════════════════════════════════════════════
+// ✍️ LA REGLE DU PSEUDO : semé au premier login, jamais repris ensuite
+// ════════════════════════════════════════════════════════════════
+// Au tout premier login, le compte n a pas de pseudo : on prend celui du
+// fournisseur, faute de mieux, et c est un bon defaut — « Adem » vaut mieux
+// qu un pseudo tire au sort.
+//
+// ⚠️ MAIS PLUS JAMAIS ENSUITE. Un joueur qui a choisi son pseudo dans le jeu
+// ne doit pas le voir redevenir « nahass#0 » a chaque reconnexion : il ne
+// comprendrait meme pas d ou ca vient, et le changerait a nouveau, en boucle.
+// Le pseudo du JEU gagne toujours sur celui du fournisseur.
+//
+// ⚠️ Et il passe par le meme tamis que les autres (`nettoyer`, qui est
+// `pseudoPropre` cote serveur). Un pseudo Discord peut etre deplace lui aussi,
+// et il s afficherait sur l ecran d un streamer devant son audience. Le fait
+// qu il vienne d un fournisseur serieux ne garantit rien.
+// ⚠️ La fonction est PASSEE EN PARAMETRE plutot qu importee : `pseudoPropre`
+// vit dans server.js, qui requiert ce fichier — l importer ici ferait une
+// boucle.
+async function identifier(jeton, { pseudo, avatar, nettoyer } = {}) {
     const u = await verifierJeton(jeton);
     if (!u) return null;
-    const profil = await toucherCompte(u.id, { pseudo, avatar });
+
+    let aPoser = pseudo;
+    if (!aPoser && u.nomFournisseur) {
+        const tamis = typeof nettoyer === 'function' ? nettoyer : (x) => x;
+        // `pseudoPropre` rend une chaine vide pour un pseudo refuse : on ne
+        // pose alors RIEN, et le joueur garde celui qu il avait.
+        aPoser = tamis(u.nomFournisseur) || null;
+    }
+
+    const profil = await toucherCompte(u.id, { pseudo: aPoser, avatar });
     return {
         playerId: u.id,
         compte: true,
@@ -203,4 +268,10 @@ async function identifier(jeton, { pseudo, avatar } = {}) {
     };
 }
 
-module.exports = { ACTIF, configPourNavigateur, verifierJeton, identifier, natureDeLaClef };
+module.exports = {
+    ACTIF, configPourNavigateur, verifierJeton, identifier,
+    // Exportes pour `npm run test:comptes` : ce sont les deux decisions qui
+    // se rejouent sans base ni reseau, et les deux qui coutent cher si elles
+    // changent en silence.
+    natureDeLaClef, pseudoAPoser,
+};

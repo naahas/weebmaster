@@ -61,7 +61,8 @@
     "bomb:compter": "node scripts/compter-persos.js",
     "test:reglages": "node scripts/test-reglages.js",
     "test:portes": "node scripts/test-portes.js",
-    "test:meche-vue": "node scripts/test-meche-visuelle.js"
+    "test:meche-vue": "node scripts/test-meche-visuelle.js",
+    "test:comptes": "node scripts/test-comptes.js"
   },
   "keywords": [
     "quiz",

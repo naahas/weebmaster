@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — où se connecte-t-on ?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!--
+        ⚠️ DEUX PLACEMENTS, ET LA QUESTION N EST PAS « lequel est plus joli ».
+
+        Le compte n est JAMAIS requis pour jouer : c est la these de la v2 et
+        l avantage du site sur ses concurrents. Donc un bouton de connexion
+        trop present ment sur le produit — il fait croire qu il faut s inscrire,
+        exactement ce que Kyara impose et qu on ne veut pas. Et un bouton trop
+        discret ne sera jamais vu, donc personne n aura de compte.
+
+        A — LA BARRE DU HAUT. Vu par tout le monde, tout le temps.
+        B — LE TIROIR DU PSEUDO. Vu seulement par qui change son pseudo, mais
+            c est DEJA l ecran « qui je suis » : la connexion y est chez elle.
+
+        ⚠️ L ETAT CONNECTE COMPTE AUTANT QUE LE BOUTON. Mesure sur le banc de
+        connexion : deux fournisseurs avec deux adresses differentes donnent
+        DEUX comptes. Un joueur qui clique Google au lieu de Discord tombe sur
+        un profil vide et croit avoir perdu sa progression. Il faut donc que
+        l ecran dise AVEC QUOI on est connecte, et s en souvienne.
+
+        ⚠️ Chemins d images en ABSOLU (/novice.png) : servie sous /prototypes/,
+        la page chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --neon-primary: #FFD700;
+            --success-color: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ⚠️ L attribut `hidden` ne pose qu un `display: none` de FEUILLE PAR
+           DEFAUT : n importe quel `display` de la page l ecrase, et un style
+           en ligne encore plus surement. Sur cette page trois elements sont
+           dans ce cas (.cx-four en inline-grid, les deux blocs deplies en
+           flex) — ils restaient visibles alors que le JS les disait caches.
+           Une seule regle vaut mieux que trois selecteurs a tenir a jour. */
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a;
+            color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.55;
+            padding-bottom: 5rem;
+        }
+
+        /* ───── Barre de reglages collante ───── */
+        .rail {
+            position: sticky; top: 0; z-index: 20;
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.93);
+            backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.4rem 0.8rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 600;
+            color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 62rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; }
+
+        /* ───── Une piste ───── */
+        .piste { margin-top: 2.75rem; }
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.3rem; }
+        .piste-code {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #0b0b0e; background: var(--neon-primary);
+            padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+        }
+        .piste-nom { font-size: 1.02rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.85rem; margin-bottom: 1rem; max-width: 46rem; }
+
+        .scene {
+            background: #0a0a0a;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.055) 0%, transparent 62%);
+            border: 1px solid #1d1d26;
+            border-radius: 0.75rem;
+            padding: 1.1rem 1.25rem;
+            overflow: hidden;
+        }
+        .scene.tel { max-width: 390px; }
+
+        /* ════════ LA VRAIE BARRE DU HAUT (copiee de home.css) ════════ */
+        .v2-topbar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
+        .v2-topbar .v2-logo { margin-right: auto; }
+
+        .v2-logo {
+            position: relative; display: grid; place-items: center;
+            width: 2.9rem; height: 2.9rem; padding: 0;
+            background: none; border: none; cursor: pointer;
+        }
+        .v2-logo-img { width: 100%; height: 100%; object-fit: contain; }
+
+        .v2-avatar-pill {
+            width: 2.35rem; height: 2.35rem; padding: 0;
+            border-radius: 50%; overflow: hidden; cursor: pointer;
+            background: rgba(255, 255, 255, 0.04);
+            border: 0.09rem solid rgba(255, 255, 255, 0.12);
+            flex: 0 0 auto;
+        }
+        .v2-avatar-pill img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .v2-identity {
+            display: flex; align-items: center; gap: 0.55rem;
+            min-height: 2.35rem; padding: 0.55rem 1rem;
+            font-family: inherit; font-size: 0.82rem; font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 0.06rem solid rgba(255, 255, 255, 0.08);
+            border-radius: 2rem; cursor: pointer;
+            transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+        }
+        .v2-identity:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 215, 0, 0.4);
+            transform: translateY(-0.08rem);
+        }
+        .v2-identity-dot {
+            width: 0.4rem; height: 0.4rem; border-radius: 50%;
+            background: var(--success-color); box-shadow: 0 0 0.5rem rgba(16, 185, 129, 0.7);
+        }
+        .v2-identity-name { color: var(--text-primary); }
+        .v2-identity-edit { font-size: 0.8rem; color: var(--text-secondary); opacity: 0.6; }
+
+        /* Le losange de l inscrit, deja pose dans le jeu */
+        .v2-identity-name.compte::before {
+            content: ''; display: inline-block; vertical-align: middle;
+            width: 0.32em; height: 0.32em; margin-right: 0.45em;
+            background: currentColor; opacity: 0.8; transform: rotate(45deg);
+        }
+
+        /* ════════ A1 — pastille texte ════════ */
+        .cx-pill {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            min-height: 2.35rem; padding: 0.55rem 0.95rem;
+            font-family: inherit; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 0.06rem solid rgba(255, 255, 255, 0.08);
+            border-radius: 2rem; cursor: pointer; white-space: nowrap;
+            transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+        }
+        .cx-pill:hover { color: #fff; border-color: rgba(255, 215, 0, 0.4); background: rgba(255,255,255,0.07); }
+        .cx-pill svg { width: 0.95rem; height: 0.95rem; fill: currentColor; flex: 0 0 auto; }
+
+        /* ════════ A2 — icone seule ════════ */
+        .cx-rond {
+            display: grid; place-items: center;
+            width: 2.35rem; height: 2.35rem; padding: 0;
+            border-radius: 50%; cursor: pointer;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 0.09rem solid rgba(255, 255, 255, 0.12);
+            transition: color 0.25s ease, border-color 0.25s ease;
+            flex: 0 0 auto;
+        }
+        .cx-rond:hover { color: var(--neon-primary); border-color: rgba(255, 215, 0, 0.45); }
+        .cx-rond svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
+
+        /* ════════ A3 — pastille doree ════════ */
+        .cx-or {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            min-height: 2.35rem; padding: 0.55rem 1.05rem;
+            font-family: inherit; font-size: 0.78rem; font-weight: 700;
+            color: #120f02;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: 0; border-radius: 2rem; cursor: pointer; white-space: nowrap;
+            box-shadow: 0 0.2rem 1rem rgba(255, 180, 0, 0.25);
+            transition: filter 0.2s ease, transform 0.2s ease;
+        }
+        .cx-or:hover { filter: brightness(1.08); transform: translateY(-0.08rem); }
+        .cx-or svg { width: 0.95rem; height: 0.95rem; fill: currentColor; }
+
+        /* ════════ La marque du fournisseur, une fois connecte ════════ */
+        .cx-four {
+            display: inline-grid; place-items: center;
+            width: 1.05rem; height: 1.05rem; border-radius: 50%;
+            flex: 0 0 auto;
+        }
+        .cx-four svg { width: 100%; height: 100%; display: block; }
+        .cx-four.discord { background: #5865F2; padding: 0.17rem; }
+        .cx-four.discord svg { fill: #fff; }
+        .cx-four.google { background: #fff; padding: 0.15rem; }
+
+        /* ════════ LE VRAI TIROIR DU PSEUDO (copie de home.css) ════════ */
+        .v2-pseudo-overlay {
+            position: relative; display: grid; place-items: center;
+            padding: 2rem 1.2rem;
+            background: rgba(4, 4, 6, 0.72);
+            border-radius: 0.5rem;
+        }
+        .v2-pseudo-card {
+            display: flex; flex-direction: column; gap: 0.75rem;
+            width: min(23rem, 92%);
+            padding: 1.6rem;
+            background: linear-gradient(160deg, rgba(28, 24, 16, 0.96), rgba(14, 14, 16, 0.96));
+            border: 0.09rem solid rgba(255, 215, 0, 0.22);
+            border-radius: 1rem;
+            box-shadow: 0 1.6rem 4rem rgba(0, 0, 0, 0.6), 0 0 3rem rgba(255, 180, 0, 0.08);
+        }
+        .v2-pseudo-label {
+            font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--text-secondary);
+        }
+        .v2-pseudo-input {
+            width: 100%; padding: 0.85rem 1rem;
+            font-family: inherit; font-size: 1.1rem; font-weight: 700; text-align: center;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.35);
+            border: 0.09rem solid rgba(255, 215, 0, 0.25);
+            border-radius: 0.6rem; outline: none;
+        }
+        .v2-btn-primary {
+            padding: 0.6rem 1.1rem; border: 0; border-radius: 0.5rem;
+            font-family: inherit; font-size: 0.82rem; font-weight: 700;
+            color: #120f02; background: linear-gradient(135deg, #FFD700, #FFA500);
+            cursor: pointer; width: 100%;
+        }
+
+        /* Le separateur « ou » */
+        .ou {
+            display: flex; align-items: center; gap: 0.7rem;
+            margin: 0.25rem 0;
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .ou::before, .ou::after {
+            content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1);
+        }
+
+        .cx-four-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+            width: 100%; padding: 0.72rem 1rem;
+            border: 0.06rem solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.55rem;
+            font-family: inherit; font-size: 0.84rem; font-weight: 600;
+            color: #e8e8ef; background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .cx-four-btn:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255,255,255,0.22); }
+        .cx-four-btn svg { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+        .cx-four-btn.discord svg { fill: #5865F2; }
+
+        .cx-note {
+            font-size: 0.72rem; color: #7d7d8a; text-align: center; line-height: 1.45;
+        }
+
+        /* Le replie — B2 */
+        .cx-replie {
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+            width: 100%; padding: 0.5rem;
+            background: none; border: 0; cursor: pointer;
+            font-family: inherit; font-size: 0.76rem; font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .cx-replie:hover { color: var(--neon-primary); }
+        .cx-replie svg { width: 0.85rem; height: 0.85rem; fill: currentColor; }
+
+        /* L etat connecte, dans le tiroir */
+        .cx-etat {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.7rem 0.85rem;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 0.55rem;
+            font-size: 0.78rem;
+        }
+        .cx-etat b { color: #fff; font-weight: 600; }
+        .cx-etat .sortir {
+            margin-left: auto; background: none; border: 0; cursor: pointer;
+            font-family: inherit; font-size: 0.72rem; color: #7d7d8a; text-decoration: underline;
+        }
+        .cx-etat .sortir:hover { color: #f87171; }
+
+        .avis {
+            margin-top: 1rem; padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 2px solid #2b2b36;
+            font-size: 0.8rem; color: #8b8b96;
+        }
+        .avis b { color: #cfcfd8; }
+
+        @media (max-width: 700px) {
+            .rail { gap: 0.9rem; padding: 0.75rem 1rem; }
+            .page { padding: 1.75rem 1rem 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>État</span>
+            <div class="seg" id="segEtat">
+                <button data-v="off" class="on">Déconnecté</button>
+                <button data-v="discord">Discord</button>
+                <button data-v="google">Google</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <span>Largeur</span>
+            <div class="seg" id="segLarge">
+                <button data-v="pc" class="on">Ordinateur</button>
+                <button data-v="tel">Téléphone</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Où se connecte-t-on ?</h1>
+        <p class="sous">Deux endroits possibles, la vraie barre et le vrai tiroir. Bascule l'état en haut pour voir
+            ce que ça donne une fois connecté — c'est au moins aussi important que le bouton.</p>
+
+        <!-- ════════ A ════════ -->
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">A1</span><span class="piste-nom">Barre du haut —
+                    pastille texte</span></div>
+            <p class="piste-dit">Le même gabarit que le pseudo juste à côté. Se lit, ne crie pas.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar">
+                    <button class="v2-logo"><img class="v2-logo-img" src="/logo-sm.png" alt=""></button>
+                    <button class="cx-pill" data-off>
+                        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/></svg>
+                        Se connecter
+                    </button>
+                    <button class="v2-avatar-pill"><img src="/novice.png" alt=""></button>
+                    <button class="v2-identity">
+                        <span class="v2-identity-dot"></span>
+                        <span class="v2-identity-name" data-nom>Naahas</span>
+                        <span class="cx-four" data-four hidden></span>
+                        <span class="v2-identity-edit">✎</span>
+                    </button>
+                </header>
+            </div>
+            <p class="avis"><b>Pour :</b> tout le monde le voit. <b>Contre :</b> trois pastilles en ligne sur
+                téléphone, ça commence à faire beaucoup — bascule la largeur pour juger.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">A2</span><span class="piste-nom">Barre du haut — icône
+                    seule</span></div>
+            <p class="piste-dit">Même gabarit rond que l'avatar. Ne mange aucune largeur sur téléphone.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar">
+                    <button class="v2-logo"><img class="v2-logo-img" src="/logo-sm.png" alt=""></button>
+                    <button class="cx-rond" data-off title="Se connecter">
+                        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/></svg>
+                    </button>
+                    <button class="v2-avatar-pill"><img src="/novice.png" alt=""></button>
+                    <button class="v2-identity">
+                        <span class="v2-identity-dot"></span>
+                        <span class="v2-identity-name" data-nom>Naahas</span>
+                        <span class="cx-four" data-four hidden></span>
+                        <span class="v2-identity-edit">✎</span>
+                    </button>
+                </header>
+            </div>
+            <p class="avis"><b>Contre :</b> une silhouette ne dit pas « compte ». Personne ne clique sur une icône
+                dont il ne devine pas le sens — et c'est tout le problème d'un compte facultatif.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">A3</span><span class="piste-nom">Barre du haut —
+                    pastille dorée</span></div>
+            <p class="piste-dit">L'or du site, celui des boutons d'action. Impossible à rater.</p>
+            <div class="scene" data-scene>
+                <header class="v2-topbar">
+                    <button class="v2-logo"><img class="v2-logo-img" src="/logo-sm.png" alt=""></button>
+                    <button class="cx-or" data-off>
+                        <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/></svg>
+                        Se connecter
+                    </button>
+                    <button class="v2-avatar-pill"><img src="/novice.png" alt=""></button>
+                    <button class="v2-identity">
+                        <span class="v2-identity-dot"></span>
+                        <span class="v2-identity-name" data-nom>Naahas</span>
+                        <span class="cx-four" data-four hidden></span>
+                        <span class="v2-identity-edit">✎</span>
+                    </button>
+                </header>
+            </div>
+            <p class="avis">⚠️ <b>Le danger :</b> l'or est la couleur de « Créer une partie ». Posé ici, il met la
+                connexion au même rang que l'action principale — et fait croire qu'il faut s'inscrire pour jouer.
+                C'est exactement ce que le site refuse.</p>
+        </div>
+
+        <!-- ════════ B ════════ -->
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">B1</span><span class="piste-nom">Tiroir du pseudo —
+                    les deux boutons</span></div>
+            <p class="piste-dit">L'écran qui s'ouvre déjà quand on clique sur son pseudo. C'est l'écran « qui je
+                suis » : la connexion y est chez elle.</p>
+            <div class="scene" data-scene>
+                <div class="v2-pseudo-overlay">
+                    <div class="v2-pseudo-card">
+                        <span class="v2-pseudo-label">Ton pseudo</span>
+                        <input class="v2-pseudo-input" value="Naahas" readonly>
+                        <button class="v2-btn-primary">Valider</button>
+
+                        <div data-off>
+                            <div class="ou">ou</div>
+                            <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                                <button class="cx-four-btn discord">
+                                    <svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>
+                                    Continuer avec Discord
+                                </button>
+                                <button class="cx-four-btn">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>
+                                        <path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>
+                                        <path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>
+                                        <path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/>
+                                    </svg>
+                                    Continuer avec Google
+                                </button>
+                            </div>
+                            <p class="cx-note" style="margin-top:0.65rem;">Facultatif — pour garder ta progression
+                                d'un appareil à l'autre.</p>
+                        </div>
+
+                        <div data-on hidden>
+                            <div class="ou">compte</div>
+                            <div class="cx-etat">
+                                <span class="cx-four" data-four2></span>
+                                <span>Connecté avec <b data-fournom>Discord</b></span>
+                                <button class="sortir">Se déconnecter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="avis"><b>Pour :</b> la barre ne bouge pas d'un pixel, et le compte apparaît au seul moment où
+                l'on pense à son identité. <b>Contre :</b> invisible pour qui ne touche jamais à son pseudo.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">B2</span><span class="piste-nom">Tiroir du pseudo —
+                    replié</span></div>
+            <p class="piste-dit">Une seule ligne, qui déplie les deux boutons au clic. Le tiroir garde sa taille
+                d'avant pour qui ne vient que changer son pseudo.</p>
+            <div class="scene" data-scene>
+                <div class="v2-pseudo-overlay">
+                    <div class="v2-pseudo-card">
+                        <span class="v2-pseudo-label">Ton pseudo</span>
+                        <input class="v2-pseudo-input" value="Naahas" readonly>
+                        <button class="v2-btn-primary">Valider</button>
+
+                        <div data-off>
+                            <div class="ou">ou</div>
+                            <button class="cx-replie" id="deplier">
+                                <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/></svg>
+                                Garder ma progression
+                            </button>
+                            <div id="deplie" hidden style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+                                <button class="cx-four-btn discord">
+                                    <svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>
+                                    Continuer avec Discord
+                                </button>
+                                <button class="cx-four-btn">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>
+                                        <path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>
+                                        <path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>
+                                        <path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/>
+                                    </svg>
+                                    Continuer avec Google
+                                </button>
+                            </div>
+                        </div>
+
+                        <div data-on hidden>
+                            <div class="ou">compte</div>
+                            <div class="cx-etat">
+                                <span class="cx-four" data-four2></span>
+                                <span>Connecté avec <b data-fournom>Discord</b></span>
+                                <button class="sortir">Se déconnecter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="avis"><b>Pour :</b> « Garder ma progression » dit ce que ça FAIT, pas par quoi ça passe —
+                personne ne se connecte pour le plaisir de se connecter.</p>
+        </div>
+
+    </div>
+
+    <script>
+        // ⚠️ Les deux marques de fournisseur sont fabriquees ici et non ecrites
+        // cinq fois dans le gabarit : une correction sur l une devait sinon
+        // etre reportee a la main partout, et c est exactement comme ca qu on
+        // se retrouve avec deux versions qui divergent.
+        const MARQUES = {
+            discord: {
+                nom: 'Discord',
+                svg: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            },
+            google: {
+                nom: 'Google',
+                svg: '<svg viewBox="0 0 24 24">'
+                    + '<path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>'
+                    + '<path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>'
+                    + '<path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>'
+                    + '<path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            },
+        };
+
+        function appliquer(etat) {
+            const connecte = etat !== 'off';
+            const m = MARQUES[etat];
+
+            document.querySelectorAll('[data-off]').forEach(e => { e.hidden = connecte; });
+            document.querySelectorAll('[data-on]').forEach(e => { e.hidden = !connecte; });
+
+            // Le losange : il ne s allume que pour un inscrit. C est le meme
+            // ::before que dans le jeu, et il prend currentColor.
+            document.querySelectorAll('[data-nom]').forEach(e => {
+                e.classList.toggle('compte', connecte);
+            });
+
+            document.querySelectorAll('[data-four], [data-four2]').forEach(e => {
+                e.hidden = !connecte;
+                e.className = 'cx-four' + (connecte ? ' ' + etat : '');
+                e.innerHTML = connecte ? m.svg : '';
+            });
+            document.querySelectorAll('[data-fournom]').forEach(e => {
+                if (m) e.textContent = m.nom;
+            });
+        }
+
+        document.getElementById('segEtat').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            appliquer(b.dataset.v);
+        });
+
+        document.getElementById('segLarge').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelectorAll('[data-scene]').forEach(s => s.classList.toggle('tel', b.dataset.v === 'tel'));
+        });
+
+        // La ligne repliee s efface en se depliant : la garder afficherait
+        // « Garder ma progression » au-dessus des deux boutons qui le font.
+        document.getElementById('deplier').addEventListener('click', function () {
+            document.getElementById('deplie').hidden = false;
+            this.hidden = true;
+        });
+
+        appliquer('off');
+    </script>
+</body>
+
+</html>
