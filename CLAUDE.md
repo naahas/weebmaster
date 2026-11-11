@@ -574,6 +574,17 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
 - `/admin/*` : plus aucune page, mais les routes HTTP que le client de l'hôte appelle (réglages,
   démarrer, question suivante, camps, exclure). **Toutes exigent le jeton d'hôte**, sauf l'ouverture
   d'un salon — c'est elle qui le crée. L'événement socket `kick-player` le porte aussi.
+- `/confidentialite` et `/conditions` : **les deux pages légales**, servies à tout le monde.
+  ⚠️ Elles ne sont pas décoratives : **Google refuse de publier l'application OAuth sans un lien
+  public vers la politique de confidentialité**, et tant qu'elle reste « en Test », seuls des
+  comptes inscrits à la main peuvent se connecter — avec une session qui expire au bout de **sept
+  jours**, ce qu'on irait chercher dans le code. Les retirer casserait donc la connexion Google.
+  Style dans `src/style/legal.css`, **volontairement indépendant de `home.css`** : celui-ci pose un
+  `overflow: hidden` et une hauteur bloquée à `100dvh` sur des pages qui doivent défiler.
+  ⚠️ Et leur tableau perd son `min-width` sous 600 px : mesuré, il tenait 500 px dans un cadre de
+  350, donc il fallait le **balayer de côté** pour lire la seconde colonne. La page, elle, ne
+  débordait pas — l'`overflow-x` du cadre jouait son rôle —, donc le défaut est **invisible à qui
+  ne mesure que le défilement de la page**.
 - `/prototypes/*` : pages de travail sur le visuel (boutons, timer, cœurs, HUD, podium, icônes…).
   Dont `/prototypes/rush-passage` : six facons d enchainer les portraits du Rush.
   Et `/prototypes/rush-multi` : le multiplicateur RETENU, isole hors d une manche

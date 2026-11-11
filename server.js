@@ -2862,6 +2862,30 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/src/html/home.html');
 });
 
+// ⚖️ Les deux pages legales.
+//
+// Elles ne sont pas la pour faire joli : GOOGLE REFUSE DE PUBLIER l application
+// OAuth sans un lien public vers la politique de confidentialite, et tant qu elle
+// reste « en Test » seuls des comptes inscrits a la main peuvent se connecter —
+// avec, en prime, une session qui expire au bout de sept jours. Les retirer
+// casserait donc la connexion Google, pas seulement l affichage.
+//
+// ⚠️ Les adresses sont SANS extension parce que c est ce qui est declare chez
+// Google ; `express.static('src/html')` sert aussi `/confidentialite.html`, et
+// c est sans importance ici — contrairement a l ancien `/question.html`, ces
+// deux pages n ont rien a cacher.
+//
+// ℹ️ Le motif a quatre caracteres de `/:code` juste en dessous ne peut pas les
+// avaler (quinze et dix lettres), mais on les declare avant par principe : c est
+// l ordre qui protege toutes les autres adresses du site.
+app.get('/confidentialite', (req, res) => {
+    res.sendFile(__dirname + '/src/html/confidentialite.html');
+});
+
+app.get('/conditions', (req, res) => {
+    res.sendFile(__dirname + '/src/html/conditions.html');
+});
+
 // 🔗 Un code de salon dans l adresse : shonenmaster.com/YRWD.
 //
 // Rejoindre demandait cinq gestes a un viewer : quitter le stream, ouvrir un

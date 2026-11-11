@@ -90,15 +90,27 @@ create policy "chacun lit son compte"
 -- ============================================================
 -- CE QU'IL RESTE À FAIRE, ET QUI N'EST PAS DU SQL
 -- ============================================================
+-- Les clics, site par site, sont détaillés dans docs/comptes-providers.md —
+-- avec le piège qui coûte le plus de temps : l'URL de retour (celle de
+-- Supabase, à coller chez Discord et Google) et la liste blanche (celle du
+-- site, à déclarer chez Supabase) sont DEUX choses différentes, et les
+-- intervertir ne se voit qu'au premier essai de connexion.
+--
 -- 1. Créer une application Discord (Developer Portal) et une application
 --    Google (Cloud Console), puis coller leurs identifiants dans
 --    Supabase → Authentication → Providers.
 -- 2. Y déclarer l'URL de retour que Supabase affiche, et ajouter
---    https://shonenmaster.com aux URL autorisées.
--- 3. Récupérer la clé ANON (Settings → API) et la poser en variable
+--    https://shonenmaster.com ET http://localhost:7000 aux URL autorisées —
+--    sans la seconde, la connexion est intestable en local.
+-- 3. ⚠️ PUBLIER l'écran de consentement Google. Laissé en « Testing », il
+--    n'autorise que des comptes inscrits à la main et la session expire au
+--    bout de SEPT JOURS — ce qui ressemble à un bug qu'on ira chercher dans
+--    le code. Aucune validation de Google n'est requise : on ne demande que
+--    l'adresse et le profil, qui ne sont pas des scopes sensibles.
+-- 4. Récupérer la clé ANON (Settings → API) et la poser en variable
 --    d'environnement — c'est la seule qui ait le droit d'être servie au
---    navigateur.
--- 4. ⚠️ Le pseudo venu de Discord passe par `pseudoPropre` COMME N'IMPORTE
+--    navigateur. ⚠️ Sur Heroku AUSSI, pas seulement dans le .env local.
+-- 5. ⚠️ Le pseudo venu de Discord passe par `pseudoPropre` COMME N'IMPORTE
 --    QUEL AUTRE. Un pseudo Discord peut être déplacé lui aussi, et il
 --    s'afficherait sur l'écran d'un streamer. Ne pas court-circuiter
 --    `pseudos-interdits.js` parce que le nom vient d'un fournisseur sérieux.

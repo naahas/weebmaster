@@ -1,0 +1,229 @@
+/* ════════════════════════════════════════════════════════════
+   legal.css — les pages /confidentialite et /conditions
+   ════════════════════════════════════════════════════════════
+   ⚠️ VOLONTAIREMENT INDEPENDANT DE home.css. Celui-ci fait 11 500 lignes
+   de styles de JEU (hexagones, bombe, grilles de portraits) dont ces deux
+   pages n ont aucun usage, et qui poserait un `overflow: hidden` et une
+   hauteur bloquee a 100dvh sur des pages qui, elles, DOIVENT defiler.
+
+   La palette reprend celle du jeu — fond noir, or — pour qu on reste chez
+   soi en cliquant sur le lien du pied de page.
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+    --l-fond: #0a0a0a;
+    --l-carte: #141414;
+    --l-trait: rgba(255, 255, 255, 0.09);
+    --l-texte: #e9e9ec;
+    --l-doux: #9a9aa2;
+    --l-or: #FFD700;
+    --l-ambre: #FFA500;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--l-fond);
+    color: var(--l-texte);
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.75;
+    /* ⚠️ Le fond est pose sur BODY et pas seulement sur HTML : sans ca, une
+       page plus courte que l ecran laisse paraitre le blanc du navigateur
+       sous le dernier bloc. */
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* La lueur doree du jeu, en beaucoup plus discret : la page se lit, elle
+   ne se regarde pas. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% -10%, rgba(255, 215, 0, 0.07) 0%, transparent 60%);
+}
+
+.l-page {
+    position: relative;
+    max-width: 44rem;      /* ~68 caracteres : au-dela, l oeil perd sa ligne */
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+}
+
+/* ───── Le retour au jeu ───── */
+.l-retour {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--l-doux);
+    text-decoration: none;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 2.5rem;
+    transition: color 0.18s ease;
+}
+.l-retour:hover,
+.l-retour:focus-visible { color: var(--l-or); }
+.l-retour svg { width: 1em; height: 1em; }
+
+/* ───── Titre ───── */
+.l-titre {
+    font-family: 'Orbitron', 'Poppins', sans-serif;
+    font-size: clamp(1.6rem, 5.5vw, 2.3rem);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    background: linear-gradient(135deg, var(--l-or) 0%, var(--l-ambre) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.l-date {
+    margin-top: 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--l-doux);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ───── L encadre de resume ───── */
+.l-resume {
+    margin: 2.25rem 0 0;
+    padding: 1.35rem 1.5rem;
+    background: var(--l-carte);
+    border: 1px solid var(--l-trait);
+    border-left: 3px solid var(--l-or);
+    border-radius: 0.5rem;
+}
+.l-resume p { margin: 0; }
+.l-resume ul { margin: 0.75rem 0 0; }
+
+/* ───── Sections ───── */
+h2 {
+    font-family: 'Orbitron', 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #fff;
+    margin: 3rem 0 0.85rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--l-trait);
+    text-wrap: balance;
+}
+h2:first-of-type { border-top: 0; padding-top: 0; }
+
+h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--l-or);
+    margin: 1.75rem 0 0.5rem;
+}
+
+p { margin: 0 0 1rem; }
+p:last-child { margin-bottom: 0; }
+
+ul { margin: 0 0 1rem 1.15rem; }
+li { margin-bottom: 0.45rem; }
+li:last-child { margin-bottom: 0; }
+li::marker { color: var(--l-or); }
+
+strong { color: #fff; font-weight: 600; }
+
+a {
+    color: var(--l-or);
+    text-decoration-color: rgba(255, 215, 0, 0.35);
+    text-underline-offset: 0.2em;
+}
+a:hover { text-decoration-color: var(--l-or); }
+
+code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.875em;
+    padding: 0.1em 0.4em;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 0.25rem;
+    color: var(--l-ambre);
+}
+
+/* ───── Le tableau des donnees ───── */
+.l-table-cadre { overflow-x: auto; margin: 0 0 1.25rem; }
+
+table {
+    width: 100%;
+    min-width: 30rem;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+th, td {
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--l-trait);
+    vertical-align: top;
+}
+th {
+    color: var(--l-or);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+tr:last-child td { border-bottom: 0; }
+
+/* ───── Le bloc « ce qu on ne fait pas » ───── */
+.l-jamais {
+    margin: 1.25rem 0;
+    padding: 1.25rem 1.5rem;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    border-radius: 0.5rem;
+}
+.l-jamais h3 { margin-top: 0; color: #34d399; }
+.l-jamais ul { margin-bottom: 0; }
+.l-jamais li::marker { color: #34d399; }
+
+/* ───── Pied ───── */
+.l-pied {
+    margin-top: 3.5rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--l-trait);
+    font-size: 0.875rem;
+    color: var(--l-doux);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+}
+
+/* ───── Telephone ───── */
+@media (max-width: 600px) {
+    body { font-size: 0.9375rem; line-height: 1.7; }
+    .l-page { padding: 2.25rem 1.25rem 3.5rem; }
+    h2 { font-size: 1rem; margin-top: 2.5rem; }
+    .l-resume { padding: 1.15rem 1.15rem; }
+
+    /* ⚠️ Le `min-width: 30rem` tombe ICI, et c est mesure, pas suppose : a
+       390 px il laissait les deux tableaux a 500 px dans un cadre de 350,
+       donc il fallait les BALAYER DE COTE pour lire la seconde colonne.
+       La page, elle, ne debordait pas — l `overflow-x` du cadre faisait son
+       travail —, ce qui rend le defaut invisible a qui ne mesure que le
+       defilement de la page.
+       Un tableau qu on doit faire glisser sur un texte qu on parcourt au
+       pouce ne sera pas lu. Les deux colonnes sont courtes : sans plancher,
+       elles se replient toutes seules. Le cadre scrollable reste en place
+       pour les ecrans intermediaires, ou le plancher s applique encore. */
+    table { min-width: 0; font-size: 0.85rem; }
+    th, td { padding: 0.6rem 0.5rem; }
+    th:first-child, td:first-child { width: 42%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition-duration: 0.01ms !important; }
+}
