@@ -2277,6 +2277,13 @@ app.get('/prototypes/compte-modal', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-modal.html');
 });
 
+// 🔑 Quatre NATURES de panneau, pas quatre boites : la carte de joueur, le
+// volet, le plein ecran, le bandeau. Le banc d avant posait la meme carte a
+// trois endroits — le choix se reduisait a « ou » au lieu de « quoi ».
+app.get('/prototypes/compte-formes', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-formes.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });

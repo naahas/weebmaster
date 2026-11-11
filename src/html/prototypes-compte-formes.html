@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — quatre formes de profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ QUATRE DIRECTIONS, PAS QUATRE BOITES. Le banc d avant proposait la
+        meme carte posee a trois endroits — le choix se reduisait a « ou », pas
+        a « quoi ». Ici chaque piste a sa propre nature, et elles ne se
+        melangent pas :
+
+          F1  LA CARTE DE JOUEUR — l objet. Cadre dore, portrait encadre,
+              statistiques gravees dessous. Le site a deja un mode de CARTES
+              (Collect) : la forme est chez elle, et aucun concurrent ne l a.
+          F2  LE VOLET — le calme. Pleine hauteur, colle au bord droit, de
+              l air partout. C est la forme des reglages d une application.
+          F3  LE PLEIN ECRAN — le cinema. Pas de carte du tout : l ecran EST
+              le panneau. Avatar enorme, pseudo en gros titre. C est l ecran
+              de selection de personnage d un jeu.
+          F4  LE BANDEAU — le HUD. La barre du haut se deplie sur toute la
+              largeur. Tout sur une ligne, rien ne couvre la page.
+
+        ⚠️ Les statistiques d un invite restent VERROUILLEES et non a zero :
+        un zero dit « tu n as rien joue », un emplacement grise dit
+        « connecte-toi pour que ca compte ». C est le seul argument honnete du
+        compte, et il vaut dans les quatre formes.
+
+        ⚠️ Chemins d images en ABSOLU — servie sous /prototypes/, la page
+        chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.55; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #6e6e7b;
+        }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.4rem 0.8rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.8rem; font-weight: 600;
+            color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 66rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; max-width: 48rem; }
+
+        .piste { margin-top: 3.25rem; }
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.3rem; }
+        .piste-code {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+            color: #0b0b0e; background: var(--or); padding: 0.1rem 0.45rem; border-radius: 0.25rem;
+        }
+        .piste-nom { font-size: 1.02rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.85rem; margin-bottom: 1rem; max-width: 48rem; }
+
+        .scene {
+            position: relative; overflow: hidden;
+            background: #0a0a0a;
+            background-image: radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.05) 0%, transparent 62%);
+            border: 1px solid #1d1d26; border-radius: 0.75rem;
+            padding: 1.1rem 1.25rem; min-height: 25rem;
+            display: flex; flex-direction: column;
+        }
+        .scene.tel { max-width: 390px; }
+
+        .avis {
+            margin-top: 1rem; padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.025);
+            border-left: 2px solid #2b2b36; font-size: 0.8rem; color: #8b8b96;
+        }
+        .avis b { color: #cfcfd8; }
+
+        /* ════════════ LA BARRE (commune) ════════════ */
+        .tb { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; flex: 0 0 auto; z-index: 3; }
+        .tb .logo { margin-right: auto; width: 2.9rem; height: 2.9rem; padding: 0; background: none; border: 0; cursor: pointer; }
+        .tb .logo img { width: 100%; height: 100%; object-fit: contain; }
+        .tb .nom { font-size: 0.85rem; font-weight: 600; color: var(--txt); white-space: nowrap; }
+        .tb .nom.compte::before {
+            content: ''; display: inline-block; vertical-align: middle;
+            width: 0.32em; height: 0.32em; margin-right: 0.45em;
+            background: currentColor; opacity: 0.8; transform: rotate(45deg);
+        }
+        .tb .av { position: relative; width: 2.6rem; height: 2.6rem; padding: 0; background: none; border: 0; cursor: pointer; flex: 0 0 auto; }
+        .tb .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,255,255,0.14); }
+        .tb .av .coin {
+            position: absolute; right: -0.1rem; bottom: -0.1rem;
+            width: 1rem; height: 1rem; border-radius: 50%;
+            display: grid; place-items: center; border: 0.11rem solid #0a0a0a;
+        }
+        .coin.discord { background: var(--discord); } .coin.discord svg { fill: #fff; }
+        .coin.google { background: #fff; }
+        .coin svg { width: 0.6rem; height: 0.6rem; }
+
+        /* ════════════ Briques communes ════════════ */
+        .etiq { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #6e6e7b; }
+
+        .four-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            width: 100%; padding: 0.65rem 1rem; border: 0; border-radius: 0.5rem;
+            font-family: inherit; font-size: 0.82rem; font-weight: 600;
+            color: #fff; background: var(--discord); cursor: pointer; white-space: nowrap;
+        }
+        .four-btn:hover { filter: brightness(1.1); }
+        .four-btn svg { width: 1rem; height: 1rem; flex: 0 0 auto; fill: #fff; }
+        .four-btn.g { background: #fff; color: #1f1f1f; } .four-btn.g svg { fill: none; }
+
+        .lien {
+            display: flex; align-items: center; gap: 0.6rem; width: 100%;
+            padding: 0.5rem 0.5rem; border: 0; border-radius: 0.4rem; background: none;
+            font-family: inherit; font-size: 0.8rem; font-weight: 500; color: #b9b9c6;
+            cursor: pointer; text-align: left;
+        }
+        .lien:hover { background: rgba(255,255,255,0.055); color: #fff; }
+        .lien svg { width: 0.95rem; height: 0.95rem; fill: currentColor; opacity: 0.65; flex: 0 0 auto; }
+        .lien.danger:hover { color: #f87171; }
+
+        .fermer {
+            width: 1.9rem; height: 1.9rem; flex: 0 0 auto; border: 0; border-radius: 50%;
+            background: rgba(255,255,255,0.06); color: var(--doux); cursor: pointer; font-size: 0.85rem; line-height: 1;
+        }
+        .fermer:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+        /* ════════════════════════════════════════════
+           F1 — LA CARTE DE JOUEUR
+           ════════════════════════════════════════════ */
+        .f1-wrap { flex: 1; display: grid; place-items: center; padding: 1.5rem 0; }
+        .f1 {
+            position: relative; width: min(19rem, 100%);
+            padding: 0.42rem;
+            background: linear-gradient(150deg, #6b5410 0%, #d4af37 18%, #f6e27a 32%, #8a6d14 52%, #d4af37 74%, #5e4a0e 100%);
+            border-radius: 1.05rem;
+            box-shadow: 0 1.5rem 3.5rem rgba(0,0,0,0.72), 0 0 2.5rem rgba(255,180,0,0.14);
+        }
+        .f1-in {
+            position: relative; overflow: hidden;
+            background: linear-gradient(170deg, #1b1710 0%, #0f0e12 55%, #0b0b0e 100%);
+            border-radius: 0.78rem; padding: 1.2rem 1.1rem 1.1rem;
+            display: flex; flex-direction: column; gap: 0.85rem;
+        }
+        /* La trame de fond : des rayons, comme un fond de carte shonen. */
+        .f1-in::before {
+            content: ''; position: absolute; inset: -50%;
+            background: repeating-conic-gradient(from 0deg at 50% 0%,
+                rgba(255,215,0,0.05) 0deg 4deg, transparent 4deg 10deg);
+            pointer-events: none;
+        }
+        .f1-haut { position: relative; display: flex; align-items: center; gap: 0.8rem; }
+        .f1-portrait {
+            position: relative; width: 4.4rem; height: 4.4rem; flex: 0 0 auto;
+            padding: 0; background: none; border: 0; cursor: pointer;
+        }
+        .f1-portrait img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            border-radius: 0.6rem;
+            border: 0.14rem solid var(--or);
+            box-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.35);
+        }
+        .f1-portrait .crayon {
+            position: absolute; right: -0.3rem; bottom: -0.3rem;
+            width: 1.3rem; height: 1.3rem; border-radius: 50%; display: grid; place-items: center;
+            background: #2a2412; border: 0.1rem solid #0f0e12; color: var(--or); font-size: 0.6rem;
+        }
+        /* ⚠️ Le pseudo s edite SUR PLACE, il n y a pas de champ separe.
+           Une carte est un OBJET : y poser une boite de formulaire avec son
+           bouton « OK » la ramenerait a une fenetre, et c est precisement ce
+           qui la distingue des trois autres. Le nom est donc l entree
+           elle-meme, soulignee en pointilles pour dire qu on peut y toucher. */
+        .f1-nom {
+            width: 100%; max-width: 100%;
+            font-family: inherit; font-size: 1.15rem; font-weight: 800;
+            color: var(--txt); line-height: 1.15;
+            background: none; border: 0;
+            border-bottom: 0.08rem dashed rgba(255, 215, 0, 0.32);
+            outline: none; padding: 0 0 0.12rem; cursor: text;
+        }
+        .f1-nom:focus { border-bottom-color: var(--or); border-bottom-style: solid; }
+        .f1-rang { display: flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: var(--doux); margin-top: 0.15rem; }
+        .f1-rang .four { width: 0.82rem; height: 0.82rem; border-radius: 50%; display: inline-grid; place-items: center; flex: 0 0 auto; }
+        .f1-rang .four.discord { background: var(--discord); padding: 0.12rem; } .f1-rang .four.discord svg { fill: #fff; }
+        .f1-rang .four.google { background: #fff; padding: 0.1rem; }
+        .f1-rang .four svg { width: 100%; height: 100%; display: block; }
+
+        /* Les statistiques « gravees » : un bandeau, pas des boites */
+        .f1-grave {
+            position: relative; display: grid; grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid rgba(255,215,0,0.22);
+            border-bottom: 1px solid rgba(255,215,0,0.22);
+            padding: 0.6rem 0;
+        }
+        .f1-grave > div { text-align: center; }
+        .f1-grave > div + div { border-left: 1px solid rgba(255,255,255,0.07); }
+        .f1-grave .v { font-size: 1.1rem; font-weight: 900; color: var(--or); line-height: 1.1; }
+        .f1-grave .n { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #7d7d8a; }
+        .f1-grave.verrou .v { color: #5c5c68; }
+        .f1-grave.verrou { opacity: 0.6; }
+
+        .f1-bas { position: relative; display: flex; flex-direction: column; gap: 0.4rem; }
+        .f1-liens { position: relative; display: flex; gap: 0.3rem; justify-content: center; flex-wrap: wrap; }
+        .f1-liens .lien { width: auto; padding: 0.35rem 0.5rem; font-size: 0.72rem; }
+        .f1-fermer { position: absolute; top: 0.65rem; right: 0.65rem; z-index: 4; }
+
+        /* ════════════════════════════════════════════
+           F2 — LE VOLET
+           ════════════════════════════════════════════ */
+        .f2-stage { position: relative; flex: 1; margin-top: 0.75rem; border-radius: 0.5rem; overflow: hidden; background: rgba(4,4,6,0.55); }
+        .f2 {
+            position: absolute; top: 0; right: 0; bottom: 0; width: min(20rem, 88%);
+            background: linear-gradient(200deg, #141318 0%, #0d0d10 100%);
+            border-left: 1px solid rgba(255,215,0,0.16);
+            box-shadow: -1.5rem 0 3rem rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; padding: 1.15rem 1.15rem 1.3rem;
+            gap: 1.15rem; overflow-y: auto;
+        }
+        .f2-tete { display: flex; align-items: center; gap: 0.8rem; }
+        .f2-av { position: relative; width: 3.1rem; height: 3.1rem; flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+        .f2-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.12rem solid rgba(255,215,0,0.45); }
+        .f2-av .crayon { position: absolute; right: -0.2rem; bottom: -0.2rem; width: 1.2rem; height: 1.2rem; border-radius: 50%; display: grid; place-items: center; background: #26231a; border: 0.1rem solid #0d0d10; color: var(--or); font-size: 0.58rem; }
+        .f2-nom { font-size: 1rem; font-weight: 700; color: var(--txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .f2-rang { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--doux); }
+        .f2-rang .four { width: 0.82rem; height: 0.82rem; border-radius: 50%; display: inline-grid; place-items: center; flex: 0 0 auto; }
+        .f2-rang .four.discord { background: var(--discord); padding: 0.12rem; } .f2-rang .four.discord svg { fill: #fff; }
+        .f2-rang .four.google { background: #fff; padding: 0.1rem; }
+        .f2-rang .four svg { width: 100%; height: 100%; display: block; }
+        .f2-bloc { display: flex; flex-direction: column; gap: 0.5rem; }
+        .f2-champ { display: flex; gap: 0.4rem; }
+        .f2-champ input {
+            flex: 1; min-width: 0; padding: 0.55rem 0.8rem; font-family: inherit;
+            font-size: 0.85rem; font-weight: 600; color: var(--txt);
+            background: rgba(0,0,0,0.4); border: 0.08rem solid rgba(255,255,255,0.12);
+            border-radius: 0.45rem; outline: none;
+        }
+        .f2-champ button { padding: 0 0.85rem; border: 0; border-radius: 0.45rem; font-family: inherit; font-size: 0.78rem; font-weight: 700; color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre)); cursor: pointer; }
+        .f2-stats { display: flex; flex-direction: column; gap: 0.3rem; }
+        .f2-stat { display: flex; align-items: baseline; justify-content: space-between; padding: 0.42rem 0.1rem; border-bottom: 1px solid rgba(255,255,255,0.055); }
+        .f2-stat .n { font-size: 0.78rem; color: #9a9aa6; }
+        .f2-stat .v { font-size: 0.95rem; font-weight: 800; color: var(--or); }
+        .f2-stats.verrou .v { color: #5c5c68; }
+        .f2-pousse { margin-top: auto; }
+
+        /* ════════════════════════════════════════════
+           F3 — LE PLEIN ECRAN
+           ════════════════════════════════════════════ */
+        .f3 {
+            position: absolute; inset: 0; z-index: 5;
+            background:
+                radial-gradient(ellipse at 50% 18%, rgba(255, 190, 40, 0.13) 0%, transparent 58%),
+                rgba(6, 6, 9, 0.97);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 2rem 1.5rem; gap: 0.75rem; overflow-y: auto;
+        }
+        .f3-fermer { position: absolute; top: 1rem; right: 1rem; }
+        .f3-av { position: relative; width: 6rem; height: 6rem; padding: 0; background: none; border: 0; cursor: pointer; margin-top: 0.5rem; }
+        .f3-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+        .f3-av .anneau {
+            position: absolute; inset: -0.4rem; border-radius: 50%;
+            border: 0.12rem solid rgba(255, 215, 0, 0.55);
+            box-shadow: 0 0 2rem rgba(255, 190, 40, 0.3), inset 0 0 1.5rem rgba(255, 190, 40, 0.12);
+        }
+        .f3-av .crayon { position: absolute; right: 0.1rem; bottom: 0.1rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center; background: #26231a; border: 0.11rem solid #06060a; color: var(--or); font-size: 0.68rem; }
+        .f3-nom {
+            font-size: clamp(1.5rem, 6vw, 2.1rem); font-weight: 900; color: var(--txt);
+            letter-spacing: -0.02em; text-align: center; line-height: 1.1;
+            background: none; border: 0; border-bottom: 0.1rem dashed rgba(255,215,0,0.3);
+            font-family: inherit; outline: none; padding: 0.1rem 0.4rem; max-width: 100%;
+            text-align: center; cursor: text;
+        }
+        .f3-nom:focus { border-bottom-color: var(--or); }
+        .f3-rang { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--doux); }
+        .f3-rang .four { width: 0.9rem; height: 0.9rem; border-radius: 50%; display: inline-grid; place-items: center; }
+        .f3-rang .four.discord { background: var(--discord); padding: 0.13rem; } .f3-rang .four.discord svg { fill: #fff; }
+        .f3-rang .four.google { background: #fff; padding: 0.11rem; }
+        .f3-rang .four svg { width: 100%; height: 100%; display: block; }
+        /* Pas de boites : les chiffres nus, bien espaces. */
+        .f3-stats { display: flex; gap: 2.4rem; margin: 0.9rem 0 0.3rem; }
+        .f3-stats > div { text-align: center; }
+        .f3-stats .v { font-size: 1.65rem; font-weight: 900; color: var(--or); line-height: 1; }
+        .f3-stats .n { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #7d7d8a; margin-top: 0.25rem; }
+        .f3-stats.verrou { opacity: 0.45; } .f3-stats.verrou .v { color: #6e6e7b; }
+        .f3-appel { width: min(19rem, 100%); display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.4rem; }
+        .f3-mot { font-size: 0.8rem; color: #b4b4c0; text-align: center; margin-bottom: 0.3rem; }
+        .f3-mot b { color: #fff; }
+        .f3-liens { display: flex; gap: 0.2rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+        .f3-liens .lien { width: auto; padding: 0.4rem 0.55rem; font-size: 0.75rem; }
+
+        /* ════════════════════════════════════════════
+           F4 — LE BANDEAU
+           ════════════════════════════════════════════ */
+        .f4 {
+            margin-top: 0.7rem; flex: 0 0 auto;
+            background: linear-gradient(180deg, rgba(26,23,16,0.97), rgba(13,13,16,0.97));
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 0.7rem;
+            padding: 0.85rem 1rem;
+            display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+        }
+        .f4-id { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+        .f4-av { position: relative; width: 2.7rem; height: 2.7rem; flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+        .f4-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.4); }
+        .f4-av .crayon { position: absolute; right: -0.15rem; bottom: -0.15rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; display: grid; place-items: center; background: #26231a; border: 0.09rem solid #12110f; color: var(--or); font-size: 0.52rem; }
+        .f4-champ { display: flex; gap: 0.35rem; }
+        .f4-champ input {
+            width: 8.5rem; padding: 0.4rem 0.6rem; font-family: inherit; font-size: 0.82rem; font-weight: 600;
+            color: var(--txt); background: rgba(0,0,0,0.4);
+            border: 0.07rem solid rgba(255,255,255,0.12); border-radius: 0.4rem; outline: none;
+        }
+        .f4-champ button { padding: 0 0.7rem; border: 0; border-radius: 0.4rem; font-family: inherit; font-size: 0.74rem; font-weight: 700; color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre)); cursor: pointer; }
+        .f4-sep { width: 1px; align-self: stretch; background: rgba(255,255,255,0.09); }
+        .f4-stats { display: flex; gap: 1.3rem; }
+        .f4-stats > div { text-align: center; }
+        .f4-stats .v { font-size: 1rem; font-weight: 800; color: var(--or); line-height: 1.1; }
+        .f4-stats .n { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #7d7d8a; }
+        .f4-stats.verrou { opacity: 0.5; } .f4-stats.verrou .v { color: #5c5c68; }
+        .f4-droite { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+        .f4-droite .four-btn { width: auto; padding: 0.5rem 0.85rem; font-size: 0.76rem; }
+        .f4-liens { display: flex; gap: 0.1rem; }
+        .f4-liens .lien { width: auto; padding: 0.4rem 0.45rem; font-size: 0.74rem; }
+
+        @media (max-width: 700px) {
+            .rail { gap: 0.9rem; padding: 0.75rem 1rem; }
+            .page { padding: 1.75rem 1rem 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>État</span>
+            <div class="seg" id="segEtat">
+                <button data-v="off" class="on">Invité</button>
+                <button data-v="discord">Discord</button>
+                <button data-v="google">Google</button>
+            </div>
+        </div>
+        <div class="groupe">
+            <span>Largeur</span>
+            <div class="seg" id="segLarge">
+                <button data-v="pc" class="on">Ordinateur</button>
+                <button data-v="tel">Téléphone</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Quatre formes de profil</h1>
+        <p class="sous">La barre ne garde que deux éléments — le pseudo et l'avatar. Ce qui change ici, c'est
+            <b>ce que l'avatar ouvre</b> : un objet, un volet, un écran, ou un bandeau. Quatre natures, pas quatre
+            boîtes.</p>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">F1</span><span class="piste-nom">La carte de
+                    joueur</span></div>
+            <p class="piste-dit">Un objet, pas une fenêtre. Cadre doré, portrait encadré, statistiques gravées dans
+                un bandeau. Le site a déjà un mode de cartes — la forme est chez elle, et personne d'autre ne l'a.</p>
+            <div class="scene" data-scene>
+                <header class="tb" data-barre></header>
+                <div class="f1-wrap" data-panneau data-f="1"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> c'est la seule des quatre qui ressemble à ShonenMaster et à rien d'autre.
+                <b>Contre :</b> un cadre doré pour changer son pseudo, c'est solennel — et ça vieillit vite si on le
+                voit dix fois par soirée.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">F2</span><span class="piste-nom">Le volet</span></div>
+            <p class="piste-dit">Glisse du bord droit, pleine hauteur. De l'air partout, chaque chose sur sa ligne.
+                C'est la forme des réglages d'une application.</p>
+            <!-- ⚠️ Scene plus haute que les autres : le volet est PLEINE
+                 HAUTEUR par nature. A 25rem il se coupait au milieu de
+                 « Continuer avec Google », ce qui donnait l air d un defaut
+                 alors que sur un vrai ecran il a toute la hauteur. -->
+            <div class="scene" data-scene style="min-height: 46rem;">
+                <header class="tb" data-barre></header>
+                <div class="f2-stage"><div class="f2" data-panneau data-f="2"></div></div>
+            </div>
+            <p class="avis"><b>Pour :</b> de la place pour grandir — classements, succès, historique viendront
+                s'ajouter sans rien casser. <b>Contre :</b> c'est la forme la plus banale des quatre. Sobre, mais
+                elle ne dit rien du site.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">F3</span><span class="piste-nom">Le plein écran</span>
+            </div>
+            <p class="piste-dit">Pas de carte du tout : l'écran <i>est</i> le panneau. Avatar énorme, pseudo en gros
+                titre qu'on édite sur place. C'est l'écran de sélection de personnage d'un jeu.</p>
+            <div class="scene" data-scene style="min-height: 39rem;">
+                <header class="tb" data-barre></header>
+                <div class="f3" data-panneau data-f="3"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> le plus premium des quatre, et le seul qui rend <i>exactement</i> pareil
+                sur téléphone et sur ordinateur. <b>Contre :</b> couper toute la page pour corriger deux lettres de
+                son pseudo, c'est lourd.</p>
+        </div>
+
+        <div class="piste">
+            <div class="piste-tete"><span class="piste-code">F4</span><span class="piste-nom">Le bandeau</span></div>
+            <p class="piste-dit">La barre du haut se déplie sur toute la largeur. Tout sur une ligne, rien ne couvre
+                la page — on voit encore le site derrière.</p>
+            <!-- Le bandeau ne prend que sa hauteur : une scene haute ne
+                 montrerait que du vide sous lui. -->
+            <div class="scene" data-scene style="min-height: 0;">
+                <header class="tb" data-barre></header>
+                <div data-panneau data-f="4"></div>
+            </div>
+            <p class="avis"><b>Pour :</b> ne masque rien, se referme d'un clic, et sur ordinateur c'est le geste le
+                plus léger. <b>Contre :</b> sur téléphone il se replie en pile et redevient une carte ordinaire —
+                bascule la largeur.</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ Les quatre formes partagent leurs DONNEES, jamais leur mise en
+        // page : chacune a sa propre fonction de dessin. Le banc d avant
+        // posait la meme carte a trois endroits, et le choix se reduisait a
+        // « ou » au lieu de « quoi ».
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24">'
+                + '<path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>'
+                + '<path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/>'
+                + '<path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/>'
+                + '<path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            stats: '<svg viewBox="0 0 24 24"><path d="M4 20h16v-2H4v2zM6 16h2V9H6v7zm5 0h2V5h-2v11zm5 0h2v-5h-2v5z"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+            bug: '<svg viewBox="0 0 24 24"><path d="M20 8h-2.8a5.9 5.9 0 0 0-1.6-1.7L17 4.4 15.6 3l-2 2a6 6 0 0 0-3.2 0l-2-2L7 4.4l1.4 1.9A5.9 5.9 0 0 0 6.8 8H4v2h2.1v1H4v2h2.1v1H4v2h2.8a6 6 0 0 0 10.4 0H20v-2h-2.1v-1H20v-2h-2.1v-1H20V8z"/></svg>',
+            sortie: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>',
+        };
+        const NOMS = { discord: 'Discord', google: 'Google' };
+        const INVITE = 'Invité-7F2K', COMPTE = 'Naahas';
+
+        const co = (e) => e !== 'off';
+        const nom = (e) => co(e) ? COMPTE : INVITE;
+        const four = (e, cls) => co(e) ? `<span class="four ${e}">${SVG[e]}</span>` : '';
+        const rang = (e) => co(e) ? `${four(e)} Connecté avec ${NOMS[e]}` : 'Compte invité';
+        const S = (e) => co(e) ? ['47', '1 280', '12'] : ['—', '—', '—'];
+        const liens = (e) => `
+            <button class="lien">${SVG.stats} Mes statistiques</button>
+            <button class="lien">${SVG.image} Mon avatar</button>
+            <button class="lien">${SVG.bug} Signaler</button>
+            ${co(e) ? `<button class="lien danger">${SVG.sortie} Se déconnecter</button>` : ''}`;
+        const boutons = () => `
+            <button class="four-btn">${SVG.discord} Continuer avec Discord</button>
+            <button class="four-btn g">${SVG.google} Continuer avec Google</button>`;
+
+        const barre = (e) => `
+            <button class="logo"><img src="/logo-sm.png" alt=""></button>
+            <span class="nom${co(e) ? ' compte' : ''}">${nom(e)}</span>
+            <button class="av" title="Mon profil">
+                <img src="/novice.png" alt="">
+                ${co(e) ? `<span class="coin ${e}">${SVG[e]}</span>` : ''}
+            </button>`;
+
+        const FORMES = {
+            // ── F1 : la carte de joueur
+            1: (e) => {
+                const s = S(e);
+                return `
+                <div class="f1">
+                    <div class="f1-in">
+                        <button class="fermer f1-fermer">✕</button>
+                        <div class="f1-haut">
+                            <button class="f1-portrait" title="Changer d'avatar">
+                                <img src="/novice.png" alt=""><span class="crayon">✎</span>
+                            </button>
+                            <div style="min-width:0;flex:1">
+                                <input class="f1-nom" value="${nom(e)}" maxlength="16">
+                                <div class="f1-rang">${rang(e)}</div>
+                            </div>
+                        </div>
+                        <div class="f1-grave${co(e) ? '' : ' verrou'}">
+                            <div><div class="v">${s[0]}</div><div class="n">Parties</div></div>
+                            <div><div class="v">${s[1]}</div><div class="n">XP</div></div>
+                            <div><div class="v">${s[2]}</div><div class="n">Victoires</div></div>
+                        </div>
+                        <div class="f1-bas">
+                            ${co(e) ? '' : `<p style="font-size:0.76rem;color:#b4b4c0;text-align:center;margin-bottom:0.15rem;">
+                                <b style="color:#fff">Garde ta progression.</b> Facultatif — tu peux jouer sans.</p>${boutons()}`}
+                        </div>
+                        <div class="f1-liens">${liens(e)}</div>
+                    </div>
+                </div>`;
+            },
+
+            // ── F2 : le volet
+            2: (e) => {
+                const s = S(e);
+                return `
+                <div class="f2-tete">
+                    <button class="f2-av" title="Changer d'avatar"><img src="/novice.png" alt=""><span class="crayon">✎</span></button>
+                    <div style="flex:1;min-width:0">
+                        <div class="f2-nom">${nom(e)}</div>
+                        <div class="f2-rang">${rang(e)}</div>
+                    </div>
+                    <button class="fermer">✕</button>
+                </div>
+                <div class="f2-bloc">
+                    <span class="etiq">Pseudo</span>
+                    <div class="f2-champ"><input value="${nom(e)}" maxlength="16"><button>OK</button></div>
+                </div>
+                ${co(e) ? '' : `<div class="f2-bloc">
+                    <span class="etiq">Compte</span>
+                    <p style="font-size:0.78rem;color:#b4b4c0;">Garde ta progression d'un appareil à l'autre. Facultatif.</p>
+                    ${boutons()}
+                </div>`}
+                <div class="f2-bloc">
+                    <span class="etiq">Statistiques</span>
+                    <div class="f2-stats${co(e) ? '' : ' verrou'}">
+                        <div class="f2-stat"><span class="n">Parties jouées</span><span class="v">${s[0]}</span></div>
+                        <div class="f2-stat"><span class="n">Expérience</span><span class="v">${s[1]}</span></div>
+                        <div class="f2-stat"><span class="n">Victoires</span><span class="v">${s[2]}</span></div>
+                    </div>
+                </div>
+                <div class="f2-pousse">${liens(e)}</div>`;
+            },
+
+            // ── F3 : le plein ecran
+            3: (e) => {
+                const s = S(e);
+                return `
+                <button class="fermer f3-fermer">✕</button>
+                <button class="f3-av" title="Changer d'avatar">
+                    <img src="/novice.png" alt=""><span class="anneau"></span><span class="crayon">✎</span>
+                </button>
+                <input class="f3-nom" value="${nom(e)}" maxlength="16">
+                <div class="f3-rang">${rang(e)}</div>
+                <div class="f3-stats${co(e) ? '' : ' verrou'}">
+                    <div><div class="v">${s[0]}</div><div class="n">Parties</div></div>
+                    <div><div class="v">${s[1]}</div><div class="n">XP</div></div>
+                    <div><div class="v">${s[2]}</div><div class="n">Victoires</div></div>
+                </div>
+                ${co(e) ? '' : `<div class="f3-appel">
+                    <p class="f3-mot"><b>Garde ta progression.</b> Facultatif — tu peux jouer sans.</p>
+                    ${boutons()}
+                </div>`}
+                <div class="f3-liens">${liens(e)}</div>`;
+            },
+
+            // ── F4 : le bandeau
+            4: (e) => {
+                const s = S(e);
+                return `
+                <div class="f4">
+                    <div class="f4-id">
+                        <button class="f4-av" title="Changer d'avatar"><img src="/novice.png" alt=""><span class="crayon">✎</span></button>
+                        <div class="f4-champ"><input value="${nom(e)}" maxlength="16"><button>OK</button></div>
+                    </div>
+                    <div class="f4-sep"></div>
+                    <div class="f4-stats${co(e) ? '' : ' verrou'}">
+                        <div><div class="v">${s[0]}</div><div class="n">Parties</div></div>
+                        <div><div class="v">${s[1]}</div><div class="n">XP</div></div>
+                        <div><div class="v">${s[2]}</div><div class="n">Victoires</div></div>
+                    </div>
+                    <div class="f4-droite">
+                        ${co(e)
+                        ? `<div class="f4-liens">${liens(e)}</div>`
+                        : `<button class="four-btn">${SVG.discord} Discord</button>
+                           <button class="four-btn g">${SVG.google} Google</button>
+                           <div class="f4-liens">${liens(e)}</div>`}
+                        <button class="fermer">✕</button>
+                    </div>
+                </div>`;
+            },
+        };
+
+        function appliquer(e) {
+            document.querySelectorAll('[data-barre]').forEach(x => { x.innerHTML = barre(e); });
+            document.querySelectorAll('[data-panneau]').forEach(x => { x.innerHTML = FORMES[x.dataset.f](e); });
+        }
+
+        document.getElementById('segEtat').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on'); appliquer(b.dataset.v);
+        });
+        document.getElementById('segLarge').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            document.querySelectorAll('[data-scene]').forEach(s => s.classList.toggle('tel', b.dataset.v === 'tel'));
+        });
+
+        appliquer('off');
+    </script>
+</body>
+
+</html>
