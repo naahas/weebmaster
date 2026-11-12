@@ -7104,6 +7104,12 @@ body.game-active:has(.poll-game-container) #particles-js {
     display: inline-flex;
     align-items: center;
     gap: 0.42rem;
+    /* ⚠️ MEME HAUTEUR QUE L AVATAR POSE JUSTE A COTE. Sans ca la pastille lui
+       arrive a mi-hauteur et les deux ne forment pas une ligne — c est le
+       defaut que portait deja l ancienne barre, et la raison pour laquelle
+       `.v2-identity` avait exactement le meme plancher.
+       La valeur suit `.v2-moi-av` : les changer ENSEMBLE. */
+    min-height: 2.35rem;
     font-family: inherit;
     font-size: 0.8rem;
     font-weight: 600;
@@ -7150,8 +7156,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-moi-av {
     position: relative;
-    width: 2.6rem;
-    height: 2.6rem;
+    /* ⚠️ Suit `.v2-moi-nom` : les deux doivent faire la MEME hauteur, sans
+       quoi la pastille et l avatar ne forment pas une ligne. */
+    width: 2.35rem;
+    height: 2.35rem;
     padding: 0;
     flex: 0 0 auto;
     background: none;
@@ -7198,9 +7206,12 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil {
     position: fixed;
     z-index: 901;
-    top: 4.6rem;
+    /* ⚠️ Un peu plus bas qu avant : a 4,6rem la pointe venait TOUCHER l avatar,
+       et une bulle collee a son emetteur ne se lit plus comme une bulle — elle
+       passe pour un defaut d alignement. Il lui faut l air d un petit saut. */
+    top: 5.15rem;
     right: 1.25rem;
-    width: 20rem;
+    width: 18.5rem;
     max-width: calc(100vw - 2.5rem);
     border-radius: 1rem;
     /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
@@ -7259,12 +7270,14 @@ body.game-active:has(.poll-game-container) #particles-js {
    cote : la barre du haut vit dans un conteneur qui a sa propre marge
    laterale, la carte non (elle est en `fixed`). Les deux bords droits ne sont
    donc pas alignes. Releve au rendu : le centre de l avatar tombe a 42 px du
-   bord droit de la carte, d ou 42 − 6,8 = 35 px ≈ 2,17rem. */
+   bord droit de la carte. ⚠️ A REPRENDRE a chaque fois que la largeur de
+   l avatar OU celle de la carte bouge : les deux deplacent la cible, et rien
+   ne le signalera — la pointe se contentera de viser a cote. */
 .v2-profil::before {
     content: '';
     position: absolute;
     top: -0.43rem;
-    right: 2.17rem;
+    right: 2.045rem;
     width: 0.85rem;
     height: 0.85rem;
     transform: rotate(45deg);
@@ -7466,13 +7479,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
-    .v2-profil { top: 4.2rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+    .v2-profil { top: 4.75rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
     /* ⚠️ La pointe se recale, elle aussi MESUREE : la carte et la barre du
        haut n ont pas la meme marge laterale ici non plus, et les deux ecarts
        different (42 px sur ordinateur, 32 ici). Un seul chiffre pour les deux
        largeurs ferait rater la cible d un demi-avatar sur telephone, la ou
        l on voit le mieux qu une bulle ne pointe sur rien. */
-    .v2-profil::before { right: 1.55rem; }
+    .v2-profil::before { right: 1.426rem; }
 }
 
 /* ── Écran 1 : pseudo ─────────────────────── */
