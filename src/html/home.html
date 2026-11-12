@@ -138,21 +138,22 @@
                          Les trois gestes — changer d avatar, changer de pseudo, se
                          connecter — repondent a la meme question : qui je suis. Ils
                          vivent donc dans un seul panneau, ouvert par l avatar. -->
-                    <!-- ⚠️ Le crayon revient, et la pastille redevient CLIQUABLE :
-                         sans lui, rien ne disait que le pseudo se change — il
-                         fallait deviner qu il se modifiait dans un panneau ouvert
-                         par l avatar, ce qui n a aucune raison de venir a l esprit.
-                         Le clic ouvre le panneau et met le curseur DANS le champ :
-                         une seule porte, deux facons d y entrer. -->
-                    <button class="v2-moi-nom" :class="{ compte: estConnecte }"
-                            @click="ouvrirProfilPseudo" title="Changer de pseudo">
-                        <span class="v2-moi-crayon">✎</span>
-                        <span>{{ username }}</span>
-                    </button>
+                    <!-- ⚠️ L AVATAR EST SEUL : la pastille du pseudo a ete retiree
+                         du coin. Il porte donc a lui seul tout ce qu on peut faire
+                         ici, d ou le crayon colle dessus — sans lui, plus rien ne
+                         dirait qu il y a quoi que ce soit a changer.
+                         ℹ️ Le crayon n a PAS son propre clic : a 38 % d un avatar
+                         de 2,8rem il ferait une cible de dix-sept pixels, et sur
+                         telephone on viserait a cote une fois sur deux. C est tout
+                         le bouton qui ouvre le panneau ; le crayon est un signe,
+                         pas une commande. -->
                     <button class="v2-moi-av" @click="basculerProfil"
                             :class="{ ouvert: profilOuvert }" title="Mon profil">
                         <img :src="srcAvatar(avatar)" alt="" draggable="false"
                              @error="$event.target.src='novice.png'">
+                        <span class="v2-moi-stylo">
+                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </span>
                         <!-- ⚠️ PLUS DE LOGO DU FOURNISSEUR SUR L AVATAR : un
                              second anneau le remplace. Le logo collait une marque
                              Discord ou Google sur le portrait du joueur — c est

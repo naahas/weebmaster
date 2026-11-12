@@ -7100,66 +7100,16 @@ body.game-active:has(.poll-game-container) #particles-js {
    l avatar avait une forme, lui non. Le fond est volontairement a peine
    visible : il donne un corps sans ajouter une couleur de plus a un coin qui
    en porte deja (l or de la banniere, le dore de l avatar). */
-.v2-moi-nom {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.42rem;
-    /* ⚠️ MEME HAUTEUR QUE L AVATAR POSE JUSTE A COTE. Sans ca la pastille lui
-       arrive a mi-hauteur et les deux ne forment pas une ligne — c est le
-       defaut que portait deja l ancienne barre, et la raison pour laquelle
-       `.v2-identity` avait exactement le meme plancher.
-       La valeur suit `.v2-moi-av` : les changer ENSEMBLE. */
-    min-height: 2.35rem;
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #e6e6ee;
-    white-space: nowrap;
-    padding: 0.34rem 0.8rem;
-    border-radius: 2rem;
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    cursor: pointer;
-    transition: border-color 0.22s ease, background 0.22s ease;
-}
-.v2-moi-nom:hover {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 215, 0, 0.4);
-}
-.v2-moi-nom:hover .v2-moi-crayon { color: var(--neon-primary); opacity: 1; }
-
-/* ⚠️ Le crayon n est pas decoratif : sans lui, RIEN ne disait que le pseudo se
-   change. Il fallait deviner qu il se modifiait dans un panneau ouvert par
-   l avatar — ce qui n a aucune raison de venir a l esprit. */
-.v2-moi-crayon {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    opacity: 0.65;
-    transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-/* Le losange de l inscrit. ⚠️ Il prend `currentColor` : il SUIT la couleur du
-   pseudo au lieu de la contredire — les cinq camps et le dore du tour passent
-   tous dessus sans conflit. Et il est en `em`, parce que le pseudo va de
-   1,15 rem dans le salon a 0,62 rem sur un hexagone de telephone. */
-.v2-moi-nom.compte::before {
-    content: '';
-    display: inline-block;
-    vertical-align: middle;
-    width: 0.32em;
-    height: 0.32em;
-    margin-right: 0.45em;
-    background: currentColor;
-    opacity: 0.8;
-    transform: rotate(45deg);
-}
+/* ℹ️ `.v2-moi-nom` et `.v2-moi-crayon` ont ete retires : le pseudo ne
+   s affiche plus dans la barre, qui ne garde que l avatar. Le pseudo se lit et
+   se change dans le panneau, ou il est deja. */
 
 .v2-moi-av {
     position: relative;
-    /* ⚠️ Suit `.v2-moi-nom` : les deux doivent faire la MEME hauteur, sans
-       quoi la pastille et l avatar ne forment pas une ligne. */
-    width: 2.35rem;
-    height: 2.35rem;
+    /* L avatar est SEUL dans le coin : il peut donc grandir sans serrer quoi
+       que ce soit, et il le doit — c est devenu la seule cible du coin. */
+    width: 2.8rem;
+    height: 2.8rem;
     padding: 0;
     flex: 0 0 auto;
     background: none;
@@ -7193,6 +7143,32 @@ body.game-active:has(.poll-game-container) #particles-js {
     pointer-events: none;
 }
 
+/* ⚠️ LE CRAYON. L avatar est seul dans le coin depuis que la pastille du pseudo
+   en est partie : sans lui, plus rien ne dirait qu il y a quelque chose a
+   changer derriere. Il n a pas son propre clic — a 38 % d un avatar de 2,8rem
+   il ferait une cible de dix-sept pixels, et sur telephone on viserait a cote
+   une fois sur deux. C est tout le bouton qui ouvre le panneau.
+   ⚠️ Ses dimensions sont en POURCENTAGE de l avatar, pas en pixels : la barre
+   retrecit sur telephone, et une pastille figee y deviendrait disproportionnee.
+   Le cerne reprend le fond de la page : c est lui qui detache le disque du
+   portrait, et c est aussi lui qui interrompt proprement le double anneau de
+   l inscrit la ou les deux se croisent. */
+.v2-moi-stylo {
+    position: absolute;
+    right: -4%;
+    bottom: -4%;
+    width: 38%;
+    height: 38%;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
+    border: 0.1rem solid var(--bg-primary);
+    color: #120f02;
+    pointer-events: none;
+}
+.v2-moi-stylo svg { width: 58%; height: 58%; fill: currentColor; display: block; }
+
 /* ───── Le panneau ───── */
 .v2-profil-voile {
     position: fixed;
@@ -7206,7 +7182,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     /* ⚠️ Un peu plus bas qu avant : a 4,6rem la pointe venait TOUCHER l avatar,
        et une bulle collee a son emetteur ne se lit plus comme une bulle — elle
        passe pour un defaut d alignement. Il lui faut l air d un petit saut. */
-    top: 5.15rem;
+    /* ⚠️ A REPRENDRE avec la taille de l avatar, comme la pointe : l avatar est
+       le plus haut element de la barre, donc l agrandir pousse tout vers le bas
+       et la pointe vient le TOUCHER. Et il faut compter le crayon en plus, qui
+       deborde sous le cercle de 4 % plus sa bordure. */
+    top: 5.75rem;
     right: 1.25rem;
     width: 18.5rem;
     max-width: calc(100vw - 2.5rem);
@@ -7274,7 +7254,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     content: '';
     position: absolute;
     top: -0.43rem;
-    right: 2.045rem;
+    right: 2.27rem;
     width: 0.85rem;
     height: 0.85rem;
     transform: rotate(45deg);
@@ -7481,13 +7461,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
-    .v2-profil { top: 4.75rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+    .v2-profil { top: 5.35rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
     /* ⚠️ La pointe se recale, elle aussi MESUREE : la carte et la barre du
        haut n ont pas la meme marge laterale ici non plus, et les deux ecarts
        different (42 px sur ordinateur, 32 ici). Un seul chiffre pour les deux
        largeurs ferait rater la cible d un demi-avatar sur telephone, la ou
        l on voit le mieux qu une bulle ne pointe sur rien. */
-    .v2-profil::before { right: 1.426rem; }
+    .v2-profil::before { right: 1.635rem; }
 }
 
 /* ── Écran 1 : pseudo ─────────────────────── */
