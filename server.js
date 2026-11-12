@@ -2337,6 +2337,13 @@ app.get('/prototypes/compte-cadre', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-cadre.html');
 });
 
+// 🔑 Comment le panneau SORT de l avatar, et y rentre. Quatre facons,
+// rejouables, avec un curseur de duree — une transition se juge en la
+// rejouant, jamais sur une capture.
+app.get('/prototypes/compte-anim', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-anim.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });

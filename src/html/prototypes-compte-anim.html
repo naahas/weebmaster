@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — l'ouverture du panneau</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ CE BANC NE SE JUGE PAS SUR UNE CAPTURE. Quatre facons pour le
+        panneau de SORTIR de l avatar et d y rentrer. Clique « Ouvrir /
+        Fermer » sur chacune, et refais-le : une transition se juge a la
+        troisieme fois, pas a la premiere.
+
+        Le panneau est aussi plus LARGE et plus AERE qu en jeu (20rem au lieu
+        de 17,5, et des marges plus grandes) — il grandit sans qu on y ajoute
+        une seule ligne.
+
+        ⚠️ T2 EST UNE VRAIE FLIP, pas une imitation : l avatar de la barre et
+        celui de la carte sont DEUX elements distincts, a deux endroits. Les
+        « fusionner » demande de mesurer les deux rectangles au moment du clic
+        et d animer un fantome de l un vers l autre. Une transition CSS seule
+        ne peut pas le faire — elle ne sait pas ou est l autre.
+
+        ⚠️ Et toute l animation evite `width`/`height`/`top` : seuls
+        `transform` et `opacity` sont composes par le GPU. Animer la hauteur
+        d une carte force un recalcul de mise en page a chaque image, et ca se
+        voit sur un telephone bien avant un ordinateur.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 60;
+            display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+            padding: 0.9rem 1.5rem;
+            background: rgba(10, 10, 14, 0.94); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.6rem; }
+        .groupe > span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6e6e7b; }
+        .groupe input[type=range] { width: 9rem; accent-color: var(--or); }
+        .val { font-size: 0.78rem; font-weight: 700; color: var(--or); min-width: 3.2rem; }
+        .btn-tout {
+            padding: 0.4rem 0.85rem; border: 1px solid #2b2b36; border-radius: 0.4rem;
+            background: #15151c; color: #c9c9d4; font-family: inherit;
+            font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        }
+        .btn-tout:hover { background: #1f1f28; color: #fff; }
+
+        .page { max-width: 68rem; margin: 0 auto; padding: 2.5rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.9rem; margin-top: 0.3rem; max-width: 48rem; }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(27rem, 1fr)); gap: 1.6rem; margin-top: 2rem; }
+
+        .piste-tete { display: flex; align-items: baseline; gap: 0.7rem; margin-bottom: 0.2rem; }
+        .piste-code { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; color: #0b0b0e; background: var(--or); padding: 0.1rem 0.42rem; border-radius: 0.25rem; }
+        .piste-nom { font-size: 0.98rem; font-weight: 700; }
+        .piste-dit { color: #8b8b96; font-size: 0.8rem; margin-bottom: 0.7rem; min-height: 2.6rem; }
+
+        .scene {
+            position: relative; overflow: hidden; min-height: 25rem;
+            border: 1px solid #1d1d26; border-radius: 0.75rem;
+            background:
+                radial-gradient(ellipse at 25% 35%, rgba(140, 70, 220, 0.14) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 85%, rgba(255, 180, 80, 0.12) 0%, transparent 58%),
+                linear-gradient(180deg, #0c0a14 0%, #0f0c1a 50%, #08080c 100%);
+            padding: 0.9rem 1rem;
+        }
+        .scene::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 2.4rem 2.4rem;
+        }
+
+        .faux { position: relative; margin-top: 2.6rem; padding-left: 0.3rem; }
+        .faux-titre { width: 10rem; opacity: 0.9; }
+        .faux-b { display: inline-block; margin-top: 1rem; padding: 0.5rem 0.95rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre)); }
+
+        /* ════════ La barre ════════ */
+        .tb { position: relative; z-index: 3; display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; }
+        .tb .nom { font-size: 0.82rem; font-weight: 600; color: var(--txt); }
+        .tb .av { position: relative; width: 2.6rem; height: 2.6rem; padding: 0; background: none; border: 0; cursor: pointer; flex: 0 0 auto; }
+        .tb .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+        /* L anneau qui se dilate quand le panneau sort de l avatar */
+        .tb .av::after {
+            content: ''; position: absolute; inset: -0.25rem; border-radius: 50%;
+            border: 0.1rem solid rgba(255, 215, 0, 0); pointer-events: none;
+            transition: border-color 0.25s ease, transform 0.25s ease;
+            transform: scale(0.8);
+        }
+        .tb .av.on::after { border-color: rgba(255, 215, 0, 0.55); transform: scale(1); }
+
+        /* ════════ Le panneau — PLUS LARGE ET PLUS AERE ════════ */
+        .pn {
+            position: absolute; z-index: 5;
+            top: 3.9rem; right: 1rem;
+            width: 20rem; max-width: calc(100% - 2rem);
+            /* ⚠️ Marges plus grandes qu en jeu : la carte grandit sans qu on y
+               ajoute une ligne. C est la facon la moins chere de la rendre
+               moins serree. */
+            padding: 1.15rem;
+            display: flex; flex-direction: column; gap: 0.85rem;
+            border-radius: 0.9rem;
+            background: linear-gradient(90deg,
+                rgba(16, 16, 19, 0.18) 0%,
+                rgba(16, 16, 19, 0.78) 34%,
+                rgba(20, 18, 14, 0.97) 100%);
+            backdrop-filter: blur(0.45rem);
+            box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.45);
+            will-change: transform, opacity;
+        }
+        .pn::after {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+            border: 0.08rem solid rgba(255, 215, 0, 0.3);
+            -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+        }
+
+        .pn-tete { display: flex; align-items: center; gap: 0.8rem; }
+        .pn-av { position: relative; width: 3.3rem; height: 3.3rem; flex: 0 0 auto; padding: 0; background: none; border: 0; cursor: pointer; }
+        .pn-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); }
+        .pn-av .crayon { position: absolute; right: -0.18rem; bottom: -0.18rem; width: 1.2rem; height: 1.2rem; border-radius: 50%; display: grid; place-items: center; background: #26231a; border: 0.09rem solid #101013; color: var(--or); font-size: 0.56rem; }
+        .pn-id { flex: 1; min-width: 0; }
+        .pn-nom { width: 100%; font-family: inherit; font-size: 1rem; font-weight: 700; color: var(--txt); background: none; border: 0; border-bottom: 0.07rem dashed rgba(255,215,0,0.3); outline: none; padding: 0 0 0.12rem; }
+        .pn-fermer { width: 1.7rem; height: 1.7rem; flex: 0 0 auto; border: 0; border-radius: 50%; background: rgba(255,255,255,0.08); color: var(--doux); cursor: pointer; font-size: 0.78rem; line-height: 1; }
+        .pn-trait { height: 1px; background: rgba(255,255,255,0.09); }
+        .etiq { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e7b; margin-bottom: -0.3rem; }
+        .ronds { display: flex; gap: 0.5rem; }
+        .rond { flex: 1; display: grid; place-items: center; height: 2.5rem; border: 0; border-radius: 0.55rem; cursor: pointer; }
+        .rond.d { background: var(--discord); } .rond.d svg { fill: #fff; }
+        .rond.g { background: #fff; }
+        .rond svg { width: 1.2rem; height: 1.2rem; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem; opacity: 0.5; }
+        .stats > div { text-align: center; padding: 0.6rem 0.2rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; }
+        .stats .v { font-size: 1rem; font-weight: 800; color: #6e6e7b; line-height: 1.15; }
+        .stats .n { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7d7d8a; }
+        .liens { display: flex; flex-direction: column; gap: 0.05rem; }
+        .lien { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.48rem 0.45rem; border: 0; border-radius: 0.4rem; background: none; font-family: inherit; font-size: 0.8rem; font-weight: 500; color: #b9b9c6; cursor: pointer; text-align: left; }
+        .lien:hover { background: rgba(255,255,255,0.07); color: #fff; }
+        .lien svg { width: 0.95rem; height: 0.95rem; fill: currentColor; opacity: 0.65; }
+
+        /* Le fantome de la FLIP (T2) */
+        .fantome {
+            position: absolute; z-index: 9; border-radius: 50%; overflow: hidden;
+            pointer-events: none; will-change: transform;
+            border: 0.11rem solid rgba(255,215,0,0.7);
+            box-shadow: 0 0 1.4rem rgba(255, 190, 40, 0.45);
+        }
+        .fantome img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .cmd { display: flex; gap: 0.5rem; margin-top: 0.7rem; }
+        .cmd button {
+            padding: 0.42rem 0.9rem; border: 1px solid #2b2b36; border-radius: 0.4rem;
+            background: #15151c; color: #c9c9d4; font-family: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        }
+        .cmd button:hover { background: #1f1f28; color: #fff; }
+
+        .avis { margin-top: 0.6rem; font-size: 0.76rem; color: #7d7d8a; }
+        .avis b { color: #cfcfd8; }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>Durée</span>
+            <input type="range" id="duree" min="120" max="700" step="20" value="300">
+            <span class="val" id="dureeVal">300 ms</span>
+        </div>
+        <div class="groupe">
+            <button class="btn-tout" id="toutOuvrir">Tout ouvrir</button>
+            <button class="btn-tout" id="toutFermer">Tout fermer</button>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>L'ouverture du panneau</h1>
+        <p class="sous">Quatre façons pour le panneau de <b>sortir de l'avatar</b> et d'y rentrer. Le curseur règle
+            la durée — une transition se juge en la rejouant, pas sur une capture.</p>
+        <p class="sous" style="margin-top:0.5rem">Le panneau est aussi <b>plus large et plus aéré</b> qu'en jeu
+            (20 rem au lieu de 17,5, marges augmentées) : il grandit sans qu'on y ajoute une seule ligne.</p>
+
+        <div class="grille" id="grille"></div>
+    </div>
+
+    <script>
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24"><path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+        };
+
+        const PISTES = [
+            { c: 'T1', n: 'Éclosion depuis l\'avatar', d: 'La carte naît au point exact de l\'avatar et se déplie vers le bas à gauche. Son origine de transformation EST l\'avatar — c\'est ce qui fait qu\'elle en sort au lieu d\'apparaître à côté.' },
+            { c: 'T2', n: 'Fusion de l\'avatar (FLIP)', d: 'Un fantôme de l\'avatar quitte la barre, descend et grossit jusqu\'à prendre la place de celui de la carte. À la fermeture il remonte s\'y fondre. C\'est le plus littéral de ta demande.' },
+            { c: 'T3', n: 'Dépliage', d: 'La carte se déroule vers le bas, comme un store tiré depuis l\'avatar. Rien ne change de largeur : seule la hauteur se révèle.' },
+            { c: 'T4', n: 'Goutte', d: 'La carte part en pastille ronde à la taille de l\'avatar, puis s\'étire et se carre. L\'arrondi se résorbe en même temps que la forme s\'allonge.' },
+        ];
+
+        const grille = document.getElementById('grille');
+        let duree = 300;
+
+        const panneauHTML = () => `
+            <div class="pn-tete">
+                <button class="pn-av"><img src="/novice.png" alt=""><span class="crayon">✎</span></button>
+                <div class="pn-id"><input class="pn-nom" value="Hokage432" maxlength="16"></div>
+                <button class="pn-fermer">✕</button>
+            </div>
+            <div class="pn-trait"></div>
+            <div class="etiq">Connexion</div>
+            <div class="ronds">
+                <button class="rond d">${SVG.discord}</button>
+                <button class="rond g">${SVG.google}</button>
+            </div>
+            <div class="pn-trait"></div>
+            <div class="stats">
+                <div><div class="v">—</div><div class="n">Parties</div></div>
+                <div><div class="v">—</div><div class="n">XP</div></div>
+            </div>
+            <div class="pn-trait"></div>
+            <div class="liens"><button class="lien">${SVG.image} Mon avatar</button></div>`;
+
+        PISTES.forEach((p) => {
+            const bloc = document.createElement('div');
+            bloc.innerHTML = `
+                <div class="piste-tete"><span class="piste-code">${p.c}</span><span class="piste-nom">${p.n}</span></div>
+                <p class="piste-dit">${p.d}</p>
+                <div class="scene" data-t="${p.c}">
+                    <header class="tb">
+                        <span class="nom">Hokage432</span>
+                        <button class="av"><img src="/novice.png" alt=""></button>
+                    </header>
+                    <div class="faux">
+                        <img class="faux-titre" src="/titre-sm.webp" alt="">
+                        <div><span class="faux-b">Créer une partie</span></div>
+                    </div>
+                    <div class="pn" hidden>${panneauHTML()}</div>
+                </div>
+                <div class="cmd"><button data-act="toggle">Ouvrir / Fermer</button></div>`;
+            grille.appendChild(bloc);
+        });
+
+        // ⚠️ Chaque piste garde son etat : « Tout ouvrir » ne doit pas rejouer
+        // une ouverture sur une carte deja ouverte, sinon on compare une
+        // animation a un sursaut.
+        const etats = new WeakMap();
+
+        function ouvrir(scene) {
+            if (etats.get(scene)) return;
+            etats.set(scene, true);
+            const t = scene.dataset.t;
+            const pn = scene.querySelector('.pn');
+            const av = scene.querySelector('.tb .av');
+            pn.hidden = false;
+            av.classList.add('on');
+
+            // Le point d ou la carte doit naitre : le centre de l avatar,
+            // exprime dans le repere de la carte.
+            const rp = pn.getBoundingClientRect();
+            const ra = av.getBoundingClientRect();
+            const ox = (ra.left + ra.width / 2) - rp.left;
+            const oy = (ra.top + ra.height / 2) - rp.top;
+
+            if (t === 'T1') {
+                pn.style.transformOrigin = `${ox}px ${oy}px`;
+                pn.animate(
+                    [{ opacity: 0, transform: 'scale(0.18)' }, { opacity: 1, transform: 'scale(1)' }],
+                    { duration: duree, easing: 'cubic-bezier(0.22, 1.1, 0.3, 1)', fill: 'both' });
+
+            } else if (t === 'T2') {
+                // ── La FLIP : un fantome de l avatar va de la barre a la carte.
+                const cible = pn.querySelector('.pn-av');
+                const rc = cible.getBoundingClientRect();
+                cible.style.opacity = '0';
+                const f = document.createElement('div');
+                f.className = 'fantome';
+                f.innerHTML = '<img src="/novice.png" alt="">';
+                f.style.cssText += `left:${ra.left - scene.getBoundingClientRect().left}px;`
+                    + `top:${ra.top - scene.getBoundingClientRect().top}px;`
+                    + `width:${ra.width}px;height:${ra.height}px;`;
+                scene.appendChild(f);
+                // La carte, elle, se deplie derriere le fantome.
+                pn.style.transformOrigin = `${ox}px ${oy}px`;
+                pn.animate([{ opacity: 0, transform: 'scale(0.3)' }, { opacity: 1, transform: 'scale(1)' }],
+                    { duration: duree, easing: 'cubic-bezier(0.22, 1.1, 0.3, 1)', fill: 'both' });
+                const a = f.animate([
+                    { transform: 'translate(0,0) scale(1)' },
+                    { transform: `translate(${rc.left - ra.left}px, ${rc.top - ra.top}px) scale(${rc.width / ra.width})` },
+                ], { duration: duree, easing: 'cubic-bezier(0.3, 0.9, 0.3, 1)', fill: 'both' });
+                a.finished.then(() => { cible.style.opacity = ''; f.remove(); }).catch(() => {});
+
+            } else if (t === 'T3') {
+                pn.style.transformOrigin = `${ox}px 0px`;
+                pn.animate([
+                    { opacity: 0, transform: 'scaleY(0.02)' },
+                    { opacity: 1, offset: 0.35 },
+                    { opacity: 1, transform: 'scaleY(1)' },
+                ], { duration: duree, easing: 'cubic-bezier(0.25, 1, 0.35, 1)', fill: 'both' });
+
+            } else if (t === 'T4') {
+                pn.style.transformOrigin = `${ox}px ${oy}px`;
+                const a = pn.animate([
+                    { opacity: 0, transform: 'scale(0.13)', borderRadius: '50%' },
+                    { opacity: 1, offset: 0.3 },
+                    { opacity: 1, transform: 'scale(1)', borderRadius: '0.9rem' },
+                ], { duration: duree, easing: 'cubic-bezier(0.3, 1.2, 0.35, 1)', fill: 'both' });
+                a.finished.then(() => { pn.style.borderRadius = ''; }).catch(() => {});
+            }
+        }
+
+        function fermer(scene) {
+            if (!etats.get(scene)) return;
+            etats.set(scene, false);
+            const t = scene.dataset.t;
+            const pn = scene.querySelector('.pn');
+            const av = scene.querySelector('.tb .av');
+            av.classList.remove('on');
+
+            const rp = pn.getBoundingClientRect();
+            const ra = av.getBoundingClientRect();
+            const ox = (ra.left + ra.width / 2) - rp.left;
+            const oy = (ra.top + ra.height / 2) - rp.top;
+            pn.style.transformOrigin = t === 'T3' ? `${ox}px 0px` : `${ox}px ${oy}px`;
+
+            let img;
+            if (t === 'T1') img = [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.18)' }];
+            else if (t === 'T3') img = [{ opacity: 1, transform: 'scaleY(1)' }, { opacity: 0, transform: 'scaleY(0.02)' }];
+            else if (t === 'T4') img = [{ opacity: 1, transform: 'scale(1)', borderRadius: '0.9rem' }, { opacity: 0, transform: 'scale(0.13)', borderRadius: '50%' }];
+            else img = [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.3)' }];
+
+            if (t === 'T2') {
+                // Le fantome refait le trajet a l envers : il remonte se fondre
+                // dans l avatar de la barre.
+                const cible = pn.querySelector('.pn-av');
+                const rc = cible.getBoundingClientRect();
+                const rs = scene.getBoundingClientRect();
+                cible.style.opacity = '0';
+                const f = document.createElement('div');
+                f.className = 'fantome';
+                f.innerHTML = '<img src="/novice.png" alt="">';
+                f.style.cssText += `left:${rc.left - rs.left}px;top:${rc.top - rs.top}px;`
+                    + `width:${rc.width}px;height:${rc.height}px;`;
+                scene.appendChild(f);
+                f.animate([
+                    { transform: 'translate(0,0) scale(1)' },
+                    { transform: `translate(${ra.left - rc.left}px, ${ra.top - rc.top}px) scale(${ra.width / rc.width})` },
+                ], { duration: duree, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'both' })
+                    .finished.then(() => { f.remove(); cible.style.opacity = ''; }).catch(() => {});
+            }
+
+            const a = pn.animate(img, { duration: duree, easing: 'cubic-bezier(0.4, 0, 0.7, 0.4)', fill: 'both' });
+            a.finished.then(() => { pn.hidden = true; pn.style.borderRadius = ''; }).catch(() => {});
+        }
+
+        // ⚠️ Un ecouteur PAR BLOC, et pas une delegation sur la grille : le
+        // bouton « Ouvrir / Fermer » vit HORS de la scene qu il commande
+        // (c est sa commande, elle est sous elle), donc `closest('.scene')`
+        // rend null pour lui. Remonter l arbre au juge pour retrouver la bonne
+        // scene marchait tant que le gabarit ne bougeait pas — c est-a-dire
+        // jusqu a la premiere retouche.
+        [...grille.children].forEach((bloc) => {
+            const s = bloc.querySelector('.scene');
+            const bascule = () => (etats.get(s) ? fermer(s) : ouvrir(s));
+            bloc.querySelector('[data-act="toggle"]').addEventListener('click', bascule);
+            s.querySelector('.tb .av').addEventListener('click', bascule);
+            s.querySelector('.pn-fermer').addEventListener('click', bascule);
+        });
+
+        const curseur = document.getElementById('duree');
+        curseur.addEventListener('input', () => {
+            duree = +curseur.value;
+            document.getElementById('dureeVal').textContent = duree + ' ms';
+        });
+        document.getElementById('toutOuvrir').onclick = () => document.querySelectorAll('.scene').forEach(ouvrir);
+        document.getElementById('toutFermer').onclick = () => document.querySelectorAll('.scene').forEach(fermer);
+    </script>
+</body>
+
+</html>
