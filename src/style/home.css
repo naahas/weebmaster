@@ -7095,11 +7095,20 @@ body.game-active:has(.poll-game-container) #particles-js {
    pseudo, connexion — repondent a la meme question (qui je suis) : ils
    vivent donc dans un seul panneau, ouvert par l avatar. */
 
+/* ⚠️ Une pastille, et pas du texte nu. Le pseudo est le premier mot que lit
+   un visiteur ; pose en blanc sans rien autour, le coin paraissait inacheve —
+   l avatar avait une forme, lui non. Le fond est volontairement a peine
+   visible : il donne un corps sans ajouter une couleur de plus a un coin qui
+   en porte deja (l or de la banniere, le dore de l avatar). */
 .v2-moi-nom {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #e6e6ee;
     white-space: nowrap;
+    padding: 0.34rem 0.8rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 /* Le losange de l inscrit. ⚠️ Il prend `currentColor` : il SUIT la couleur du
@@ -7170,22 +7179,20 @@ body.game-active:has(.poll-game-container) #particles-js {
     z-index: 901;
     top: 4.6rem;
     right: 1.25rem;
-    width: 17.5rem;
+    width: 20rem;
     max-width: calc(100vw - 2.5rem);
-    padding: 0.95rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-    border-radius: 0.85rem;
-    /* ⚠️ LE FOND S EFFACE VERS LA GAUCHE : la carte parait SORTIR du bord
-       droit au lieu d etre posee dessus. C est tout le parti pris de ce
-       panneau, et il ne tient qu a ce degrade. */
-    background: linear-gradient(90deg,
-        rgba(16, 16, 19, 0.18) 0%,
-        rgba(16, 16, 19, 0.78) 34%,
-        rgba(20, 18, 14, 0.97) 100%);
-    backdrop-filter: blur(0.45rem);
-    box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.45);
+    border-radius: 1rem;
+    /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
+       posait l avatar et le pseudo — ce qu on lit en premier — sur la partie
+       la plus transparente, et surtout il se contredisait avec l en-tete
+       teinte ci-dessous, qui demande une surface franche pour se detacher.
+       On ne peut pas a la fois effacer le fond et le teinter par zones. */
+    background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    /* Les deux surfaces de l en-tete et du corps vont jusqu au bord : sans
+       ca, les coins arrondis laisseraient passer le fond de la carte. */
+    overflow: hidden;
+    box-shadow: 0 1.4rem 3.2rem rgba(0, 0, 0, 0.6);
     /* ⚠️ SES PROPRES KEYFRAMES, et surtout pas `v2AvatarsIn`. Celles du
        tiroir des avatars portent son centrage — `translateY(-50%)` —, parce
        qu'il est calé au milieu de la hauteur. Reprises ici, elles remontaient
@@ -7201,24 +7208,25 @@ body.game-active:has(.poll-game-container) #particles-js {
     to   { opacity: 1; transform: none; }
 }
 
-/* ⚠️ LA BORDURE SUIT LE MEME FONDU, et ce n est pas un detail de finition :
-   un trait net tout autour d un fond qui s efface FERME une carte qui, elle,
-   s ouvre — les deux se contredisent a l oeil. D ou le masque, qui efface la
-   bordure exactement la ou le fond disparait.
-   Et c est un calque separe : une `border` sur l element lui-meme ne peut pas
-   recevoir de masque sans masquer aussi le contenu. */
-.v2-profil::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    border: 0.08rem solid rgba(255, 215, 0, 0.3);
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
+/* ⚠️ L EN-TETE EST TEINTE, LE CORPS NE L EST PAS : c est tout le parti pris.
+   La frontiere entre « qui je suis » et « ce que je peux faire » se voit
+   SANS un seul trait de separation — et c est l accumulation de traits qui
+   faisait paraitre les versions precedentes brouillonnes. */
+.v2-profil-tete {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1.05rem 1.15rem;
+    background: linear-gradient(135deg, rgba(255, 190, 40, 0.16), rgba(255, 140, 0, 0.06));
+    border-bottom: 1px solid rgba(255, 215, 0, 0.14);
 }
 
-.v2-profil-tete { display: flex; align-items: center; gap: 0.65rem; }
+.v2-profil-corps {
+    padding: 1.05rem 1.15rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+}
 
 .v2-profil-av {
     position: relative;
@@ -7316,47 +7324,50 @@ body.game-active:has(.poll-game-container) #particles-js {
     color: var(--error-color);
 }
 
-.v2-profil-bloc { display: flex; flex-direction: column; gap: 0.7rem; }
-.v2-profil-trait { height: 1px; background: rgba(255, 255, 255, 0.09); }
-.v2-profil-etiq {
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #6e6e7b;
-    margin-bottom: -0.25rem;
-}
+/* ℹ️ `.v2-profil-trait`, `.v2-profil-etiq` et `.v2-profil-bloc` ont ete
+   retires avec l en-tete teinte : les traits de separation ne servent plus
+   (c est la surface qui separe) et l etiquette « Connexion » non plus (les
+   boutons portent leur nom). Rien ne les cite dans le gabarit. */
 
-.v2-profil-ronds { display: flex; gap: 0.45rem; }
+.v2-profil-ronds { display: flex; gap: 0.5rem; }
+/* ⚠️ Les boutons portent leur NOM, pas seulement le logo : on reconnait le
+   logo Discord, on ne devine pas qu il sert a SE CONNECTER. C est ce qui a
+   permis de retirer l etiquette « Connexion » qui compensait au-dessus. */
 .v2-profil-rond {
     flex: 1;
-    display: grid;
-    place-items: center;
-    height: 2.3rem;
-    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 2.45rem;
+    padding: 0 0.6rem;
     border: 0;
-    border-radius: 0.5rem;
+    border-radius: 0.55rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
     transition: filter 0.18s ease;
 }
 .v2-profil-rond:hover { filter: brightness(1.12); }
-.v2-profil-rond.d { background: #5865F2; }
+.v2-profil-rond.d { background: #5865F2; color: #fff; }
 .v2-profil-rond.d svg { fill: #fff; }
-.v2-profil-rond.g { background: #fff; }
-.v2-profil-rond svg { width: 1.15rem; height: 1.15rem; display: block; }
+.v2-profil-rond.g { background: #fff; color: #1f1f1f; }
+/* ⚠️ Une taille EXPLICITE : un <svg> sans width/height retombe sur sa taille
+   par defaut, 300×150 px, et fait exploser le bouton qui le porte. */
+.v2-profil-rond svg { width: 1.05rem; height: 1.05rem; display: block; flex: 0 0 auto; }
 
-.v2-profil-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
-.v2-profil-stats > div {
-    text-align: center;
-    padding: 0.45rem 0.2rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.45rem;
-}
+/* ⚠️ Deux chiffres NUS, aux deux bouts. Pas de boites : la carte en a deja
+   deux (l en-tete et le corps), une troisieme surface par statistique
+   redonnerait le patchwork qu on vient de retirer. */
+.v2-profil-stats { display: flex; justify-content: space-between; }
+.v2-profil-stats > .droite { text-align: right; }
 .v2-profil-stats .v {
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: 1.1rem;
+    font-weight: 900;
     color: var(--neon-primary);
-    line-height: 1.15;
+    line-height: 1.1;
 }
 .v2-profil-stats .n {
     font-size: 0.52rem;
