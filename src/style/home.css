@@ -7101,6 +7101,10 @@ body.game-active:has(.poll-game-container) #particles-js {
    visible : il donne un corps sans ajouter une couleur de plus a un coin qui
    en porte deja (l or de la banniere, le dore de l avatar). */
 .v2-moi-nom {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    font-family: inherit;
     font-size: 0.8rem;
     font-weight: 600;
     color: #e6e6ee;
@@ -7109,6 +7113,23 @@ body.game-active:has(.poll-game-container) #particles-js {
     border-radius: 2rem;
     background: rgba(255, 255, 255, 0.055);
     border: 1px solid rgba(255, 255, 255, 0.09);
+    cursor: pointer;
+    transition: border-color 0.22s ease, background 0.22s ease;
+}
+.v2-moi-nom:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 215, 0, 0.4);
+}
+.v2-moi-nom:hover .v2-moi-crayon { color: var(--neon-primary); opacity: 1; }
+
+/* ⚠️ Le crayon n est pas decoratif : sans lui, RIEN ne disait que le pseudo se
+   change. Il fallait deviner qu il se modifiait dans un panneau ouvert par
+   l avatar — ce qui n a aucune raison de venir a l esprit. */
+.v2-moi-crayon {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.65;
+    transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 /* Le losange de l inscrit. ⚠️ Il prend `currentColor` : il SUIT la couleur du
@@ -7189,9 +7210,6 @@ body.game-active:has(.poll-game-container) #particles-js {
        On ne peut pas a la fois effacer le fond et le teinter par zones. */
     background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
     border: 1px solid rgba(255, 255, 255, 0.075);
-    /* Les deux surfaces de l en-tete et du corps vont jusqu au bord : sans
-       ca, les coins arrondis laisseraient passer le fond de la carte. */
-    overflow: hidden;
     box-shadow: 0 1.4rem 3.2rem rgba(0, 0, 0, 0.6);
     /* ⚠️ SES PROPRES KEYFRAMES, et surtout pas `v2AvatarsIn`. Celles du
        tiroir des avatars portent son centrage — `translateY(-50%)` —, parce
@@ -7219,6 +7237,49 @@ body.game-active:has(.poll-game-container) #particles-js {
     padding: 1.05rem 1.15rem;
     background: linear-gradient(135deg, rgba(255, 190, 40, 0.16), rgba(255, 140, 0, 0.06));
     border-bottom: 1px solid rgba(255, 215, 0, 0.14);
+    /* ⚠️ Les coins sont arrondis ICI, et non par un `overflow: hidden` sur la
+       carte. Celui-ci coupait la POINTE DE BULLE, qui doit justement sortir du
+       cadre. Un pixel de moins que la carte, pour laisser voir sa bordure.
+       ⚠️ Et `position: relative` + `z-index` ne sont pas gratuits : la pointe
+       est un pseudo-element POSITIONNE, donc elle peint par-dessus un en-tete
+       qui ne l est pas — sa moitie basse resterait visible en travers de la
+       bande. L en-tete doit passer devant pour la masquer. */
+    border-radius: calc(1rem - 1px) calc(1rem - 1px) 0 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* ⚠️ LA POINTE DE BULLE. Un carre tourne a 45°, dont seule la moitie haute
+   depasse : c est ce qui permet de lui donner la MEME bordure que la carte sur
+   ses deux aretes exterieures. Un triangle fabrique en `border` n aurait pas pu
+   en porter.
+   ⚠️ Elle est calee sur le CENTRE DE L AVATAR, et ce chiffre est MESURE, pas
+   calcule. Le calcul evident — la carte est a `right: 1.25rem`, l avatar fait
+   2,6rem au meme bord, donc son centre serait a 1,3rem — tombe a 21 px a
+   cote : la barre du haut vit dans un conteneur qui a sa propre marge
+   laterale, la carte non (elle est en `fixed`). Les deux bords droits ne sont
+   donc pas alignes. Releve au rendu : le centre de l avatar tombe a 42 px du
+   bord droit de la carte, d ou 42 − 6,8 = 35 px ≈ 2,17rem. */
+.v2-profil::before {
+    content: '';
+    position: absolute;
+    top: -0.43rem;
+    right: 2.17rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    transform: rotate(45deg);
+    border-radius: 0.14rem 0 0 0;
+    border-top: 1px solid rgba(255, 215, 0, 0.17);
+    border-left: 1px solid rgba(255, 215, 0, 0.17);
+    /* ⚠️ La teinte est celle de l en-tete A CET ENDROIT PRECIS, calculee et non
+       choisie a l oeil : la bande est un degrade a 135°, sa couleur sous la
+       pointe n est donc ni celle du depart ni celle de l arrivee.
+       Sur une bande de 318 × 85, l axe du degrade mesure 285 px et la pointe
+       tombe a 70 % de sa course : l or y vaut rgb(255,155,12) a 9 % d opacite,
+       pose sur le #16151b du haut de la carte — soit #2b211a.
+       Prendre la couleur de depart aurait donne une pointe nettement plus
+       claire que la bande qu elle prolonge, et la soudure se serait vue. */
+    background: #2b211a;
 }
 
 .v2-profil-corps {
@@ -7406,6 +7467,12 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
     .v2-profil { top: 4.2rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+    /* ⚠️ La pointe se recale, elle aussi MESUREE : la carte et la barre du
+       haut n ont pas la meme marge laterale ici non plus, et les deux ecarts
+       different (42 px sur ordinateur, 32 ici). Un seul chiffre pour les deux
+       largeurs ferait rater la cible d un demi-avatar sur telephone, la ou
+       l on voit le mieux qu une bulle ne pointe sur rien. */
+    .v2-profil::before { right: 1.55rem; }
 }
 
 /* ── Écran 1 : pseudo ─────────────────────── */

@@ -4689,6 +4689,18 @@ createApp({
             this.pseudoError = '';
         },
 
+        // Le crayon de la barre ouvre le MEME panneau, mais le curseur arrive
+        // dans le champ et le pseudo est selectionne : on tape par-dessus sans
+        // avoir a effacer. C est ce que faisait l ancienne modale du pseudo.
+        ouvrirProfilPseudo() {
+            if (this.profilOuvert) { this.fermerProfil(); return; }
+            this.basculerProfil();
+            // ⚠️ Le champ n existe pas encore : le panneau est en `v-if`, Vue ne
+            // le pose qu au rendu suivant. Sans `$nextTick`, `$refs` est vide et
+            // le focus tombe dans le vide, en silence.
+            this.$nextTick(() => this.$refs.profilPseudo?.select());
+        },
+
         // Les deux panneaux sont colles au meme bord droit : ouvrir l un sans
         // fermer l autre les superposerait.
         avatarsDepuisProfil() {
