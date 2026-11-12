@@ -7178,23 +7178,20 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-moi-av:hover img,
 .v2-moi-av.ouvert img { border-color: rgba(255, 215, 0, 0.6); }
 
-/* La marque du fournisseur se pose SUR l avatar : l oeil y est deja, et ca
-   evite une troisieme chose dans la barre. */
-.v2-moi-coin {
+/* ⚠️ LE DOUBLE ANNEAU DU JOUEUR INSCRIT — il remplace le logo du fournisseur.
+   Celui-ci collait une marque Discord ou Google sur le portrait du joueur, qui
+   est SON image et non celle d une plateforme ; et il serait venu se disputer
+   le coin bas-droit avec le crayon.
+   L anneau, lui, ne recouvre rien et ne prend aucune place : c est le MEME
+   signe que le losange du pseudo en partie — on est inscrit, point. Quel
+   fournisseur, le panneau le dit, et c est le seul endroit ou ca sert. */
+.v2-moi-anneau {
     position: absolute;
-    right: -0.1rem;
-    bottom: -0.1rem;
-    width: 1rem;
-    height: 1rem;
+    inset: -0.24rem;
     border-radius: 50%;
-    display: grid;
-    place-items: center;
-    border: 0.11rem solid var(--bg-primary);
+    border: 0.09rem solid rgba(255, 215, 0, 0.5);
+    pointer-events: none;
 }
-.v2-moi-coin.discord { background: #5865F2; }
-.v2-moi-coin.discord svg { fill: #fff; }
-.v2-moi-coin.google { background: #fff; }
-.v2-moi-coin svg { width: 0.6rem; height: 0.6rem; display: block; }
 
 /* ───── Le panneau ───── */
 .v2-profil-voile {
@@ -7349,7 +7346,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     border: 0;
     border-bottom: 0.07rem dashed rgba(255, 215, 0, 0.3);
     outline: none;
-    padding: 0 0 0.1rem;
+    /* ⚠️ Le pointillé respire des DEUX côtés, et les deux valeurs vont
+       ensemble : collé au pseudo il ressemblait à un soulignement du mot, collé
+       à « Profil local » il ressemblait à un trait de séparation. Il n'est ni
+       l'un ni l'autre — c'est la marque d'un champ qu'on peut modifier. */
+    padding: 0 0 0.22rem;
     cursor: text;
 }
 .v2-profil-nom:focus {
@@ -7363,7 +7364,8 @@ body.game-active:has(.poll-game-container) #particles-js {
     gap: 0.32rem;
     font-size: 0.68rem;
     color: var(--text-secondary);
-    margin-top: 0.2rem;
+    /* Voir `.v2-profil-nom` : les deux marges du pointillé se règlent ensemble. */
+    margin-top: 0.33rem;
 }
 .v2-profil-four {
     width: 0.78rem;

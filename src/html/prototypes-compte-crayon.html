@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le crayon sur l'avatar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ LA BARRE NE GARDE PLUS QUE L AVATAR. Le pseudo en pastille a cote
+        part, donc l avatar devient le SEUL objet du coin — et rien n y dit
+        plus qu on peut changer quoi que ce soit. Le crayon doit porter ca a
+        lui tout seul.
+
+        ⚠️ LE PIEGE DE CE BANC : une pastille jugee sur un avatar de 3rem n est
+        plus la meme a 2,4rem. Elle doit tenir sur les deux, parce que la barre
+        retrecit sur telephone. D ou le curseur, et les deux tailles affichees
+        cote a cote plutot qu une seule.
+
+        ⚠️ Et le survol ne vaut RIEN sur telephone : une piste qui ne montre le
+        crayon qu au survol est invisible pour la moitie du public. C est dit
+        sous celle qui le fait.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --fond: #0a0a0a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 60;
+            display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+            padding: 0.85rem 1.5rem;
+            background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.6rem; }
+        .groupe > span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6e6e7b; }
+        .groupe input[type=range] { width: 10rem; accent-color: var(--or); }
+        .val { font-size: 0.8rem; font-weight: 700; color: var(--or); min-width: 4.2rem; }
+
+        .page { max-width: 68rem; margin: 0 auto; padding: 2.4rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.88rem; margin-top: 0.3rem; max-width: 50rem; }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.4rem; margin-top: 2rem; }
+
+        .case {
+            background: linear-gradient(180deg, #0d0b16 0%, #09090d 100%);
+            border: 1px solid #1d1d26; border-radius: 0.7rem;
+            padding: 1rem 1.1rem 1.1rem;
+        }
+        .case-tete { display: flex; align-items: baseline; gap: 0.6rem; }
+        .case-code { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; color: #0b0b0e; background: var(--or); padding: 0.08rem 0.4rem; border-radius: 0.25rem; }
+        .case-nom { font-size: 0.93rem; font-weight: 700; }
+        .case-dit { color: #8b8b96; font-size: 0.77rem; margin-top: 0.35rem; min-height: 3.1rem; }
+
+        /* La scene : la vraie barre, l avatar seul au bord droit */
+        .scene {
+            margin-top: 0.85rem; border-radius: 0.55rem;
+            background:
+                radial-gradient(ellipse at 70% 0%, rgba(255, 190, 40, 0.09) 0%, transparent 60%),
+                linear-gradient(180deg, #0c0a14 0%, #08080c 100%);
+            border: 1px solid #16161e;
+            padding: 0.9rem 1rem;
+            display: flex; align-items: center; justify-content: flex-end; gap: 1.6rem;
+        }
+        /* Les deux tailles cote a cote : la grande du bureau, la petite du telephone */
+        .duo { display: flex; align-items: center; gap: 1.5rem; }
+        .duo .etq { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5e5e6b; text-align: center; margin-top: 0.45rem; }
+
+        /* ════════ L avatar, socle commun ════════ */
+        .av {
+            position: relative; padding: 0; background: none; border: 0; cursor: pointer;
+            width: var(--t); height: var(--t);
+            display: block;
+        }
+        .av > img {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+            border: 0.11rem solid rgba(255, 215, 0, 0.45);
+            transition: border-color 0.22s ease;
+        }
+        .av:hover > img { border-color: var(--or); }
+
+        /* Le dessin du crayon, commun */
+        .cr svg { width: 58%; height: 58%; display: block; }
+
+        /* ── I1 · pastille dorée en bas à droite ── */
+        .i1 .cr {
+            position: absolute; right: -4%; bottom: -4%;
+            width: 38%; height: 38%;
+            border-radius: 50%; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--or), var(--ambre));
+            border: 0.1rem solid var(--fond);
+            color: #120f02;
+        }
+        .i1 .cr svg { fill: currentColor; }
+
+        /* ── I2 · pastille sombre, crayon doré ── */
+        .i2 .cr {
+            position: absolute; right: -4%; bottom: -4%;
+            width: 38%; height: 38%;
+            border-radius: 50%; display: grid; place-items: center;
+            background: #26231a;
+            border: 0.1rem solid var(--fond);
+            color: var(--or);
+        }
+        .i2 .cr svg { fill: currentColor; }
+
+        /* ── I3 · au survol seulement ── */
+        .i3 .cr {
+            position: absolute; inset: 0;
+            border-radius: 50%; display: grid; place-items: center;
+            background: rgba(8, 7, 4, 0.62);
+            color: var(--or);
+            opacity: 0; transition: opacity 0.18s ease;
+        }
+        .i3 .cr svg { width: 38%; height: 38%; fill: currentColor; }
+        .i3:hover .cr { opacity: 1; }
+
+        /* ── I4 · arc en bas de l avatar ── */
+        /* ⚠️ L arc doit rester DANS le cercle. Un masque en degre radial l a
+           efface ENTIEREMENT au premier essai — le cercle du masque etait pose
+           si haut que sa partie opaque tombait hors de l element. On clippe
+           donc le BOUTON lui-meme, ce qui ne peut pas se tromper : un
+           `overflow: hidden` sur un conteneur rond coupe exactement au rond. */
+        .i4 { overflow: hidden; border-radius: 50%; }
+        .i4 > img { position: relative; z-index: 1; }
+        .i4 .cr {
+            position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+            height: 34%;
+            display: grid; place-items: center;
+            background: linear-gradient(180deg, rgba(255, 190, 40, 0.75), rgba(255, 150, 0, 0.92));
+            color: #120f02;
+        }
+        .i4 .cr svg { width: 34%; height: 34%; fill: currentColor; margin-bottom: 4%; }
+
+        /* ── I5 · crayon POSÉ contre le bord, hors du cercle ── */
+        .i5 .cr {
+            position: absolute; right: -22%; bottom: -8%;
+            width: 36%; height: 36%;
+            display: grid; place-items: center;
+            color: var(--or);
+            filter: drop-shadow(0 0.1rem 0.25rem rgba(0, 0, 0, 0.8));
+        }
+        .i5 .cr svg { width: 100%; height: 100%; fill: currentColor; }
+
+        /* ── I6 · anneau pointillé + crayon minuscule ── */
+        .i6 > img { border-color: transparent; }
+        .i6 .anneau {
+            position: absolute; inset: -0.18rem; border-radius: 50%;
+            border: 0.11rem dashed rgba(255, 215, 0, 0.55);
+            pointer-events: none;
+        }
+        .i6 .cr {
+            position: absolute; right: -6%; bottom: -6%;
+            width: 32%; height: 32%;
+            border-radius: 50%; display: grid; place-items: center;
+            background: var(--fond); color: var(--or);
+        }
+        .i6 .cr svg { fill: currentColor; }
+
+        .avis { margin-top: 0.8rem; font-size: 0.76rem; color: #7d7d8a; }
+        .avis b { color: #cfcfd8; }
+
+        @media (max-width: 700px) { .rail { gap: 0.8rem; padding: 0.7rem 1rem; } .page { padding: 1.6rem 1rem 0; } }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>Avatar</span>
+            <input type="range" id="taille" min="2.2" max="3.4" step="0.05" value="2.8">
+            <span class="val" id="tailleVal">2.80 rem</span>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Le crayon sur l'avatar</h1>
+        <p class="sous">La pastille du pseudo part : l'avatar devient le <b>seul</b> objet du coin, et plus rien n'y
+            dit qu'on peut changer quelque chose. Le crayon doit porter ça tout seul.</p>
+        <p class="sous" style="margin-top:0.5rem">⚠️ Chaque piste est montrée <b>deux fois</b> — à la taille réglée
+            par le curseur, et à celle du téléphone. Une pastille qui tient à 3 rem peut devenir un point illisible
+            à 2,4.</p>
+
+        <div class="grille" id="grille"></div>
+    </div>
+
+    <script>
+        // Un crayon simple et plein : a 10 px de cote, un trace fin disparait.
+        const CRAYON = '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+
+        const PISTES = [
+            ['I1', 'Pastille dorée', 'i1', false,
+                'Un disque d\'or en bas à droite, cerné du fond de la page. C\'est la convention la plus répandue — on la lit sans réfléchir.',
+                '<b>Pour :</b> aucune ambiguïté. <b>Contre :</b> un second point d\'or dans un coin qui en a déjà, et il devra cohabiter avec la pastille du fournisseur une fois connecté.'],
+            ['I2', 'Pastille sombre', 'i2', false,
+                'Même place, mais le disque est sombre et c\'est le crayon qui porte l\'or. Beaucoup plus discret.',
+                '<b>Pour :</b> ne vole pas l\'attention au logo ni à « Créer une partie ». <b>Contre :</b> à la petite taille, un crayon doré sur fond sombre se devine plus qu\'il ne se lit.'],
+            ['I3', 'Au survol', 'i3', false,
+                'Rien par défaut. Le crayon apparaît au centre sur un voile sombre quand la souris passe.',
+                '⚠️ <b>À écarter :</b> il n\'y a pas de survol sur téléphone. La moitié du public ne saurait jamais que le pseudo se change — exactement le problème qu\'on cherche à régler.'],
+            ['I4', 'Arc inférieur', 'i4', false,
+                'Un bandeau doré épouse le bas du cercle, le crayon dedans. Ce n\'est pas une pastille posée dessus : ça fait partie de l\'avatar.',
+                '<b>Pour :</b> le plus franc de tous sans ajouter d\'objet. <b>Contre :</b> il mange le bas du portrait — et c\'est là que sont les épaules du personnage.'],
+            ['I5', 'Posé contre le bord', 'i5', false,
+                'Le crayon seul, sans disque, appuyé contre le cercle par l\'extérieur. Une ombre portée le détache du fond.',
+                '<b>Pour :</b> le plus léger — pas une forme de plus, juste un signe. <b>Contre :</b> sans disque, il dépend du fond derrière lui : sur une zone claire de l\'accueil il se perdrait.'],
+            ['I6', 'Anneau pointillé', 'i6', true,
+                'Le cercle de l\'avatar devient pointillé — le même pointillé que le champ du pseudo dans le panneau — avec un petit crayon en bas.',
+                '<b>Pour :</b> l\'avatar et le champ du pseudo parlent la même langue. <b>Contre :</b> un anneau pointillé autour d\'un visage évoque aussi « image manquante ».'],
+        ];
+
+        const grille = document.getElementById('grille');
+        PISTES.forEach(([code, nom, cls, anneau, dit, avis]) => {
+            const d = document.createElement('div');
+            d.className = 'case';
+            const un = (t, etq) => `
+                <div>
+                    <button class="av ${cls}" style="--t:${t}" title="Changer d'avatar">
+                        <img src="/novice.png" alt="">
+                        ${anneau ? '<span class="anneau"></span>' : ''}
+                        <span class="cr">${CRAYON}</span>
+                    </button>
+                    <div class="etq">${etq}</div>
+                </div>`;
+            d.innerHTML = `
+                <div class="case-tete"><span class="case-code">${code}</span><span class="case-nom">${nom}</span></div>
+                <div class="case-dit">${dit}</div>
+                <div class="scene">
+                    <div class="duo">
+                        ${un('var(--grand)', 'réglé')}
+                        ${un('2.35rem', 'téléphone')}
+                    </div>
+                </div>
+                <div class="avis">${avis}</div>`;
+            grille.appendChild(d);
+        });
+
+        const curseur = document.getElementById('taille');
+        const poser = () => {
+            document.documentElement.style.setProperty('--grand', curseur.value + 'rem');
+            document.getElementById('tailleVal').textContent = (+curseur.value).toFixed(2) + ' rem';
+        };
+        curseur.addEventListener('input', poser);
+        poser();
+    </script>
+</body>
+
+</html>

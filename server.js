@@ -2350,6 +2350,14 @@ app.get('/prototypes/compte-refonte', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-refonte.html');
 });
 
+// 🔑 Le crayon colle a l avatar : la pastille du pseudo part de la barre, donc
+// plus rien n y dit qu on peut changer quoi que ce soit. Six facons, chacune
+// montree a DEUX tailles — une pastille qui tient a 3rem devient un point
+// illisible a 2,35.
+app.get('/prototypes/compte-crayon', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-crayon.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });
