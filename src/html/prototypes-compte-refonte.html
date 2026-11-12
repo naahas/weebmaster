@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — refonte du profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ REFONTE. Les bancs precedents proposaient toujours LA MEME CARTE :
+        un en-tete, des traits, des blocs empiles. On ne choisissait qu entre
+        des densites. Ici chaque panneau a une STRUCTURE differente, et
+        plusieurs se passent entierement de traits de separation — c est
+        souvent ce qui fait qu une carte « fait brouillon » : trop de lignes.
+
+        ⚠️ Et le pseudo blanc tout nu de la barre est traite a part, en haut :
+        c est le premier mot que lit un visiteur, et il n a aujourd hui
+        AUCUNE forme. Six facons de lui en donner une sans alourdir le coin.
+
+        ⚠️ Chemins d images en ABSOLU — servie sous /prototypes/, la page
+        chercherait sinon /prototypes/novice.png.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 7rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 60;
+            display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+            padding: 0.85rem 1.5rem;
+            background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.5rem; }
+        .groupe > span { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6e6e7b; }
+        .seg { display: flex; background: #15151c; border-radius: 0.45rem; padding: 0.15rem; }
+        .seg button {
+            padding: 0.36rem 0.72rem; border: 0; background: none; border-radius: 0.35rem;
+            font-family: inherit; font-size: 0.77rem; font-weight: 600; color: #8b8b96; cursor: pointer; white-space: nowrap;
+        }
+        .seg button.on { background: #2b2b36; color: #fff; }
+
+        .page { max-width: 72rem; margin: 0 auto; padding: 2.4rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        h2 {
+            font-size: 1.05rem; font-weight: 700; margin-top: 3.25rem;
+            padding-top: 1.5rem; border-top: 1px solid #1d1d26;
+        }
+        .sous { color: #8b8b96; font-size: 0.88rem; margin-top: 0.3rem; max-width: 50rem; }
+
+        /* ════════ SECTION A — le pseudo dans la barre ════════ */
+        .noms { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 0.9rem; margin-top: 1.4rem; }
+        .nom-case {
+            background: linear-gradient(180deg, #0d0b16 0%, #09090d 100%);
+            border: 1px solid #1d1d26; border-radius: 0.6rem; padding: 0.85rem 1rem 0.95rem;
+        }
+        .nom-tag { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #6e6e7b; }
+        .nom-bar { display: flex; align-items: center; justify-content: flex-end; gap: 0.7rem; margin-top: 0.65rem; }
+        .nom-dit { font-size: 0.74rem; color: #7d7d8a; margin-top: 0.6rem; }
+
+        .av-mini { width: 2.4rem; height: 2.4rem; border-radius: 50%; object-fit: cover; display: block; border: 0.11rem solid rgba(255,215,0,0.45); flex: 0 0 auto; }
+
+        /* N1 blanc nu */
+        .n1 { font-size: 0.85rem; font-weight: 600; color: #fff; }
+        /* N2 pastille */
+        .n2 {
+            font-size: 0.8rem; font-weight: 600; color: #e6e6ee;
+            padding: 0.34rem 0.8rem; border-radius: 2rem;
+            background: rgba(255, 255, 255, 0.055);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+        /* N3 point d etat */
+        .n3 { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 600; color: #fff; }
+        .n3::before { content: ''; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #10b981; box-shadow: 0 0 0.5rem rgba(16,185,129,0.7); }
+        /* N4 etiquette */
+        .n4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #9a9aa6; }
+        /* N5 degrade dore */
+        .n5 {
+            font-size: 0.86rem; font-weight: 800; letter-spacing: -0.01em;
+            background: linear-gradient(135deg, var(--or) 10%, var(--ambre) 90%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        /* N6 soulignement */
+        .n6 { font-size: 0.85rem; font-weight: 600; color: #fff; padding-bottom: 0.18rem; border-bottom: 0.12rem solid rgba(255, 215, 0, 0.55); }
+
+        /* ════════ SECTION B — les panneaux ════════ */
+        .panneaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(23rem, 1fr)); gap: 1.6rem; margin-top: 1.6rem; }
+        .p-tete { display: flex; align-items: baseline; gap: 0.65rem; margin-bottom: 0.2rem; }
+        .p-code { font-size: 0.67rem; font-weight: 700; letter-spacing: 0.1em; color: #0b0b0e; background: var(--or); padding: 0.08rem 0.4rem; border-radius: 0.25rem; }
+        .p-nom { font-size: 0.97rem; font-weight: 700; }
+        .p-dit { color: #8b8b96; font-size: 0.79rem; margin-bottom: 0.75rem; min-height: 3.4rem; }
+        .p-scene {
+            display: grid; place-items: center; padding: 1.5rem 1rem;
+            border: 1px solid #1d1d26; border-radius: 0.7rem;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(140, 70, 220, 0.10) 0%, transparent 60%),
+                linear-gradient(180deg, #0c0a14 0%, #08080c 100%);
+        }
+
+        /* Le socle commun : fond, ombre, rayon. La STRUCTURE, elle, change. */
+        .k {
+            width: 20rem; max-width: 100%;
+            border-radius: 1rem;
+            background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.075);
+            box-shadow: 0 1.4rem 3.2rem rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        .av-gd { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+        .crayon {
+            position: absolute; right: -0.15rem; bottom: -0.15rem;
+            width: 1.25rem; height: 1.25rem; border-radius: 50%; display: grid; place-items: center;
+            background: #26231a; border: 0.1rem solid #0f0f13; color: var(--or); font-size: 0.58rem;
+        }
+        .champ {
+            font-family: inherit; color: var(--txt); background: none; border: 0; outline: none;
+            padding: 0 0 0.12rem; width: 100%;
+        }
+
+        .fb { display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: 0; cursor: pointer; font-family: inherit; font-weight: 600; }
+        .fb:hover { filter: brightness(1.12); }
+        /* ⚠️ UNE TAILLE EXPLICITE, SANS QUOI RIEN NE TIENT. Un <svg> sans
+           width/height ni dans l attribut ni dans la feuille retombe sur sa
+           taille par defaut (300×150 px) et fait exploser le bouton qui le
+           porte — quatre panneaux sur six etaient illisibles. `flex: 0 0 auto`
+           empeche seulement le RETRECISSEMENT, il ne donne aucune taille. */
+        .fb svg { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
+        .fb.d { background: var(--discord); color: #fff; } .fb.d svg { fill: #fff; }
+        .fb.g { background: #fff; color: #1f1f1f; }
+
+        .lien {
+            display: flex; align-items: center; gap: 0.55rem; width: 100%;
+            border: 0; background: none; cursor: pointer; text-align: left;
+            font-family: inherit; font-size: 0.79rem; font-weight: 500; color: #a8a8b6;
+        }
+        .lien:hover { color: #fff; }
+        .lien svg { width: 0.92rem; height: 0.92rem; fill: currentColor; opacity: 0.6; flex: 0 0 auto; }
+
+        .etiq { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #6a6a78; }
+
+        .avis { margin-top: 0.75rem; font-size: 0.76rem; color: #7d7d8a; }
+        .avis b { color: #cfcfd8; }
+
+        @media (max-width: 700px) { .rail { gap: 0.8rem; padding: 0.7rem 1rem; } .page { padding: 1.6rem 1rem 0; } }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>État</span>
+            <div class="seg" id="segEtat">
+                <button data-v="off" class="on">Invité</button>
+                <button data-v="discord">Connecté</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Refonte du profil</h1>
+        <p class="sous">Les bancs d'avant proposaient toujours la même carte à des densités différentes. Ici chaque
+            panneau a une <b>structure</b> différente — et plusieurs se passent entièrement de traits de séparation,
+            ce qui est souvent ce qui fait qu'une carte paraît brouillonne.</p>
+
+        <h2>A — Le pseudo dans la barre</h2>
+        <p class="sous">Aujourd'hui c'est du blanc tout nu, sans aucune forme. C'est pourtant le premier mot que lit
+            un visiteur.</p>
+        <div class="noms" id="noms"></div>
+
+        <h2>B — Le panneau</h2>
+        <p class="sous">Six structures. Bascule « Connecté » en haut pour voir chacune dans les deux états.</p>
+        <div class="panneaux" id="panneaux"></div>
+    </div>
+
+    <script>
+        const SVG = {
+            discord: '<svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>',
+            google: '<svg viewBox="0 0 24 24"><path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>',
+            image: '<svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>',
+            sortie: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>',
+            fleche: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        };
+
+        const PSEUDO = 'Hokage432';
+        let etat = 'off';
+        const co = () => etat !== 'off';
+        const S = () => co() ? ['47', '1 280'] : ['—', '—'];
+
+        // ════════ A — les six traitements du pseudo ════════
+        const NOMS = [
+            ['N1', 'Blanc nu — l\'état actuel', 'n1', 'Rien autour. Lisible, mais le coin paraît inachevé : l\'avatar a une forme, le pseudo non.'],
+            ['N2', 'Pastille discrète', 'n2', 'Un fond à peine visible lui donne un corps. C\'est ce que portait l\'ancienne barre, sans le crayon.'],
+            ['N3', 'Point d\'état', 'n3', 'Le point vert dit « en ligne ». ⚠️ Il dit aussi quelque chose de faux : on est toujours en ligne sur cette page.'],
+            ['N4', 'Étiquette', 'n4', 'Petites capitales espacées, en gris. Le pseudo devient une mention discrète plutôt qu\'un titre.'],
+            ['N5', 'Dégradé doré', 'n5', 'La couleur du site. ⚠️ Elle est aussi celle de « Créer une partie » — deux ors à l\'écran se disputent le regard.'],
+            ['N6', 'Soulignement', 'n6', 'Un filet doré sous le mot. Donne une forme sans ajouter de surface.'],
+        ];
+
+        const bNoms = document.getElementById('noms');
+        NOMS.forEach(([c, n, cls, dit]) => {
+            const d = document.createElement('div');
+            d.className = 'nom-case';
+            d.innerHTML = `<div class="nom-tag">${c} · ${n}</div>
+                <div class="nom-bar">
+                    <span class="${cls}">${PSEUDO}</span>
+                    <img class="av-mini" src="/novice.png" alt="">
+                </div>
+                <div class="nom-dit">${dit}</div>`;
+            bNoms.appendChild(d);
+        });
+
+        // ════════ B — les six panneaux ════════
+        const PAN = [
+            {
+                c: 'P1', n: 'Colonne centrée',
+                d: 'Aucun trait, aucune boîte. Tout est centré et c\'est l\'espacement seul qui sépare. Le panneau se lit de haut en bas comme une fiche.',
+                avis: '<b>Pour :</b> c\'est la plus calme des six — rien ne découpe. <b>Contre :</b> centrer rend la lecture plus lente qu\'un alignement à gauche.',
+                html: () => `
+                <div class="k" style="padding:1.6rem 1.4rem 1.3rem;display:flex;flex-direction:column;align-items:center;gap:0.1rem;">
+                    <div style="position:relative;width:4.2rem;height:4.2rem;margin-bottom:0.85rem;">
+                        <img class="av-gd" src="/novice.png" alt="" style="border:0.13rem solid rgba(255,215,0,0.5)">
+                        <span class="crayon">✎</span>
+                    </div>
+                    <input class="champ" value="${PSEUDO}" style="font-size:1.1rem;font-weight:800;text-align:center;">
+                    <div style="font-size:0.7rem;color:#7d7d8a;margin-top:0.3rem;">${co() ? 'Connecté avec Discord' : 'Profil local'}</div>
+                    <div style="display:flex;gap:2.2rem;margin:1.5rem 0 1.4rem;${co() ? '' : 'opacity:0.42;'}">
+                        <div style="text-align:center"><div style="font-size:1.35rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1">${S()[0]}</div><div class="etiq" style="margin-top:0.3rem">Parties</div></div>
+                        <div style="text-align:center"><div style="font-size:1.35rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1">${S()[1]}</div><div class="etiq" style="margin-top:0.3rem">XP</div></div>
+                    </div>
+                    ${co() ? '' : `<div style="display:flex;gap:0.5rem;width:100%;margin-bottom:1.1rem;">
+                        <button class="fb d" style="flex:1;height:2.5rem;border-radius:0.6rem;font-size:0.82rem;">${SVG.discord}</button>
+                        <button class="fb g" style="flex:1;height:2.5rem;border-radius:0.6rem;font-size:0.82rem;">${SVG.google}</button>
+                    </div>`}
+                    <button class="lien" style="justify-content:center;font-size:0.76rem;">${co() ? SVG.sortie + ' Se déconnecter' : SVG.image + ' Changer d\'avatar'}</button>
+                </div>`,
+            },
+            {
+                c: 'P2', n: 'En-tête teinté',
+                d: 'Une bande colorée porte l\'identité, le corps porte les actions. La séparation se fait par la SURFACE, pas par un trait.',
+                avis: '<b>Pour :</b> la hiérarchie se voit avant d\'être lue. <b>Contre :</b> une bande dorée de plus sur une page qui en a déjà.',
+                html: () => `
+                <div class="k">
+                    <div style="padding:1.05rem 1.15rem;display:flex;align-items:center;gap:0.8rem;background:linear-gradient(135deg, rgba(255,190,40,0.16), rgba(255,140,0,0.06));border-bottom:1px solid rgba(255,215,0,0.14);">
+                        <div style="position:relative;width:3rem;height:3rem;flex:0 0 auto;">
+                            <img class="av-gd" src="/novice.png" alt="" style="border:0.11rem solid rgba(255,215,0,0.6)">
+                            <span class="crayon" style="border-color:#1a1710">✎</span>
+                        </div>
+                        <div style="flex:1;min-width:0">
+                            <input class="champ" value="${PSEUDO}" style="font-size:1rem;font-weight:800;">
+                            <div style="font-size:0.68rem;color:#b9a97a;margin-top:0.1rem;">${co() ? 'Connecté avec Discord' : 'Profil local'}</div>
+                        </div>
+                    </div>
+                    <div style="padding:1.05rem 1.15rem 1.1rem;display:flex;flex-direction:column;gap:0.95rem;">
+                        ${co() ? '' : `<div style="display:flex;gap:0.5rem;">
+                            <button class="fb d" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.discord} Discord</button>
+                            <button class="fb g" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.google} Google</button>
+                        </div>`}
+                        <div style="display:flex;justify-content:space-between;${co() ? '' : 'opacity:0.42;'}">
+                            <div><div style="font-size:1.1rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[0]}</div><div class="etiq">Parties</div></div>
+                            <div style="text-align:right"><div style="font-size:1.1rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[1]}</div><div class="etiq">XP</div></div>
+                        </div>
+                        <button class="lien">${co() ? SVG.sortie + ' Se déconnecter' : SVG.image + ' Changer d\'avatar'}</button>
+                    </div>
+                </div>`,
+            },
+            {
+                c: 'P3', n: 'Liste de réglages',
+                d: 'Tout devient une rangée : libellé à gauche, valeur à droite. C\'est la grammaire d\'un écran de réglages, que tout le monde sait lire sans apprendre.',
+                avis: '<b>Pour :</b> la plus prévisible, donc la plus « propre » au premier regard. <b>Contre :</b> elle ne ressemble à rien de particulier.',
+                html: () => `
+                <div class="k">
+                    <div style="padding:0.4rem 0;">
+                        <div style="display:flex;align-items:center;gap:0.8rem;padding:0.85rem 1.1rem;">
+                            <div style="position:relative;width:2.6rem;height:2.6rem;flex:0 0 auto;">
+                                <img class="av-gd" src="/novice.png" alt="" style="border:0.11rem solid rgba(255,215,0,0.45)">
+                            </div>
+                            <input class="champ" value="${PSEUDO}" style="font-size:0.98rem;font-weight:700;flex:1;">
+                        </div>
+                        <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 1.1rem;"></div>
+                        <button class="lien" style="padding:0.72rem 1.1rem;font-size:0.82rem;">
+                            ${SVG.image} Mon avatar <span style="margin-left:auto;width:0.9rem;height:0.9rem;opacity:0.45;">${SVG.fleche}</span>
+                        </button>
+                        <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 1.1rem;"></div>
+                        ${co() ? `
+                        <div style="display:flex;align-items:center;padding:0.72rem 1.1rem;font-size:0.82rem;color:#a8a8b6;">
+                            Connexion <span style="margin-left:auto;display:flex;align-items:center;gap:0.35rem;color:#fff;font-weight:600;">
+                            <span style="width:0.85rem;height:0.85rem;border-radius:50%;background:var(--discord);display:grid;place-items:center;padding:0.12rem;">${SVG.discord.replace('<svg', '<svg style="fill:#fff"')}</span> Discord</span>
+                        </div>` : `
+                        <div style="display:flex;align-items:center;padding:0.6rem 1.1rem;font-size:0.82rem;color:#a8a8b6;">
+                            Connexion
+                            <span style="margin-left:auto;display:flex;gap:0.35rem;">
+                                <button class="fb d" style="width:2.1rem;height:2.1rem;border-radius:0.45rem;">${SVG.discord.replace('<svg', '<svg style="width:1rem;height:1rem"')}</button>
+                                <button class="fb g" style="width:2.1rem;height:2.1rem;border-radius:0.45rem;">${SVG.google.replace('<svg', '<svg style="width:1rem;height:1rem"')}</button>
+                            </span>
+                        </div>`}
+                        <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 1.1rem;"></div>
+                        <div style="display:flex;align-items:center;padding:0.62rem 1.1rem;font-size:0.82rem;color:#a8a8b6;${co() ? '' : 'opacity:0.45;'}">
+                            Parties <span style="margin-left:auto;font-weight:800;color:${co() ? 'var(--or)' : '#6a6a78'}">${S()[0]}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;padding:0.62rem 1.1rem 0.85rem;font-size:0.82rem;color:#a8a8b6;${co() ? '' : 'opacity:0.45;'}">
+                            XP <span style="margin-left:auto;font-weight:800;color:${co() ? 'var(--or)' : '#6a6a78'}">${S()[1]}</span>
+                        </div>
+                    </div>
+                </div>`,
+            },
+            {
+                c: 'P4', n: 'Encart creusé',
+                d: 'L\'identité vit dans un creux plus sombre, posé dans la carte. Rien ne les sépare : c\'est le RELIEF qui fait la frontière.',
+                avis: '<b>Pour :</b> deux zones nettes sans une seule ligne. <b>Contre :</b> un creux sur un fond déjà sombre se voit mal sur un écran peu contrasté.',
+                html: () => `
+                <div class="k" style="padding:0.85rem;display:flex;flex-direction:column;gap:0.9rem;">
+                    <div style="padding:0.95rem 1rem;border-radius:0.7rem;background:rgba(0,0,0,0.42);box-shadow:inset 0 0.08rem 0.6rem rgba(0,0,0,0.6);display:flex;align-items:center;gap:0.8rem;">
+                        <div style="position:relative;width:2.9rem;height:2.9rem;flex:0 0 auto;">
+                            <img class="av-gd" src="/novice.png" alt="" style="border:0.11rem solid rgba(255,215,0,0.5)">
+                            <span class="crayon" style="border-color:#0b0b0e">✎</span>
+                        </div>
+                        <div style="flex:1;min-width:0">
+                            <input class="champ" value="${PSEUDO}" style="font-size:1rem;font-weight:800;">
+                            <div style="font-size:0.67rem;color:#7d7d8a;margin-top:0.12rem;">${co() ? 'Connecté avec Discord' : 'Profil local'}</div>
+                        </div>
+                    </div>
+                    ${co() ? '' : `<div style="display:flex;gap:0.5rem;">
+                        <button class="fb d" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.discord} Discord</button>
+                        <button class="fb g" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.google} Google</button>
+                    </div>`}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;${co() ? '' : 'opacity:0.42;'}">
+                        <div style="padding:0.6rem;border-radius:0.6rem;background:rgba(0,0,0,0.35);box-shadow:inset 0 0.06rem 0.4rem rgba(0,0,0,0.5);text-align:center;">
+                            <div style="font-size:1.05rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[0]}</div><div class="etiq">Parties</div></div>
+                        <div style="padding:0.6rem;border-radius:0.6rem;background:rgba(0,0,0,0.35);box-shadow:inset 0 0.06rem 0.4rem rgba(0,0,0,0.5);text-align:center;">
+                            <div style="font-size:1.05rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[1]}</div><div class="etiq">XP</div></div>
+                    </div>
+                    <button class="lien" style="padding:0.2rem 0.3rem;">${co() ? SVG.sortie + ' Se déconnecter' : SVG.image + ' Changer d\'avatar'}</button>
+                </div>`,
+            },
+            {
+                c: 'P5', n: 'Avatar débordant',
+                d: 'L\'avatar sort par le haut de la carte, à moitié dehors. Le panneau n\'est plus une boîte qui contient un portrait : c\'est un portrait qui porte une carte.',
+                avis: '<b>Pour :</b> la plus mémorable des six, et celle qui dit le mieux « c\'est toi ». <b>Contre :</b> ⚠️ ça demande de la place au-dessus — collé sous la barre, l\'avatar la chevaucherait.',
+                html: () => `
+                <div style="padding-top:1.9rem;">
+                    <div class="k" style="padding:2.4rem 1.2rem 1.15rem;position:relative;overflow:visible;display:flex;flex-direction:column;gap:0.95rem;">
+                        <div style="position:absolute;top:-1.9rem;left:50%;transform:translateX(-50%);width:3.8rem;height:3.8rem;">
+                            <img class="av-gd" src="/novice.png" alt="" style="border:0.16rem solid #0f0f13;box-shadow:0 0 0 0.11rem rgba(255,215,0,0.55), 0 0.5rem 1.4rem rgba(0,0,0,0.6)">
+                            <span class="crayon" style="border-color:#0f0f13">✎</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <input class="champ" value="${PSEUDO}" style="font-size:1.05rem;font-weight:800;text-align:center;">
+                            <div style="font-size:0.68rem;color:#7d7d8a;margin-top:0.2rem;">${co() ? 'Connecté avec Discord' : 'Profil local'}</div>
+                        </div>
+                        ${co() ? '' : `<div style="display:flex;gap:0.5rem;">
+                            <button class="fb d" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.discord} Discord</button>
+                            <button class="fb g" style="flex:1;height:2.45rem;border-radius:0.55rem;font-size:0.8rem;">${SVG.google} Google</button>
+                        </div>`}
+                        <div style="display:flex;justify-content:space-around;${co() ? '' : 'opacity:0.42;'}">
+                            <div style="text-align:center"><div style="font-size:1.1rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[0]}</div><div class="etiq">Parties</div></div>
+                            <div style="text-align:center"><div style="font-size:1.1rem;font-weight:900;color:${co() ? 'var(--or)' : '#6a6a78'};line-height:1.1">${S()[1]}</div><div class="etiq">XP</div></div>
+                        </div>
+                        <button class="lien" style="justify-content:center;font-size:0.77rem;">${co() ? SVG.sortie + ' Se déconnecter' : SVG.image + ' Changer d\'avatar'}</button>
+                    </div>
+                </div>`,
+            },
+            {
+                c: 'P6', n: 'Au strict nécessaire',
+                d: 'Une ligne d\'identité, deux boutons, rien d\'autre. Pas de statistiques pour un invité qui n\'en a pas, pas de libellés, pas de liens : l\'avatar se change en cliquant dessus.',
+                avis: '<b>Pour :</b> impossible de faire plus propre — il n\'y a presque rien. <b>Contre :</b> le compte perd son seul argument, les statistiques qu\'on gagnerait.',
+                html: () => `
+                <div class="k" style="padding:1.05rem;display:flex;flex-direction:column;gap:0.9rem;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="position:relative;width:2.8rem;height:2.8rem;flex:0 0 auto;">
+                            <img class="av-gd" src="/novice.png" alt="" style="border:0.11rem solid rgba(255,215,0,0.5)">
+                            <span class="crayon">✎</span>
+                        </div>
+                        <input class="champ" value="${PSEUDO}" style="font-size:1rem;font-weight:800;flex:1;">
+                    </div>
+                    ${co()
+                        ? `<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.76rem;color:#8b8b96;">
+                             <span style="width:0.82rem;height:0.82rem;border-radius:50%;background:var(--discord);display:grid;place-items:center;padding:0.12rem;">${SVG.discord.replace('<svg', '<svg style="fill:#fff"')}</span>
+                             Discord
+                             <button class="lien" style="width:auto;margin-left:auto;font-size:0.74rem;">${SVG.sortie} Sortir</button>
+                           </div>`
+                        : `<div style="display:flex;gap:0.5rem;">
+                             <button class="fb d" style="flex:1;height:2.5rem;border-radius:0.55rem;font-size:0.82rem;">${SVG.discord} Discord</button>
+                             <button class="fb g" style="flex:1;height:2.5rem;border-radius:0.55rem;font-size:0.82rem;">${SVG.google} Google</button>
+                           </div>`}
+                </div>`,
+            },
+        ];
+
+        const bPan = document.getElementById('panneaux');
+        function dessiner() {
+            bPan.innerHTML = '';
+            PAN.forEach((p) => {
+                const d = document.createElement('div');
+                d.innerHTML = `
+                    <div class="p-tete"><span class="p-code">${p.c}</span><span class="p-nom">${p.n}</span></div>
+                    <p class="p-dit">${p.d}</p>
+                    <div class="p-scene">${p.html()}</div>
+                    <p class="avis">${p.avis}</p>`;
+                bPan.appendChild(d);
+            });
+        }
+
+        document.getElementById('segEtat').addEventListener('click', (ev) => {
+            const b = ev.target.closest('button'); if (!b) return;
+            [...ev.currentTarget.children].forEach(x => x.classList.remove('on'));
+            b.classList.add('on'); etat = b.dataset.v; dessiner();
+        });
+
+        dessiner();
+    </script>
+</body>
+
+</html>

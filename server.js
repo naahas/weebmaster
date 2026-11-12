@@ -2344,6 +2344,12 @@ app.get('/prototypes/compte-anim', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-anim.html');
 });
 
+// 🔑 Refonte : six STRUCTURES de panneau (les bancs d avant ne proposaient que
+// des densites de la meme carte), et six traitements du pseudo dans la barre.
+app.get('/prototypes/compte-refonte', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-refonte.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });
