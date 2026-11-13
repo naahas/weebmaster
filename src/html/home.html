@@ -242,18 +242,16 @@
                                  dit ou vivent ses donnees, ce qui est vrai et
                                  utile. -->
                             <div class="v2-profil-rang">
-                                <span class="v2-profil-four" :class="fournisseur" v-if="estConnecte">
-                                    <svg v-if="fournisseur === 'discord'" viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/></svg>
-                                    <svg v-else viewBox="0 0 24 24"><path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/><path d="M12 22c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.2H3v2.6A10 10 0 0 0 12 22z" fill="#34A853"/><path d="M6.2 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9l3.2-2.6z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.2 2.6C7 7.7 9.3 5.9 12 5.9z" fill="#EA4335"/></svg>
-                                </span>
-                                <!-- ⚠️ « Profil Joueur » et non « Connecté avec
-                                     Discord » : la pastille du fournisseur, juste
-                                     a gauche, le dit deja — et elle le dit mieux,
-                                     puisqu elle reste lisible d un coup d oeil
-                                     sans occuper une ligne. Le texte, lui, sert a
-                                     nommer CE QU ON EST, pas par ou l on est
-                                     passe : « Profil local » / « Profil Joueur »
-                                     se repondent. -->
+                                <!-- ⚠️ PLUS AUCUN LOGO DE FOURNISSEUR ICI. Le
+                                     titre dit ce qu on EST, pas par ou l on est
+                                     passe, et le logo Discord volait la place du
+                                     titre pour une information qui ne sert
+                                     qu une fois.
+                                     ⚠️ Consequence a connaitre : plus rien dans
+                                     le jeu ne dit AVEC QUOI on est connecte. Un
+                                     joueur qui a un compte Discord et un compte
+                                     Google — deux adresses, donc deux profils —
+                                     ne peut plus voir lequel il regarde. -->
                                 <!-- ⚠️ Le TITRE prend la place de « Profil Joueur ».
                                      C est ce qu on gagne en jouant, donc c est ce
                                      qui doit s afficher — et il porte la couleur de
@@ -307,6 +305,12 @@
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
                             <div><span class="n">Expérience</span><span class="v">{{ estConnecte ? compteXp : '—' }}</span></div>
                         </div>
+
+                        <!-- ✦ Ce qu on A FAIT au-dessus, ou l on EN EST en dessous :
+                             deux choses differentes, donc un trait. Mais un filet
+                             net redonnerait les separations qu on a retirees de
+                             cette carte — celui-ci s eteint aux deux bouts. -->
+                        <div class="v2-profil-sep" v-if="estConnecte"></div>
 
                         <!-- ⚠️ La barre ne s affiche QUE pour un inscrit. Montree
                              vide a un invite, elle promettrait une progression

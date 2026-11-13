@@ -5749,6 +5749,28 @@ body.game-active:has(.poll-game-container) #particles-js {
    ============================================ */
 
 /* Variables FizzBuzz */
+/* ════════════════════════════════════════════════════════════
+   👤 LES TROIS MESURES DU COIN « MOI », PARTAGEES
+   ════════════════════════════════════════════════════════════
+   ⚠️ Elles existent parce que la position du panneau de profil et celle de sa
+   POINTE DE BULLE ont du etre re-mesurees A LA MAIN quatre fois de suite —
+   une par changement de taille d avatar. Rien ne signalait le decalage : la
+   pointe se contentait de viser a cote.
+
+   La cause : la barre du haut vit dans `.v2-home`, qui a une gouttiere en
+   `clamp()` — donc variable avec la largeur de l ecran —, pendant que le
+   panneau est en `position: fixed` et n en savait rien. Leurs bords droits ne
+   tombaient jamais au meme endroit, et l ecart changeait avec la fenetre.
+
+   Desormais le panneau se cale sur LA MEME gouttiere, donc son bord droit est
+   celui de l avatar, et la pointe se deduit : demi-avatar moins demi-pointe.
+   Changer `--moi-av` suffit, tout suit. */
+:root {
+    --gouttiere: clamp(1.5rem, 2.4vw, 2.6rem);
+    --home-pad-y: 1.9rem;
+    --moi-av: 3.5rem;
+}
+
 :root {
     --fizzbuzz-green: #4ade80;
     --fizzbuzz-green-dark: #22c55e;
@@ -6751,8 +6773,11 @@ body.game-active:has(.poll-game-container) #particles-js {
     z-index: 2;
     display: flex;
     flex-direction: column;
-    /* Le logo touchait presque le coin : la page se donne un peu de marge. */
-    padding: 1.9rem clamp(1.5rem, 2.4vw, 2.6rem);
+    /* Le logo touchait presque le coin : la page se donne un peu de marge.
+       ⚠️ La gouttiere passe par une VARIABLE : le panneau du profil s y cale
+       pour que son bord droit soit celui de l avatar. L ecrire en dur ici les
+       ferait diverger au premier ajustement. */
+    padding: var(--home-pad-y) var(--gouttiere);
     overflow-y: auto;
 }
 
@@ -7108,12 +7133,12 @@ body.game-active:has(.poll-game-container) #particles-js {
     position: relative;
     /* L avatar est SEUL dans le coin : il peut donc grandir sans serrer quoi
        que ce soit, et il le doit — c est devenu la seule cible du coin.
-       ⚠️ Le changer oblige a reprendre DEUX autres valeurs, et rien ne le
-       signalera : le `top` du panneau (l avatar est le plus haut element de la
-       barre, il pousse tout vers le bas) et le `right` de la pointe (son
-       centre se deplace). Voir leurs commentaires. */
-    width: 3.1rem;
-    height: 3.1rem;
+       ℹ️ Sa taille vit dans `--moi-av` (en tete de fichier) : le `top` du
+       panneau et le `right` de sa pointe s en deduisent. Changer cette seule
+       valeur suffit desormais — avant, il fallait re-mesurer les deux autres
+       a la main, et rien ne signalait l oubli. */
+    width: var(--moi-av);
+    height: var(--moi-av);
     padding: 0;
     flex: 0 0 auto;
     background: none;
@@ -7126,11 +7151,13 @@ body.game-active:has(.poll-game-container) #particles-js {
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 0.11rem solid rgba(255, 255, 255, 0.14);
+    /* Le PREMIER des deux anneaux. Fin et franc : c est sa nettete qui le fait
+       exister a cote du second, pas son epaisseur. */
+    border: 0.095rem solid rgba(255, 215, 0, 0.62);
     transition: border-color 0.25s ease;
 }
 .v2-moi-av:hover img,
-.v2-moi-av.ouvert img { border-color: rgba(255, 215, 0, 0.6); }
+.v2-moi-av.ouvert img { border-color: var(--neon-primary); }
 
 /* ⚠️ LE DOUBLE ANNEAU DU JOUEUR INSCRIT — il remplace le logo du fournisseur.
    Celui-ci collait une marque Discord ou Google sur le portrait du joueur, qui
@@ -7152,15 +7179,20 @@ body.game-active:has(.poll-game-container) #particles-js {
     pointer-events: none;
     overflow: visible;
 }
+/* ⚠️ DEUX ANNEAUX FINS, PAS UN EPAIS. Le cercle de l avatar en porte deja un ;
+   celui-ci est le second, et c est leur ECART qui les fait lire comme une
+   paire. Un seul trait epais aurait dit « cadre », deux traits fins disent
+   « jauge ». D ou un trace mince (2,1 unites ≈ 1,5 px) mais PLEINEMENT opaque :
+   la finesse se paye en contraste, sinon l anneau disparait. */
 .v2-moi-xp .piste {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.12);
-    stroke-width: 3.2;
+    stroke: rgba(255, 255, 255, 0.17);
+    stroke-width: 2.1;
 }
 .v2-moi-xp .jauge {
     fill: none;
     stroke: var(--neon-primary);
-    stroke-width: 3.2;
+    stroke-width: 2.1;
     /* Les bouts arrondis ne sont pas une coquetterie : sans eux, une
        progression de 3 % ressemble a un eclat de poussiere. */
     stroke-linecap: round;
@@ -7206,12 +7238,15 @@ body.game-active:has(.poll-game-container) #particles-js {
     /* ⚠️ Un peu plus bas qu avant : a 4,6rem la pointe venait TOUCHER l avatar,
        et une bulle collee a son emetteur ne se lit plus comme une bulle — elle
        passe pour un defaut d alignement. Il lui faut l air d un petit saut. */
-    /* ⚠️ A REPRENDRE avec la taille de l avatar, comme la pointe : l avatar est
-       le plus haut element de la barre, donc l agrandir pousse tout vers le bas
-       et la pointe vient le TOUCHER. Et il faut compter le crayon en plus, qui
-       deborde sous le cercle de 4 % plus sa bordure. */
-    top: 6.05rem;
-    right: 1.25rem;
+    /* ⚠️ TOUT SE DEDUIT, plus rien ne se mesure a la main.
+       `top` = la marge haute de la page + l avatar + l air sous lui. L avatar
+       est le plus haut element de la barre, donc c est lui qui pousse le
+       panneau vers le bas ; l air de 0,95rem laisse passer le crayon, qui
+       deborde sous le cercle, et les 7 px de la pointe.
+       `right` = la gouttiere de `.v2-home`, donc le bord droit du panneau est
+       exactement celui de l avatar. */
+    top: calc(var(--home-pad-y) + var(--moi-av) + 1.3rem);
+    right: var(--gouttiere);
     width: 18.5rem;
     max-width: calc(100vw - 2.5rem);
     border-radius: 1rem;
@@ -7245,7 +7280,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-tete {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    /* Le pseudo et le titre respirent a cote du portrait : colles, les trois
+       formaient un seul paquet et l avatar paraissait pousser le texte. */
+    gap: 1rem;
     padding: 1.05rem 1.15rem;
     background: linear-gradient(135deg, rgba(255, 190, 40, 0.16), rgba(255, 140, 0, 0.06));
     border-bottom: 1px solid rgba(255, 215, 0, 0.14);
@@ -7278,7 +7315,9 @@ body.game-active:has(.poll-game-container) #particles-js {
     content: '';
     position: absolute;
     top: -0.43rem;
-    right: 2.42rem;
+    /* Le bord droit du panneau est celui de l avatar : le centre de l avatar
+       tombe donc a un demi-avatar du bord, et la pointe s y centre. */
+    right: calc(var(--moi-av) / 2 - 0.425rem);
     width: 0.85rem;
     height: 0.85rem;
     transform: rotate(45deg);
@@ -7365,24 +7404,17 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-rang {
     display: flex;
     align-items: center;
-    gap: 0.32rem;
     font-size: 0.68rem;
     color: var(--text-secondary);
     /* Voir `.v2-profil-nom` : les deux marges du pointillé se règlent ensemble. */
-    margin-top: 0.33rem;
+    margin-top: 0.48rem;
 }
-.v2-profil-four {
-    width: 0.78rem;
-    height: 0.78rem;
-    border-radius: 50%;
-    display: inline-grid;
-    place-items: center;
-    flex: 0 0 auto;
-}
-.v2-profil-four.discord { background: #5865F2; padding: 0.11rem; }
-.v2-profil-four.discord svg { fill: #fff; }
-.v2-profil-four.google { background: #fff; padding: 0.1rem; }
-.v2-profil-four svg { width: 100%; height: 100%; display: block; }
+
+/* ℹ️ `.v2-profil-four` a ete retire : le logo du fournisseur ne s affiche plus
+   nulle part. ⚠️ Consequence a connaitre — plus rien ne dit AVEC QUOI on est
+   connecte. Un joueur qui a un compte Discord et un compte Google (deux
+   adresses differentes, donc deux profils) ne peut plus voir lequel il
+   regarde, et croira avoir perdu sa progression en cliquant sur le mauvais. */
 
 .v2-profil-fermer {
     width: 1.6rem;
@@ -7471,6 +7503,33 @@ body.game-active:has(.poll-game-container) #particles-js {
     text-transform: uppercase;
 }
 
+/* ✦ Le trait entre les statistiques et le niveau. Ce ne sont pas les memes
+   choses : au-dessus ce qu on A FAIT, en dessous ou l on EN EST. Mais un
+   filet net d un bord a l autre redonnerait les traits de separation qu on a
+   justement retires de cette carte — d ou un trait qui s eteint aux deux
+   bouts et porte un losange au centre, le meme signe que le joueur inscrit. */
+.v2-profil-sep {
+    position: relative;
+    height: 1px;
+    margin: 0.35rem 0;
+    background: linear-gradient(90deg,
+        transparent, rgba(255, 215, 0, 0.3) 25%, rgba(255, 215, 0, 0.3) 75%, transparent);
+}
+.v2-profil-sep::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.3rem;
+    height: 0.3rem;
+    /* ⚠️ La rotation ET le recentrage dans UN SEUL `transform` : deux
+       declarations se remplaceraient l une l autre, et le losange partirait
+       d un quart de sa taille vers le bas a droite. */
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--neon-primary);
+    opacity: 0.75;
+}
+
 /* La barre de niveau, sous les trois lignes. */
 .v2-profil-niveau { display: flex; flex-direction: column; gap: 0.3rem; }
 .v2-profil-niv-ligne {
@@ -7517,13 +7576,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
-    .v2-profil { top: 5.65rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
-    /* ⚠️ La pointe se recale, elle aussi MESUREE : la carte et la barre du
-       haut n ont pas la meme marge laterale ici non plus, et les deux ecarts
-       different (42 px sur ordinateur, 32 ici). Un seul chiffre pour les deux
-       largeurs ferait rater la cible d un demi-avatar sur telephone, la ou
-       l on voit le mieux qu une bulle ne pointe sur rien. */
-    .v2-profil::before { right: 1.775rem; }
+    /* ⚠️ `top`, `right` et la pointe NE SE REDEFINISSENT PLUS : les trois se
+       deduisent de `--gouttiere` et `--moi-av`, qui changent deja plus haut.
+       Seule la largeur est propre au telephone. */
+    .v2-profil { width: calc(100vw - 2 * var(--gouttiere)); }
 }
 
 /* ── Écran 1 : pseudo ─────────────────────── */
@@ -8379,7 +8435,10 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 @media (max-width: 768px) {
-    .v2-home { padding: 1.5rem 1.4rem; }
+    /* ⚠️ On redefinit les VARIABLES, pas le padding : le panneau du profil et
+       sa pointe s y calent. Ecrire `padding: 1.5rem 1.4rem` ici laisserait le
+       panneau sur la gouttiere du bureau, et la pointe viserait a cote. */
+    :root { --gouttiere: 1.4rem; --home-pad-y: 1.5rem; }
     .v2-choice { aspect-ratio: 16 / 7; }
     .v2-modes-layout { grid-template-columns: 1fr; }
     /* Les six modes en deux colonnes : plus de bande étroite à faire défiler
