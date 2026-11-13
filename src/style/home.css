@@ -7488,7 +7488,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     /* L air entre les lignes : serrees, les trois formaient un bloc gris ou
        l on ne distinguait plus une ligne de sa voisine. ⚠️ En dessous de
        0,2rem elles se recollent — c est le plancher, pas un reglage libre. */
-    padding: 0.24rem 0;
+    padding: 0.34rem 0;
 }
 .v2-profil-lignes .n { color: #9a9aa6; }
 .v2-profil-lignes .v { font-weight: 800; color: var(--neon-primary); }
@@ -7536,7 +7536,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 /* La barre de niveau, sous les trois lignes. */
-.v2-profil-niveau { display: flex; flex-direction: column; gap: 0.3rem; }
+/* L ecart entre « Niveau 7 · 80/200 » et sa barre : colles, le chiffre
+   paraissait etiqueter la barre plutot que la resumer. */
+.v2-profil-niveau { display: flex; flex-direction: column; gap: 0.46rem; }
 .v2-profil-niv-ligne {
     display: flex;
     align-items: baseline;
