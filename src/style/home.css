@@ -7107,9 +7107,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-moi-av {
     position: relative;
     /* L avatar est SEUL dans le coin : il peut donc grandir sans serrer quoi
-       que ce soit, et il le doit — c est devenu la seule cible du coin. */
-    width: 2.8rem;
-    height: 2.8rem;
+       que ce soit, et il le doit — c est devenu la seule cible du coin.
+       ⚠️ Le changer oblige a reprendre DEUX autres valeurs, et rien ne le
+       signalera : le `top` du panneau (l avatar est le plus haut element de la
+       barre, il pousse tout vers le bas) et le `right` de la pointe (son
+       centre se deplace). Voir leurs commentaires. */
+    width: 3.1rem;
+    height: 3.1rem;
     padding: 0;
     flex: 0 0 auto;
     background: none;
@@ -7157,8 +7161,8 @@ body.game-active:has(.poll-game-container) #particles-js {
     position: absolute;
     right: -4%;
     bottom: -4%;
-    width: 38%;
-    height: 38%;
+    width: 41%;
+    height: 41%;
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -7186,7 +7190,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        le plus haut element de la barre, donc l agrandir pousse tout vers le bas
        et la pointe vient le TOUCHER. Et il faut compter le crayon en plus, qui
        deborde sous le cercle de 4 % plus sa bordure. */
-    top: 5.75rem;
+    top: 6.05rem;
     right: 1.25rem;
     width: 18.5rem;
     max-width: calc(100vw - 2.5rem);
@@ -7254,7 +7258,7 @@ body.game-active:has(.poll-game-container) #particles-js {
     content: '';
     position: absolute;
     top: -0.43rem;
-    right: 2.27rem;
+    right: 2.42rem;
     width: 0.85rem;
     height: 0.85rem;
     transform: rotate(45deg);
@@ -7461,13 +7465,13 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
-    .v2-profil { top: 5.35rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
+    .v2-profil { top: 5.65rem; right: 0.75rem; width: calc(100vw - 1.5rem); }
     /* ⚠️ La pointe se recale, elle aussi MESUREE : la carte et la barre du
        haut n ont pas la meme marge laterale ici non plus, et les deux ecarts
        different (42 px sur ordinateur, 32 ici). Un seul chiffre pour les deux
        largeurs ferait rater la cible d un demi-avatar sur telephone, la ou
        l on voit le mieux qu une bulle ne pointe sur rien. */
-    .v2-profil::before { right: 1.635rem; }
+    .v2-profil::before { right: 1.775rem; }
 }
 
 /* ── Écran 1 : pseudo ─────────────────────── */

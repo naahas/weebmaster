@@ -338,7 +338,9 @@
       "anime": "Dragon Ball",
       "img": "krillin.webp",
       "alias": [
-        "Krilin"
+        "Krilin",
+        "Krillin",
+        "Kuririn"
       ]
     },
     {
@@ -3075,7 +3077,7 @@
       "nom": "Rindo",
       "anime": "Food Wars",
       "img": "rindou.webp",
-      "alias": []
+      "alias": ["Rindou", "Rindo Kobayashi", "Rindou Kobayashi"]
     },
     {
       "id": "satoshi",
@@ -3396,7 +3398,7 @@
       "nom": "N",
       "anime": "Death Note",
       "img": "near.webp",
-      "alias": []
+      "alias": ["Near", "Nate River"]
     },
     {
       "id": "mob",
@@ -3536,7 +3538,7 @@
       "nom": "Nelliel",
       "anime": "Bleach",
       "img": "nel.webp",
-      "alias": []
+      "alias": ["Nel", "Neliel", "Nelliel Tu Odelschwanck", "Nel Tu", "Nelliel Tu"]
     },
     {
       "id": "daki",

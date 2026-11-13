@@ -2358,6 +2358,13 @@ app.get('/prototypes/compte-crayon', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-compte-crayon.html');
 });
 
+// 🔑 Niveau, titre et statistiques dans la carte du joueur. Cinq mises en page,
+// avec l anneau de progression autour de l avatar et un curseur d xp qui le
+// remplit pour de vrai — un indicateur de progression ne se juge pas a l arret.
+app.get('/prototypes/compte-stats', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-compte-stats.html');
+});
+
 app.get('/prototypes/signalement', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-signalement.html');
 });
@@ -8809,7 +8816,19 @@ function rushNormaliser(texte) {
         .replace(/[^a-z0-9]/g, '');                          // ponctuation, espaces
 }
 
-// Toutes les ecritures acceptees pour un personnage
+// Toutes les ecritures acceptees pour un personnage.
+//
+// ⚠️ L `id` N EN FAIT PAS PARTIE, et c est le piege de rushdata.json : il
+// ressemble souvent au nom usuel — `nel` pour « Nelliel », `near` pour « N »,
+// `rindou` pour « Rindo » — au point qu on le croit couvert. Il ne l est pas :
+// c est une clef interne, rien d autre. Trois personnages etaient dans ce cas
+// et refusaient le nom que tout le monde tape.
+//
+// ⚠️ Et on ne peut PAS « regler » ca en ajoutant l id aux formes : plusieurs
+// ids ne sont pas des noms mais des clefs de desambiguisation — `makioze`,
+// `rinitoshi`, `sakuramatou`, `lucy2`. Les accepter ferait passer des reponses
+// que personne ne devrait pouvoir taper. Un alias ajoute a la main, cas par
+// cas, est la seule bonne reponse.
 function rushFormes(perso) {
     return [perso.nom, ...(perso.alias || [])].map(rushNormaliser).filter(Boolean);
 }

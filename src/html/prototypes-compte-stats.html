@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — niveau, titre et statistiques</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        ⚠️ A LIRE AVANT DE CHOISIR — CE QUE LA BASE SAIT VRAIMENT.
+        La table `comptes` porte `xp` et `parties`, et c est TOUT.
+          · `victoires` n existe pas : il faut une colonne de plus.
+          · `niveau` et `titre` ne doivent PAS etre des colonnes — ils se
+            deduisent de l xp. Les stocker, c est se garantir deux verites qui
+            divergent le jour ou l on change le bareme.
+          · ⚠️ ET RIEN N INCREMENTE QUOI QUE CE SOIT AUJOURD HUI. Aucune fin de
+            partie n ecrit d xp. Tout ce banc montre donc une mecanique qui
+            existera — le choix de mise en page, lui, se fait maintenant.
+
+        Le curseur d xp remplit l anneau pour de vrai : c est la seule facon de
+        juger un indicateur de progression.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --ambre: #FFA500;
+            --txt: #ffffff;
+            --doux: #a0a0a0;
+            --discord: #5865F2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #07070a; color: #e8e8ef;
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.5; padding-bottom: 6rem;
+        }
+
+        .rail {
+            position: sticky; top: 0; z-index: 60;
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+            padding: 0.85rem 1.5rem;
+            background: rgba(10, 10, 14, 0.95); backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid #1d1d26;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.6rem; }
+        .groupe > span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6e6e7b; }
+        .groupe input[type=range] { width: 12rem; accent-color: var(--or); }
+        .val { font-size: 0.8rem; font-weight: 700; color: var(--or); min-width: 9.5rem; }
+
+        .page { max-width: 70rem; margin: 0 auto; padding: 2.3rem 1.5rem 0; }
+        h1 { font-size: 1.45rem; font-weight: 700; }
+        .sous { color: #8b8b96; font-size: 0.87rem; margin-top: 0.3rem; max-width: 50rem; }
+
+        .alerte {
+            margin-top: 1.1rem; padding: 0.9rem 1.1rem;
+            background: rgba(255, 193, 7, 0.06);
+            border: 1px solid rgba(255, 193, 7, 0.24);
+            border-radius: 0.55rem; font-size: 0.82rem; color: #d9c9a0;
+        }
+        .alerte b { color: #ffd77a; }
+        .alerte ul { margin: 0.4rem 0 0 1.1rem; }
+        .alerte li { margin-bottom: 0.15rem; }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(21rem, 1fr)); gap: 1.5rem; margin-top: 1.8rem; }
+        .p-tete { display: flex; align-items: baseline; gap: 0.6rem; }
+        .p-code { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; color: #0b0b0e; background: var(--or); padding: 0.08rem 0.4rem; border-radius: 0.25rem; }
+        .p-nom { font-size: 0.95rem; font-weight: 700; }
+        .p-dit { color: #8b8b96; font-size: 0.78rem; margin: 0.3rem 0 0.8rem; min-height: 3.2rem; }
+        .p-scene {
+            display: grid; place-items: center; padding: 1.4rem 1rem;
+            border: 1px solid #1d1d26; border-radius: 0.7rem;
+            background: linear-gradient(180deg, #0c0a14 0%, #08080c 100%);
+        }
+        .avis { margin-top: 0.75rem; font-size: 0.76rem; color: #7d7d8a; }
+        .avis b { color: #cfcfd8; }
+
+        /* ════════ La carte, socle commun ════════ */
+        .k {
+            width: 18.5rem; max-width: 100%;
+            border-radius: 1rem;
+            background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.075);
+            box-shadow: 0 1.4rem 3.2rem rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+        .tete {
+            display: flex; align-items: center; gap: 0.8rem;
+            padding: 1.05rem 1.15rem;
+            background: linear-gradient(135deg, rgba(255, 190, 40, 0.16), rgba(255, 140, 0, 0.06));
+            border-bottom: 1px solid rgba(255, 215, 0, 0.14);
+        }
+        .corps { padding: 1rem 1.15rem 1.1rem; display: flex; flex-direction: column; gap: 0.9rem; }
+
+        /* ── L avatar et son ANNEAU DE PROGRESSION ── */
+        .av-wrap { position: relative; width: 3.4rem; height: 3.4rem; flex: 0 0 auto; }
+        .av-wrap img {
+            position: absolute; inset: 0.3rem;
+            width: calc(100% - 0.6rem); height: calc(100% - 0.6rem);
+            border-radius: 50%; object-fit: cover; display: block;
+        }
+        /* ⚠️ L anneau est un SVG, pas un conic-gradient : seul un trace peut
+           avoir des BOUTS ARRONDIS, et sans eux une progression de 3 % ressemble
+           a un eclat de poussiere plutot qu au debut de quelque chose. */
+        .av-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+        .av-wrap .piste { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 3.4; }
+        .av-wrap .jauge {
+            fill: none; stroke: url(#degOr); stroke-width: 3.4; stroke-linecap: round;
+            transition: stroke-dashoffset 0.4s ease;
+        }
+        .av-crayon {
+            position: absolute; right: -2%; bottom: -2%;
+            width: 36%; height: 36%; border-radius: 50%;
+            display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--or), var(--ambre));
+            border: 0.1rem solid #15130e; color: #120f02;
+        }
+        .av-crayon svg { position: static; transform: none; width: 58%; height: 58%; fill: currentColor; }
+
+        .ident { flex: 1; min-width: 0; }
+        .nom {
+            width: 100%; font-family: inherit; font-size: 1rem; font-weight: 800;
+            color: var(--txt); background: none; border: 0;
+            border-bottom: 0.07rem dashed rgba(255, 215, 0, 0.3);
+            outline: none; padding: 0 0 0.22rem;
+        }
+        .titre {
+            display: flex; align-items: center; gap: 0.35rem;
+            font-size: 0.7rem; margin-top: 0.33rem; color: var(--doux);
+        }
+        /* Le titre porte la couleur de son palier : c est ce qui le rend
+           desirable sans ajouter d objet a l ecran. */
+        .titre b { font-weight: 700; }
+
+        .pastille-niv {
+            display: inline-grid; place-items: center;
+            min-width: 1.35rem; height: 1.35rem; padding: 0 0.3rem;
+            border-radius: 0.35rem;
+            font-size: 0.68rem; font-weight: 800;
+            color: #120f02; background: linear-gradient(135deg, var(--or), var(--ambre));
+            flex: 0 0 auto;
+        }
+
+        .etiq { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6a6a78; }
+
+        /* ── Les trois statistiques, quatre mises ── */
+        .st3 { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .st3 > div { text-align: center; }
+        /* ⚠️ Des filets ENTRE les colonnes, pas des boites autour : trois cadres
+           dans une carte qui en est deja une font un patchwork. */
+        .st3 > div + div { border-left: 1px solid rgba(255, 255, 255, 0.08); }
+        .st3 .v { font-size: 1.12rem; font-weight: 900; color: var(--or); line-height: 1.15; }
+        .st3 .n { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #7d7d8a; }
+
+        .stListe { display: flex; flex-direction: column; gap: 0.1rem; }
+        .stListe > div { display: flex; align-items: baseline; justify-content: space-between; font-size: 0.8rem; padding: 0.22rem 0; }
+        .stListe .n { color: #9a9aa6; }
+        .stListe .v { font-weight: 800; color: var(--or); }
+
+        .stLigne { font-size: 0.82rem; color: #a8a8b6; text-align: center; }
+        .stLigne b { color: var(--or); font-weight: 800; }
+
+        /* La barre de niveau */
+        .barre { height: 0.42rem; border-radius: 999px; background: rgba(255, 255, 255, 0.09); overflow: hidden; }
+        .barre > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--or), var(--ambre)); }
+        .barre-ligne { display: flex; align-items: baseline; justify-content: space-between; font-size: 0.68rem; color: #8b8b96; margin-bottom: 0.3rem; }
+        .barre-ligne b { color: var(--txt); font-weight: 700; font-size: 0.78rem; }
+
+        .gros-niv { display: flex; align-items: center; gap: 0.75rem; }
+        .gros-niv .chiffre { font-size: 1.9rem; font-weight: 900; color: var(--or); line-height: 0.95; }
+        .gros-niv .droite { flex: 1; min-width: 0; }
+
+        .lien { display: flex; align-items: center; gap: 0.55rem; width: 100%; padding: 0.42rem 0.4rem; border: 0; border-radius: 0.38rem; background: none; font-family: inherit; font-size: 0.78rem; font-weight: 500; color: #b9b9c6; cursor: pointer; text-align: left; }
+        .lien:hover { background: rgba(255,255,255,0.07); color: #fff; }
+        .lien svg { width: 0.9rem; height: 0.9rem; fill: currentColor; opacity: 0.65; }
+
+        @media (max-width: 700px) { .rail { gap: 0.8rem; padding: 0.7rem 1rem; } .page { padding: 1.6rem 1rem 0; } }
+    </style>
+</head>
+
+<body>
+    <div class="rail">
+        <div class="groupe">
+            <span>XP</span>
+            <input type="range" id="xp" min="0" max="2600" step="10" value="1280">
+            <span class="val" id="xpVal"></span>
+        </div>
+    </div>
+
+    <div class="page">
+        <h1>Niveau, titre et statistiques</h1>
+        <p class="sous">Cinq façons de poser les trois chiffres, le niveau et le titre. L'anneau autour de l'avatar
+            est commun à toutes — <b>bouge le curseur d'XP</b>, il se remplit pour de vrai.</p>
+
+        <div class="alerte">
+            ⚠️ <b>Ce que la base sait vraiment aujourd'hui.</b> La table <code>comptes</code> porte
+            <code>xp</code> et <code>parties</code>, et c'est tout.
+            <ul>
+                <li><b>Victoires</b> n'existe pas : il faut une colonne de plus.</li>
+                <li><b>Niveau et titre ne doivent PAS être des colonnes</b> — ils se déduisent de l'XP. Les
+                    stocker, c'est se garantir deux vérités qui divergent le jour où l'on change le barème.</li>
+                <li>⚠️ <b>Et rien n'incrémente quoi que ce soit aujourd'hui</b> : aucune fin de partie n'écrit
+                    d'XP. Le choix de mise en page se fait maintenant, la mécanique vient après.</li>
+            </ul>
+        </div>
+
+        <div class="grille" id="grille"></div>
+    </div>
+
+    <!-- Le dégradé de l'anneau, défini une fois pour toutes les cartes -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <linearGradient id="degOr" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#FFD700" />
+                <stop offset="100%" stop-color="#FFA500" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <script>
+        const SVG = {
+            crayon: '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+            sortie: '<svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>',
+        };
+
+        // ⚠️ LE BAREME VIT A UN SEUL ENDROIT, et c est une FONCTION, pas une
+        // colonne : le niveau et le titre se deduisent de l xp. Les stocker en
+        // base, ce serait se garantir deux verites qui divergent le jour ou le
+        // bareme change — et il changera.
+        // Palier constant a 200 : simple a annoncer (« 200 XP par niveau »), et
+        // on peut le courber plus tard sans rien casser puisque rien n en
+        // depend ailleurs.
+        const PAR_NIVEAU = 200;
+        const TITRES = [
+            [1, 'Novice', '#9a9aa6'],
+            [3, 'Apprenti', '#7fd4a0'],
+            [5, 'Combattant', '#6fb3f5'],
+            [8, 'Vétéran', '#c08cf5'],
+            [12, 'Maître', '#f5a65b'],
+            [20, 'Légende', '#FFD700'],
+        ];
+        const niveauDe = (xp) => Math.floor(xp / PAR_NIVEAU) + 1;
+        const resteDe = (xp) => xp % PAR_NIVEAU;
+        const titreDe = (niv) => {
+            let t = TITRES[0];
+            for (const x of TITRES) if (niv >= x[0]) t = x;
+            return t;
+        };
+
+        let XP = 1280;
+        const PSEUDO = 'Naahas';
+        const PARTIES = 47;
+        const VICTOIRES = 12;
+
+        // L anneau : un cercle SVG dont on fait varier le `stroke-dashoffset`.
+        function anneau(part) {
+            const r = 24.2, c = 2 * Math.PI * r;
+            return `
+            <div class="av-wrap">
+                <svg viewBox="0 0 56 56">
+                    <circle class="piste" cx="28" cy="28" r="${r}"></circle>
+                    <circle class="jauge" cx="28" cy="28" r="${r}"
+                            stroke-dasharray="${c.toFixed(2)}"
+                            stroke-dashoffset="${(c * (1 - part)).toFixed(2)}"></circle>
+                </svg>
+                <img src="/novice.png" alt="">
+                <span class="av-crayon">${SVG.crayon}</span>
+            </div>`;
+        }
+
+        const PISTES = [
+            {
+                c: 'S1', n: 'Trois colonnes',
+                d: 'Les trois chiffres alignés, séparés par de simples filets. Le niveau est une pastille à côté du titre.',
+                avis: '<b>Pour :</b> on compare les trois d\'un coup d\'œil, et rien ne traîne aux extrémités comme avant. <b>Contre :</b> le niveau est relégué au rang de décoration du titre.',
+                corps: (n, r, t) => `
+                    <div class="st3">
+                        <div><div class="v">${PARTIES}</div><div class="n">Parties</div></div>
+                        <div><div class="v">${VICTOIRES}</div><div class="n">Victoires</div></div>
+                        <div><div class="v">${XP}</div><div class="n">XP</div></div>
+                    </div>`,
+                titre: (n, t) => `<span class="pastille-niv">${n}</span> <b style="color:${t[2]}">${t[1]}</b>`,
+            },
+            {
+                c: 'S2', n: 'Niveau en vedette',
+                d: 'Le niveau en gros, sa barre de progression à côté, et les trois chiffres en dessous. La progression devient le sujet de la carte.',
+                avis: '<b>Pour :</b> c\'est ce qui donne envie de rejouer — un niveau à moitié rempli appelle la partie suivante. <b>Contre :</b> la carte la plus chargée des cinq.',
+                corps: (n, r, t) => `
+                    <div class="gros-niv">
+                        <div class="chiffre">${n}</div>
+                        <div class="droite">
+                            <div class="barre-ligne"><b style="color:${t[2]}">${t[1]}</b><span>${r} / ${PAR_NIVEAU}</span></div>
+                            <div class="barre"><i style="width:${(r / PAR_NIVEAU * 100).toFixed(1)}%"></i></div>
+                        </div>
+                    </div>
+                    <div class="st3">
+                        <div><div class="v">${PARTIES}</div><div class="n">Parties</div></div>
+                        <div><div class="v">${VICTOIRES}</div><div class="n">Victoires</div></div>
+                        <div><div class="v">${XP}</div><div class="n">XP</div></div>
+                    </div>`,
+                titre: () => 'Profil Joueur',
+            },
+            {
+                c: 'S3', n: 'Tout dans l\'anneau',
+                d: 'Le niveau ne s\'écrit qu\'une fois, sur l\'anneau lui-même. Le corps ne porte plus que les trois chiffres.',
+                avis: '<b>Pour :</b> la plus courte, et l\'anneau cesse d\'être décoratif — il devient la seule source. <b>Contre :</b> ⚠️ un anneau ne dit pas combien il reste à faire. On voit qu\'on avance, jamais de combien.',
+                corps: (n, r, t) => `
+                    <div class="st3">
+                        <div><div class="v">${PARTIES}</div><div class="n">Parties</div></div>
+                        <div><div class="v">${VICTOIRES}</div><div class="n">Victoires</div></div>
+                        <div><div class="v">${XP}</div><div class="n">XP</div></div>
+                    </div>`,
+                titre: (n, t) => `<b style="color:${t[2]}">${t[1]}</b>`,
+                surAnneau: true,
+            },
+            {
+                c: 'S4', n: 'En lignes',
+                d: 'Chaque chiffre sur sa ligne, libellé à gauche et valeur à droite. La barre de niveau ferme le bloc.',
+                avis: '<b>Pour :</b> se lit sans effort, et supporte d\'accueillir une quatrième ligne plus tard sans rien casser. <b>Contre :</b> trois lignes prennent plus de hauteur que trois colonnes, pour la même information.',
+                corps: (n, r, t) => `
+                    <div class="stListe">
+                        <div><span class="n">Parties jouées</span><span class="v">${PARTIES}</span></div>
+                        <div><span class="n">Victoires</span><span class="v">${VICTOIRES}</span></div>
+                        <div><span class="n">Expérience</span><span class="v">${XP}</span></div>
+                    </div>
+                    <div>
+                        <div class="barre-ligne"><span>Niveau ${n}</span><span>${r} / ${PAR_NIVEAU}</span></div>
+                        <div class="barre"><i style="width:${(r / PAR_NIVEAU * 100).toFixed(1)}%"></i></div>
+                    </div>`,
+                titre: (n, t) => `<b style="color:${t[2]}">${t[1]}</b>`,
+            },
+            {
+                c: 'S5', n: 'Une phrase',
+                d: 'Les chiffres se lisent comme une phrase plutôt que comme un tableau. La barre porte le niveau.',
+                avis: '<b>Pour :</b> la plus calme — rien n\'est aligné, donc rien ne demande à être comparé. <b>Contre :</b> on ne repère plus un chiffre d\'un coup d\'œil, il faut lire.',
+                corps: (n, r, t) => `
+                    <div class="stLigne"><b>${PARTIES}</b> parties · <b>${VICTOIRES}</b> victoires · <b>${XP}</b> XP</div>
+                    <div>
+                        <div class="barre-ligne"><b style="color:${t[2]}">${t[1]}</b><span>niveau ${n} · ${r}/${PAR_NIVEAU}</span></div>
+                        <div class="barre"><i style="width:${(r / PAR_NIVEAU * 100).toFixed(1)}%"></i></div>
+                    </div>`,
+                titre: () => 'Profil Joueur',
+            },
+        ];
+
+        const grille = document.getElementById('grille');
+
+        function dessiner() {
+            const niv = niveauDe(XP), reste = resteDe(XP), t = titreDe(niv);
+            document.getElementById('xpVal').textContent =
+                XP + ' XP · niveau ' + niv + ' · ' + t[1];
+
+            grille.innerHTML = '';
+            PISTES.forEach((p) => {
+                const d = document.createElement('div');
+                d.innerHTML = `
+                    <div class="p-tete"><span class="p-code">${p.c}</span><span class="p-nom">${p.n}</span></div>
+                    <p class="p-dit">${p.d}</p>
+                    <div class="p-scene">
+                        <div class="k">
+                            <div class="tete">
+                                ${anneau(reste / PAR_NIVEAU)}
+                                <div class="ident">
+                                    <input class="nom" value="${PSEUDO}" maxlength="16">
+                                    <div class="titre">${p.titre(niv, t)}</div>
+                                </div>
+                            </div>
+                            <div class="corps">
+                                ${p.corps(niv, reste, t)}
+                                <button class="lien">${SVG.sortie} Se déconnecter</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="avis">${p.avis}</p>`;
+                // S3 porte son niveau SUR l anneau, au lieu du crayon.
+                if (p.surAnneau) {
+                    const w = d.querySelector('.av-wrap');
+                    w.querySelector('.av-crayon').outerHTML =
+                        `<span class="pastille-niv" style="position:absolute;right:-18%;bottom:-10%;border:0.1rem solid #15130e">${niv}</span>`;
+                }
+                grille.appendChild(d);
+            });
+        }
+
+        const curseur = document.getElementById('xp');
+        curseur.addEventListener('input', () => { XP = +curseur.value; dessiner(); });
+        dessiner();
+    </script>
+</body>
+
+</html>
