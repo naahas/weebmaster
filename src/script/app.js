@@ -4860,20 +4860,81 @@ createApp({
             });
         },
 
+        // 🏅 L anneau SE DEVIDE au lieu de disparaitre.
+        //
+        // Une jauge qui s evanouit laisse croire a un defaut d affichage ; une
+        // jauge qui redescend a zero dit « ta progression n est plus montree
+        // ici », ce qui est exactement ce qui vient de se passer.
+        //
+        // ⚠️ Elle ne doit JAMAIS retarder la deconnexion elle-meme. Tout est
+        // garde-fou : pas d anneau trouve, mouvement refuse par le systeme,
+        // animation qui n aboutit pas — on sort, et la deconnexion suit son
+        // cours. Un joueur qui clique « Se deconnecter » doit etre deconnecte.
+        animerDevidage() {
+            return new Promise((resolve) => {
+                // ⚠️ L anneau de la BARRE, pas celui du panneau : le panneau se
+                // referme au meme instant, et son anneau part avec lui.
+                const jauge = document.querySelector('.v2-moi-av .v2-moi-xp .jauge');
+                const av = document.querySelector('.v2-moi-av img');
+                const court = window.matchMedia
+                    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (!jauge || court || !jauge.animate) return resolve();
+
+                const plein = this.anneauPerimetre;
+                const depuis = this.anneauReste;
+                // Rien a devider : un joueur au tout debut d un niveau. On
+                // laisse quand meme la pulsation de l avatar se jouer.
+                const a = jauge.animate(
+                    [{ strokeDashoffset: depuis }, { strokeDashoffset: plein }],
+                    { duration: 420, easing: 'cubic-bezier(0.4, 0, 0.3, 1)', fill: 'forwards' });
+
+                if (av && av.animate) {
+                    // Une seule respiration, tres courte : c est le battement
+                    // qui fait sentir que quelque chose s est passe, pas
+                    // l amplitude.
+                    av.animate([
+                        { transform: 'scale(1)' },
+                        { transform: 'scale(0.945)', offset: 0.45 },
+                        { transform: 'scale(1)' },
+                    ], { duration: 420, easing: 'ease-in-out' });
+                }
+
+                // ⚠️ Un filet de securite en plus de `finished` : si l onglet
+                // passe en arriere-plan, l animation est suspendue et sa
+                // promesse ne se resout jamais. Sans ce minuteur, le bouton
+                // resterait sans effet jusqu au retour sur l onglet.
+                let fini = false;
+                const sortir = () => { if (!fini) { fini = true; resolve(); } };
+                a.finished.then(sortir).catch(sortir);
+                setTimeout(sortir, 520);
+            });
+        },
+
         async deconnecterCompte() {
             const sb = this._sb;
+            // Le panneau se referme d abord : le geste doit repondre tout de
+            // suite, l anneau de la barre porte la suite.
+            this.profilOuvert = false;
+
+            // ⚠️ LA SESSION EST REVOQUEE AVANT L ANIMATION, pas apres. Une
+            // deconnexion qui attend 420 ms de decor laisse une session vivante
+            // pendant ce temps — et si l onglet se ferme entre-temps, le joueur
+            // se croit deconnecte sans l etre. Le decor ne commande jamais a la
+            // securite.
+            if (sb) { try { sb.auth.signOut(); } catch (e) {} }
+
+            await this.animerDevidage();
+
             this.estConnecte = false;
             this.fournisseur = null;
             this.compteParties = 0;
             this.compteVictoires = 0;
             this.compteXp = 0;
-            this._jeton = null;
-            this.profilOuvert = false;
             // ⚠️ On ne reprend PAS un playerId d invite : le joueur garderait
             // son pseudo mais deviendrait quelqu un d autre pour le serveur,
             // en plein salon le cas echeant. Il en reprendra un au prochain
             // chargement s il n est plus connecte.
-            if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+            this._jeton = null;
         },
 
         // Le panneau se pose SOUS la ligne qui l ouvre, sur toute sa largeur.
