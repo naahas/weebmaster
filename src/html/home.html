@@ -303,8 +303,14 @@
                         <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
                             <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
-                            <div><span class="n">Expérience</span><span class="v">{{ estConnecte ? compteXp : '—' }}</span></div>
                         </div>
+                        <!-- ℹ️ Pas de ligne « Expérience » : la barre juste en
+                             dessous porte deja l xp, et mieux — « 80 / 200 » dit
+                             ce qu il reste a faire, la ou « 1280 » ne dit rien.
+                             L xp TOTALE n est donc plus affichee nulle part, et
+                             c est assume : une fois le niveau connu, elle ne
+                             renseigne sur rien. -->
+
 
                         <!-- ✦ Ce qu on A FAIT au-dessus, ou l on EN EST en dessous :
                              deux choses differentes, donc un trait. Mais un filet
