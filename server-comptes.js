@@ -200,7 +200,10 @@ async function toucherCompte(idCompte, { pseudo, avatar } = {}) {
         const { data, error } = await supabase
             .from('comptes')
             .upsert(ligne, { onConflict: 'id' })
-            .select('id, pseudo, avatar, xp, parties')
+            // ⚠️ Pas de `niveau` ni de `titre` : ils se deduisent de l xp cote
+            // client. Les stocker garantirait deux verites qui divergent le
+            // jour ou le bareme change — et un bareme d xp change toujours.
+            .select('id, pseudo, avatar, xp, parties, victoires')
             .single();
         if (error) {
             // 42P01 = la table n existe pas. Le SQL de docs/comptes.sql n a pas

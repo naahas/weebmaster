@@ -7139,12 +7139,32 @@ body.game-active:has(.poll-game-container) #particles-js {
    L anneau, lui, ne recouvre rien et ne prend aucune place : c est le MEME
    signe que le losange du pseudo en partie — on est inscrit, point. Quel
    fournisseur, le panneau le dit, et c est le seul endroit ou ca sert. */
-.v2-moi-anneau {
+/* 🏅 L ANNEAU DE PROGRESSION. Il sert dans la barre du haut ET dans le
+   panneau : le meme signe doit dire la meme chose aux deux endroits.
+   ⚠️ Il est posé EN DEHORS de l avatar (inset negatif) et non par-dessus : le
+   portrait est ce qu on regarde, une jauge en travers le masquerait a moitie.
+   ⚠️ La rotation de -90° met le depart EN HAUT. Sans elle un cercle SVG
+   commence a trois heures, et la jauge paraitrait deja entamee a zero. */
+.v2-moi-xp {
     position: absolute;
-    inset: -0.24rem;
-    border-radius: 50%;
-    border: 0.09rem solid rgba(255, 215, 0, 0.5);
+    inset: -0.32rem;
+    transform: rotate(-90deg);
     pointer-events: none;
+    overflow: visible;
+}
+.v2-moi-xp .piste {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 3.2;
+}
+.v2-moi-xp .jauge {
+    fill: none;
+    stroke: var(--neon-primary);
+    stroke-width: 3.2;
+    /* Les bouts arrondis ne sont pas une coquetterie : sans eux, une
+       progression de 3 % ressemble a un eclat de poussiere. */
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
 }
 
 /* ⚠️ LE CRAYON. L avatar est seul dans le coin depuis que la pastille du pseudo
@@ -7418,29 +7438,61 @@ body.game-active:has(.poll-game-container) #particles-js {
    par defaut, 300×150 px, et fait exploser le bouton qui le porte. */
 .v2-profil-rond svg { width: 1.05rem; height: 1.05rem; display: block; flex: 0 0 auto; }
 
-/* ⚠️ Deux chiffres NUS, aux deux bouts. Pas de boites : la carte en a deja
-   deux (l en-tete et le corps), une troisieme surface par statistique
-   redonnerait le patchwork qu on vient de retirer. */
-.v2-profil-stats { display: flex; justify-content: space-between; }
-.v2-profil-stats > .droite { text-align: right; }
-.v2-profil-stats .v {
-    font-size: 1.1rem;
-    font-weight: 900;
-    color: var(--neon-primary);
-    line-height: 1.1;
+/* 📊 LES TROIS CHIFFRES, UN PAR LIGNE — libelle a gauche, valeur a droite.
+   Les deux chiffres d avant etaient pousses aux deux extremites d une rangee :
+   l oeil devait traverser la carte pour les apparier, et le vide entre eux
+   passait pour un defaut d alignement. En lignes, chaque paire se lit d un
+   seul mouvement, et une quatrieme viendra s ajouter sans rien casser. */
+.v2-profil-lignes { display: flex; flex-direction: column; }
+.v2-profil-lignes > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    /* L air entre les lignes : serrees, les trois formaient un bloc gris ou
+       l on ne distinguait plus une ligne de sa voisine. */
+    padding: 0.3rem 0;
 }
-.v2-profil-stats .n {
-    font-size: 0.52rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #7d7d8a;
-}
+.v2-profil-lignes .n { color: #9a9aa6; }
+.v2-profil-lignes .v { font-weight: 800; color: var(--neon-primary); }
 /* ⚠️ Verrouillees pour un invite, pas a zero : un « 0 » dit « tu n as rien
    joue », un tiret grise dit « ca ne compte pas encore ». C est le seul
    argument du compte, et il ne coute pas une ligne de texte. */
-.v2-profil-stats.verrou { opacity: 0.5; }
-.v2-profil-stats.verrou .v { color: #6e6e7b; }
+.v2-profil-lignes.verrou { opacity: 0.5; }
+.v2-profil-lignes.verrou .v { color: #6e6e7b; }
+
+/* 🏅 Le titre du palier. ⚠️ EN CAPITALES ET ESPACE : en casse normale il se
+   confondait avec « Profil local » — une mention de statut parmi d autres.
+   Un titre se gagne, il doit se lire comme une distinction. */
+.v2-profil-titre {
+    font-size: 0.67rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+/* La barre de niveau, sous les trois lignes. */
+.v2-profil-niveau { display: flex; flex-direction: column; gap: 0.3rem; }
+.v2-profil-niv-ligne {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: #8b8b96;
+}
+.v2-profil-barre {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
+    overflow: hidden;
+}
+.v2-profil-barre > i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+    transition: width 0.5s ease;
+}
 
 .v2-profil-liens { display: flex; flex-direction: column; gap: 0.05rem; }
 .v2-profil-lien {

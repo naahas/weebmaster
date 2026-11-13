@@ -161,7 +161,25 @@
                              de surcroit devoir cohabiter avec le crayon dans le
                              meme coin bas-droit. L anneau ne prend aucune place et
                              ne recouvre rien. Quel fournisseur, le panneau le dit. -->
-                        <span class="v2-moi-anneau" v-if="estConnecte"></span>
+                        <!-- 🏅 L ANNEAU DE PROGRESSION, visible SANS ouvrir le
+                             panneau : c est tout son interet. Un indicateur de
+                             niveau qu il faut aller chercher ne rappelle jamais
+                             qu on avance.
+                             ⚠️ Un TRACE SVG et non un degrade conique : seul un
+                             trace peut avoir des bouts arrondis, et sans eux une
+                             progression de 3 % ressemble a un eclat de poussiere
+                             plutot qu au debut de quelque chose.
+                             ⚠️ Et une couleur PLEINE, pas un `url(#…)` : un
+                             degrade demanderait des `<defs>` ailleurs dans la
+                             page, et un identifiant qui ne resout pas rend le
+                             trace NOIR — invisible sur ce fond. A cette taille
+                             le degrade ne se verrait pas, le risque si. -->
+                        <svg class="v2-moi-xp" viewBox="0 0 56 56" v-if="estConnecte" aria-hidden="true">
+                            <circle class="piste" cx="28" cy="28" r="24.2"></circle>
+                            <circle class="jauge" cx="28" cy="28" r="24.2"
+                                    :stroke-dasharray="anneauPerimetre"
+                                    :stroke-dashoffset="anneauReste"></circle>
+                        </svg>
                     </button>
 
                 </header>
@@ -199,6 +217,14 @@
                         <button class="v2-profil-av" @click="avatarsDepuisProfil" title="Changer d'avatar">
                             <img :src="srcAvatar(avatar)" alt="" draggable="false"
                                  @error="$event.target.src='novice.png'">
+                            <!-- Le meme anneau que dans la barre, pour que les
+                                 deux disent la meme chose au meme endroit. -->
+                            <svg class="v2-moi-xp" viewBox="0 0 56 56" v-if="estConnecte" aria-hidden="true">
+                                <circle class="piste" cx="28" cy="28" r="24.2"></circle>
+                                <circle class="jauge" cx="28" cy="28" r="24.2"
+                                        :stroke-dasharray="anneauPerimetre"
+                                        :stroke-dashoffset="anneauReste"></circle>
+                            </svg>
                             <span class="v2-profil-crayon">✎</span>
                         </button>
                         <div class="v2-profil-id">
@@ -228,7 +254,18 @@
                                      nommer CE QU ON EST, pas par ou l on est
                                      passe : « Profil local » / « Profil Joueur »
                                      se repondent. -->
-                                {{ estConnecte ? 'Profil Joueur' : 'Profil local' }}
+                                <!-- ⚠️ Le TITRE prend la place de « Profil Joueur ».
+                                     C est ce qu on gagne en jouant, donc c est ce
+                                     qui doit s afficher — et il porte la couleur de
+                                     son palier, ce qui le rend desirable sans
+                                     ajouter un seul objet a l ecran.
+                                     Sa couleur est posee en ligne parce qu elle
+                                     vient de la DONNEE (le palier), pas d une
+                                     classe : six paliers feraient six classes a
+                                     tenir d accord avec la liste de app.js. -->
+                                <span v-if="estConnecte" class="v2-profil-titre"
+                                      :style="{ color: titreJoueur.couleur }">{{ titreJoueur.nom }}</span>
+                                <span v-else>Profil local</span>
                             </div>
                         </div>
                         <button class="v2-profil-fermer" @click="fermerProfil" title="Fermer">✕</button>
@@ -265,9 +302,22 @@
                          coute plus cher qu un chiffre absent.
                          Verrouillees pour un invite : un zero dirait « tu n as rien
                          joue », un tiret grise dit « ca ne compte pas encore ». -->
-                        <div class="v2-profil-stats" :class="{ verrou: !estConnecte }">
-                            <div><div class="v">{{ estConnecte ? compteParties : '—' }}</div><div class="n">Parties</div></div>
-                            <div class="droite"><div class="v">{{ estConnecte ? compteXp : '—' }}</div><div class="n">XP</div></div>
+                        <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
+                            <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
+                            <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
+                            <div><span class="n">Expérience</span><span class="v">{{ estConnecte ? compteXp : '—' }}</span></div>
+                        </div>
+
+                        <!-- ⚠️ La barre ne s affiche QUE pour un inscrit. Montree
+                             vide a un invite, elle promettrait une progression
+                             qui n est pas enregistree — les trois tirets au-dessus
+                             disent deja « ca ne compte pas encore », c est assez. -->
+                        <div class="v2-profil-niveau" v-if="estConnecte">
+                            <div class="v2-profil-niv-ligne">
+                                <span>Niveau {{ niveauJoueur }}</span>
+                                <span>{{ xpDansNiveau }} / {{ xpParNiveau }}</span>
+                            </div>
+                            <div class="v2-profil-barre"><i :style="{ width: (xpPart * 100) + '%' }"></i></div>
                         </div>
 
                         <!-- ⚠️ Pas de lien « Mon avatar » : l avatar du panneau

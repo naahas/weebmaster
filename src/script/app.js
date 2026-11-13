@@ -32,6 +32,33 @@ const { createApp } = Vue;
 // quiz à deux joueurs.
 const MIN_CLASSIQUE = 8;
 
+// ════════════════════════════════════════════════════════════════
+// 🏅 LE BAREME D XP — niveau et titre se DEDUISENT, ils ne se stockent pas
+// ════════════════════════════════════════════════════════════════
+// ⚠️ Il n y a ni colonne `niveau` ni colonne `titre` en base, et il ne faut
+// pas en ajouter : les deux se calculent ici a partir de l xp. Les stocker,
+// ce serait se garantir DEUX VERITES qui divergent le jour ou l on change le
+// bareme — et un bareme d xp change toujours. Un joueur se retrouverait
+// « Vétéran » en base et « Combattant » a l ecran, sans que rien ne dise
+// lequel a raison.
+//
+// Palier CONSTANT, volontairement : « 200 XP par niveau » s annonce en quatre
+// mots. Une courbe se justifie quand les niveaux hauts doivent ralentir —
+// rien ne le demande encore, et on peut la courber plus tard sans rien casser
+// puisque personne d autre ne lit ces valeurs.
+const XP_PAR_NIVEAU = 200;
+
+// ⚠️ Le premier palier est a 1, donc `titrePourNiveau` trouve toujours quelque
+// chose : pas de cas « aucun titre » a gerer a l affichage.
+const TITRES_JOUEUR = [
+    { des: 1, nom: 'Novice', couleur: '#9a9aa6' },
+    { des: 3, nom: 'Apprenti', couleur: '#7fd4a0' },
+    { des: 5, nom: 'Combattant', couleur: '#6fb3f5' },
+    { des: 8, nom: 'Vétéran', couleur: '#c08cf5' },
+    { des: 12, nom: 'Maître', couleur: '#f5a65b' },
+    { des: 20, nom: 'Légende', couleur: '#FFD700' },
+];
+
 // 🏠 SOMMES-NOUS CHEZ NOUS ? Sert à garder un mode fermé au public tout en le
 // laissant jouable à la maison (voir `soon` sur Choice).
 //
@@ -162,6 +189,7 @@ createApp({
             estConnecte: false,
             fournisseur: null,      // 'discord' | 'google'
             compteParties: 0,
+            compteVictoires: 0,
             compteXp: 0,
             // ⚠️ La bibliotheque Supabase n est PAS chargee au demarrage. Elle
             // ne sert qu a qui ouvre le panneau ou revient deja connecte — soit
@@ -1152,6 +1180,42 @@ createApp({
     },
 
     computed: {
+
+        // ════════════════════════════════════════════════
+        // 🏅 Niveau et titre — DEDUITS de l xp, jamais stockes
+        // ════════════════════════════════════════════════
+        // Voir `XP_PAR_NIVEAU` en tete de fichier pour le pourquoi.
+        niveauJoueur() {
+            return Math.floor(this.compteXp / XP_PAR_NIVEAU) + 1;
+        },
+        // Ce qu il reste a faire DANS le niveau courant : c est ce chiffre
+        // qu on montre, pas l xp totale — « 80 / 200 » dit quoi faire,
+        // « 1280 » ne dit rien.
+        xpDansNiveau() {
+            return this.compteXp % XP_PAR_NIVEAU;
+        },
+        xpParNiveau() {
+            return XP_PAR_NIVEAU;
+        },
+        // La part remplie, de 0 a 1. Sert a la barre ET a l anneau.
+        xpPart() {
+            return this.xpDansNiveau / XP_PAR_NIVEAU;
+        },
+        titreJoueur() {
+            let t = TITRES_JOUEUR[0];
+            for (const x of TITRES_JOUEUR) if (this.niveauJoueur >= x.des) t = x;
+            return t;
+        },
+        // ⚠️ L anneau est un trace SVG, pas un degrade conique : seul un trace
+        // peut avoir des BOUTS ARRONDIS, et sans eux une progression de 3 %
+        // ressemble a un eclat de poussiere plutot qu au debut de quelque
+        // chose. Le perimetre se calcule ici une fois pour toutes.
+        anneauPerimetre() {
+            return 2 * Math.PI * 24.2;
+        },
+        anneauReste() {
+            return this.anneauPerimetre * (1 - this.xpPart);
+        },
 
         // 💀 Éliminé de la manche en cours.
         //
@@ -4801,7 +4865,9 @@ createApp({
             this.estConnecte = false;
             this.fournisseur = null;
             this.compteParties = 0;
+            this.compteVictoires = 0;
             this.compteXp = 0;
+            this._jeton = null;
             this.profilOuvert = false;
             // ⚠️ On ne reprend PAS un playerId d invite : le joueur garderait
             // son pseudo mais deviendrait quelqu un d autre pour le serveur,
@@ -8150,6 +8216,20 @@ createApp({
                     this.selectedTeam = null;
                     localStorage.removeItem('selectedTeam');
                 }
+            });
+
+            // 🏅 Le profil du joueur inscrit, apres verification du jeton.
+            // ⚠️ Il arrive TOUJOURS apres coup — la verification demande un
+            // aller-retour a Supabase — et il peut ne jamais arriver (reseau
+            // coupe, table absente). Les trois chiffres restent donc a zero
+            // par defaut plutot que d attendre quoi que ce soit.
+            // ⚠️ Ni niveau ni titre ici : ils se deduisent de l xp (voir
+            // XP_PAR_NIVEAU). Le serveur n en envoie pas, et ne doit pas.
+            this.socket.on('compte-profil', (p) => {
+                if (!p) return;
+                this.compteParties = p.parties || 0;
+                this.compteVictoires = p.victoires || 0;
+                this.compteXp = p.xp || 0;
             });
 
             this.socket.on('lobby-update', (data) => {

@@ -9292,6 +9292,18 @@ io.on('connection', (socket) => {
             }).then((r) => {
                 if (!r || r.playerId !== data.playerId) return;
                 marquerCompte(data.playerId);
+                // ⚠️ Le profil part vers CETTE socket seulement, jamais au
+                // salon : les statistiques d'un joueur ne regardent que lui.
+                // Et on n'envoie ni niveau ni titre — ils se déduisent de
+                // l'XP côté client, et les calculer ici donnerait deux
+                // barèmes à tenir d'accord.
+                if (r.profil) {
+                    socket.emit('compte-profil', {
+                        parties: r.profil.parties || 0,
+                        victoires: r.profil.victoires || 0,
+                        xp: r.profil.xp || 0,
+                    });
+                }
             }).catch(() => { /* réseau coupé : il reste un invité */ });
         }
 

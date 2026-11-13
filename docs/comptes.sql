@@ -58,6 +58,7 @@ create table if not exists public.comptes (
     -- stocker sur des gens qui n'ont rien demandé, pour un gain hypothétique.
     xp        integer     not null default 0,
     parties   integer     not null default 0,
+    victoires integer     not null default 0,
 
     cree_le   timestamptz not null default now(),
     -- Sert à savoir qui revient, et à ne rien faire d'autre pour l'instant.
@@ -114,6 +115,21 @@ create policy "chacun lit son compte"
 --    QUEL AUTRE. Un pseudo Discord peut être déplacé lui aussi, et il
 --    s'afficherait sur l'écran d'un streamer. Ne pas court-circuiter
 --    `pseudos-interdits.js` parce que le nom vient d'un fournisseur sérieux.
+--
+-- ============================================================
+-- AJOUT APRÈS COUP : les victoires
+-- ============================================================
+-- Si la table existe déjà, la colonne se rajoute sans rien perdre :
+--
+--   alter table public.comptes
+--       add column if not exists victoires integer not null default 0;
+--
+-- ⚠️ IL N'Y A PAS DE COLONNE `niveau` NI `titre`, ET IL NE DOIT PAS Y EN
+-- AVOIR. Les deux se déduisent de `xp` côté client (`PAR_NIVEAU` et `TITRES`
+-- dans app.js). Les stocker, ce serait se garantir deux vérités qui divergent
+-- le jour où le barème change — et un barème d'XP change toujours. Un joueur
+-- se retrouverait « Vétéran » en base et « Combattant » à l'écran, sans que
+-- rien ne dise lequel a raison.
 --
 -- ============================================================
 -- REMISE À ZÉRO
