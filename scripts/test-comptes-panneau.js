@@ -50,6 +50,7 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
         ['POST .../compte/titre', await post('/admin/site/compte/titre', { id: 'x' }, '')],
         ['POST .../compte/chiffres', await post('/admin/site/compte/chiffres', { id: 'x' }, '')],
         ['POST .../compte/supprimer', await post('/admin/site/compte/supprimer', { id: 'x' }, '')],
+        ['POST .../compte/rubis', await post('/admin/site/compte/rubis', { id: 'x' }, '')],
     ];
     for (const [nom, r] of sans) check(nom + ' refuse', r.status === 401, 'HTTP ' + r.status);
     const faux = await get('/admin/site/comptes', PANEL + 'x');
@@ -147,6 +148,30 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
         check('on le relache', p.status === 200 && p.body.success);
         ({ c } = await trouver());
         check('il reprend le sien', c.pseudo_impose === null, String(c.pseudo_impose));
+    }
+
+    // ── 5 bis. La monnaie ────────────────────────────────────────
+    // ⚠️ Elle est volontairement plus OUVERTE que les compteurs : donner des
+    // rubis est un geste courant (recompenser, dedommager), remettre l xp a
+    // zero efface une progression qu on ne retrouve pas. Le code du panneau
+    // suffit donc — et ce controle est la pour que personne ne « repare »
+    // cette difference en y remettant le second mot de passe.
+    console.log('\n=== 5 bis. Les rubis, SANS second mot de passe ===');
+    let m = await post('/admin/site/compte/rubis', { id: ID, rubis: 4200 });
+    if (m.status === 500) {
+        console.log('  ⏭️  colonne « rubis » absente — on saute (docs/comptes.sql)');
+    } else {
+        check('⚠️ le code du panneau SUFFIT', m.status === 200 && m.body.success, m.body.error || 'ok');
+        ({ c } = await trouver());
+        check('le montant est pose', c.rubis === 4200, 'rubis=' + c.rubis);
+        m = await post('/admin/site/compte/rubis', { id: ID, rubis: -1 });
+        check('un montant negatif est refuse', m.status === 400, 'HTTP ' + m.status);
+        m = await post('/admin/site/compte/rubis', { id: ID, rubis: 'plein' });
+        check('un montant qui n est pas un nombre aussi', m.status === 400, 'HTTP ' + m.status);
+        m = await post('/admin/site/compte/rubis', { id: ID, rubis: 99999999 });
+        check('un montant hors borne aussi', m.status === 400, 'HTTP ' + m.status);
+        ({ c } = await trouver());
+        check('… et aucun refus n a abime le montant', c.rubis === 4200, 'rubis=' + c.rubis);
     }
 
     // ── 6. Les compteurs ─────────────────────────────────────────

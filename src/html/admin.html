@@ -3267,36 +3267,26 @@ function corrigerCompte(el) {
 // question : être entré dans le panneau ne suffit pas à effacer le profil
 // de quelqu'un. `CODE_SUP` est partagé avec la modale des questions — on ne
 // le retape pas d'une modale à l'autre.
-let CPT_ACTION = null, CPT_ID = null, CPT_RUBIS = null;
+let CPT_ACTION = null, CPT_ID = null;
 
-// 💎 Changer le montant. Il passe par la route des compteurs, donc par le
-// second mot de passe.
-//
-// ⚠️ Et on NE DEMANDE PAS le mot de passe d'avance : la plupart du temps il
-// est déjà en mémoire (`CODE_SUP`, partagé avec la suppression d'une
-// question), et une modale avant chaque correction aurait rendu le geste
-// inutilisable. On tente, et l'on n'ouvre la modale QUE si le serveur refuse.
+// 💎 Changer le montant. ⚠️ PAS de second mot de passe, et c'est voulu : la
+// monnaie se DONNE, c'est un geste courant. Remettre l'XP à zéro efface une
+// progression qu'on ne retrouve pas ; changer un solde, non. Le code du
+// panneau suffit, et la route s'appelle `/rubis` et non `/chiffres`.
 async function appliquerRubis(id, montant) {
-    if (CODE_SUP) {
-        const r = await appel('/admin/site/compte/chiffres', {
+    try {
+        const r = await appel('/admin/site/compte/rubis', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deleteCode: CODE_SUP, id, rubis: montant }),
-        }, false);
+            body: JSON.stringify({ id, rubis: montant }),
+        });
         const d = await r.json().catch(() => ({}));
-        if (r.status !== 401 && d.success) {
-            Object.assign(COMPTES.find(x => x.id === id) || {}, d.compte);
-            peindreComptes();
-            return;
-        }
-        // ⚠️ Un code refusé doit être OUBLIÉ : conservé, il reviendrait
-        // pré-rempli et tout échouerait sans raison visible.
-        if (r.status === 401) CODE_SUP = '';
-        else { alert(d.error || 'Erreur ' + r.status); return; }
+        if (!r.ok || !d.success) throw new Error(d.error || 'Erreur ' + r.status);
+        Object.assign(COMPTES.find(x => x.id === id) || {}, d.compte);
+        peindreComptes();
+    } catch (e) {
+        alert(e.message);
     }
-    // Pas de code, ou code périmé : on le demande, en gardant le montant.
-    CPT_RUBIS = montant;
-    ouvrirCompteSup('rubis', id);
 }
 
 function ouvrirCompteSup(action, id) {
@@ -3305,14 +3295,11 @@ function ouvrirCompteSup(action, id) {
     CPT_ACTION = action;
     CPT_ID = id;
     const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
-    $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte'
-        : action === 'rubis' ? 'Changer le montant' : 'Reset des compteurs';
+    $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte' : 'Reset des compteurs';
     $('cpt-cible').textContent = action === 'del'
         // ⚠️ On dit ce que ça fait VRAIMENT : ce n'est pas un bannissement.
         ? '« ' + nom + " » sera supprimé de Supabase, avec son XP et ses parties. "
           + "Il pourra se reconnecter et repartir d'un compte neuf — ce n'est pas un bannissement."
-        : action === 'rubis'
-        ? '« ' + nom + ' » passera de ' + (c.rubis || 0) + ' à ' + CPT_RUBIS + ' rubis.'
         : '« ' + nom + ' » repartira à 0 XP, 0 rubis, 0 partie, 0 victoire. '
           + 'Son titre et son pseudo ne bougent pas.';
     $('cpt-code').value = CODE_SUP;
@@ -3320,10 +3307,7 @@ function ouvrirCompteSup(action, id) {
     setTimeout(() => (CODE_SUP ? $('cpt-go') : $('cpt-code')).focus(), 30);
 }
 
-function fermerCompteSup() {
-    $('voile-cpt').classList.remove('ouvert');
-    CPT_ACTION = null; CPT_ID = null; CPT_RUBIS = null;
-}
+function fermerCompteSup() { $('voile-cpt').classList.remove('ouvert'); CPT_ACTION = null; CPT_ID = null; }
 $('cpt-annuler').onclick = fermerCompteSup;
 $('voile-cpt').onclick = e => { if (e.target === $('voile-cpt')) fermerCompteSup(); };
 
@@ -3338,8 +3322,6 @@ $('cpt-go').onclick = async () => {
         const chemin = action === 'del' ? '/admin/site/compte/supprimer' : '/admin/site/compte/chiffres';
         const corps = action === 'del'
             ? { deleteCode: CODE_SUP, id }
-            : action === 'rubis'
-            ? { deleteCode: CODE_SUP, id, rubis: CPT_RUBIS }
             : { deleteCode: CODE_SUP, id, xp: 0, rubis: 0, parties: 0, victoires: 0 };
         // ⚠️ `false` : ici un 401 parle du mot de passe de SUPPRESSION, pas du
         // code du panneau. Laisser appel() le traiter déconnecterait de tout.

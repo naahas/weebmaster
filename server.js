@@ -7072,6 +7072,34 @@ app.post('/admin/site/compte/titre', async (req, res) => {
     res.json({ success: true, compte: r });
 });
 
+// 💎 LE MONTANT DE RUBIS, sans second mot de passe.
+//
+// ⚠️ Volontairement plus ouvert que `/chiffres`, et ce n'est pas un oubli :
+// la monnaie se DONNE, c'est un geste courant — récompenser un gagnant de
+// tournoi, dédommager une partie coupée — alors que remettre l'XP à zéro
+// efface une progression qu'on ne retrouve pas. Le code du panneau suffit
+// donc ici ; une modale avant chaque don aurait rendu le geste inutilisable.
+app.post('/admin/site/compte/rubis', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    // ⚠️ Borne HAUTE autant que basse : une faute de frappe à dix chiffres
+    // passerait l'entier de Postgres et ferait échouer l'écriture avec une
+    // erreur que personne ne saurait lire.
+    const n = parseInt(req.body.rubis, 10);
+    if (!Number.isInteger(n) || n < 0 || n > 9999999) {
+        return res.status(400).json({ error: 'Montant invalide.' });
+    }
+
+    const r = await comptes.majCompte(id, { rubis: n });
+    if (!r) return res.status(500).json({ error: 'Écriture impossible (colonne « rubis » absente ?).' });
+
+    poussierProfil(id, r);
+    console.log(`💎 Rubis de ${id} : ${n}`);
+    res.json({ success: true, compte: r });
+});
+
 // ⚠️ LES COMPTEURS. Irréversible — on ne retrouve pas l xp d avant — donc
 // second mot de passe.
 app.post('/admin/site/compte/chiffres', async (req, res) => {

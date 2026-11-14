@@ -7560,10 +7560,10 @@ body.game-active:has(.poll-game-container) #particles-js {
     font-size: 0.92rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    /* Il se colle un peu a l avatar : la gouttiere d 1rem de la barre les
-       separait comme deux elements sans rapport, alors que le solde EST
-       celui du joueur dont on voit le portrait. */
-    margin-right: -0.3rem;
+    /* Il garde la gouttiere de la barre, plus un peu : colle a l avatar, le
+       chiffre paraissait lui appartenir comme une pastille de notification.
+       Ecarte, on lit deux choses — le portrait, et ce qu on possede. */
+    margin-right: 0.3rem;
     user-select: none;
 }
 /* ⚠️ Taille EXPLICITE sur le trace : un <svg> sans width ni height retombe
