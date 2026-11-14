@@ -154,12 +154,10 @@
                          deja tout ce qu il y a a dire sur le compte.
                          ⚠️ Et PAS LE MOT « Rubis » : le chiffre est a cote de
                          son dessin, c est assez. Le nom ne survit que dans le
-                         `title`, pour la premiere fois ou on le croise.
-                         ⚠️ L icone est PROVISOIRE, en SVG inline et pas en
-                         fichier : a 14 px une image perdrait ses facettes, et
-                         le trace suit la couleur du texte. -->
-                    <span class="v2-moi-rubis" v-if="estConnecte"
-                          :title="compteRubis.toLocaleString('fr-FR')">
+                         `title`, pour la premiere fois ou on le croise — il y
+                         portait avant le NOMBRE, c est-a-dire exactement ce
+                         qu on lit deja a cote du curseur. -->
+                    <span class="v2-moi-rubis" v-if="estConnecte" title="Rubis">
                         <!-- ⚠️ Un FICHIER et non plus un trace : le gemme porte
                              le S du logo, qui ne se redessine pas au trait.
                              Recadre sur sa boite alpha — il arrivait avec 20 %

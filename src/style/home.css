@@ -7570,35 +7570,35 @@ body.game-active:has(.poll-game-container) #particles-js {
    chercher ne donne envie de rien. Et SANS le mot « Rubis » — le chiffre est
    collé a son dessin, c est assez.
 
-   ⚠️ UN BADGE, pas du texte nu. Pose sans fond, le chiffre flottait dans le
-   coin sans rien pour le tenir, et son rouge devenait une alerte au milieu de
-   l or de la banniere. Enferme, il redevient un objet — un portefeuille a
-   cote d un portrait.
+   ⚠️ UN FILET, PAS UN BADGE. Huit poses ont ete jugees au banc
+   `/prototypes/monnaie`, sur le vrai degrade d or du coin — un badge dore ne
+   se juge pas sur du noir. Le badge plein, la pose d avant, faisait DEUX
+   DISQUES DE MEME TAILLE cote a cote, sa hauteur suivant `--moi-av` : les
+   deux se disputaient le coin, et l avatar — le seul BOUTON des deux —
+   n etait plus celui qu on voyait en premier. Un trait vertical dit « deux
+   choses differentes » sans dessiner une seconde pastille.
 
-   ⚠️ Et sa HAUTEUR est celle de l avatar (`--moi-av`), pas une valeur a lui :
-   deux pastilles rondes cote a cote dont l une est plus courte se lisent
-   comme un defaut d alignement, et l avatar change de taille selon l ecran. */
+   ⚠️ Donc PLUS DE HAUTEUR A LUI : le filet mesure son contenu, et c est ce qui
+   le rend plus court que l avatar. Voulu — lui rendre `--moi-av` redonnerait
+   le poids du badge sans son fond.
+
+   ⚠️ L ecart total vaut 1,6rem : le `gap` de la barre (1rem) PLUS cette marge.
+   Le banc portait le meme gap, c est donc la pose exacte qui a ete jugee ;
+   toucher a l un des deux la defait. */
 .v2-moi-rubis {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 0.45rem;
-    height: var(--moi-av);
-    padding: 0 0.95rem;
-    border-radius: 999px;
+    padding-right: 0.9rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
     /* ⚠️ DORE et non plus rouge : le gemme livré porte le S du logo et il est
        or. Un chiffre rouge à côté d un jeton doré faisait deux monnaies, et
        le rouge se lisait comme une alerte au milieu de l or de la bannière. */
     color: #f0c75e;
-    background: rgba(240, 199, 94, 0.08);
-    border: 1px solid rgba(240, 199, 94, 0.2);
     font-size: 0.95rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    /* La gouttiere de la barre (1rem) plus ce qu il faut pour qu on lise deux
-       objets et non un seul : colle, le badge paraissait appartenir a
-       l avatar comme une pastille de notification. */
-    margin-right: 0.55rem;
+    margin-right: 0.6rem;
     user-select: none;
 }
 /* ⚠️ La HAUTEUR decide, la largeur suit. Le gemme n est pas carre (149 × 160
@@ -7607,11 +7607,11 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-moi-rubis b { font-weight: 700; }
 
 @media (max-width: 480px) {
-    /* Sur telephone la barre n a que l avatar a droite : le badge peut rester,
+    /* Sur telephone la barre n a que l avatar a droite : le solde peut rester,
        mais il se resserre pour ne pas pousser le portrait vers le centre.
-       ⚠️ Sa hauteur ne se touche PAS : elle suit `--moi-av`, qui se resserre
-       deja de son cote. La reecrire ici la desaccorderait de l avatar. */
-    .v2-moi-rubis { font-size: 0.84rem; gap: 0.32rem; padding: 0 0.7rem; margin-right: 0.35rem; }
+       ⚠️ Seul l ECART au filet se resserre, jamais sa hauteur — il n en a pas,
+       il mesure son contenu, qui se resserre deja par la police. */
+    .v2-moi-rubis { font-size: 0.84rem; gap: 0.32rem; padding-right: 0.65rem; margin-right: 0.4rem; }
     .v2-moi-rubis img { height: 1rem; }
 }
 
