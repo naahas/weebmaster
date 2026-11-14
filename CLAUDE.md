@@ -993,6 +993,101 @@ donc lisible dans l’onglet reseau avant d’avoir repondu. Il vit maintenant d
 fait que deplacer la fuite. Le client le recoit par `question-results`.
 `npm run test:preuve` tient les trois portes.
 
+## L'XP, les niveaux et les titres
+
+Un joueur **connecté** (Discord ou Google — `server-comptes.js`) cumule de l'XP, des parties et
+des victoires. Un invité ne cumule rien : c'est la seule différence que le compte fait pendant
+une partie, et il n'est **jamais requis pour jouer**.
+
+**Le barème vit dans `XP_MODES` (`server-comptes.js`), à un seul endroit.** Le client reçoit des
+**totaux** et les dessine ; il ne recalcule jamais ce qu'une partie a rapporté.
+
+| mode | partie | + victoire | seuil du bonus |
+|---|---|---|---|
+| Classique / Rivalité | 100 | 300 | **8** |
+| Ascension | 100 | 225 | 4 |
+| Collect | 100 | 200 | 4 |
+| Rush | 80 | 150 | 4 |
+| Codanime | 50 | 125 | 4 |
+| Choice | 50 | 125 | 4 |
+| BombAnime | 25 | 75 | 4 |
+
+⚠️ **`victoire` est un BONUS QUI S'AJOUTE**, pas un total : un Rush gagné vaut 80 + 150 = **230**.
+Le lire comme un total diviserait par deux ce que rapporte toute partie gagnée, sans rien casser
+nulle part — le genre d'erreur qui ne se voit qu'au bout d'un mois.
+
+⚠️ **Le seuil ne borne QUE le bonus de victoire, jamais l'XP de base.** Rush et Ascension se jouent
+seuls, BombAnime a son bot : un plancher posé sur toute l'XP aurait rendu le solo stérile, alors
+que c'est par là qu'on découvre le site. Mais « gagner » à deux ne veut rien dire, et c'est
+exactement ce qu'un joueur aurait envie de forcer — d'où la porte, posée là et seulement là.
+
+⚠️ Le Classique est à **huit**, comme `MIN_CLASSIQUE`. Même chiffre de produit, pas une
+coïncidence : le quiz n'est le quiz qu'à partir de là. Les deux se changent ensemble ou pas du tout.
+
+⚠️ `rivalry` porte **exactement** le barème de `classic`. Un écart ferait choisir le *Format*
+pour l'XP plutôt que pour la partie.
+
+⚠️ **Le compteur « Victoires » suit le BONUS, pas le classement.** Gagner sous le seuil ne
+rapporte rien, donc ne s'affiche pas non plus : un profil à « 30 victoires » dont l'XP n'aurait
+jamais bougé n'aurait aucune explication à l'écran.
+
+### La courbe des niveaux
+
+Dans `app.js`, **deux constantes et rien d'autre** : `XP_BASE` (300, le prix du niveau 2) et
+`XP_PAS` (100, ce que chaque niveau suivant coûte en plus). Cumulé : `50·(n−1)·(n+4)`.
+Apprenti (3) à 700, Combattant (5) à 1 800, Vétéran (8) à 4 200, Maître (12) à 8 800,
+Légende (20) à **22 800** — environ 190 parties.
+
+⚠️ **Ni colonne `niveau` ni colonne `titre` en base, et il ne faut pas en ajouter** : les deux se
+déduisent de l'XP. Les stocker garantirait deux vérités qui divergent le jour où le barème change
+— et un barème d'XP change toujours.
+
+⚠️ Croissance **linéaire, pas géométrique**. Un facteur (×1,5 par niveau) mettrait Légende à deux
+millions : hors d'atteinte, donc un titre que personne ne porte, donc un titre qui ne dit rien.
+
+⚠️ **Le palier n'est plus constant, donc un modulo ne marche plus.** `xpDansNiveau` retranche le
+cumulé du niveau courant, et `xpParNiveau` est le prix **de ce niveau-là** — l'écrire en dur
+figerait la barre sur le prix du niveau 2 et elle déborderait dès le niveau 3.
+
+### Où ça se crédite
+
+Tout passe par **`recordFinishedGame`**, qui gagne un paramètre `gagnants` et appelle
+`crediterXpDeLaPartie` (`server.js`).
+
+⚠️ **`gagnants` est une liste de `playerId`, JAMAIS de pseudos.** Rien n'interdit deux joueurs du
+même nom dans un salon, et résoudre le vainqueur par son nom aurait crédité les deux. C'est aussi
+le seul trou qu'on aurait eu intérêt à creuser : deux comptes, le même pseudo, le bonus deux fois.
+C'est pour ça que les quatre `winnerData` du quiz portent désormais `playerId`.
+
+⚠️ **En camps, TOUT le camp gagnant** (`gagnantsDuQuiz` pour le quiz, `etat.equipes[x]` pour
+Codanime, espion compris). Ne payer que le meilleur score ferait jouer chacun pour soi dans le
+seul format qui demande le contraire.
+
+⚠️ **Le plancher se compte en HUMAINS et en joueurs DISTINCTS** : le bot de BombAnime siège dans
+`players` comme un joueur (trois amis plus un bot auraient ouvert un bonus qui en demande quatre),
+et un joueur peut y figurer deux fois — une entrée laissée par une socket morte, une neuve à côté.
+
+⚠️ **L'XP s'écrit À LA FIN DE LA MANCHE**, jamais au fil de l'eau. Les salons vivent dans la
+mémoire du dyno, qui est recyclé tous les jours : une partie coupée en plein milieu n'écrit rien,
+c'est architectural. Créditer au fil de l'eau n'y changerait rien de bon.
+
+⚠️ **On LIT puis on ÉCRIT** (`comptes.crediter`), en deux requêtes, plutôt qu'une fonction SQL
+`xp = xp + n`. Le pas atomique serait plus juste mais demanderait une migration de plus — donc une
+étape de déploiement de plus, donc une occasion de plus de l'oublier en production, où l'échec
+serait **silencieux**. La course qu'on s'autorise : un même joueur terminant deux parties dans la
+même fraction de seconde. Et **une seule requête pour toute la table**, jamais une par joueur — un
+Classique à quinze inscrits ferait trente allers-retours sur la boucle que tous les salons partagent.
+
+⚠️ **Un mode ajouté doit recevoir sa ligne dans `XP_MODES`**, même s'il n'est pas encore ouvert
+(Choice a la sienne). Sans elle il tombe sur `XP_DEFAUT` en silence. Le défaut paye **peu mais
+jamais zéro** : à zéro, le joueur verrait son XP s'arrêter sans pouvoir dire depuis quand.
+`npm run test:comptes` le tient — il vérifie que les huit modes du jeu ont leur ligne.
+
+ℹ️ Le total revient au client par l'événement socket **`compte-profil`**, qui sert deux fois : à la
+connexion, et à la fin de chaque partie. C'est ce qui fait monter la barre sans rechargement. Il
+porte des **totaux**, jamais un gain, et part **par socket** — l'XP d'un joueur ne regarde pas les
+quatorze autres.
+
 ## Points d'attention
 
 - L accueil compte les parties et en montre les dernieres, avec deux seuils :

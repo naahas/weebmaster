@@ -1052,6 +1052,20 @@ function creerModule(deps) {
                 mode: 'codanime',
                 playersCount: joueurs.length,
                 winnerName: gagnant ? ('Équipe ' + gagnant) : null,
+                // 🤝 TOUT LE CAMP GAGNANT, espion compris. C est le seul mode
+                // purement par equipe du site : ne payer que l espion, ou que
+                // les agents, recompenserait la moitie d un travail qui ne se
+                // fait qu a deux bouts.
+                //
+                // ⚠️ `etat.equipes[x].agents` est une liste de playerId, et
+                // `espion` un playerId seul — pas des vignettes. Les vignettes
+                // se fabriquent a l affichage (`vueDesEquipes`), elles ne sont
+                // pas ce qui est stocke.
+                gagnants: gagnant
+                    ? [].concat(
+                        etat.equipes[gagnant].espion ? [etat.equipes[gagnant].espion] : [],
+                        etat.equipes[gagnant].agents || [])
+                    : [],
                 // En SECONDES, comme les autres modes. ⚠️ Et jamais négative
                 // si `debut` manque — une partie reprise d'un vieil état, par
                 // exemple : mieux vaut zéro qu'un chiffre absurde dans un

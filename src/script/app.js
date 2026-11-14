@@ -42,11 +42,47 @@ const MIN_CLASSIQUE = 8;
 // « Vétéran » en base et « Combattant » a l ecran, sans que rien ne dise
 // lequel a raison.
 //
-// Palier CONSTANT, volontairement : « 200 XP par niveau » s annonce en quatre
-// mots. Une courbe se justifie quand les niveaux hauts doivent ralentir —
-// rien ne le demande encore, et on peut la courber plus tard sans rien casser
-// puisque personne d autre ne lit ces valeurs.
-const XP_PAR_NIVEAU = 200;
+// ────────────────────────────────────────────────────────────────
+// La courbe : chaque niveau coute XP_PAS de plus que le precedent.
+// ────────────────────────────────────────────────────────────────
+// Le palier a longtemps ete CONSTANT (200 XP), et c etait tenable tant que
+// rien ne creditait d xp. Le bareme du serveur (`XP_MODES`, server-comptes.js)
+// l a rendu absurde : un Classique gagne vaut 400, soit DEUX NIVEAUX d un
+// coup. On ne voyait meme pas la barre bouger, on la voyait sauter.
+//
+// ⚠️ Croissance LINEAIRE, pas geometrique. Un facteur (×1,5 par niveau)
+// mettrait « Légende » a deux millions d xp : hors d atteinte, donc un titre
+// que personne ne porte, donc un titre qui ne dit plus rien. Ici il vaut
+// 22 800 — environ 190 parties. Long, mais fini.
+//
+// Deux nombres, et ce sont les deux seuls leviers : XP_BASE est le prix du
+// niveau 2, XP_PAS ce que chaque niveau suivant coute en plus. Diviser
+// XP_PAS par deux fait monter deux fois plus vite, et rien d autre n est a
+// toucher — pas meme l affichage, qui lit la courbe au lieu de la supposer.
+const XP_BASE = 300;
+const XP_PAS = 100;
+
+// L xp cumulee qu il faut pour ATTEINDRE le niveau n. Somme d une suite
+// arithmetique, donc une forme fermee : pas de boucle pour la descente.
+function xpCumulee(n) {
+    if (n <= 1) return 0;
+    return (XP_BASE * (n - 1)) + (XP_PAS * (n - 1) * (n - 2) / 2);
+}
+
+// Le niveau atteint avec `xp`.
+//
+// ⚠️ On MONTE au lieu d inverser la formule. L inverse existe (c est une
+// racine carree) mais il rend 1,9999999 la ou il faut 2, et il faudrait de
+// toute facon corriger l arrondi — autant ne pas l introduire. La boucle fait
+// une vingtaine de tours au pire, sur une valeur que Vue met en cache.
+// La borne a 500 n est pas la pour les joueurs : elle est la pour qu un `xp`
+// absurde (NaN, Infinity, une colonne mal lue) ne fige pas la page.
+function niveauPourXp(xp) {
+    const total = Number(xp) || 0;
+    let n = 1;
+    while (n < 500 && xpCumulee(n + 1) <= total) n++;
+    return n;
+}
 
 // ⚠️ Le premier palier est a 1, donc `titrePourNiveau` trouve toujours quelque
 // chose : pas de cas « aucun titre » a gerer a l affichage.
@@ -1184,22 +1220,31 @@ createApp({
         // ════════════════════════════════════════════════
         // 🏅 Niveau et titre — DEDUITS de l xp, jamais stockes
         // ════════════════════════════════════════════════
-        // Voir `XP_PAR_NIVEAU` en tete de fichier pour le pourquoi.
+        // Voir `XP_BASE` / `XP_PAS` en tete de fichier pour le pourquoi.
         niveauJoueur() {
-            return Math.floor(this.compteXp / XP_PAR_NIVEAU) + 1;
+            return niveauPourXp(this.compteXp);
         },
         // Ce qu il reste a faire DANS le niveau courant : c est ce chiffre
-        // qu on montre, pas l xp totale — « 80 / 200 » dit quoi faire,
+        // qu on montre, pas l xp totale — « 80 / 300 » dit quoi faire,
         // « 1280 » ne dit rien.
+        //
+        // ⚠️ Un MODULO ne marche plus depuis que le palier grandit : il
+        // supposait tous les niveaux de meme prix. On retranche donc le
+        // cumule du niveau courant, qui est la seule facon juste.
         xpDansNiveau() {
-            return this.compteXp % XP_PAR_NIVEAU;
+            return Math.max(0, (Number(this.compteXp) || 0) - xpCumulee(this.niveauJoueur));
         },
+        // ⚠️ Et le denominateur CHANGE a chaque niveau : c est le prix de
+        // celui-ci, pas une constante. L ecrire en dur figerait la barre sur
+        // le prix du niveau 2 et elle deborderait des le niveau 3.
         xpParNiveau() {
-            return XP_PAR_NIVEAU;
+            return xpCumulee(this.niveauJoueur + 1) - xpCumulee(this.niveauJoueur);
         },
         // La part remplie, de 0 a 1. Sert a la barre ET a l anneau.
         xpPart() {
-            return this.xpDansNiveau / XP_PAR_NIVEAU;
+            const p = this.xpParNiveau;
+            if (!p) return 0;
+            return Math.min(1, this.xpDansNiveau / p);
         },
         titreJoueur() {
             let t = TITRES_JOUEUR[0];
@@ -8285,7 +8330,13 @@ createApp({
             // coupe, table absente). Les trois chiffres restent donc a zero
             // par defaut plutot que d attendre quoi que ce soit.
             // ⚠️ Ni niveau ni titre ici : ils se deduisent de l xp (voir
-            // XP_PAR_NIVEAU). Le serveur n en envoie pas, et ne doit pas.
+            // XP_BASE / XP_PAS). Le serveur n en envoie pas, et ne doit pas.
+            //
+            // ⚠️ Le meme evenement sert DEUX FOIS : a la connexion, et a la
+            // FIN DE CHAQUE PARTIE, quand le serveur vient de crediter l xp.
+            // C est ce qui fait monter la barre sans rechargement — et c est
+            // pour ca qu il remplace les trois chiffres au lieu d y ajouter :
+            // le serveur envoie des TOTAUX, jamais un gain.
             this.socket.on('compte-profil', (p) => {
                 if (!p) return;
                 this.compteParties = p.parties || 0;

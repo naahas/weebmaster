@@ -462,6 +462,9 @@ function creerModule(deps) {
                 playersCount: gameState.initialPlayerCount || etat.joueurs.size,
                 winnerName: vainqueur ? vainqueur.username : null,
                 duration: Math.round((Date.now() - etat.debutA) / 1000),
+                // `etat.joueurs` est indexee par playerId : le classement le
+                // porte deja, il n y a rien a resoudre.
+                gagnants: vainqueur && vainqueur.playerId ? [vainqueur.playerId] : [],
                 gameState,
             });
         }

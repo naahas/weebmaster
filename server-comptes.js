@@ -271,10 +271,137 @@ async function identifier(jeton, { pseudo, avatar, nettoyer } = {}) {
     };
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🎖️ LE BAREME D XP
+// ════════════════════════════════════════════════════════════════
+// Il s ecrit ICI et nulle part ailleurs. Le client ne recalcule jamais ce
+// qu une partie a rapporte : il recoit un TOTAL et le dessine. C est la meme
+// regle que partout sur ce projet — une valeur ecrite deux fois finit par
+// diverger, et ici elle divergerait sur le profil des joueurs.
+//
+// ⚠️ `victoire` est un BONUS QUI S AJOUTE a `partie`, pas un remplacement.
+// Une victoire en Rush vaut 80 + 150 = 230. Le lire comme un total diviserait
+// par deux ce que rapporte une partie gagnee, sans rien casser nulle part —
+// le genre d erreur qu on ne voit qu au bout d un mois de parties.
+//
+// ⚠️ `seuil` ne borne QUE le bonus de victoire, JAMAIS l xp de base. Rush et
+// Ascension se jouent seuls, BombAnime a son bot : un plancher pose sur tout
+// l xp aurait rendu le jeu en solo entierement sterile, alors que c est par
+// la qu on decouvre le site. Mais « gagner » a deux ne veut rien dire, et
+// c est exactement ce qu un joueur aurait envie de forcer — d ou la porte,
+// posee la et seulement la.
+//
+// ⚠️ Le Classique est a HUIT, comme son plancher de lancement
+// (`MIN_CLASSIQUE`, app.js). Ce n est pas une coincidence a corriger : c est
+// le meme chiffre de produit, le quiz n est le quiz qu a partir de la. Les
+// deux se changent ensemble ou pas du tout.
+const XP_MODES = {
+    classic:   { partie: 100, victoire: 300, seuil: 8 },
+    // ⚠️ `rivalry` n est pas un mode, c est le reglage Format du quiz. Meme
+    // bareme, forcement : un ecart rendrait un camp plus payant qu un solo
+    // sur exactement les memes questions, et l hote choisirait le Format
+    // pour l xp plutot que pour la partie.
+    rivalry:   { partie: 100, victoire: 300, seuil: 8 },
+    rush:      { partie:  80, victoire: 150, seuil: 4 },
+    bombanime: { partie:  25, victoire:  75, seuil: 4 },
+    collect:   { partie: 100, victoire: 200, seuil: 4 },
+    codanime:  { partie:  50, victoire: 125, seuil: 4 },
+    ascension: { partie: 100, victoire: 225, seuil: 4 },
+    // Choice n est pas encore ouvert au public (`soon: true` sur sa carte),
+    // mais il se joue a la maison et il appelle `recordFinishedGame`. Sa
+    // ligne est donc la : l oublier le ferait tomber sur le defaut en
+    // silence, et personne ne s en apercevrait avant son ouverture.
+    choice:    { partie:  50, victoire: 125, seuil: 4 },
+};
+
+// ⚠️ Un mode inconnu rapporte QUELQUE CHOSE plutot que rien. Le jour ou un
+// mode est ajoute sans sa ligne, le defaut le fait payer peu — ca se remarque
+// au bareme. Rendre zero le rendrait invisible : le joueur verrait son xp ne
+// plus bouger sans pouvoir dire depuis quand.
+const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4 };
+
+// Pure : ni base, ni reseau, ni etat. C est la seule decision du bareme, donc
+// c est celle que `npm run test:comptes` rejoue.
+function xpDeLaPartie(mode, { gagnant = false, joueurs = 0 } = {}) {
+    const b = XP_MODES[mode] || XP_DEFAUT;
+    const victoire = !!gagnant && joueurs >= b.seuil;
+    return {
+        xp: b.partie + (victoire ? b.victoire : 0),
+        // ⚠️ Le compteur « Victoires » du profil suit LE BONUS, pas le
+        // classement : une victoire a deux ne rapporte rien, donc elle ne
+        // s affiche pas non plus. Les deux ensemble disent la meme chose ;
+        // les separer donnerait un profil a « 30 victoires » dont l xp
+        // n aurait jamais bouge, et rien a l ecran pour l expliquer.
+        victoire,
+    };
+}
+
+// ════════════════════════════════════════════════════════════════
+// 💰 Crediter la fin d une partie
+// ════════════════════════════════════════════════════════════════
+// `lignes` : [{ id, xp, victoire }] — un par joueur INSCRIT de la partie.
+// Rend les profils a jour, pour que le serveur les renvoie a chacun.
+//
+// ⚠️ ON LIT PUIS ON ECRIT, en deux requetes, et pas une fonction SQL
+// `xp = xp + n`. Le pas atomique serait plus juste, mais il demanderait une
+// migration de plus — donc une etape de deploiement de plus, donc une
+// occasion de plus de l oublier en production, ou l echec serait SILENCIEUX.
+// La course qu on s autorise, c est qu un meme joueur termine DEUX parties
+// dans la meme fraction de seconde : il faut etre dans deux salons a la fois
+// et qu ils se terminent ensemble. Le prix, alors, est un credit perdu.
+//
+// ⚠️ Et une seule requete pour toute la table, jamais une par joueur : un
+// Classique a quinze inscrits ferait trente allers-retours a la fin de chaque
+// partie, sur la boucle que TOUS les salons partagent.
+async function crediter(lignes) {
+    if (!ACTIF || !tableComptesOk || !Array.isArray(lignes) || !lignes.length) return null;
+    const ids = lignes.map((l) => l.id).filter(Boolean);
+    if (!ids.length) return null;
+
+    try {
+        const { data: avant, error: eLecture } = await supabase
+            .from('comptes').select('id, xp, parties, victoires').in('id', ids);
+        if (eLecture) {
+            if (eLecture.code === '42P01') tableComptesOk = false;
+            return null;
+        }
+
+        const parId = new Map((avant || []).map((r) => [r.id, r]));
+        // ⚠️ On ne credite QUE des lignes qui existent deja. Un upsert sur un
+        // identifiant inconnu creerait un compte fantome, sans pseudo ni
+        // avatar, a partir d un `playerId` qu on n a pas verifie ici.
+        const aEcrire = lignes
+            .filter((l) => parId.has(l.id))
+            .map((l) => {
+                const r = parId.get(l.id);
+                return {
+                    id: l.id,
+                    xp: (r.xp || 0) + (l.xp || 0),
+                    parties: (r.parties || 0) + 1,
+                    victoires: (r.victoires || 0) + (l.victoire ? 1 : 0),
+                };
+            });
+        if (!aEcrire.length) return null;
+
+        // ⚠️ `pseudo` et `avatar` sont ABSENTS de l objet, donc l upsert n y
+        // touche pas : Postgres ne met a jour que les colonnes citees. Les y
+        // mettre a `undefined` les effacerait.
+        const { data, error } = await supabase
+            .from('comptes')
+            .upsert(aEcrire, { onConflict: 'id' })
+            .select('id, xp, parties, victoires');
+        if (error) throw error;
+        return data || null;
+    } catch (e) {
+        return null;
+    }
+}
+
 module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
-    // Exportes pour `npm run test:comptes` : ce sont les deux decisions qui
-    // se rejouent sans base ni reseau, et les deux qui coutent cher si elles
+    xpDeLaPartie, crediter,
+    // Exportes pour `npm run test:comptes` : ce sont les decisions qui se
+    // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.
-    natureDeLaClef, pseudoAPoser,
+    natureDeLaClef, pseudoAPoser, XP_MODES,
 };

@@ -846,7 +846,17 @@ function reglagesDeLaPartie(gameState) {
     }
 }
 
-async function recordFinishedGame({ mode, playersCount, winnerName, duration, gameState }) {
+// ⚠️ `gagnants` est une liste de **playerId**, jamais de pseudos. Deux
+// joueurs peuvent porter le meme pseudo dans un salon — rien ne l interdit —
+// et resoudre le vainqueur par son nom aurait donc credite les deux. C est
+// aussi le seul trou qu un joueur aurait eu interet a creuser : deux comptes,
+// le meme pseudo, et le bonus de victoire tombe deux fois.
+async function recordFinishedGame({ mode, playersCount, winnerName, duration, gagnants, gameState }) {
+    // 🎖️ L XP des inscrits. Lancee AVANT l ecriture de l historique et SANS
+    // `await` : les deux sont independantes, et une table `game_history`
+    // absente ne doit pas empecher un joueur de monter de niveau.
+    crediterXpDeLaPartie(gameState, mode, gagnants).catch(() => {});
+
     const entry = {
         mode,
         modeLabel: MODE_LABELS[mode] || mode,
@@ -913,6 +923,94 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration, ga
         }
         gameHistoryTableOk = false;
     }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 🎖️ L XP DE FIN DE PARTIE
+// ════════════════════════════════════════════════════════════════
+// Le bareme vit dans server-comptes.js. Ici on ne fait que repondre a deux
+// questions : QUI a joue, et QUI a gagne.
+//
+// ⚠️ ELLE S ECRIT A LA FIN DE LA MANCHE, jamais au fil de l eau. Les salons
+// vivent dans la memoire du dyno, qui est recycle tous les jours : une partie
+// coupee en plein milieu n ecrit rien, et c est architectural. Crediter au fil
+// de l eau n y changerait rien de bon — ca multiplierait seulement les ecritures
+// pour un resultat aussi perdu.
+async function crediterXpDeLaPartie(gameState, mode, gagnants) {
+    if (!comptes.ACTIF || !gameState || !gameState.players) return;
+
+    // ⚠️ Le plancher de la victoire se compte en HUMAINS. Le bot de BombAnime
+    // siege dans `players` comme un joueur : trois amis plus un bot auraient
+    // ouvert un bonus qui demande quatre joueurs.
+    const humains = humainsDuSalon(gameState);
+    if (!humains.length) return;
+
+    // ⚠️ Et en joueurs DISTINCTS. Un joueur peut figurer deux fois dans
+    // `players` — une entree laissee par une socket morte, une neuve a cote —
+    // et le compter deux fois gonflerait le salon jusqu au seuil.
+    const distincts = new Set();
+    for (const p of humains) if (p.playerId) distincts.add(p.playerId);
+    const nbJoueurs = distincts.size || humains.length;
+
+    const gagne = new Set((gagnants || []).filter(Boolean));
+    const vus = new Set();
+    const lignes = [];
+    for (const p of humains) {
+        if (!p.playerId || vus.has(p.playerId)) continue;
+        vus.add(p.playerId);
+        // Un invite ne cumule rien : il n a pas de ligne ou l ecrire. C est la
+        // seule difference que le compte fait pendant une partie.
+        if (!estUnCompte(p.playerId)) continue;
+        const r = comptes.xpDeLaPartie(mode, {
+            gagnant: gagne.has(p.playerId),
+            joueurs: nbJoueurs,
+        });
+        lignes.push({ id: p.playerId, xp: r.xp, victoire: r.victoire });
+    }
+    if (!lignes.length) return;
+
+    const profils = await comptes.crediter(lignes);
+    if (!profils || !profils.length) return;
+
+    // Renvoyer a chacun SON total : c est ce qui fait monter la barre sans
+    // rechargement.
+    //
+    // ⚠️ Un envoi par SOCKET, jamais un `diffuser` au salon : l xp d un joueur
+    // ne regarde pas les quatorze autres, et l evenement porte son profil.
+    const parId = new Map(profils.map((r) => [r.id, r]));
+    for (const [socketId, p] of gameState.players) {
+        const r = p.playerId && parId.get(p.playerId);
+        if (!r) continue;
+        io.to(socketId).emit('compte-profil', {
+            parties: r.parties || 0,
+            victoires: r.victoires || 0,
+            xp: r.xp || 0,
+        });
+    }
+}
+
+// 🏆 Qui a gagne le quiz ? La seule fin de partie dont le vainqueur ait
+// plusieurs formes : un joueur, plusieurs ex aequo, un camp, ou personne.
+function gagnantsDuQuiz(gameState, payload) {
+    const w = payload && payload.winner;
+    if (!w || w.isDraw) return [];
+
+    // 🤝 EN CAMPS, TOUT LE CAMP GAGNANT — et pas son meilleur score. Un camp
+    // gagne ensemble ; ne payer que le premier ferait jouer chacun pour soi
+    // dans le seul format qui demande le contraire.
+    if (w.team) {
+        return [...gameState.players.values()]
+            .filter((p) => p.team === w.team && !p.estBot)
+            .map((p) => p.playerId)
+            .filter(Boolean);
+    }
+
+    // Egalite en solo : les ex aequo gagnent tous. `revealTiebreakerAnswers`
+    // relance tant que les deux savent, donc on n arrive ici qu une fois le
+    // departage epuise — personne n a vole sa place.
+    if (Array.isArray(w.winners)) return w.winners.map((x) => x && x.playerId).filter(Boolean);
+
+    return w.playerId ? [w.playerId] : [];
 }
 
 async function loadRecentGamesFromDb() {
@@ -997,6 +1095,7 @@ function emitGameEnded(gameState, payload) {
         playersCount: gameState.initialPlayerCount || (payload.playersData || []).length,
         winnerName: payload.winner?.username || payload.winner?.name || null,
         duration: payload.duration,
+        gagnants: gagnantsDuQuiz(gameState, payload),
         gameState,
     });
 }
@@ -1008,6 +1107,10 @@ function emitBombanimeGameEnded(gameState, payload) {
         playersCount: gameState.initialPlayerCount || (payload.ranking || []).length,
         winnerName: payload.winner?.username || null,
         duration: payload.duration,
+        // ⚠️ Le bot peut etre le dernier debout. Il porte un `playerId` comme
+        // les autres, mais aucun compte : `estUnCompte` l ecarte de lui-meme,
+        // il n y a rien a filtrer ici.
+        gagnants: payload.winner?.playerId ? [payload.winner.playerId] : [],
         gameState,
     });
 }
@@ -3837,6 +3940,7 @@ app.post('/admin/start-game', async (req, res) => {
                     playersCount: gameState.initialPlayerCount || podium.length,
                     winnerName: winner ? winner.username : null,
                     duration: Math.round((Date.now() - debut) / 1000),
+                    gagnants: winner && winner.playerId ? [winner.playerId] : [],
                     gameState,
                 });
             },
@@ -3862,6 +3966,9 @@ app.post('/admin/start-game', async (req, res) => {
                     playersCount: gameState.initialPlayerCount || 0,
                     winnerName: nom,
                     duration: secondes,
+                    // `etat.vainqueur` EST un playerId — le moteur indexe ses
+                    // joueurs par la, pas par socket.
+                    gagnants: vainqueurId ? [vainqueurId] : [],
                     gameState,
                 });
             },
@@ -5597,6 +5704,10 @@ async function endGameByPoints(gameState) {
 
 
                 const winnerData = {
+                    // ⚠️ `playerId` est ce par quoi l xp retrouve le vainqueur
+                    // (voir `gagnantsDuQuiz`). Le pseudo ne suffit pas : rien
+                    // n interdit deux joueurs du meme nom dans un salon.
+                    playerId: winner.playerId,
                     username: winner.username,
                     points: winner.points || 0
                 };
@@ -5795,6 +5906,8 @@ async function checkTiebreakerWinner(gameState) {
 
         try {
             const winnerData = {
+                // ⚠️ Voir `gagnantsDuQuiz` : l xp se credite par playerId.
+                playerId: winner.playerId,
                 username: winner.username,
                 points: winner.points || 0
             };
@@ -6249,7 +6362,10 @@ async function endGameWithTie(gameState) {
 
     const winnerData = {
         tie: true,
+        // ⚠️ Les ex aequo gagnent TOUS l xp de victoire, d ou le playerId sur
+        // chacun. On n arrive ici qu une fois le departage epuise.
         winners: winners.map(w => ({
+            playerId: w.playerId,
             username: w.username,
             points: w.points || 0
         })),
@@ -6318,6 +6434,8 @@ async function endGame(gameState, winner) {
             gameState.lastGlobalWinner = winner.playerId;
 
             winnerData = {
+                // ⚠️ Voir `gagnantsDuQuiz` : l xp se credite par playerId.
+                playerId: winner.playerId,
                 username: winner.username,
                 correctAnswers: winner.correctAnswers,
                 livesRemaining: winner.lives
@@ -9126,6 +9244,10 @@ function terminerRush(gameState) {
         playersCount: gameState.initialPlayerCount || classement.length,
         winnerName: gagnant ? gagnant.username : null,
         duration: gameState.rush.duree,
+        // ⚠️ `rushClassement` trie et rend des playerId : le premier est le
+        // vainqueur meme s il a quitte la manche, et c est voulu — son record
+        // tient.
+        gagnants: gagnant && gagnant.playerId ? [gagnant.playerId] : [],
         gameState,
     });
 
