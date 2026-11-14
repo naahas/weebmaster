@@ -1072,6 +1072,27 @@ seul format qui demande le contraire.
 `players` comme un joueur (trois amis plus un bot auraient ouvert un bonus qui en demande quatre),
 et un joueur peut y figurer deux fois — une entrée laissée par une socket morte, une neuve à côté.
 
+⚠️ **QUI PART NE TOUCHE RIEN.** Une partie terminée, c'est une partie où l'on était encore là pour
+l'écran du vainqueur. `leave-lobby` pose donc `player.parti = true`, et `crediterXpDeLaPartie`
+écarte aussi bien `parti` que `disconnectedAt` — fermer son onglet est la façon la plus courante
+d'abandonner, et ne garder que le bouton *Quitter* laissait le trou ouvert.
+
+⚠️ **`player.parti` se pose en PREMIÈRE LIGNE de `leave-lobby`**, avant les gestionnaires de mode.
+`quitterAscension` et `quitterCollect` **terminent la partie dans la foulée** — la tour se finit
+quand tout le monde a « fini », et abandonner compte comme finir —, donc le crédit se joue *à
+l'intérieur* de ces appels. Posé après, il payait le dernier partant : deux onglets, une Ascension
+démarrée puis quittée des deux côtés, et c'était 100 XP en dix secondes.
+
+⚠️ **Et `parti` se nettoie dans `/admin/start-game`**, le seul point de passage des sept modes.
+BombAnime garde dans le cercle celui qui s'en va (le retirer redistribuerait les places au milieu
+d'un tour) : sans ce nettoyage, son drapeau le suivrait d'une manche à l'autre et il resterait
+privé d'XP pour toutes les parties du salon, en silence.
+
+ℹ️ Le prix assumé de `disconnectedAt` : un téléphone dont l'écran se verrouille coupe la socket.
+Si la partie se termine pendant ce temps, le joueur ne touche rien. Une coupure brève ne coûte
+rien — le drapeau s'efface au retour — mais c'est la raison pour laquelle on ne peut pas durcir
+davantage.
+
 ⚠️ **L'XP s'écrit À LA FIN DE LA MANCHE**, jamais au fil de l'eau. Les salons vivent dans la
 mémoire du dyno, qui est recyclé tous les jours : une partie coupée en plein milieu n'écrit rien,
 c'est architectural. Créditer au fil de l'eau n'y changerait rien de bon.

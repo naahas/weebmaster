@@ -794,8 +794,14 @@ function quitterCollect(gameState, io, playerId) {
     if (etat.ordre.length < 2) {
         etat.active = false;
         etat.vainqueur = etat.ordre[0] || null;
-        stopperMinuteries(etat);
-        diffuserEtat(gameState, io);
+        // ⚠️ `apresAction`, PAS `diffuserEtat`. Ce chemin diffusait l état et
+        // sortait : le dernier joueur voyait bien son écran de vainqueur, mais
+        // `onGameEnd` n était jamais appelé — la partie n entrait donc ni dans
+        // l historique ni dans le panneau, et elle était perdue pour toujours.
+        // C est exactement ce que le commentaire d `apresAction` promet
+        // d empêcher : un seul endroit, pour qu aucun chemin n oublie l un
+        // des trois. Celui-ci passait à côté.
+        apresAction(gameState, io, etat._onGameEnd);
         return;
     }
     // Le vol qu'il menait, ou qu'il subissait, n'a plus d'objet. La carte prise

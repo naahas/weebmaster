@@ -958,6 +958,15 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants) {
     for (const p of humains) {
         if (!p.playerId || vus.has(p.playerId)) continue;
         vus.add(p.playerId);
+        // 🚪 Parti en cours de route : rien. Une partie terminee, c est une
+        // partie ou l on etait encore la pour l ecran du vainqueur.
+        if (p.parti) continue;
+        // ⚠️ Et deconnecte au moment de la fin, c est pareil : fermer son
+        // onglet est la facon la plus courante d abandonner, et ne garder que
+        // le bouton « Quitter » aurait laisse le farm ouvert a qui ferme la
+        // fenetre. Une coupure breve ne coute rien — `disconnectedAt` est
+        // efface des le retour, et la partie dure plus longtemps qu elle.
+        if (p.disconnectedAt) continue;
         // Un invite ne cumule rien : il n a pas de ligne ou l ecrire. C est la
         // seule difference que le compte fait pendant une partie.
         if (!estUnCompte(p.playerId)) continue;
@@ -3853,8 +3862,20 @@ app.post('/bombanime/player-suggestion', async (req, res) => {
 app.post('/admin/set-lives', (req, res) => {
     const gameState = req.room;   // posée par le garde-fou d'hôte
 
-    const { lives } = req.body;
-    gameState.lives = parseInt(lives);
+    // ⚠️ LISTE BLANCHE, comme tous les autres réglages du salon. Celui-ci
+    // prenait un `parseInt` brut, sans rien vérifier — le seul du fichier.
+    // Deux conséquences qu aucun écran ne signalait :
+    //   - `lives: 0` lançait une partie où tout le monde est déjà mort ;
+    //   - `lives: "x"` posait NaN, et toute comparaison devenant fausse,
+    //     plus personne ne pouvait perdre une vie.
+    // Le tiroir ne propose que 1, 2 ou 3 : la route dit désormais la même
+    // chose. Une route ouverte ne garde pas la main de l hôte, elle garde
+    // l état du salon contre une requête faite à la main.
+    const n = parseInt(req.body && req.body.lives, 10);
+    if (![1, 2, 3].includes(n)) {
+        return res.status(400).json({ error: 'Nombre de vies invalide' });
+    }
+    gameState.lives = n;
 
     console.log(`⚙️ Vies mises à jour: ${gameState.lives}❤️`);
 
@@ -3925,7 +3946,17 @@ app.post('/admin/start-game', async (req, res) => {
             error: 'Impossible de démarrer : aucun joueur dans le lobby'
         });
     }
-    
+
+    // 🚪 Un départ appartient à SA partie, et pas aux suivantes.
+    //
+    // ⚠️ BombAnime garde dans le cercle celui qui s en va (le retirer
+    // redistribuerait les places au milieu d un tour) : son `parti` le
+    // suivrait donc d une manche à l autre, et il resterait privé d xp pour
+    // toutes les parties du salon, en silence. On repart propre à chaque
+    // départ — c est le seul endroit par lequel passent les sept modes.
+    gameState.players.forEach((p) => { delete p.parti; });
+
+
     // 🏔️ MODE ASCENSION — chacun gravit sa tour à son rythme, jouable seul
     if (gameState.lobbyMode === 'ascension') {
         gameState.initialPlayerCount = totalPlayers;
@@ -9724,6 +9755,24 @@ io.on('connection', (socket) => {
         if (!gameState) return;
         const player = gameState.players.get(socket.id);
         if (player) {
+            // 🚪 IL EST PARTI — marqué AVANT tout le reste.
+            //
+            // ⚠️ Un joueur qui s en va ne touche AUCUNE xp, même si la partie
+            // se termine proprement derrière lui : « partie terminée » veut
+            // dire « j étais là pour l écran du vainqueur ». Sans ça, le farm
+            // le plus rapide du jeu tenait en deux onglets — démarrer une
+            // Ascension et quitter des deux côtés rendait 100 xp en dix
+            // secondes, la tour se terminant quand tout le monde a « fini »
+            // et abandonner comptant comme finir.
+            //
+            // ⚠️ ET IL FAUT QUE CE SOIT LA PREMIÈRE LIGNE. Les gestionnaires
+            // de mode juste en dessous peuvent terminer la partie SUR-LE-CHAMP
+            // (`quitterAscension` et `quitterCollect` appellent la fin de
+            // partie dans la foulée) : le crédit d xp se joue donc À
+            // L INTÉRIEUR de ces appels, et le drapeau doit déjà y être.
+            // Le poser après aurait payé le dernier partant.
+            player.parti = true;
+
             // En pleine partie de BombAnime, le retirer redistribuerait les
             // places du cercle au milieu d'un tour et la mèche pointerait à
             // côté. Il y reste, éteint : le moteur sait déjà sauter un joueur
