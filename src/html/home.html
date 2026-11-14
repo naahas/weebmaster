@@ -147,6 +147,26 @@
                          telephone on viserait a cote une fois sur deux. C est tout
                          le bouton qui ouvre le panneau ; le crayon est un signe,
                          pas une commande. -->
+                    <!-- 💎 LE SOLDE, a gauche de l avatar.
+                         ⚠️ RIEN POUR UN INVITE : un « 0 » promettrait une
+                         monnaie qui ne se garde nulle part, et un tiret
+                         demanderait qu on explique pourquoi. Le panneau dit
+                         deja tout ce qu il y a a dire sur le compte.
+                         ⚠️ Et PAS LE MOT « Rubis » : le chiffre est a cote de
+                         son dessin, c est assez. Le nom ne survit que dans le
+                         `title`, pour la premiere fois ou on le croise.
+                         ⚠️ L icone est PROVISOIRE, en SVG inline et pas en
+                         fichier : a 14 px une image perdrait ses facettes, et
+                         le trace suit la couleur du texte. -->
+                    <span class="v2-moi-rubis" v-if="estConnecte"
+                          :title="compteRubis.toLocaleString('fr-FR') + ' rubis'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.7" stroke-linejoin="round">
+                            <path d="M7 3h10l4 6-9 12L3 9z"/>
+                            <path d="M3 9h18M7 3l2 6 3 12 3-12 2-6M9 9h6"/>
+                        </svg>
+                        <b>{{ compteRubis.toLocaleString('fr-FR') }}</b>
+                    </span>
                     <button class="v2-moi-av" @click="basculerProfil"
                             :class="{ ouvert: profilOuvert }" title="Mon profil">
                         <img :src="srcAvatar(avatar)" alt="" draggable="false"
@@ -312,23 +332,11 @@
                         <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
                             <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
-                            <!-- 💎 LA MONNAIE. ⚠️ Son icone est PROVISOIRE —
-                                 un rubis taille, dessine a la main en attendant
-                                 celui qu Adem fera generer. Elle vit ici en SVG
-                                 inline et pas en fichier : a 13 px, une image
-                                 perdrait ses facettes, et le trace suit la
-                                 couleur du texte sans qu on ait a la redonner. -->
-                            <div class="rubis">
-                                <span class="n">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="1.7" stroke-linejoin="round">
-                                        <path d="M7 3h10l4 6-9 12L3 9z"/>
-                                        <path d="M3 9h18M7 3l2 6 3 12 3-12 2-6M9 9h6"/>
-                                    </svg>
-                                    Rubis
-                                </span>
-                                <span class="v">{{ estConnecte ? compteRubis.toLocaleString('fr-FR') : '—' }}</span>
-                            </div>
+                            <!-- ℹ️ Pas de ligne « Rubis » ici : la monnaie vit
+                                 dans la BARRE, a gauche de l avatar, ou elle se
+                                 voit sans ouvrir quoi que ce soit. C est tout
+                                 son interet — un solde qu il faut aller
+                                 chercher ne donne envie de rien. -->
                         </div>
                         <!-- ℹ️ Pas de ligne « Expérience » : la barre juste en
                              dessous porte deja l xp, et mieux — « 80 / 200 » dit

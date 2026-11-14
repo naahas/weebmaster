@@ -7545,19 +7545,39 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-lignes.verrou { opacity: 0.5; }
 .v2-profil-lignes.verrou .v { color: #6e6e7b; }
 
-/* 💎 LA MONNAIE. Seule ligne coloree des trois, parce que c est la seule qui
-   s ACHETE : les deux autres comptent ce qu on a fait, celle-ci dit ce qu on
-   peut faire. Le rouge est eclairci (#ff8a8a) et non celui des erreurs — sur
-   une carte sombre, un rouge vif a cote d un chiffre se lit comme un
-   avertissement. */
-.v2-profil-lignes .rubis .n { color: #ff8a8a; display: inline-flex; align-items: center; gap: 0.36rem; }
-.v2-profil-lignes .rubis .v { color: #ff8a8a; }
+/* 💎 LE SOLDE DANS LA BARRE, a gauche de l avatar.
+   Il vit la et pas dans la carte du profil : une monnaie qu il faut aller
+   chercher ne donne envie de rien. Et SANS le mot « Rubis » — le chiffre est
+   collé a son dessin, c est assez.
+   ⚠️ Pas de fond ni de cadre : le coin porte deja l or de la banniere et le
+   cercle dore de l avatar. Une troisieme forme en aurait fait une barre
+   d outils. Le rubis se tient seul, par sa couleur. */
+.v2-moi-rubis {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #ff8a8a;
+    font-size: 0.92rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    /* Il se colle un peu a l avatar : la gouttiere d 1rem de la barre les
+       separait comme deux elements sans rapport, alors que le solde EST
+       celui du joueur dont on voit le portrait. */
+    margin-right: -0.3rem;
+    user-select: none;
+}
 /* ⚠️ Taille EXPLICITE sur le trace : un <svg> sans width ni height retombe
-   sur 300 × 150 px et fait exploser la ligne qui le porte. C est l erreur qui
+   sur 300 × 150 px et fait exploser la barre qui le porte. C est l erreur qui
    a deja coute quatre panneaux sur le banc de la refonte. */
-.v2-profil-lignes .rubis svg { width: 0.82rem; height: 0.82rem; flex: 0 0 auto; display: block; }
-.v2-profil-lignes.verrou .rubis .n,
-.v2-profil-lignes.verrou .rubis .v { color: #6e6e7b; }
+.v2-moi-rubis svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; display: block; }
+.v2-moi-rubis b { font-weight: 700; }
+
+@media (max-width: 480px) {
+    /* Sur telephone la barre n a que l avatar a droite : le solde peut rester,
+       mais il se resserre pour ne pas pousser le portrait vers le centre. */
+    .v2-moi-rubis { font-size: 0.82rem; gap: 0.3rem; }
+    .v2-moi-rubis svg { width: 0.85rem; height: 0.85rem; }
+}
 
 /* 🏅 Le titre du palier. ⚠️ EN CAPITALES ET ESPACE : en casse normale il se
    confondait avec « Profil local » — une mention de statut parmi d autres.
