@@ -35,65 +35,27 @@ const MIN_CLASSIQUE = 8;
 // ════════════════════════════════════════════════════════════════
 // 🏅 LE BAREME D XP — niveau et titre se DEDUISENT, ils ne se stockent pas
 // ════════════════════════════════════════════════════════════════
-// ⚠️ Il n y a ni colonne `niveau` ni colonne `titre` en base, et il ne faut
-// pas en ajouter : les deux se calculent ici a partir de l xp. Les stocker,
-// ce serait se garantir DEUX VERITES qui divergent le jour ou l on change le
-// bareme — et un bareme d xp change toujours. Un joueur se retrouverait
-// « Vétéran » en base et « Combattant » a l ecran, sans que rien ne dise
-// lequel a raison.
+// ⚠️ Il n y a pas de colonne `niveau` en base, et il ne faut pas en ajouter :
+// il se calcule a partir de l xp. La stocker, ce serait se garantir DEUX
+// VERITES qui divergent le jour ou l on change le bareme — et un bareme d xp
+// change toujours. Un joueur se retrouverait « Vétéran » en base et
+// « Combattant » a l ecran, sans que rien ne dise lequel a raison.
 //
-// ────────────────────────────────────────────────────────────────
-// La courbe : chaque niveau coute XP_PAS de plus que le precedent.
-// ────────────────────────────────────────────────────────────────
-// Le palier a longtemps ete CONSTANT (200 XP), et c etait tenable tant que
-// rien ne creditait d xp. Le bareme du serveur (`XP_MODES`, server-comptes.js)
-// l a rendu absurde : un Classique gagne vaut 400, soit DEUX NIVEAUX d un
-// coup. On ne voyait meme pas la barre bouger, on la voyait sauter.
+// ⚠️ LA COURBE ET LES TITRES ONT DEMENAGE dans `src/script/niveaux.js`, qui
+// est charge par home.html JUSTE AVANT ce fichier. Ils y vivent parce que le
+// serveur en a besoin lui aussi : le panneau /admin affiche le niveau de
+// chaque compte, et le recalculer dans sa page aurait fait exactement la
+// divergence que le paragraphe du dessus interdit.
 //
-// ⚠️ Croissance LINEAIRE, pas geometrique. Un facteur (×1,5 par niveau)
-// mettrait « Légende » a deux millions d xp : hors d atteinte, donc un titre
-// que personne ne porte, donc un titre qui ne dit plus rien. Ici il vaut
-// 22 800 — environ 190 parties. Long, mais fini.
+// `XP_BASE`, `XP_PAS`, `xpCumulee`, `niveauPourXp`, `TITRES_JOUEUR` et
+// `titrePourNiveau` viennent donc de la. ⚠️ Si la page blanchit sur un
+// « XP_BASE is not defined », c est la balise <script> de home.html qui a
+// change d ordre — niveaux.js doit passer EN PREMIER.
 //
-// Deux nombres, et ce sont les deux seuls leviers : XP_BASE est le prix du
-// niveau 2, XP_PAS ce que chaque niveau suivant coute en plus. Diviser
-// XP_PAS par deux fait monter deux fois plus vite, et rien d autre n est a
-// toucher — pas meme l affichage, qui lit la courbe au lieu de la supposer.
-const XP_BASE = 300;
-const XP_PAS = 100;
-
-// L xp cumulee qu il faut pour ATTEINDRE le niveau n. Somme d une suite
-// arithmetique, donc une forme fermee : pas de boucle pour la descente.
-function xpCumulee(n) {
-    if (n <= 1) return 0;
-    return (XP_BASE * (n - 1)) + (XP_PAS * (n - 1) * (n - 2) / 2);
-}
-
-// Le niveau atteint avec `xp`.
-//
-// ⚠️ On MONTE au lieu d inverser la formule. L inverse existe (c est une
-// racine carree) mais il rend 1,9999999 la ou il faut 2, et il faudrait de
-// toute facon corriger l arrondi — autant ne pas l introduire. La boucle fait
-// une vingtaine de tours au pire, sur une valeur que Vue met en cache.
-// La borne a 500 n est pas la pour les joueurs : elle est la pour qu un `xp`
-// absurde (NaN, Infinity, une colonne mal lue) ne fige pas la page.
-function niveauPourXp(xp) {
-    const total = Number(xp) || 0;
-    let n = 1;
-    while (n < 500 && xpCumulee(n + 1) <= total) n++;
-    return n;
-}
-
-// ⚠️ Le premier palier est a 1, donc `titrePourNiveau` trouve toujours quelque
-// chose : pas de cas « aucun titre » a gerer a l affichage.
-const TITRES_JOUEUR = [
-    { des: 1, nom: 'Novice', couleur: '#9a9aa6' },
-    { des: 3, nom: 'Apprenti', couleur: '#7fd4a0' },
-    { des: 5, nom: 'Combattant', couleur: '#6fb3f5' },
-    { des: 8, nom: 'Vétéran', couleur: '#c08cf5' },
-    { des: 12, nom: 'Maître', couleur: '#f5a65b' },
-    { des: 20, nom: 'Légende', couleur: '#FFD700' },
-];
+// ℹ️ La seule chose qu un compte peut porter en base, c est un titre
+// SPECIAL donne a la main depuis le panneau (`comptes.titre`), qui ecrase
+// celui du niveau. Ce n est pas la meme chose que stocker le titre deduit :
+// l un est une decision, l autre un doublon.
 
 // 🏠 SOMMES-NOUS CHEZ NOUS ? Sert à garder un mode fermé au public tout en le
 // laissant jouable à la maison (voir `soon` sur Choice).
@@ -227,6 +189,10 @@ createApp({
             compteParties: 0,
             compteVictoires: 0,
             compteXp: 0,
+            // Le titre SPECIAL, pose a la main depuis /admin. `null` = aucun,
+            // et c est le cas de presque tout le monde : le titre vient alors
+            // du niveau. Voir `titreJoueur`.
+            compteTitre: null,
             // ⚠️ La bibliotheque Supabase n est PAS chargee au demarrage. Elle
             // ne sert qu a qui ouvre le panneau ou revient deja connecte — soit
             // une minorite —, et l accueil est le premier contact d un viewer
@@ -1247,9 +1213,18 @@ createApp({
             return Math.min(1, this.xpDansNiveau / p);
         },
         titreJoueur() {
-            let t = TITRES_JOUEUR[0];
-            for (const x of TITRES_JOUEUR) if (this.niveauJoueur >= x.des) t = x;
-            return t;
+            // ⚠️ UN TITRE SPECIAL ECRASE CELUI DU NIVEAU. C est le seul titre
+            // qui vit en base (`comptes.titre`, pose a la main depuis le
+            // panneau) : il n est pas un doublon de la deduction, c est une
+            // decision — « Bêta-testeur », « Vainqueur du tournoi ». Un titre
+            // deduit stocke serait un doublon ; celui-la ne se deduit de rien.
+            //
+            // ⚠️ Et sa couleur est une TEINTE A PART (rose, ~345°), pas l or
+            // de Légende : sur une seule ligne de texte c est la teinte qui
+            // separe, et un titre offert qui ressemble au dernier palier
+            // ferait croire au palier.
+            if (this.compteTitre) return { nom: this.compteTitre, couleur: '#ff7a9c' };
+            return titrePourNiveau(this.niveauJoueur);
         },
         // ⚠️ L anneau est un trace SVG, pas un degrade conique : seul un trace
         // peut avoir des BOUTS ARRONDIS, et sans eux une progression de 3 %
@@ -8342,6 +8317,18 @@ createApp({
                 this.compteParties = p.parties || 0;
                 this.compteVictoires = p.victoires || 0;
                 this.compteXp = p.xp || 0;
+                // ⚠️ `|| null` et pas `p.titre` nu : une chaine vide venue de
+                // la base doit valoir « aucun titre special », sinon
+                // `titreJoueur` afficherait un titre VIDE a la place de celui
+                // du niveau — une ligne blanche, sans rien pour l expliquer.
+                this.compteTitre = p.titre || null;
+                // 🏷️ Un pseudo IMPOSE depuis le panneau gagne sur celui du
+                // joueur, et il s applique tout de suite : c est a ca qu il
+                // sert. On le pose comme le joueur l aurait tape lui-meme.
+                if (p.pseudoImpose && p.pseudoImpose !== this.username) {
+                    this.username = p.pseudoImpose;
+                    try { localStorage.setItem('pseudo', p.pseudoImpose); } catch (e) {}
+                }
             });
 
             this.socket.on('lobby-update', (data) => {

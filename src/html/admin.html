@@ -598,6 +598,43 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 }
 .s-champ.serie { font-size: .8rem; font-weight: 400; min-width: 90px; }
 .s.corrigee { background: rgba(52,211,153,.07); }
+
+/* ── 👤 LES COMPTES ────────────────────────────────────────────────
+   Une rangée par compte, comme les suggestions : le tableau du direct
+   aurait demandé huit colonnes dont quatre vides la plupart du temps
+   (titre spécial, pseudo imposé), et une colonne vide se lit comme une
+   donnée manquante plutôt que comme « rien à signaler ». */
+.cp {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .95rem 1.15rem; border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.cp:hover { background: rgba(255,255,255,.022); }
+.cp-av { width: 38px; height: 38px; border-radius: 50%; flex: 0 0 auto; object-fit: cover; }
+/* `min-width: 0` : sans lui un pseudo à rallonge pousse les chiffres hors
+   du cadre au lieu de se couper. C'est le défaut des enfants de flex. */
+.cp-qui { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .18rem; }
+.cp-nom { font-weight: 600; font-size: .98rem; cursor: text;
+          border-bottom: 1px dashed transparent; transition: border-color .15s; }
+.cp-nom:hover { border-color: rgba(255,255,255,.3); }
+.cp-sous { font-size: .76rem; color: var(--doux); display: flex; gap: .55rem; flex-wrap: wrap; }
+/* Les deux marques de ce qu'on a POSÉ à la main. Elles sont colorées parce
+   qu'elles sont rares : sur vingt comptes il y en aura deux, et c'est
+   exactement ce qu'on vient chercher dans cette vue. */
+.cp-marque { padding: .1rem .45rem; border-radius: 5px; font-weight: 600; cursor: text; }
+.cp-marque.titre  { background: rgba(255,122,156,.16); color: #ff7a9c; }
+.cp-marque.impose { background: rgba(251,113,133,.16); color: var(--rouge); }
+.cp-niv { font-variant-numeric: tabular-nums; }
+.cp-chiffres { display: flex; gap: 1.3rem; flex: 0 0 auto; }
+.cp-c { display: flex; flex-direction: column; align-items: center; gap: .1rem; min-width: 52px; }
+.cp-c b { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.cp-c span { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--doux); }
+.cp-actions { display: flex; gap: .4rem; flex: 0 0 auto; }
+.cp-champ {
+    font-family: inherit; font-size: .95rem; font-weight: 600; color: var(--texte);
+    background: rgba(0,0,0,.35); border: 1px solid var(--accent);
+    border-radius: 7px; padding: .18rem .45rem; outline: none; min-width: 140px;
+}
+.cp-vide { padding: 2.4rem 1.15rem; text-align: center; color: var(--doux); }
 .s-serie {
     font-size: .78rem; padding: .2rem .55rem; border-radius: 6px;
     background: rgba(109,92,255,.15); color: var(--accent-clair);
@@ -1089,6 +1126,11 @@ body:not(.entre) { overflow: hidden; }
             Vue d'ensemble
             <span class="temoin" id="temoin"><span class="point"></span><span id="temoin-n">0</span></span>
         </button>
+        <button class="onglet" data-vue="comptes" aria-selected="false">
+            <svg width="17" height="17"><use href="#i-gens"/></svg>
+            Comptes
+            <span class="compte" id="compte-comptes"></span>
+        </button>
         <button class="onglet" data-vue="questions" aria-selected="false">
             <svg width="17" height="17"><use href="#i-crayon"/></svg>
             Questions
@@ -1193,6 +1235,26 @@ body:not(.entre) { overflow: hidden; }
          Ajouter, lister et modifier au même endroit. Le formulaire vit
          dans une modale plutôt qu'en haut de page : la liste garde
          toute la hauteur, et c'est elle qu'on lit. -->
+    <!-- ── 👤 LES COMPTES ────────────────────────────────────────────
+         ⚠️ Tout s y corrige SUR PLACE : un clic sur le pseudo, sur le
+         titre, et l on tape. Une modale par champ, sur une vue qu on
+         ouvre justement pour corriger deux choses, personne ne s en
+         servirait — c est la leçon des suggestions.
+         Les deux gestes IRREVERSIBLES, eux, passent par la modale du
+         second mot de passe : remettre les compteurs a zero et
+         supprimer le compte. -->
+    <section class="vue vue-pleine" data-vue="comptes">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16"><use href="#i-gens"/></svg>
+                Les inscrits <small id="cp-note"></small>
+            </div>
+            <div class="defile" id="cp-liste">
+                <div class="etat">Lecture…</div>
+            </div>
+        </div>
+    </section>
+
     <section class="vue vue-pleine" data-vue="questions">
         <div class="carte">
             <div class="carte-tete">
@@ -1478,6 +1540,27 @@ body:not(.entre) { overflow: hidden; }
     </div>
 </div>
 
+<!-- ── Le second mot de passe, pour les deux gestes irréversibles d'un
+     compte. ⚠️ Une modale A PART de celle des questions : celle-ci est
+     câblée sur `BANQUES[CIBLE_TYPE]`, et l'élargir aurait mélangé deux
+     cibles qui n'ont ni les mêmes routes ni le même texte. Le mot de
+     passe, lui, est le MÊME et se partage (`CODE_SUP`) — on ne le
+     retape pas d'une modale à l'autre. -->
+<div class="voile" id="voile-cpt">
+    <div class="modale">
+        <h3 id="cpt-titre">Remettre les compteurs à zéro</h3>
+        <p id="cpt-cible"></p>
+        <div class="champ" style="margin-bottom:1rem">
+            <label>Mot de passe de suppression</label>
+            <input type="password" id="cpt-code" autocomplete="off">
+        </div>
+        <div class="modale-actions">
+            <button class="bouton" id="cpt-annuler">Annuler</button>
+            <button class="bouton danger" id="cpt-go">Confirmer</button>
+        </div>
+    </div>
+</div>
+
 <div class="voile" id="voile-sup">
     <div class="modale">
         <h3>Supprimer la question</h3>
@@ -1643,6 +1726,7 @@ function pousser(sel, cle, prop) {
 // ── Les onglets ─────────────────────────────────────────────────────
 const TITRES = {
     ensemble: ["Vue d'ensemble", 'Ce qui se joue, et ce qui a été joué'],
+    comptes: ['Comptes', 'Les joueurs inscrits, leur progression et leurs titres'],
     questions: ['Questions', 'La banque du mode Classique'],
     choice: ['Vrai / Faux', 'La banque du mode Choice'],
     suggestions: ['Suggestions', 'Les personnages proposés depuis BombAnime'],
@@ -1672,6 +1756,7 @@ document.querySelectorAll('.onglet').forEach(o => {
             $('c-rech').value = '';   // même filet que la recherche du quiz
             lireChoice();
         }
+        if (v === 'comptes' && !CHARGE.comptes) { CHARGE.comptes = true; lireComptes(); }
         if (v === 'suggestions' && !CHARGE.suggestions) { CHARGE.suggestions = true; lireSuggestions(); }
     };
 });
@@ -2864,6 +2949,211 @@ async function supprimerSuggestion(id) {
     } catch (e) { alert(e.message); }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 👤 LES COMPTES
+// ════════════════════════════════════════════════════════════════════
+let COMPTES = [];
+
+async function lireComptes() {
+    const zone = $('cp-liste');
+    if (!COMPTES.length) zone.innerHTML = '<div class="etat">Lecture…</div>';
+    try {
+        const r = await appel('/admin/site/comptes');
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Erreur ' + r.status);
+        COMPTES = d.comptes || [];
+        $('compte-comptes').textContent = COMPTES.length || '';
+        // ⚠️ On le DIT quand le SQL manque, plutôt que de laisser cliquer sur
+        // un titre qui ne s'enregistrera pas : les deux colonnes sont arrivées
+        // après la table, et une base pas à jour est le cas normal au premier
+        // déploiement.
+        $('cp-note').textContent = (COMPTES.length ? '· ' + COMPTES.length : '')
+            + (d.colonnesPretes === false ? '  ·  titre et pseudo imposé indisponibles (docs/comptes.sql à passer)' : '');
+        peindreComptes();
+    } catch (e) {
+        zone.innerHTML = '<div class="etat">' + ech(e.message) + '</div>';
+    }
+}
+
+function peindreComptes() {
+    const zone = $('cp-liste');
+    if (!COMPTES.length) {
+        zone.innerHTML = '<div class="cp-vide">Personne ne s\'est encore connecté.</div>';
+        return;
+    }
+    zone.innerHTML = COMPTES.map(c => {
+        // ⚠️ Le pseudo AFFICHE est celui qui s'applique vraiment : imposé s'il
+        // y en a un, sinon le sien. Montrer le sien en gros alors qu'un autre
+        // s'affiche en jeu ferait chercher longtemps.
+        const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
+        const sous = [];
+        if (c.pseudo_impose) {
+            sous.push('<span class="cp-marque impose" data-ch="pseudo" data-id="' + ech(c.id) +
+                '" title="Cliquer pour changer ou relâcher">imposé · il s\'appelle ' + ech(c.pseudo || '?') + '</span>');
+        }
+        sous.push('<span class="cp-niv">Niveau ' + c.niveau + ' · ' + ech(c.titreNiveau) +
+            ' · ' + c.xpDansNiveau + '/' + c.xpDuNiveau + '</span>');
+        sous.push('<span class="cp-marque titre" data-ch="titre" data-id="' + ech(c.id) +
+            '" title="Cliquer pour changer ou retirer">' +
+            (c.titre ? ech(c.titre) : '+ titre') + '</span>');
+        sous.push('<span>vu ' + ech(quandSug(c.vu_le)) + '</span>');
+
+        return '<div class="cp">' +
+            '<img class="cp-av" src="' + ech(c.avatarUrl) + '" alt="">' +
+            '<span class="cp-qui">' +
+                '<span class="cp-nom" data-ch="pseudo" data-id="' + ech(c.id) +
+                    '" title="Cliquer pour imposer un pseudo">' + ech(nom) + '</span>' +
+                '<span class="cp-sous">' + sous.join('') + '</span>' +
+            '</span>' +
+            '<span class="cp-chiffres">' +
+                '<span class="cp-c"><b>' + c.xp + '</b><span>XP</span></span>' +
+                '<span class="cp-c"><b>' + c.parties + '</b><span>Parties</span></span>' +
+                '<span class="cp-c"><b>' + c.victoires + '</b><span>Victoires</span></span>' +
+            '</span>' +
+            '<span class="cp-actions">' +
+                '<button class="mini" data-cp="zero" data-id="' + ech(c.id) + '">Remettre à zéro</button>' +
+                '<button class="mini danger" data-cp="del" data-id="' + ech(c.id) + '">Supprimer</button>' +
+            '</span></div>';
+    }).join('');
+
+    zone.querySelectorAll('[data-ch]').forEach(el => { el.onclick = () => corrigerCompte(el); });
+    zone.querySelectorAll('.mini[data-cp]').forEach(b => {
+        b.onclick = () => ouvrirCompteSup(b.dataset.cp, b.dataset.id);
+    });
+}
+
+// Un clic change le texte en champ. Entrée valide, Échap annule, perdre le
+// focus valide aussi — on clique souvent à côté après avoir tapé. Même
+// geste que la correction d'une suggestion, pour ne pas avoir deux façons
+// de corriger dans la même page.
+function corrigerCompte(el) {
+    if (el.dataset.enCours) return;
+    el.dataset.enCours = '1';
+    const champ = el.dataset.ch;          // 'pseudo' | 'titre'
+    const id = el.dataset.id;
+    const c = COMPTES.find(x => x.id === id);
+    if (!c) { delete el.dataset.enCours; return; }
+
+    const saisie = document.createElement('input');
+    saisie.type = 'text';
+    saisie.className = 'cp-champ';
+    // ⚠️ On part de la valeur POSÉE, pas de ce qui est affiché : la pastille
+    // du titre affiche « + titre » quand il n'y en a pas, et le champ serait
+    // pré-rempli avec ce libellé.
+    saisie.value = champ === 'pseudo' ? (c.pseudo_impose || '') : (c.titre || '');
+    saisie.maxLength = champ === 'pseudo' ? 20 : 40;
+    saisie.placeholder = champ === 'pseudo' ? 'vide = relâcher' : 'vide = retirer';
+    el.replaceWith(saisie);
+    saisie.focus();
+    saisie.select();
+
+    let fini = false;
+    const rendre = () => {
+        if (fini) return;
+        fini = true;
+        delete el.dataset.enCours;
+        saisie.replaceWith(el);
+    };
+
+    const valider = async () => {
+        const neuf = saisie.value.replace(/\s+/g, ' ').trim();
+        const vieux = champ === 'pseudo' ? (c.pseudo_impose || '') : (c.titre || '');
+        if (neuf === vieux) { rendre(); return; }
+        fini = true;
+        saisie.disabled = true;
+        try {
+            const r = await appel('/admin/site/compte/' + champ, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, [champ]: neuf }),
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || !d.success) throw new Error(d.error || 'Erreur ' + r.status);
+            // ⚠️ On remplace la ligne EN MÉMOIRE puis on repeint : relire
+            // toute la table pour un champ ferait une requête et perdrait la
+            // position de défilement.
+            Object.assign(c, d.compte);
+            peindreComptes();
+        } catch (e) {
+            alert(e.message);
+            fini = false;
+            saisie.disabled = false;
+            rendre();
+        }
+    };
+
+    saisie.onkeydown = (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); valider(); }
+        if (ev.key === 'Escape') { ev.preventDefault(); rendre(); }
+    };
+    saisie.onblur = valider;
+}
+
+// ── Les deux gestes irréversibles ───────────────────────────────────
+// ⚠️ Ils exigent le SECOND mot de passe, le même que pour effacer une
+// question : être entré dans le panneau ne suffit pas à effacer le profil
+// de quelqu'un. `CODE_SUP` est partagé avec la modale des questions — on ne
+// le retape pas d'une modale à l'autre.
+let CPT_ACTION = null, CPT_ID = null;
+
+function ouvrirCompteSup(action, id) {
+    const c = COMPTES.find(x => x.id === id);
+    if (!c) return;
+    CPT_ACTION = action;
+    CPT_ID = id;
+    const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
+    $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte' : 'Remettre les compteurs à zéro';
+    $('cpt-cible').textContent = action === 'del'
+        // ⚠️ On dit ce que ça fait VRAIMENT : ce n'est pas un bannissement.
+        ? '« ' + nom + " » sera supprimé de Supabase, avec son XP et ses parties. "
+          + "Il pourra se reconnecter et repartir d'un compte neuf — ce n'est pas un bannissement."
+        : '« ' + nom + ' » repartira à 0 XP, 0 partie, 0 victoire. Son titre et son pseudo ne bougent pas.';
+    $('cpt-code').value = CODE_SUP;
+    $('voile-cpt').classList.add('ouvert');
+    setTimeout(() => (CODE_SUP ? $('cpt-go') : $('cpt-code')).focus(), 30);
+}
+
+function fermerCompteSup() { $('voile-cpt').classList.remove('ouvert'); CPT_ACTION = null; CPT_ID = null; }
+$('cpt-annuler').onclick = fermerCompteSup;
+$('voile-cpt').onclick = e => { if (e.target === $('voile-cpt')) fermerCompteSup(); };
+
+$('cpt-go').onclick = async () => {
+    if (!CPT_ID) return;
+    CODE_SUP = $('cpt-code').value;
+    if (!CODE_SUP) { $('cpt-code').focus(); return; }
+    const action = CPT_ACTION, id = CPT_ID;
+    const b = $('cpt-go');
+    b.disabled = true;
+    try {
+        const chemin = action === 'del' ? '/admin/site/compte/supprimer' : '/admin/site/compte/chiffres';
+        const corps = action === 'del'
+            ? { deleteCode: CODE_SUP, id }
+            : { deleteCode: CODE_SUP, id, xp: 0, parties: 0, victoires: 0 };
+        // ⚠️ `false` : ici un 401 parle du mot de passe de SUPPRESSION, pas du
+        // code du panneau. Laisser appel() le traiter déconnecterait de tout.
+        const r = await appel(chemin, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps),
+        }, false);
+        const d = await r.json().catch(() => ({}));
+        // ⚠️ Un code refusé doit être OUBLIÉ : conservé, il reviendrait
+        // pré-rempli à la modale suivante et tout échouerait sans raison visible.
+        if (r.status === 401) { CODE_SUP = ''; throw new Error(d.error || 'Mot de passe refusé.'); }
+        if (!d.success) throw new Error(d.error || 'Erreur ' + r.status);
+
+        if (action === 'del') COMPTES = COMPTES.filter(x => x.id !== id);
+        else Object.assign(COMPTES.find(x => x.id === id) || {}, d.compte);
+        $('compte-comptes').textContent = COMPTES.length || '';
+        $('cp-note').textContent = COMPTES.length ? '· ' + COMPTES.length : '';
+        peindreComptes();
+        fermerCompteSup();
+    } catch (e) {
+        alert(e.message);
+    }
+    b.disabled = false;
+};
+
 // ── Tout relire ─────────────────────────────────────────────────────
 // ⚠️ L'historique n'est lu QU'UNE FOIS, à l'entrée : seul le direct se
 // rafraîchit tout seul (10 s). Sans ce bouton, une partie qui vient de se
@@ -2880,6 +3170,7 @@ $('b-relire').onclick = async () => {
         await Promise.all([
             lireStats(),
             lireDirect(),
+            CHARGE.comptes ? lireComptes() : null,
             CHARGE.questions ? lireQuestions() : null,
             CHARGE.choice ? lireChoice() : null,
             CHARGE.suggestions ? lireSuggestions() : null,
@@ -2905,6 +3196,7 @@ document.addEventListener('keydown', e => {
     // La plus haute d'abord : fermer celle du dessous laisserait l'autre.
     if ($('voile-gens').classList.contains('ouvert')) { fermerGens(); return; }
     if ($('voile-sup').classList.contains('ouvert')) { fermerSuppression(); return; }
+    if ($('voile-cpt').classList.contains('ouvert')) { fermerCompteSup(); return; }
     if ($('voile-q').classList.contains('ouvert')) { fermerForm(); return; }
     $('voile').classList.remove('ouvert');
 });

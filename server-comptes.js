@@ -36,6 +36,37 @@ const CLE_PUBLIQUE = process.env.SUPABASE_ANON_KEY || '';
 let tableComptesOk = true;
 
 // ════════════════════════════════════════════════════════════════
+// ⚠️ LES DEUX COLONNES ARRIVEES APRES LA TABLE
+// ════════════════════════════════════════════════════════════════
+// `titre` et `pseudo_impose` n existaient pas au depart. Les NOMMER dans un
+// `select` alors qu elles manquent ne degrade rien : ca fait echouer la
+// REQUETE ENTIERE (Postgres 42703). Resultat si le SQL n a pas ete passe en
+// production : plus de profil du tout, plus d xp credite, et rien a l ecran
+// pour le dire — la panne la plus chere possible et la moins visible.
+//
+// On retient donc leur absence apres le PREMIER refus et l on repart sur les
+// colonnes d origine. Le jeu tourne alors a l identique, sans titre special
+// ni pseudo impose. Meme garde-fou que `colonneReglagesOk` pour l historique,
+// et pour la meme raison : une colonne ajoutee apres coup se deploie toujours
+// en deux temps.
+let colonnesPanneauOk = null;
+const CHAMPS_BASE = 'id, pseudo, avatar, xp, parties, victoires';
+const CHAMPS_PLUS = CHAMPS_BASE + ', titre, pseudo_impose';
+const champsProfil = () => (colonnesPanneauOk === false ? CHAMPS_BASE : CHAMPS_PLUS);
+
+// Rend `true` si l erreur vient de ces colonnes — l appelant doit alors
+// reessayer sans elles. Ne se plaint qu UNE fois.
+function colonnesManquantes(error) {
+    if (!error || error.code !== '42703') return false;
+    if (colonnesPanneauOk !== false) {
+        colonnesPanneauOk = false;
+        console.error('🚨 Colonnes « titre » / « pseudo_impose » absentes de « comptes » — passe docs/comptes.sql.');
+        console.error('   Le jeu tourne, mais le panneau ne pourra ni imposer un pseudo ni donner un titre.');
+    }
+    return true;
+}
+
+// ════════════════════════════════════════════════════════════════
 // 🔍 Quelle clef nous a-t-on donnee ?
 // ════════════════════════════════════════════════════════════════
 // Supabase a DEUX generations de clefs et il faut tenir les deux :
@@ -158,12 +189,30 @@ async function verifierJeton(jeton) {
 // s afficher a chaque reconnexion, donc elle vit a part plutot qu enfouie dans
 // une requete : on peut la lire, et `npm run test:comptes` peut la rejouer
 // sans toucher a la base de production.
-function pseudoAPoser(demande, existant) {
-    // Rien a proposer : on ne touche a rien.
-    if (!demande) return false;
-    // Le compte a DEJA un pseudo — celui du jeu. Il gagne toujours.
-    if (existant) return false;
-    return true;
+// ⚠️ LA REGLE A CHANGE : le pseudo du jeu se RESYNCHRONISE maintenant.
+//
+// Avant, on l ecrivait au tout premier login et plus jamais. L intention
+// etait bonne — empecher « nahass#0 » de revenir ecraser le pseudo choisi
+// dans le jeu a chaque reconnexion — mais le resultat ne l etait pas : le
+// pseudo du jeu n etait JAMAIS envoye au serveur, donc il ne « gagnait »
+// pas, il n arrivait simplement pas. La colonne restait figee sur le nom
+// Discord du premier jour, et le panneau montrait un pseudo que plus
+// personne ne portait.
+//
+// Rend LA CHAINE A ECRIRE, ou `null` quand il n y a rien a faire. Pure,
+// donc rejouable sans base — voir `npm run test:comptes`.
+function pseudoAPoser(duJeu, duFournisseur, existant) {
+    // Celui du JEU gagne, et il se reecrit des qu il change. Le nom du
+    // fournisseur ne sert QUE d amorce, au tout premier login, quand le
+    // compte n a encore rien : passe cette amorce, il ne doit plus jamais
+    // revenir — c est le defaut d origine, et il reste interdit.
+    const voulu = duJeu || (existant ? null : duFournisseur);
+    if (!voulu) return null;
+    // ⚠️ Rien a changer : on ne reecrit pas. Un upsert par connexion de
+    // socket, pour reposer la meme chaine, ferait une ecriture inutile a
+    // chaque rafraichissement de page.
+    if (voulu === existant) return null;
+    return voulu;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -175,19 +224,16 @@ function pseudoAPoser(demande, existant) {
 // ⚠️ `avatar` et `pseudo` ne sont ecrits QUE s ils sont fournis. Un `undefined`
 // passe a Supabase effacerait la valeur existante — un joueur qui se reconnecte
 // sans avoir encore choisi d avatar perdrait le sien.
-async function toucherCompte(idCompte, { pseudo, avatar } = {}) {
+async function toucherCompte(idCompte, { pseudo, pseudoFournisseur, avatar } = {}) {
     if (!ACTIF || !tableComptesOk || !idCompte) return null;
 
     const ligne = { id: idCompte, vu_le: new Date().toISOString() };
     if (avatar) ligne.avatar = avatar;
 
     try {
-        // ⚠️ ON LIT AVANT D ECRIRE, et uniquement pour savoir si le compte est
-        // NEUF. Sans cette lecture, l upsert reposerait le pseudo a chaque
-        // connexion — « nahass#0 » reviendrait ecraser le pseudo choisi dans
-        // le jeu, a chaque fois, sans que rien ne l explique au joueur.
-        // Un aller-retour de plus, une seule fois par connexion : c est le
-        // prix d un pseudo qui ne bouge pas tout seul.
+        // ⚠️ ON LIT AVANT D ECRIRE, pour savoir ce que le compte porte DEJA.
+        // Sans cette lecture on ne saurait pas si le pseudo a change, et l on
+        // reecrirait la meme chaine a chaque rafraichissement de page.
         const { data: deja, error: eLecture } = await supabase
             .from('comptes').select('pseudo').eq('id', idCompte).maybeSingle();
         if (eLecture && eLecture.code === '42P01') {
@@ -195,16 +241,21 @@ async function toucherCompte(idCompte, { pseudo, avatar } = {}) {
             console.error('🚨 La table « comptes » n existe pas — passe docs/comptes.sql. Connexion sans profil.');
             return null;
         }
-        if (pseudoAPoser(pseudo, deja && deja.pseudo)) ligne.pseudo = pseudo;
+        const aEcrire = pseudoAPoser(pseudo, pseudoFournisseur, deja && deja.pseudo);
+        if (aEcrire) ligne.pseudo = aEcrire;
 
-        const { data, error } = await supabase
-            .from('comptes')
-            .upsert(ligne, { onConflict: 'id' })
-            // ⚠️ Pas de `niveau` ni de `titre` : ils se deduisent de l xp cote
-            // client. Les stocker garantirait deux verites qui divergent le
-            // jour ou le bareme change — et un bareme d xp change toujours.
-            .select('id, pseudo, avatar, xp, parties, victoires')
-            .single();
+        // ⚠️ Pas de `niveau` : il se deduit de l xp (src/script/niveaux.js).
+        // `titre` et `pseudo_impose`, eux, SONT des colonnes — ils ne se
+        // deduisent de rien, ils se posent a la main depuis le panneau. Et on
+        // retombe sur les colonnes d origine si le SQL n a pas ete passe.
+        let { data, error } = await supabase
+            .from('comptes').upsert(ligne, { onConflict: 'id' })
+            .select(champsProfil()).single();
+        if (colonnesManquantes(error)) {
+            ({ data, error } = await supabase
+                .from('comptes').upsert(ligne, { onConflict: 'id' })
+                .select(CHAMPS_BASE).single());
+        }
         if (error) {
             // 42P01 = la table n existe pas. Le SQL de docs/comptes.sql n a pas
             // ete passe : on le dit UNE fois et on arrete d essayer.
@@ -252,15 +303,17 @@ async function identifier(jeton, { pseudo, avatar, nettoyer } = {}) {
     const u = await verifierJeton(jeton);
     if (!u) return null;
 
-    let aPoser = pseudo;
-    if (!aPoser && u.nomFournisseur) {
-        const tamis = typeof nettoyer === 'function' ? nettoyer : (x) => x;
-        // `pseudoPropre` rend une chaine vide pour un pseudo refuse : on ne
-        // pose alors RIEN, et le joueur garde celui qu il avait.
-        aPoser = tamis(u.nomFournisseur) || null;
-    }
+    const tamis = typeof nettoyer === 'function' ? nettoyer : (x) => x;
+    // ⚠️ Les deux passent par le MEME tamis, et le nom du fournisseur plus
+    // encore que l autre : un pseudo Discord peut etre deplace lui aussi, et
+    // il s afficherait sur l ecran d un streamer devant son audience. Le fait
+    // qu il vienne d un fournisseur serieux ne garantit rien.
+    // `pseudoPropre` rend une chaine vide pour un pseudo refuse : on ne pose
+    // alors RIEN, et le joueur garde celui qu il avait.
+    const duJeu = pseudo ? (tamis(pseudo) || null) : null;
+    const duFournisseur = u.nomFournisseur ? (tamis(u.nomFournisseur) || null) : null;
 
-    const profil = await toucherCompte(u.id, { pseudo: aPoser, avatar });
+    const profil = await toucherCompte(u.id, { pseudo: duJeu, pseudoFournisseur: duFournisseur, avatar });
     return {
         playerId: u.id,
         compte: true,
@@ -408,7 +461,7 @@ async function crediter(lignes) {
 
     try {
         const { data: avant, error: eLecture } = await supabase
-            .from('comptes').select('id, xp, parties, victoires').in('id', ids);
+            .from('comptes').select('id, pseudo, xp, parties, victoires').in('id', ids);
         if (eLecture) {
             if (eLecture.code === '42P01') tableComptesOk = false;
             return null;
@@ -422,22 +475,39 @@ async function crediter(lignes) {
             .filter((l) => parId.has(l.id))
             .map((l) => {
                 const r = parId.get(l.id);
-                return {
+                const ligne = {
                     id: l.id,
                     xp: (r.xp || 0) + (l.xp || 0),
                     parties: (r.parties || 0) + 1,
                     victoires: (r.victoires || 0) + (l.victoire ? 1 : 0),
                 };
+                // 🏷️ LA SECONDE COUCHE DE SYNCHRONISATION DU PSEUDO.
+                //
+                // La premiere est la connexion de socket. Celle-ci rattrape
+                // le cas qui lui echappe : un joueur qui change de pseudo EN
+                // COURS DE SESSION, sans recharger la page — sa socket est
+                // deja enregistree, `register-authenticated` ne repassera
+                // pas. Sans ce filet, la base garderait l ancien jusqu au
+                // prochain rechargement, qui peut ne jamais venir.
+                //
+                // ⚠️ On n ecrit QUE si ca a change : la colonne part sinon
+                // dans chaque upsert de fin de partie, pour rien.
+                if (l.pseudo && l.pseudo !== r.pseudo) ligne.pseudo = l.pseudo;
+                return ligne;
             });
         if (!aEcrire.length) return null;
 
         // ⚠️ `pseudo` et `avatar` sont ABSENTS de l objet, donc l upsert n y
         // touche pas : Postgres ne met a jour que les colonnes citees. Les y
         // mettre a `undefined` les effacerait.
-        const { data, error } = await supabase
-            .from('comptes')
-            .upsert(aEcrire, { onConflict: 'id' })
-            .select('id, xp, parties, victoires');
+        let { data, error } = await supabase
+            .from('comptes').upsert(aEcrire, { onConflict: 'id' })
+            .select(champsProfil());
+        if (colonnesManquantes(error)) {
+            ({ data, error } = await supabase
+                .from('comptes').upsert(aEcrire, { onConflict: 'id' })
+                .select(CHAMPS_BASE));
+        }
         if (error) throw error;
         return data || null;
     } catch (e) {
@@ -445,9 +515,91 @@ async function crediter(lignes) {
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🛠️ LE PANNEAU — lire et corriger les comptes
+// ════════════════════════════════════════════════════════════════
+// ⚠️ TOUT CE QUI SUIT EST RESERVE A /admin, derriere `PANEL_ADMIN_CODE`, et
+// les deux gestes destructeurs exigent EN PLUS `QUESTION_DELETE_CODE`. Rien
+// ici ne doit etre appele depuis une route ouverte : ce sont les seules
+// fonctions du fichier qui ECRIVENT sur un compte sans que le joueur ait fait
+// quoi que ce soit.
+//
+// ⚠️ Et elles passent par `supabase` (service_role), donc RLS ne s applique
+// pas. C est voulu et c est le seul moyen de lire la table entiere — la
+// politique de `comptes` ne laisse voir a chacun que SA ligne.
+
+// ⚠️ Pas de pagination : `toutesLesLignes` existe pour les tables qui
+// grossissent (la banque a franchi les mille), mais un millier de COMPTES
+// serait une tres bonne nouvelle qu on verrait venir de loin. Le plafond est
+// pose a 1000 pour que la limite soit explicite plutot que silencieuse.
+async function listerComptes() {
+    if (!ACTIF || !tableComptesOk) return null;
+    const lire = (champs) => supabase.from('comptes')
+        .select(champs + ', cree_le, vu_le')
+        .order('vu_le', { ascending: false })
+        .limit(1000);
+
+    let { data, error } = await lire(champsProfil());
+    // ⚠️ Le panneau marche SANS les deux colonnes, en lecture seule sur ces
+    // deux champs : mieux vaut une liste sans titres qu un onglet en erreur.
+    if (colonnesManquantes(error)) ({ data, error } = await lire(CHAMPS_BASE));
+    if (error) {
+        if (error.code === '42P01') tableComptesOk = false;
+        return null;
+    }
+    return data || [];
+}
+
+// Le panneau doit pouvoir DIRE que le SQL manque, plutot que de laisser
+// cliquer sur un bouton qui echouera.
+function colonnesPanneauPretes() { return colonnesPanneauOk !== false; }
+
+// Pose, change ou efface un champ d un compte. `valeurs` ne contient que ce
+// qu on touche — un champ absent n est pas ecrase.
+async function majCompte(id, valeurs) {
+    if (!ACTIF || !tableComptesOk || !id) return null;
+    const ecrire = (champs) => supabase.from('comptes')
+        .update(valeurs).eq('id', id)
+        .select(champs + ', cree_le, vu_le').single();
+
+    let { data, error } = await ecrire(champsProfil());
+    // ⚠️ Le MEME repli que partout ailleurs, et il manquait ici : sans lui,
+    // remettre les compteurs a zero echouait sur une base ou le SQL n avait
+    // pas ete passe — l ECRITURE etait pourtant parfaitement valide, c est le
+    // `select` de retour qui nommait deux colonnes absentes. Mesure : la
+    // route rendait « Écriture impossible » alors qu elle n avait rien ecrit
+    // de fautif.
+    if (colonnesManquantes(error)) ({ data, error } = await ecrire(CHAMPS_BASE));
+    if (error) return null;
+    return data;
+}
+
+// ⚠️ SUPPRIMER POUR DE BON : on efface le COMPTE SUPABASE, pas seulement sa
+// ligne de profil. Effacer la seule ligne de `comptes` ne supprimerait rien —
+// l identite Supabase resterait, le joueur se reconnecterait et retrouverait
+// une ligne neuve a zero. C est une remise a zero, pas une suppression, et
+// confondre les deux dans un bouton nomme « Supprimer » serait un mensonge.
+//
+// Le `on delete cascade` de `comptes.id` fait partir le profil tout seul.
+//
+// ℹ️ Et ce n est PAS un bannissement : la personne peut se reconnecter avec
+// le meme Discord et repartir d un compte neuf. Il n existe aucune liste
+// noire sur ce projet, et ce bouton n en fabrique pas une.
+async function supprimerCompte(id) {
+    if (!ACTIF || !id) return { ok: false, erreur: 'Connexion aux comptes éteinte.' };
+    try {
+        const { error } = await supabase.auth.admin.deleteUser(id);
+        if (error) return { ok: false, erreur: error.message };
+        return { ok: true };
+    } catch (e) {
+        return { ok: false, erreur: e.message };
+    }
+}
+
 module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
     xpDeLaPartie, partieAssezLongue, crediter,
+    listerComptes, majCompte, supprimerCompte, colonnesPanneauPretes,
     // Exportes pour `npm run test:comptes` : ce sont les decisions qui se
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.

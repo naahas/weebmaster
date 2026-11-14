@@ -173,6 +173,10 @@ scripts/test-hote.js          les routes /admin sont-elles fermées aux visiteur
 docs/ASCENSION.md      conception du mode Ascension, mis de côté (branche archive/ascension)
 src/html/              home (le jeu), question (back-office questions), prototypes-*.html
 src/script/            app.js — le seul script du jeu
+                       niveaux.js — la courbe des niveaux et les titres. ⚠️ CHARGE DES DEUX
+                       COTES : <script> avant app.js, et `require` par server.js pour que le
+                       panneau affiche le niveau d un compte. Double sortie en bas du fichier ;
+                       ni `import` ni `export`, la balise n est pas un module
 src/style/             home.css, home-bombanime.css, home-collect.css
 src/img/               avatars, questionpic
 ```
@@ -658,10 +662,30 @@ de mise au point et `/admin/ascension/solution` resteraient ouverts.
   le CSS produit qui part en jeu, jamais ce JS. ⚠️ Le ralenti de la barre ne
   touche a aucune valeur exportee, sinon on regle au ralenti et on livre du
   ralenti. Les reglages s ecrivent dans l adresse, pour se renvoyer un choix.
-- `/admin` : **le panneau du site**, pour Adem seul. Trois onglets — **Vue d ensemble**,
-  **Questions** (la banque : ajouter, lister, modifier, supprimer) et **Suggestions**
-  (les personnages proposes depuis BombAnime). Chaque onglet ne va chercher ses donnees
-  qu a sa premiere ouverture.
+- `/admin` : **le panneau du site**, pour Adem seul. Cinq onglets — **Vue d ensemble**,
+  **Comptes**, **Questions** (la banque : ajouter, lister, modifier, supprimer),
+  **Vrai / Faux** et **Suggestions** (les personnages proposes depuis BombAnime). Chaque
+  onglet ne va chercher ses donnees qu a sa premiere ouverture.
+
+  👤 **L onglet Comptes** liste les inscrits avec leur niveau (calcule par le serveur depuis
+  `src/script/niveaux.js`, jamais recalcule dans la page), leur XP, leurs parties et leurs
+  victoires. Tout s y corrige **sur place** — un clic sur le pseudo ou sur le titre, on tape,
+  Entree : une modale par champ, sur une vue qu on ouvre justement pour corriger deux choses,
+  personne ne s en servirait. C est la lecon des suggestions.
+  ⚠️ Les deux gestes IRREVERSIBLES — **remettre les compteurs a zero** et **supprimer le
+  compte** — exigent le SECOND mot de passe, `QUESTION_DELETE_CODE`, le meme que pour effacer
+  une question. Etre entre dans le panneau ne suffit pas a effacer le profil de quelqu un.
+  ⚠️ **« Supprimer » efface l utilisateur SUPABASE**, pas seulement sa ligne de profil
+  (`auth.admin.deleteUser`, le `on delete cascade` fait partir le reste). Effacer la seule
+  ligne de `comptes` n aurait rien supprime : l identite serait restee, le joueur se serait
+  reconnecte et aurait retrouve une ligne neuve a zero — une remise a zero, pas une
+  suppression, et le bouton aurait menti. ℹ️ Ce n est pas pour autant un **bannissement** :
+  il peut revenir avec le meme Discord et repartir d un compte neuf. Il n existe aucune liste
+  noire sur ce projet.
+  `npm run test:comptes-panneau` tient le tout — il **fabrique son propre compte** (un
+  utilisateur Supabase sur un domaine `.invalid`, qui ne peut exister nulle part), s en sert
+  pour les deux gestes destructeurs, puis le supprime. Sans ca, eprouver « remettre a zero »
+  coutait l XP de quelqu un, donc on ne l aurait pas eprouve.
   ⚠️ `codeBackOffice()` accepte desormais DEUX clefs : `adminCode` =
   `QUESTION_ADMIN_CODE` (la porte historique, dont `/saisie` se sert encore) et l en-tete
   `X-Admin-Code` = `PANEL_ADMIN_CODE`. Le panneau est la porte LARGE — il ouvre deja
@@ -1059,8 +1083,15 @@ jamais bougé n'aurait aucune explication à l'écran.
 
 ### La courbe des niveaux
 
-Dans `app.js`, **deux constantes et rien d'autre** : `XP_BASE` (300, le prix du niveau 2) et
-`XP_PAS` (100, ce que chaque niveau suivant coûte en plus). Cumulé : `50·(n−1)·(n+4)`.
+Dans **`src/script/niveaux.js`**, **deux constantes et rien d'autre** : `XP_BASE` (300, le prix du
+niveau 2) et `XP_PAS` (100, ce que chaque niveau suivant coûte en plus). Cumulé : `50·(n−1)·(n+4)`.
+
+⚠️ **Le fichier est lu des DEUX CÔTÉS** : `home.html` le charge en `<script>` **avant `app.js`**,
+et `server.js` le `require` pour que le panneau `/admin` affiche le niveau de chaque compte. Il
+vit à part pour cette seule raison — recalculer la courbe dans la page du panneau aurait fait
+diverger le jeu et le panneau sur le profil des joueurs. Double sortie en bas du fichier ; **ni
+`import` ni `export`**, la balise `<script>` n'est pas un module et un `export` y blanchirait la
+page. Si la page blanchit sur `XP_BASE is not defined`, c'est l'ordre des deux balises.
 Apprenti (3) à 700, Combattant (5) à 1 800, Vétéran (8) à 4 200, Maître (12) à 8 800,
 Légende (20) à **22 800** — environ 190 parties.
 
@@ -1158,6 +1189,39 @@ Classique à quinze inscrits ferait trente allers-retours sur la boucle que tous
 (Choice a la sienne). Sans elle il tombe sur `XP_DEFAUT` en silence. Le défaut paye **peu mais
 jamais zéro** : à zéro, le joueur verrait son XP s'arrêter sans pouvoir dire depuis quand.
 `npm run test:comptes` le tient — il vérifie que les huit modes du jeu ont leur ligne.
+
+### Le pseudo d'un compte, et les deux colonnes du panneau
+
+`comptes.pseudo` **se resynchronise** sur le pseudo du jeu. Il ne le faisait pas : il n'était
+jamais envoyé au serveur, donc il restait figé sur le nom Discord du premier login — le commentaire
+promettait « ensuite c'est celui du jeu qui gagne », mais le pseudo du jeu n'arrivait pas. Deux
+couches, et il faut les deux :
+
+1. **À la connexion de socket** — `register-authenticated` passe `pseudo: data.username`.
+2. **À la fin de chaque partie** — `crediterXpDeLaPartie` le joint au crédit. C'est le filet pour
+   qui change de pseudo **en cours de session** : sa socket est déjà enregistrée,
+   `register-authenticated` ne repassera pas.
+
+`pseudoAPoser(duJeu, duFournisseur, existant)` décide, et rend la chaîne à écrire ou `null`. ⚠️ Le
+nom du fournisseur reste une **amorce** : passé le premier login, il ne revient jamais — c'était le
+défaut d'origine et il reste fermé.
+
+**Deux colonnes se posent à la main depuis `/admin`**, et elles ne se déduisent de rien :
+
+- **`titre`** — un titre spécial (« Bêta-testeur »). Rempli, il **écrase** celui du niveau, dans
+  une teinte à part (rose `#ff7a9c`, pas l'or de Légende : sur une ligne de texte c'est la teinte
+  qui sépare, et un titre offert qui ressemble au dernier palier ferait croire au palier).
+- **`pseudo_impose`** — le pseudo qu'on force. Il gagne sur tout et le joueur l'adopte à la volée
+  (`compte-profil` le porte). ⚠️ **Deux colonnes et non une** : écraser `pseudo` aurait perdu ce
+  qu'il voulait s'appeler, donc ce qu'il reprendra dès qu'on le relâche.
+
+⚠️ **Les deux sont arrivées APRÈS la table**, donc les nommer dans un `select` quand elles manquent
+fait échouer la **requête entière** (42703) — plus de profil du tout, plus d'XP, et rien à l'écran
+pour le dire. `colonnesManquantes()` retient leur absence au premier refus et tout repart sur les
+colonnes d'origine ; le panneau l'affiche au lieu de laisser cliquer. Même garde-fou que
+`colonneReglagesOk`. ⚠️ Il doit être posé sur **les quatre** lectures (`toucherCompte`, `crediter`,
+`listerComptes`, `majCompte`) — oublié sur la dernière, « remettre à zéro » échouait alors que
+l'écriture, elle, était parfaitement valide : c'était le `select` de retour qui fautait.
 
 ℹ️ Le total revient au client par l'événement socket **`compte-profil`**, qui sert deux fois : à la
 connexion, et à la fin de chaque partie. C'est ce qui fait monter la barre sans rechargement. Il

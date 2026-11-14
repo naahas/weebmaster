@@ -124,12 +124,35 @@ create policy "chacun lit son compte"
 --   alter table public.comptes
 --       add column if not exists victoires integer not null default 0;
 --
--- ⚠️ IL N'Y A PAS DE COLONNE `niveau` NI `titre`, ET IL NE DOIT PAS Y EN
--- AVOIR. Les deux se déduisent de `xp` côté client (`PAR_NIVEAU` et `TITRES`
--- dans app.js). Les stocker, ce serait se garantir deux vérités qui divergent
--- le jour où le barème change — et un barème d'XP change toujours. Un joueur
--- se retrouverait « Vétéran » en base et « Combattant » à l'écran, sans que
--- rien ne dise lequel a raison.
+-- ⚠️ IL N'Y A PAS DE COLONNE `niveau`, ET IL NE DOIT PAS Y EN AVOIR. Il se
+-- déduit de `xp` (`src/script/niveaux.js`, lu par le navigateur ET par le
+-- serveur). Le stocker, ce serait se garantir deux vérités qui divergent le
+-- jour où le barème change — et un barème d'XP change toujours. Un joueur se
+-- retrouverait « Vétéran » en base et « Combattant » à l'écran, sans que rien
+-- ne dise lequel a raison.
+--
+-- ============================================================
+-- AJOUT APRÈS COUP : le titre spécial et le pseudo imposé
+-- ============================================================
+--
+--   alter table public.comptes
+--       add column if not exists titre          text,
+--       add column if not exists pseudo_impose  text;
+--
+-- ⚠️ `titre` N'EST PAS le titre déduit du niveau, et c'est toute la
+-- différence avec le paragraphe du dessus. Il est NULL pour presque tout le
+-- monde ; rempli, il ÉCRASE celui du niveau. « Bêta-testeur », « Vainqueur du
+-- tournoi » : ça ne se déduit de rien, donc ça doit se stocker. Un titre
+-- déduit stocké serait un doublon ; celui-là est une décision.
+--
+-- ⚠️ `pseudo_impose` est la réponse au pseudo que personne ne veut voir sur
+-- l'écran d'un streamer. Rempli, il gagne sur TOUT — sur le pseudo du jeu
+-- comme sur celui du fournisseur — et le joueur le reçoit à sa prochaine
+-- connexion, son navigateur l'adopte. Le vider le relâche.
+--   `pseudo`        = ce qu'il s'appelle, synchronisé depuis le jeu
+--   `pseudo_impose` = ce qu'on lui impose, et qui gagne
+-- Deux colonnes et non une : écraser `pseudo` aurait perdu l'information de
+-- ce qu'il voulait s'appeler, donc de ce qu'il remettra dès qu'on le relâche.
 --
 -- ============================================================
 -- REMISE À ZÉRO

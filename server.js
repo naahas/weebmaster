@@ -13,6 +13,11 @@ const { db, supabase, SERIES_FILTERS, getFilterSeries, invaliderBanque, toutesLe
 // publique, `comptes.ACTIF` vaut false et le jeu tourne exactement comme
 // avant, sans bouton de connexion. Un compte n est JAMAIS requis pour jouer.
 const comptes = require('./server-comptes');
+// ⚠️ LE MEME FICHIER QUE CELUI QUE LE NAVIGATEUR CHARGE (home.html le prend
+// en <script> avant app.js). Le panneau /admin affiche le niveau de chaque
+// compte : le recalculer ici aurait fait deux courbes a tenir d accord, et
+// elles auraient diverge au premier changement de bareme.
+const niveaux = require('./src/script/niveaux');
 
 const app = express();
 
@@ -991,7 +996,12 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             gagnant: gagne.has(p.playerId),
             joueurs: nbJoueurs,
         });
-        lignes.push({ id: p.playerId, xp: r.xp, victoire: r.victoire });
+        // 🏷️ LA SECONDE COUCHE DE SYNCHRONISATION DU PSEUDO. La premiere est
+        // la connexion de socket ; celle-ci rattrape le joueur qui change de
+        // pseudo EN COURS DE SESSION, sans recharger — sa socket est deja
+        // enregistree, `register-authenticated` ne repassera pas.
+        // `crediter` ne l ecrit que s il a change.
+        lignes.push({ id: p.playerId, xp: r.xp, victoire: r.victoire, pseudo: p.username });
     }
     if (!lignes.length) return;
 
@@ -1011,6 +1021,8 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             parties: r.parties || 0,
             victoires: r.victoires || 0,
             xp: r.xp || 0,
+            titre: r.titre || null,
+            pseudoImpose: r.pseudo_impose || null,
         });
     }
 }
@@ -6976,6 +6988,152 @@ app.post('/admin/site/supprimer', async (req, res) => {
     }
 });
 
+// ════════════════════════════════════════════════════════════════
+// 👤 LES COMPTES, DEPUIS LE PANNEAU
+// ════════════════════════════════════════════════════════════════
+// ⚠️ Toutes derriere `gardePanneau` (PANEL_ADMIN_CODE), et les deux gestes
+// IRREVERSIBLES — remise a zero et suppression — exigent EN PLUS le second
+// mot de passe, le meme que celui qui efface une question. Etre entre dans le
+// panneau ne suffit pas a effacer le profil de quelqu un.
+
+app.get('/admin/site/comptes', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const lignes = await comptes.listerComptes();
+    if (!lignes) return res.status(503).json({ error: 'Table « comptes » illisible (SQL passé ?).' });
+    res.json({
+        // Le panneau le DIT plutôt que de laisser cliquer sur un bouton
+        // qui échouera : sans les deux colonnes, titre et pseudo imposé
+        // n'existent pas en base.
+        colonnesPretes: comptes.colonnesPanneauPretes(),
+        comptes: lignes.map((c) => {
+            const niveau = niveaux.niveauPourXp(c.xp);
+            return Object.assign({}, c, {
+                // ⚠️ L URL se fabrique ICI, jeton de version compris. La
+                // recomposer dans la page la ferait diverger de celle du jeu,
+                // et le dossier est servi en « immutable » pour un an : un
+                // avatar remplace resterait l ancien dans le panneau seul.
+                avatarUrl: srcAvatarServeur(c.avatar),
+                niveau,
+                // ⚠️ Le titre DEDUIT part a part de `titre`, qui est le titre
+                // special. La page doit pouvoir dire « Maître, sauf qu on lui
+                // a donne Bêta-testeur » — avec un seul champ, on ne saurait
+                // plus ce qu on ecrase.
+                titreNiveau: niveaux.titrePourNiveau(niveau).nom,
+                xpDansNiveau: c.xp - niveaux.xpCumulee(niveau),
+                xpDuNiveau: niveaux.xpCumulee(niveau + 1) - niveaux.xpCumulee(niveau),
+            });
+        }),
+    });
+});
+
+// 🏷️ Le pseudo IMPOSE. Vide = on relache le joueur, qui reprend le sien.
+app.post('/admin/site/compte/pseudo', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    // ⚠️ Il passe par le MEME tamis que n importe quel pseudo du jeu. Rien ne
+    // dit qu un pseudo impose soit convenable du seul fait qu il vient du
+    // panneau, et il s affichera sur l ecran d un streamer comme les autres.
+    const brut = typeof req.body.pseudo === 'string' ? req.body.pseudo.trim() : '';
+    const propre = brut ? pseudoPropre(brut) : '';
+    if (brut && !propre) return res.status(400).json({ error: 'Ce pseudo est refusé par le filtre.' });
+
+    const r = await comptes.majCompte(id, { pseudo_impose: propre || null });
+    if (!r) return res.status(500).json({ error: 'Écriture impossible.' });
+
+    // Il s applique TOUT DE SUITE si le joueur est en ligne : un pseudo impose
+    // qui attendrait la prochaine connexion ne servirait a rien le jour ou il
+    // sert vraiment, c est-a-dire pendant un direct.
+    poussierProfil(id, r);
+    console.log(`🏷️ Pseudo imposé sur ${id} : ${propre || '(relâché)'}`);
+    res.json({ success: true, compte: r });
+});
+
+// 🎖️ Le titre SPECIAL. Vide = il retombe sur celui de son niveau.
+app.post('/admin/site/compte/titre', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    const titre = typeof req.body.titre === 'string' ? req.body.titre.trim().slice(0, 40) : '';
+    const r = await comptes.majCompte(id, { titre: titre || null });
+    if (!r) return res.status(500).json({ error: 'Écriture impossible.' });
+
+    poussierProfil(id, r);
+    console.log(`🎖️ Titre sur ${id} : ${titre || '(retiré)'}`);
+    res.json({ success: true, compte: r });
+});
+
+// ⚠️ LES COMPTEURS. Irréversible — on ne retrouve pas l xp d avant — donc
+// second mot de passe.
+app.post('/admin/site/compte/chiffres', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    if (!codeSuppression(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    const valeurs = {};
+    for (const champ of ['xp', 'parties', 'victoires']) {
+        if (req.body[champ] === undefined) continue;
+        const n = parseInt(req.body[champ], 10);
+        // ⚠️ Borne HAUTE autant que basse : une faute de frappe a dix
+        // chiffres passerait l entier de Postgres et ferait echouer
+        // l ecriture avec une erreur que personne ne saurait lire.
+        if (!Number.isInteger(n) || n < 0 || n > 9999999) {
+            return res.status(400).json({ error: `Valeur invalide pour « ${champ} ».` });
+        }
+        valeurs[champ] = n;
+    }
+    if (!Object.keys(valeurs).length) return res.status(400).json({ error: 'Rien à changer.' });
+
+    const r = await comptes.majCompte(id, valeurs);
+    if (!r) return res.status(500).json({ error: 'Écriture impossible.' });
+
+    poussierProfil(id, r);
+    console.log(`🔢 Compteurs de ${id} : ${JSON.stringify(valeurs)}`);
+    res.json({ success: true, compte: r });
+});
+
+// ⚠️ LA SUPPRESSION. Second mot de passe, comme pour une question.
+app.post('/admin/site/compte/supprimer', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    if (!codeSuppression(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    const r = await comptes.supprimerCompte(id);
+    if (!r.ok) return res.status(500).json({ error: r.erreur || 'Suppression impossible.' });
+
+    // ⚠️ Il cesse d etre un compte TOUT DE SUITE, sans quoi il continuerait de
+    // cumuler de l xp sur une ligne qui n existe plus — `crediter` ne trouve
+    // rien a mettre a jour et echoue en silence, ce qui ne se verrait nulle part.
+    comptesVerifies.delete(id);
+    console.log(`🗑️ Compte ${id} supprimé depuis le panneau`);
+    res.json({ success: true });
+});
+
+// Renvoie son profil a un joueur en ligne, sur toutes ses sockets.
+//
+// ⚠️ On parcourt TOUS les salons : rien ne dit ou il est, et il peut figurer
+// dans deux a la fois — c est le cas courant de qui enchaine deux parties.
+// Muet s il n est nulle part : c est le cas normal, pas une erreur.
+function poussierProfil(idCompte, profil) {
+    if (!profil) return;
+    const charge = {
+        parties: profil.parties || 0,
+        victoires: profil.victoires || 0,
+        xp: profil.xp || 0,
+        titre: profil.titre || null,
+        pseudoImpose: profil.pseudo_impose || null,
+    };
+    for (const r of rooms.values()) {
+        for (const [socketId, p] of r.players) {
+            if (p.playerId === idCompte) io.to(socketId).emit('compte-profil', charge);
+        }
+    }
+}
+
 app.post('/admin/site/vider', async (req, res) => {
     if (!gardePanneau(req, res)) return;
     try {
@@ -9456,22 +9614,36 @@ io.on('connection', (socket) => {
         if (data && data.jeton && comptes.ACTIF) {
             comptes.identifier(data.jeton, {
                 avatar: data.avatar || null,
-                // Le pseudo du fournisseur ne sert qu'au tout premier login ;
-                // ensuite c'est celui du jeu qui gagne (server-comptes.js).
+                // 🏷️ LE PSEUDO DU JEU, et c'est la PREMIÈRE des deux couches
+                // de synchronisation. Il n'était pas envoyé du tout : la
+                // colonne restait figée sur le nom Discord du premier login,
+                // et le panneau montrait un pseudo que plus personne ne
+                // portait. Celui du fournisseur ne sert plus que d'amorce,
+                // quand le compte est tout neuf (server-comptes.js).
+                pseudo: data.username,
+                // ⚠️ Le tamis s'applique aux DEUX — celui du jeu comme celui
+                // du fournisseur. Un pseudo Discord peut être déplacé lui
+                // aussi, et il s'affichera sur l'écran d'un streamer.
                 nettoyer: pseudoPropre,
             }).then((r) => {
                 if (!r || r.playerId !== data.playerId) return;
                 marquerCompte(data.playerId);
                 // ⚠️ Le profil part vers CETTE socket seulement, jamais au
                 // salon : les statistiques d'un joueur ne regardent que lui.
-                // Et on n'envoie ni niveau ni titre — ils se déduisent de
-                // l'XP côté client, et les calculer ici donnerait deux
-                // barèmes à tenir d'accord.
+                // Et on n'envoie PAS le niveau — il se déduit de l'XP, des
+                // deux côtés, depuis le même `src/script/niveaux.js`.
+                //
+                // ⚠️ `titre` et `pseudoImpose`, eux, PARTENT : ils ne se
+                // déduisent de rien. Ce sont les deux seules choses qu'un
+                // compte porte en base et que le client ne peut pas trouver
+                // tout seul.
                 if (r.profil) {
                     socket.emit('compte-profil', {
                         parties: r.profil.parties || 0,
                         victoires: r.profil.victoires || 0,
                         xp: r.profil.xp || 0,
+                        titre: r.profil.titre || null,
+                        pseudoImpose: r.profil.pseudo_impose || null,
                     });
                 }
             }).catch(() => { /* réseau coupé : il reste un invité */ });

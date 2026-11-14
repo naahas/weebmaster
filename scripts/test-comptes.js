@@ -41,12 +41,35 @@ verif('du n importe quoi', 'inconnue', c.natureDeLaClef('bonjour'));
 verif('un JWT sans role', 'inconnue', c.natureDeLaClef(jwt(undefined)));
 
 console.log('\n=== 2. Quand ecrit-on le pseudo ? ===');
-verif('premier login : on pose celui du fournisseur', true, c.pseudoAPoser('nahass#0', null));
-verif('premier login, ligne vide ( chaine )', true, c.pseudoAPoser('Adem', ''));
-verif('⚠️ reconnexion : le pseudo du JEU gagne', false, c.pseudoAPoser('nahass#0', 'Naahas'));
-verif('rien a proposer : on ne touche a rien', false, c.pseudoAPoser(null, 'Naahas'));
-verif('rien a proposer et rien en base', false, c.pseudoAPoser(null, null));
-verif('pseudo refuse par le tamis (chaine vide)', false, c.pseudoAPoser('', null));
+// `pseudoAPoser(duJeu, duFournisseur, existant)` rend LA CHAINE A ECRIRE,
+// ou `null` quand il n y a rien a faire.
+
+// Le nom du fournisseur n est qu une AMORCE, au tout premier login.
+verif('compte neuf, pas de pseudo de jeu : on amorce avec le fournisseur',
+    'nahass#0', c.pseudoAPoser(null, 'nahass#0', null));
+verif('compte neuf, ligne vide ( chaine )',
+    'nahass#0', c.pseudoAPoser(null, 'nahass#0', ''));
+verif('compte neuf AVEC un pseudo de jeu : c est lui qu on pose',
+    'Naahas', c.pseudoAPoser('Naahas', 'nahass#0', null));
+
+// ⚠️ LE DEFAUT D ORIGINE, ET IL RESTE FERME : passe l amorce, le nom du
+// fournisseur ne doit PLUS JAMAIS revenir. Un joueur qui a choisi son pseudo
+// ne doit pas le voir redevenir « nahass#0 » a chaque reconnexion — il ne
+// comprendrait meme pas d ou ca vient.
+verif('⚠️ le fournisseur ne revient JAMAIS sur un compte qui a deja un pseudo',
+    null, c.pseudoAPoser(null, 'nahass#0', 'Naahas'));
+
+// ⚠️ CE QUI A CHANGE : le pseudo du jeu se RESYNCHRONISE. Avant, il n etait
+// jamais envoye au serveur — la colonne restait figee sur le nom Discord du
+// premier jour et le panneau montrait un pseudo que plus personne ne portait.
+verif('⚠️ le pseudo du jeu a change : on le reecrit',
+    'Senpai174', c.pseudoAPoser('Senpai174', 'nahass#0', 'Naahas'));
+verif('⚠️ il n a PAS change : on n ecrit rien',
+    null, c.pseudoAPoser('Naahas', 'nahass#0', 'Naahas'));
+
+verif('rien a proposer du tout', null, c.pseudoAPoser(null, null, 'Naahas'));
+verif('rien a proposer et rien en base', null, c.pseudoAPoser(null, null, null));
+verif('pseudo refuse par le tamis (chaine vide)', null, c.pseudoAPoser('', '', null));
 
 console.log('\n=== 3. Ce qui part vraiment au navigateur ===');
 const cfg = c.configPourNavigateur();
