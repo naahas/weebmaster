@@ -7415,7 +7415,14 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-profil-rang {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    /* ⚠️ Il porte DEUX choses depuis que le rang et le titre se séparent, et
+       sans cet écart elles se collaient : « NOVICE Chasseur » se lisait comme
+       un seul mot composé. `baseline` et non `center` — ce sont deux textes
+       de tailles différentes, les aligner par le milieu faisait flotter le
+       rang au-dessus de la ligne du titre. */
+    gap: 0.45rem;
+    flex-wrap: wrap;
     font-size: 0.68rem;
     color: var(--text-secondary);
     /* Voir `.v2-profil-nom` : les deux marges du pointillé se règlent ensemble. */
@@ -7545,6 +7552,19 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-lignes.verrou { opacity: 0.5; }
 .v2-profil-lignes.verrou .v { color: #6e6e7b; }
 
+/* 💎 La ligne de la monnaie. Seule des trois a etre doree, parce que c est la
+   seule qui S ACHETE : les deux autres comptent ce qu on a fait, celle-ci dit
+   ce qu on peut faire. */
+.v2-profil-lignes .rubis .n { color: #f0c75e; display: inline-flex; align-items: center; gap: 0.38rem; }
+.v2-profil-lignes .rubis .v { color: #f0c75e; }
+/* ⚠️ La HAUTEUR decide, la largeur suit : le gemme fait 149 × 160, lui
+   imposer un carre l ecraserait. Et une taille EXPLICITE est obligatoire —
+   une image sans dimension prend celle de son fichier et fait exploser la
+   ligne qui la porte. */
+.v2-profil-lignes .rubis img { height: 0.9rem; width: auto; flex: 0 0 auto; display: block; }
+.v2-profil-lignes.verrou .rubis .n,
+.v2-profil-lignes.verrou .rubis .v { color: #6e6e7b; }
+
 /* 💎 LE SOLDE DANS LA BARRE, a gauche de l avatar.
    Il vit la et pas dans la carte du profil : une monnaie qu il faut aller
    chercher ne donne envie de rien. Et SANS le mot « Rubis » — le chiffre est
@@ -7613,17 +7633,22 @@ body.game-active:has(.poll-game-container) #particles-js {
    comme une seule phrase coupee en deux (« VÉTÉRAN SHINIGAMI DES OMBRES »).
    La casse separe mieux que la teinte a cette taille. */
 .v2-profil-exploit {
-    font-size: 0.72rem;
+    /* Sur TOUTE la largeur du corps, en tete : il a quitte l en-tete, ou il
+       n avait que la moitie de la carte et sortait tronque. */
+    text-align: center;
+    padding: 0.1rem 0 0.55rem;
+    font-size: 0.88rem;
     font-style: italic;
     color: #c9a227;
-    /* ⚠️ Il peut etre long — « Purificateur de l'infini » fait vingt-trois
-       caracteres dans une carte de 16rem. On le coupe plutot que de laisser
-       la carte s elargir : sa largeur est calculee ailleurs et tout en
-       depend, a commencer par la pointe de bulle. */
+    /* ⚠️ IL PASSE A LA LIGNE, il ne se coupe PAS. « Shinigami des ombres »
+       est un titre de longueur ordinaire et il sortait tronque — mesure :
+       « Shinigami des ombr… » dans une carte de 16rem. Un titre qu on ne peut
+       pas lire n est pas une recompense, et c est le seul endroit du jeu ou
+       il s affiche. L en-tete grandit d une ligne, c est le bon echange.
+       ⚠️ La carte, elle, ne s elargit pas : sa largeur est calculee ailleurs
+       et la pointe de bulle en depend. */
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.3;
 }
 
 /* ✦ Le trait entre les statistiques et le niveau. Ce ne sont pas les memes

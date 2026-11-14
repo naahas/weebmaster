@@ -2449,6 +2449,15 @@ app.get('/prototypes/connexion', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-connexion.html');
 });
 
+// 💎 Ou poser le SOLDE a cote de l avatar : huit formes, sur une maquette du
+// vrai coin haut-droit. ⚠️ Le fond n y est pas decoratif — un badge dore se
+// juge sur le degrade d or de l accueil, pas sur du noir, et c est justement
+// la qu il disparait. Trois soldes au curseur (0, 3 333, 128 450) : un badge
+// qui tient a quatre chiffres peut deborder a six.
+app.get('/prototypes/monnaie', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-monnaie.html');
+});
+
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
 // ⚠️ Ecarte — les deux chargeaient la barre. Garde comme trace du pourquoi.
 app.get('/prototypes/compte-place', (req, res) => {

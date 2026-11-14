@@ -292,17 +292,13 @@
                                      lit d un joueur. -->
                                 <span v-if="estConnecte" class="v2-profil-titre"
                                       :style="{ color: rangJoueur.couleur }">{{ rangJoueur.nom }}</span>
-                                <!-- 🎖️ LE TITRE, et seulement s il en porte un.
-                                     ⚠️ C est autre chose que le rang : il se
-                                     gagne, s achete ou se donne, il se COMPOSE
-                                     (prefixe + suffixe) et la plupart des
-                                     joueurs n en ont aucun. Une ligne vide
-                                     laissee a sa place aurait fait croire a un
-                                     defaut d affichage ; absente, elle ne
-                                     promet rien. -->
-                                <span v-if="estConnecte && titrePorte"
-                                      class="v2-profil-exploit">{{ titrePorte }}</span>
-                                <span v-else-if="!estConnecte">Profil local</span>
+                                <!-- ℹ️ LE TITRE N EST PLUS ICI. Il a sa propre
+                                     ligne en tete du corps : a cote du rang,
+                                     il n avait que la moitie d une carte de
+                                     16rem — l avatar prend le reste — et
+                                     « Shinigami des ombres » sortait tronque.
+                                     Un titre se gagne, il doit se lire. -->
+                                <span v-if="!estConnecte">Profil local</span>
                             </div>
                         </div>
                         <button class="v2-profil-fermer" @click="fermerProfil" title="Fermer">✕</button>
@@ -314,6 +310,16 @@
                          c est l accumulation de traits qui faisait paraitre les
                          versions precedentes brouillonnes. -->
                     <div class="v2-profil-corps">
+                    <!-- 🎖️ LE TITRE PORTE, sur toute la largeur.
+                         ⚠️ Il etait a cote du rang, dans l en-tete : il n y
+                         avait que la moitie d une carte de 16rem — l avatar
+                         prend le reste — et « Shinigami des ombres », qui est
+                         de longueur tout a fait ordinaire, en sortait tronque.
+                         Ici il a la carte entiere et ne se coupe plus.
+                         ⚠️ Et seulement s il en porte un : la plupart des
+                         joueurs n en ont aucun, et une ligne vide laissee a sa
+                         place ferait croire a un defaut d affichage. -->
+                    <div class="v2-profil-exploit" v-if="estConnecte && titrePorte">{{ titrePorte }}</div>
                     <div class="v2-profil-err" v-if="pseudoError">{{ pseudoError }}</div>
 
                     <!-- ⚠️ Rien ne s affiche si la connexion n est pas configuree
@@ -351,11 +357,21 @@
                         <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
                             <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
-                            <!-- ℹ️ Pas de ligne « Rubis » ici : la monnaie vit
-                                 dans la BARRE, a gauche de l avatar, ou elle se
-                                 voit sans ouvrir quoi que ce soit. C est tout
-                                 son interet — un solde qu il faut aller
-                                 chercher ne donne envie de rien. -->
+                            <!-- 💎 LA MONNAIE, ici AUSSI. Elle vit d abord dans
+                                 la barre, ou elle se voit sans rien ouvrir ;
+                                 cette ligne-ci est son chiffre exact, a cote
+                                 des deux autres compteurs. Les deux ne font
+                                 pas doublon : l une se croise, l autre se
+                                 consulte. -->
+                            <!-- ⚠️ PAS LE MOT « Rubis » : le gemme tient lieu
+                                 de libelle, comme dans la barre. Les deux
+                                 autres lignes sont nommees parce qu un
+                                 chiffre nu ne dirait pas de quoi il s agit ;
+                                 celle-ci porte son dessin, c est assez. -->
+                            <div class="rubis">
+                                <span class="n"><img src="smoney.webp" alt="Rubis" draggable="false"></span>
+                                <span class="v">{{ estConnecte ? compteRubis.toLocaleString('fr-FR') : '—' }}</span>
+                            </div>
                         </div>
                         <!-- ℹ️ Pas de ligne « Expérience » : la barre juste en
                              dessous porte deja l xp, et mieux — « 80 / 200 » dit

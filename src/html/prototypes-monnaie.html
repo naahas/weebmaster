@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le solde dans la barre</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        💎 HUIT FACONS D AFFICHER LE SOLDE a cote de l avatar.
+
+        ⚠️ LE FOND N EST PAS DECORATIF. Un badge se juge sur ce qu il y a
+        DERRIERE : la barre du jeu est posee sur un degre d or, et c est
+        justement la que le badge dore disparait et que le rouge criait. Chaque
+        variante est donc sur une maquette du vrai coin haut-droit, avec la
+        banniere « nouveau mode » a sa place — c est elle, et pas le noir, qui
+        dit si le solde se detache.
+
+        ⚠️ Et LE MEME AVATAR partout, a la vraie taille (--moi-av, 3,5rem) :
+        une variante jugee sur un portrait plus petit paraitrait toujours mieux
+        proportionnee.
+
+        ⚠️ Trois nombres se croisent — 0, 3 333 et 128 450. Un badge qui tient
+        a quatre chiffres peut deborder a six, et le solde grandit toute la vie
+        du joueur. Le curseur du haut les fait defiler.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --or-doux: #f0c75e;
+            --moi-av: 3.5rem;
+            --fond: #07070b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Poppins', system-ui, sans-serif;
+            background: var(--fond);
+            color: #e9e9ef;
+            padding: 2.5rem 2rem 5rem;
+        }
+        h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; }
+        .sous { color: #8a8a99; font-size: 0.88rem; margin-top: 0.3rem; line-height: 1.6; max-width: 70ch; }
+
+        .reglages {
+            display: flex; gap: 1.6rem; align-items: center; flex-wrap: wrap;
+            margin: 1.6rem 0 2.2rem; padding: 0.9rem 1.1rem;
+            background: #11111a; border: 1px solid #23232f; border-radius: 12px;
+        }
+        .reglages label { font-size: 0.8rem; color: #8a8a99; display: flex; align-items: center; gap: 0.6rem; }
+        .reglages button {
+            font-family: inherit; font-size: 0.8rem; font-weight: 600; color: #e9e9ef;
+            background: #1b1b27; border: 1px solid #2c2c3a; border-radius: 8px;
+            padding: 0.35rem 0.8rem; cursor: pointer;
+        }
+        .reglages button[aria-pressed="true"] { background: var(--or); border-color: var(--or); color: #1a1405; }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1.6rem; }
+        .cas { border: 1px solid #23232f; border-radius: 14px; overflow: hidden; background: #0d0d14; }
+        .cas h2 {
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 0.85rem 1.1rem 0; color: var(--or-doux);
+        }
+        .cas p { font-size: 0.8rem; color: #8a8a99; padding: 0.35rem 1.1rem 0.9rem; line-height: 1.55; }
+
+        /* La maquette du coin haut-droit : le degre d or de l accueil, la
+           banniere, et la barre. */
+        .scene {
+            position: relative; height: 140px; padding: 1.9rem 2.6rem;
+            display: flex; align-items: flex-start; justify-content: flex-end; gap: 1rem;
+            background:
+                radial-gradient(120% 150% at 50% -30%, rgba(255, 190, 40, 0.16), transparent 62%),
+                radial-gradient(90% 120% at 90% 0%, rgba(255, 150, 20, 0.08), transparent 60%),
+                #07070b;
+            border-top: 1px solid #1b1b26;
+        }
+        .banniere {
+            position: absolute; top: 1.5rem; left: 50%; transform: translateX(-50%);
+            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--or); white-space: nowrap; opacity: 0.85;
+        }
+
+        /* L avatar, identique partout. */
+        .av {
+            position: relative; width: var(--moi-av); height: var(--moi-av);
+            border-radius: 50%; flex: 0 0 auto;
+            background: linear-gradient(145deg, #3a3550, #1a1726);
+            border: 2px solid rgba(255, 215, 0, 0.55);
+            display: grid; place-items: center; font-size: 1.1rem;
+        }
+        .av::after {
+            content: ''; position: absolute; right: -2px; bottom: -2px;
+            width: 1.35rem; height: 1.35rem; border-radius: 50%;
+            background: var(--or); border: 2px solid var(--fond);
+        }
+
+        .gem { height: 1.15rem; width: auto; display: block; flex: 0 0 auto; }
+        .nb { font-variant-numeric: tabular-nums; }
+
+        /* ── A. Texte nu ───────────────────────────────────────── */
+        .a {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            color: var(--or-doux); font-size: 0.95rem; font-weight: 700;
+            margin-right: 0.3rem; align-self: center;
+        }
+
+        /* ── B. Badge plein (l actuel) ─────────────────────────── */
+        .b {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+            height: var(--moi-av); padding: 0 0.95rem; border-radius: 999px;
+            color: var(--or-doux); background: rgba(240, 199, 94, 0.08);
+            border: 1px solid rgba(240, 199, 94, 0.2);
+            font-size: 0.95rem; font-weight: 700; margin-right: 0.55rem;
+        }
+
+        /* ── C. Pastille basse ─────────────────────────────────── */
+        /* Plus courte que l avatar et posee sur sa ligne du bas : elle cesse
+           d etre un bloc a cote d un cercle. */
+        .c {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            height: 1.7rem; padding: 0 0.7rem 0 0.5rem; border-radius: 999px;
+            background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(240, 199, 94, 0.28);
+            color: var(--or-doux); font-size: 0.86rem; font-weight: 700;
+            align-self: flex-end; margin-right: 0.6rem; backdrop-filter: blur(4px);
+        }
+        .c .gem { height: 1.05rem; }
+
+        /* ── D. Accrochee a l avatar ───────────────────────────── */
+        /* Le jeton chevauche le bord, le nombre sort a gauche : un seul objet
+           au lieu de deux. */
+        .d-grp { position: relative; display: inline-flex; align-items: center; }
+        .d-pill {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            height: 1.6rem; padding: 0 1.5rem 0 0.65rem; border-radius: 999px;
+            background: #16131c; border: 1px solid rgba(240, 199, 94, 0.3);
+            color: var(--or-doux); font-size: 0.85rem; font-weight: 700;
+            margin-right: -1.15rem; position: relative; z-index: 0;
+        }
+        .d-grp .av { z-index: 1; }
+
+        /* ── E. Sous l avatar ──────────────────────────────────── */
+        .e-col { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+        .e-nb {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            color: var(--or-doux); font-size: 0.78rem; font-weight: 700;
+        }
+        .e-nb .gem { height: 0.85rem; }
+
+        /* ── F. Contour seul ───────────────────────────────────── */
+        .f {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            height: 2.1rem; padding: 0 0.85rem; border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            color: var(--or-doux); font-size: 0.9rem; font-weight: 700;
+            align-self: center; margin-right: 0.6rem;
+        }
+
+        /* ── G. Jeton seul, nombre dessous ─────────────────────── */
+        .g-col {
+            display: inline-flex; flex-direction: column; align-items: center; gap: 0.1rem;
+            align-self: center; margin-right: 0.75rem;
+        }
+        .g-col .gem { height: 1.5rem; }
+        .g-col .nb { color: var(--or-doux); font-size: 0.72rem; font-weight: 800; }
+
+        /* ── H. Separee par un filet ───────────────────────────── */
+        .h {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            color: var(--or-doux); font-size: 0.95rem; font-weight: 700;
+            align-self: center; padding-right: 0.9rem; margin-right: 0.6rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Le solde dans la barre</h1>
+    <p class="sous">
+        Huit façons de poser la monnaie à côté de l'avatar. Chacune sur une maquette du vrai coin
+        haut-droit — un badge doré se juge sur le dégradé d'or de l'accueil, pas sur du noir.
+        Les trois nombres couvrent la vie d'un joueur : un badge qui tient à quatre chiffres peut
+        déborder à six.
+    </p>
+
+    <div class="reglages">
+        <label>Solde
+            <span id="boutons"></span>
+        </label>
+    </div>
+
+    <div class="grille" id="grille"></div>
+
+    <script>
+        // ⚠️ Le MEME fichier que le jeu, pas une copie redessinee : c est le
+        // gemme livre qu on juge, avec ses facettes et son S.
+        const GEM = '<img class="gem" src="/smoney.webp" alt="">';
+        const AV = '<span class="av">🗡️</span>';
+
+        const CAS = [
+            ['A', 'Texte nu',
+             "Rien autour. Le plus discret, et le plus fragile : sur le dégradé d'or, un chiffre doré sans fond perd ses contours.",
+             (n) => `<span class="a">${GEM}<span class="nb">${n}</span></span>${AV}`],
+
+            ['B', 'Badge plein — l’actuel',
+             "Pilule à la hauteur de l'avatar. Lisible partout, mais deux gros objets ronds côte à côte alourdissent le coin.",
+             (n) => `<span class="b">${GEM}<span class="nb">${n}</span></span>${AV}`],
+
+            ['C', 'Pastille basse',
+             "Plus courte que l'avatar et alignée sur sa ligne du bas : elle cesse de lui faire concurrence et devient une annotation.",
+             (n) => `<span class="c">${GEM}<span class="nb">${n}</span></span>${AV}`],
+
+            ['D', 'Accrochée à l’avatar',
+             "Le jeton passe sous le portrait. Un seul objet au lieu de deux — mais le nombre devient une étiquette de l'avatar, pas une monnaie.",
+             (n) => `<span class="d-grp"><span class="d-pill">${GEM}<span class="nb">${n}</span></span>${AV}</span>`],
+
+            ['E', 'Sous l’avatar',
+             "Ne prend aucune largeur. ⚠️ Mais il descend sous la barre, et c'est la seule variante qui change la hauteur du coin.",
+             (n) => `<span class="e-col">${AV}<span class="e-nb">${GEM}<span class="nb">${n}</span></span></span>`],
+
+            ['F', 'Contour seul, coin carré',
+             "Un cadre fin et droit, sans fond. La forme carrée le détache du cercle de l'avatar sans ajouter de matière.",
+             (n) => `<span class="f">${GEM}<span class="nb">${n}</span></span>${AV}`],
+
+            ['G', 'Jeton seul, nombre dessous',
+             "Le gemme devient l'objet et le nombre sa légende. Le plus « jeu », le moins « interface » — et le plus étroit à six chiffres.",
+             (n) => `<span class="g-col">${GEM}<span class="nb">${n}</span></span>${AV}`],
+
+            ['H', 'Séparée par un filet',
+             "Pas de cadre, juste un trait vertical. Dit « deux choses différentes » sans dessiner une seconde pastille.",
+             (n) => `<span class="h">${GEM}<span class="nb">${n}</span></span>${AV}`],
+        ];
+
+        const SOLDES = [0, 3333, 128450];
+        let choisi = 1;
+
+        function fmt(n) { return n.toLocaleString('fr-FR'); }
+
+        function peindre() {
+            const n = fmt(SOLDES[choisi]);
+            document.getElementById('grille').innerHTML = CAS.map(([l, titre, note, rendu]) => `
+                <div class="cas">
+                    <h2>${l} · ${titre}</h2>
+                    <p>${note}</p>
+                    <div class="scene">
+                        <span class="banniere">nouveau mode · bientôt disponible</span>
+                        ${rendu(n)}
+                    </div>
+                </div>`).join('');
+        }
+
+        document.getElementById('boutons').innerHTML = SOLDES.map((s, i) =>
+            `<button data-i="${i}" aria-pressed="${i === choisi}">${fmt(s)}</button>`).join(' ');
+        document.getElementById('boutons').onclick = (e) => {
+            const b = e.target.closest('button');
+            if (!b) return;
+            choisi = +b.dataset.i;
+            [...document.querySelectorAll('#boutons button')].forEach(x =>
+                x.setAttribute('aria-pressed', String(+x.dataset.i === choisi)));
+            peindre();
+        };
+        peindre();
+    </script>
+</body>
+
+</html>
