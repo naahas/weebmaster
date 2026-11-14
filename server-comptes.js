@@ -547,7 +547,33 @@ async function listerComptes() {
         if (error.code === '42P01') tableComptesOk = false;
         return null;
     }
-    return data || [];
+
+    // 🔗 LE FOURNISSEUR — Discord, Google… Il n est PAS dans `comptes`, et on
+    // n y ajoute pas de colonne pour lui : il vit deja dans `auth.users`, et
+    // l y recopier ferait deux verites a tenir d accord le jour ou quelqu un
+    // relie une seconde identite a son compte.
+    //
+    // ⚠️ `listUsers` PAGINE — 50 par page par defaut, en silence. Demander la
+    // premiere page et s arreter marcherait tant qu il y a peu de monde, puis
+    // les inscrits les plus anciens perdraient leur icone sans que rien ne le
+    // signale. C est la meme maladie que le plafond des mille lignes de
+    // PostgREST, et elle se repare de la meme facon : on tourne.
+    const fournisseurs = new Map();
+    try {
+        for (let page = 1; page <= 40; page++) {
+            const { data: u, error: eU } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+            const lot = (u && u.users) || [];
+            if (eU || !lot.length) break;
+            for (const x of lot) {
+                fournisseurs.set(x.id, (x.app_metadata && x.app_metadata.provider) || null);
+            }
+            if (lot.length < 200) break;
+        }
+    } catch (e) {
+        // Pas de fournisseur affiche, et c est tout : l onglet doit s ouvrir.
+    }
+
+    return (data || []).map((c) => Object.assign({}, c, { fournisseur: fournisseurs.get(c.id) || null }));
 }
 
 // Le panneau doit pouvoir DIRE que le SQL manque, plutot que de laisser
