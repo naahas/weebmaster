@@ -855,7 +855,7 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration, ga
     // 🎖️ L XP des inscrits. Lancee AVANT l ecriture de l historique et SANS
     // `await` : les deux sont independantes, et une table `game_history`
     // absente ne doit pas empecher un joueur de monter de niveau.
-    crediterXpDeLaPartie(gameState, mode, gagnants).catch(() => {});
+    crediterXpDeLaPartie(gameState, mode, gagnants, duration).catch(() => {});
 
     const entry = {
         mode,
@@ -936,8 +936,25 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration, ga
 // coupee en plein milieu n ecrit rien, et c est architectural. Crediter au fil
 // de l eau n y changerait rien de bon — ca multiplierait seulement les ecritures
 // pour un resultat aussi perdu.
-async function crediterXpDeLaPartie(gameState, mode, gagnants) {
+async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     if (!comptes.ACTIF || !gameState || !gameState.players) return;
+
+    // ⏱️ TROP COURTE POUR COMPTER — ni xp, ni victoire, ni « +1 partie ».
+    // Le plancher est par mode (`XP_MODES[…].duree`, server-comptes.js) : une
+    // manche de Rush dure legitimement 30 s la ou un Classique en prend cinq.
+    //
+    // ⚠️ La partie reste ENREGISTREE dans l historique, c est le credit seul
+    // qui saute. Le panneau doit continuer de montrer ce qui s est joue, y
+    // compris les parties ratees — ce qui n entre pas en base est perdu pour
+    // toujours, pas l inverse.
+    //
+    // On le dit dans le journal : refuser en silence rendrait indiscernables
+    // « le joueur n est pas inscrit » et « la partie etait trop courte ».
+    if (!comptes.partieAssezLongue(mode, duree)) {
+        const min = (comptes.XP_MODES[mode] || {}).duree;
+        console.log(`⏱️ ${mode} : ${Math.round(Number(duree) || 0)}s — trop court pour l xp${min ? ` (${min}s requis)` : ''}`);
+        return;
+    }
 
     // ⚠️ Le plancher de la victoire se compte en HUMAINS. Le bot de BombAnime
     // siege dans `players` comme un joueur : trois amis plus un bot auraient

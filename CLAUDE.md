@@ -1002,15 +1002,15 @@ une partie, et il n'est **jamais requis pour jouer**.
 **Le barème vit dans `XP_MODES` (`server-comptes.js`), à un seul endroit.** Le client reçoit des
 **totaux** et les dessine ; il ne recalcule jamais ce qu'une partie a rapporté.
 
-| mode | partie | + victoire | seuil du bonus |
-|---|---|---|---|
-| Classique / Rivalité | 100 | 300 | **8** |
-| Ascension | 100 | 225 | 4 |
-| Collect | 100 | 200 | **3** |
-| Rush | 80 | 150 | 4 |
-| Codanime | 50 | 125 | 4 |
-| Choice | 50 | 125 | 4 |
-| BombAnime | 25 | 75 | 4 |
+| mode | partie | + victoire | seuil du bonus | durée mini |
+|---|---|---|---|---|
+| Classique / Rivalité | 100 | 300 | **8** | 60 s |
+| Ascension | 100 | 225 | 4 | 60 s |
+| Collect | 100 | 200 | **3** | 50 s |
+| Rush | 80 | 150 | 4 | **25 s** |
+| Codanime | 50 | 125 | 4 | 60 s |
+| Choice | 50 | 125 | 4 | 60 s |
+| BombAnime | 25 | 75 | 4 | 45 s |
 
 ⚠️ **`victoire` est un BONUS QUI S'AJOUTE**, pas un total : un Rush gagné vaut 80 + 150 = **230**.
 Le lire comme un total diviserait par deux ce que rapporte toute partie gagnée, sans rien casser
@@ -1071,6 +1071,35 @@ seul format qui demande le contraire.
 ⚠️ **Le plancher se compte en HUMAINS et en joueurs DISTINCTS** : le bot de BombAnime siège dans
 `players` comme un joueur (trois amis plus un bot auraient ouvert un bonus qui en demande quatre),
 et un joueur peut y figurer deux fois — une entrée laissée par une socket morte, une neuve à côté.
+
+### ⏱️ La durée minimale (`partieAssezLongue`)
+
+Sous le plancher de son mode, une partie ne rapporte **rien du tout** — ni XP, ni victoire, ni
+même le « +1 partie ». Elle reste **enregistrée dans l'historique** : c'est le crédit qui saute,
+pas la trace. Ce qui n'entre pas en base est perdu pour toujours ; l'inverse se rattrape.
+
+⚠️ **PAR MODE, et une valeur unique ne marcherait pas** : une manche de Rush dure légitimement
+30 s (c'est un réglage du salon), donc un plancher global à 60 s aurait éteint l'XP d'un réglage
+normal — un bug déguisé en garde-fou. Chaque chiffre se lit contre la durée réelle de **son** mode.
+
+Ce que ça ferme, mesuré : **quatre modes terminent la partie sur-le-champ quand il ne reste qu'un
+joueur** — BombAnime (il reste dans le cercle à 0 vie, `restants <= 1`), Collect (`ordre < 2`),
+Choice (`vivants <= 1`, après 600 ms) et le Classique en vies (à la question suivante, il n'y a
+pas de contrôle au départ). Deux onglets, l'un part, l'autre encaissait. Codanime, lui, se
+terminait en 25 s en désignant l'assassin exprès. Ces parties étaient bel et bien **finies** —
+elles n'avaient juste pas été **jouées**.
+
+⚠️ **Ça ne couvre PAS le Rush** : une manche farmée *est* une vraie manche de 30 s, la durée ne
+les distingue pas. Lui demande l'autre levier — un plafond quotidien —, qui n'est pas posé.
+
+⚠️ `partieAssezLongue` vit **à part de `xpDeLaPartie`** : l'une répond « combien », l'autre « est-ce
+que ça compte ». Les mélanger aurait donné une fonction rendant 0 XP, et `crediterXpDeLaPartie`
+aurait quand même écrit « +1 partie » — robinet d'XP fermé, compteur de parties ouvert.
+
+⚠️ **Une durée absente vaut zéro, donc refuse.** C'est le bon côté pour se tromper : un chemin qui
+oublierait de la passer cesserait de payer, au lieu d'ouvrir un robinet que personne ne verrait
+couler. Le refus **s'écrit dans le journal** — sans ça, « pas inscrit » et « partie trop courte »
+seraient indiscernables.
 
 ⚠️ **QUI PART NE TOUCHE RIEN.** Une partie terminée, c'est une partie où l'on était encore là pour
 l'écran du vainqueur. `leave-lobby` pose donc `player.parti = true`, et `crediterXpDeLaPartie`

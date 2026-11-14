@@ -104,6 +104,38 @@ verif('aucun argument ne fait pas tomber', 50, c.xpDeLaPartie('codanime').xp);
 // ce controle, un mode ajoute demain paierait le defaut en silence.
 const MODES_DU_JEU = ['classic', 'rivalry', 'bombanime', 'rush', 'ascension', 'collect', 'choice', 'codanime'];
 verif('⚠️ les 8 modes du jeu ont leur ligne', [], MODES_DU_JEU.filter((m) => !c.XP_MODES[m]));
+verif('⚠️ … et chacune porte sa durée minimale', [], MODES_DU_JEU.filter((m) => !c.XP_MODES[m].duree));
+
+console.log('\n=== 5. La durée minimale d une partie ===');
+// ⏱️ Ce qui se fermait : quatre modes terminent la partie sur-le-champ quand
+// il ne reste qu un joueur, et Codanime se suicide sur l assassin en 25 s.
+verif('⚠️ Collect fini en 10 s par un départ : refusé', false, c.partieAssezLongue('collect', 10));
+verif('⚠️ BombAnime fini en 10 s par un départ : refusé', false, c.partieAssezLongue('bombanime', 10));
+verif('⚠️ Codanime suicidé sur l assassin (25 s) : refusé', false, c.partieAssezLongue('codanime', 25));
+verif('⚠️ Classique à 2 sans réponse (20 s) : refusé', false, c.partieAssezLongue('classic', 20));
+verif('⚠️ Ascension abandonnée (10 s) : refusé', false, c.partieAssezLongue('ascension', 10));
+
+// ⚠️ Et ce qu il ne faut SURTOUT pas fermer : la manche de Rush la plus
+// courte que le salon propose vaut 30 s. Un plancher global à 60 s aurait
+// éteint l xp d un réglage parfaitement normal.
+verif('⚠️ une VRAIE manche de Rush à 30 s passe', true, c.partieAssezLongue('rush', 30));
+verif('une manche de Rush à 60 s passe', true, c.partieAssezLongue('rush', 60));
+verif('un BombAnime de 2 min passe', true, c.partieAssezLongue('bombanime', 120));
+verif('un Collect de 2 min 30 passe', true, c.partieAssezLongue('collect', 150));
+verif('un Classique de 5 min passe', true, c.partieAssezLongue('classic', 300));
+
+// Les bords exacts, pour que personne ne les déplace sans le voir.
+verif('le seuil est INCLUSIF (collect à 50)', true, c.partieAssezLongue('collect', 50));
+verif('… et 49 ne passe pas', false, c.partieAssezLongue('collect', 49));
+
+// ⚠️ Une durée absente vaut zéro, donc REFUSE. C est le bon côté pour se
+// tromper : un chemin qui oublierait de la passer cesserait de payer, au
+// lieu d ouvrir un robinet que personne ne verrait couler.
+verif('⚠️ durée absente : refusé', false, c.partieAssezLongue('rush', undefined));
+verif('⚠️ durée NaN : refusé', false, c.partieAssezLongue('rush', 'bonjour'));
+verif('⚠️ durée négative : refusé', false, c.partieAssezLongue('rush', -300));
+verif('⚠️ un mode inconnu prend le plancher le plus HAUT', false, c.partieAssezLongue('pizza', 59));
+verif('… et passe au-delà', true, c.partieAssezLongue('pizza', 60));
 
 console.log(`\n${ko ? '❌' : '✅'} ${ok} verifications passees, ${ko} echouees\n`);
 process.exit(ko ? 1 : 0);

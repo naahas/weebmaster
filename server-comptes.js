@@ -295,35 +295,78 @@ async function identifier(jeton, { pseudo, avatar, nettoyer } = {}) {
 // (`MIN_CLASSIQUE`, app.js). Ce n est pas une coincidence a corriger : c est
 // le meme chiffre de produit, le quiz n est le quiz qu a partir de la. Les
 // deux se changent ensemble ou pas du tout.
+//
+// ⏱️ `duree` est la DURÉE MINIMALE, en secondes, sous laquelle une partie ne
+// rapporte RIEN — ni xp, ni victoire, ni même le « +1 partie ». Elle reste
+// enregistrée dans l historique : c est le crédit qui saute, pas la trace.
+//
+// ⚠️ Elle est PAR MODE, et une valeur unique ne marcherait pas : une manche de
+// Rush dure légitimement 30 s (c est un réglage du salon), donc un plancher
+// global à 60 s aurait éteint l xp d un réglage normal — un bug déguisé en
+// garde-fou. Chaque chiffre se lit contre la durée réelle de SON mode.
+//
+// Ce qu elle ferme, mesuré : quatre modes terminent la partie sur-le-champ
+// quand il ne reste qu un joueur (BombAnime, Collect, Choice, et le Classique
+// en vies à la question suivante). Deux onglets, l un part, l autre encaissait.
+// Codanime se terminait en 25 s en désignant l assassin exprès. Toutes ces
+// parties étaient bel et bien FINIES — elles n avaient juste pas été jouées.
+//
+// ⚠️ Ça ne couvre PAS le Rush : une manche farmée est une vraie manche de
+// 30 s, la durée ne les distingue pas. Lui demande l autre levier (un plafond
+// quotidien), qui n est pas posé.
 const XP_MODES = {
-    classic:   { partie: 100, victoire: 300, seuil: 8 },
+    classic:   { partie: 100, victoire: 300, seuil: 8, duree: 60 },
     // ⚠️ `rivalry` n est pas un mode, c est le reglage Format du quiz. Meme
     // bareme, forcement : un ecart rendrait un camp plus payant qu un solo
     // sur exactement les memes questions, et l hote choisirait le Format
     // pour l xp plutot que pour la partie.
-    rivalry:   { partie: 100, victoire: 300, seuil: 8 },
-    rush:      { partie:  80, victoire: 150, seuil: 4 },
-    bombanime: { partie:  25, victoire:  75, seuil: 4 },
+    rivalry:   { partie: 100, victoire: 300, seuil: 8, duree: 60 },
+    // ⏱️ 25 s et pas davantage : la manche la plus courte que le salon
+    // propose vaut 30 s. Monter le plancher au-dessus éteindrait un réglage
+    // parfaitement normal.
+    rush:      { partie:  80, victoire: 150, seuil: 4, duree: 25 },
+    bombanime: { partie:  25, victoire:  75, seuil: 4, duree: 45 },
     // ⚠️ Collect est le SEUL a trois, et c est son PLAFOND qui le decide :
     // le mode se joue a cinq au maximum. A quatre, la fenetre ou une victoire
     // paye n aurait fait que deux valeurs sur quatre, alors que la partie
     // mediane s y joue a deux. Le meme seuil que les autres aurait eteint le
     // bonus du mode presque partout.
-    collect:   { partie: 100, victoire: 200, seuil: 3 },
-    codanime:  { partie:  50, victoire: 125, seuil: 4 },
-    ascension: { partie: 100, victoire: 225, seuil: 4 },
+    collect:   { partie: 100, victoire: 200, seuil: 3, duree: 50 },
+    codanime:  { partie:  50, victoire: 125, seuil: 4, duree: 60 },
+    ascension: { partie: 100, victoire: 225, seuil: 4, duree: 60 },
     // Choice n est pas encore ouvert au public (`soon: true` sur sa carte),
     // mais il se joue a la maison et il appelle `recordFinishedGame`. Sa
     // ligne est donc la : l oublier le ferait tomber sur le defaut en
     // silence, et personne ne s en apercevrait avant son ouverture.
-    choice:    { partie:  50, victoire: 125, seuil: 4 },
+    choice:    { partie:  50, victoire: 125, seuil: 4, duree: 60 },
 };
 
 // ⚠️ Un mode inconnu rapporte QUELQUE CHOSE plutot que rien. Le jour ou un
 // mode est ajoute sans sa ligne, le defaut le fait payer peu — ca se remarque
 // au bareme. Rendre zero le rendrait invisible : le joueur verrait son xp ne
 // plus bouger sans pouvoir dire depuis quand.
-const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4 };
+// ⏱️ Et son plancher de durée est le plus HAUT, pas le plus bas : sur le
+// barème on est généreux avec l inconnu, sur la durée on est strict. Un mode
+// dont on ne sait rien pourrait se terminer en trois secondes.
+const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4, duree: 60 };
+
+// ⏱️ La partie a-t-elle duré assez pour compter ?
+//
+// À part de `xpDeLaPartie` exprès : l une répond « combien », l autre « est-ce
+// que ça compte ». Les mélanger aurait donné une fonction qui rend 0 xp, et
+// `crediterXpDeLaPartie` aurait quand même écrit « +1 partie » pour chacun —
+// on aurait fermé le robinet de l xp en laissant gonfler le compteur de
+// parties. Une partie trop courte ne laisse RIEN.
+//
+// ⚠️ `duree` est en SECONDES. Les sept modes la calculent déjà ainsi
+// (`Math.floor((Date.now() - debut) / 1000)`), et Rush annonce la durée
+// réglée de sa manche. Une valeur manquante vaut zéro, donc refuse : c est le
+// bon côté pour se tromper — un chemin qui oublierait de la passer cesserait
+// de payer, au lieu d ouvrir un robinet que personne ne verrait couler.
+function partieAssezLongue(mode, duree) {
+    const b = XP_MODES[mode] || XP_DEFAUT;
+    return (Number(duree) || 0) >= b.duree;
+}
 
 // Pure : ni base, ni reseau, ni etat. C est la seule decision du bareme, donc
 // c est celle que `npm run test:comptes` rejoue.
@@ -404,7 +447,7 @@ async function crediter(lignes) {
 
 module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
-    xpDeLaPartie, crediter,
+    xpDeLaPartie, partieAssezLongue, crediter,
     // Exportes pour `npm run test:comptes` : ce sont les decisions qui se
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.
