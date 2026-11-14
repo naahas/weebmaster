@@ -159,12 +159,17 @@
                          fichier : a 14 px une image perdrait ses facettes, et
                          le trace suit la couleur du texte. -->
                     <span class="v2-moi-rubis" v-if="estConnecte"
-                          :title="compteRubis.toLocaleString('fr-FR') + ' rubis'">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="1.7" stroke-linejoin="round">
-                            <path d="M7 3h10l4 6-9 12L3 9z"/>
-                            <path d="M3 9h18M7 3l2 6 3 12 3-12 2-6M9 9h6"/>
-                        </svg>
+                          :title="compteRubis.toLocaleString('fr-FR')">
+                        <!-- ⚠️ Un FICHIER et non plus un trace : le gemme porte
+                             le S du logo, qui ne se redessine pas au trait.
+                             Recadre sur sa boite alpha — il arrivait avec 20 %
+                             de vide sur chaque cote, ce qui l aurait reduit a
+                             neuf pixels dans un badge de quinze.
+                             ⚠️ Pour le REMPLACER un jour : un NOM NEUF
+                             (smoney2.webp), jamais le meme fichier reecrit —
+                             src/img est servi avec du cache, l ancien resterait
+                             chez les joueurs. -->
+                        <img src="smoney.webp" alt="" draggable="false">
                         <b>{{ compteRubis.toLocaleString('fr-FR') }}</b>
                     </span>
                     <button class="v2-moi-av" @click="basculerProfil"

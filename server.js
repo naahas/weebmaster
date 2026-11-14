@@ -1028,7 +1028,6 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             titre: r.titre || null,
             titrePrefixe: r.titre_prefixe || null,
             titreSuffixe: r.titre_suffixe || null,
-            pseudoImpose: r.pseudo_impose || null,
         });
     }
 }
@@ -7039,43 +7038,17 @@ app.get('/admin/site/comptes', async (req, res) => {
 });
 
 // 🏷️ Le pseudo IMPOSE. Vide = on relache le joueur, qui reprend le sien.
-app.post('/admin/site/compte/pseudo', async (req, res) => {
-    if (!gardePanneau(req, res)) return;
-    const id = req.body && req.body.id;
-    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
-
-    // ⚠️ Il passe par le MEME tamis que n importe quel pseudo du jeu. Rien ne
-    // dit qu un pseudo impose soit convenable du seul fait qu il vient du
-    // panneau, et il s affichera sur l ecran d un streamer comme les autres.
-    const brut = typeof req.body.pseudo === 'string' ? req.body.pseudo.trim() : '';
-    const propre = brut ? pseudoPropre(brut) : '';
-    if (brut && !propre) return res.status(400).json({ error: 'Ce pseudo est refusé par le filtre.' });
-
-    const r = await comptes.majCompte(id, { pseudo_impose: propre || null });
-    if (!r) return res.status(500).json({ error: 'Écriture impossible.' });
-
-    // Il s applique TOUT DE SUITE si le joueur est en ligne : un pseudo impose
-    // qui attendrait la prochaine connexion ne servirait a rien le jour ou il
-    // sert vraiment, c est-a-dire pendant un direct.
-    poussierProfil(id, r);
-    console.log(`🏷️ Pseudo imposé sur ${id} : ${propre || '(relâché)'}`);
-    res.json({ success: true, compte: r });
-});
-
-// 🎖️ Le titre SPECIAL. Vide = il retombe sur celui de son niveau.
-app.post('/admin/site/compte/titre', async (req, res) => {
-    if (!gardePanneau(req, res)) return;
-    const id = req.body && req.body.id;
-    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
-
-    const titre = typeof req.body.titre === 'string' ? req.body.titre.trim().slice(0, 40) : '';
-    const r = await comptes.majCompte(id, { titre: titre || null });
-    if (!r) return res.status(500).json({ error: 'Écriture impossible.' });
-
-    poussierProfil(id, r);
-    console.log(`🎖️ Titre sur ${id} : ${titre || '(retiré)'}`);
-    res.json({ success: true, compte: r });
-});
+// ℹ️ DEUX ROUTES ONT ÉTÉ RETIRÉES ICI, et il ne faut pas les remettre sans
+// le décider :
+//
+//   /admin/site/compte/pseudo  — imposait un pseudo à un joueur. Le panneau
+//     ne change plus le pseudo de personne : c'est le sien. La colonne
+//     `pseudo_impose` reste en base (la supprimer est irréversible) mais plus
+//     rien ne l'écrit ni ne la lit.
+//
+//   /admin/site/compte/titre   — posait un titre en TEXTE LIBRE, avant le
+//     catalogue. Un titre se prend désormais dans `src/script/titres.js` et
+//     nulle part ailleurs ; la colonne `titre` ne sert plus.
 
 // 🎖️ LES TITRES D UN COMPTE — donner, retirer, et choisir ce qu il porte.
 //
@@ -7128,21 +7101,15 @@ app.post('/admin/site/compte/titres', async (req, res) => {
         if (actuel.titre_suffixe === req.body.retirer) valeurs.titre_suffixe = null;
     }
 
-    // ── Choisir ce qu il porte ───────────────────────────────────
-    // `''` deshabille l emplacement ; `undefined` ne le touche pas.
-    for (const [cle, slot] of [['prefixe', 'titre_prefixe'], ['suffixe', 'titre_suffixe']]) {
-        if (req.body[cle] === undefined) continue;
-        const v = req.body[cle];
-        if (!v) { valeurs[slot] = null; continue; }
-        const t = titres.TITRES_PAR_ID[v];
-        if (!t || t.type !== cle) return res.status(400).json({ error: 'Titre invalide pour cet emplacement.' });
-        // ⚠️ On ne peut porter QUE ce qu on possede. Sans ce controle, le
-        // panneau pourrait habiller quelqu un d un titre qui ne lui
-        // appartient pas, et le retirer de sa collection ne le lui
-        // enleverait pas.
-        if (!possedes.has(t.id)) return res.status(400).json({ error: 'Il ne possède pas ce titre.' });
-        valeurs[slot] = t.id;
-    }
+    // ⚠️ LE PANNEAU NE CHOISIT PAS CE QU IL PORTE, et il ne le pourra pas
+    // par cette route : elle n accepte que `donner` et `retirer`. C est au
+    // JOUEUR de composer son titre parmi ce qu il possede — le panneau le lui
+    // offre, il ne l habille pas.
+    //
+    // Les deux emplacements bougent quand meme, mais seulement comme
+    // CONSEQUENCE : on habille un emplacement vide a la remise d un titre, et
+    // on deshabille celui qu on reprend. Dans les deux cas, ne pas le faire
+    // laisserait l ecran du joueur en desaccord avec ce qu il possede.
 
     if (!Object.keys(valeurs).length) return res.status(400).json({ error: 'Rien à changer.' });
 
@@ -7250,7 +7217,6 @@ function poussierProfil(idCompte, profil) {
         titre: profil.titre || null,
         titrePrefixe: profil.titre_prefixe || null,
         titreSuffixe: profil.titre_suffixe || null,
-        pseudoImpose: profil.pseudo_impose || null,
     };
     for (const r of rooms.values()) {
         for (const [socketId, p] of r.players) {
@@ -9758,7 +9724,6 @@ io.on('connection', (socket) => {
                 // Et on n'envoie PAS le niveau — il se déduit de l'XP, des
                 // deux côtés, depuis le même `src/script/niveaux.js`.
                 //
-                // ⚠️ `titre` et `pseudoImpose`, eux, PARTENT : ils ne se
                 // déduisent de rien. Ce sont les deux seules choses qu'un
                 // compte porte en base et que le client ne peut pas trouver
                 // tout seul.
@@ -9771,7 +9736,6 @@ io.on('connection', (socket) => {
                         titre: r.profil.titre || null,
                         titrePrefixe: r.profil.titre_prefixe || null,
                         titreSuffixe: r.profil.titre_suffixe || null,
-                        pseudoImpose: r.profil.pseudo_impose || null,
                     });
                 }
             }).catch(() => { /* réseau coupé : il reste un invité */ });

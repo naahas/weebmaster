@@ -8341,13 +8341,6 @@ createApp({
                 // chercherait un identifiant vide dans le catalogue.
                 this.titrePrefixe = p.titrePrefixe || null;
                 this.titreSuffixe = p.titreSuffixe || null;
-                // 🏷️ Un pseudo IMPOSE depuis le panneau gagne sur celui du
-                // joueur, et il s applique tout de suite : c est a ca qu il
-                // sert. On le pose comme le joueur l aurait tape lui-meme.
-                if (p.pseudoImpose && p.pseudoImpose !== this.username) {
-                    this.username = p.pseudoImpose;
-                    try { localStorage.setItem('pseudo', p.pseudoImpose); } catch (e) {}
-                }
             });
 
             this.socket.on('lobby-update', (data) => {

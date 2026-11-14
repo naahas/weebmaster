@@ -665,11 +665,15 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
    doit se distinguer d un compteur. Le rubis est rouge par definition — on
    l eclaircit (#ff8a8a plutot que `--rouge`) pour qu il ne se lise pas comme
    le rouge d alerte des boutons « Supprimer », juste a cote. */
-.cp-c.rub b, .cp-c.rub span { color: #ff8a8a; }
-/* Le montant se modifie sur place, comme le pseudo et le titre : meme
-   pointillé au survol, pour que le geste s apprenne une fois. */
+/* ⚠️ Doré, comme le gemme : il porte le S du logo et il est or. Un chiffre
+   rouge à côté d'un jeton doré faisait deux monnaies. */
+.cp-c.rub b { color: #f0c75e; }
+/* ⚠️ La HAUTEUR décide : le gemme fait 149 × 160, un carré l'écraserait. */
+.cp-gem { height: 15px; width: auto; display: block; }
+/* Le montant se modifie sur place : pointillé au survol, pour que le geste
+   s'apprenne une fois. */
 .cp-c.rub b { cursor: text; border-bottom: 1px dashed transparent; transition: border-color .15s; }
-.cp-c.rub b:hover { border-color: rgba(255,138,138,.5); }
+.cp-c.rub b:hover { border-color: rgba(240,199,94,.55); }
 .cp-actions { display: flex; gap: .45rem; flex: 0 0 auto; }
 .cp-champ {
     font-family: inherit; font-size: 1.1rem; font-weight: 600; color: var(--texte);
@@ -685,40 +689,86 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 .cp-marque.titre i { font-style: normal; opacity: .6; font-size: .72rem; }
 
 /* ── 🎖️ LA MODALE DES TITRES ─────────────────────────────────── */
-/* Ce qu'il porte, en grand : c'est la réponse à la question qu'on se pose en
-   ouvrant la modale, elle doit être lisible avant les listes. */
-.tit-porte {
-    font-size: 1.15rem; font-style: italic; color: #c9a227;
-    padding: .2rem 0 1rem; min-height: 1.6rem;
+/* ⚠️ Elle ne passe PAS par `.modale` tel quel : sa largeur est fixe et son
+   corps défile tout seul. À quatre-vingt-neuf titres, une modale qui grandit
+   avec son contenu aurait dépassé l'écran — et toute cette page tient sur la
+   promesse de ne pas défiler. */
+/* ⚠️ `.modale.tit-modale` ET PAS `.tit-modale` SEUL. `.modale` plafonne à
+   420 px ; à spécificité égale c'est l'ORDRE qui tranche, et `.modale` est
+   déclarée plus bas dans le fichier — elle gagnait. La modale sortait à
+   420 px au lieu de 760, les deux colonnes se serraient et « EN DONNER UN »
+   se coupait en deux lignes. Mesuré deux fois : la première correction, qui
+   n'ajoutait que `max-width`, n'a rien changé. */
+.modale.tit-modale { width: min(760px, 94vw); max-width: 760px; padding: 0; overflow: hidden; }
+
+/* Le bandeau teinté : le même parti pris que la carte de profil du jeu —
+   l'en-tête porte une couleur, le corps non, et la frontière se voit sans un
+   seul trait. */
+.tit-chapeau {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    background: linear-gradient(135deg, rgba(201,162,39,.14), rgba(201,162,39,.03));
+    border-bottom: 1px solid rgba(201,162,39,.16);
 }
-.tit-porte:empty::before { content: 'Il ne porte aucun titre'; font-style: normal; color: var(--doux); }
-.tit-bloc { margin-bottom: 1.1rem; }
+.tit-av { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; }
+.tit-qui { font-size: 1.1rem; font-weight: 700; }
+/* Ce qu'il porte, en italique doré : le même habillage que dans le jeu, pour
+   qu'on reconnaisse la même chose aux deux endroits. */
+.tit-porte { font-size: .95rem; font-style: italic; color: #c9a227; margin-top: .1rem; }
+.tit-porte:empty::before { content: 'Aucun titre porté'; font-style: normal; color: var(--doux); }
+.tit-x {
+    margin-left: auto; background: none; border: 0; cursor: pointer;
+    color: var(--doux); font-size: 1.05rem; padding: .3rem .5rem; border-radius: 8px;
+}
+.tit-x:hover { background: rgba(255,255,255,.07); color: var(--texte); }
+
+.tit-corps { padding: 1.25rem 1.35rem 1.35rem; }
+.tit-bloc + .tit-bloc { margin-top: 1.4rem; }
 .tit-tete {
-    display: flex; align-items: center; gap: .6rem; margin-bottom: .55rem;
-    font-size: .78rem; font-weight: 600; letter-spacing: .06em;
+    display: flex; align-items: center; gap: .6rem; margin-bottom: .7rem;
+    font-size: .74rem; font-weight: 700; letter-spacing: .12em;
     text-transform: uppercase; color: var(--doux);
 }
-.tit-liste { display: flex; flex-wrap: wrap; gap: .4rem; }
-/* ⚠️ Le catalogue DÉFILE dans un cadre : quatre-vingt-neuf pastilles font
-   douze lignes, et la modale aurait dépassé l'écran — c'est la contrainte de
-   toute cette page, elle ne défile pas. */
-#tit-cat { max-height: 190px; overflow-y: auto; align-content: flex-start; padding-right: .3rem; }
-.tit {
-    display: inline-flex; align-items: center; gap: .35rem;
-    padding: .3rem .6rem; border-radius: 7px; cursor: pointer;
-    font-size: .85rem; border: 1px solid var(--bord-fort);
-    background: rgba(255,255,255,.03); transition: background .14s, border-color .14s;
+.tit-liste { display: flex; flex-wrap: wrap; gap: .45rem; align-content: flex-start; }
+
+/* Les deux colonnes du catalogue. */
+.tit-deux { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+.tit-col { min-width: 0; }
+.tit-col-tete {
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--tres-doux); padding-bottom: .5rem; margin-bottom: .6rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    display: flex; justify-content: space-between;
 }
-.tit:hover { background: rgba(255,255,255,.08); }
-/* Le préfixe et le suffixe se distinguent à l'œil : sans ça, « paisible »
-   apparaît deux fois dans la même liste sans qu'on sache lequel est lequel. */
-.tit.pre { border-left: 3px solid #6fb3f5; }
-.tit.suf { border-left: 3px solid #c08cf5; font-style: italic; }
-/* Celui qu'il PORTE, parmi ceux qu'il possède. */
-.tit.on { background: rgba(201,162,39,.16); border-color: rgba(201,162,39,.5); color: #e8c75a; }
-.tit .x { opacity: .45; font-size: .9rem; padding: 0 .1rem; }
+.tit-col-tete b { font-weight: 700; opacity: .55; }
+.tit-deux .tit-liste { max-height: 212px; overflow-y: auto; padding-right: .35rem; }
+
+.tit {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .38rem .7rem; border-radius: 999px; cursor: pointer;
+    font-size: .86rem; line-height: 1.1;
+    border: 1px solid rgba(255,255,255,.09);
+    background: rgba(255,255,255,.035);
+    transition: background .14s, border-color .14s, transform .1s;
+}
+.tit:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.22); }
+.tit:active { transform: scale(.97); }
+/* ℹ️ Plus de liseré de couleur : la COLONNE dit déjà préfixe ou suffixe, et
+   un troisième signal sur chaque pastille faisait du bruit. Il ne reste que
+   l'italique des suffixes, qui est leur forme naturelle dans le jeu. */
+.tit.suf { font-style: italic; }
+/* Dans sa collection, celui qu'il porte. ⚠️ Non cliquable : le panneau ne
+   change plus ce qui est porté, il ne fait qu'ajouter et retirer. */
+.tit.on { background: rgba(201,162,39,.15); border-color: rgba(201,162,39,.45); color: #e8c75a; cursor: default; }
+.tit.on:hover { background: rgba(201,162,39,.15); border-color: rgba(201,162,39,.45); }
+.tit.sien { cursor: default; }
+.tit.sien:hover { background: rgba(255,255,255,.035); border-color: rgba(255,255,255,.09); }
+.tit .x {
+    opacity: .4; font-size: .82rem; font-weight: 400; cursor: pointer;
+    margin-right: -.18rem; padding: 0 .12rem; border-radius: 4px;
+}
 .tit .x:hover { opacity: 1; color: var(--rouge); }
-.tit-vide { color: var(--doux); font-size: .85rem; padding: .3rem 0; }
+.tit-vide { color: var(--doux); font-size: .85rem; padding: .35rem 0; }
 
 /* 🔍 LA RECHERCHE. Elle vit dans le chapeau de la carte, à droite, là où les
    suggestions ont leurs filtres : une barre posée au-dessus de la carte
@@ -1687,28 +1737,49 @@ body:not(.entre) { overflow: hidden; }
      ⚠️ La modale est LARGE : les titres sont des pastilles, et dans une
      modale étroite elles se seraient empilées sur trente lignes. -->
 <div class="voile" id="voile-tit">
-    <div class="modale large">
-        <h3>Titres de <span id="tit-qui"></span></h3>
-        <div class="tit-porte" id="tit-porte"></div>
-
-        <div class="tit-bloc">
-            <div class="tit-tete">Sa collection <small id="tit-n"></small></div>
-            <div class="tit-liste" id="tit-sien"></div>
-        </div>
-
-        <div class="tit-bloc">
-            <div class="tit-tete">
-                En donner un
-                <span class="cp-rech" style="margin-left:auto">
-                    <svg viewBox="0 0 24 24"><use href="#i-loupe"/></svg>
-                    <input type="text" id="tit-rech" placeholder="Chercher un titre…" autocomplete="off">
-                </span>
+    <div class="modale tit-modale">
+        <!-- Le bandeau : qui, et ce qu'il porte. C'est la question qu'on se
+             pose en ouvrant, elle doit être lue avant les listes. -->
+        <div class="tit-chapeau">
+            <img class="tit-av" id="tit-av" src="" alt="">
+            <div>
+                <div class="tit-qui" id="tit-qui"></div>
+                <div class="tit-porte" id="tit-porte"></div>
             </div>
-            <div class="tit-liste defile" id="tit-cat"></div>
+            <button class="tit-x" id="tit-fermer" title="Fermer">✕</button>
         </div>
 
-        <div class="modale-actions">
-            <button class="bouton" id="tit-fermer">Fermer</button>
+        <div class="tit-corps">
+            <div class="tit-bloc">
+                <div class="tit-tete">Sa collection <small id="tit-n"></small></div>
+                <div class="tit-liste" id="tit-sien"></div>
+            </div>
+
+            <div class="tit-bloc">
+                <div class="tit-tete">
+                    En donner un
+                    <span class="cp-rech" style="margin-left:auto">
+                        <svg viewBox="0 0 24 24"><use href="#i-loupe"/></svg>
+                        <input type="text" id="tit-rech" placeholder="Chercher…" autocomplete="off">
+                    </span>
+                </div>
+                <!-- ⚠️ DEUX COLONNES, préfixes à gauche, suffixes à droite.
+                     C'était le vrai défaut de lisibilité : mélangés dans un
+                     seul flot, quatre-vingt-neuf titres formaient un mur où
+                     « Paisible » et « paisible » se suivaient sans qu'on
+                     sache lequel allait devant. La colonne le dit avant la
+                     couleur. -->
+                <div class="tit-deux">
+                    <div class="tit-col">
+                        <div class="tit-col-tete">Préfixes <b id="tit-np"></b></div>
+                        <div class="tit-liste defile" id="tit-cat-p"></div>
+                    </div>
+                    <div class="tit-col">
+                        <div class="tit-col-tete">Suffixes <b id="tit-ns"></b></div>
+                        <div class="tit-liste defile" id="tit-cat-s"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -3195,7 +3266,7 @@ function peindreComptes() {
     // par le nom qu'il s'est donné même quand un autre lui est imposé.
     const q = ($('cp-rech').value || '').toLowerCase().trim();
     const vus = q
-        ? COMPTES.filter(c => ((c.pseudo || '') + ' ' + (c.pseudo_impose || '')).toLowerCase().includes(q))
+        ? COMPTES.filter(c => (c.pseudo || '').toLowerCase().includes(q))
         : COMPTES;
 
     if (!vus.length) {
@@ -3203,15 +3274,10 @@ function peindreComptes() {
         return;
     }
     zone.innerHTML = vus.map(c => {
-        // ⚠️ Le pseudo AFFICHE est celui qui s'applique vraiment : imposé s'il
-        // y en a un, sinon le sien. Montrer le sien en gros alors qu'un autre
-        // s'affiche en jeu ferait chercher longtemps.
-        const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
+        // ℹ️ Le pseudo ne se CHANGE PLUS depuis le panneau, et la marque
+        // « imposé » est partie avec. C'est le pseudo du joueur, point.
+        const nom = c.pseudo || '(sans pseudo)';
         const sous = [];
-        if (c.pseudo_impose) {
-            sous.push('<span class="cp-marque impose" data-ch="pseudo" data-id="' + ech(c.id) +
-                '" title="Cliquer pour changer ou relâcher">imposé · il s\'appelle ' + ech(c.pseudo || '?') + '</span>');
-        }
         // ⚠️ Le RANG est monté sur la première ligne, en badge à côté du
         // pseudo : c'est ce qu'on lit en premier d'un joueur, et il se
         // perdait en petit sous le pseudo, entre le niveau et l'heure.
@@ -3244,8 +3310,7 @@ function peindreComptes() {
         return '<div class="cp">' + port +
             '<span class="cp-qui">' +
                 '<span class="cp-tete">' +
-                    '<span class="cp-nom" data-ch="pseudo" data-id="' + ech(c.id) +
-                        '" title="Cliquer pour imposer un pseudo">' + ech(nom) + '</span>' +
+                    '<span class="cp-nom">' + ech(nom) + '</span>' +
                     // 🏅 LE RANG, en badge. ⚠️ La couleur arrive du serveur en
                     // hexadécimal ; on lui colle « 26 » pour obtenir le même ton
                     // à 15 % en fond. Un hex à huit chiffres évite de convertir
@@ -3261,9 +3326,11 @@ function peindreComptes() {
                 // s affiche dans la barre du jeu, et le panneau doit montrer
                 // la meme chose que ce que voit le joueur.
                 // Le montant se MODIFIE : clic, on tape. Voir `corrigerCompte`.
+                // ⚠️ Le MEME fichier que dans le jeu, pas un tracé approchant :
+                // le panneau doit montrer exactement ce que le joueur voit.
                 '<span class="cp-c rub"><b data-ch="rubis" data-id="' + ech(c.id) +
                     '" title="Cliquer pour changer le montant">' + (c.rubis || 0) + '</b>' +
-                    '<span>' + icone('rubis', 13) + '</span></span>' +
+                    '<span><img class="cp-gem" src="/smoney.webp" alt=""></span></span>' +
                 '<span class="cp-c"><b>' + c.parties + '</b><span>Parties</span></span>' +
                 '<span class="cp-c"><b>' + c.victoires + '</b><span>Victoires</span></span>' +
             '</span>' +
@@ -3289,14 +3356,17 @@ function peindreComptes() {
 // serait une requête par lettre pour un tri qu'on sait faire ici.
 $('cp-rech').oninput = () => peindreComptes();
 
-// Un clic change le texte en champ. Entrée valide, Échap annule, perdre le
+// Un clic change le nombre en champ. Entrée valide, Échap annule, perdre le
 // focus valide aussi — on clique souvent à côté après avoir tapé. Même
 // geste que la correction d'une suggestion, pour ne pas avoir deux façons
 // de corriger dans la même page.
+//
+// ℹ️ Il ne reste qu'UN champ corrigible : le montant de rubis. Le pseudo ne
+// se change plus depuis le panneau, et le titre se prend dans le catalogue.
 function corrigerCompte(el) {
     if (el.dataset.enCours) return;
     el.dataset.enCours = '1';
-    const champ = el.dataset.ch;          // 'pseudo' | 'titre'
+    const champ = el.dataset.ch;          // 'rubis'
     const id = el.dataset.id;
     const c = COMPTES.find(x => x.id === id);
     if (!c) { delete el.dataset.enCours; return; }
@@ -3307,12 +3377,9 @@ function corrigerCompte(el) {
     // ⚠️ On part de la valeur POSÉE, pas de ce qui est affiché : la pastille
     // du titre affiche « + titre » quand il n'y en a pas, et le champ serait
     // pré-rempli avec ce libellé.
-    saisie.value = champ === 'pseudo' ? (c.pseudo_impose || '')
-        : champ === 'rubis' ? String(c.rubis || 0) : (c.titre || '');
-    saisie.maxLength = champ === 'rubis' ? 7 : (champ === 'pseudo' ? 20 : 40);
-    saisie.placeholder = champ === 'pseudo' ? 'vide = relâcher'
-        : champ === 'rubis' ? '' : 'vide = retirer';
-    if (champ === 'rubis') saisie.inputMode = 'numeric';
+    saisie.value = String(c.rubis || 0);
+    saisie.maxLength = 7;
+    saisie.inputMode = 'numeric';
     el.replaceWith(saisie);
     saisie.focus();
     saisie.select();
@@ -3325,45 +3392,14 @@ function corrigerCompte(el) {
         saisie.replaceWith(el);
     };
 
-    const valider = async () => {
-        const neuf = saisie.value.replace(/\s+/g, ' ').trim();
-
-        // 💎 Le montant passe par une AUTRE route, celle des compteurs, qui
-        // exige le second mot de passe — donner ou retirer de la monnaie
-        // n'est pas du même ordre qu'écrire un titre.
-        if (champ === 'rubis') {
-            const n = parseInt(neuf, 10);
-            if (!Number.isInteger(n) || n < 0 || n > 9999999) { rendre(); return; }
-            if (n === (c.rubis || 0)) { rendre(); return; }
-            fini = true;
-            rendre();
-            appliquerRubis(id, n);
-            return;
-        }
-
-        const vieux = champ === 'pseudo' ? (c.pseudo_impose || '') : (c.titre || '');
-        if (neuf === vieux) { rendre(); return; }
+    const valider = () => {
+        const n = parseInt(saisie.value.trim(), 10);
+        // Rien de lisible, ou rien de changé : on remet le nombre sans
+        // déranger la base.
+        if (!Number.isInteger(n) || n < 0 || n > 9999999 || n === (c.rubis || 0)) { rendre(); return; }
         fini = true;
-        saisie.disabled = true;
-        try {
-            const r = await appel('/admin/site/compte/' + champ, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, [champ]: neuf }),
-            });
-            const d = await r.json().catch(() => ({}));
-            if (!r.ok || !d.success) throw new Error(d.error || 'Erreur ' + r.status);
-            // ⚠️ On remplace la ligne EN MÉMOIRE puis on repeint : relire
-            // toute la table pour un champ ferait une requête et perdrait la
-            // position de défilement.
-            Object.assign(c, d.compte);
-            peindreComptes();
-        } catch (e) {
-            alert(e.message);
-            fini = false;
-            saisie.disabled = false;
-            rendre();
-        }
+        rendre();
+        appliquerRubis(id, n);
     };
 
     saisie.onkeydown = (ev) => {
@@ -3393,47 +3429,49 @@ $('tit-rech').oninput = () => peindreTitres();
 function peindreTitres() {
     const c = COMPTES.find(x => x.id === TIT_ID);
     if (!c) { fermerTitres(); return; }
-    $('tit-qui').textContent = c.pseudo_impose || c.pseudo || '(sans pseudo)';
+    $('tit-av').src = c.avatarUrl || '';
+    $('tit-qui').textContent = c.pseudo || '(sans pseudo)';
     $('tit-porte').textContent = composerTitrePanneau(c.titre_prefixe, c.titre_suffixe);
 
-    const siens = (c.titres || []).map(id => CAT_PAR_ID[id]).filter(Boolean);
+    // ⚠️ Sa collection, PRÉFIXES D'ABORD. Mélangés, on ne savait pas lequel
+    // des deux « paisible » on regardait.
+    const siens = (c.titres || []).map(id => CAT_PAR_ID[id]).filter(Boolean)
+        .sort((a, b) => (a.type === b.type ? a.nom.localeCompare(b.nom) : a.type === 'prefixe' ? -1 : 1));
     $('tit-n').textContent = siens.length ? '· ' + siens.length : '';
-    // ⚠️ Un clic sur la pastille l'habille ou le déshabille ; la croix la lui
-    // REPREND. Deux gestes sur le même objet, donc deux cibles distinctes —
-    // confondre « je ne le porte plus » et « je ne l'ai plus » serait le
-    // genre d'erreur qu'on ne remarque qu'après.
+
+    // ⚠️ La pastille n'est PLUS cliquable : le panneau ne change pas ce qui
+    // est porté, il ne fait qu'ajouter et retirer. Seule la croix agit, et
+    // elle reprend le titre. Un clic qui habillait ET une croix qui
+    // reprenait sur le même objet, c'était deux gestes à distinguer à chaque
+    // fois pour un seul qu'on voulait.
     $('tit-sien').innerHTML = siens.length ? siens.map(t => {
         const porte = (t.type === 'prefixe' ? c.titre_prefixe : c.titre_suffixe) === t.id;
-        return '<span class="tit ' + (t.type === 'prefixe' ? 'pre' : 'suf') + (porte ? ' on' : '') +
-            '" data-porter="' + ech(t.id) + '" title="' +
-            (porte ? 'Cliquer pour le retirer de sa tenue' : 'Cliquer pour le lui faire porter') + '">' +
-            ech(t.nom) + '<b class="x" data-reprendre="' + ech(t.id) + '" title="Le lui reprendre">✕</b></span>';
+        return '<span class="tit sien ' + (t.type === 'prefixe' ? 'pre' : 'suf') + (porte ? ' on' : '') +
+            '" title="' + (porte ? 'Il le porte' : 'Dans sa collection') + '">' + ech(t.nom) +
+            '<b class="x" data-reprendre="' + ech(t.id) + '" title="Le lui reprendre">✕</b></span>';
     }).join('') : '<span class="tit-vide">Il n’en possède aucun.</span>';
 
-    // Le catalogue, moins ce qu'il a déjà. ⚠️ Filtré à la frappe : à
-    // quatre-vingt-neuf titres, la liste entière n'est pas utilisable.
+    // Le catalogue, moins ce qu'il a déjà, en DEUX colonnes. ⚠️ Filtré à la
+    // frappe : à quatre-vingt-neuf titres, la liste entière n'est pas
+    // utilisable — et le filtre s'applique aux deux colonnes à la fois.
     const q = ($('tit-rech').value || '').toLowerCase().trim();
     const a = new Set(c.titres || []);
     const reste = CATALOGUE.filter(t => !a.has(t.id) && (!q || t.nom.toLowerCase().includes(q)));
-    $('tit-cat').innerHTML = reste.length ? reste.map(t =>
-        '<span class="tit ' + (t.type === 'prefixe' ? 'pre' : 'suf') + '" data-donner="' + ech(t.id) +
-        '" title="' + (t.source === 'boutique' ? 'Boutique' : 'À gagner') + ' — cliquer pour le donner">' +
-        ech(t.nom) + '</span>').join('')
-        : '<span class="tit-vide">' + (q ? 'Aucun titre ne correspond.' : 'Il les a tous.') + '</span>';
+
+    for (const [type, cible, compteur] of [['prefixe', 'tit-cat-p', 'tit-np'], ['suffixe', 'tit-cat-s', 'tit-ns']]) {
+        const l = reste.filter(t => t.type === type);
+        $(compteur).textContent = l.length || '';
+        $(cible).innerHTML = l.length ? l.map(t =>
+            '<span class="tit ' + (type === 'prefixe' ? 'pre' : 'suf') + '" data-donner="' + ech(t.id) +
+            '" title="' + (t.source === 'boutique' ? 'Boutique' : 'À gagner') + ' — cliquer pour le donner">' +
+            ech(t.nom) + '</span>').join('')
+            : '<span class="tit-vide">' + (q ? 'Rien ici.' : 'Il les a tous.') + '</span>';
+    }
 
     $('voile-tit').querySelectorAll('[data-donner]').forEach(el =>
         el.onclick = () => majTitres({ donner: el.dataset.donner }));
     $('voile-tit').querySelectorAll('[data-reprendre]').forEach(el =>
-        // ⚠️ `stopPropagation` : la croix est DANS la pastille, et sans lui
-        // le clic déclencherait aussi « porter » — on reprendrait le titre
-        // en l'habillant avec, dans le même geste.
-        el.onclick = (ev) => { ev.stopPropagation(); majTitres({ retirer: el.dataset.reprendre }); });
-    $('voile-tit').querySelectorAll('[data-porter]').forEach(el => el.onclick = () => {
-        const t = CAT_PAR_ID[el.dataset.porter];
-        const cle = t.type === 'prefixe' ? 'prefixe' : 'suffixe';
-        const deja = (t.type === 'prefixe' ? c.titre_prefixe : c.titre_suffixe) === t.id;
-        majTitres({ [cle]: deja ? '' : t.id });
-    });
+        el.onclick = () => majTitres({ retirer: el.dataset.reprendre }));
 }
 
 async function majTitres(quoi) {
@@ -3484,7 +3522,7 @@ function ouvrirCompteSup(action, id) {
     if (!c) return;
     CPT_ACTION = action;
     CPT_ID = id;
-    const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
+    const nom = c.pseudo || '(sans pseudo)';
     $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte' : 'Reset des compteurs';
     $('cpt-cible').textContent = action === 'del'
         // ⚠️ On dit ce que ça fait VRAIMENT : ce n'est pas un bannissement.

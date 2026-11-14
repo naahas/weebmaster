@@ -46,11 +46,11 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
     console.log('\n=== 1. Fermees sans le code du panneau ===');
     const sans = [
         ['GET  /admin/site/comptes', await get('/admin/site/comptes', '')],
-        ['POST .../compte/pseudo', await post('/admin/site/compte/pseudo', { id: 'x' }, '')],
-        ['POST .../compte/titre', await post('/admin/site/compte/titre', { id: 'x' }, '')],
         ['POST .../compte/chiffres', await post('/admin/site/compte/chiffres', { id: 'x' }, '')],
         ['POST .../compte/supprimer', await post('/admin/site/compte/supprimer', { id: 'x' }, '')],
         ['POST .../compte/rubis', await post('/admin/site/compte/rubis', { id: 'x' }, '')],
+        ['POST .../compte/titres', await post('/admin/site/compte/titres', { id: 'x' }, '')],
+        ['GET  /admin/site/titres', await get('/admin/site/titres', '')],
     ];
     for (const [nom, r] of sans) check(nom + ' refuse', r.status === 401, 'HTTP ' + r.status);
     const faux = await get('/admin/site/comptes', PANEL + 'x');
@@ -110,45 +110,21 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
     check('l URL de l avatar est fabriquee par le SERVEUR',
         typeof c.avatarUrl === 'string' && c.avatarUrl.startsWith('/'), c.avatarUrl);
 
-    if (liste.body.colonnesPretes === false) {
-        console.log('\n⏭️  Colonnes « titre » / « pseudo_impose » absentes — on saute 4 et 5.');
-        console.log('    (docs/comptes.sql, section « AJOUT APRES COUP »)');
-    } else {
-        // ── 4. Le titre special ──────────────────────────────────
-        console.log('\n=== 4. Le titre special ===');
-        let p = await post('/admin/site/compte/titre', { id: ID, titre: 'Bêta-testeur' });
-        check('on pose un titre', p.status === 200 && p.body.success, p.body.error || 'ok');
-        ({ c } = await trouver());
-        check('il est en base', c.titre === 'Bêta-testeur', c.titre);
-        // ⚠️ Le titre DEDUIT ne bouge pas : le special l ecrase a l affichage,
-        // il ne le remplace pas en base. Les melanger ferait perdre le niveau.
-        check('⚠️ le titre du NIVEAU est intact a cote', c.titreNiveau === 'Combattant', c.titreNiveau);
-
-        p = await post('/admin/site/compte/titre', { id: ID, titre: '' });
-        check('on le retire', p.status === 200 && p.body.success);
-        ({ c } = await trouver());
-        check('il est bien parti', c.titre === null, String(c.titre));
-
-        // ── 5. Le pseudo impose ──────────────────────────────────
-        console.log('\n=== 5. Le pseudo impose ===');
-        p = await post('/admin/site/compte/pseudo', { id: ID, pseudo: 'JoueurCorrige' });
-        check('on impose un pseudo', p.status === 200 && p.body.success, p.body.error || 'ok');
-        ({ c } = await trouver());
-        check('il est en base', c.pseudo_impose === 'JoueurCorrige', c.pseudo_impose);
-        // ⚠️ DEUX COLONNES, et c est tout l interet : on sait toujours ce
-        // qu il voulait s appeler, donc ce qu il reprendra si on le relache.
-        check('⚠️ son vrai pseudo est CONSERVE a cote', c.pseudo === marque, c.pseudo);
-
-        // ⚠️ Un pseudo impose passe par le MEME tamis que les autres : rien
-        // ne le rend convenable du seul fait qu il vient du panneau.
-        const sale = await post('/admin/site/compte/pseudo', { id: ID, pseudo: '   ' });
-        check('un pseudo vide de sens relache plutot que d ecrire', sale.status === 200);
-
-        p = await post('/admin/site/compte/pseudo', { id: ID, pseudo: '' });
-        check('on le relache', p.status === 200 && p.body.success);
-        ({ c } = await trouver());
-        check('il reprend le sien', c.pseudo_impose === null, String(c.pseudo_impose));
+    const pret = liste.body.colonnesPretes !== false;
+    if (!pret) {
+        console.log('\n⏭️  Colonnes du panneau absentes — on saute 5 bis et 5 ter.');
+        console.log('    (docs/comptes.sql, sections « AJOUT APRES COUP »)');
     }
+
+    // ── 5. Ce que le panneau ne peut PLUS faire ──────────────────
+    // ⚠️ Deux routes ont ete retirees, et ces controles sont la pour qu on
+    // ne les remette pas sans le decider. Le pseudo d un joueur est le sien,
+    // et un titre se prend dans le catalogue — pas au clavier.
+    console.log('\n=== 5. Les deux routes retirees ===');
+    const pseudoMort = await post('/admin/site/compte/pseudo', { id: ID, pseudo: 'Impose' });
+    check('⚠️ /compte/pseudo n existe plus', pseudoMort.status === 404, 'HTTP ' + pseudoMort.status);
+    const titreMort = await post('/admin/site/compte/titre', { id: ID, titre: 'Texte libre' });
+    check('⚠️ /compte/titre (texte libre) n existe plus', titreMort.status === 404, 'HTTP ' + titreMort.status);
 
     // ── 5 bis. La monnaie ────────────────────────────────────────
     // ⚠️ Elle est volontairement plus OUVERTE que les compteurs : donner des
@@ -208,19 +184,19 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
         check('un suffixe se compose avec', catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe) === 'Shinigami des ombres',
             catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe));
 
-        // ⚠️ On ne porte QUE ce qu on possede.
+        // ⚠️ LE PANNEAU NE CHOISIT PAS CE QU IL PORTE. Il donne et il
+        // reprend, rien d autre — c est au joueur de composer son titre
+        // parmi ce qu il possede. Ces deux controles sont la pour qu on ne
+        // remette pas la route d habillage sans le decider.
         z2 = await post('/admin/site/compte/titres', { id: ID, prefixe: 'empereur' });
-        check('⚠️ porter un titre qu il n a pas est refuse', z2.status === 400, 'HTTP ' + z2.status);
-
-        // Un emplacement seul reste valable.
-        await post('/admin/site/compte/titres', { id: ID, prefixe: '' });
+        check('⚠️ le panneau ne peut pas HABILLER', z2.status === 400, 'HTTP ' + z2.status);
+        z2 = await post('/admin/site/compte/titres', { id: ID, prefixe: '' });
+        check('⚠️ … ni DESHABILLER', z2.status === 400, 'HTTP ' + z2.status);
         ({ c } = await trouver());
-        check('on peut n en porter qu un', catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe) === 'des ombres',
-            catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe));
-        check('… sans le perdre de sa collection', (c.titres || []).includes('shinigami'));
+        check('… et rien n a bouge', c.titre_prefixe === 'shinigami', String(c.titre_prefixe));
 
-        // ⚠️ Lui reprendre un titre qu il PORTE doit aussi le deshabiller.
-        await post('/admin/site/compte/titres', { id: ID, prefixe: 'shinigami' });
+        // ⚠️ Lui reprendre un titre qu il PORTE doit quand meme le
+        // deshabiller : sinon il garderait a l ecran un titre qu il n a plus.
         z2 = await post('/admin/site/compte/titres', { id: ID, retirer: 'shinigami' });
         check('on le lui reprend', z2.status === 200 && z2.body.success);
         ({ c } = await trouver());

@@ -7549,34 +7549,50 @@ body.game-active:has(.poll-game-container) #particles-js {
    Il vit la et pas dans la carte du profil : une monnaie qu il faut aller
    chercher ne donne envie de rien. Et SANS le mot « Rubis » — le chiffre est
    collé a son dessin, c est assez.
-   ⚠️ Pas de fond ni de cadre : le coin porte deja l or de la banniere et le
-   cercle dore de l avatar. Une troisieme forme en aurait fait une barre
-   d outils. Le rubis se tient seul, par sa couleur. */
+
+   ⚠️ UN BADGE, pas du texte nu. Pose sans fond, le chiffre flottait dans le
+   coin sans rien pour le tenir, et son rouge devenait une alerte au milieu de
+   l or de la banniere. Enferme, il redevient un objet — un portefeuille a
+   cote d un portrait.
+
+   ⚠️ Et sa HAUTEUR est celle de l avatar (`--moi-av`), pas une valeur a lui :
+   deux pastilles rondes cote a cote dont l une est plus courte se lisent
+   comme un defaut d alignement, et l avatar change de taille selon l ecran. */
 .v2-moi-rubis {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    color: #ff8a8a;
-    font-size: 0.92rem;
+    justify-content: center;
+    gap: 0.45rem;
+    height: var(--moi-av);
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    /* ⚠️ DORE et non plus rouge : le gemme livré porte le S du logo et il est
+       or. Un chiffre rouge à côté d un jeton doré faisait deux monnaies, et
+       le rouge se lisait comme une alerte au milieu de l or de la bannière. */
+    color: #f0c75e;
+    background: rgba(240, 199, 94, 0.08);
+    border: 1px solid rgba(240, 199, 94, 0.2);
+    font-size: 0.95rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    /* Il garde la gouttiere de la barre, plus un peu : colle a l avatar, le
-       chiffre paraissait lui appartenir comme une pastille de notification.
-       Ecarte, on lit deux choses — le portrait, et ce qu on possede. */
-    margin-right: 0.3rem;
+    /* La gouttiere de la barre (1rem) plus ce qu il faut pour qu on lise deux
+       objets et non un seul : colle, le badge paraissait appartenir a
+       l avatar comme une pastille de notification. */
+    margin-right: 0.55rem;
     user-select: none;
 }
-/* ⚠️ Taille EXPLICITE sur le trace : un <svg> sans width ni height retombe
-   sur 300 × 150 px et fait exploser la barre qui le porte. C est l erreur qui
-   a deja coute quatre panneaux sur le banc de la refonte. */
-.v2-moi-rubis svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; display: block; }
+/* ⚠️ La HAUTEUR decide, la largeur suit. Le gemme n est pas carre (149 × 160
+   apres recadrage) : lui imposer un carre l aurait ecrase. */
+.v2-moi-rubis img { height: 1.15rem; width: auto; flex: 0 0 auto; display: block; }
 .v2-moi-rubis b { font-weight: 700; }
 
 @media (max-width: 480px) {
-    /* Sur telephone la barre n a que l avatar a droite : le solde peut rester,
-       mais il se resserre pour ne pas pousser le portrait vers le centre. */
-    .v2-moi-rubis { font-size: 0.82rem; gap: 0.3rem; }
-    .v2-moi-rubis svg { width: 0.85rem; height: 0.85rem; }
+    /* Sur telephone la barre n a que l avatar a droite : le badge peut rester,
+       mais il se resserre pour ne pas pousser le portrait vers le centre.
+       ⚠️ Sa hauteur ne se touche PAS : elle suit `--moi-av`, qui se resserre
+       deja de son cote. La reecrire ici la desaccorderait de l avatar. */
+    .v2-moi-rubis { font-size: 0.84rem; gap: 0.32rem; padding: 0 0.7rem; margin-right: 0.35rem; }
+    .v2-moi-rubis img { height: 1rem; }
 }
 
 /* 🏅 Le titre du palier. ⚠️ EN CAPITALES ET ESPACE : en casse normale il se
