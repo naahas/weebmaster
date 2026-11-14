@@ -7020,6 +7020,12 @@ app.get('/admin/site/comptes', async (req, res) => {
                 // a donne Bêta-testeur » — avec un seul champ, on ne saurait
                 // plus ce qu on ecrase.
                 titreNiveau: niveaux.titrePourNiveau(niveau).nom,
+                // ⚠️ La couleur du rang vient du MEME tableau que son nom
+                // (`TITRES_JOUEUR`, src/script/niveaux.js). La recopier dans
+                // la page du panneau aurait fait deux palettes a tenir
+                // d accord — et c est exactement la raison d etre du fichier
+                // partage.
+                rangCouleur: niveaux.titrePourNiveau(niveau).couleur,
                 xpDansNiveau: c.xp - niveaux.xpCumulee(niveau),
                 xpDuNiveau: niveaux.xpCumulee(niveau + 1) - niveaux.xpCumulee(niveau),
             });

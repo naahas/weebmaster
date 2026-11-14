@@ -633,8 +633,18 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 /* `min-width: 0` : sans lui un pseudo à rallonge pousse les chiffres hors
    du cadre au lieu de se couper. C'est le défaut des enfants de flex. */
 .cp-qui { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
-.cp-nom { font-weight: 600; font-size: 1.16rem; cursor: text; align-self: flex-start;
-          border-bottom: 1px dashed transparent; transition: border-color .15s; }
+/* Le pseudo et son rang sur la même ligne. `baseline` et non `center` : les
+   deux sont du texte, et les aligner par le milieu faisait flotter le badge
+   au-dessus de la ligne de base du pseudo. */
+.cp-tete { display: flex; align-items: baseline; gap: .6rem; min-width: 0; }
+.cp-rang {
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; padding: .2rem .5rem; border-radius: 6px;
+    flex: 0 0 auto; white-space: nowrap;
+}
+.cp-nom { font-weight: 600; font-size: 1.16rem; cursor: text;
+          border-bottom: 1px dashed transparent; transition: border-color .15s;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-nom:hover { border-color: rgba(255,255,255,.3); }
 .cp-sous { font-size: .86rem; color: var(--doux); display: flex; gap: .65rem;
            flex-wrap: wrap; align-items: center; }
@@ -656,12 +666,19 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
    l eclaircit (#ff8a8a plutot que `--rouge`) pour qu il ne se lise pas comme
    le rouge d alerte des boutons « Supprimer », juste a cote. */
 .cp-c.rub b, .cp-c.rub span { color: #ff8a8a; }
+/* Le montant se modifie sur place, comme le pseudo et le titre : meme
+   pointillé au survol, pour que le geste s apprenne une fois. */
+.cp-c.rub b { cursor: text; border-bottom: 1px dashed transparent; transition: border-color .15s; }
+.cp-c.rub b:hover { border-color: rgba(255,138,138,.5); }
 .cp-actions { display: flex; gap: .45rem; flex: 0 0 auto; }
 .cp-champ {
     font-family: inherit; font-size: 1.1rem; font-weight: 600; color: var(--texte);
     background: rgba(0,0,0,.35); border: 1px solid var(--accent);
     border-radius: 7px; padding: .2rem .5rem; outline: none; min-width: 160px;
 }
+/* Le montant : étroit et centré, il remplace un nombre dans une colonne de
+   62 px. À 160 px il aurait poussé les trois autres compteurs hors du cadre. */
+.cp-champ.nb { min-width: 0; width: 76px; text-align: center; font-size: 1rem; }
 .cp-vide { padding: 2.8rem 1.4rem; text-align: center; color: var(--doux); }
 
 /* 🔍 LA RECHERCHE. Elle vit dans le chapeau de la carte, à droite, là où les
@@ -3091,8 +3108,13 @@ function peindreComptes() {
             sous.push('<span class="cp-marque impose" data-ch="pseudo" data-id="' + ech(c.id) +
                 '" title="Cliquer pour changer ou relâcher">imposé · il s\'appelle ' + ech(c.pseudo || '?') + '</span>');
         }
-        sous.push('<span class="cp-niv">Niveau ' + c.niveau + ' · ' + ech(c.titreNiveau) +
-            ' · ' + c.xpDansNiveau + '/' + c.xpDuNiveau + '</span>');
+        // ⚠️ Le RANG est monté sur la première ligne, en badge à côté du
+        // pseudo : c'est ce qu'on lit en premier d'un joueur, et il se
+        // perdait en petit sous le pseudo, entre le niveau et l'heure.
+        // Il ne reste ici que le niveau et la progression, qui sont des
+        // chiffres — leur place est dans la ligne des chiffres.
+        sous.push('<span class="cp-niv">Niveau ' + c.niveau +
+            ' · ' + c.xpDansNiveau + '/' + c.xpDuNiveau + ' XP</span>');
         sous.push('<span class="cp-marque titre" data-ch="titre" data-id="' + ech(c.id) +
             '" title="Cliquer pour changer ou retirer">' +
             (c.titre ? ech(c.titre) : '+ titre') + '</span>');
@@ -3111,17 +3133,27 @@ function peindreComptes() {
 
         return '<div class="cp">' + port +
             '<span class="cp-qui">' +
-                '<span class="cp-nom" data-ch="pseudo" data-id="' + ech(c.id) +
-                    '" title="Cliquer pour imposer un pseudo">' + ech(nom) + '</span>' +
+                '<span class="cp-tete">' +
+                    '<span class="cp-nom" data-ch="pseudo" data-id="' + ech(c.id) +
+                        '" title="Cliquer pour imposer un pseudo">' + ech(nom) + '</span>' +
+                    // 🏅 LE RANG, en badge. ⚠️ La couleur arrive du serveur en
+                    // hexadécimal ; on lui colle « 26 » pour obtenir le même ton
+                    // à 15 % en fond. Un hex à huit chiffres évite de convertir
+                    // en rgba dans la page, donc d'y recopier la palette.
+                    '<span class="cp-rang" style="color:' + ech(c.rangCouleur) +
+                        ';background:' + ech(c.rangCouleur) + '26">' + ech(c.titreNiveau) + '</span>' +
+                '</span>' +
                 '<span class="cp-sous">' + sous.join('') + '</span>' +
             '</span>' +
             '<span class="cp-chiffres">' +
                 '<span class="cp-c"><b>' + c.xp + '</b><span>XP</span></span>' +
-                // 💎 La monnaie porte son icone plutot que son nom : c est
-                // ainsi qu elle s affichera dans le jeu, et le panneau doit
-                // montrer la meme chose que ce que voit le joueur.
-                '<span class="cp-c rub"><b>' + (c.rubis || 0) + '</b>' +
-                    '<span>' + icone('rubis', 11) + ' Rubis</span></span>' +
+                // 💎 L icone SEULE, sans le mot : c est ainsi que la monnaie
+                // s affiche dans la barre du jeu, et le panneau doit montrer
+                // la meme chose que ce que voit le joueur.
+                // Le montant se MODIFIE : clic, on tape. Voir `corrigerCompte`.
+                '<span class="cp-c rub"><b data-ch="rubis" data-id="' + ech(c.id) +
+                    '" title="Cliquer pour changer le montant">' + (c.rubis || 0) + '</b>' +
+                    '<span>' + icone('rubis', 13) + '</span></span>' +
                 '<span class="cp-c"><b>' + c.parties + '</b><span>Parties</span></span>' +
                 '<span class="cp-c"><b>' + c.victoires + '</b><span>Victoires</span></span>' +
             '</span>' +
@@ -3160,13 +3192,16 @@ function corrigerCompte(el) {
 
     const saisie = document.createElement('input');
     saisie.type = 'text';
-    saisie.className = 'cp-champ';
+    saisie.className = 'cp-champ' + (champ === 'rubis' ? ' nb' : '');
     // ⚠️ On part de la valeur POSÉE, pas de ce qui est affiché : la pastille
     // du titre affiche « + titre » quand il n'y en a pas, et le champ serait
     // pré-rempli avec ce libellé.
-    saisie.value = champ === 'pseudo' ? (c.pseudo_impose || '') : (c.titre || '');
-    saisie.maxLength = champ === 'pseudo' ? 20 : 40;
-    saisie.placeholder = champ === 'pseudo' ? 'vide = relâcher' : 'vide = retirer';
+    saisie.value = champ === 'pseudo' ? (c.pseudo_impose || '')
+        : champ === 'rubis' ? String(c.rubis || 0) : (c.titre || '');
+    saisie.maxLength = champ === 'rubis' ? 7 : (champ === 'pseudo' ? 20 : 40);
+    saisie.placeholder = champ === 'pseudo' ? 'vide = relâcher'
+        : champ === 'rubis' ? '' : 'vide = retirer';
+    if (champ === 'rubis') saisie.inputMode = 'numeric';
     el.replaceWith(saisie);
     saisie.focus();
     saisie.select();
@@ -3181,6 +3216,20 @@ function corrigerCompte(el) {
 
     const valider = async () => {
         const neuf = saisie.value.replace(/\s+/g, ' ').trim();
+
+        // 💎 Le montant passe par une AUTRE route, celle des compteurs, qui
+        // exige le second mot de passe — donner ou retirer de la monnaie
+        // n'est pas du même ordre qu'écrire un titre.
+        if (champ === 'rubis') {
+            const n = parseInt(neuf, 10);
+            if (!Number.isInteger(n) || n < 0 || n > 9999999) { rendre(); return; }
+            if (n === (c.rubis || 0)) { rendre(); return; }
+            fini = true;
+            rendre();
+            appliquerRubis(id, n);
+            return;
+        }
+
         const vieux = champ === 'pseudo' ? (c.pseudo_impose || '') : (c.titre || '');
         if (neuf === vieux) { rendre(); return; }
         fini = true;
@@ -3218,7 +3267,37 @@ function corrigerCompte(el) {
 // question : être entré dans le panneau ne suffit pas à effacer le profil
 // de quelqu'un. `CODE_SUP` est partagé avec la modale des questions — on ne
 // le retape pas d'une modale à l'autre.
-let CPT_ACTION = null, CPT_ID = null;
+let CPT_ACTION = null, CPT_ID = null, CPT_RUBIS = null;
+
+// 💎 Changer le montant. Il passe par la route des compteurs, donc par le
+// second mot de passe.
+//
+// ⚠️ Et on NE DEMANDE PAS le mot de passe d'avance : la plupart du temps il
+// est déjà en mémoire (`CODE_SUP`, partagé avec la suppression d'une
+// question), et une modale avant chaque correction aurait rendu le geste
+// inutilisable. On tente, et l'on n'ouvre la modale QUE si le serveur refuse.
+async function appliquerRubis(id, montant) {
+    if (CODE_SUP) {
+        const r = await appel('/admin/site/compte/chiffres', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deleteCode: CODE_SUP, id, rubis: montant }),
+        }, false);
+        const d = await r.json().catch(() => ({}));
+        if (r.status !== 401 && d.success) {
+            Object.assign(COMPTES.find(x => x.id === id) || {}, d.compte);
+            peindreComptes();
+            return;
+        }
+        // ⚠️ Un code refusé doit être OUBLIÉ : conservé, il reviendrait
+        // pré-rempli et tout échouerait sans raison visible.
+        if (r.status === 401) CODE_SUP = '';
+        else { alert(d.error || 'Erreur ' + r.status); return; }
+    }
+    // Pas de code, ou code périmé : on le demande, en gardant le montant.
+    CPT_RUBIS = montant;
+    ouvrirCompteSup('rubis', id);
+}
 
 function ouvrirCompteSup(action, id) {
     const c = COMPTES.find(x => x.id === id);
@@ -3226,11 +3305,14 @@ function ouvrirCompteSup(action, id) {
     CPT_ACTION = action;
     CPT_ID = id;
     const nom = c.pseudo_impose || c.pseudo || '(sans pseudo)';
-    $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte' : 'Reset des compteurs';
+    $('cpt-titre').textContent = action === 'del' ? 'Supprimer ce compte'
+        : action === 'rubis' ? 'Changer le montant' : 'Reset des compteurs';
     $('cpt-cible').textContent = action === 'del'
         // ⚠️ On dit ce que ça fait VRAIMENT : ce n'est pas un bannissement.
         ? '« ' + nom + " » sera supprimé de Supabase, avec son XP et ses parties. "
           + "Il pourra se reconnecter et repartir d'un compte neuf — ce n'est pas un bannissement."
+        : action === 'rubis'
+        ? '« ' + nom + ' » passera de ' + (c.rubis || 0) + ' à ' + CPT_RUBIS + ' rubis.'
         : '« ' + nom + ' » repartira à 0 XP, 0 rubis, 0 partie, 0 victoire. '
           + 'Son titre et son pseudo ne bougent pas.';
     $('cpt-code').value = CODE_SUP;
@@ -3238,7 +3320,10 @@ function ouvrirCompteSup(action, id) {
     setTimeout(() => (CODE_SUP ? $('cpt-go') : $('cpt-code')).focus(), 30);
 }
 
-function fermerCompteSup() { $('voile-cpt').classList.remove('ouvert'); CPT_ACTION = null; CPT_ID = null; }
+function fermerCompteSup() {
+    $('voile-cpt').classList.remove('ouvert');
+    CPT_ACTION = null; CPT_ID = null; CPT_RUBIS = null;
+}
 $('cpt-annuler').onclick = fermerCompteSup;
 $('voile-cpt').onclick = e => { if (e.target === $('voile-cpt')) fermerCompteSup(); };
 
@@ -3253,6 +3338,8 @@ $('cpt-go').onclick = async () => {
         const chemin = action === 'del' ? '/admin/site/compte/supprimer' : '/admin/site/compte/chiffres';
         const corps = action === 'del'
             ? { deleteCode: CODE_SUP, id }
+            : action === 'rubis'
+            ? { deleteCode: CODE_SUP, id, rubis: CPT_RUBIS }
             : { deleteCode: CODE_SUP, id, xp: 0, rubis: 0, parties: 0, victoires: 0 };
         // ⚠️ `false` : ici un 401 parle du mot de passe de SUPPRESSION, pas du
         // code du panneau. Laisser appel() le traiter déconnecterait de tout.
