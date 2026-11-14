@@ -7251,7 +7251,11 @@ body.game-active:has(.poll-game-container) #particles-js {
        cale sur le CENTRE DE L AVATAR, qui est a un demi-avatar du bord droit
        quelle que soit la largeur de la carte. On peut donc la resserrer sans
        rien recalculer — ce qui n etait pas vrai avant les variables. */
-    width: 17rem;
+    /* 16 et non 17 : avec Google retire, le corps ne porte plus qu un bouton
+       et deux lignes de chiffres. A 17rem la carte etait plus large que son
+       contenu ne le demandait. ⚠️ Le bouton suit tout seul — il est en
+       `flex: 1`, donc sa largeur EST celle du corps. */
+    width: 16rem;
     max-width: calc(100vw - 2.5rem);
     border-radius: 1rem;
     /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
@@ -7340,7 +7344,11 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 
 .v2-profil-corps {
-    padding: 0.9rem 1rem 0.95rem;
+    /* ⚠️ Le haut est plus genereux que le bas (1,15 contre 0,95) : c est lui
+       qui separe l etiquette « Se connecter » de la bande teintee de
+       l en-tete. Trop pres, les petites majuscules dorees se lisaient comme
+       la derniere ligne de l en-tete plutot que comme le titre du bloc. */
+    padding: 1.15rem 1rem 0.95rem;
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
@@ -7455,7 +7463,7 @@ body.game-active:has(.poll-game-container) #particles-js {
    ou un second fournisseur revient (Twitch), les boutons se remettent cote a
    cote sans toucher a l etiquette. Mettre la colonne sur `.v2-profil-ronds`
    lui-meme les aurait empiles. */
-.v2-profil-cnx { display: flex; flex-direction: column; gap: 0.5rem; }
+.v2-profil-cnx { display: flex; flex-direction: column; gap: 0.72rem; }
 .v2-profil-cnx > span {
     /* ⚠️ Le filet de chaque cote est un pseudo-element en `flex: 1`, donc le
        span doit occuper TOUTE la largeur. Pas de `align-self: center` ici :
