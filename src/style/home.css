@@ -7582,11 +7582,32 @@ body.game-active:has(.poll-game-container) #particles-js {
 /* 🏅 Le titre du palier. ⚠️ EN CAPITALES ET ESPACE : en casse normale il se
    confondait avec « Profil local » — une mention de statut parmi d autres.
    Un titre se gagne, il doit se lire comme une distinction. */
+/* 🏅 LE RANG : petites capitales espacees, couleur de son palier. */
 .v2-profil-titre {
     font-size: 0.67rem;
     font-weight: 800;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+}
+
+/* 🎖️ LE TITRE PORTE, sous le rang.
+   ⚠️ Deliberement DIFFERENT du rang, et pas seulement en couleur : en
+   minuscules, en italique, sans l espacement des capitales. Les deux sont de
+   petites lignes grises sous un pseudo — habillees pareil, on les aurait lues
+   comme une seule phrase coupee en deux (« VÉTÉRAN SHINIGAMI DES OMBRES »).
+   La casse separe mieux que la teinte a cette taille. */
+.v2-profil-exploit {
+    font-size: 0.72rem;
+    font-style: italic;
+    color: #c9a227;
+    /* ⚠️ Il peut etre long — « Purificateur de l'infini » fait vingt-trois
+       caracteres dans une carte de 16rem. On le coupe plutot que de laisser
+       la carte s elargir : sa largeur est calculee ailleurs et tout en
+       depend, a commencer par la pointe de bulle. */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ✦ Le trait entre les statistiques et le niveau. Ce ne sont pas les memes

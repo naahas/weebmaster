@@ -151,6 +151,31 @@ create policy "chacun lit son compte"
 -- l'XP dit « combien j'ai joué » et se compte en centaines ; les rubis
 -- achètent des titres, dont les prix de la v1 allaient de 500 à 260 000.
 --
+-- ============================================================
+-- AJOUT APRÈS COUP : les titres
+-- ============================================================
+--
+--   alter table public.comptes
+--       add column if not exists titres        jsonb not null default '[]'::jsonb,
+--       add column if not exists titre_prefixe text,
+--       add column if not exists titre_suffixe text;
+--
+-- 🎖️ `titres` est la COLLECTION : la liste des identifiants qu'il possède.
+-- `titre_prefixe` et `titre_suffixe` sont ce qu'il PORTE — deux emplacements
+-- indépendants, « Shinigami des ombres », et l'un sans l'autre est valable.
+--
+-- ⚠️ Ce sont des IDENTIFIANTS du catalogue (`src/script/titres.js`), jamais
+-- des noms. Corriger un nom — « Capitale » est devenu « Capitaine » — ne doit
+-- pas faire perdre son titre à quelqu'un.
+--
+-- ⚠️ Un jsonb et pas une table de liaison : un joueur en portera cinq ou dix,
+-- jamais mille, et une table de plus aurait voulu dire une jointure à chaque
+-- lecture de profil — pour une liste qu'on lit toujours en entier.
+--
+-- ⚠️ ET LA COLONNE `titre` NE SERT PLUS. Elle portait un titre spécial en
+-- texte libre, avant le catalogue. On ne la supprime pas (c'est irréversible
+-- et elle ne coûte rien), mais plus rien ne l'écrit ni ne la lit.
+--
 -- ⚠️ `titre` N'EST PAS le titre déduit du niveau, et c'est toute la
 -- différence avec le paragraphe du dessus. Il est NULL pour presque tout le
 -- monde ; rempli, il ÉCRASE celui du niveau. « Bêta-testeur », « Vainqueur du

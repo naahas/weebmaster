@@ -51,7 +51,7 @@ let tableComptesOk = true;
 // en deux temps.
 let colonnesPanneauOk = null;
 const CHAMPS_BASE = 'id, pseudo, avatar, xp, parties, victoires';
-const CHAMPS_PLUS = CHAMPS_BASE + ', titre, pseudo_impose, rubis';
+const CHAMPS_PLUS = CHAMPS_BASE + ', titre, pseudo_impose, rubis, titres, titre_prefixe, titre_suffixe';
 const champsProfil = () => (colonnesPanneauOk === false ? CHAMPS_BASE : CHAMPS_PLUS);
 
 // Rend `true` si l erreur vient de ces colonnes — l appelant doit alors
@@ -616,6 +616,20 @@ async function listerComptes() {
 // cliquer sur un bouton qui echouera.
 function colonnesPanneauPretes() { return colonnesPanneauOk !== false; }
 
+// Un compte, par son identifiant. Sert aux routes qui doivent LIRE avant
+// d ecrire — donner un titre demande de savoir ce qu il possede deja.
+async function lireCompte(id) {
+    if (!ACTIF || !tableComptesOk || !id) return null;
+    let { data, error } = await supabase.from('comptes')
+        .select(champsProfil()).eq('id', id).maybeSingle();
+    if (colonnesManquantes(error)) {
+        ({ data, error } = await supabase.from('comptes')
+            .select(CHAMPS_BASE).eq('id', id).maybeSingle());
+    }
+    if (error) return null;
+    return data || null;
+}
+
 // Pose, change ou efface un champ d un compte. `valeurs` ne contient que ce
 // qu on touche — un champ absent n est pas ecrase.
 async function majCompte(id, valeurs) {
@@ -661,7 +675,7 @@ async function supprimerCompte(id) {
 module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
     xpDeLaPartie, partieAssezLongue, crediter,
-    listerComptes, majCompte, supprimerCompte, colonnesPanneauPretes,
+    listerComptes, lireCompte, majCompte, supprimerCompte, colonnesPanneauPretes,
     // Exportes pour `npm run test:comptes` : ce sont les decisions qui se
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.

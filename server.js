@@ -18,6 +18,9 @@ const comptes = require('./server-comptes');
 // compte : le recalculer ici aurait fait deux courbes a tenir d accord, et
 // elles auraient diverge au premier changement de bareme.
 const niveaux = require('./src/script/niveaux');
+// 🎖️ Le catalogue des titres, lui aussi charge des deux cotes : le serveur
+// valide ce que le panneau envoie, le navigateur compose ce qu il affiche.
+const titres = require('./src/script/titres');
 
 const app = express();
 
@@ -1023,6 +1026,8 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             xp: r.xp || 0,
             rubis: r.rubis || 0,
             titre: r.titre || null,
+            titrePrefixe: r.titre_prefixe || null,
+            titreSuffixe: r.titre_suffixe || null,
             pseudoImpose: r.pseudo_impose || null,
         });
     }
@@ -7072,6 +7077,88 @@ app.post('/admin/site/compte/titre', async (req, res) => {
     res.json({ success: true, compte: r });
 });
 
+// 🎖️ LES TITRES D UN COMPTE — donner, retirer, et choisir ce qu il porte.
+//
+// Une seule route pour les trois : elles lisent la même collection, écrivent
+// la même ligne et rendent le même profil. Trois routes auraient voulu dire
+// trois fois le même préambule, et trois occasions de les désaccorder.
+//
+// ⚠️ Pas de second mot de passe : donner un titre est un geste courant et
+// réversible — on le reprend d'un clic. C'est la même frontière que pour les
+// rubis : ce qui s'annule librement passe par le code du panneau, ce qui
+// efface une progression (l XP, le compte) demande davantage.
+app.post('/admin/site/compte/titres', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    const id = req.body && req.body.id;
+    if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
+
+    const actuel = await comptes.lireCompte(id);
+    if (!actuel) return res.status(404).json({ error: 'Compte introuvable (colonnes « titres » absentes ?).' });
+
+    // ⚠️ `titres` peut arriver `null` d une ligne creee avant la colonne :
+    // un `.includes` dessus leverait, et la route rendrait 500 pour un
+    // compte parfaitement sain.
+    const possedes = new Set(Array.isArray(actuel.titres) ? actuel.titres : []);
+    const valeurs = {};
+
+    // ── Donner ───────────────────────────────────────────────────
+    if (req.body.donner) {
+        const t = titres.TITRES_PAR_ID[req.body.donner];
+        // ⚠️ LE CATALOGUE EST LA SEULE SOURCE. Accepter un identifiant libre
+        // remettrait le champ texte qu on vient justement de retirer, et un
+        // titre absent du catalogue ne s afficherait nulle part — il serait
+        // en base sans que personne ne puisse le voir.
+        if (!t) return res.status(400).json({ error: 'Ce titre n’existe pas.' });
+        possedes.add(t.id);
+        valeurs.titres = [...possedes];
+        // S il ne porte RIEN a cet emplacement, on l habille tout de suite :
+        // un titre donne qui ne se voit pas donne l impression que le clic
+        // n a rien fait.
+        const slot = t.type === 'prefixe' ? 'titre_prefixe' : 'titre_suffixe';
+        if (!actuel[slot]) valeurs[slot] = t.id;
+    }
+
+    // ── Retirer ──────────────────────────────────────────────────
+    if (req.body.retirer) {
+        possedes.delete(req.body.retirer);
+        valeurs.titres = [...possedes];
+        // ⚠️ Et on le DESHABILLE s il le portait : sans ca, il garderait a
+        // l ecran un titre qu il ne possede plus.
+        if (actuel.titre_prefixe === req.body.retirer) valeurs.titre_prefixe = null;
+        if (actuel.titre_suffixe === req.body.retirer) valeurs.titre_suffixe = null;
+    }
+
+    // ── Choisir ce qu il porte ───────────────────────────────────
+    // `''` deshabille l emplacement ; `undefined` ne le touche pas.
+    for (const [cle, slot] of [['prefixe', 'titre_prefixe'], ['suffixe', 'titre_suffixe']]) {
+        if (req.body[cle] === undefined) continue;
+        const v = req.body[cle];
+        if (!v) { valeurs[slot] = null; continue; }
+        const t = titres.TITRES_PAR_ID[v];
+        if (!t || t.type !== cle) return res.status(400).json({ error: 'Titre invalide pour cet emplacement.' });
+        // ⚠️ On ne peut porter QUE ce qu on possede. Sans ce controle, le
+        // panneau pourrait habiller quelqu un d un titre qui ne lui
+        // appartient pas, et le retirer de sa collection ne le lui
+        // enleverait pas.
+        if (!possedes.has(t.id)) return res.status(400).json({ error: 'Il ne possède pas ce titre.' });
+        valeurs[slot] = t.id;
+    }
+
+    if (!Object.keys(valeurs).length) return res.status(400).json({ error: 'Rien à changer.' });
+
+    const r = await comptes.majCompte(id, valeurs);
+    if (!r) return res.status(500).json({ error: 'Écriture impossible (colonnes « titres » absentes ?).' });
+
+    poussierProfil(id, r);
+    res.json({ success: true, compte: r });
+});
+
+// Le catalogue, pour que le panneau dresse ses listes sans le recopier.
+app.get('/admin/site/titres', (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    res.json({ titres: titres.TITRES_CATALOGUE });
+});
+
 // 💎 LE MONTANT DE RUBIS, sans second mot de passe.
 //
 // ⚠️ Volontairement plus ouvert que `/chiffres`, et ce n'est pas un oubli :
@@ -7161,6 +7248,8 @@ function poussierProfil(idCompte, profil) {
         xp: profil.xp || 0,
         rubis: profil.rubis || 0,
         titre: profil.titre || null,
+        titrePrefixe: profil.titre_prefixe || null,
+        titreSuffixe: profil.titre_suffixe || null,
         pseudoImpose: profil.pseudo_impose || null,
     };
     for (const r of rooms.values()) {
@@ -9680,6 +9769,8 @@ io.on('connection', (socket) => {
                         xp: r.profil.xp || 0,
                         rubis: r.profil.rubis || 0,
                         titre: r.profil.titre || null,
+                        titrePrefixe: r.profil.titre_prefixe || null,
+                        titreSuffixe: r.profil.titre_suffixe || null,
                         pseudoImpose: r.profil.pseudo_impose || null,
                     });
                 }

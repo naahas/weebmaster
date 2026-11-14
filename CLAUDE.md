@@ -1203,6 +1203,45 @@ Classique à quinze inscrits ferait trente allers-retours sur la boucle que tous
 jamais zéro** : à zéro, le joueur verrait son XP s'arrêter sans pouvoir dire depuis quand.
 `npm run test:comptes` le tient — il vérifie que les huit modes du jeu ont leur ligne.
 
+### 🎖️ Les rangs et les titres — deux choses différentes
+
+Elles ont longtemps été confondues sur la carte du joueur, et c'est ce qui rendait l'une des deux
+incompréhensible.
+
+- **Le RANG** (Novice, Apprenti, Combattant, Vétéran, Maître, Légende) se **déduit** du niveau,
+  personne ne le donne, il s'affiche **en permanence**. Il vit dans `src/script/niveaux.js`.
+- **Le TITRE** se **compose** : un préfixe et un suffixe, « Shinigami des ombres ». Il ne se déduit
+  de rien — on le gagne, on l'achète ou l'hôte le donne — et **la plupart des joueurs n'en ont
+  aucun**. Catalogue dans `src/script/titres.js`, lu des deux côtés comme `niveaux.js`.
+
+**89 titres** : 44 préfixes (16 à gagner, 28 en boutique) et 45 suffixes (8 / 37), repris de la v1.
+
+⚠️ **Cinq titres de la v1 ont été RETIRÉS** — Novice, Soldat, Guerrier, Commandant, General. Ils
+formaient l'échelle « parties jouées » de la v1, c'est-à-dire exactement ce que les rangs font
+maintenant : les garder aurait donné deux échelles militaires côte à côte (« Soldat » affiché sous
+« VÉTÉRAN ») et personne n'aurait su laquelle compte. **Capitaine** survit seul — il tient debout
+sans l'échelle, et il portait une faute en base (« Capitale »). Quatre autres accents corrigés :
+Étudiant, Fantôme, Garçon, Démon.
+
+⚠️ **C'est l'IDENTIFIANT qui est stocké, jamais le nom** : corriger un nom ne doit pas faire perdre
+son titre à quelqu'un. Et trois suffixes portent le même nom qu'un préfixe (paisible, renégat,
+ultime) — ce ne sont pas des doublons, ils occupent deux emplacements, d'où les suffixes d'id
+`_p` / `_s`.
+
+⚠️ **Les deux emplacements sont indépendants** : « Shinigami » seul est un titre valable. Exiger
+les deux aurait rendu inutile le premier titre qu'on reçoit.
+
+`prix: null` partout — **la boutique est vide**, les prix de la v1 (100 à 55 000) ne tiennent plus
+face au barème des rubis et seront refaits. ⚠️ `null` veut dire « pas encore en vente », jamais
+« gratuit » : c'est ce que la boutique devra tester.
+
+Trois colonnes : `titres` (jsonb, la collection), `titre_prefixe` et `titre_suffixe` (ce qu'il
+porte). Une route unique `/admin/site/compte/titres` donne, reprend et habille — sans second mot
+de passe, comme les rubis : c'est réversible d'un clic. ⚠️ Deux garde-fous qu'elle porte :
+**donner un titre quand l'emplacement est vide l'habille aussitôt** (un titre donné qui ne se voit
+nulle part donne l'impression que le clic n'a rien fait), et **lui reprendre un titre qu'il porte
+le déshabille** (sans quoi il garderait à l'écran un titre qu'il ne possède plus).
+
 ### Le pseudo d'un compte, et les deux colonnes du panneau
 
 `comptes.pseudo` **se resynchronise** sur le pseudo du jeu. Il ne le faisait pas : il n'était

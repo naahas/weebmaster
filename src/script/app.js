@@ -194,10 +194,14 @@ createApp({
             // minimale, meme bonus de victoire — et s en distingue par son
             // echelle : environ cinq fois, parce qu elle achete des titres.
             compteRubis: 0,
-            // Le titre SPECIAL, pose a la main depuis /admin. `null` = aucun,
-            // et c est le cas de presque tout le monde : le titre vient alors
-            // du niveau. Voir `titreJoueur`.
-            compteTitre: null,
+            // 🎖️ Les deux emplacements du titre porte, par leur IDENTIFIANT
+            // de catalogue — jamais leur nom : corriger un nom ne doit pas
+            // faire perdre son titre a un joueur. `composerTitre` les
+            // assemble (src/script/titres.js).
+            // `null` des deux cotes = il n en porte aucun, et c est le cas de
+            // presque tout le monde.
+            titrePrefixe: null,
+            titreSuffixe: null,
             // ⚠️ La bibliotheque Supabase n est PAS chargee au demarrage. Elle
             // ne sert qu a qui ouvre le panneau ou revient deja connecte — soit
             // une minorite —, et l accueil est le premier contact d un viewer
@@ -1217,19 +1221,25 @@ createApp({
             if (!p) return 0;
             return Math.min(1, this.xpDansNiveau / p);
         },
-        titreJoueur() {
-            // ⚠️ UN TITRE SPECIAL ECRASE CELUI DU NIVEAU. C est le seul titre
-            // qui vit en base (`comptes.titre`, pose a la main depuis le
-            // panneau) : il n est pas un doublon de la deduction, c est une
-            // decision — « Bêta-testeur », « Vainqueur du tournoi ». Un titre
-            // deduit stocke serait un doublon ; celui-la ne se deduit de rien.
-            //
-            // ⚠️ Et sa couleur est une TEINTE A PART (rose, ~345°), pas l or
-            // de Légende : sur une seule ligne de texte c est la teinte qui
-            // separe, et un titre offert qui ressemble au dernier palier
-            // ferait croire au palier.
-            if (this.compteTitre) return { nom: this.compteTitre, couleur: '#ff7a9c' };
+        // 🏅 LE RANG — Novice, Apprenti… Il se DEDUIT du niveau, personne ne
+        // le donne, et il s affiche en permanence.
+        //
+        // ⚠️ A ne pas confondre avec le TITRE juste en dessous : le rang dit
+        // ou l on en est, le titre dit ce qu on a obtenu. Ils ont longtemps
+        // ete la meme chose sur cette carte, et c est ce qui rendait l un des
+        // deux incomprehensible.
+        rangJoueur() {
             return titrePourNiveau(this.niveauJoueur);
+        },
+
+        // 🎖️ LE TITRE PORTE, compose de ses deux emplacements.
+        //
+        // ⚠️ Rend une CHAINE VIDE quand il n en porte aucun — c est le cas de
+        // presque tout le monde —, et le gabarit teste cette chaine pour ne
+        // pas afficher de ligne du tout. `composerTitre` vient du catalogue
+        // partage (`src/script/titres.js`), charge avant ce fichier.
+        titrePorte() {
+            return composerTitre(this.titrePrefixe, this.titreSuffixe);
         },
         // ⚠️ L anneau est un trace SVG, pas un degrade conique : seul un trace
         // peut avoir des BOUTS ARRONDIS, et sans eux une progression de 3 %
@@ -4956,7 +4966,8 @@ createApp({
             this.compteVictoires = 0;
             this.compteXp = 0;
             this.compteRubis = 0;
-            this.compteTitre = null;
+            this.titrePrefixe = null;
+            this.titreSuffixe = null;
             // ⚠️ On ne reprend PAS un playerId d invite : le joueur garderait
             // son pseudo mais deviendrait quelqu un d autre pour le serveur,
             // en plein salon le cas echeant. Il en reprendra un au prochain
@@ -8325,11 +8336,11 @@ createApp({
                 this.compteVictoires = p.victoires || 0;
                 this.compteXp = p.xp || 0;
                 this.compteRubis = p.rubis || 0;
-                // ⚠️ `|| null` et pas `p.titre` nu : une chaine vide venue de
-                // la base doit valoir « aucun titre special », sinon
-                // `titreJoueur` afficherait un titre VIDE a la place de celui
-                // du niveau — une ligne blanche, sans rien pour l expliquer.
-                this.compteTitre = p.titre || null;
+                // ⚠️ `|| null` et pas le champ nu : une chaine vide venue de
+                // la base doit valoir « aucun titre », sinon `composerTitre`
+                // chercherait un identifiant vide dans le catalogue.
+                this.titrePrefixe = p.titrePrefixe || null;
+                this.titreSuffixe = p.titreSuffixe || null;
                 // 🏷️ Un pseudo IMPOSE depuis le panneau gagne sur celui du
                 // joueur, et il s applique tout de suite : c est a ca qu il
                 // sert. On le pose comme le joueur l aurait tape lui-meme.

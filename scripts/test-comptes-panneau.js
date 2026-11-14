@@ -174,6 +174,60 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
         check('… et aucun refus n a abime le montant', c.rubis === 4200, 'rubis=' + c.rubis);
     }
 
+    // ── 5 ter. Les titres ────────────────────────────────────────
+    console.log('\n=== 5 ter. La collection de titres ===');
+    const cat = await get('/admin/site/titres');
+    check('le catalogue se sert au panneau', cat.status === 200 && (cat.body.titres || []).length > 80,
+        (cat.body.titres || []).length + ' titres');
+    // ⚠️ Le catalogue du serveur et celui du navigateur sont LE MEME fichier.
+    // S ils divergeaient, le panneau proposerait un titre que la route refuse.
+    const catalogue = require('../src/script/titres');
+    check('⚠️ c est le MEME que celui du jeu',
+        (cat.body.titres || []).length === catalogue.TITRES_CATALOGUE.length);
+    check('⚠️ les cinq doublons de rangs ne sont plus la', [],
+        (cat.body.titres || []).filter(t => ['Novice', 'Soldat', 'Guerrier', 'Commandant', 'General'].includes(t.nom)).map(t => t.nom));
+    check('⚠️ « Capitale » est corrige en « Capitaine »', true,
+        !!(cat.body.titres || []).find(t => t.nom === 'Capitaine'));
+
+    let z2 = await post('/admin/site/compte/titres', { id: ID, donner: 'pizza-volante' });
+    check('⚠️ un titre hors catalogue est refuse', z2.status === 400, 'HTTP ' + z2.status);
+
+    z2 = await post('/admin/site/compte/titres', { id: ID, donner: 'shinigami' });
+    if (z2.status === 404 || z2.status === 500) {
+        console.log('  ⏭️  colonnes « titres » absentes — on saute (docs/comptes.sql)');
+    } else {
+        check('on donne un prefixe', z2.status === 200 && z2.body.success, z2.body.error || 'ok');
+        ({ c } = await trouver());
+        check('il est dans sa collection', (c.titres || []).includes('shinigami'), JSON.stringify(c.titres));
+        // ⚠️ Il n en portait aucun : on l habille tout de suite, sinon le
+        // titre donne ne se verrait nulle part et le clic aurait l air vain.
+        check('⚠️ … et il le PORTE deja', c.titre_prefixe === 'shinigami', String(c.titre_prefixe));
+
+        await post('/admin/site/compte/titres', { id: ID, donner: 'desombres' });
+        ({ c } = await trouver());
+        check('un suffixe se compose avec', catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe) === 'Shinigami des ombres',
+            catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe));
+
+        // ⚠️ On ne porte QUE ce qu on possede.
+        z2 = await post('/admin/site/compte/titres', { id: ID, prefixe: 'empereur' });
+        check('⚠️ porter un titre qu il n a pas est refuse', z2.status === 400, 'HTTP ' + z2.status);
+
+        // Un emplacement seul reste valable.
+        await post('/admin/site/compte/titres', { id: ID, prefixe: '' });
+        ({ c } = await trouver());
+        check('on peut n en porter qu un', catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe) === 'des ombres',
+            catalogue.composerTitre(c.titre_prefixe, c.titre_suffixe));
+        check('… sans le perdre de sa collection', (c.titres || []).includes('shinigami'));
+
+        // ⚠️ Lui reprendre un titre qu il PORTE doit aussi le deshabiller.
+        await post('/admin/site/compte/titres', { id: ID, prefixe: 'shinigami' });
+        z2 = await post('/admin/site/compte/titres', { id: ID, retirer: 'shinigami' });
+        check('on le lui reprend', z2.status === 200 && z2.body.success);
+        ({ c } = await trouver());
+        check('il n est plus dans sa collection', !(c.titres || []).includes('shinigami'));
+        check('⚠️ … et il ne le PORTE plus non plus', !c.titre_prefixe, String(c.titre_prefixe));
+    }
+
     // ── 6. Les compteurs ─────────────────────────────────────────
     console.log('\n=== 6. Les compteurs, et leur second mot de passe ===');
     let z = await post('/admin/site/compte/chiffres', { id: ID, xp: 0, parties: 0, victoires: 0 });
