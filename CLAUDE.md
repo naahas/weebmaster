@@ -532,6 +532,27 @@ Ascension est documenté dans docs/ASCENSION.md et conservé sur la branche `arc
 - Les **questions du quiz** vivent en base Supabase (table `questions`). Ajout/édition via la page
   `/question` protégée par `QUESTION_ADMIN_CODE`.
 
+## 🔒 RLS — depuis les comptes, la clef `anon` est dans la page
+
+⚠️ **Toute table du schéma `public` doit avoir RLS activé.** Ce n'était pas vrai avant la v2 et
+ça ne se voyait pas : en v1, seul le serveur parlait à Supabase, avec `service_role`. La connexion
+par compte a mis la clef `anon` dans le navigateur (`/api/auth-config` — elle est **publique par
+conception**, Discord en a besoin), et à partir de là **ce qui protège une table n'est plus le
+secret de la clef, c'est RLS**.
+
+Mesuré le 14 novembre 2026, avec la seule clef `anon`, depuis l'extérieur : `questions` rendait
+**les 1 965 questions avec `coanswer`**, c'est-à-dire la bonne réponse ; `users` les 380 pseudos
+et identifiants Twitch de la v1 ; `visits` **28 981 lignes avec `twitch_username` et
+`user_agent`**. Dix autres tables suivaient. Seules `comptes` et `game_history` étaient fermées.
+
+Le correctif est dans [docs/fermer-rls.sql](docs/fermer-rls.sql) : RLS activé, **sans aucune
+politique**. Ça ne casse rien — `service_role` ignore RLS, et c'est la seule clef qui lit ces
+tables (`dbs.js` pour tout le jeu, et le workflow `keep_alive`, vérifié). Le navigateur ne lit
+que `comptes`, qui garde la sienne.
+
+ℹ️ Le réflexe à garder : **une table créée ici part ouverte.** Supabase accorde `select` au rôle
+`anon` par défaut, et le bandeau « UNRESTRICTED » du Table Editor est la seule chose qui le dit.
+
 ## Tables Supabase (via `dbs.js`)
 
 `questions`, `bombanime_suggestions`, `reported_questions`, `keep_alive`.
