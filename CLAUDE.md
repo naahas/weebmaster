@@ -1047,15 +1047,28 @@ une partie, et il n'est **jamais requis pour jouer**.
 **Le barème vit dans `XP_MODES` (`server-comptes.js`), à un seul endroit.** Le client reçoit des
 **totaux** et les dessine ; il ne recalcule jamais ce qu'une partie a rapporté.
 
-| mode | partie | + victoire | seuil du bonus | durée mini |
-|---|---|---|---|---|
-| Classique / Rivalité | 100 | 300 | **8** | 60 s |
-| Ascension | 100 | 225 | 4 | 60 s |
-| Collect | 100 | 200 | **3** | 50 s |
-| Rush | 80 | 150 | 4 | **25 s** |
-| Codanime | 50 | 125 | 4 | 60 s |
-| Choice | 50 | 125 | 4 | 60 s |
-| BombAnime | 25 | 75 | 4 | 45 s |
+| mode | XP partie | + victoire | 💎 partie | + victoire | seuil du bonus | durée mini |
+|---|---|---|---|---|---|---|
+| Classique / Rivalité | 100 | 300 | 500 | 1 500 | **8** | 60 s |
+| Ascension | 100 | 225 | 400 | 1 000 | 4 | 60 s |
+| Collect | 100 | 200 | 300 | 700 | **3** | 50 s |
+| Rush | 80 | 150 | 300 | 800 | 4 | **25 s** |
+| Codanime | 50 | 125 | 700 | 1 000 | 4 | 60 s |
+| Choice | 50 | 125 | 300 | 700 | 4 | 60 s |
+| BombAnime | 25 | 75 | 200 | 500 | 4 | 45 s |
+
+💎 **Les rubis** sont la monnaie (`comptes.rubis`). Ils suivent **exactement** les mêmes règles que
+l'XP — même seuil de joueurs, même durée minimale, même bonus qui s'ajoute — et vivent sur la
+**même ligne** de `XP_MODES` : deux tables auraient voulu dire deux fois `seuil` et `duree`, donc
+deux occasions de les désaccorder. Un joueur n'a pas à retenir deux jeux de conditions.
+
+⚠️ Ils valent environ **cinq fois** l'XP, et ce n'est pas une erreur d'échelle : l'XP dit « combien
+j'ai joué » et se compte en centaines ; les rubis achètent des titres, dont les prix de la v1
+allaient de 500 à 260 000.
+
+ℹ️ L'icône du rubis est **provisoire** — un SVG tracé à la main, en attendant celle qu'Adem fera
+générer. Elle est en ligne dans `home.html` et dans les `<symbol>` du panneau, pas en fichier : à
+13 px une image perdrait ses facettes, et le tracé suit la couleur du texte.
 
 ⚠️ **`victoire` est un BONUS QUI S'AJOUTE**, pas un total : un Rush gagné vaut 80 + 150 = **230**.
 Le lire comme un total diviserait par deux ce que rapporte toute partie gagnée, sans rien casser

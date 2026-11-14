@@ -7545,6 +7545,20 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-lignes.verrou { opacity: 0.5; }
 .v2-profil-lignes.verrou .v { color: #6e6e7b; }
 
+/* 💎 LA MONNAIE. Seule ligne coloree des trois, parce que c est la seule qui
+   s ACHETE : les deux autres comptent ce qu on a fait, celle-ci dit ce qu on
+   peut faire. Le rouge est eclairci (#ff8a8a) et non celui des erreurs — sur
+   une carte sombre, un rouge vif a cote d un chiffre se lit comme un
+   avertissement. */
+.v2-profil-lignes .rubis .n { color: #ff8a8a; display: inline-flex; align-items: center; gap: 0.36rem; }
+.v2-profil-lignes .rubis .v { color: #ff8a8a; }
+/* ⚠️ Taille EXPLICITE sur le trace : un <svg> sans width ni height retombe
+   sur 300 × 150 px et fait exploser la ligne qui le porte. C est l erreur qui
+   a deja coute quatre panneaux sur le banc de la refonte. */
+.v2-profil-lignes .rubis svg { width: 0.82rem; height: 0.82rem; flex: 0 0 auto; display: block; }
+.v2-profil-lignes.verrou .rubis .n,
+.v2-profil-lignes.verrou .rubis .v { color: #6e6e7b; }
+
 /* 🏅 Le titre du palier. ⚠️ EN CAPITALES ET ESPACE : en casse normale il se
    confondait avec « Profil local » — une mention de statut parmi d autres.
    Un titre se gagne, il doit se lire comme une distinction. */

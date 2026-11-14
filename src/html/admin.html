@@ -649,7 +649,13 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 .cp-chiffres { display: flex; gap: 1.7rem; flex: 0 0 auto; }
 .cp-c { display: flex; flex-direction: column; align-items: center; gap: .14rem; min-width: 62px; }
 .cp-c b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
-.cp-c span { font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; color: var(--doux); }
+.cp-c span { font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; color: var(--doux);
+             display: inline-flex; align-items: center; gap: .25rem; }
+/* 💎 La seule des quatre colonnes qui soit coloree : c est une monnaie, elle
+   doit se distinguer d un compteur. Le rubis est rouge par definition — on
+   l eclaircit (#ff8a8a plutot que `--rouge`) pour qu il ne se lise pas comme
+   le rouge d alerte des boutons « Supprimer », juste a cote. */
+.cp-c.rub b, .cp-c.rub span { color: #ff8a8a; }
 .cp-actions { display: flex; gap: .45rem; flex: 0 0 auto; }
 .cp-champ {
     font-family: inherit; font-size: 1.1rem; font-weight: 600; color: var(--texte);
@@ -1108,6 +1114,14 @@ body:not(.entre) { overflow: hidden; }
     </g>
     <g id="i-loupe" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="7"/><path d="m20 20-3.9-3.9"/>
+    </g>
+    <!-- 💎 PROVISOIRE : un rubis taille en facettes, dessine a la main en
+         attendant celui qu Adem fera generer. Le trace est volontairement
+         simple — table, couronne, pointe — pour qu il reste lisible a 12 px
+         et qu on voie tout de suite que c est une pierre. -->
+    <g id="i-rubis" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round">
+      <path d="M7 3h10l4 6-9 12L3 9z"/>
+      <path d="M3 9h18M7 3l2 6 3 12 3-12 2-6M9 9h6"/>
     </g>
     <g id="i-ampoule" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.5.4.8 1 .9 1.6l.1.6h5.2l.1-.6c.1-.6.4-1.2.9-1.6A6 6 0 0012 3z"/>
@@ -3103,6 +3117,11 @@ function peindreComptes() {
             '</span>' +
             '<span class="cp-chiffres">' +
                 '<span class="cp-c"><b>' + c.xp + '</b><span>XP</span></span>' +
+                // 💎 La monnaie porte son icone plutot que son nom : c est
+                // ainsi qu elle s affichera dans le jeu, et le panneau doit
+                // montrer la meme chose que ce que voit le joueur.
+                '<span class="cp-c rub"><b>' + (c.rubis || 0) + '</b>' +
+                    '<span>' + icone('rubis', 11) + ' Rubis</span></span>' +
                 '<span class="cp-c"><b>' + c.parties + '</b><span>Parties</span></span>' +
                 '<span class="cp-c"><b>' + c.victoires + '</b><span>Victoires</span></span>' +
             '</span>' +
@@ -3212,7 +3231,8 @@ function ouvrirCompteSup(action, id) {
         // ⚠️ On dit ce que ça fait VRAIMENT : ce n'est pas un bannissement.
         ? '« ' + nom + " » sera supprimé de Supabase, avec son XP et ses parties. "
           + "Il pourra se reconnecter et repartir d'un compte neuf — ce n'est pas un bannissement."
-        : '« ' + nom + ' » repartira à 0 XP, 0 partie, 0 victoire. Son titre et son pseudo ne bougent pas.';
+        : '« ' + nom + ' » repartira à 0 XP, 0 rubis, 0 partie, 0 victoire. '
+          + 'Son titre et son pseudo ne bougent pas.';
     $('cpt-code').value = CODE_SUP;
     $('voile-cpt').classList.add('ouvert');
     setTimeout(() => (CODE_SUP ? $('cpt-go') : $('cpt-code')).focus(), 30);
@@ -3233,7 +3253,7 @@ $('cpt-go').onclick = async () => {
         const chemin = action === 'del' ? '/admin/site/compte/supprimer' : '/admin/site/compte/chiffres';
         const corps = action === 'del'
             ? { deleteCode: CODE_SUP, id }
-            : { deleteCode: CODE_SUP, id, xp: 0, parties: 0, victoires: 0 };
+            : { deleteCode: CODE_SUP, id, xp: 0, rubis: 0, parties: 0, victoires: 0 };
         // ⚠️ `false` : ici un 401 parle du mot de passe de SUPPRESSION, pas du
         // code du panneau. Laisser appel() le traiter déconnecterait de tout.
         const r = await appel(chemin, {

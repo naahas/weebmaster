@@ -189,6 +189,11 @@ createApp({
             compteParties: 0,
             compteVictoires: 0,
             compteXp: 0,
+            // 💎 La monnaie. Elle se gagne sous EXACTEMENT les memes
+            // conditions que l xp — meme seuil de joueurs, meme duree
+            // minimale, meme bonus de victoire — et s en distingue par son
+            // echelle : environ cinq fois, parce qu elle achete des titres.
+            compteRubis: 0,
             // Le titre SPECIAL, pose a la main depuis /admin. `null` = aucun,
             // et c est le cas de presque tout le monde : le titre vient alors
             // du niveau. Voir `titreJoueur`.
@@ -4950,6 +4955,8 @@ createApp({
             this.compteParties = 0;
             this.compteVictoires = 0;
             this.compteXp = 0;
+            this.compteRubis = 0;
+            this.compteTitre = null;
             // ⚠️ On ne reprend PAS un playerId d invite : le joueur garderait
             // son pseudo mais deviendrait quelqu un d autre pour le serveur,
             // en plein salon le cas echeant. Il en reprendra un au prochain
@@ -8317,6 +8324,7 @@ createApp({
                 this.compteParties = p.parties || 0;
                 this.compteVictoires = p.victoires || 0;
                 this.compteXp = p.xp || 0;
+                this.compteRubis = p.rubis || 0;
                 // ⚠️ `|| null` et pas `p.titre` nu : une chaine vide venue de
                 // la base doit valoir « aucun titre special », sinon
                 // `titreJoueur` afficherait un titre VIDE a la place de celui

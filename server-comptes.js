@@ -51,7 +51,7 @@ let tableComptesOk = true;
 // en deux temps.
 let colonnesPanneauOk = null;
 const CHAMPS_BASE = 'id, pseudo, avatar, xp, parties, victoires';
-const CHAMPS_PLUS = CHAMPS_BASE + ', titre, pseudo_impose';
+const CHAMPS_PLUS = CHAMPS_BASE + ', titre, pseudo_impose, rubis';
 const champsProfil = () => (colonnesPanneauOk === false ? CHAMPS_BASE : CHAMPS_PLUS);
 
 // Rend `true` si l erreur vient de ces colonnes — l appelant doit alors
@@ -367,31 +367,49 @@ async function identifier(jeton, { pseudo, avatar, nettoyer } = {}) {
 // ⚠️ Ça ne couvre PAS le Rush : une manche farmée est une vraie manche de
 // 30 s, la durée ne les distingue pas. Lui demande l autre levier (un plafond
 // quotidien), qui n est pas posé.
+//
+// 💎 `rubis` / `rubisVictoire` : LA MONNAIE, sur la meme ligne que l xp.
+//
+// ⚠️ Deux baremes dans UNE table, et pas deux tables. Ils partagent `seuil`
+// et `duree` — les memes regles exactement, c est ce qu Adem a demande —, et
+// deux tables auraient voulu dire deux fois ces deux colonnes, donc deux
+// occasions de les desaccorder. Une partie trop courte ne rapporte ni xp ni
+// rubis ; un bonus refuse l est pour les deux.
+//
+// ⚠️ Et la monnaie est ENVIRON CINQ FOIS l xp, volontairement : ce sont deux
+// echelles qui ne se comparent pas. L xp dit « combien j ai joue » et se
+// compte en centaines ; les rubis achetent des titres dont les prix de la v1
+// allaient de 500 a 260 000. Les mettre a la meme echelle aurait rendu la
+// boutique inatteignable ou l xp absurde.
 const XP_MODES = {
-    classic:   { partie: 100, victoire: 300, seuil: 8, duree: 60 },
+    // ⚠️ 500 + 1500 = 2000. Adem a ecrit « +3000 si gagnee (donc 2000
+    // cumulees) » — les deux ne peuvent pas etre vraies ensemble, et c est
+    // la somme qu il a donnee qui decide : 3500 aurait fait du Classique le
+    // double de Codanime, qui culmine a 1700.
+    classic:   { partie: 100, victoire: 300, seuil: 8, duree: 60, rubis: 500, rubisVictoire: 1500 },
     // ⚠️ `rivalry` n est pas un mode, c est le reglage Format du quiz. Meme
     // bareme, forcement : un ecart rendrait un camp plus payant qu un solo
     // sur exactement les memes questions, et l hote choisirait le Format
     // pour l xp plutot que pour la partie.
-    rivalry:   { partie: 100, victoire: 300, seuil: 8, duree: 60 },
+    rivalry:   { partie: 100, victoire: 300, seuil: 8, duree: 60, rubis: 500, rubisVictoire: 1500 },
     // ⏱️ 25 s et pas davantage : la manche la plus courte que le salon
     // propose vaut 30 s. Monter le plancher au-dessus éteindrait un réglage
     // parfaitement normal.
-    rush:      { partie:  80, victoire: 150, seuil: 4, duree: 25 },
-    bombanime: { partie:  25, victoire:  75, seuil: 4, duree: 45 },
+    rush:      { partie:  80, victoire: 150, seuil: 4, duree: 25, rubis: 300, rubisVictoire:  800 },
+    bombanime: { partie:  25, victoire:  75, seuil: 4, duree: 45, rubis: 200, rubisVictoire:  500 },
     // ⚠️ Collect est le SEUL a trois, et c est son PLAFOND qui le decide :
     // le mode se joue a cinq au maximum. A quatre, la fenetre ou une victoire
     // paye n aurait fait que deux valeurs sur quatre, alors que la partie
     // mediane s y joue a deux. Le meme seuil que les autres aurait eteint le
     // bonus du mode presque partout.
-    collect:   { partie: 100, victoire: 200, seuil: 3, duree: 50 },
-    codanime:  { partie:  50, victoire: 125, seuil: 4, duree: 60 },
-    ascension: { partie: 100, victoire: 225, seuil: 4, duree: 60 },
+    collect:   { partie: 100, victoire: 200, seuil: 3, duree: 50, rubis: 300, rubisVictoire:  700 },
+    codanime:  { partie:  50, victoire: 125, seuil: 4, duree: 60, rubis: 700, rubisVictoire: 1000 },
+    ascension: { partie: 100, victoire: 225, seuil: 4, duree: 60, rubis: 400, rubisVictoire: 1000 },
     // Choice n est pas encore ouvert au public (`soon: true` sur sa carte),
     // mais il se joue a la maison et il appelle `recordFinishedGame`. Sa
     // ligne est donc la : l oublier le ferait tomber sur le defaut en
     // silence, et personne ne s en apercevrait avant son ouverture.
-    choice:    { partie:  50, victoire: 125, seuil: 4, duree: 60 },
+    choice:    { partie:  50, victoire: 125, seuil: 4, duree: 60, rubis: 300, rubisVictoire:  700 },
 };
 
 // ⚠️ Un mode inconnu rapporte QUELQUE CHOSE plutot que rien. Le jour ou un
@@ -401,7 +419,7 @@ const XP_MODES = {
 // ⏱️ Et son plancher de durée est le plus HAUT, pas le plus bas : sur le
 // barème on est généreux avec l inconnu, sur la durée on est strict. Un mode
 // dont on ne sait rien pourrait se terminer en trois secondes.
-const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4, duree: 60 };
+const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4, duree: 60, rubis: 300, rubisVictoire: 700 };
 
 // ⏱️ La partie a-t-elle duré assez pour compter ?
 //
@@ -428,6 +446,10 @@ function xpDeLaPartie(mode, { gagnant = false, joueurs = 0 } = {}) {
     const victoire = !!gagnant && joueurs >= b.seuil;
     return {
         xp: b.partie + (victoire ? b.victoire : 0),
+        // 💎 La monnaie suit EXACTEMENT les memes regles : meme seuil de
+        // joueurs, meme duree minimale, meme bonus qui s AJOUTE. Un joueur ne
+        // doit jamais avoir a retenir deux jeux de conditions.
+        rubis: b.rubis + (victoire ? b.rubisVictoire : 0),
         // ⚠️ Le compteur « Victoires » du profil suit LE BONUS, pas le
         // classement : une victoire a deux ne rapporte rien, donc elle ne
         // s affiche pas non plus. Les deux ensemble disent la meme chose ;
@@ -460,8 +482,18 @@ async function crediter(lignes) {
     if (!ids.length) return null;
 
     try {
-        const { data: avant, error: eLecture } = await supabase
-            .from('comptes').select('id, pseudo, xp, parties, victoires').in('id', ids);
+        // ⚠️ `rubis` passe par le MEME repli que `titre` : la colonne est
+        // arrivee apres, la nommer quand elle manque ferait echouer la
+        // lecture entiere, donc plus d xp credite du tout.
+        const avecRubis = colonnesPanneauOk !== false;
+        let { data: avant, error: eLecture } = await supabase
+            .from('comptes')
+            .select('id, pseudo, xp, parties, victoires' + (avecRubis ? ', rubis' : ''))
+            .in('id', ids);
+        if (colonnesManquantes(eLecture)) {
+            ({ data: avant, error: eLecture } = await supabase
+                .from('comptes').select('id, pseudo, xp, parties, victoires').in('id', ids));
+        }
         if (eLecture) {
             if (eLecture.code === '42P01') tableComptesOk = false;
             return null;
@@ -481,6 +513,10 @@ async function crediter(lignes) {
                     parties: (r.parties || 0) + 1,
                     victoires: (r.victoires || 0) + (l.victoire ? 1 : 0),
                 };
+                // 💎 La monnaie, seulement si la colonne existe : sans ce
+                // test, l upsert la nommerait et echouerait en entier — on
+                // perdrait l xp AUSSI, pour une colonne accessoire.
+                if (colonnesPanneauOk !== false) ligne.rubis = (r.rubis || 0) + (l.rubis || 0);
                 // 🏷️ LA SECONDE COUCHE DE SYNCHRONISATION DU PSEUDO.
                 //
                 // La premiere est la connexion de socket. Celle-ci rattrape

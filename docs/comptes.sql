@@ -137,7 +137,19 @@ create policy "chacun lit son compte"
 --
 --   alter table public.comptes
 --       add column if not exists titre          text,
---       add column if not exists pseudo_impose  text;
+--       add column if not exists pseudo_impose  text,
+--       add column if not exists rubis          integer not null default 0;
+--
+-- 💎 `rubis` est LA MONNAIE. Elle se gagne en jouant, exactement sous les
+-- mêmes conditions que l'XP (même seuil de joueurs, même durée minimale,
+-- même bonus de victoire qui s'ajoute) — un joueur n'a pas à retenir deux
+-- jeux de règles. Son barème est à côté de celui de l'XP, dans `XP_MODES`
+-- (server-comptes.js) : deux tables auraient voulu dire deux fois `seuil` et
+-- `duree`, donc deux occasions de les désaccorder.
+--
+-- ⚠️ Elle est environ CINQ FOIS l'XP, et ce n'est pas une erreur d'échelle :
+-- l'XP dit « combien j'ai joué » et se compte en centaines ; les rubis
+-- achètent des titres, dont les prix de la v1 allaient de 500 à 260 000.
 --
 -- ⚠️ `titre` N'EST PAS le titre déduit du niveau, et c'est toute la
 -- différence avec le paragraphe du dessus. Il est NULL pour presque tout le

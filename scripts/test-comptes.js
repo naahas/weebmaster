@@ -129,6 +129,26 @@ const MODES_DU_JEU = ['classic', 'rivalry', 'bombanime', 'rush', 'ascension', 'c
 verif('⚠️ les 8 modes du jeu ont leur ligne', [], MODES_DU_JEU.filter((m) => !c.XP_MODES[m]));
 verif('⚠️ … et chacune porte sa durée minimale', [], MODES_DU_JEU.filter((m) => !c.XP_MODES[m].duree));
 
+console.log('\n=== 4 bis. La monnaie ===');
+// 💎 Mêmes règles que l xp, a la lettre : même seuil, même durée, et le
+// bonus s AJOUTE. Un joueur n a pas a retenir deux jeux de conditions.
+verif('Classique gagné à 8 = 500 + 1500', 2000, c.xpDeLaPartie('classic', { gagnant: true, joueurs: 8 }).rubis);
+verif('Classique perdu = 500', 500, c.xpDeLaPartie('classic', { gagnant: false, joueurs: 8 }).rubis);
+verif('BombAnime gagné à 4 = 200 + 500', 700, c.xpDeLaPartie('bombanime', { gagnant: true, joueurs: 4 }).rubis);
+verif('Rush gagné à 4 = 300 + 800', 1100, c.xpDeLaPartie('rush', { gagnant: true, joueurs: 4 }).rubis);
+verif('Ascension gagnée à 4 = 400 + 1000', 1400, c.xpDeLaPartie('ascension', { gagnant: true, joueurs: 4 }).rubis);
+verif('Collect gagné à 3 = 300 + 700', 1000, c.xpDeLaPartie('collect', { gagnant: true, joueurs: 3 }).rubis);
+verif('Codanime gagné à 4 = 700 + 1000', 1700, c.xpDeLaPartie('codanime', { gagnant: true, joueurs: 4 }).rubis);
+
+// ⚠️ Le MEME seuil que l xp, pas un autre. Si les deux divergeaient, un
+// joueur toucherait la monnaie d une victoire sans en toucher l xp.
+verif('⚠️ sous le seuil, pas de bonus de rubis non plus', 300,
+    c.xpDeLaPartie('rush', { gagnant: true, joueurs: 3 }).rubis);
+verif('⚠️ jouer seul rapporte quand même des rubis', 300,
+    c.xpDeLaPartie('rush', { gagnant: false, joueurs: 1 }).rubis);
+verif('⚠️ les 8 modes ont leur barème de monnaie', [],
+    MODES_DU_JEU.filter((m) => !c.XP_MODES[m].rubis || !c.XP_MODES[m].rubisVictoire));
+
 console.log('\n=== 5. La durée minimale d une partie ===');
 // ⏱️ Ce qui se fermait : quatre modes terminent la partie sur-le-champ quand
 // il ne reste qu un joueur, et Codanime se suicide sur l assassin en 25 s.

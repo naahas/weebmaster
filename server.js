@@ -1001,7 +1001,7 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         // pseudo EN COURS DE SESSION, sans recharger — sa socket est deja
         // enregistree, `register-authenticated` ne repassera pas.
         // `crediter` ne l ecrit que s il a change.
-        lignes.push({ id: p.playerId, xp: r.xp, victoire: r.victoire, pseudo: p.username });
+        lignes.push({ id: p.playerId, xp: r.xp, rubis: r.rubis, victoire: r.victoire, pseudo: p.username });
     }
     if (!lignes.length) return;
 
@@ -1021,6 +1021,7 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             parties: r.parties || 0,
             victoires: r.victoires || 0,
             xp: r.xp || 0,
+            rubis: r.rubis || 0,
             titre: r.titre || null,
             pseudoImpose: r.pseudo_impose || null,
         });
@@ -7074,7 +7075,7 @@ app.post('/admin/site/compte/chiffres', async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Identifiant manquant.' });
 
     const valeurs = {};
-    for (const champ of ['xp', 'parties', 'victoires']) {
+    for (const champ of ['xp', 'parties', 'victoires', 'rubis']) {
         if (req.body[champ] === undefined) continue;
         const n = parseInt(req.body[champ], 10);
         // ⚠️ Borne HAUTE autant que basse : une faute de frappe a dix
@@ -7124,6 +7125,7 @@ function poussierProfil(idCompte, profil) {
         parties: profil.parties || 0,
         victoires: profil.victoires || 0,
         xp: profil.xp || 0,
+        rubis: profil.rubis || 0,
         titre: profil.titre || null,
         pseudoImpose: profil.pseudo_impose || null,
     };
@@ -9642,6 +9644,7 @@ io.on('connection', (socket) => {
                         parties: r.profil.parties || 0,
                         victoires: r.profil.victoires || 0,
                         xp: r.profil.xp || 0,
+                        rubis: r.profil.rubis || 0,
                         titre: r.profil.titre || null,
                         pseudoImpose: r.profil.pseudo_impose || null,
                     });
