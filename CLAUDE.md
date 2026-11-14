@@ -1006,7 +1006,7 @@ une partie, et il n'est **jamais requis pour jouer**.
 |---|---|---|---|
 | Classique / Rivalité | 100 | 300 | **8** |
 | Ascension | 100 | 225 | 4 |
-| Collect | 100 | 200 | 4 |
+| Collect | 100 | 200 | **3** |
 | Rush | 80 | 150 | 4 |
 | Codanime | 50 | 125 | 4 |
 | Choice | 50 | 125 | 4 |
@@ -1023,6 +1023,11 @@ exactement ce qu'un joueur aurait envie de forcer — d'où la porte, posée là
 
 ⚠️ Le Classique est à **huit**, comme `MIN_CLASSIQUE`. Même chiffre de produit, pas une
 coïncidence : le quiz n'est le quiz qu'à partir de là. Les deux se changent ensemble ou pas du tout.
+
+⚠️ **Collect est à trois, et c'est son PLAFOND qui le décide** — le mode se joue à cinq au maximum.
+À quatre, la fenêtre où une victoire paye n'aurait fait que deux valeurs sur quatre, alors que la
+partie médiane s'y joue à deux : le bonus du mode aurait été éteint presque partout. Un seuil se
+lit toujours **contre le plafond du mode**, jamais en absolu.
 
 ⚠️ `rivalry` porte **exactement** le barème de `classic`. Un écart ferait choisir le *Format*
 pour l'XP plutôt que pour la partie.

@@ -304,7 +304,12 @@ const XP_MODES = {
     rivalry:   { partie: 100, victoire: 300, seuil: 8 },
     rush:      { partie:  80, victoire: 150, seuil: 4 },
     bombanime: { partie:  25, victoire:  75, seuil: 4 },
-    collect:   { partie: 100, victoire: 200, seuil: 4 },
+    // ⚠️ Collect est le SEUL a trois, et c est son PLAFOND qui le decide :
+    // le mode se joue a cinq au maximum. A quatre, la fenetre ou une victoire
+    // paye n aurait fait que deux valeurs sur quatre, alors que la partie
+    // mediane s y joue a deux. Le meme seuil que les autres aurait eteint le
+    // bonus du mode presque partout.
+    collect:   { partie: 100, victoire: 200, seuil: 3 },
     codanime:  { partie:  50, victoire: 125, seuil: 4 },
     ascension: { partie: 100, victoire: 225, seuil: 4 },
     // Choice n est pas encore ouvert au public (`soon: true` sur sa carte),

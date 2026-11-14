@@ -67,6 +67,11 @@ verif('Rush gagné à 4 = 80 + 150', 230, c.xpDeLaPartie('rush', { gagnant: true
 verif('Classique gagné à 8 = 100 + 300', 400, c.xpDeLaPartie('classic', { gagnant: true, joueurs: 8 }).xp);
 verif('BombAnime gagné à 4 = 25 + 75', 100, c.xpDeLaPartie('bombanime', { gagnant: true, joueurs: 4 }).xp);
 verif('Collect gagné à 4 = 100 + 200', 300, c.xpDeLaPartie('collect', { gagnant: true, joueurs: 4 }).xp);
+// ⚠️ Collect plafonne a CINQ joueurs : a seuil 4, la fenetre ou une victoire
+// paye n aurait fait que deux valeurs sur quatre, et la partie mediane s y
+// joue a deux. C est le plafond du mode qui decide du seuil, pas l habitude.
+verif('⚠️ Collect paye dès 3 (son plafond est à 5)', 300, c.xpDeLaPartie('collect', { gagnant: true, joueurs: 3 }).xp);
+verif('⚠️ mais pas à 2', 100, c.xpDeLaPartie('collect', { gagnant: true, joueurs: 2 }).xp);
 verif('Codanime gagné à 4 = 50 + 125', 175, c.xpDeLaPartie('codanime', { gagnant: true, joueurs: 4 }).xp);
 verif('Ascension gagné à 4 = 100 + 225', 325, c.xpDeLaPartie('ascension', { gagnant: true, joueurs: 4 }).xp);
 
