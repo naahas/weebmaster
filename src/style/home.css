@@ -7445,10 +7445,46 @@ body.game-active:has(.poll-game-container) #particles-js {
    (c est la surface qui separe) et l etiquette « Connexion » non plus (les
    boutons portent leur nom). Rien ne les cite dans le gabarit. */
 
+/* 🔑 « SE CONNECTER » — l etiquette au-dessus du bouton.
+   Elle etait partie du temps ou il y avait DEUX fournisseurs : « Discord |
+   Google » cote a cote se lisent comme un choix, donc comme une connexion.
+   Google retire, le bouton se retrouve seul et redevient une affirmation
+   sans verbe — un logo nomme, pas une invitation. L etiquette revient donc.
+
+   ⚠️ Le bloc est en COLONNE et `.v2-profil-ronds` reste une RANGEE : le jour
+   ou un second fournisseur revient (Twitch), les boutons se remettent cote a
+   cote sans toucher a l etiquette. Mettre la colonne sur `.v2-profil-ronds`
+   lui-meme les aurait empiles. */
+.v2-profil-cnx { display: flex; flex-direction: column; gap: 0.5rem; }
+.v2-profil-cnx > span {
+    /* ⚠️ Le filet de chaque cote est un pseudo-element en `flex: 1`, donc le
+       span doit occuper TOUTE la largeur. Pas de `align-self: center` ici :
+       il le ferait retrecir sur son texte et les deux filets dispararaitraient. */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    /* Un or eteint : la carte porte deja l or vif sur l anneau d xp et le
+       stylo. Le reprendre ici en ferait un troisieme point d appel pour une
+       ligne qui n est qu une indication. */
+    color: #9a8655;
+}
+/* Les deux filets reprennent le degrade qui s efface aux deux bouts du
+   separateur en pointilles, plus bas : un seul vocabulaire dans la carte. */
+.v2-profil-cnx > span::before,
+.v2-profil-cnx > span::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+}
+
 .v2-profil-ronds { display: flex; gap: 0.5rem; }
-/* ⚠️ Les boutons portent leur NOM, pas seulement le logo : on reconnait le
-   logo Discord, on ne devine pas qu il sert a SE CONNECTER. C est ce qui a
-   permis de retirer l etiquette « Connexion » qui compensait au-dessus. */
+/* ⚠️ Le bouton porte son NOM, pas seulement le logo : on reconnait le logo
+   Discord, on ne devine pas qu il sert a SE CONNECTER. */
 .v2-profil-rond {
     flex: 1;
     display: flex;
@@ -7469,6 +7505,9 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-rond:hover { filter: brightness(1.12); }
 .v2-profil-rond.d { background: #5865F2; color: #fff; }
 .v2-profil-rond.d svg { fill: #fff; }
+/* Gardee bien que le bouton Google soit retire du gabarit : c est la seule
+   chose a reecrire si on le remet, et deux lignes de CSS valent mieux qu une
+   fouille dans l historique. */
 .v2-profil-rond.g { background: #fff; color: #1f1f1f; }
 /* ⚠️ Une taille EXPLICITE : un <svg> sans width/height retombe sur sa taille
    par defaut, 300×150 px, et fait exploser le bouton qui le porte. */
