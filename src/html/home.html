@@ -957,6 +957,27 @@
 
                         <div class="v2-settings-body">
 
+                            <!-- 🔐 QUI PEUT REJOINDRE — commun aux sept modes,
+                                 donc EN TETE et hors des blocs par mode : il
+                                 decide de l entree, pas de la facon de jouer.
+                                 ⚠️ Le bouton n est qu un bouton. La vraie
+                                 porte est dans `join-lobby`, cote serveur :
+                                 le code du salon suffit a appeler
+                                 l evenement, un controle pose ici ne
+                                 tiendrait pas devant un client bricole.
+                                 ⚠️ Et le refuser demande un compte A L HOTE
+                                 lui-meme — sans quoi il se verrouillerait
+                                 hors de son propre salon a la premiere
+                                 coupure de socket. Le serveur le dit, le
+                                 bandeau le repete. -->
+                            <div class="v2-set static">
+                                <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <span class="v2-set-label" title="Autoriser les joueurs sans compte à rejoindre">Invités</span>
+                                <button class="v2-switch" :class="{ on: invitesAutorises }"
+                                        :disabled="invitesBusy"
+                                        @click="basculerInvites"><span></span></button>
+                            </div>
+
                             <!-- Quiz : Classique & Rivalité -->
                             <template v-if="lobbyMode === 'classic' || lobbyMode === 'rivalry'">
                                 <div class="v2-set">
@@ -5130,6 +5151,16 @@
                     </div>
                 </div>
             </div>
+        </transition>
+
+        <!-- 📢 LE BANDEAU SOBRE, en haut de l ecran.
+             Il porte des refus — « Compte connecté requis » en premier — et
+             s efface tout seul : un message d erreur qui reste finit par
+             etre lu comme un etat de la page.
+             ⚠️ A LA RACINE comme la ceremonie, et pour la meme raison : un
+             `transform` sur un ancetre casserait son `position: fixed`. -->
+        <transition name="v2-bandeau-t">
+            <div class="v2-bandeau" v-if="bandeau" @click="bandeau = ''">{{ bandeau }}</div>
         </transition>
 
         <!-- ============================================

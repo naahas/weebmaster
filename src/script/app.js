@@ -895,6 +895,15 @@ createApp({
             cerPromu: false,           // a-t-on change de rang
             cerXpAffiche: '0',         // ⚠️ des CHAINES : elles sont deja
             cerArAffiche: '0',         //    formatees en francais (espaces)
+
+            // 🔐 Les invites sont-ils admis dans ce salon ? Le serveur le dit
+            // a l ouverture (`appliquerReglagesSalon`) ; on n affiche jamais
+            // ce qu on croit savoir.
+            invitesAutorises: false,
+            invitesBusy: false,
+            // Le bandeau sobre de refus, en haut de l ecran.
+            bandeau: '',
+            bandeauT: null,
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
@@ -5152,6 +5161,45 @@ createApp({
         // `noSpoil`, `speedBonus`, `multiplicateur` et `sequencePartagee` sont
         // des booléens, et un `r.noSpoil || this.noSpoil` aurait ignoré un
         // `false` venu du serveur — le réglage serait resté coché.
+        // ════════════════════════════════════════════════════════
+        // 🔐 LES INVITÉS — qui peut rejoindre ce salon
+        // ════════════════════════════════════════════════════════
+        // ⚠️ CE BOUTON N'EST QU'UN BOUTON. La vraie porte est dans
+        // `join-lobby`, côté serveur : le code du salon est tout ce qu'il
+        // faut pour appeler l'événement, donc un contrôle posé ici ne
+        // tiendrait pas une minute devant un client bricolé.
+        async basculerInvites() {
+            if (this.invitesBusy) return;
+            this.invitesBusy = true;
+            const voulu = !this.invitesAutorises;
+            try {
+                const rep = await this.hostFetch('/admin/set-invites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ autorises: voulu }),
+                });
+                const r = await rep.json();
+                if (r && r.success) this.invitesAutorises = !!r.invitesAutorises;
+                // ⚠️ Un refus se DIT. Le serveur en a un seul : un hôte non
+                // inscrit ne peut pas exiger un compte des autres, sous peine
+                // de se verrouiller hors de son propre salon à la première
+                // coupure de socket. Sans message, le bouton paraîtrait cassé.
+                else if (r && r.error) this.direBandeau(r.error);
+            } catch (e) {
+                this.direBandeau('Réglage impossible pour le moment.');
+            }
+            this.invitesBusy = false;
+        },
+
+        // 📢 Le bandeau sobre, en haut de l'écran. Il porte des refus, donc il
+        // s'efface tout seul : un message d'erreur qui reste finit par être
+        // lu comme un état de la page.
+        direBandeau(texte, duree = 3600) {
+            clearTimeout(this.bandeauT);
+            this.bandeau = texte;
+            this.bandeauT = setTimeout(() => { this.bandeau = ''; }, duree);
+        },
+
         appliquerReglagesSalon(r) {
             if (!r) return;
             const poser = (cible, clef, valeur) => {
@@ -5169,6 +5217,7 @@ createApp({
             poser(this, 'speedBonus', r.speedBonus);
             poser(this, 'bonusEnabled', r.bonusEnabled);
             poser(this, 'teamNames', r.teamNames);
+            poser(this, 'invitesAutorises', r.invitesAutorises);
 
             if (r.bombanime) {
                 poser(this.bombanime, 'serie', r.bombanime.serie);
@@ -8847,6 +8896,21 @@ createApp({
                 });
 
             this.socket.on('error', (data) => {
+                // 🔐 Salon réservé aux inscrits. On le dit en bandeau sobre
+                // et on RAMÈNE à l'accueil : laisser l'écran du salon à
+                // quelqu'un qui n'y est pas entré est la pire des réponses —
+                // il attendrait que ça démarre.
+                if (data.compteRequis) {
+                    this.direBandeau(data.message || 'Compte connecté requis');
+                    this.pendingJoinCode = null;
+                    this.hasJoined = false;
+                    this.joinPending = false;
+                    try {
+                        localStorage.removeItem('hasJoinedLobby');
+                        localStorage.removeItem('lobbyPlayerId');
+                    } catch (e) {}
+                    return;
+                }
                 // 🆕 v2 : code de salon refusé → on reste sur la modale
                 if (data.badCode) {
                     this.signalJoinError(data.message || 'Code de salon invalide');

@@ -720,6 +720,9 @@ function reglagesDuSalon(gameState) {
         speedBonus: gameState.speedBonus,
         bonusEnabled: gameState.bonusEnabled,
         teamNames: gameState.teamNames,
+        // 🔐 Commun aux sept modes, comme le format : il décide qui peut
+        // entrer, pas comment on joue.
+        invitesAutorises: gameState.invitesAutorises,
 
         bombanime: {
             serie: gameState.bombanime.serie,
@@ -775,7 +778,12 @@ function reglagesDeLaPartie(gameState) {
         : null;
     const hote = h ? h.username : null;
 
-    const avec = x => Object.assign({ hote }, x);
+    // ⚠️ `invites` est commun AUX SEPT MODES, donc il vit dans le socle et
+    // non dans chaque branche : un reglage ajoute a un mode doit l etre le
+    // JOUR MEME, sinon les parties de l intervalle ne l auront jamais. En le
+    // posant ici, les sept le recoivent d un coup et aucune branche ne peut
+    // l oublier.
+    const avec = x => Object.assign({ hote, invites: !!g.invitesAutorises }, x);
 
     switch (g.lobbyMode) {
         case 'bombanime': {
@@ -1709,6 +1717,22 @@ function etatNeuf() {
     usedQuestionIds: [],
     speedBonus: true, // 🆕 Bonus rapidité (500 pts au plus rapide en mode points)
     bonusEnabled: true, // 🎮 Bonus activés (jauge combo, bonus, défis)
+
+    // 🔐 LES INVITÉS SONT-ILS ADMIS DANS CE SALON ?
+    //
+    // Posé à FAUX : par défaut, il faut un compte pour rejoindre. C'est un
+    // choix de produit, et il se change ICI, d'un mot — aucune autre ligne du
+    // projet ne dépend de sa valeur.
+    //
+    // ⚠️ Son intérêt arrive avec le CLASSEMENT : un hôte voudra une partie où
+    // tout le monde compte. Aujourd'hui un invité ne gagne rien, donc il ne
+    // coûte rien aux inscrits — le réglage protège surtout l'intention de
+    // l'hôte, pas l'équité.
+    //
+    // ⚠️ ET CE RÉGLAGE NE CHASSE PERSONNE. Les invités déjà entrés restent,
+    // quoi qu'on en fasse ensuite — sinon un hôte viderait son salon d'un
+    // clic, sans rien pour annuler. Voir le contrôle dans `join-lobby`.
+    invitesAutorises: false,
 
     liveAnswers: new Map(),
 
@@ -4608,6 +4632,37 @@ app.post('/admin/set-speed-bonus', (req, res) => {
     console.log(`⚡ Bonus rapidité: ${gameState.speedBonus ? 'Activé' : 'Désactivé'}`);
 
     res.json({ success: true, speedBonus: gameState.speedBonus });
+});
+
+// 🔐 Route pour admettre ou non les invités (joueurs sans compte).
+//
+// ⚠️ ELLE N'EXCLUT PERSONNE. Les invités déjà dans le salon y restent ; c'est
+// `join-lobby` qui tient la porte, pas cette route. Les éjecter ferait qu'un
+// hôte vide son salon d'un clic, sans rien pour annuler.
+//
+// ⚠️ SEUL UN HÔTE INSCRIT PEUT LA FERMER, et le refus se dit à l'écran. On
+// n'exige pas des autres ce qu'on n'a pas fait soi-même — et `join-lobby`
+// porte la même condition, donc une porte fermée par un hôte sans compte ne
+// bloquerait personne : le réglage mentirait, allumé mais inerte. Mieux vaut
+// refuser franchement, c'est aussi la seule fois où le jeu explique à quoi
+// sert un compte.
+app.post('/admin/set-invites', (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
+
+    const vouluOuvert = req.body.autorises === true;
+    if (!vouluOuvert && !estUnCompte(gameState.hostPlayerId)) {
+        return res.status(403).json({
+            success: false,
+            error: 'Connecte-toi pour exiger un compte des autres joueurs.',
+        });
+    }
+    gameState.invitesAutorises = vouluOuvert;
+    console.log(`🔐 Invités dans ${gameState.roomCode} : ${gameState.invitesAutorises ? 'admis' : 'refusés'}`);
+
+    // Les joueurs voient le réglage changer : il décide qui peut les
+    // rejoindre, ce n'est pas une affaire privée de l'hôte.
+    diffuser(gameState, 'lobby-settings', { invitesAutorises: gameState.invitesAutorises });
+    res.json({ success: true, invitesAutorises: gameState.invitesAutorises });
 });
 
 // 🎮 Route pour activer/désactiver les bonus (jauge combo, bonus, défis)
@@ -9979,6 +10034,47 @@ io.on('connection', (socket) => {
             }
         }
         
+        // 🔐 LA PORTE DES INVITÉS. Elle est ici et nulle part ailleurs : le
+        // code du salon est tout ce qu'il faut pour appeler `join-lobby`, donc
+        // un contrôle posé dans la page ne tiendrait pas une minute devant un
+        // client bricolé. C'est la leçon des portes de service du Classique.
+        //
+        // ⚠️ ELLE NE S'APPLIQUE PAS À UNE RECONNEXION, et c'est tout l'objet
+        // du maintien promis : un invité déjà entré reste, même si l'hôte
+        // referme derrière lui. Le cas n'est pas théorique — un téléphone qui
+        // verrouille son écran coupe la socket, et son propriétaire repasse
+        // par ici sans avoir jamais quitté le salon. Le refuser alors serait
+        // le pire des deux mondes : il verrait son salon disparaître sans que
+        // rien ne se soit passé de son côté.
+        //
+        // ⚠️ ET L'HÔTE PASSE TOUJOURS, inscrit ou non : il ouvre son propre
+        // salon, on ne va pas l'en exclure. Mais l'exemption tient sur SON
+        // JETON et surtout pas sur `data.isHost` — ce champ est écrit par le
+        // client, donc un invité qui l'envoie à `true` passerait la porte
+        // sans rien prouver. Le jeton, lui, n'est remis qu'au créateur du
+        // salon. (Le même champ sert plus haut à sauter la vérification du
+        // code : là c'est sans conséquence, la room a déjà été trouvée PAR ce
+        // code.)
+        //
+        // ⚠️ ET ELLE NE VAUT QUE SI L'HÔTE EST LUI-MÊME INSCRIT. On ne peut
+        // pas exiger des autres ce qu'on n'a pas fait soi-même, et la règle
+        // n'est pas qu'un principe : sans elle, un hôte sans compte
+        // referme la porte, se la prend en revenant, et son salon meurt avec
+        // lui. La route `/admin/set-invites` refuse d'ailleurs de la fermer
+        // dans ce cas — les deux disent la même chose, l'une à l'hôte,
+        // l'autre à l'arrivant.
+        const estLHote = !!data.hostToken && data.hostToken === gameState.hostToken;
+        if (!isReconnection && !estLHote
+            && !gameState.invitesAutorises
+            && estUnCompte(gameState.hostPlayerId)
+            && !estUnCompte(data.playerId)) {
+            console.log(`🔐 ${data.username} refusé dans ${gameState.roomCode} : pas de compte`);
+            return socket.emit('error', {
+                message: 'Compte connecté requis',
+                compteRequis: true,
+            });
+        }
+
         // 💣🎴 Le plafond du mode, places réservées comprises. Il ne valait que
         // pour BombAnime : Collect n'était vérifié qu'au DÉMARRAGE, si bien qu'un
         // joueur de trop entrait et que l'hôte ne pouvait plus lancer sans savoir

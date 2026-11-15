@@ -63,7 +63,8 @@
     "test:portes": "node scripts/test-portes.js",
     "test:meche-vue": "node scripts/test-meche-visuelle.js",
     "test:comptes": "node scripts/test-comptes.js",
-    "test:comptes-panneau": "node scripts/test-comptes-panneau.js"
+    "test:comptes-panneau": "node scripts/test-comptes-panneau.js",
+    "test:invites": "node scripts/test-invites.js"
   },
   "keywords": [
     "quiz",
