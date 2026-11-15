@@ -157,6 +157,15 @@
                          `title`, pour la premiere fois ou on le croise — il y
                          portait avant le NOMBRE, c est-a-dire exactement ce
                          qu on lit deja a cote du curseur. -->
+                    <!-- ⚠️ UN GROUPE, et il n est pas decoratif : en variante
+                         « accrochee », la pastille glisse SOUS le portrait par
+                         une marge negative. Restees voisines dans la barre,
+                         elles etaient separees par son `gap` de 1rem, qu il
+                         aurait fallu annuler en plus de la marge — deux
+                         nombres a tenir d accord au lieu d un. Reunies, le
+                         `gap` ne s applique plus entre elles et la marge dit
+                         seule de combien la pastille s enfonce. -->
+                    <div class="v2-moi-grp">
                     <span class="v2-moi-rubis" v-if="estConnecte" title="Rubis">
                         <!-- ⚠️ Un FICHIER et non plus un trace : le gemme porte
                              le S du logo, qui ne se redessine pas au trait.
@@ -204,6 +213,7 @@
                                     :stroke-dashoffset="anneauReste"></circle>
                         </svg>
                     </button>
+                    </div>
 
                 </header>
 
