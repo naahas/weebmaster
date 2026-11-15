@@ -7614,7 +7614,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        vaut `(hauteur - bordures - 1,15rem) / 2`. A 1,75rem il n en restait que
        4 px et la pastille paraissait serree du haut — c est le gemme qu on
        voyait toucher le bord, jamais le chiffre. */
-    height: 2.05rem;
+    height: 2.2rem;
     /* ⚠️ Le padding DROIT est le gros : c est la part qui passe sous le
        portrait. Trop court, le nombre disparait dessous ; c est lui qui
        repousse le texte hors de la zone couverte.
@@ -7622,7 +7622,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        l ecart vaut `padding-droit moins l enfoncement`, soit 0,8rem ici. Le
        creuser en touchant a la marge, c est deplacer la pastille entiere au
        lieu d ecarter le texte. */
-    padding: 0 1.95rem 0 0.85rem;
+    padding: 0 2.15rem 0 1rem;
     border-radius: 999px;
     /* Un fond SOMBRE et non dore : la pastille passe derriere l avatar, elle
        doit s effacer devant lui. L or ne reste que sur le filet et le texte. */
@@ -7659,7 +7659,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        ⚠️ Le padding DROIT et la marge negative ne bougent PAS d un seul cote :
        ils se repondent, et resserrer l un sans l autre ferait sortir la
        pastille de sous le portrait ou y enfoncerait le nombre. */
-    .v2-moi-rubis { font-size: 0.78rem; gap: 0.35rem; height: 1.85rem; padding: 0 1.75rem 0 0.72rem; margin-right: -1.05rem; }
+    .v2-moi-rubis { font-size: 0.78rem; gap: 0.35rem; height: 2rem; padding: 0 1.95rem 0 0.88rem; margin-right: -1.05rem; }
     .v2-moi-rubis img { height: 1rem; }
 }
 
