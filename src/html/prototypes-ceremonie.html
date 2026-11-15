@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — la cérémonie de fin de partie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Chakra+Petch:wght@300;500;600;700&family=Bebas+Neue&family=Outfit:wght@200;300;400;500;600&family=Rajdhani:wght@500;600;700&family=Poppins:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <!--
+        🎬 CINQ DIRECTIONS POUR LA CEREMONIE DE FIN DE PARTIE.
+
+        Un voile sombre sur le podium, un bloc au centre, la barre de rang
+        dedans. La pose est la meme partout — ce qui se juge ici, c est LE
+        LANGAGE VISUEL, et d abord le caractere.
+
+        ⚠️ LE « CARTOON » VIENT DE LA TYPO, pas des couleurs. Poppins est une
+        grotesque geometrique ARRONDIE : ses O sont des cercles parfaits, ses
+        terminaisons sont molles, et elle a ete dessinee pour des interfaces
+        aimables. Posee en gras sur du jaune vif, elle dit « application
+        mobile », jamais « ecran de fin ». Les jeux dont on parle emploient des
+        caracteres TECHNIQUES (angles coupes, fûts droits) ou CONDENSES (hauts
+        et serres), et ils se servent de l or comme d une LUMIERE — un filet,
+        une lueur — plutot que comme d un aplat.
+
+        Chaque direction porte donc son propre caractere, et c est le vrai
+        objet du choix :
+          A  Archivo       — grotesque moderne, tres tracee, poids legers
+          B  Chakra Petch  — technique, fûts droits, angles coupes
+          C  Bebas Neue    — capitales condensees, echelle monumentale
+          D  Outfit        — tres fine, verre depoli, lumiere douce
+          E  Rajdhani      — condensee « gaming », l emblème au centre
+        La sixieme vignette montre l ETAT ACTUEL en Poppins, pour comparer.
+
+        ⚠️ TROIS CONTRAINTES DE MISE EN OEUVRE, a ne pas decouvrir apres :
+        - Le voile et le bloc vivent A LA RACINE du gabarit. Un `transform`
+          sur un ancetre cree un bloc conteneur et casse leur
+          `position: fixed` — c est l erreur qui revient le plus souvent sur
+          ce projet.
+        - Les etages : voile a 900, bloc a 1000, comme les autres modales du
+          jeu. Au-dessus de 9000 ils passeraient PAR-DESSUS les vraies
+          modales.
+        - L ecran de fin est deja en `position: fixed; inset: 0; z-index: 10`.
+          La ceremonie se pose dessus sans rien lui demander : aucune des cinq
+          ne touche a la mise en page du podium, donc aucune n est a ecrire
+          trois fois.
+
+        ⚠️ Et la BASCULE DE RANG reste le moment a juger. La barre touche le
+        bout, les deux noms avancent d un cran, elle repart — sans transition
+        au retour, sinon on la voit REDESCENDRE, ce qui dit l inverse d une
+        promotion. L interrupteur du haut la coupe.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --or-doux: #f0c75e;
+            --or-eteint: #8a7442;
+            --fond: #07070b;
+            --carte: #101016;
+            --trait: rgba(255, 255, 255, 0.07);
+            --elite: #6fa0f5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Archivo', system-ui, sans-serif;
+            background: var(--fond);
+            color: #e9e9ef;
+            padding: 2.5rem 2rem 6rem;
+        }
+
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.015em; }
+        .sous { color: #8a8a99; font-size: 0.9rem; line-height: 1.65; max-width: 68ch; margin-top: 0.6rem; }
+        .sous b { color: #c9c9d6; font-weight: 600; }
+
+        .reglages {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem;
+            margin: 1.8rem 0 2.2rem; padding: 0.95rem 1.2rem;
+            background: var(--carte); border: 1px solid var(--trait); border-radius: 0.7rem;
+            position: sticky; top: 0.8rem; z-index: 50;
+        }
+        .reglages label {
+            display: flex; align-items: center; gap: 0.55rem;
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--or-eteint);
+        }
+        .reglages button {
+            font-family: inherit; font-size: 0.8rem; font-weight: 500;
+            padding: 0.38rem 0.8rem; border-radius: 0.35rem; cursor: pointer;
+            background: #1a1a23; color: #c9c9d6; border: 1px solid var(--trait);
+        }
+        .reglages button:hover { background: #22222c; }
+        .reglages button.on { background: var(--or); color: #12100a; border-color: var(--or); }
+        .reglages .tout { background: #241d2e; color: var(--or-doux); border-color: rgba(240,199,94,.28); }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem; }
+        .cas { background: var(--carte); border: 1px solid var(--trait); border-radius: 0.8rem; overflow: hidden; }
+        .cas h2 {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+            padding: 0.9rem 1.1rem 0; color: var(--or-doux);
+        }
+        .cas .police {
+            display: inline-block; margin: 0.35rem 1.1rem 0;
+            font-size: 0.62rem; font-weight: 500; letter-spacing: 0.1em;
+            color: #6e6e7b; border: 1px solid var(--trait); border-radius: 0.3rem; padding: 0.1rem 0.4rem;
+        }
+        .cas p { font-size: 0.82rem; color: #8a8a99; line-height: 1.55; padding: 0.5rem 1.1rem 0.85rem; }
+        .cas .rejouer {
+            display: block; margin: 0 1.1rem 0.95rem auto;
+            font-family: inherit; font-size: 0.74rem; font-weight: 500;
+            padding: 0.32rem 0.75rem; border-radius: 0.35rem; cursor: pointer;
+            background: #1a1a23; color: #c9c9d6; border: 1px solid var(--trait);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           LA SCENE : le podium derriere, le voile, la ceremonie
+           ══════════════════════════════════════════════════════════ */
+        .scene {
+            position: relative; height: 470px; overflow: hidden;
+            background: radial-gradient(130% 90% at 50% 8%, rgba(255,190,40,.06), transparent 62%), #08080c;
+            border-top: 1px solid #1b1b26;
+            font-family: 'Poppins', sans-serif;   /* le podium garde la police du jeu */
+        }
+        /* Le podium, flou et immobile : il est derriere, il ne se juge pas. */
+        .podium {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+        }
+        .podium .cr { font-size: 1.6rem; color: var(--or); line-height: 1; }
+        .podium .vic { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.26em; color: #8a8a99; margin: 0.4rem 0 0.45rem; }
+        .podium .qui { display: flex; align-items: center; gap: 0.55rem; }
+        .podium .av { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(145deg,#3a3550,#1a1726); box-shadow: 0 0 0 2px rgba(255,215,0,.45); }
+        .podium .nm { font-size: 1.4rem; font-weight: 800; color: var(--or); }
+        .podium .ch { display: flex; gap: 2rem; margin: 0.8rem 0 0; text-align: center; }
+        .podium .ch b { display: block; font-size: 1rem; font-weight: 800; }
+        .podium .ch span { font-size: 0.52rem; font-weight: 600; letter-spacing: 0.15em; color: #6e6e7b; }
+        .podium .bt { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: 0.85rem; }
+        .podium .bt i { font-style: normal; font-size: 0.74rem; font-weight: 700; padding: 0.38rem 1.4rem; border-radius: 999px; background: var(--or); color: #15120a; }
+        .podium .bt i.f { background: rgba(255,215,0,.07); color: var(--or-doux); }
+
+        /* ⚠️ LE VOILE. Un fondu, jamais une apparition : le podium se retire,
+           il ne disparait pas. Et `pointer-events` reste actif — pendant la
+           ceremonie on ne doit pas pouvoir cliquer « Rejouer » derriere.
+
+           ⚠️ IL EST PLUS SOMBRE AU CENTRE, et ce n est pas une coquetterie.
+           A plat, 82 % laissaient le podium transparaitre A TRAVERS LE TEXTE
+           des trois variantes qui n ont pas de carte opaque (A, C et E) : la
+           couronne doree et le pseudo du vainqueur sont a fort contraste, et
+           18 % de clair suffisent a les lire sous des chiffres fins. Les
+           trois autres ne le voyaient pas — leur cadre cachait le probleme,
+           donc le defaut n appartenait qu a la moitie du banc.
+
+           Le degrade radial regle les deux a la fois : quasi opaque la ou le
+           bloc se pose, plus leger sur les bords, ou le podium doit rester
+           DEVINABLE — c est lui qui dit qu on est encore sur l ecran de fin
+           et pas sur une page a part. */
+        .voile {
+            position: absolute; inset: 0; z-index: 2;
+            background:
+                radial-gradient(58% 52% at 50% 50%, rgba(4, 4, 7, 0.975), rgba(4, 4, 7, 0.88) 72%),
+                rgba(4, 4, 7, 0.86);
+            opacity: 0;
+        }
+        .ceremonie.on .voile { animation: v-entre 0.45s ease forwards; }
+        @keyframes v-entre { to { opacity: 1; } }
+
+        .centre {
+            position: absolute; inset: 0; z-index: 3;
+            display: flex; align-items: center; justify-content: center;
+            padding: 1.5rem;
+        }
+        .bloc { width: min(400px, 100%); opacity: 0; }
+        .ceremonie.on .bloc { animation: b-entre 0.6s cubic-bezier(.16,.84,.3,1) 0.18s forwards; }
+        @keyframes b-entre {
+            from { opacity: 0; transform: translateY(1.1rem) scale(0.97); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        /* Le vocabulaire commun : piste, jauge, bascule. */
+        .piste { position: relative; overflow: hidden; }
+        .jauge { position: absolute; inset: 0 auto 0 0; width: 0; transition: width 1.3s cubic-bezier(.22,.8,.28,1); }
+        .jauge.zero { transition: none; }
+        .nb { font-variant-numeric: tabular-nums; }
+        .gem { width: auto; display: block; flex: 0 0 auto; }
+        .rg.change { animation: rg-ch 0.5s cubic-bezier(.16,.84,.3,1.2); }
+        @keyframes rg-ch { from { opacity: 0; transform: translateY(0.4rem); } to { opacity: 1; transform: none; } }
+
+        /* ══════════════════════════════════════════════════════════
+           A. FILET — Archivo, tout en traits, rien en aplat
+           ══════════════════════════════════════════════════════════ */
+        .a { font-family: 'Archivo', sans-serif; text-align: center; }
+        .a .cadre { border-top: 1px solid rgba(240,199,94,.3); border-bottom: 1px solid rgba(240,199,94,.3); padding: 1.6rem 0 1.4rem; }
+        .a .sur { font-size: 0.58rem; font-weight: 500; letter-spacing: 0.42em; text-transform: uppercase; color: var(--or-eteint); margin-bottom: 1.1rem; }
+        .a .duo { display: flex; justify-content: center; gap: 2.6rem; margin-bottom: 1.5rem; }
+        .a .v { font-size: 2.1rem; font-weight: 300; color: #fff; line-height: 1; letter-spacing: -0.02em; }
+        .a .u { display: block; margin-top: 0.4rem; font-size: 0.52rem; font-weight: 500; letter-spacing: 0.26em; text-transform: uppercase; color: var(--or-eteint); }
+        .a .u .gem { height: 0.62rem; display: inline-block; vertical-align: -0.04em; margin-right: 0.22rem; }
+        .a .bouts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+        .a .rg { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--elite); }
+        .a .rg.suiv { opacity: 0.38; }
+        .a .piste { height: 1px; background: rgba(255,255,255,.12); }
+        .a .jauge { background: var(--or); box-shadow: 0 0 8px rgba(255,215,0,.6); }
+        .a .promu { display: block; margin-top: 1rem; font-size: 0.55rem; font-weight: 500; letter-spacing: 0.38em; text-transform: uppercase; color: var(--or); opacity: 0; }
+
+        /* ══════════════════════════════════════════════════════════
+           B. TACTIQUE — Chakra Petch, angles coupes, filet diagonal
+           ══════════════════════════════════════════════════════════ */
+        .b { font-family: 'Chakra Petch', sans-serif; }
+        .b .cadre {
+            position: relative; padding: 1.3rem 1.4rem 1.2rem;
+            background: linear-gradient(135deg, rgba(20,20,26,.97), rgba(12,12,16,.97));
+            border: 1px solid rgba(240,199,94,.22);
+            /* ⚠️ Les coins coupes sont un `clip-path`, pas un `border-radius`
+               negatif : c est la seule facon d obtenir un angle droit biseaute
+               sans dessiner quatre pseudo-elements. */
+            clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+        }
+        .b .sur { display: flex; align-items: center; gap: 0.5rem; font-size: 0.58rem; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: var(--or); margin-bottom: 1rem; }
+        .b .sur::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(240,199,94,.35), transparent); }
+        .b .duo { display: flex; gap: 2rem; margin-bottom: 1.2rem; }
+        .b .v { font-size: 1.65rem; font-weight: 600; color: #fff; line-height: 1; }
+        .b .u { display: block; margin-top: 0.2rem; font-size: 0.52rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--or-eteint); }
+        .b .u .gem { height: 0.6rem; display: inline-block; vertical-align: -0.03em; margin-right: 0.2rem; }
+        .b .bouts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+        .b .rg { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--elite); }
+        .b .rg.suiv { opacity: 0.4; }
+        .b .piste { height: 4px; background: rgba(0,0,0,.6); clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
+        .b .jauge { background: var(--or); }
+        .b .promu { display: block; margin-top: 0.8rem; text-align: right; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--or); opacity: 0; }
+
+        /* ══════════════════════════════════════════════════════════
+           C. MONUMENT — Bebas Neue, le rang occupe toute la largeur
+           ══════════════════════════════════════════════════════════ */
+        .c { font-family: 'Archivo', sans-serif; text-align: center; }
+        .c .sur { font-size: 0.55rem; font-weight: 500; letter-spacing: 0.4em; text-transform: uppercase; color: var(--or-eteint); }
+        .c .titre {
+            font-family: 'Bebas Neue', sans-serif; font-size: 3.4rem; line-height: 0.92;
+            letter-spacing: 0.02em; color: #fff; margin: 0.5rem 0 0.1rem;
+        }
+        .c .titre em { font-style: normal; color: var(--elite); }
+        .c .piste { height: 2px; background: rgba(255,255,255,.1); margin: 1rem 0 0.45rem; }
+        .c .jauge { background: linear-gradient(90deg, var(--elite), var(--or)); }
+        .c .vers { display: flex; justify-content: space-between; font-size: 0.54rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e7b; }
+        .c .duo { display: flex; justify-content: center; gap: 2.2rem; margin-top: 1.4rem; }
+        .c .v { font-size: 1.3rem; font-weight: 600; color: var(--or); line-height: 1; }
+        .c .u { display: block; margin-top: 0.25rem; font-size: 0.5rem; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; color: var(--or-eteint); }
+        .c .u .gem { height: 0.58rem; display: inline-block; vertical-align: -0.03em; margin-right: 0.2rem; }
+        .c .promu { display: block; margin-top: 0.9rem; font-size: 0.55rem; font-weight: 500; letter-spacing: 0.34em; text-transform: uppercase; color: var(--or); opacity: 0; }
+
+        /* ══════════════════════════════════════════════════════════
+           D. VERRE — Outfit tres fine, voile floute, lumiere douce
+           ══════════════════════════════════════════════════════════ */
+        .d { font-family: 'Outfit', sans-serif; }
+        /* ⚠️ Le flou vit sur le VOILE de cette variante, pas sur le bloc : un
+           `backdrop-filter` sur un element cree un contexte d empilement et
+           flouterait ce qu il y a derriere LUI, donc le voile deja opaque —
+           on ne verrait rien. */
+        .ceremonie.flou .voile {
+            background: rgba(6, 6, 10, 0.55);
+            backdrop-filter: blur(14px) saturate(.75);
+        }
+        .d .cadre {
+            padding: 1.5rem 1.5rem 1.35rem; border-radius: 1.1rem;
+            background: linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.015));
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 24px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.14);
+        }
+        .d .sur { font-size: 0.58rem; font-weight: 400; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-bottom: 1.1rem; }
+        .d .duo { display: flex; gap: 2.2rem; margin-bottom: 1.4rem; }
+        .d .v { font-size: 1.9rem; font-weight: 200; color: #fff; line-height: 1; letter-spacing: -0.01em; }
+        .d .u { display: block; margin-top: 0.3rem; font-size: 0.52rem; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+        .d .u .gem { height: 0.6rem; display: inline-block; vertical-align: -0.03em; margin-right: 0.2rem; }
+        .d .bouts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.45rem; }
+        .d .rg { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #fff; }
+        .d .rg.suiv { color: rgba(255,255,255,.35); }
+        .d .piste { height: 3px; border-radius: 999px; background: rgba(255,255,255,.12); }
+        .d .jauge { border-radius: 999px; background: #fff; box-shadow: 0 0 14px rgba(255,255,255,.5); }
+        .d .promu { display: block; margin-top: 0.9rem; text-align: center; font-size: 0.55rem; font-weight: 400; letter-spacing: 0.3em; text-transform: uppercase; color: #fff; opacity: 0; }
+
+        /* ══════════════════════════════════════════════════════════
+           E. EMBLEME — Rajdhani, l ecusson au centre, la barre dessous
+           ══════════════════════════════════════════════════════════ */
+        .e { font-family: 'Rajdhani', sans-serif; text-align: center; }
+        .e .ecu {
+            position: relative; width: 5.2rem; height: 5.9rem; margin: 0 auto 0.9rem;
+            display: grid; place-items: center;
+            background: linear-gradient(160deg, var(--elite), #2d5fa8);
+            clip-path: polygon(50% 0, 100% 24%, 100% 70%, 50% 100%, 0 70%, 0 24%);
+            box-shadow: 0 0 40px rgba(111,160,245,.3);
+        }
+        .e .ecu span { font-size: 1.6rem; font-weight: 700; color: rgba(255,255,255,.95); letter-spacing: 0.04em; line-height: 1; }
+        .e .ecu::before {
+            content: ''; position: absolute; inset: 3px;
+            background: linear-gradient(160deg, rgba(0,0,0,.35), rgba(0,0,0,.05));
+            clip-path: polygon(50% 0, 100% 24%, 100% 70%, 50% 100%, 0 70%, 0 24%);
+        }
+        .e .ecu span { position: relative; z-index: 1; }
+        .e .nom { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #fff; }
+        .e .piste { height: 5px; border-radius: 999px; background: rgba(255,255,255,.1); margin: 0.95rem 0 0.4rem; }
+        .e .jauge { border-radius: 999px; background: linear-gradient(90deg, var(--elite), #a7c8ff); box-shadow: 0 0 12px rgba(111,160,245,.6); }
+        .e .vers { display: flex; justify-content: space-between; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #6e6e7b; }
+        .e .duo { display: flex; justify-content: center; gap: 2.2rem; margin-top: 1.2rem; }
+        .e .v { font-size: 1.4rem; font-weight: 700; color: var(--or); line-height: 1; }
+        .e .u { display: block; font-size: 0.55rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--or-eteint); }
+        .e .u .gem { height: 0.62rem; display: inline-block; vertical-align: -0.04em; margin-right: 0.2rem; }
+        .e .promu { display: block; margin-top: 0.85rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--or); opacity: 0; }
+        .ceremonie.monte .e .ecu { animation: ecu-pulse 0.7s cubic-bezier(.16,.84,.3,1.3); }
+        @keyframes ecu-pulse {
+            0% { transform: scale(1); } 40% { transform: scale(1.14); box-shadow: 0 0 70px rgba(111,160,245,.75); } 100% { transform: scale(1); }
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           Z. L ETAT ACTUEL — Poppins, pour comparer
+           ══════════════════════════════════════════════════════════ */
+        .z { font-family: 'Poppins', sans-serif; }
+        .z .cadre {
+            padding: 1.1rem 1.2rem 1.15rem; border-radius: 0.8rem;
+            background: linear-gradient(180deg, rgba(28,22,10,.95), rgba(16,13,8,.97));
+            border: 1px solid rgba(240,199,94,.22);
+            box-shadow: 0 10px 30px rgba(0,0,0,.45);
+        }
+        .z .duo { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.6rem; }
+        .z .v { font-size: 1.1rem; font-weight: 800; color: var(--or); }
+        .z .u { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--or-eteint); margin-left: 0.25rem; }
+        .z .u .gem { height: 0.9rem; display: inline-block; vertical-align: -0.12em; margin-right: 0.2rem; }
+        .z .bouts { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
+        .z .rg { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--elite); }
+        .z .rg.suiv { opacity: 0.45; }
+        .z .piste { height: 8px; border-radius: 999px; background: rgba(0,0,0,.45); }
+        .z .jauge { border-radius: 999px; background: linear-gradient(90deg, var(--or-doux), var(--or)); }
+        .z .promu { display: block; margin-top: 0.5rem; text-align: center; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--or); opacity: 0; }
+
+        /* La promotion, partagee. ⚠️ Son propre mouvement : reprendre celui du
+           bloc importerait son `scale`, qui ferait sauter le texte. */
+        .ceremonie.monte .promu { animation: pr-entre 0.45s ease 0.12s forwards; }
+        @keyframes pr-entre { from { opacity: 0; transform: translateY(0.35rem); } to { opacity: 1; transform: none; } }
+        .ceremonie.monte .piste { animation: eclat 0.6s ease; }
+        @keyframes eclat {
+            0% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+            35% { box-shadow: 0 0 0 6px rgba(255,215,0,.18); }
+            100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 1.5rem 1rem 4rem; }
+            .grille { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>La cérémonie de fin de partie</h1>
+    <p class="sous">
+        Un voile sur le podium, un bloc au centre, la barre de rang dedans. La pose est la même
+        partout : ce qui se juge ici, c'est <b>le langage visuel, et d'abord le caractère</b>.
+        Le côté « cartoon » vient de Poppins — une grotesque géométrique arrondie, dessinée pour
+        des interfaces aimables. Les cinq directions portent chacune la sienne ; la dernière
+        vignette garde Poppins pour comparer. L'interrupteur « Change de rang » joue la bascule,
+        qui est le seul moment où l'on peut se tromper en silence.
+    </p>
+
+    <div class="reglages">
+        <label>Victoire <span id="b-vic"></span></label>
+        <label>Change de rang <span id="b-lvl"></span></label>
+        <button class="tout" id="tout">Tout rejouer</button>
+    </div>
+
+    <div class="grille" id="grille"></div>
+
+    <script>
+        const GEM = '<img class="gem" src="/smoney.webp" alt="">';
+        const BAREME = { xp: 100, xpVic: 300, rubis: 500, rubisVic: 1500 };
+
+        let victoire = true;
+        let monte = true;
+
+        const fmt = (n) => n.toLocaleString('fr-FR');
+        const g = () => ({
+            xp: BAREME.xp + (victoire ? BAREME.xpVic : 0),
+            rubis: BAREME.rubis + (victoire ? BAREME.rubisVic : 0),
+        });
+        const PARCOURS = () => monte ? { de: 78, a: 100, apres: 22 } : { de: 34, a: 71, apres: null };
+
+        function scene(classe, dedans, flou) {
+            return `<div class="scene">
+                <div class="podium">
+                    <span class="cr">♛</span>
+                    <span class="vic">Victoire</span>
+                    <span class="qui"><span class="av"></span><span class="nm">admin</span></span>
+                    <span class="ch"><span><b>4</b><span>Personnages</span></span><span><b>0:12</b><span>Durée</span></span></span>
+                    <span class="bt"><i>Rejouer</i><i class="f">Retour</i></span>
+                </div>
+                <div class="ceremonie${flou ? ' flou' : ''}">
+                    <div class="voile"></div>
+                    <div class="centre"><div class="bloc ${classe}">${dedans(g())}</div></div>
+                </div>
+            </div>`;
+        }
+
+        const CAS = [
+            ['A', 'Filet', 'Archivo 300 · lettres très tracées',
+             "Deux filets, des chiffres en poids léger, aucun aplat. L'or n'est plus un fond mais une lumière — un trait de 1 px qui rayonne. La direction « publicité de montre » : elle respire, et elle a l'air chère.",
+             false,
+             (v) => `<div class="cadre">
+                <div class="sur">Récompenses</div>
+                <div class="duo">
+                    <div><span class="v nb">+${fmt(v.xp)}</span><span class="u">Expérience</span></div>
+                    <div><span class="v nb">+${fmt(v.rubis)}</span><span class="u">${GEM}Rubis</span></div>
+                </div>
+                <div class="bouts"><span class="rg courant">Élite I</span><span class="rg suiv prochain">Élite II</span></div>
+                <div class="piste"><div class="jauge"></div></div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+
+            ['B', 'Tactique', 'Chakra Petch 600 · fûts droits',
+             "Coins biseautés, filet qui s'efface, capitales serrées. Le vocabulaire des jeux de tir — c'est la direction la plus reconnaissable, et celle qui jure le plus avec un site d'anime si on n'en met pas ailleurs.",
+             false,
+             (v) => `<div class="cadre">
+                <div class="sur">Récompenses</div>
+                <div class="duo">
+                    <div><span class="v nb">+${fmt(v.xp)}</span><span class="u">Expérience</span></div>
+                    <div><span class="v nb">+${fmt(v.rubis)}</span><span class="u">${GEM}Rubis</span></div>
+                </div>
+                <div class="bouts"><span class="rg courant">Élite I</span><span class="rg suiv prochain">Élite II</span></div>
+                <div class="piste"><div class="jauge"></div></div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+
+            ['C', 'Monument', 'Bebas Neue · capitales condensées',
+             "Le rang occupe toute la largeur en capitales condensées, tout le reste est minuscule. Le contraste d'échelle fait le travail à la place des effets — et c'est la seule où l'on lit le rang depuis l'autre bout d'une pièce, ce qui compte pour un stream.",
+             false,
+             (v) => `<div>
+                <div class="sur">Rang atteint</div>
+                <div class="titre"><em class="courant">Élite I</em></div>
+                <div class="piste"><div class="jauge"></div></div>
+                <div class="vers"><span class="reste">2 000 / 2 000 XP</span><span class="prochain">Élite II</span></div>
+                <div class="duo">
+                    <div><span class="v nb">+${fmt(v.xp)}</span><span class="u">Expérience</span></div>
+                    <div><span class="v nb">+${fmt(v.rubis)}</span><span class="u">${GEM}Rubis</span></div>
+                </div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+
+            ['D', 'Verre', 'Outfit 200 · voile flouté',
+             "Le voile floute le podium au lieu de le cacher, et le bloc est une plaque de verre. Le blanc remplace l'or : c'est la seule direction qui ne soit pas dorée, et la plus calme. ⚠️ `backdrop-filter` coûte cher sur un téléphone d'entrée de gamme.",
+             true,
+             (v) => `<div class="cadre">
+                <div class="sur">Récompenses</div>
+                <div class="duo">
+                    <div><span class="v nb">+${fmt(v.xp)}</span><span class="u">Expérience</span></div>
+                    <div><span class="v nb">+${fmt(v.rubis)}</span><span class="u">${GEM}Rubis</span></div>
+                </div>
+                <div class="bouts"><span class="rg courant">Élite I</span><span class="rg suiv prochain">Élite II</span></div>
+                <div class="piste"><div class="jauge"></div></div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+
+            ['E', 'Emblème', 'Rajdhani 700 · condensée',
+             "L'écusson du palier au centre, sa division dedans, la barre dessous. La plus « jeu » des cinq, et la seule où la promotion a quelque chose à FAIRE : l'écusson grossit et change de chiffre. C'est aussi celle qui demandera neuf insignes à dessiner.",
+             false,
+             (v) => `<div>
+                <span class="ecu"><span class="div">I</span></span>
+                <div class="nom courant">Élite</div>
+                <div class="piste"><div class="jauge"></div></div>
+                <div class="vers"><span class="reste">2 000 / 2 000 XP</span><span class="prochain">Élite II</span></div>
+                <div class="duo">
+                    <div><span class="v nb">+${fmt(v.xp)}</span><span class="u">Expérience</span></div>
+                    <div><span class="v nb">+${fmt(v.rubis)}</span><span class="u">${GEM}Rubis</span></div>
+                </div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+
+            ['Z', 'L’état actuel', 'Poppins 800 · pour comparer',
+             "La barre d'aujourd'hui, posée au centre sous un voile. Elle sert de témoin : tout ce qui la sépare des cinq autres tient au caractère, aux arrondis et à l'or en aplat.",
+             false,
+             (v) => `<div class="cadre">
+                <div class="duo">
+                    <span class="v nb">+${fmt(v.xp)}<span class="u">XP</span></span>
+                    <span class="v nb"><span class="u">${GEM}</span>+${fmt(v.rubis)}</span>
+                </div>
+                <div class="bouts"><span class="rg courant">Élite I</span><span class="rg suiv prochain">Élite II</span></div>
+                <div class="piste"><div class="jauge"></div></div>
+                <span class="promu">Rang supérieur</span>
+             </div>`],
+        ];
+
+        // ⚠️ Rejouer demande un calcul de style FORCE entre le retrait et la
+        // repose des classes : sans lui les deux ecritures tombent dans la
+        // meme image, le navigateur ne voit rien bouger, et un second clic ne
+        // fait RIEN. C est la lecon du cadenas de BombAnime.
+        function jouer(sc) {
+            const cer = sc.querySelector('.ceremonie');
+            const jauge = sc.querySelector('.jauge');
+            const courant = sc.querySelector('.courant');
+            const prochain = sc.querySelector('.prochain');
+            const reste = sc.querySelector('.reste');
+            const divis = sc.querySelector('.ecu .div');
+            const avecDiv = !!divis;   // E porte la division dans l ecusson
+
+            const p = PARCOURS();
+            cer.classList.remove('on', 'monte');
+            jauge.classList.add('zero');
+            jauge.style.width = p.de + '%';
+            courant.textContent = avecDiv ? 'Élite' : 'Élite I';
+            prochain.textContent = 'Élite II';
+            if (divis) divis.textContent = 'I';
+            if (reste) reste.textContent = monte ? '2 000 / 2 000 XP' : '1 420 / 2 000 XP';
+            void cer.offsetWidth;
+
+            cer.classList.add('on');
+            setTimeout(() => {
+                jauge.classList.remove('zero');
+                jauge.style.width = p.a + '%';
+            }, 620);
+
+            if (!monte) return;
+            setTimeout(() => {
+                // ⚠️ Pas de transition au retour, sinon on voit la jauge
+                // REDESCENDRE — l inverse exact d une promotion.
+                jauge.classList.add('zero');
+                jauge.style.width = '0%';
+                courant.textContent = avecDiv ? 'Élite' : 'Élite II';
+                prochain.textContent = 'Élite III';
+                if (divis) divis.textContent = 'II';
+                if (reste) reste.textContent = '440 / 2 000 XP';
+                courant.classList.remove('change'); void courant.offsetWidth; courant.classList.add('change');
+                cer.classList.add('monte');
+                requestAnimationFrame(() => {
+                    jauge.classList.remove('zero');
+                    jauge.style.width = p.apres + '%';
+                });
+            }, 1980);
+        }
+
+        function peindre() {
+            document.getElementById('grille').innerHTML = CAS.map(([l, titre, police, note, flou, bloc]) => `
+                <div class="cas">
+                    <h2>${l} · ${titre}</h2>
+                    <span class="police">${police}</span>
+                    <p>${note}</p>
+                    <button class="rejouer">Rejouer</button>
+                    ${scene(l.toLowerCase(), bloc, flou)}
+                </div>`).join('');
+            document.querySelectorAll('.cas').forEach((c) => {
+                const sc = c.querySelector('.scene');
+                c.querySelector('.rejouer').addEventListener('click', () => jouer(sc));
+                jouer(sc);
+            });
+        }
+
+        function bascule(hote, lire, poser) {
+            hote.innerHTML = '';
+            [['Oui', true], ['Non', false]].forEach(([nom, v]) => {
+                const b = document.createElement('button');
+                b.textContent = nom;
+                if (lire() === v) b.classList.add('on');
+                b.addEventListener('click', () => { poser(v); peindre(); majBoutons(); });
+                hote.appendChild(b);
+            });
+        }
+        function majBoutons() {
+            bascule(document.getElementById('b-vic'), () => victoire, (v) => { victoire = v; });
+            bascule(document.getElementById('b-lvl'), () => monte, (v) => { monte = v; });
+        }
+
+        document.getElementById('tout').addEventListener('click', () => {
+            document.querySelectorAll('.scene').forEach(jouer);
+        });
+
+        majBoutons();
+        peindre();
+    </script>
+</body>
+
+</html>

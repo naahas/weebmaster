@@ -2480,6 +2480,15 @@ app.get('/prototypes/gain', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-gain.html');
 });
 
+// 🎬 La ceremonie de fin : un voile sur le podium, un bloc au centre.
+// ⚠️ Ce qui s y juge n est PAS la pose — elle est la meme partout — mais le
+// LANGAGE VISUEL, et d abord le caractere. Cinq directions typographiques,
+// plus l etat actuel en Poppins pour comparer : le cote « cartoon » vient de
+// cette grotesque geometrique arrondie, pas des couleurs.
+app.get('/prototypes/ceremonie', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-ceremonie.html');
+});
+
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
 // ⚠️ Ecarte — les deux chargeaient la barre. Garde comme trace du pourquoi.
 app.get('/prototypes/compte-place', (req, res) => {
