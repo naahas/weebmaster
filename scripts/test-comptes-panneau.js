@@ -95,17 +95,22 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
     check('le cobaye y figure', !!c, c ? c.pseudo : 'absent');
     if (!c) { await menage(ID); process.exit(1); }
 
-    // ⚠️ Le niveau vient de `src/script/niveaux.js`, le MEME fichier que le
-    // navigateur charge. 1800 xp = niveau 5 = Combattant : si ce controle
+    // ⚠️ Le rang vient de `src/script/niveaux.js`, le MEME fichier que le
+    // navigateur charge. 1 800 xp = 5e rang = Éveillé II : si ce controle
     // tombe, c est que les deux cotes ont diverge — exactement ce que le
     // fichier partage existe pour empecher.
     check('⚠️ le niveau est calcule par le serveur', c.niveau === 5, 'niveau ' + c.niveau);
-    check('⚠️ … et son titre suit', c.titreNiveau === 'Combattant', c.titreNiveau);
-    // ⚠️ `xpDuNiveau` est le prix du niveau COURANT vers le suivant, pas
-    // celui qu il a coute pour y arriver. 1800 est pile le seuil du 5, donc
-    // 0 de fait, et le 5 vaut 700 (300 + 100 × 4). Les confondre donnerait
-    // une barre qui deborde ou qui n arrive jamais au bout.
-    check('la progression dans le niveau', c.xpDansNiveau === 0 && c.xpDuNiveau === 700,
+    // ⚠️ LE NOM PORTE SA DIVISION. Le rang n est plus « Combattant » mais
+    // « Éveillé II » : s il revenait sans son chiffre romain, le panneau
+    // afficherait le bon palier au mauvais cran, et trois rangs sur trois se
+    // ressembleraient.
+    check('⚠️ … et son rang suit, division comprise', c.titreNiveau === 'Éveillé II', c.titreNiveau);
+    // ⚠️ `xpDuNiveau` est le prix du rang COURANT vers le suivant, pas celui
+    // qu il a coute pour y arriver. 1 800 tombe DANS Éveillé II (ouvert a
+    // 1 600), d ou 200 de faits sur les 700 que vaut une division de ce
+    // palier. Les confondre donnerait une barre qui deborde ou qui n arrive
+    // jamais au bout.
+    check('la progression dans le rang', c.xpDansNiveau === 200 && c.xpDuNiveau === 700,
         c.xpDansNiveau + '/' + c.xpDuNiveau);
     check('l URL de l avatar est fabriquee par le SERVEUR',
         typeof c.avatarUrl === 'string' && c.avatarUrl.startsWith('/'), c.avatarUrl);

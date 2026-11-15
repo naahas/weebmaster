@@ -47,9 +47,9 @@ const MIN_CLASSIQUE = 8;
 // chaque compte, et le recalculer dans sa page aurait fait exactement la
 // divergence que le paragraphe du dessus interdit.
 //
-// `XP_BASE`, `XP_PAS`, `xpCumulee`, `niveauPourXp`, `TITRES_JOUEUR` et
+// `PALIERS`, `RANGS`, `xpCumulee`, `niveauPourXp`, `TITRES_JOUEUR` et
 // `titrePourNiveau` viennent donc de la. ⚠️ Si la page blanchit sur un
-// « XP_BASE is not defined », c est la balise <script> de home.html qui a
+// « RANGS is not defined », c est la balise <script> de home.html qui a
 // change d ordre — niveaux.js doit passer EN PREMIER.
 //
 // ℹ️ La seule chose qu un compte peut porter en base, c est un titre
@@ -1216,9 +1216,15 @@ createApp({
             return xpCumulee(this.niveauJoueur + 1) - xpCumulee(this.niveauJoueur);
         },
         // La part remplie, de 0 a 1. Sert a la barre ET a l anneau.
+        //
+        // ⚠️ Un prix NUL veut dire « il n y a pas de rang apres », donc DIVIN :
+        // la barre est pleine, pas vide. Elle rendait zero, et le sommet de
+        // l echelle s affichait comme un depart — l exact contraire de ce qu il
+        // represente. Le cas n existait pas avant les paliers : l ancienne
+        // courbe montait a l infini, il y avait toujours un niveau suivant.
         xpPart() {
             const p = this.xpParNiveau;
-            if (!p) return 0;
+            if (!p) return 1;
             return Math.min(1, this.xpDansNiveau / p);
         },
         // 🏅 LE RANG — Novice, Apprenti… Il se DEDUIT du niveau, personne ne

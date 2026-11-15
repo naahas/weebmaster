@@ -5155,13 +5155,13 @@
          point, retirer « .prod » de cette ligne — et le remettre avant de
          pousser. C est la seule difference entre les deux fichiers. -->
     <script src="https://unpkg.com/vue@3.5.42/dist/vue.global.prod.js"></script>
-    <!-- ⚠️ AVANT app.js, et ce n est pas negociable : il y declare `XP_BASE`,
-         `niveauPourXp` et `TITRES_JOUEUR`, dont app.js se sert des sa premiere
-         propriete calculee. Un `const` de premier niveau vit dans la portee
-         lexicale globale, donc il est visible des scripts SUIVANTS seulement —
-         inverser les deux lignes blanchirait la page sur un
-         « XP_BASE is not defined ». Le meme fichier est `require` par le
-         serveur pour le panneau /admin : la courbe ne s ecrit qu une fois. -->
+    <!-- ⚠️ AVANT app.js, et ce n est pas negociable : il y declare `RANGS`,
+         `niveauPourXp` et `titrePourNiveau`, dont app.js se sert des sa
+         premiere propriete calculee. Un `const` de premier niveau vit dans la
+         portee lexicale globale, donc il est visible des scripts SUIVANTS
+         seulement — inverser les deux lignes blanchirait la page sur un
+         « RANGS is not defined ». Le meme fichier est `require` par le
+         serveur pour le panneau /admin : l echelle ne s ecrit qu une fois. -->
     <script src="niveaux.js"></script>
     <!-- 🎖️ Le catalogue des titres, meme regle : AVANT app.js, qui appelle
          `composerTitre` des sa propriete calculee. Lui aussi est `require`
