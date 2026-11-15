@@ -957,27 +957,6 @@
 
                         <div class="v2-settings-body">
 
-                            <!-- 🔐 QUI PEUT REJOINDRE — commun aux sept modes,
-                                 donc EN TETE et hors des blocs par mode : il
-                                 decide de l entree, pas de la facon de jouer.
-                                 ⚠️ Le bouton n est qu un bouton. La vraie
-                                 porte est dans `join-lobby`, cote serveur :
-                                 le code du salon suffit a appeler
-                                 l evenement, un controle pose ici ne
-                                 tiendrait pas devant un client bricole.
-                                 ⚠️ Et le refuser demande un compte A L HOTE
-                                 lui-meme — sans quoi il se verrouillerait
-                                 hors de son propre salon a la premiere
-                                 coupure de socket. Le serveur le dit, le
-                                 bandeau le repete. -->
-                            <div class="v2-set static">
-                                <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                <span class="v2-set-label" title="Autoriser les joueurs sans compte à rejoindre">Invités</span>
-                                <button class="v2-switch" :class="{ on: invitesAutorises }"
-                                        :disabled="invitesBusy"
-                                        @click="basculerInvites"><span></span></button>
-                            </div>
-
                             <!-- Quiz : Classique & Rivalité -->
                             <template v-if="lobbyMode === 'classic' || lobbyMode === 'rivalry'">
                                 <div class="v2-set">
@@ -1558,6 +1537,32 @@
                                 </div>
                             </template>
 
+                            <!-- 🔐 QUI PEUT REJOINDRE — commun aux sept modes, donc
+                                 hors des blocs par mode. EN BAS, et c est un choix :
+                                 il decide de l ENTREE, pas de la facon de jouer, et
+                                 on ne touche a la porte qu une fois la partie reglee.
+                                 Il reste au-dessus de « Test », qui n existe qu en
+                                 developpement — le dernier reglage d un vrai salon,
+                                 c est celui-la.
+                                 ⚠️ Le bouton n est qu un bouton. La vraie porte est
+                                 dans `join-lobby`, cote serveur : le code du salon
+                                 suffit a appeler l evenement, un controle pose ici
+                                 ne tiendrait pas devant un client bricole.
+                                 ⚠️ Et le refuser demande un compte A L HOTE lui-meme
+                                 — sans quoi il se verrouillerait hors de son propre
+                                 salon a la premiere coupure de socket. Le serveur le
+                                 dit, le bandeau le repete. -->
+                            <div class="v2-set static" data-info="invites">
+                                <svg class="v2-set-ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <!-- ⚠️ PLUS DE `title` : la bulle dit deja la meme
+                                     chose, et l infobulle du navigateur serait venue
+                                     la doubler par-dessus. -->
+                                <span class="v2-set-label">Invités</span>
+                                <button class="v2-switch" :class="{ on: invitesAutorises }"
+                                        :disabled="invitesBusy"
+                                        @click="basculerInvites"><span></span></button>
+                            </div>
+
                             <!-- 🧪 Peupler le salon sans ouvrir quinze onglets.
                                  Le serveur ne l'accepte qu'en dehors de la production.
                                  Ouvert à Ascension et à Collect, les deux modes où des
@@ -1710,6 +1715,17 @@
                             retourne.</span>
                     </span>
                 </template>
+
+                <!-- ⚠️ Celle-ci n est liee a AUCUN mode : son reglage vit en bas du
+                     tiroir, commun aux sept. D ou « isHost » seul, sans « lobbyMode ».
+                     ⚠️ Deux phrases, et c est volontaire. Le reglage se comprend
+                     seul, mais le MAINTIEN ne se devine pas : refermer la porte
+                     ressemble a une expulsion, et c est la seule chose que la
+                     bulle ait vraiment a apprendre. -->
+                <span class="v2-set-info" data-pour="invites" v-if="isHost" tabindex="0">!
+                    <span class="v2-set-bulle">Laisse entrer les joueurs sans compte.
+                        Les refuser ne met personne dehors : ceux déjà là restent.</span>
+                </span>
             </div>
 
 
