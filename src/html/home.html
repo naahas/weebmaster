@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="home-codanime.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Archivo:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <!-- ── L icone du site ──
@@ -5132,6 +5132,70 @@
             </div>
         </transition>
 
+        <!-- ============================================
+             🎆 LA CEREMONIE DE FIN — ce que la partie a rapporte
+             ============================================
+             Un voile sur le podium, le rang en monument, la barre d xp, les
+             deux gains. Elle arrive UNE SECONDE apres la fin du devoilement
+             du classement : posee pendant, elle volerait le seul moment que
+             les autres joueurs regardent.
+
+             ⚠️ A LA RACINE DU GABARIT, et ce n est pas negociable : un
+             `transform` sur un ancetre cree un bloc conteneur et casserait le
+             `position: fixed` du voile. C est l erreur qui revient le plus
+             souvent sur ce projet.
+
+             ⚠️ Elle ne s affiche QUE pour un inscrit qui a gagne quelque
+             chose : le serveur ne joint `gain` a `compte-profil` qu a la fin
+             d une partie creditee. Un invite n en voit jamais rien — lui
+             montrer une barre a zero dirait « tu aurais pu », ce qui n est
+             pas le role d un ecran de victoire.
+
+             ⚠️ Et elle est la MEME pour les sept modes. Les trois ecrans de
+             fin (`.v2-end`, `.rush-fin`, `.chx-fin`) ont des mises en page
+             differentes ; celle-ci se pose PAR-DESSUS et ne leur demande
+             rien, donc elle ne s ecrit qu une fois. -->
+        <div class="v2-cer" v-if="cerVisible" :class="{ on: cerEntree }">
+            <!-- ⚠️ Le voile ET le calque central portent la fermeture. Le
+                 central est en `inset: 0` PAR-DESSUS le voile : sans lui, un
+                 clic tombe a cote du bloc n atteindrait jamais le voile, et
+                 « cliquer a cote » ne fermerait rien. -->
+            <div class="v2-cer-voile" @click="fermerCeremonie"></div>
+            <button class="v2-cer-fermer" @click="fermerCeremonie" aria-label="Fermer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                    <path d="M5 5l14 14M19 5L5 19"/>
+                </svg>
+            </button>
+            <div class="v2-cer-centre" @click="fermerCeremonie">
+                <!-- `.stop` : un clic SUR le bloc est le geste de qui veut le
+                     regarder, pas de qui veut le fermer. -->
+                <div class="v2-cer-bloc" @click.stop>
+                    <div class="v2-cer-feu" ref="cerFeu"></div>
+                    <!-- ⚠️ La place de « Rang supérieur » est RESERVEE en
+                         permanence : son apparition pousserait sinon tout le
+                         bloc vers le bas, et le grand titre sauterait de
+                         vingt pixels au moment precis ou on le regarde. -->
+                    <div class="v2-cer-promu-zone">
+                        <span class="v2-cer-promu" ref="cerPromu" v-if="cerPromu">Rang supérieur</span>
+                    </div>
+                    <div class="v2-cer-titre" ref="cerTitre" :style="{ color: cerRang.couleur }">{{ cerRang.nom }}</div>
+                    <div class="v2-cer-ligne haut">
+                        <span class="v2-cer-xp">+{{ cerXpAffiche }}<span class="u">XP</span></span>
+                        <span class="v2-cer-reste">{{ cerDansRang }} / {{ cerParRang }}</span>
+                    </div>
+                    <div class="v2-cer-piste">
+                        <div class="v2-cer-jauge" :class="{ sec: cerSansTransition }"
+                             :style="{ width: cerPart + '%' }"></div>
+                    </div>
+                    <div class="v2-cer-ligne bas">
+                        <!-- ⚠️ PAS LE MOT « Rubis » : le gemme tient lieu de
+                             nom, ici comme dans la barre du haut. -->
+                        <span class="v2-cer-ar"><img src="smoney.webp" alt="" draggable="false">+{{ cerArAffiche }}</span>
+                        <span class="v2-cer-suiv" :style="{ color: cerSuivantCouleur }">{{ cerSuivant }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 

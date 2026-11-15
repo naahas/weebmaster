@@ -15663,3 +15663,232 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (prefers-reduced-motion: reduce) {
     .chx-bord.perdu, .chx-eclair.joue, .chx-j { animation: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   🎆 LA CEREMONIE DE FIN — ce que la partie a rapporte
+   ════════════════════════════════════════════════════════════════
+   Direction « Monument », retenue au banc /prototypes/ceremonie parmi cinq
+   langages visuels, puis reglee sur /prototypes/ceremonie2.
+
+   ⚠️ CE QUI A FAIT LE CHOIX : le rang en CAPITALES CONDENSEES occupant toute
+   la largeur, tout le reste minuscule. Le contraste d echelle fait le travail
+   a la place des effets — et c est la seule pose qui se lise depuis l autre
+   bout d une piece, ce qui n est pas un detail pour un jeu de stream.
+
+   ⚠️ ET LA TYPO EST LE SUJET, pas la couleur. Poppins est une grotesque
+   geometrique ARRONDIE, dessinee pour des interfaces aimables : en gras sur
+   de l or en aplat, elle dit « application mobile ». Le grand titre passe
+   donc en Bebas Neue (deja chargee par home.html) et les petits libelles en
+   Archivo, en poids leger et tres traques. */
+
+.v2-cer {
+    /* ⚠️ `fixed`, et le bloc vit A LA RACINE du gabarit : un `transform` sur
+       un ancetre creerait un bloc conteneur et le collerait a lui. */
+    position: fixed;
+    inset: 0;
+    /* ⚠️ 900 / 1000 comme les autres voiles et modales du jeu. Au-dessus de
+       9000 ce calque passerait PAR-DESSUS les vraies modales — la lecon que
+       le sceau du quiz avait deja coutee. */
+    z-index: 900;
+}
+
+/* ⚠️ PLUS SOMBRE AU CENTRE, et c est une mesure. A plat, 82 % laissaient le
+   podium transparaitre A TRAVERS le texte : la couronne et le pseudo du
+   vainqueur sont a fort contraste, et le bloc n a aucune carte derriere lui.
+   Les bords restent legers — le podium doit demeurer DEVINABLE, c est lui qui
+   dit qu on est encore sur l ecran de fin et pas sur une page a part. */
+.v2-cer-voile {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(58% 52% at 50% 50%, rgba(4, 4, 7, 0.975), rgba(4, 4, 7, 0.88) 72%),
+        rgba(4, 4, 7, 0.86);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+}
+.v2-cer.on .v2-cer-voile { opacity: 1; }
+
+/* La croix. Sobre : un trait fin, a demi efface, qui s allume au survol.
+   ⚠️ Elle est la DES LE DEBUT et non apres l animation — on verra cet ecran
+   cinquante fois, et retenir quelqu un dans une ceremonie qu il connait par
+   coeur est la meilleure facon de la lui faire detester. */
+.v2-cer-fermer {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.1rem;
+    z-index: 1001;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.32);
+    opacity: 0;
+    transition: color 0.18s ease, opacity 0.4s ease 0.3s;
+}
+.v2-cer.on .v2-cer-fermer { opacity: 1; }
+.v2-cer-fermer:hover { color: rgba(255, 255, 255, 0.82); }
+.v2-cer-fermer svg { width: 0.95rem; height: 0.95rem; display: block; }
+
+.v2-cer-centre {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.v2-cer-bloc {
+    position: relative;
+    width: min(390px, 100%);
+    font-family: 'Archivo', 'Poppins', system-ui, sans-serif;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(1.1rem) scale(0.975);
+    transition: opacity 0.6s cubic-bezier(.16, .84, .3, 1) 0.18s,
+                transform 0.6s cubic-bezier(.16, .84, .3, 1) 0.18s;
+}
+.v2-cer.on .v2-cer-bloc { opacity: 1; transform: none; }
+
+/* ⚠️ HAUTEUR RESERVEE. « Rang supérieur » n apparait que sur promotion ; sans
+   cette place gardee en permanence, son arrivee pousserait tout le bloc vers
+   le bas et le grand titre sauterait de vingt pixels au moment precis ou on
+   le regarde. */
+.v2-cer-promu-zone {
+    height: 2.9rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+.v2-cer-promu {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.44em;
+    text-transform: uppercase;
+    color: var(--neon-primary);
+    /* La derniere lettre porte l interlettrage en trop : sans ce retrait le
+       mot parait decale d un demi-espace vers la gauche. */
+    text-indent: 0.44em;
+    text-shadow: 0 0 22px rgba(255, 215, 0, 0.55);
+    opacity: 0;
+}
+
+.v2-cer-titre {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    margin: 0;
+}
+
+/* ⚠️ `tabular-nums` est OBLIGATOIRE sur les deux nombres : ils s incrementent,
+   donc ils changent a chaque image, et sans chasse fixe chaque chiffre a sa
+   propre largeur — le bloc entier tremble. Invisible sur un nombre fige,
+   insupportable sur un compteur. */
+.v2-cer-ligne {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+.v2-cer-ligne.haut { margin-bottom: 0.45rem; }
+.v2-cer-ligne.bas { margin-top: 0.8rem; }
+
+.v2-cer-xp {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--neon-primary);
+}
+.v2-cer-xp .u {
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    margin-left: 0.25rem;
+    color: #8a7442;
+}
+.v2-cer-ar {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--neon-primary);
+}
+.v2-cer-ar img { height: 0.85rem; width: auto; display: block; flex: 0 0 auto; }
+
+.v2-cer-reste,
+.v2-cer-suiv {
+    font-size: 0.54rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6e6e7b;
+}
+/* Le rang suivant prend SA couleur, en retrait : c est une promesse, pas un
+   etat. Pose en plein, il se disputait le regard avec le rang atteint. */
+.v2-cer-suiv { opacity: 0.5; }
+
+.v2-cer-piste {
+    position: relative;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+.v2-cer-jauge {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    background: linear-gradient(90deg, #6fa0f5, var(--neon-primary));
+    transition: width 1.3s cubic-bezier(.22, .8, .28, 1);
+}
+/* ⚠️ A LA BASCULE DE RANG, la jauge revient a zero SANS transition. Avec, on
+   la verrait REDESCENDRE sur toute sa longueur — ce qui raconte exactement
+   l inverse d une promotion. */
+.v2-cer-jauge.sec { transition: none; }
+
+/* Le calque des eclats.
+   ⚠️ `pointer-events: none` : il couvre tout le bloc, sans quoi il avalerait
+   le clic qui ferme. Et `overflow: visible` — les eclats doivent pouvoir
+   sortir du bloc, c est tout l effet. */
+.v2-cer-feu {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 2;
+}
+.v2-cer-p {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 1px;
+    will-change: transform, opacity;
+}
+.v2-cer-flash {
+    position: absolute;
+    inset: -40% -20%;
+    opacity: 0;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 235, 160, 0.55), transparent 70%);
+}
+
+@media (max-width: 480px) {
+    .v2-cer-bloc { width: min(340px, 100%); }
+    .v2-cer-titre { font-size: 2.9rem; }
+    .v2-cer-promu-zone { height: 2.5rem; }
+}
+
+/* ⚠️ Le mouvement se coupe, l INFORMATION reste. Sans transition la barre se
+   pose directement a sa valeur, les nombres sont deja ecrits, et les eclats
+   ne partent pas du tout — c est le seul des trois qui n a rien a dire. */
+@media (prefers-reduced-motion: reduce) {
+    .v2-cer-voile,
+    .v2-cer-bloc,
+    .v2-cer-jauge,
+    .v2-cer-fermer { transition: none; }
+}

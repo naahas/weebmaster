@@ -875,6 +875,26 @@ createApp({
             showQuestionStats: false,  // feuille de détail de la question (hôte)
             showTopSheet: false,       // classement en calque, sur petit écran
             endStep: 0,                // 0→4 : avancement de la révélation finale
+
+            // 🎆 LA CEREMONIE DE FIN — ce que la partie a rapporte.
+            // ⚠️ Tout part de `gain`, que le serveur joint a `compte-profil`
+            // A LA SEULE FIN D UNE PARTIE CREDITEE. Le meme evenement arrive
+            // aussi a la connexion et depuis le panneau : s il fallait
+            // deduire le gain par difference, l ecran annoncerait le total
+            // entier a qui vient d ouvrir la page.
+            cerVisible: false,         // le calque est-il dans le DOM
+            cerEntree: false,          // la classe qui declenche le fondu
+            cerGain: null,             // { xp, rubis, victoire, mode }
+            cerRang: { nom: '', couleur: '#fff' },   // le rang AFFICHE, qui bascule
+            cerSuivant: '',            // le nom du rang d apres
+            cerSuivantCouleur: '#6e6e7b',
+            cerPart: 0,                // le remplissage de la jauge, en %
+            cerSansTransition: false,  // le retour a zero de la bascule
+            cerDansRang: 0,
+            cerParRang: 0,
+            cerPromu: false,           // a-t-on change de rang
+            cerXpAffiche: '0',         // ⚠️ des CHAINES : elles sont deja
+            cerArAffiche: '0',         //    formatees en francais (espaces)
             showReport: false,         // modale de signalement d'une question
             reportPicked: [],          // plusieurs motifs peuvent se cumuler
             reportBusy: false,
@@ -5319,11 +5339,18 @@ createApp({
         // et camps) et Codanime. Ses deux boutons doivent donc aiguiller —
         // sans ça « Rejouer » relançait un QUIZ depuis la fin d'une partie
         // de Codanime, et « Retour » renvoyait à l'accueil au lieu du salon.
+        // ⚠️ LES DEUX SORTIES OUBLIENT LA CEREMONIE. La recompense d une
+        // manche n a rien a faire sur la suivante : sans ce nettoyage, un
+        // « Rejouer » immediat laissait le calque en place par-dessus la
+        // partie qui recommence — et la minuterie de la bascule rallumait
+        // des eclats au milieu d une question.
         hostRejouerPodium() {
+            this.reinitCeremonie();
             if (this.estFinCodanime) return this.hostRejouerCodanime();
             return this.hostRejouer();
         },
         retourPodium() {
+            this.reinitCeremonie();
             if (this.estFinCodanime) return this.quitterCodanime();
             return this.backToHome();
         },
@@ -5352,7 +5379,252 @@ createApp({
                 this.endStep = 3;
                 this.$nextTick(() => this.celebrerVainqueur());
             }, 3000);
-            this._endT4 = setTimeout(() => { this.endStep = 4; }, 4200);
+            this._endT4 = setTimeout(() => { this.endStep = 4; this.programmerCeremonie(); }, 4200);
+        },
+
+        // ════════════════════════════════════════════════════════
+        // 🎆 LA CEREMONIE DE FIN — ce que la partie a rapporte
+        // ════════════════════════════════════════════════════════
+        // Direction « Monument » (banc /prototypes/ceremonie), reglee sur
+        // /prototypes/ceremonie2.
+        //
+        // ⚠️ DEUX TEMPS SEPARES, et ils ne peuvent pas etre fusionnes.
+        // `preparerCeremonie` arrive avec `compte-profil`, c est-a-dire DES
+        // LA FIN DE LA PARTIE — pendant que le classement se devoile encore.
+        // `programmerCeremonie` est appelee par le DERNIER pas de ce
+        // devoilement. L une sait QUOI montrer, l autre QUAND : les melanger
+        // poserait le voile sur un podium a moitie revele, c est-a-dire sur
+        // le seul moment que les autres joueurs regardent.
+
+        preparerCeremonie(gain) {
+            this.cerGain = gain;
+            // ⚠️ `compteXp` porte deja le NOUVEAU total — le gestionnaire
+            // l a ecrit deux lignes plus haut. L etat d avant se retrouve par
+            // soustraction, et c est la seule facon : le serveur n envoie
+            // jamais l ancien total, et le client n a aucune raison de
+            // l avoir garde.
+            const apres = Number(this.compteXp) || 0;
+            const avant = Math.max(0, apres - (Number(gain.xp) || 0));
+            this._cerAvant = avant;
+            this._cerApres = apres;
+            // Si le devoilement est deja fini — une fin sans classement, un
+            // rafraichissement — on ne reste pas bloque a l attendre.
+            if (this.endStep >= 1 && !this._cerT) this.programmerCeremonie();
+        },
+
+        // ⚠️ Appelee par le DERNIER pas des deux devoilements
+        // (`startEndReveal` et `lancerRevelationListe`), qui couvrent les
+        // sept modes. Les y brancher plutot que de poser un delai fixe evite
+        // de deviner la duree d un classement dont le nombre de lignes change
+        // a chaque partie.
+        programmerCeremonie() {
+            if (!this.cerGain || this.cerVisible || this._cerT) return;
+            this._cerT = setTimeout(() => this.ouvrirCeremonie(), 1000);
+        },
+
+        ouvrirCeremonie() {
+            const gain = this.cerGain;
+            if (!gain) return;
+            const avant = this._cerAvant;
+
+            // L etat de depart : le rang qu on avait AVANT la partie.
+            const rangAvant = niveauPourXp(avant);
+            const rangApres = niveauPourXp(this._cerApres);
+            this.cerPromu = rangApres > rangAvant;
+
+            this._cerRangAvant = rangAvant;
+            this._cerRangApres = rangApres;
+            this.posterRang(rangAvant, avant);
+            this.cerXpAffiche = '0';
+            this.cerArAffiche = '0';
+            this.cerVisible = true;
+
+            this.$nextTick(() => {
+                // Deux images : la premiere pose le bloc a son etat de
+                // depart, la seconde declenche le fondu. En une seule, le
+                // navigateur ne verrait rien bouger et tout apparaitrait
+                // d un coup.
+                requestAnimationFrame(() => { this.cerEntree = true; });
+
+                // ⚠️ LES DEUX NOMBRES PARTENT AVEC LE BLOC, pas une
+                // demi-seconde apres : ils sont la premiere chose qu on vient
+                // chercher, et les voir immobiles a zero pendant que le cadre
+                // s installe donne l impression d un ecran qui charge.
+                this._cerT1 = setTimeout(() => {
+                    this.incrementer('cerXpAffiche', gain.xp, 520);
+                    this.incrementer('cerArAffiche', gain.rubis, 620);
+                    // La jauge va au bout si l on monte, a sa valeur sinon.
+                    this.cerSansTransition = false;
+                    this.cerPart = this.cerPromu ? 100 : this.partDeRang(rangAvant, this._cerApres);
+                }, 180);
+
+                if (!this.cerPromu) return;
+                this._cerT2 = setTimeout(() => this.basculerRang(), 1800);
+            });
+        },
+
+        // Pose a l ecran le rang `n` et le remplissage correspondant a `xp`.
+        posterRang(n, xp) {
+            const r = titrePourNiveau(n);
+            const suivant = n + 1 <= TITRES_JOUEUR.length ? titrePourNiveau(n + 1) : null;
+            this.cerRang = { nom: r.nom, couleur: r.couleur };
+            this.cerSuivant = suivant ? suivant.nom : '—';
+            this.cerSuivantCouleur = suivant ? suivant.couleur : '#6e6e7b';
+            const base = xpCumulee(n);
+            const prix = xpCumulee(n + 1) - base;
+            this.cerDansRang = Math.max(0, Math.round(xp - base));
+            this.cerParRang = prix;
+            this.cerPart = this.partDeRang(n, xp);
+        },
+
+        // ⚠️ Un prix NUL veut dire « il n y a pas de rang apres », donc
+        // DIVIN : la barre est PLEINE, pas vide. Rendre zero afficherait le
+        // sommet de l echelle comme un depart.
+        partDeRang(n, xp) {
+            const base = xpCumulee(n);
+            const prix = xpCumulee(n + 1) - base;
+            if (!prix) return 100;
+            return Math.min(100, Math.max(0, ((xp - base) / prix) * 100));
+        },
+
+        basculerRang() {
+            // ⚠️ RETOUR A ZERO SANS TRANSITION. Avec, on verrait la jauge
+            // REDESCENDRE sur toute sa longueur, ce qui raconte exactement
+            // l inverse d une promotion.
+            this.cerSansTransition = true;
+            this.cerPart = 0;
+            const cible = this._cerRangApres;
+            this.$nextTick(() => {
+                this.posterRang(cible, this._cerApres);
+                this.cerDansRang = Math.max(0, Math.round(this._cerApres - xpCumulee(cible)));
+                this.cerPart = 0;
+                requestAnimationFrame(() => {
+                    this.cerSansTransition = false;
+                    this.cerPart = this.partDeRang(cible, this._cerApres);
+                });
+                this.$nextTick(() => this.jouerEclats());
+            });
+        },
+
+        // ⚠️ L INCREMENTATION s arrete EXACTEMENT sur la valeur. Terminer a
+        // « 399 » parce qu une image est tombee au mauvais moment est le
+        // defaut classique de ce genre de compteur — et il ne se voit qu une
+        // fois sur dix, donc jamais en mise au point.
+        // `easeOutCubic` : elle demarre vite et finit en douceur, donc on lit
+        // le resultat avant la fin ; une rampe lineaire donne l impression
+        // d attendre un chargement.
+        incrementer(champ, vers, duree) {
+            const cible = Number(vers) || 0;
+            const debut = performance.now();
+            const pas = (t) => {
+                if (!this.cerVisible) return;
+                const x = Math.min(1, (t - debut) / duree);
+                const e = 1 - Math.pow(1 - x, 3);
+                this[champ] = Math.round(cible * e).toLocaleString('fr-FR');
+                if (x < 1) requestAnimationFrame(pas);
+                else this[champ] = cible.toLocaleString('fr-FR');
+            };
+            requestAnimationFrame(pas);
+        },
+
+        // 💥 Les eclats de la promotion — variante retenue au banc.
+        //
+        // ⚠️ VINGT-HUIT, pas deux cents. Une explosion en DOM de deux cents
+        // particules fait tomber un telephone d entree de gamme a dix images
+        // par seconde, et l effet qu on cherche tient dans la VITESSE et
+        // l ecart des tailles, pas dans le nombre.
+        //
+        // ⚠️ ET PAR L API WEB ANIMATIONS, jamais par une classe CSS posee sur
+        // un element que Vue redessine : il l emporterait en silence. C est
+        // la lecon du clic sur une reponse du quiz.
+        jouerEclats() {
+            const feu = this.$refs.cerFeu;
+            const titre = this.$refs.cerTitre;
+            if (!feu || !titre) return;
+            const rb = feu.getBoundingClientRect();
+            const rt = titre.getBoundingClientRect();
+            const cx = (rt.left + rt.right) / 2 - rb.left;
+            const cy = (rt.top + rt.bottom) / 2 - rb.top;
+
+            // Le titre encaisse le coup.
+            titre.animate([
+                { transform: 'scale(.82)', opacity: 0, filter: 'blur(6px)' },
+                { transform: 'scale(1.06)', opacity: 1, filter: 'blur(0)', offset: 0.45 },
+                { transform: 'scale(1)', opacity: 1, filter: 'blur(0)' },
+            ], { duration: 620, easing: 'cubic-bezier(.16,.84,.3,1.1)' });
+
+            // « Rang supérieur » arrive de plus haut, et son interlettrage se
+            // RESSERRE en route : c est ce qui lui donne son elan sans qu il
+            // bouge de place.
+            const promu = this.$refs.cerPromu;
+            if (promu) {
+                promu.animate([
+                    { opacity: 0, transform: 'translateY(-0.7rem)', letterSpacing: '0.9em' },
+                    { opacity: 1, transform: 'none', letterSpacing: '0.44em' },
+                ], { duration: 620, delay: 120, easing: 'cubic-bezier(.16,.84,.3,1)', fill: 'forwards' });
+            }
+
+            const flash = document.createElement('span');
+            flash.className = 'v2-cer-flash';
+            feu.appendChild(flash);
+            flash.animate([{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }],
+                { duration: 520, easing: 'ease-out' })
+                .finished.then(() => flash.remove()).catch(() => flash.remove());
+
+            for (let i = 0; i < 28; i++) {
+                const a = (Math.PI * 2 * i) / 28 + (Math.random() - 0.5) * 0.4;
+                const d = 70 + Math.random() * 130;
+                const t = 3 + Math.random() * 7;
+                const p = document.createElement('i');
+                p.className = 'v2-cer-p';
+                p.style.width = t + 'px';
+                p.style.height = (t * (0.4 + Math.random())) + 'px';
+                p.style.background = Math.random() < 0.3 ? '#fff6d0' : '#FFD700';
+                feu.appendChild(p);
+                p.animate([
+                    { transform: `translate(${cx}px, ${cy}px) scale(1) rotate(0deg)`, opacity: 1 },
+                    {
+                        transform: `translate(${cx + Math.cos(a) * d}px, ${cy + Math.sin(a) * d}px)`
+                            + ` scale(.3) rotate(${180 + Math.random() * 360}deg)`,
+                        opacity: 0,
+                    },
+                ], {
+                    duration: 620 + Math.random() * 380,
+                    easing: 'cubic-bezier(.12,.7,.3,1)',
+                    fill: 'forwards',
+                }).finished.then(() => p.remove()).catch(() => p.remove());
+            }
+        },
+
+        // ⚠️ `cerVisible` passe a faux A LA FIN du fondu, pas avant : le
+        // calque couvre « Rejouer » et « Retour », qui resteraient morts si
+        // l on se contentait de le rendre transparent — l opacite ne retire
+        // rien du flux des evenements.
+        fermerCeremonie() {
+            if (!this.cerVisible) return;
+            this.cerEntree = false;
+            this.oublierCeremonie();
+            this._cerFin = setTimeout(() => { this.cerVisible = false; }, 320);
+        },
+
+        // Coupe tout ce qui est en attente. ⚠️ Sans ca, une promotion
+        // programmee rallumerait des eclats sur un ecran qu on vient de
+        // fermer, ou pire sur la partie suivante.
+        oublierCeremonie() {
+            clearTimeout(this._cerT); clearTimeout(this._cerT1);
+            clearTimeout(this._cerT2); clearTimeout(this._cerFin);
+            this._cerT = null;
+        },
+
+        // Appelee quand on repart en partie ou qu on rentre a l accueil : la
+        // recompense d une manche n a rien a faire sur la suivante.
+        reinitCeremonie() {
+            this.oublierCeremonie();
+            this.cerVisible = false;
+            this.cerEntree = false;
+            this.cerGain = null;
+            this.cerPromu = false;
+            this.cerPart = 0;
         },
 
         // L'écran de fin diffère d'un mode à l'autre : la fête, elle, est la même
@@ -5366,7 +5638,9 @@ createApp({
             this.endStep = 0;
             // Classement vide (tout le monde est parti) : rien a devoiler, mais les
             // boutons doivent rester atteignables.
-            if (!nombre) { this.endStep = 1; return; }
+            // Classement vide : il n y a rien a devoiler, mais la recompense
+            // existe quand meme — on la programme tout de suite.
+            if (!nombre) { this.endStep = 1; this.programmerCeremonie(); return; }
 
             let t = 450;
             for (let pas = 1; pas <= nombre; pas++) {
@@ -5377,7 +5651,10 @@ createApp({
                 }, t));
                 t += place <= 3 ? 950 : 700;
             }
-            this._rushReveal.push(setTimeout(() => { this.endStep = nombre + 1; }, t));
+            this._rushReveal.push(setTimeout(() => {
+                this.endStep = nombre + 1;
+                this.programmerCeremonie();
+            }, t));
         },
 
         startRushReveal() {
@@ -8328,8 +8605,8 @@ createApp({
             // aller-retour a Supabase — et il peut ne jamais arriver (reseau
             // coupe, table absente). Les trois chiffres restent donc a zero
             // par defaut plutot que d attendre quoi que ce soit.
-            // ⚠️ Ni niveau ni titre ici : ils se deduisent de l xp (voir
-            // XP_BASE / XP_PAS). Le serveur n en envoie pas, et ne doit pas.
+            // ⚠️ Ni rang ni titre ici : ils se deduisent de l xp (voir
+            // niveaux.js). Le serveur n en envoie pas, et ne doit pas.
             //
             // ⚠️ Le meme evenement sert DEUX FOIS : a la connexion, et a la
             // FIN DE CHAQUE PARTIE, quand le serveur vient de crediter l xp.
@@ -8347,6 +8624,13 @@ createApp({
                 // chercherait un identifiant vide dans le catalogue.
                 this.titrePrefixe = p.titrePrefixe || null;
                 this.titreSuffixe = p.titreSuffixe || null;
+                // 🎆 Et SEULEMENT a la fin d une partie creditee, le serveur
+                // joint ce qu elle a rapporte. On le met de cote : la
+                // ceremonie n arrive qu une seconde apres la fin du
+                // devoilement du classement, qui dure plusieurs secondes.
+                // ⚠️ Un champ ABSENT veut dire « ce n est pas une
+                // recompense » — c est la connexion ou le panneau.
+                if (p.gain) this.preparerCeremonie(p.gain);
             });
 
             this.socket.on('lobby-update', (data) => {

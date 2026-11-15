@@ -172,7 +172,7 @@
            ⚠️ Sa place est RESERVEE en permanence (hauteur fixe), sinon son
            apparition pousserait tout le bloc vers le bas et le grand titre
            sauterait de vingt pixels au moment precis ou on le regarde. */
-        .promu-zone { height: 2.5rem; display: flex; align-items: flex-end; justify-content: center; }
+        .promu-zone { height: 2.5rem; display: flex; align-items: flex-start; justify-content: center; }
         .promu {
             font-size: 0.6rem; font-weight: 600; letter-spacing: 0.44em; text-transform: uppercase;
             color: var(--or); opacity: 0;
@@ -185,7 +185,7 @@
         /* ── Le rang, en monument ─────────────────────────────── */
         .titre {
             font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; line-height: 0.92;
-            letter-spacing: 0.02em; color: var(--elite); margin: 0.55rem 0 0;
+            letter-spacing: 0.02em; color: var(--elite); margin: 0 0 0;
             position: relative;
         }
 
@@ -195,7 +195,7 @@
         .nb { font-variant-numeric: tabular-nums; }
         .ligne { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
         .ligne.haut { margin-bottom: 0.45rem; }
-        .ligne.bas { margin-top: 0.45rem; }
+        .ligne.bas { margin-top: 0.8rem; }
         .gainxp { font-size: 0.92rem; font-weight: 600; color: var(--or); }
         .gainxp .u { font-size: 0.5rem; font-weight: 500; letter-spacing: 0.2em; margin-left: 0.25rem; color: var(--or-eteint); }
         .gainar { display: flex; align-items: center; gap: 0.3rem; font-size: 0.92rem; font-weight: 600; color: var(--or); }
@@ -441,7 +441,14 @@
             cer.classList.remove('on');
             delete cer.dataset.ferme;
             cer.style.pointerEvents = '';
-            cer.getAnimations().forEach((a) => a.cancel());
+            // ⚠️ IL FAUT ANNULER LES DESCENDANTS, PAS LE SEUL CALQUE.
+            // `el.getAnimations()` ne rend QUE les animations de cet element.
+            // Celles de « Rang supérieur » et du titre portent `fill:
+            // forwards` : laissees en place, elles gardaient leur derniere
+            // image — et le deuxieme passage affichait donc « RANG SUPÉRIEUR »
+            // des la premiere seconde, au-dessus d un rang qui n avait pas
+            // encore bouge. Le defaut ne se voyait jamais au premier essai.
+            sc.querySelectorAll('*').forEach((e) => e.getAnimations().forEach((a) => a.cancel()));
             jauge.classList.add('zero'); jauge.style.width = p.de + '%';
             titre.textContent = 'Élite I';
             prochain.textContent = 'Élite II';
@@ -460,15 +467,17 @@
             // seconde de battement laisse le temps de lire le dernier nom.
             sc._minuteries.push(setTimeout(() => cer.classList.add('on'), 1000));
 
-            // Les nombres montent pendant que la barre avance : les deux
-            // disent la meme chose, les separer dans le temps les rendrait
-            // etrangers l un a l autre.
+            // ⚠️ LES DEUX NOMBRES PARTENT AVEC LE BLOC, pas une demi-seconde
+            // apres. Ils sont la premiere chose qu on vient chercher : les
+            // voir immobiles a zero pendant que le cadre s installe donnait
+            // l impression d un ecran qui charge. 180 ms, le temps que
+            // l entree du bloc soit engagee.
             sc._minuteries.push(setTimeout(() => {
                 jauge.classList.remove('zero');
                 jauge.style.width = p.a + '%';
                 incrementer({ set textContent(t) { vxp.firstChild.nodeValue = t; } }, v.xp, 520);
                 incrementer(varg, v.rubis, 620);
-            }, 1640));
+            }, 1180));
 
             if (!monte) return;
 
