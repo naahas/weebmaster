@@ -435,15 +435,36 @@ const XP_DEFAUT = { partie: 50, victoire: 125, seuil: 4, duree: 60, rubis: 300, 
 // bon côté pour se tromper — un chemin qui oublierait de la passer cesserait
 // de payer, au lieu d ouvrir un robinet que personne ne verrait couler.
 function partieAssezLongue(mode, duree) {
+    if (SANS_LIMITES) return true;
     const b = XP_MODES[mode] || XP_DEFAUT;
     return (Number(duree) || 0) >= b.duree;
 }
 
+// ⏳ MISE AU POINT SEULEMENT — `XP_SANS_LIMITES=1` leve LES DEUX planchers :
+// la duree minimale d une partie et le nombre de joueurs qu exige le bonus de
+// victoire. Sans elle, regler l ecran de gain demanderait une vraie partie a
+// huit pendant une minute, a chaque essai — on ne met pas une animation au
+// point a ce prix-la, et l on finirait par la regler « a peu pres ».
+//
+// ⚠️ REFUSEE EN PRODUCTION, et pas seulement deconseillee : oubliee sur
+// Heroku, elle paierait l xp PLEINE a toute partie de dix secondes, bonus de
+// victoire en solo compris — exactement les six portes qu on a passe un
+// chantier a fermer. Le garde-fou est celui des bots de mise au point.
+//
+// ⚠️ Elle est lue ICI, a la source, et non dans `crediterXpDeLaPartie` : les
+// deux planchers vivent dans ce fichier, et un interrupteur pose plus haut en
+// aurait laisse un des deux debout sans que rien ne le dise.
+const SANS_LIMITES = process.env.XP_SANS_LIMITES === '1'
+    && process.env.NODE_ENV !== 'production';
+
 // Pure : ni base, ni reseau, ni etat. C est la seule decision du bareme, donc
 // c est celle que `npm run test:comptes` rejoue.
+// ⚠️ Pure A INTERRUPTEUR ETEINT, ce qui est le cas de la suite : elle ne pose
+// jamais `XP_SANS_LIMITES`. Le jour ou elle voudrait l eprouver, il faudra
+// relancer le processus — un `const` lu au chargement ne se change pas.
 function xpDeLaPartie(mode, { gagnant = false, joueurs = 0 } = {}) {
     const b = XP_MODES[mode] || XP_DEFAUT;
-    const victoire = !!gagnant && joueurs >= b.seuil;
+    const victoire = !!gagnant && (SANS_LIMITES || joueurs >= b.seuil);
     return {
         xp: b.partie + (victoire ? b.victoire : 0),
         // 💎 La monnaie suit EXACTEMENT les memes regles : meme seuil de
@@ -680,4 +701,7 @@ module.exports = {
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.
     natureDeLaClef, pseudoAPoser, XP_MODES,
+    // ⏳ Pour que le demarrage l annonce : un interrupteur de mise au point
+    // qu on ne voit pas est un interrupteur qu on oublie allume.
+    SANS_LIMITES,
 };

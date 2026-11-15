@@ -1017,9 +1017,21 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     // ⚠️ Un envoi par SOCKET, jamais un `diffuser` au salon : l xp d un joueur
     // ne regarde pas les quatorze autres, et l evenement porte son profil.
     const parId = new Map(profils.map((r) => [r.id, r]));
+    // 🎁 CE QUE LA PARTIE A RAPPORTE, a cote du total. C est `lignes` qui le
+    // porte deja — le meme objet qui vient d etre credite —, donc le chiffre
+    // montre a l ecran est EXACTEMENT celui qui est entre en base.
+    //
+    // ⚠️ Il voyage a part, et le client ne le deduit PAS par difference. Le
+    // meme evenement part aussi a la connexion et depuis le panneau : une
+    // difference y vaudrait le total entier la premiere fois, et l ecran
+    // annoncerait « +22 800 XP » a qui vient d ouvrir la page. Un champ
+    // present veut dire « ceci est la recompense d une partie », et rien
+    // d autre ne le dit.
+    const gains = new Map(lignes.map((l) => [l.id, l]));
     for (const [socketId, p] of gameState.players) {
         const r = p.playerId && parId.get(p.playerId);
         if (!r) continue;
+        const g = gains.get(p.playerId);
         io.to(socketId).emit('compte-profil', {
             parties: r.parties || 0,
             victoires: r.victoires || 0,
@@ -1028,6 +1040,7 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
             titre: r.titre || null,
             titrePrefixe: r.titre_prefixe || null,
             titreSuffixe: r.titre_suffixe || null,
+            gain: g ? { xp: g.xp, rubis: g.rubis, victoire: !!g.victoire, mode } : null,
         });
     }
 }
@@ -2456,6 +2469,15 @@ app.get('/prototypes/connexion', (req, res) => {
 // qui tient a quatre chiffres peut deborder a six.
 app.get('/prototypes/monnaie', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-monnaie.html');
+});
+
+// 🎁 Six facons d annoncer ce qu une partie a rapporte, posees sur une
+// maquette du VRAI ecran de fin — podium compris. ⚠️ Une annonce se juge sur
+// ce qu elle recouvre, pas sur du noir. Deux interrupteurs croisent les cas
+// qui changent tout : le bonus de victoire TRIPLE les nombres, et le passage
+// de niveau est le seul vrai evenement de l ecran.
+app.get('/prototypes/gain', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-gain.html');
 });
 
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
@@ -7753,6 +7775,14 @@ const server = app.listen(PORT, () => {
     ║  Mode: ${process.env.NODE_ENV || 'development'}
     ╚═══════════════════════════════════════╝
     `);
+
+    // ⏳ Un interrupteur de mise au point qu on ne voit pas est un
+    // interrupteur qu on oublie allume. Celui-ci paie l xp pleine a toute
+    // partie, bonus de victoire en solo compris : il doit crier.
+    if (comptes.SANS_LIMITES) {
+        console.log('⏳ XP_SANS_LIMITES=1 — duree minimale et seuil de joueurs LEVES.');
+        console.log('   Mise au point seulement. La variable est ignoree en production.');
+    }
 
     loadRecentGamesFromDb();
     db.getAllQuestions().catch(() => { /* elle se chargera à la première partie */ });

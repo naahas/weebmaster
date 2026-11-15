@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le gain de fin de partie</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <!--
+        🎁 SIX FACONS D ANNONCER CE QU UNE PARTIE A RAPPORTE.
+
+        ⚠️ LE FOND N EST PAS DECORATIF. Ce bandeau n apparait jamais seul : il
+        arrive SUR L ECRAN DE FIN, pendant que le classement se devoile a
+        rebours. Chaque variante est donc posee sur une maquette de cet ecran,
+        avec son podium et sa ligne « Tu es 4e ». C est lui, et pas le noir,
+        qui dit si l annonce se lit ou si elle gene.
+
+        ⚠️ TROIS ECRANS DE FIN, PAS UN. `.v2-end` (quiz, BombAnime, Collect,
+        Ascension, Codanime), `.rush-fin` et `.chx-fin`. Une variante qui
+        demande a s inserer DANS la mise en page devra donc etre ecrite trois
+        fois ; une variante posee PAR-DESSUS s ecrit une fois. Le prix se paie
+        a la variante F, qui est la seule a toucher le classement.
+
+        ⚠️ ET LES DEUX NOMBRES SONT DORES. L anneau d xp prend
+        `--neon-primary`, qui vaut #FFD700, et le gemme des rubis est or lui
+        aussi. « +400 » et « +2 000 » cote a cote se lisent donc comme un seul
+        nombre coupe en deux. Chaque variante doit les separer par autre chose
+        que la couleur — un mot, un dessin, une distance, une ligne.
+
+        ⚠️ Deux cas changent tout, et les deux interrupteurs du haut les
+        croisent :
+          - VICTOIRE : le bonus s ajoute, les nombres triplent (100 -> 400 xp,
+            500 -> 2 000 rubis). Une variante calee sur « +100 » peut deborder
+            a « +2 000 ».
+          - NIVEAU GAGNE : c est le seul vrai evenement de l ecran. Une
+            variante qui n a pas de place pour le dire le dira mal.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --or-doux: #f0c75e;
+            --or-eteint: #9a8655;
+            --fond: #07070b;
+            --carte: #12121a;
+            --trait: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', system-ui, sans-serif;
+            background: var(--fond);
+            color: #e9e9ef;
+            padding: 2.5rem 2rem 6rem;
+        }
+
+        h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
+        .sous { color: #8a8a99; font-size: 0.9rem; line-height: 1.6; max-width: 62ch; margin-top: 0.6rem; }
+
+        /* ── Les interrupteurs ─────────────────────────────────── */
+        .reglages {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;
+            margin: 1.8rem 0 2.2rem; padding: 1rem 1.2rem;
+            background: var(--carte); border: 1px solid var(--trait); border-radius: 0.8rem;
+            position: sticky; top: 0.8rem; z-index: 50;
+        }
+        .reglages label {
+            display: flex; align-items: center; gap: 0.6rem;
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--or-eteint);
+        }
+        .reglages button {
+            font-family: inherit; font-size: 0.82rem; font-weight: 600;
+            padding: 0.4rem 0.85rem; border-radius: 0.45rem; cursor: pointer;
+            background: #1c1c27; color: #c9c9d6; border: 1px solid var(--trait);
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .reglages button:hover { background: #24242f; }
+        .reglages button.on { background: var(--or); color: #15120a; border-color: var(--or); }
+        .reglages .tout { background: #2a2234; color: var(--or-doux); border-color: rgba(240,199,94,.3); }
+
+        /* ── La grille des cas ─────────────────────────────────── */
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(430px, 1fr)); gap: 1.6rem; }
+        .cas { background: var(--carte); border: 1px solid var(--trait); border-radius: 0.9rem; overflow: hidden; }
+        .cas h2 {
+            font-size: 0.74rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+            padding: 0.9rem 1.1rem 0; color: var(--or-doux);
+        }
+        .cas p { font-size: 0.82rem; color: #8a8a99; line-height: 1.55; padding: 0.45rem 1.1rem 0.9rem; }
+        .cas .rejouer {
+            display: block; margin: 0 1.1rem 1rem auto;
+            font-family: inherit; font-size: 0.76rem; font-weight: 600;
+            padding: 0.35rem 0.8rem; border-radius: 0.4rem; cursor: pointer;
+            background: #1c1c27; color: #c9c9d6; border: 1px solid var(--trait);
+        }
+        .cas .rejouer:hover { background: #24242f; }
+
+        /* ══════════════════════════════════════════════════════════
+           LA MAQUETTE DE L ECRAN DE FIN
+           ⚠️ Elle n est pas un decor : c est elle qui dit si l annonce
+           gene le classement. Podium, ligne « Tu es 4e » et boutons
+           sont a leur place et a leur taille.
+           ══════════════════════════════════════════════════════════ */
+        /* ⚠️ LA HAUTEUR DE LA MAQUETTE DECIDE DU RESULTAT, et c est le piege
+           de ce banc. Le vrai `.v2-end` est en `position: fixed; inset: 0` et
+           CENTRE son contenu : sur une fenetre de 900 px, un classement de
+           290 laisse trois cents pixels vides en bas. A 330 puis 420 px, la
+           maquette n en laissait que soixante — D et E recouvraient
+           « Rejouer », et l on aurait ecarte deux variantes pour un defaut
+           qui n existe que dans le banc. 520 px rend la proportion reelle. */
+        .ecran {
+            position: relative; height: 520px; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 0.55rem; padding: 1.2rem;
+            background:
+                radial-gradient(120% 90% at 50% 0%, rgba(255, 190, 40, 0.09), transparent 60%),
+                #06060a;
+            border-top: 1px solid #1b1b26;
+        }
+        .ecran-titre {
+            font-size: 0.68rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--or-eteint); margin-bottom: 0.2rem;
+        }
+        .rang {
+            display: flex; align-items: center; gap: 0.6rem;
+            width: min(300px, 90%); padding: 0.4rem 0.7rem;
+            background: rgba(255, 255, 255, 0.035); border-radius: 0.5rem;
+            font-size: 0.82rem;
+        }
+        .rang.moi { background: rgba(255, 215, 0, 0.09); box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.22); }
+        .rang .pl { width: 1.1rem; font-weight: 800; color: var(--or-doux); font-size: 0.78rem; }
+        .rang .av { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: linear-gradient(145deg,#3a3550,#1a1726); flex: 0 0 auto; }
+        .rang .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* `nowrap` : avec le gain de F sur la ligne, « 1 600 » se cassait en
+           deux. Un score coupe en deux est un defaut de LA VARIANTE, pas de
+           la maquette — il faut qu il se voie comme tel : la ligne serre,
+           elle ne replie pas. */
+        .rang .sc { font-weight: 700; color: #9a9aa6; font-size: 0.78rem; white-space: nowrap; }
+        .ecran-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+        .ecran-actions span {
+            font-size: 0.74rem; font-weight: 700; padding: 0.4rem 1.1rem; border-radius: 0.45rem;
+            background: var(--or); color: #15120a;
+        }
+        .ecran-actions span.fantome { background: transparent; color: var(--or-doux); box-shadow: inset 0 0 0 1px rgba(240,199,94,.35); }
+
+        /* ── Le vocabulaire commun aux variantes ───────────────── */
+        .gem { height: 1em; width: auto; display: block; flex: 0 0 auto; vertical-align: -0.12em; }
+        .nb { font-variant-numeric: tabular-nums; }
+
+        /* ══════════════════════════════════════════════════════════
+           A. BANDEAU EN BAS
+           Pleine largeur, il monte du bord. Le podium est centre et
+           haut : il ne le touche jamais, quel que soit le mode.
+           ══════════════════════════════════════════════════════════ */
+        .a-bande {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center; gap: 1.6rem;
+            padding: 0.75rem 1.2rem;
+            background: linear-gradient(0deg, rgba(20, 16, 8, 0.97), rgba(20, 16, 8, 0.82));
+            border-top: 1px solid rgba(240, 199, 94, 0.28);
+            transform: translateY(102%);
+        }
+        .a-bande.on { animation: a-monte 0.5s cubic-bezier(.2,.9,.3,1.1) forwards; }
+        @keyframes a-monte { to { transform: translateY(0); } }
+        .a-lot { display: flex; align-items: baseline; gap: 0.4rem; font-size: 1.15rem; font-weight: 800; color: var(--or); }
+        .a-lot .u { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; color: var(--or-eteint); }
+        .a-lot .gem { align-self: center; height: 1.05rem; }
+        .a-sep { width: 1px; height: 1.5rem; background: rgba(240, 199, 94, 0.25); }
+        .a-bande .vic {
+            font-size: 0.6rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+            color: #15120a; background: var(--or); padding: 0.2rem 0.5rem; border-radius: 0.25rem;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           B. CARTE EN BAS A DROITE
+           Elle se glisse dans un coin que rien n occupe. Discrete,
+           mais c est justement ce qu on lui reproche : une recompense
+           qui s excuse se remarque moins qu un compteur de parties.
+           ══════════════════════════════════════════════════════════ */
+        .b-carte {
+            position: absolute; right: 0.9rem; bottom: 0.9rem;
+            display: flex; flex-direction: column; gap: 0.4rem;
+            padding: 0.7rem 0.9rem; min-width: 150px;
+            background: rgba(18, 15, 10, 0.96); border: 1px solid rgba(240, 199, 94, 0.3);
+            border-radius: 0.6rem;
+            transform: translateX(120%); opacity: 0;
+        }
+        .b-carte.on { animation: b-entre 0.45s cubic-bezier(.2,.9,.3,1.1) forwards; }
+        @keyframes b-entre { to { transform: translateX(0); opacity: 1; } }
+        .b-tete { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: var(--or-eteint); }
+        .b-ligne { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; font-size: 0.95rem; font-weight: 800; color: var(--or); }
+        .b-ligne .u { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; color: var(--or-eteint); }
+        .b-ligne .g { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* ══════════════════════════════════════════════════════════
+           C. LES NOMBRES QUI MONTENT
+           Aucun cadre. Ils naissent au centre-bas, montent et
+           s effacent, comme des degats dans un jeu. Le moins
+           d interface possible — et rien a caler sur trois ecrans.
+           ══════════════════════════════════════════════════════════ */
+        .c-zone { position: absolute; inset: 0; pointer-events: none; }
+        .c-vol {
+            position: absolute; left: 50%; bottom: 3.2rem;
+            display: flex; align-items: center; gap: 0.35rem;
+            font-size: 1.5rem; font-weight: 900; color: var(--or);
+            text-shadow: 0 0 18px rgba(255, 215, 0, 0.45), 0 2px 6px rgba(0,0,0,.8);
+            opacity: 0;
+        }
+        .c-vol .u { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: var(--or-doux); }
+        .c-vol .gem { height: 1.3rem; }
+        .c-vol.on { animation: c-monte 1.5s cubic-bezier(.2,.7,.3,1) forwards; }
+        @keyframes c-monte {
+            0% { opacity: 0; transform: translate(-50%, 1.2rem) scale(0.7); }
+            18% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+            30% { transform: translate(-50%, -0.3rem) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -5rem) scale(0.95); }
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           D. L ANNEAU QUI SE REMPLIT
+           Le portrait du joueur, son anneau d xp qui avance pour de
+           vrai, les deux nombres a cote. C est la seule variante qui
+           montre OU VA l xp — les autres annoncent un chiffre en
+           l air.
+           ══════════════════════════════════════════════════════════ */
+        .d-bloc {
+            position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%) translateY(120%);
+            display: flex; align-items: center; gap: 0.95rem;
+            padding: 0.7rem 1.2rem 0.7rem 0.75rem;
+            background: rgba(18, 15, 10, 0.96); border: 1px solid rgba(240, 199, 94, 0.28);
+            border-radius: 999px;
+        }
+        .d-bloc.on { animation: d-monte 0.5s cubic-bezier(.2,.9,.3,1.1) forwards; }
+        @keyframes d-monte { to { transform: translateX(-50%) translateY(0); } }
+        .d-port { position: relative; width: 3rem; height: 3rem; flex: 0 0 auto; }
+        .d-port .av {
+            position: absolute; inset: 0.25rem; border-radius: 50%;
+            background: linear-gradient(145deg, #3a3550, #1a1726);
+        }
+        .d-port svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+        .d-port .piste { fill: none; stroke: rgba(255,255,255,.17); stroke-width: 3.2; }
+        .d-port .jauge {
+            fill: none; stroke: var(--or); stroke-width: 3.2; stroke-linecap: round;
+            transition: stroke-dashoffset 1.1s cubic-bezier(.2,.7,.3,1);
+        }
+        .d-niv {
+            position: absolute; left: 50%; bottom: -0.35rem; transform: translateX(-50%);
+            font-size: 0.56rem; font-weight: 900; padding: 0.05rem 0.35rem; border-radius: 0.25rem;
+            background: var(--or); color: #15120a;
+        }
+        .d-chiffres { display: flex; flex-direction: column; gap: 0.15rem; }
+        .d-l { display: flex; align-items: center; gap: 0.4rem; font-size: 1rem; font-weight: 800; color: var(--or); }
+        .d-l .u { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: var(--or-eteint); }
+        .d-l .gem { height: 0.95rem; }
+
+        /* ══════════════════════════════════════════════════════════
+           E. EN DEUX TEMPS
+           L xp d abord, les rubis ensuite, le niveau en dernier. La
+           seule qui fasse une CEREMONIE — et la seule qui coute du
+           temps a un joueur presse de rejouer.
+           ══════════════════════════════════════════════════════════ */
+        .e-pile {
+            position: absolute; left: 0; right: 0; bottom: 1rem;
+            display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+        }
+        .e-l {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.35rem 0.95rem; border-radius: 999px;
+            background: rgba(18, 15, 10, 0.95); border: 1px solid rgba(240, 199, 94, 0.25);
+            font-size: 0.95rem; font-weight: 800; color: var(--or);
+            opacity: 0; transform: translateY(0.7rem) scale(0.92);
+        }
+        .e-l .u { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: var(--or-eteint); }
+        .e-l .gem { height: 0.95rem; }
+        .e-l.on { animation: e-pop 0.42s cubic-bezier(.2,.9,.3,1.3) forwards; }
+        @keyframes e-pop { to { opacity: 1; transform: translateY(0) scale(1); } }
+        .e-l.niveau { background: var(--or); color: #15120a; border-color: var(--or); }
+        .e-l.niveau .u { color: rgba(21, 18, 10, 0.65); }
+
+        /* ══════════════════════════════════════════════════════════
+           F. COLLEE A MA LIGNE DU CLASSEMENT
+           Le gain se pose sur la ligne du joueur, la ou son oeil est
+           deja. ⚠️ C est la SEULE variante qui touche la mise en
+           page : elle devra etre ecrite dans les trois ecrans de fin,
+           et refaite a chaque fois que l un d eux change.
+           ══════════════════════════════════════════════════════════ */
+        .f-gain {
+            display: flex; align-items: center; gap: 0.5rem; margin-left: 0.4rem;
+            opacity: 0; transform: translateX(-0.5rem);
+        }
+        .f-gain.on { animation: f-entre 0.4s ease forwards; }
+        @keyframes f-entre { to { opacity: 1; transform: translateX(0); } }
+        .f-gain span { font-size: 0.78rem; font-weight: 800; color: var(--or); display: flex; align-items: center; gap: 0.22rem; }
+        .f-gain .u { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; color: var(--or-eteint); }
+        .f-gain .gem { height: 0.8rem; }
+        /* ⚠️ `.f-gain span` (0,1,1) battait `.lvl` (0,1,0) : le badge sortait
+           DORE SUR DORE, donc vide. C est la maladie de la specificite, et
+           elle ne se voit qu a l ecran — aucune des deux regles n est fausse
+           prise seule. */
+        .f-gain .lvl { color: #15120a; }
+
+        /* Le bandeau « niveau gagne », partage par A, B et F : elles
+           n ont pas de place pour le dire chez elles. */
+        .lvl {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            font-size: 0.6rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+            background: var(--or); color: #15120a; padding: 0.18rem 0.45rem; border-radius: 0.25rem;
+        }
+
+        @media (max-width: 560px) {
+            body { padding: 1.5rem 1rem 4rem; }
+            .grille { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Ce qu'une partie a rapporté</h1>
+    <p class="sous">
+        Six façons d'annoncer le gain d'XP et de rubis à la fin d'une partie, posées sur une
+        maquette du vrai écran de fin — podium compris. Une annonce se juge sur ce qu'elle
+        recouvre, pas sur du noir. Les deux interrupteurs croisent les cas qui changent tout :
+        le bonus de victoire triple les nombres, et le passage de niveau est le seul vrai
+        événement de l'écran.
+    </p>
+
+    <div class="reglages">
+        <label>Victoire <span id="b-vic"></span></label>
+        <label>Niveau gagné <span id="b-lvl"></span></label>
+        <button class="tout" id="tout">Tout rejouer</button>
+    </div>
+
+    <div class="grille" id="grille"></div>
+
+    <script>
+        // ⚠️ Le MEME fichier que le jeu : c est le gemme livre qu on juge.
+        const GEM = '<img class="gem" src="/smoney.webp" alt="">';
+
+        // Le bareme reel du Classique (XP_MODES, server-comptes.js) : la
+        // participation, puis le bonus qui S AJOUTE.
+        const BAREME = { xp: 100, xpVic: 300, rubis: 500, rubisVic: 1500 };
+
+        let victoire = true;
+        let monteNiveau = true;
+
+        const fmt = (n) => n.toLocaleString('fr-FR');
+        const gain = () => ({
+            xp: BAREME.xp + (victoire ? BAREME.xpVic : 0),
+            rubis: BAREME.rubis + (victoire ? BAREME.rubisVic : 0),
+        });
+
+        // La maquette de l ecran de fin, identique pour les six.
+        // ⚠️ `moi` est la 4e ligne : c est le cas courant, et c est celui ou
+        // le joueur n est PAS sur le podium — donc celui ou son gain doit le
+        // consoler de quelque chose.
+        function ecran(dedans, surMaLigne) {
+            const lignes = [
+                [1, 'Tanuki98', '2 400'],
+                [2, 'Kurosaki', '2 100'],
+                [3, 'Hinata', '1 850'],
+                [4, 'Toi', '1 600'],
+            ].map(([p, n, s]) => `
+                <div class="rang${p === 4 ? ' moi' : ''}">
+                    <span class="pl">${p}</span><span class="av"></span>
+                    <span class="nm">${n}</span>
+                    ${p === 4 ? (surMaLigne || '') : ''}
+                    <span class="sc">${s}</span>
+                </div>`).join('');
+            return `<div class="ecran">
+                <span class="ecran-titre">Classement final</span>
+                ${lignes}
+                <div class="ecran-actions"><span>Rejouer</span><span class="fantome">Retour</span></div>
+                ${dedans || ''}
+            </div>`;
+        }
+
+        const badgeNiveau = () => monteNiveau ? '<span class="lvl">Niveau 4</span>' : '';
+
+        const CAS = [
+            ['A', 'Bandeau en bas',
+             "Pleine largeur, il monte du bord. Le podium est centré et haut : il ne le touche jamais, sur aucun des trois écrans de fin. Le plus lisible, et le plus « interface ».",
+             () => ecran(`<div class="a-bande anime">
+                 ${victoire ? '<span class="vic">Victoire</span>' : ''}
+                 <span class="a-lot"><span class="nb">+${fmt(gain().xp)}</span><span class="u">XP</span></span>
+                 <span class="a-sep"></span>
+                 <span class="a-lot">${GEM}<span class="nb">+${fmt(gain().rubis)}</span></span>
+                 ${monteNiveau ? '<span class="a-sep"></span>' + badgeNiveau() : ''}
+               </div>`)],
+
+            ['B', 'Carte en bas à droite',
+             "Elle se glisse dans un coin que rien n'occupe, et ne demande de place à personne. Mais une récompense qui s'excuse se remarque moins qu'un compteur de parties.",
+             () => ecran(`<div class="b-carte anime">
+                 <span class="b-tete">${victoire ? 'Victoire' : 'Partie terminée'}</span>
+                 <span class="b-ligne"><span class="u">XP</span><span class="nb">+${fmt(gain().xp)}</span></span>
+                 <span class="b-ligne"><span class="g">${GEM}</span><span class="nb">+${fmt(gain().rubis)}</span></span>
+                 ${monteNiveau ? '<span class="b-ligne" style="justify-content:center">' + badgeNiveau() + '</span>' : ''}
+               </div>`)],
+
+            ['C', 'Les nombres qui montent',
+             "Aucun cadre : ils naissent, montent et s'effacent, comme des dégâts dans un jeu. Le moins d'interface possible — et rien à caler sur trois écrans de fin. Mais ils PARTENT : qui regardait ailleurs ne saura jamais ce qu'il a gagné.",
+             () => ecran(`<div class="c-zone">
+                 <span class="c-vol anime" data-retard="0"><span class="nb">+${fmt(gain().xp)}</span><span class="u">XP</span></span>
+                 <span class="c-vol anime" data-retard="420" style="bottom:3.2rem">${GEM}<span class="nb">+${fmt(gain().rubis)}</span></span>
+                 ${monteNiveau ? '<span class="c-vol anime" data-retard="900" style="bottom:3.2rem;font-size:1.1rem">' + badgeNiveau() + '</span>' : ''}
+               </div>`)],
+
+            ['D', 'L’anneau qui se remplit',
+             "Le portrait, son anneau d'XP qui avance pour de vrai, les nombres à côté. La seule qui montre OÙ VA l'XP — les cinq autres annoncent un chiffre en l'air. C'est aussi la seule qui rend le passage de niveau évident sans l'écrire.",
+             () => ecran(`<div class="d-bloc anime">
+                 <span class="d-port">
+                   <svg viewBox="0 0 48 48"><circle class="piste" cx="24" cy="24" r="21.5"></circle>
+                   <circle class="jauge" cx="24" cy="24" r="21.5" stroke-dasharray="135.1" stroke-dashoffset="108"></circle></svg>
+                   <span class="av"></span>
+                   ${monteNiveau ? '<span class="d-niv">4</span>' : ''}
+                 </span>
+                 <span class="d-chiffres">
+                   <span class="d-l"><span class="nb">+${fmt(gain().xp)}</span><span class="u">XP</span></span>
+                   <span class="d-l">${GEM}<span class="nb">+${fmt(gain().rubis)}</span></span>
+                 </span>
+               </div>`)],
+
+            ['E', 'En deux temps',
+             "L'XP, puis les rubis, puis le niveau. La seule qui fasse une cérémonie — et la seule qui coûte du temps à un joueur pressé de relancer. À juger sur la DURÉE autant que sur la pose. ⚠️ Et la seule qui touche encore « Rejouer » à 520 px : trois lignes empilées demandent 130 px sous le classement, que n'a pas un portable 13 pouces.",
+             () => ecran(`<div class="e-pile">
+                 <span class="e-l anime" data-retard="0"><span class="nb">+${fmt(gain().xp)}</span><span class="u">XP</span></span>
+                 <span class="e-l anime" data-retard="450">${GEM}<span class="nb">+${fmt(gain().rubis)}</span></span>
+                 ${monteNiveau ? '<span class="e-l niveau anime" data-retard="950"><span class="u">Niveau</span><span class="nb">4</span></span>' : ''}
+               </div>`)],
+
+            ['F', 'Collée à ma ligne',
+             "Le gain se pose sur la ligne du joueur, là où son œil est déjà. ⚠️ La seule qui touche la mise en page : elle devra être écrite dans les TROIS écrans de fin, et refaite chaque fois que l'un d'eux change.",
+             () => ecran('', `<span class="f-gain anime">
+                 <span><span class="nb">+${fmt(gain().xp)}</span><span class="u">XP</span></span>
+                 <span>${GEM}<span class="nb">+${fmt(gain().rubis)}</span></span>
+                 ${monteNiveau ? badgeNiveau() : ''}
+               </span>`)],
+        ];
+
+        // Rejoue une scene : on retire la classe, on FORCE un calcul de style,
+        // puis on la repose. ⚠️ Sans le calcul force, les deux ecritures
+        // tombent dans la meme image et le navigateur ne voit rien bouger —
+        // c est la lecon du cadenas de BombAnime.
+        function jouer(scene) {
+            scene.querySelectorAll('.anime').forEach((el) => {
+                el.classList.remove('on');
+                const jauge = el.querySelector('.jauge');
+                if (jauge) jauge.setAttribute('stroke-dashoffset', '108');
+            });
+            void scene.offsetWidth;
+            scene.querySelectorAll('.anime').forEach((el) => {
+                const retard = Number(el.dataset.retard || 0);
+                setTimeout(() => {
+                    el.classList.add('on');
+                    // L anneau de D avance APRES son entree, sinon on ne voit
+                    // que la pose et pas la montee.
+                    const jauge = el.querySelector('.jauge');
+                    if (jauge) setTimeout(() => jauge.setAttribute('stroke-dashoffset', monteNiveau ? '20' : '62'), 420);
+                }, retard);
+            });
+        }
+
+        function peindre() {
+            document.getElementById('grille').innerHTML = CAS.map(([l, titre, note, rendu]) => `
+                <div class="cas">
+                    <h2>${l} · ${titre}</h2>
+                    <p>${note}</p>
+                    <button class="rejouer" data-l="${l}">Rejouer</button>
+                    ${rendu()}
+                </div>`).join('');
+            document.querySelectorAll('.cas').forEach((c) => {
+                const scene = c.querySelector('.ecran');
+                c.querySelector('.rejouer').addEventListener('click', () => jouer(scene));
+                jouer(scene);
+            });
+        }
+
+        function bascule(hote, valeur, poser) {
+            hote.innerHTML = '';
+            [['Oui', true], ['Non', false]].forEach(([nom, v]) => {
+                const b = document.createElement('button');
+                b.textContent = nom;
+                if (valeur() === v) b.classList.add('on');
+                b.addEventListener('click', () => { poser(v); peindre(); majBoutons(); });
+                hote.appendChild(b);
+            });
+        }
+        function majBoutons() {
+            bascule(document.getElementById('b-vic'), () => victoire, (v) => { victoire = v; });
+            bascule(document.getElementById('b-lvl'), () => monteNiveau, (v) => { monteNiveau = v; });
+        }
+
+        document.getElementById('tout').addEventListener('click', () => {
+            document.querySelectorAll('.ecran').forEach(jouer);
+        });
+
+        majBoutons();
+        peindre();
+    </script>
+</body>
+
+</html>
