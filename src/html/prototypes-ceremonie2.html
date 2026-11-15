@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — la promotion de rang</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600&family=Bebas+Neue&family=Poppins:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <!--
+        🎆 LA CEREMONIE RETENUE — « Monument » — ET SON MOMENT DE PROMOTION.
+        Suite de /prototypes/ceremonie, ou la direction a ete choisie parmi
+        cinq. Ici la mise en page ne se discute plus, trois choses se reglent :
+
+        1. L INCREMENTATION des deux nombres. ⚠️ Elle EXIGE
+           `font-variant-numeric: tabular-nums` : sans lui chaque chiffre a sa
+           propre largeur, le nombre change de taille a chaque image et le
+           bloc entier tremble. C est invisible sur un nombre fixe, et
+           insupportable sur un compteur.
+
+        2. LA PLACE DES DEUX GAINS. L xp au-dessus de la barre a gauche, la
+           monnaie en dessous avec son gemme. ⚠️ Et JAMAIS le mot « Rubis » —
+           le dessin tient lieu de nom, partout dans le jeu.
+
+        3. L EFFET DE PROMOTION, trois traitements au choix. C est le seul
+           moment de tout l ecran ou il se passe quelque chose : la barre
+           touche le bout, le rang change, et il faut que ca se voie sans
+           qu on l ait explique.
+
+        ⚠️ « RANG ATTEINT » EST PARTI. Il nommait ce que le grand titre disait
+        deja, et il occupait la place ou « RANG SUPERIEUR » doit arriver. Ce
+        dernier ne s affiche QUE sur promotion — un libelle permanent au meme
+        endroit aurait tue l effet de l autre.
+
+        ⚠️ Les particules sont posees en `position: absolute` DANS la scene,
+        animees par l API Web Animations et retirees a la fin. Pas de classe
+        CSS sur un element que Vue repeint : il l emporterait en silence —
+        c est la lecon du clic sur une reponse du quiz.
+
+        ⚠️ Et elles sont peu nombreuses (28). Une explosion de deux cents
+        particules en DOM fait tomber un telephone d entree de gamme a dix
+        images par seconde, et l effet qu on veut tient dans la VITESSE et
+        l ecart des tailles, pas dans le nombre.
+    -->
+    <style>
+        :root {
+            --or: #FFD700;
+            --or-doux: #f0c75e;
+            --or-eteint: #8a7442;
+            --fond: #07070b;
+            --carte: #101016;
+            --trait: rgba(255, 255, 255, 0.07);
+            --elite: #6fa0f5;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Archivo', system-ui, sans-serif;
+            background: var(--fond); color: #e9e9ef;
+            padding: 2.5rem 2rem 6rem;
+        }
+
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.015em; }
+        .sous { color: #8a8a99; font-size: 0.9rem; line-height: 1.65; max-width: 68ch; margin-top: 0.6rem; }
+        .sous b { color: #c9c9d6; font-weight: 600; }
+
+        .reglages {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem;
+            margin: 1.8rem 0 2.2rem; padding: 0.95rem 1.2rem;
+            background: var(--carte); border: 1px solid var(--trait); border-radius: 0.7rem;
+            position: sticky; top: 0.8rem; z-index: 50;
+        }
+        .reglages label {
+            display: flex; align-items: center; gap: 0.55rem;
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--or-eteint);
+        }
+        .reglages button {
+            font-family: inherit; font-size: 0.8rem; font-weight: 500;
+            padding: 0.38rem 0.8rem; border-radius: 0.35rem; cursor: pointer;
+            background: #1a1a23; color: #c9c9d6; border: 1px solid var(--trait);
+        }
+        .reglages button:hover { background: #22222c; }
+        .reglages button.on { background: var(--or); color: #12100a; border-color: var(--or); }
+        .reglages .tout { background: #241d2e; color: var(--or-doux); border-color: rgba(240,199,94,.28); }
+
+        .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(470px, 1fr)); gap: 1.5rem; }
+        .cas { background: var(--carte); border: 1px solid var(--trait); border-radius: 0.8rem; overflow: hidden; }
+        .cas h2 {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+            padding: 0.9rem 1.1rem 0; color: var(--or-doux);
+        }
+        .cas p { font-size: 0.82rem; color: #8a8a99; line-height: 1.55; padding: 0.5rem 1.1rem 0.85rem; }
+        .cas .rejouer {
+            display: block; margin: 0 1.1rem 0.95rem auto;
+            font-family: inherit; font-size: 0.74rem; font-weight: 500;
+            padding: 0.32rem 0.75rem; border-radius: 0.35rem; cursor: pointer;
+            background: #1a1a23; color: #c9c9d6; border: 1px solid var(--trait);
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           LA SCENE
+           ══════════════════════════════════════════════════════════ */
+        .scene {
+            position: relative; height: 480px; overflow: hidden;
+            background: radial-gradient(130% 90% at 50% 8%, rgba(255,190,40,.06), transparent 62%), #08080c;
+            border-top: 1px solid #1b1b26;
+            font-family: 'Poppins', sans-serif;
+        }
+        .podium {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;
+        }
+        .podium .cr { font-size: 1.6rem; color: var(--or); line-height: 1; }
+        .podium .vic { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.26em; color: #8a8a99; margin: 0.4rem 0 0.45rem; }
+        .podium .qui { display: flex; align-items: center; gap: 0.55rem; }
+        .podium .av { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(145deg,#3a3550,#1a1726); box-shadow: 0 0 0 2px rgba(255,215,0,.45); }
+        .podium .nm { font-size: 1.4rem; font-weight: 800; color: var(--or); }
+        .podium .ch { display: flex; gap: 2rem; margin: 0.8rem 0 0; text-align: center; }
+        .podium .ch b { display: block; font-size: 1rem; font-weight: 800; }
+        .podium .ch span { font-size: 0.52rem; font-weight: 600; letter-spacing: 0.15em; color: #6e6e7b; }
+        .podium .bt { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: 0.85rem; }
+        .podium .bt i { font-style: normal; font-size: 0.74rem; font-weight: 700; padding: 0.38rem 1.4rem; border-radius: 999px; background: var(--or); color: #15120a; }
+        .podium .bt i.f { background: rgba(255,215,0,.07); color: var(--or-doux); }
+
+        /* ⚠️ Plus sombre AU CENTRE : a plat, le podium transparaissait a
+           travers le texte, qui n a pas de carte derriere lui. Les bords
+           restent legers — le podium doit demeurer devinable. */
+        .voile {
+            position: absolute; inset: 0; z-index: 2;
+            background:
+                radial-gradient(58% 52% at 50% 50%, rgba(4,4,7,.975), rgba(4,4,7,.88) 72%),
+                rgba(4,4,7,.86);
+            opacity: 0;
+        }
+        .ceremonie.on .voile { animation: v-entre 0.45s ease forwards; }
+        @keyframes v-entre { to { opacity: 1; } }
+
+        /* ⚠️ LA CEREMONIE NE PREND LES CLICS QUE QUAND ELLE EST LA. Sans
+           `pointer-events: none` au repos, son calque couvrirait « Rejouer »
+           pendant tout le podium — les boutons paraitraient morts, et rien a
+           l ecran ne dirait pourquoi. */
+        .ceremonie { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+        .ceremonie.on { pointer-events: auto; }
+
+        .centre { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+
+        /* ── La croix ────────────────────────────────────────────
+           Sobre : un trait fin, a demi efface, qui s allume au survol. Elle
+           est disponible DES LE DEBUT et non apres l animation — on la
+           regardera cinquante fois, et retenir quelqu un dans une ceremonie
+           qu il connait par coeur est la meilleure facon de la lui faire
+           detester. */
+        .fermer {
+            position: absolute; top: 0.9rem; right: 0.9rem; z-index: 5;
+            width: 1.9rem; height: 1.9rem; padding: 0;
+            display: grid; place-items: center;
+            background: none; border: 0; cursor: pointer;
+            color: rgba(255, 255, 255, 0.32);
+            transition: color 0.18s ease;
+        }
+        .fermer:hover { color: rgba(255, 255, 255, 0.8); }
+        .fermer svg { width: 0.85rem; height: 0.85rem; display: block; }
+        .bloc { position: relative; width: min(390px, 100%); font-family: 'Archivo', sans-serif; text-align: center; opacity: 0; }
+        .ceremonie.on .bloc { animation: b-entre 0.6s cubic-bezier(.16,.84,.3,1) 0.18s forwards; }
+        @keyframes b-entre { from { opacity: 0; transform: translateY(1.1rem) scale(0.975); } to { opacity: 1; transform: none; } }
+
+        /* ── « RANG SUPÉRIEUR », au-dessus du rang ────────────────
+           ⚠️ Sa place est RESERVEE en permanence (hauteur fixe), sinon son
+           apparition pousserait tout le bloc vers le bas et le grand titre
+           sauterait de vingt pixels au moment precis ou on le regarde. */
+        .promu-zone { height: 2.5rem; display: flex; align-items: flex-end; justify-content: center; }
+        .promu {
+            font-size: 0.6rem; font-weight: 600; letter-spacing: 0.44em; text-transform: uppercase;
+            color: var(--or); opacity: 0;
+            /* La lettre de droite porte l interlettrage en trop : sans ce
+               retrait le mot parait decale d un demi-espace vers la gauche. */
+            text-indent: 0.44em;
+            text-shadow: 0 0 22px rgba(255,215,0,.55);
+        }
+
+        /* ── Le rang, en monument ─────────────────────────────── */
+        .titre {
+            font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; line-height: 0.92;
+            letter-spacing: 0.02em; color: var(--elite); margin: 0.55rem 0 0;
+            position: relative;
+        }
+
+        /* ── Les deux gains, de part et d autre de la barre ──────
+           ⚠️ `tabular-nums` est OBLIGATOIRE : l incrementation change le
+           nombre a chaque image, et sans chasse fixe le bloc tremble. */
+        .nb { font-variant-numeric: tabular-nums; }
+        .ligne { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+        .ligne.haut { margin-bottom: 0.45rem; }
+        .ligne.bas { margin-top: 0.45rem; }
+        .gainxp { font-size: 0.92rem; font-weight: 600; color: var(--or); }
+        .gainxp .u { font-size: 0.5rem; font-weight: 500; letter-spacing: 0.2em; margin-left: 0.25rem; color: var(--or-eteint); }
+        .gainar { display: flex; align-items: center; gap: 0.3rem; font-size: 0.92rem; font-weight: 600; color: var(--or); }
+        .gainar .gem { height: 0.85rem; width: auto; display: block; }
+        .reste, .suiv {
+            font-size: 0.54rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #6e6e7b;
+        }
+        .suiv { color: rgba(111,160,245,.5); }
+
+        .piste { position: relative; height: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+        .jauge {
+            position: absolute; inset: 0 auto 0 0; width: 0;
+            background: linear-gradient(90deg, var(--elite), var(--or));
+            transition: width 1.3s cubic-bezier(.22,.8,.28,1);
+        }
+        .jauge.zero { transition: none; }
+
+        /* ── Le calque des particules ────────────────────────────
+           ⚠️ `pointer-events: none` : il couvre tout le bloc, sans quoi il
+           avalerait les clics des boutons du podium une fois la ceremonie
+           terminee. Et `overflow: visible` — les eclats doivent pouvoir
+           sortir du bloc, c est tout l effet. */
+        .feu { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 4; }
+        .p { position: absolute; left: 50%; top: 50%; border-radius: 1px; will-change: transform, opacity; }
+        .onde {
+            position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+            border-radius: 50%; border: 2px solid var(--or); opacity: 0;
+        }
+        .colonne {
+            position: absolute; left: 50%; top: 50%; width: 180px; height: 300px;
+            margin: -150px 0 0 -90px; opacity: 0;
+            background: linear-gradient(0deg, transparent, rgba(255,215,0,.22) 35%, rgba(255,255,255,.3) 55%, transparent);
+            filter: blur(10px);
+        }
+        .flash {
+            position: absolute; inset: -40% -20%; opacity: 0;
+            background: radial-gradient(50% 50% at 50% 50%, rgba(255,235,160,.55), transparent 70%);
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 1.5rem 1rem 4rem; }
+            .grille { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>La promotion de rang</h1>
+    <p class="sous">
+        La direction est choisie — « Monument ». Trois choses se règlent ici : <b>l'incrémentation</b>
+        des deux nombres, <b>leur place</b> de part et d'autre de la barre, et surtout <b>l'effet de
+        promotion</b>, en trois traitements. C'est le seul moment de tout l'écran où il se passe
+        quelque chose. « Rang atteint » est parti : il nommait ce que le titre dit déjà, et il
+        occupait la place où « Rang supérieur » doit arriver.
+    </p>
+
+    <div class="reglages">
+        <label>Victoire <span id="b-vic"></span></label>
+        <label>Change de rang <span id="b-lvl"></span></label>
+        <button class="tout" id="tout">Tout rejouer</button>
+    </div>
+
+    <div class="grille" id="grille"></div>
+
+    <script>
+        const GEM = '<img class="gem" src="/smoney.webp" alt="">';
+        const BAREME = { xp: 100, xpVic: 300, rubis: 500, rubisVic: 1500 };
+
+        let victoire = true;
+        let monte = true;
+
+        const fmt = (n) => Math.round(n).toLocaleString('fr-FR');
+        const g = () => ({
+            xp: BAREME.xp + (victoire ? BAREME.xpVic : 0),
+            rubis: BAREME.rubis + (victoire ? BAREME.rubisVic : 0),
+        });
+        const PARCOURS = () => monte ? { de: 78, a: 100, apres: 22 } : { de: 34, a: 71, apres: null };
+
+        // ⚠️ L INCREMENTATION. Rapide (520 ms) et en `easeOutCubic` : elle
+        // demarre vite et finit en douceur, donc on lit le resultat avant la
+        // fin — une rampe lineaire donne l impression d attendre un
+        // chargement. Et elle s arrete EXACTEMENT sur la valeur : terminer a
+        // « 399 » parce qu une image est tombee au mauvais moment est le
+        // defaut classique de ce genre de compteur.
+        function incrementer(el, vers, duree) {
+            const debut = performance.now();
+            function pas(t) {
+                const x = Math.min(1, (t - debut) / duree);
+                const e = 1 - Math.pow(1 - x, 3);
+                el.textContent = '+' + fmt(vers * e);
+                if (x < 1) requestAnimationFrame(pas);
+                else el.textContent = '+' + fmt(vers);
+            }
+            requestAnimationFrame(pas);
+        }
+
+        // ── Les trois effets de promotion ──────────────────────
+        // Chacun recoit le calque et le centre d ou partir, en pixels
+        // relatifs au calque.
+        const EFFETS = {
+            // Des eclats qui giclent du titre, tailles tres inegales.
+            eclats(feu, cx, cy) {
+                for (let i = 0; i < 28; i++) {
+                    const a = (Math.PI * 2 * i) / 28 + (Math.random() - 0.5) * 0.4;
+                    const d = 70 + Math.random() * 130;
+                    const t = 3 + Math.random() * 7;
+                    const p = document.createElement('i');
+                    p.className = 'p';
+                    p.style.cssText = `width:${t}px;height:${t * (0.4 + Math.random())}px;` +
+                        `background:${Math.random() < 0.3 ? '#fff6d0' : '#FFD700'};` +
+                        `margin:${-t / 2}px 0 0 ${-t / 2}px;`;
+                    feu.appendChild(p);
+                    p.animate([
+                        { transform: `translate(${cx}px, ${cy}px) scale(1) rotate(0deg)`, opacity: 1 },
+                        { transform: `translate(${cx + Math.cos(a) * d}px, ${cy + Math.sin(a) * d}px) scale(.3) rotate(${180 + Math.random() * 360}deg)`, opacity: 0 },
+                    ], { duration: 620 + Math.random() * 380, easing: 'cubic-bezier(.12,.7,.3,1)', fill: 'forwards' })
+                     .finished.then(() => p.remove()).catch(() => p.remove());
+                }
+                const f = feu.querySelector('.flash');
+                f.animate([{ opacity: 0 }, { opacity: 1, offset: 0.12 }, { opacity: 0 }],
+                    { duration: 520, easing: 'ease-out' });
+            },
+
+            // Une onde de choc partie de la barre, plus une poussiere qui monte.
+            onde(feu, cx, cy) {
+                const o = feu.querySelector('.onde');
+                o.style.left = cx + 'px'; o.style.top = cy + 'px';
+                o.animate([
+                    { transform: 'scale(1)', opacity: 0.9, borderWidth: '2px' },
+                    { transform: 'scale(26)', opacity: 0, borderWidth: '0.5px' },
+                ], { duration: 760, easing: 'cubic-bezier(.1,.75,.3,1)' });
+                for (let i = 0; i < 22; i++) {
+                    const p = document.createElement('i');
+                    const t = 2 + Math.random() * 3;
+                    p.className = 'p';
+                    p.style.cssText = `width:${t}px;height:${t}px;border-radius:50%;background:#FFD700;`;
+                    feu.appendChild(p);
+                    const x = cx + (Math.random() - 0.5) * 300;
+                    p.animate([
+                        { transform: `translate(${x}px, ${cy}px)`, opacity: 0 },
+                        { transform: `translate(${x + (Math.random() - 0.5) * 40}px, ${cy - 60 - Math.random() * 90}px)`, opacity: 1, offset: 0.3 },
+                        { transform: `translate(${x + (Math.random() - 0.5) * 60}px, ${cy - 150 - Math.random() * 110}px)`, opacity: 0 },
+                    ], { duration: 1100 + Math.random() * 500, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' })
+                     .finished.then(() => p.remove()).catch(() => p.remove());
+                }
+            },
+
+            // Une colonne de lumiere derriere le rang, et des etincelles qui retombent.
+            colonne(feu, cx, cy) {
+                const c = feu.querySelector('.colonne');
+                c.style.left = cx + 'px';
+                c.animate([
+                    { opacity: 0, transform: 'scaleY(.5) scaleX(.4)' },
+                    { opacity: 1, transform: 'scaleY(1) scaleX(1)', offset: 0.25 },
+                    { opacity: 0, transform: 'scaleY(1.15) scaleX(1.3)' },
+                ], { duration: 900, easing: 'cubic-bezier(.2,.8,.3,1)' });
+                for (let i = 0; i < 24; i++) {
+                    const p = document.createElement('i');
+                    const t = 2 + Math.random() * 4;
+                    p.className = 'p';
+                    p.style.cssText = `width:${t}px;height:${t * 2.4}px;background:linear-gradient(180deg,#fff6d0,#FFD700);`;
+                    feu.appendChild(p);
+                    const x = cx + (Math.random() - 0.5) * 230;
+                    const haut = cy - 130 - Math.random() * 60;
+                    p.animate([
+                        { transform: `translate(${x}px, ${haut}px) scaleY(.4)`, opacity: 0 },
+                        { transform: `translate(${x}px, ${haut + 40}px) scaleY(1)`, opacity: 1, offset: 0.2 },
+                        { transform: `translate(${x + (Math.random() - 0.5) * 30}px, ${cy + 70}px) scaleY(1.6)`, opacity: 0 },
+                    ], { duration: 950 + Math.random() * 450, delay: Math.random() * 180, easing: 'cubic-bezier(.4,.1,.7,1)', fill: 'forwards' })
+                     .finished.then(() => p.remove()).catch(() => p.remove());
+                }
+            },
+        };
+
+        const CAS = [
+            ['1', 'Éclats', 'eclats',
+             "Vingt-huit éclats giclent du nom du rang, de tailles très inégales, avec un flash court. Le plus direct — c'est ce qu'on attend quand on dit « explosion », et c'est le même vocabulaire que les éclats du clic sur une réponse du quiz.",
+             'titre'],
+            ['2', 'Onde de choc', 'onde',
+             "Un anneau part de la barre au moment où elle touche le bout, et une poussière dorée monte derrière. Plus retenu : c'est la BARRE qui provoque l'événement, donc la cause se lit.",
+             'piste'],
+            ['3', 'Colonne de lumière', 'colonne',
+             "Une colonne de lumière s'ouvre derrière le rang et des étincelles retombent au travers. Le plus « cérémonie » des trois, et le seul qui dure assez pour qu'on le regarde plutôt qu'on le remarque.",
+             'titre'],
+        ];
+
+        function scene(effet, source) {
+            return `<div class="scene" data-effet="${effet}" data-source="${source}">
+                <div class="podium">
+                    <span class="cr">♛</span><span class="vic">Victoire</span>
+                    <span class="qui"><span class="av"></span><span class="nm">admin</span></span>
+                    <span class="ch"><span><b>4</b><span>Personnages</span></span><span><b>0:12</b><span>Durée</span></span></span>
+                    <span class="bt"><i>Rejouer</i><i class="f">Retour</i></span>
+                </div>
+                <div class="ceremonie">
+                    <div class="voile"></div>
+                    <button class="fermer" aria-label="Fermer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                            <path d="M5 5l14 14M19 5L5 19"/>
+                        </svg>
+                    </button>
+                    <div class="centre"><div class="bloc">
+                        <div class="feu"><span class="flash"></span><span class="onde"></span><span class="colonne"></span></div>
+                        <div class="promu-zone"><span class="promu">Rang supérieur</span></div>
+                        <div class="titre courant">Élite I</div>
+                        <div class="ligne haut">
+                            <span class="gainxp nb vxp">+0<span class="u">XP</span></span>
+                            <span class="reste">2 000 / 2 000</span>
+                        </div>
+                        <div class="piste"><div class="jauge"></div></div>
+                        <div class="ligne bas">
+                            <span class="gainar">${GEM}<span class="nb var">+0</span></span>
+                            <span class="suiv prochain">Élite II</span>
+                        </div>
+                    </div></div>
+                </div>
+            </div>`;
+        }
+
+        // ⚠️ Rejouer demande un calcul de style FORCE entre le retrait et la
+        // repose des classes : sans lui les deux ecritures tombent dans la
+        // meme image, le navigateur ne voit rien bouger, et un second clic ne
+        // fait RIEN. C est la lecon du cadenas de BombAnime.
+        function jouer(sc) {
+            const cer = sc.querySelector('.ceremonie');
+            const bloc = sc.querySelector('.bloc');
+            const feu = sc.querySelector('.feu');
+            const jauge = sc.querySelector('.jauge');
+            const titre = sc.querySelector('.titre');
+            const prochain = sc.querySelector('.prochain');
+            const reste = sc.querySelector('.reste');
+            const promu = sc.querySelector('.promu');
+            const vxp = sc.querySelector('.vxp');
+            const varg = sc.querySelector('.var');
+            const v = g();
+            const p = PARCOURS();
+
+            // Remise a zero complete : particules, minuteries en attente et
+            // drapeau de fermeture.
+            (sc._minuteries || []).forEach(clearTimeout);
+            sc._minuteries = [];
+            feu.querySelectorAll('i').forEach((e) => e.remove());
+            cer.classList.remove('on');
+            delete cer.dataset.ferme;
+            cer.style.pointerEvents = '';
+            cer.getAnimations().forEach((a) => a.cancel());
+            jauge.classList.add('zero'); jauge.style.width = p.de + '%';
+            titre.textContent = 'Élite I';
+            prochain.textContent = 'Élite II';
+            reste.textContent = monte ? '2 000 / 2 000' : '1 420 / 2 000';
+            promu.style.opacity = '0';
+            vxp.firstChild.nodeValue = '+0';
+            varg.textContent = '+0';
+            cer.style.display = '';
+            cer.style.opacity = '';
+            void cer.offsetWidth;
+
+            // ⚠️ ELLE ARRIVE UNE SECONDE APRES LA FIN DU PODIUM, pas avec
+            // lui. Le classement se devoile a rebours et c est le moment
+            // qu on attend ; un voile pose dessus pendant qu il se joue
+            // volerait la seule chose que les autres joueurs regardent. La
+            // seconde de battement laisse le temps de lire le dernier nom.
+            sc._minuteries.push(setTimeout(() => cer.classList.add('on'), 1000));
+
+            // Les nombres montent pendant que la barre avance : les deux
+            // disent la meme chose, les separer dans le temps les rendrait
+            // etrangers l un a l autre.
+            sc._minuteries.push(setTimeout(() => {
+                jauge.classList.remove('zero');
+                jauge.style.width = p.a + '%';
+                incrementer({ set textContent(t) { vxp.firstChild.nodeValue = t; } }, v.xp, 520);
+                incrementer(varg, v.rubis, 620);
+            }, 1640));
+
+            if (!monte) return;
+
+            sc._minuteries.push(setTimeout(() => {
+                // ⚠️ Pas de transition au retour, sinon on voit la jauge
+                // REDESCENDRE — l inverse exact d une promotion.
+                jauge.classList.add('zero'); jauge.style.width = '0%';
+                titre.textContent = 'Élite II';
+                prochain.textContent = 'Élite III';
+                reste.textContent = '440 / 2 000';
+                requestAnimationFrame(() => {
+                    jauge.classList.remove('zero');
+                    jauge.style.width = p.apres + '%';
+                });
+
+                // Le titre encaisse le coup.
+                titre.animate([
+                    { transform: 'scale(.82)', opacity: 0, filter: 'blur(6px)' },
+                    { transform: 'scale(1.06)', opacity: 1, filter: 'blur(0)', offset: 0.45 },
+                    { transform: 'scale(1)', opacity: 1, filter: 'blur(0)' },
+                ], { duration: 620, easing: 'cubic-bezier(.16,.84,.3,1.1)' });
+
+                // « Rang supérieur » arrive de plus haut, et l interlettrage
+                // se RESSERRE en route : c est ce qui lui donne son elan sans
+                // qu il bouge de place.
+                promu.animate([
+                    { opacity: 0, transform: 'translateY(-0.7rem)', letterSpacing: '0.9em' },
+                    { opacity: 1, transform: 'none', letterSpacing: '0.44em' },
+                ], { duration: 620, delay: 120, easing: 'cubic-bezier(.16,.84,.3,1)', fill: 'forwards' });
+
+                // L effet, depuis le centre de sa source.
+                const source = sc.dataset.source === 'piste' ? sc.querySelector('.piste') : titre;
+                const rb = bloc.getBoundingClientRect();
+                const rs = source.getBoundingClientRect();
+                EFFETS[sc.dataset.effet](feu, (rs.left + rs.right) / 2 - rb.left, (rs.top + rs.bottom) / 2 - rb.top);
+            }, 3000));
+        }
+
+        // ⚠️ LA FERMETURE. Au clic sur la croix OU a cote du bloc — le voile
+        // porte l ecouteur, le bloc arrete la propagation. Sans ce `stop`, un
+        // clic sur le bloc lui-meme la fermerait, ce qui est exactement le
+        // geste de quelqu un qui veut la regarder de plus pres.
+        //
+        // ⚠️ Et `display: none` A LA FIN du fondu, pas avant : le calque
+        // couvre « Rejouer » et « Retour », qui resteraient morts si on se
+        // contentait de le rendre transparent. L opacite ne retire rien du
+        // flux des evenements.
+        function fermer(sc) {
+            const cer = sc.querySelector('.ceremonie');
+            if (cer.dataset.ferme === '1') return;
+            cer.dataset.ferme = '1';
+            cer.style.pointerEvents = 'none';
+            // Les minuteries en attente doivent mourir avec elle : sans ca,
+            // une promotion programmee rallumerait des particules sur un
+            // ecran qu on vient de fermer.
+            (sc._minuteries || []).forEach(clearTimeout);
+            sc._minuteries = [];
+            cer.animate([{ opacity: 1 }, { opacity: 0 }],
+                { duration: 280, easing: 'ease', fill: 'forwards' })
+               .finished.then(() => { cer.style.display = 'none'; })
+               .catch(() => { cer.style.display = 'none'; });
+        }
+
+        function peindre() {
+            document.getElementById('grille').innerHTML = CAS.map(([l, titre, effet, note, source]) => `
+                <div class="cas">
+                    <h2>${l} · ${titre}</h2>
+                    <p>${note}</p>
+                    <button class="rejouer">Rejouer</button>
+                    ${scene(effet, source)}
+                </div>`).join('');
+            document.querySelectorAll('.cas').forEach((c) => {
+                const sc = c.querySelector('.scene');
+                sc._minuteries = [];
+                c.querySelector('.rejouer').addEventListener('click', () => jouer(sc));
+                sc.querySelector('.fermer').addEventListener('click', () => fermer(sc));
+                // ⚠️ L ecouteur va sur `.centre` ET sur le voile, pas sur le
+                // voile seul : `.centre` est en `inset: 0` PAR-DESSUS lui
+                // (etage 3 contre 2), donc c est lui qui recoit tous les
+                // clics tombes a cote du bloc — le voile n en verrait jamais
+                // un seul, et « cliquer a cote » n aurait rien ferme.
+                sc.querySelector('.centre').addEventListener('click', () => fermer(sc));
+                sc.querySelector('.voile').addEventListener('click', () => fermer(sc));
+                // ⚠️ Et le bloc ARRETE la propagation : sans ce `stop`, un
+                // clic sur le bloc remonterait a `.centre` et fermerait la
+                // ceremonie, alors que c est le geste de qui veut la regarder.
+                sc.querySelector('.bloc').addEventListener('click', (e) => e.stopPropagation());
+                jouer(sc);
+            });
+        }
+
+        function bascule(hote, lire, poser) {
+            hote.innerHTML = '';
+            [['Oui', true], ['Non', false]].forEach(([nom, val]) => {
+                const b = document.createElement('button');
+                b.textContent = nom;
+                if (lire() === val) b.classList.add('on');
+                b.addEventListener('click', () => { poser(val); peindre(); majBoutons(); });
+                hote.appendChild(b);
+            });
+        }
+        function majBoutons() {
+            bascule(document.getElementById('b-vic'), () => victoire, (v) => { victoire = v; });
+            bascule(document.getElementById('b-lvl'), () => monte, (v) => { monte = v; });
+        }
+
+        document.getElementById('tout').addEventListener('click', () => {
+            document.querySelectorAll('.scene').forEach(jouer);
+        });
+
+        majBoutons();
+        peindre();
+    </script>
+</body>
+
+</html>

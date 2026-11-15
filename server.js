@@ -2489,6 +2489,16 @@ app.get('/prototypes/ceremonie', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ceremonie.html');
 });
 
+// 🎆 La suite : la direction « Monument » retenue, et son MOMENT DE
+// PROMOTION en trois traitements — eclats, onde de choc, colonne de lumiere.
+// S y reglent aussi l incrementation des deux nombres et la fermeture (croix
+// sobre, ou clic a cote). La ceremonie arrive UNE SECONDE apres la fin du
+// podium : posee pendant, elle volerait le seul moment que les autres
+// joueurs regardent.
+app.get('/prototypes/ceremonie2', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-ceremonie2.html');
+});
+
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
 // ⚠️ Ecarte — les deux chargeaient la barre. Garde comme trace du pourquoi.
 app.get('/prototypes/compte-place', (req, res) => {
