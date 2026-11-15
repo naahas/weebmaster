@@ -630,6 +630,7 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 }
 .cp-prov svg { width: 12px; height: 12px; display: block; }
 .cp-prov.d { color: #5865F2; }
+.cp-prov.t { color: #9146FF; }
 /* `min-width: 0` : sans lui un pseudo à rallonge pousse les chiffres hors
    du cadre au lieu de se couper. C'est le défaut des enfants de flex. */
 .cp-qui { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
@@ -1211,6 +1212,9 @@ body:not(.entre) { overflow: hidden; }
          16 px. Ils portent donc leur propre `fill` au lieu de `currentColor`. -->
     <g id="i-discord" fill="currentColor" stroke="none">
       <path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.5c1.6.4 2.9 1 4.2 1.8a14 14 0 0 0-11-.4l.5-.2.4-1.2a19.7 19.7 0 0 0-5.1 1.9C1.3 8.8.4 13 .8 17.2a19.9 19.9 0 0 0 6 3c.5-.6.9-1.3 1.2-2-.6-.3-1.3-.6-1.9-1l.5-.4a14.2 14.2 0 0 0 12 0l.5.4c-.6.4-1.2.7-1.9 1 .3.7.7 1.4 1.2 2a19.8 19.8 0 0 0 6-3c.5-4.9-.8-9-3.1-12.8zM8.1 14.7c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4z"/>
+    </g>
+    <g id="i-twitch" fill="currentColor" stroke="none">
+      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
     </g>
     <g id="i-google" stroke="none">
       <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.5h3.2c1.9-1.7 3-4.3 3-7.5z" fill="#4285F4"/>
@@ -3225,7 +3229,10 @@ async function lireComptes() {
 // 🔗 Les logos des fournisseurs. Un fournisseur inconnu — ou absent, si
 // l'API admin n'a pas répondu — ne dessine RIEN plutôt qu'un point
 // d'interrogation : l'absence d'icône se lit déjà comme « on ne sait pas ».
-const PROV = { discord: ['d', 'Discord'], google: ['g', 'Google'] };
+// ⚠️ Un fournisseur ouvert cote jeu DOIT recevoir sa ligne ici, sinon ses
+//    comptes s affichent sans pastille — et comme l absence se lit « on ne
+//    sait pas », rien ne dirait que c est la table qui manque.
+const PROV = { discord: ['d', 'Discord'], twitch: ['t', 'Twitch'], google: ['g', 'Google'] };
 
 // 🎖️ LE CATALOGUE DES TITRES, demandé une fois au serveur.
 //

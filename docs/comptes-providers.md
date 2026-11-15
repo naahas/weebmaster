@@ -1,7 +1,24 @@
-# Déclarer Discord et Google dans Supabase
+# Déclarer les fournisseurs de connexion dans Supabase
 
 Ce qui reste à faire pour que la connexion existe, et qui **n'est pas du code** : trois sites,
 une quinzaine de clics. Le SQL de la table est dans [comptes.sql](comptes.sql).
+
+## Qui est ouvert, et qui ne l'est pas
+
+| | Bouton dans le jeu | Fournisseur Supabase |
+|---|---|---|
+| **Discord** | ✅ | à activer |
+| **Twitch** | ✅ | à activer |
+| **Google** | ❌ **retiré** | ⚠️ **encore actif** |
+
+⚠️ **Le bouton Google a été retiré, pas le fournisseur.** Le sélecteur de comptes Google fait
+d'un second compte une affaire de deux clics, sans mot de passe : c'est dix identités pour une
+personne, donc dix fois l'XP et les rubis d'une partie. Discord et Twitch demandent tous les deux
+une adresse distincte et une vraie reconnexion.
+
+Mais **le flux répond toujours** à qui fabrique l'URL à la main — retirer un bouton ne ferme pas
+une porte. Pour la fermer : **Authentication → Providers → Google → désactiver**. L'annexe garde
+sa déclaration, pour le jour où la question se repose.
 
 ---
 
@@ -11,12 +28,12 @@ C'est la seule vraie difficulté de ce chantier. Tout le reste est du remplissag
 
 | | Quelle adresse | Où elle se colle |
 |---|---|---|
-| **L'URL de retour** (*callback*) | celle de **Supabase** : `https://<ref>.supabase.co/auth/v1/callback` | chez **Discord** et chez **Google** |
+| **L'URL de retour** (*callback*) | celle de **Supabase** : `https://<ref>.supabase.co/auth/v1/callback` | chez **Discord**, chez **Twitch** |
 | **La liste blanche** (*Redirect URLs*) | celles de **shonenmaster.com** | chez **Supabase** |
 
 Les intervertir est l'erreur classique, et elle ne se voit qu'au moment du premier essai de
-connexion — jamais avant. Le sens est celui-ci : Discord et Google renvoient le joueur **à
-Supabase**, et Supabase le renvoie **au site**. Chacun a donc besoin de l'adresse du suivant.
+connexion — jamais avant. Le sens est celui-ci : le fournisseur renvoie le joueur **à Supabase**,
+et Supabase le renvoie **au site**. Chacun a donc besoin de l'adresse du suivant.
 
 Le `<ref>` se lit dans `.env`, ligne `SUPABASE_URL` : c'est la partie entre `https://` et
 `.supabase.co`. ⚠️ Il n'est pas écrit ici parce que **ce dépôt est public** — l'adresse n'est pas
@@ -45,7 +62,36 @@ pas.
 
 ---
 
-## 2. Google
+## 2. Twitch
+
+**Developer Console** → <https://dev.twitch.tv/console/apps>
+
+1. ⚠️ **L'authentification à deux facteurs doit être active sur le compte Twitch**, sinon le
+   bouton *Register Your Application* refuse tout net. C'est le seul blocage de cette page, il
+   n'est écrit nulle part sur le formulaire, et il se règle dans les paramètres de sécurité du
+   compte — avec un vrai numéro de téléphone.
+2. **Register Your Application**. Le *Name* est **ce que le joueur verra** sur l'écran
+   d'autorisation : mettre **ShonenMaster**. ⚠️ Twitch exige qu'il soit **unique sur toute la
+   plateforme** — si le nom est pris, il refuse, et il faut en trouver un autre.
+3. **OAuth Redirect URLs** → coller l'URL de retour de Supabase.
+4. **Category** : *Website Integration*. **Client Type** : *Confidential* (le secret vit sur le
+   serveur de Supabase, jamais dans le navigateur).
+5. **Create**, puis rouvrir l'application : relever le **Client ID** et faire **New Secret** pour
+   le *Client Secret*.
+
+ℹ️ **Rien à cocher du côté des scopes**, comme chez Discord : Supabase demande `user:read:email`
+tout seul.
+
+ℹ️ **L'écran d'autorisation montre le nom et le logo de l'application**, donc « ShonenMaster » —
+pas l'adresse `supabase.co`. C'est l'avantage qu'a déjà Discord et que Google n'a pas.
+
+---
+
+## Annexe — Google (fournisseur gardé, bouton retiré)
+
+⚠️ **Le bouton n'existe plus dans le jeu** (voir le tableau en tête de page). Cette section reste
+pour que la déclaration ne soit pas à refaire si la question se repose — et parce que le
+fournisseur, lui, est probablement **encore actif côté Supabase**.
 
 **Cloud Console** → <https://console.cloud.google.com>
 
@@ -78,8 +124,9 @@ argument de plus pour Discord, qui est déjà là où vivent les communautés vi
 
 ## 3. Supabase
 
-**Authentication** → **Providers** : activer **Discord**, puis **Google**, et coller dans chacun
-le *Client ID* et le *Client Secret* relevés plus haut.
+**Authentication** → **Providers** : activer **Discord**, puis **Twitch**, et coller dans chacun
+le *Client ID* et le *Client Secret* relevés plus haut. Profiter du passage pour **désactiver
+Google**, dont le bouton n'existe plus.
 
 **Authentication** → **URL Configuration** :
 
@@ -124,10 +171,16 @@ qui permet de la faire tourner sans toucher au code.
 
 ## Si ça ne marche pas
 
-- **`redirect_uri_mismatch`** → l'URL de retour collée chez Discord ou Google ne correspond pas.
+- **`redirect_uri_mismatch`** → l'URL de retour collée chez le fournisseur ne correspond pas.
   Chercher le slash final, et vérifier qu'on a bien collé l'adresse `supabase.co` et non celle du
   site.
 - **Renvoyé sur l'accueil sans être connecté** → l'adresse du site manque dans **Redirect URLs**.
+- **« Unsupported provider »** → le fournisseur n'est pas activé dans **Authentication →
+  Providers**. Le bouton part bien, c'est Supabase qui refuse au retour : le message ne vient
+  donc pas du code du jeu, qui passe le nom du fournisseur tel quel.
+- **Le compte apparaît dans `/admin` sans pastille de fournisseur** → son nom manque dans la
+  table `PROV` d'`admin.html`. Le panneau ne dessine rien pour un fournisseur inconnu, et
+  l'absence se lit « on ne sait pas » : rien ne dirait que c'est la table qui est en retard.
 - **Ça marche pour moi et pour personne d'autre** → l'écran de consentement Google est resté en
   **Testing**.
 - **Déconnecté tous les sept jours** → le même.

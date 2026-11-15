@@ -7460,16 +7460,18 @@ body.game-active:has(.poll-game-container) #particles-js {
    (c est la surface qui separe) et l etiquette « Connexion » non plus (les
    boutons portent leur nom). Rien ne les cite dans le gabarit. */
 
-/* 🔑 « SE CONNECTER » — l etiquette au-dessus du bouton.
-   Elle etait partie du temps ou il y avait DEUX fournisseurs : « Discord |
-   Google » cote a cote se lisent comme un choix, donc comme une connexion.
-   Google retire, le bouton se retrouve seul et redevient une affirmation
-   sans verbe — un logo nomme, pas une invitation. L etiquette revient donc.
+/* 🔑 « SE CONNECTER » — l etiquette au-dessus des boutons.
+   Elle etait partie du temps de Google : « Discord | Google » cote a cote se
+   lisent comme un choix, donc comme une connexion. Elle est revenue quand il
+   n en est reste qu un, le bouton seul n etant plus qu un logo nomme.
 
-   ⚠️ Le bloc est en COLONNE et `.v2-profil-ronds` reste une RANGEE : le jour
-   ou un second fournisseur revient (Twitch), les boutons se remettent cote a
-   cote sans toucher a l etiquette. Mettre la colonne sur `.v2-profil-ronds`
-   lui-meme les aurait empiles. */
+   ℹ️ Twitch pose, elle RESTE : elle coiffe la paire et dit ce que ce choix
+   decide. Deux boutons se lisent peut-etre comme un choix, ils ne disent
+   toujours pas de quoi.
+
+   ⚠️ Le bloc est en COLONNE et `.v2-profil-ronds` une RANGEE : c est ce qui a
+   permis a Twitch de se poser a cote sans toucher a l etiquette. Mettre la
+   colonne sur `.v2-profil-ronds` lui-meme les aurait empiles. */
 .v2-profil-cnx { display: flex; flex-direction: column; gap: 0.72rem; }
 .v2-profil-cnx > span {
     /* ⚠️ Le filet de chaque cote est un pseudo-element en `flex: 1`, donc le
@@ -7497,21 +7499,32 @@ body.game-active:has(.poll-game-container) #particles-js {
     background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
 }
 
-.v2-profil-ronds { display: flex; gap: 0.5rem; }
+.v2-profil-ronds { display: flex; gap: 0.45rem; }
 /* ⚠️ Le bouton porte son NOM, pas seulement le logo : on reconnait le logo
-   Discord, on ne devine pas qu il sert a SE CONNECTER. */
+   Discord, on ne devine pas qu il sert a SE CONNECTER.
+
+   ⚠️ Et c est ce nom qui decide de la TAILLE depuis qu ils sont deux. La
+   carte fait 16rem : chacun n a plus qu une demi-largeur, et « Discord » —
+   le plus long des deux — doit y tenir AVEC son logo, sans retour a la
+   ligne (`white-space: nowrap`, sinon il sort du bouton au lieu de
+   l elargir). D ou la police, la gouttiere et les marges resserrees ; a la
+   taille d avant, le mot etait coupe. */
 .v2-profil-rond {
     flex: 1;
+    /* ⚠️ `min-width: 0` : sans lui un element flex ne se laisse pas reduire
+       sous la largeur de son contenu, les deux boutons debordaient la carte
+       par la droite au lieu de se partager la ligne. */
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     height: 2.45rem;
-    padding: 0 0.6rem;
+    padding: 0 0.4rem;
     border: 0;
     border-radius: 0.55rem;
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -7519,14 +7532,19 @@ body.game-active:has(.poll-game-container) #particles-js {
 }
 .v2-profil-rond:hover { filter: brightness(1.12); }
 .v2-profil-rond.d { background: #5865F2; color: #fff; }
-.v2-profil-rond.d svg { fill: #fff; }
+/* Le violet de la marque. ⚠️ `#9146FF` et pas un violet approchant : a cote
+   du bleu Discord, les deux boutons se lisent comme deux marques — une
+   teinte inventee les ferait lire comme deux etats du meme bouton. */
+.v2-profil-rond.t { background: #9146FF; color: #fff; }
+.v2-profil-rond.d svg,
+.v2-profil-rond.t svg { fill: #fff; }
 /* Gardee bien que le bouton Google soit retire du gabarit : c est la seule
    chose a reecrire si on le remet, et deux lignes de CSS valent mieux qu une
    fouille dans l historique. */
 .v2-profil-rond.g { background: #fff; color: #1f1f1f; }
 /* ⚠️ Une taille EXPLICITE : un <svg> sans width/height retombe sur sa taille
    par defaut, 300×150 px, et fait exploser le bouton qui le porte. */
-.v2-profil-rond svg { width: 1.05rem; height: 1.05rem; display: block; flex: 0 0 auto; }
+.v2-profil-rond svg { width: 1rem; height: 1rem; display: block; flex: 0 0 auto; }
 
 /* 📊 LES TROIS CHIFFRES, UN PAR LIGNE — libelle a gauche, valeur a droite.
    Les deux chiffres d avant etaient pousses aux deux extremites d une rangee :
