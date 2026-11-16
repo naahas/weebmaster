@@ -12590,7 +12590,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        chiffres ne paraissent plus sur telephone, et la reserve laissait donc
        47 px de vide sous le pied de page — une bande morte que rien
        n expliquait a l ecran. */
-    .v2-home { padding-bottom: 0.9rem; }
+    /* ⚠️ 1,1rem. A 0,45 le pied frolait le bord — pire que l inverse : une
+       ligne collee au bas de l ecran se lit comme un debordement, pas comme
+       un pied de page. A 4rem (la valeur d origine, qui reservait la place
+       des chiffres) il flottait. Entre les deux. */
+    .v2-home { padding-bottom: 1.1rem; }
 
     .v2-choices {
         flex-direction: row;
@@ -14386,7 +14390,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (min-width: 769px) {
     .v2-start-info {
         position: absolute;
-        right: calc(100% + 0.65rem);
+        /* ⚠️ 1,6rem d ecart, pas 0,65. Trop pres, la pastille se lisait
+           comme un cinquieme caractere du code — une case de plus dans la
+           rangee « R 9 H 2 ». Il lui faut assez d air pour qu on la voie
+           comme un objet a part, pose a cote. */
+        right: calc(100% + 1.6rem);
         top: 50%;
         transform: translateY(-50%);
         margin: 0;
@@ -14411,7 +14419,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     right: 0;
     bottom: 0;
     z-index: 20;
-    padding: 0.85rem 1rem clamp(0.8rem, 2vh, 1.2rem);
+    /* ⚠️ Une bande plus epaisse qu il n y parait necessaire, et c est le
+       propre d un pied : trop mince, il se lit comme une ligne de texte
+       tombee en bas de la page plutot que comme une zone. L air en haut et
+       en bas lui donne son assise, maintenant qu il a un fond a lui. */
+    padding: 1.15rem 1rem clamp(1.05rem, 2.2vh, 1.5rem);
     pointer-events: none;
     /* ⚠️ UN FOND NOIR UNI, et non la transparence. La barre se posait sur le
        degre d aurore et sur la grille en perspective, qui montent tous deux
@@ -14496,7 +14508,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    signatures sont reunies dans leur propre `span`, c est lui qui doit
    s ecarter de la liste — une marge posee sur l icone aurait aussi agi en
    colonne, ou il n y a plus rien a sa gauche. */
-.v2-pied-sign { margin-left: 0.3rem; }
+/* ⚠️ 1,1rem, pas 0,3. Les signatures ne sont pas des liens de la liste : a
+   l ecart des liens entre eux, la premiere icone se lisait comme le
+   quatrieme element d une enumeration. C est cette marge qui dit ou la liste
+   s arrete et ou commence autre chose. */
+.v2-pied-sign { margin-left: 1.1rem; }
 
 /* Les deux groupes de la barre : les liens d un cote, les signatures de
    l autre. Ils heritent du `gap` du parent entre eux, et posent le leur a
@@ -14534,7 +14550,20 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         right: auto;
         bottom: auto;
         margin-top: auto;
-        padding: 1.1rem 0 0.2rem;
+        /* ⚠️ RIEN EN BAS. La barre est la derniere chose de l ecran : tout
+           ce qu on lui laisse dessous se lit comme un oubli de mise en page.
+           L air qui reste vient de `.v2-home`, et il est volontairement
+           maigre — assez pour que le texte ne touche pas le bord, pas assez
+           pour qu on y voie une marge. */
+        /* ⚠️ ELLE RESSORT DE LA GOUTTIERE pour toucher les deux bords. Dans
+           le flux, elle heritait du `padding` horizontal de `.v2-home` : son
+           fond noir s arretait a 22 px de chaque bord et laissait voir la
+           grille de part et d autre — une bande posee au milieu, pas un pied
+           de page. Les marges negatives l elargissent, le padding rend l air
+           au texte. */
+        margin-left: calc(var(--gouttiere) * -1);
+        margin-right: calc(var(--gouttiere) * -1);
+        padding: 0.95rem var(--gouttiere) 0;
         /* ℹ️ PAS DE MARGE NEGATIVE ICI. Une premiere version en posait une
            pour rattraper la bande vide sous le pied — c etait soigner le
            symptome : le vide venait d une reserve de 4rem laissee pour une
@@ -14562,23 +14591,35 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         letter-spacing: 0.12em;
     }
 
-    /* ⚠️ `flex: 1 0 100%` PLUTOT QU UNE COLONNE SUR LE PARENT. Passer le
-       parent en colonne aurait fait du copyright une TROISIEME rangee, lui
-       qui doit rester avec les icones. En prenant toute la largeur, le bloc
-       de liens pousse simplement ce qui suit a la ligne suivante — et ce
-       qui suit y reste ensemble. */
+    /* ℹ️ LE BLOC DE LIENS NE PREND PLUS TOUTE LA LARGEUR. Il la prenait pour
+       pousser les icones a la ligne suivante, du temps ou quatre liens et un
+       copyright s y bousculaient. Depuis que Conditions, Confidentialite et
+       la signature se cachent sur telephone, les trois liens restants et les
+       deux icones tiennent sur UNE ligne — et une rangee unique vaut mieux
+       que deux bien rangees. */
     .v2-pied-liens {
         display: flex;
-        flex: 1 0 100%;
         gap: 0.45rem 0.8rem;
         line-height: 1.1;
     }
-    /* ⚠️ LES POINTS MEDIANS DISPARAISSENT. Separateurs d une liste qui tient
-       sur une ligne, ils deviennent des orphelins des qu elle se replie : la
-       premiere ligne se terminait par un « · » qui ne separait plus rien.
-       Aucun selecteur CSS ne sait « ce point est en fin de ligne » — on les
-       retire tous, et c est l ecart qui separe. */
-    .v2-pied-liens > span[aria-hidden] { display: none; }
+    /* ⚠️ LES POINTS MEDIANS DEVIENNENT DE PETITS TRAITS VERTICAUX. Le point
+       seul, a 0,64rem, se perdait entre deux mots en capitales espacees ; et
+       il avait ete retire du temps ou la liste se repliait, parce qu un « · »
+       en fin de ligne ne separe plus rien. La liste tient maintenant sur une
+       ligne, le separateur peut revenir — en trait, qui se voit.
+       ⚠️ Le texte du point est MASQUE plutot que l element remplace : le
+       gabarit reste le meme pour les deux largeurs, et c est le CSS seul qui
+       decide de la forme du separateur.
+       ⚠️ Et il s eteint a ses deux bouts, comme tous les filets de ce jeu —
+       un trait net ferait une colonne de tableau. */
+    .v2-pied-liens > span[aria-hidden] {
+        width: 1px;
+        height: 0.72rem;
+        font-size: 0;
+        background: linear-gradient(180deg,
+            transparent, rgba(255, 255, 255, 0.22) 30%,
+            rgba(255, 255, 255, 0.22) 70%, transparent);
+    }
 
     /* ⚠️ CONDITIONS ET CONFIDENTIALITE DISPARAISSENT SUR TELEPHONE, pour que
        les liens tiennent sur une ligne. Ce sont les deux dont on n a pas
@@ -14593,7 +14634,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        parce qu ils disent la meme chose — qui a fait ca. Le copyright y est
        plus petit et plus sourd que les liens du dessus : il se lit en
        dernier, et c est sa place. */
-    .v2-pied-sign { gap: 0.45rem; margin-left: 0; }
+    .v2-pied-sign { gap: 0.45rem; margin-left: 0.85rem; }
     .v2-pied .v2-reseau { width: 1.55rem; height: 1.55rem; }
     .v2-pied .v2-reseau + .v2-reseau { margin-left: -0.1rem; }
     .v2-pied-marque {
