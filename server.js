@@ -9957,7 +9957,15 @@ io.on('connection', (socket) => {
         // Le jeton dit qui l'on est ; le champ `playerId` n'est qu'une
         // déclaration.
         if (data && data.jeton && comptes.ACTIF) {
-            comptes.identifier(data.jeton, {
+            // ⏳ LA VERIFICATION EN COURS EST RETENUE SUR LA SOCKET, et c est
+            // `join-lobby` qui l attend. Elle demande un aller-retour a
+            // Supabase — deux cents millisecondes — et par le LIEN
+            // D INVITATION le joueur arrive dans le salon avant qu elle ne
+            // soit revenue : la porte le prenait alors pour un invite et le
+            // refusait, alors qu il etait bel et bien connecte. En saisissant
+            // le code a la main il passait, parce que taper quatre lettres
+            // prend plus de temps que la verification.
+            socket.data.compteEnCours = comptes.identifier(data.jeton, {
                 avatar: data.avatar || null,
                 // 🏷️ LE PSEUDO DU JEU, et c'est la PREMIÈRE des deux couches
                 // de synchronisation. Il n'était pas envoyé du tout : la
@@ -9997,7 +10005,8 @@ io.on('connection', (socket) => {
                         titreSuffixe: r.profil.titre_suffixe || null,
                     });
                 }
-            }).catch(() => { /* réseau coupé : il reste un invité */ });
+            }).catch(() => { /* réseau coupé : il reste un invité */ })
+                .finally(() => { if (socket.data) socket.data.compteEnCours = null; });
         }
 
         // 🔥 FIX: Auto-remap socket.id if player already in gameState.players with old socket
@@ -10211,6 +10220,19 @@ io.on('connection', (socket) => {
         // `/admin/set-invites` refuse de fermer, l'interrupteur reste ouvert,
         // l'arrivant entre. Les trois disent la même chose parce qu'ils la
         // demandent au même endroit.
+        // ⏳ ON ATTEND LA VERIFICATION EN COURS, s il y en a une. Elle part
+        // de `register-authenticated` et demande un aller-retour a Supabase.
+        // Par le LIEN D INVITATION, le joueur arrive ici avant qu elle ne
+        // soit revenue : la porte le prenait pour un invite et le refusait,
+        // alors qu il etait connecte. En tapant le code a la main il passait,
+        // parce que quatre lettres prennent plus longtemps que la
+        // verification — le defaut ne se voyait donc que par le lien.
+        // ⚠️ Ce `await` est SANS DANGER ICI : la place est deja reservee
+        // (`pendingJoins`), et le pire cas est le delai du reseau.
+        if (socket.data && socket.data.compteEnCours) {
+            try { await socket.data.compteEnCours; } catch (e) { /* il reste invite */ }
+        }
+
         // ⚠️ `socketInscrite` ET NON `estUnCompte` : la porte demande une
         // PREUVE, pas une declaration. `estUnCompte` ne regarde qu un
         // identifiant, et les identifiants circulent — `lobby-update` les

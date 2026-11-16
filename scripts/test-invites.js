@@ -167,6 +167,22 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     check('2 ter. ⚠️ apres « compte-deconnecte », la porte se referme sur lui',
         !!rF2.erreur && rF2.erreur.compteRequis === true, JSON.stringify(rF2));
 
+    // ── 2 quater. ⚠️ LA COURSE DU LIEN D INVITATION ──────────────
+    // Par le lien, tout part ensemble : la socket s ouvre, le jeton est
+    // presente, et `join-lobby` suit DANS LA FOULEE — avant que la
+    // verification Supabase, qui demande un aller-retour, ne soit revenue.
+    // La porte prenait alors un joueur connecte pour un invite et le
+    // refusait. En saisissant le code a la main il passait, parce que taper
+    // quatre lettres prend plus longtemps que la verification : le defaut ne
+    // se voyait QUE par le lien.
+    // Ici on ne laisse AUCUN repit — zero milliseconde entre les deux.
+    const f3 = client(); await attendre(250);
+    f3.emit('register-authenticated', { playerId: ID, username: 'Presse', jeton: jetonCompte });
+    const rF3 = await rejoindre(f3, { code, playerId: ID, username: 'Presse' });
+    check('2 quater. ⚠️ rejoindre AUSSITOT apres avoir presente son jeton passe',
+        !!rF3.ok, JSON.stringify(rF3.erreur));
+    f3.emit('leave-lobby'); await attendre(300);
+
     const rH = await rejoindre(hote, { code, playerId: ID, username: 'Cobaye', isHost: true, hostToken: jeton });
     check('   l’hôte inscrit entre dans son salon', !!rH.ok, JSON.stringify(rH.erreur));
 
@@ -237,7 +253,7 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     const rG = await rejoindre(g, { code: ouv2.corps.roomCode, playerId: 'invite-G', username: 'InviteG' });
     check('   … donc son salon reste ouvert aux invités', !!rG.ok, JSON.stringify(rG.erreur));
 
-    [hote, b, c, d, e2, g, f1, f2].forEach(s => { try { s.disconnect(); } catch (x) {} });
+    [hote, b, c, d, e2, g, f1, f2, f3].forEach(s => { try { s.disconnect(); } catch (x) {} });
     await poster('/admin/toggle-game', {}, jeton);
     await poster('/admin/toggle-game', {}, jeton2);
     await menage();

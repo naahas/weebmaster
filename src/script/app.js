@@ -8392,7 +8392,27 @@ createApp({
                     // Un souffle, comme la saisie a la main : la derniere case
                     // doit s allumer avant qu on parte, sinon on ne voit jamais
                     // le code qu on vient de rejoindre.
-                    setTimeout(() => { if (this.joinCode === code) this.joinRoom(); }, 260);
+                    //
+                    // ⏳ ⚠️ ET ON ATTEND DE SAVOIR QUI L ON EST. Par le lien,
+                    // tout part en meme temps : la socket s ouvre, la session
+                    // se restaure, et ce minuteur court. Si le jeton n a pas
+                    // encore ete presente quand `join-lobby` arrive, un salon
+                    // ferme aux invites refuse un joueur pourtant connecte —
+                    // defaut invisible a la saisie manuelle, ou taper quatre
+                    // lettres laisse tout le temps a la session de revenir.
+                    // ⚠️ AVEC UN PLAFOND : un CDN injoignable ne doit pas
+                    // retenir le joueur a la porte. Au-dela de deux secondes
+                    // on entre quand meme, quitte a entrer en invite.
+                    setTimeout(async () => {
+                        if (this.joinCode !== code) return;
+                        try {
+                            await Promise.race([
+                                this.chargerAuth(),
+                                new Promise((r) => setTimeout(r, 2000)),
+                            ]);
+                        } catch (e) { /* pas de connexion : on entre en invite */ }
+                        if (this.joinCode === code) this.joinRoom();
+                    }, 260);
                 }
 
                 if (this.isAuthenticated) {
