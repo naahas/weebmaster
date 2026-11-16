@@ -355,8 +355,19 @@ const DELAI_RETRAIT_JOUEUR_MS = parseInt(process.env.GRACE_LOBBY_MS, 10) || 6000
 //
 // Le seuil ne dépend plus du mode. Il valait quinze au quiz et cinq ailleurs,
 // ce qui écartait de la liste des parties de quiz tout à fait honorables.
-const MIN_JOUEURS_COMPTEUR = parseInt(process.env.MIN_JOUEURS_COMPTEUR, 10) || 3;
-const MIN_JOUEURS_LISTE = parseInt(process.env.MIN_JOUEURS_LISTE, 10) || 5;
+//
+// ⏳ LES DEUX TOMBENT A UN HORS PRODUCTION (docs/restrictions-levees.md). Une
+// partie d essai se joue a deux, parfois a un avec un bot : aux seuils de
+// production, l accueil local n aurait JAMAIS rien montre, et l on reglerait
+// une liste qu on ne voit pas. Une variable d environnement passe quand meme
+// devant, pour pouvoir eprouver les vrais seuils sans quitter sa machine.
+//
+// ⚠️ Sans effet sur la production, et sans effet sur SA base : ce seuil
+// filtre ce qu on LIT, pas ce qu on ecrit. Les parties a deux etaient deja
+// enregistrees, elles etaient seulement ecartees de l affichage.
+const SEUIL_DEV = comptes.SANS_LIMITES ? 1 : 0;
+const MIN_JOUEURS_COMPTEUR = parseInt(process.env.MIN_JOUEURS_COMPTEUR, 10) || SEUIL_DEV || 3;
+const MIN_JOUEURS_LISTE = parseInt(process.env.MIN_JOUEURS_LISTE, 10) || SEUIL_DEV || 5;
 let gameHistoryTableOk = null; // null = pas encore testé, false = table absente
 
 let questionsCountCache = { value: null, at: 0 };
@@ -997,13 +1008,16 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         vus.add(p.playerId);
         // 🚪 Parti en cours de route : rien. Une partie terminee, c est une
         // partie ou l on etait encore la pour l ecran du vainqueur.
-        if (p.parti) continue;
+        // ⏳ LEVE HORS PRODUCTION — voir docs/restrictions-levees.md, qui
+        // tient la liste des cinq et dit comment les remettre.
+        if (p.parti && !comptes.SANS_LIMITES) continue;
         // ⚠️ Et deconnecte au moment de la fin, c est pareil : fermer son
         // onglet est la facon la plus courante d abandonner, et ne garder que
         // le bouton « Quitter » aurait laisse le farm ouvert a qui ferme la
         // fenetre. Une coupure breve ne coute rien — `disconnectedAt` est
         // efface des le retour, et la partie dure plus longtemps qu elle.
-        if (p.disconnectedAt) continue;
+        // ⏳ LEVE HORS PRODUCTION — docs/restrictions-levees.md.
+        if (p.disconnectedAt && !comptes.SANS_LIMITES) continue;
         // Un invite ne cumule rien : il n a pas de ligne ou l ecrire. C est la
         // seule difference que le compte fait pendant une partie.
         if (!estUnCompte(p.playerId)) continue;
@@ -1194,6 +1208,14 @@ app.get('/api/home-stats', async (req, res) => {
         questionsCount: (await getQuestionsCount()) + QUESTIONS_VITRINE,
         gamesPlayed: gamesPlayedTotal,
         recentGames,
+        // 📏 LES DEUX SEUILS EN VIGUEUR, pour que le filet puisse eprouver
+        // l invariant au lieu de recopier un chiffre. `smoke` verifiait
+        // « aucune partie sous CINQ dans la liste » avec un 5 ecrit a la
+        // main : le jour ou le seuil a bouge hors production, le controle
+        // est devenu faux alors que la regle, elle, etait toujours tenue.
+        // Un filet qui connait la valeur attendue par coeur ne protege que
+        // la valeur, pas la regle.
+        seuils: { compteur: MIN_JOUEURS_COMPTEUR, liste: MIN_JOUEURS_LISTE },
     });
 });
 
@@ -7900,9 +7922,11 @@ const server = app.listen(PORT, () => {
     // c est-a-dire exactement la situation ou l on cherche pourquoi une
     // partie ne s est pas comptee.
     if (comptes.SANS_LIMITES) {
-        console.log('⏳ Hors production — duree minimale et seuil de joueurs LEVES.');
-        console.log('   Toute partie compte, bonus de victoire en solo compris.');
-        console.log('   `XP_SANS_LIMITES=0` remet les planchers.');
+        console.log('⏳ Hors production — CINQ restrictions levees :');
+        console.log('   duree minimale · seuil du bonus de victoire · joueur parti ·');
+        console.log('   joueur deconnecte · seuils de l accueil (' + MIN_JOUEURS_COMPTEUR + '/' + MIN_JOUEURS_LISTE + ').');
+        console.log('   Liste et raisons : docs/restrictions-levees.md');
+        console.log('   `XP_SANS_LIMITES=0` les remet toutes.');
     } else if (process.env.NODE_ENV !== 'production') {
         console.log('⏱️ XP_SANS_LIMITES=0 — planchers de duree et de joueurs EN PLACE.');
         console.log('   Une partie trop courte ne comptera ni xp, ni victoire, ni « +1 partie ».');

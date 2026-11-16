@@ -213,13 +213,17 @@ async function scenarioHomeStats() {
     // justement à quinze et n aurait sinon retenu que les salons complets.
     check('historique lisible', Array.isArray(stats.recentGames),
         (stats.recentGames || []).length + ' partie(s) retenue(s)');
-    // Un seul seuil pour la liste, tous modes confondus : cinq joueurs. Il doit
-    // suivre « MIN_JOUEURS_LISTE » dans server.js. Le compteur, lui, retient des
-    // trois — mais il ne se lit pas ici.
-    const seuil = () => 5;
-    const petites = (stats.recentGames || []).filter(g => g.playersCount < seuil(g.mode));
-    check('les parties sous le seuil de leur mode sont écartées', petites.length === 0,
-        petites.length ? petites.map(g => g.mode + ' ' + g.playersCount + 'j').join(', ') : 'aucune');
+    // Un seul seuil pour la liste, tous modes confondus. ⚠️ ET IL SE DEMANDE
+    // AU SERVEUR, il ne se recopie plus. Ce controle portait un « 5 » ecrit a
+    // la main : le jour ou le seuil est tombe a un hors production, il a
+    // echoue alors que la regle — rien sous le seuil dans la liste — etait
+    // toujours tenue. Un filet qui connait la valeur par coeur ne protege que
+    // la valeur, pas la regle.
+    const seuil = (stats.seuils && stats.seuils.liste) || 5;
+    const petites = (stats.recentGames || []).filter(g => g.playersCount < seuil);
+    check('les parties sous le seuil de la liste sont écartées', petites.length === 0,
+        petites.length ? petites.map(g => g.mode + ' ' + g.playersCount + 'j').join(', ')
+            : 'aucune (seuil ' + seuil + ')');
 }
 
 (async () => {

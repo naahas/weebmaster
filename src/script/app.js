@@ -10759,6 +10759,23 @@ createApp({
                     namesUsed: data.namesUsed
                 };
 
+                // 🎆 ⚠️ LA CEREMONIE, QUI NE S OUVRAIT JAMAIS ICI. Elle est
+                // programmee par le DERNIER pas des deux devoilements —
+                // `startEndReveal` pour le quiz et Codanime,
+                // `lancerRevelationListe` pour Rush, Choice, Collect et
+                // Ascension. BombAnime n emprunte ni l un ni l autre : son
+                // ecran de victoire a sa propre mise en page et ses propres
+                // animations CSS. `endStep` restait donc a zero, et l ecran
+                // d xp n apparaissait pas — dans ce mode UNIQUEMENT, ce qui
+                // est exactement ce qui le rendait difficile a voir.
+                //
+                // ⚠️ `endStep = 1` n a rien a reveler ici : c est le drapeau
+                // « l ecran de fin est pose ». Il sert au rattrapage de
+                // `preparerCeremonie`, pour le cas ou le credit du serveur
+                // arrive APRES cet evenement — ce qui est l ordre courant,
+                // l ecriture en base prenant son temps.
+                this.endStep = 1;
+                this.programmerCeremonie();
             });
 
             
