@@ -17,9 +17,32 @@
          remarque bien plus qu une difference franche. -->
     <link rel="stylesheet" href="/legal.css">
     <style>
+        /* ⚠️ CETTE PAGE SE LIT SANS DEFILER, et c est sa contrainte
+           principale. Les pages legales a cote sont LONGUES par nature : on
+           y descend, c est normal. Celle-ci demande une ACTION, et un
+           formulaire dont le bouton d envoi est sous la ligne de flottaison
+           perd une part de ceux qui l ouvrent — ils ne voient pas qu il y a
+           quelque chose a valider.
+           Les valeurs ci-dessous resserrent donc l habillage herite de
+           `legal.css` : titre, marges, encadre. Mesure a 1100 x 860, la
+           page entiere tient. */
+        .l-page { padding: 1.8rem 1.5rem 1.6rem; }
+        .l-retour { margin-bottom: 1.3rem; }
+        .l-titre { font-size: clamp(1.5rem, 4.5vw, 1.95rem); }
+        .l-date { margin-top: 0.4rem; }
+        .l-resume { margin: 1.35rem 0 0; padding: 0.9rem 1.2rem; font-size: 0.9rem; }
+        .l-pied { margin-top: 1.4rem; padding-top: 0.9rem; font-size: 0.8rem; }
+
         /* ── Le formulaire. Une seule colonne, des champs larges : on ecrit
            ici depuis un telephone aussi souvent que depuis un bureau. ── */
-        .f-champ { margin: 0 0 1.25rem; }
+        .f-champ { margin: 0 0 1rem; }
+
+        /* ⚠️ L AIR SOUS L ENCADRE EST PLUS GRAND QUE LE RESTE. Le premier
+           libelle du formulaire venait se coller sous la bulle de conseil, et
+           les deux se lisaient comme un seul bloc — on ne voyait pas ou le
+           texte s arretait et ou la saisie commencait. C est la seule couture
+           de la page qui separe deux NATURES differentes. */
+        .f-formulaire { margin-top: 1.6rem; }
 
         .f-label {
             display: block;
@@ -77,12 +100,28 @@
             border-color: var(--l-or, #f0c75e);
             background: rgba(255, 255, 255, 0.06);
         }
-        .f-zone { min-height: 9rem; resize: vertical; line-height: 1.6; }
+        /* ⚠️ 6rem, ET C EST SUFFISANT : la zone est REDIMENSIONNABLE, et un
+           signalement utile tient en trois phrases. Une boite haute a vide
+           suggere qu on attend une dissertation, et coute la hauteur qui
+           obligeait a defiler pour trouver le bouton. */
+        .f-zone { min-height: 6rem; resize: vertical; line-height: 1.55; }
 
         .f-compteur { float: right; font-size: 0.78rem; color: #6f6a80; font-variant-numeric: tabular-nums; }
 
-        .f-deux { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-        .f-deux > * { flex: 1 1 13rem; }
+        /* ⚠️ LA DERNIERE LIGNE MET LE PSEUDO ET LE BOUTON COTE A COTE. Seuls,
+           ils faisaient deux rangees pour trois mots et un bouton — c est
+           cette hauteur-la qui obligeait a defiler. Le pseudo est borne :
+           seize caracteres n ont jamais demande toute la largeur d une page.
+           `align-items: flex-end` aligne le bas du bouton sur le bas du
+           champ, pas sur son libelle. */
+        .f-fin {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 1rem 1.25rem;
+            margin-top: 1.2rem;
+        }
+        .f-fin .f-champ { flex: 0 1 15rem; margin: 0; }
 
         .f-envoyer {
             padding: 0.8rem 2rem;
@@ -115,6 +154,11 @@
         .f-merci h2 { margin-top: 0; }
         body.envoye .f-formulaire { display: none; }
         body.envoye .f-merci { display: block; }
+        /* ⚠️ L ENCADRE DE CONSEIL PART AVEC LE FORMULAIRE. « Ce qui aide le
+           plus : dire ce que tu faisais… » s adresse a quelqu un qui n a pas
+           encore ecrit. Laisse au-dessus du « Reçu, merci », il lisait comme
+           un reproche — voila ce que tu aurais du mettre. */
+        body.envoye .l-resume { display: none; }
     </style>
 </head>
 
@@ -164,27 +208,32 @@
                 <span class="f-aide">Cinq caractères au minimum. Rien d'autre n'est obligatoire.</span>
             </div>
 
-            <div class="f-deux">
+            <!-- ⚠️ PLUS DE CHAMP « pour te répondre ». Il demandait une
+                 adresse pour une réponse qu'on ne promet pas, et c'est
+                 justement le genre de champ qui fait refermer un formulaire.
+                 Qui veut être recontacté le met dans son message.
+                 ℹ️ La colonne `contact` reste en base et la route l'accepte
+                 toujours : une colonne vide ne coûte rien, une migration
+                 pour la retirer si — et le panneau ne l'affiche que
+                 lorsqu'elle est remplie. -->
+            <div class="f-fin">
                 <div class="f-champ">
                     <label class="f-label" for="pseudo">Ton pseudo <span style="text-transform:none;font-weight:400;color:#6f6a80">(facultatif)</span></label>
                     <input class="f-saisie" id="pseudo" maxlength="16" autocomplete="off" placeholder="Tengu553">
                 </div>
-                <div class="f-champ">
-                    <label class="f-label" for="contact">Pour te répondre <span style="text-transform:none;font-weight:400;color:#6f6a80">(facultatif)</span></label>
-                    <input class="f-saisie" id="contact" maxlength="120" autocomplete="off"
-                        placeholder="Discord, courriel…">
-                </div>
+                <button class="f-envoyer" id="envoyer" type="submit">Envoyer</button>
             </div>
-
-            <button class="f-envoyer" id="envoyer" type="submit">Envoyer</button>
             <p class="f-mot" id="mot" role="status" aria-live="polite"></p>
         </form>
 
+        <!-- ⚠️ PAS DE SECONDE PHRASE. Celle d avant promettait une reponse
+             « si tu as laisse de quoi te repondre » — or le champ qui servait
+             a ca n existe plus, et promettre une reponse qu on ne tiendra pas
+             toujours vaut moins que ne rien promettre. « Reçu » est ce que la
+             personne est venue chercher. -->
         <div class="f-merci" id="merci">
             <h2>Reçu, merci.</h2>
-            <p>C'est arrivé. Si tu as laissé de quoi te répondre et que la question appelle une réponse,
-                elle viendra.</p>
-            <p><a class="l-retour" href="/" style="margin-top:1.5rem">Retour au jeu</a></p>
+            <p><a class="l-retour" href="/" style="margin-top:1.2rem">Retour au jeu</a></p>
         </div>
 
         <footer class="l-pied">
@@ -234,7 +283,6 @@
                     body: JSON.stringify({
                         type, message,
                         pseudo: $('pseudo').value.trim() || null,
-                        contact: $('contact').value.trim() || null,
                         // ⚠️ Le playerId du jeu, s'il y en a un dans ce
                         // navigateur : il permet de relier un retour à un
                         // compte sans RIEN demander de plus. Le serveur ne

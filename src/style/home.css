@@ -14233,32 +14233,44 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     gap: 0.55rem;
 }
 
-/* ⚖️ LE PIED DE PAGE — conditions, confidentialite, signalement.
-   ⚠️ MEME `bottom` QUE LES RESEAUX, a la valeur pres : les deux sont des
-   coins bas et doivent s aligner, sinon on voit un decalage de six pixels
-   qu on n arrive pas a nommer.
-   ⚠️ ET UNE LARGEUR BORNEE : sans elle, les trois liens passent SOUS
-   l icone TikTok sur un ecran etroit — deux calques `fixed` ne se poussent
-   pas l un l autre, ils se superposent. Les 4,5rem reserves valent la
-   largeur de l icone plus son air. */
-/* ⚠️ CENTRE, PAS DANS LE COIN. Pose a gauche, il se lisait comme un oubli :
-   un bloc de texte seul dans un angle vide, pendant que le coin droit porte
-   deja la signature. Au milieu il se lit comme ce qu il est, un pied de page.
-   ⚠️ `left: 50%` + `translateX(-50%)` ET NON `left: 0; right: 0`. La seconde
-   forme ferait un calque FIXE sur toute la largeur de l ecran : invisible,
-   mais il avalerait les clics sur toute la bande du bas — dont ceux qui
-   visent l icone du coin. Ici l element ne fait que la largeur de son
-   contenu.
-   ⚠️ Et la largeur reste bornee : centre, il doit laisser de chaque cote la
-   place de l icone (2,7rem) plus sa gouttiere. 9rem couvrent les deux cotes
-   avec de la marge. */
+/* ⚖️ LA BARRE DU BAS — liens utiles et signature, sous un filet.
+   ⚠️ ELLE PREND TOUTE LA LARGEUR, et c est le filet qui l exige : un trait
+   qui s arrete au bord du texte souligne les liens au lieu de separer deux
+   zones de la page. Le filet s eteint a ses deux bouts, comme ceux de la
+   carte du profil — un trait net d un bord a l autre ferait une frontiere
+   de tableau, pas une respiration.
+   ⚠️ ET DONC `pointer-events: none` SUR LA BARRE. Pleine largeur et fixe,
+   elle avalerait sinon tous les clics de la bande du bas, y compris ceux
+   qui ne la visent pas. Seul le groupe interieur les reprend, et il ne fait
+   que la largeur de son contenu. C est exactement le piege qu on avait
+   evite en la centrant par translation ; maintenant qu elle est pleine
+   largeur pour de bon, il faut le desamorcer autrement. */
 .v2-pied {
     position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: clamp(1rem, 2.5vh, 1.8rem);
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 20;
-    max-width: min(calc(100% - 9rem), 40rem);
+    padding: 0.85rem 1rem clamp(0.8rem, 2vh, 1.2rem);
+    pointer-events: none;
+}
+.v2-pied::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, rgba(240, 199, 94, 0.16) 22%,
+        rgba(240, 199, 94, 0.16) 78%, transparent);
+}
+
+.v2-pied-dedans {
+    pointer-events: auto;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 auto;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -14286,6 +14298,26 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-pied a:hover,
 .v2-pied a:focus-visible { color: var(--neon-primary, #f0c75e); }
 
+/* 🎵 L icone, PLUS PETITE QUE DANS SON COIN. Seule dans l angle elle devait
+   se faire voir ; dans une rangee de texte elle doit s y fondre — a 2,7rem
+   elle pesait deux fois la hauteur des liens et tirait l oeil a elle.
+   ⚠️ `margin-left` plus grand que le `gap` : elle n est pas un quatrieme
+   lien, c est une signature. L ecart dit ou s arrete la liste.
+   ⚠️ Et pas de `color` ici — elle garde celle de `.v2-reseau`, plus claire
+   que le texte : un dessin a besoin de plus de contraste qu une lettre pour
+   se lire a la meme distance. */
+.v2-pied .v2-reseau {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+}
+/* ⚠️ LA MARGE EST SUR LA PREMIERE SEULEMENT. Posee sur chaque icone, elle
+   s ajoutait au `gap` ENTRE les deux et les eloignait l une de l autre : les
+   signatures doivent former un groupe, c est la liste de liens dont elles
+   doivent s ecarter. */
+.v2-pied .v2-reseau:first-of-type { margin-left: 0.5rem; }
+.v2-pied .v2-reseau svg { width: 0.85rem; height: 0.85rem; }
+
 /* ⚠️ SUR TELEPHONE IL REPASSE DANS LE FLUX, et ce n est pas un reglage de
    confort : rendu, le pied fixe se posait PAR-DESSUS la barre de chiffres
    (« 6 modes · +2400 questions · +310 parties »), qui occupe exactement ce
@@ -14302,19 +14334,23 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-pied {
         position: static;
         left: auto;
+        right: auto;
         bottom: auto;
-        /* ⚠️ La translation se retire AUSSI. Laissee en place sur un element
-           repasse dans le flux, elle le decalerait d une demi-largeur vers
-           la gauche — a moitie hors de l ecran. */
-        transform: none;
-        max-width: none;
         margin-top: auto;
-        padding-top: 1.5rem;
-        justify-content: center;
+        padding: 1.1rem 0 0.2rem;
+        /* ⚠️ Repasse dans le flux, la barre ne peut plus avaler de clic :
+           elle ne couvre que sa propre hauteur. On rend donc les
+           evenements, sans quoi le filet separerait une rangee de liens
+           MORTS — le defaut le plus silencieux qui soit. */
+        pointer-events: auto;
+    }
+    .v2-pied-dedans {
         font-size: 0.64rem;
         gap: 0.7rem;
         letter-spacing: 0.12em;
     }
+    .v2-pied .v2-reseau { width: 1.6rem; height: 1.6rem; }
+    .v2-pied .v2-reseau:first-of-type { margin-left: 0.3rem; }
 }
 
 .v2-reseau {
@@ -14362,6 +14398,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 /* Chacun reprend ses couleurs, mais seulement quand on s y interesse */
 .v2-reseau.tiktok::before {
     background: linear-gradient(135deg, rgba(37, 244, 238, 0.28), rgba(254, 44, 85, 0.32));
+}
+/* ⚠️ X n a PAS de couleur de marque — c est du noir sur blanc. Un fond
+   sombre au survol serait invisible sur un site deja noir, et lui inventer
+   une teinte lui en donnerait une qu il n a pas. Il s eclaircit donc, ce qui
+   est sa seule facon de se signaler ici. */
+.v2-reseau.x::before {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
 }
 
 

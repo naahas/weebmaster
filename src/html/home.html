@@ -680,26 +680,44 @@
                      ⚠️ Et « Signaler un bug » est le SEUL des trois qui
                      serve au joueur. Il est donc en dernier mais ecrit en
                      clair, pas cache derriere un « Contact ». -->
-                <nav class="v2-pied" v-if="homeScreen === 'hub'" aria-label="Liens utiles">
-                    <a href="/conditions">Conditions</a>
-                    <span aria-hidden="true">·</span>
-                    <a href="/confidentialite">Confidentialité</a>
-                    <span aria-hidden="true">·</span>
-                    <a href="/signaler">Signaler un bug</a>
-                </nav>
-
-                <!-- Le reseau de l auteur, dans le coin. Eteint tant qu on ne le regarde
-                     pas : c est une signature, pas un appel. Il ne parait que sur
-                     l accueil meme — ni sur le choix des modes, ni sur la saisie du
-                     code, ni en salon : on n y vient plus pour le decouvrir. -->
-                <nav class="v2-reseaux" v-if="homeScreen === 'hub'" aria-label="Reseaux sociaux">
-                    <a class="v2-reseau tiktok" href="https://www.tiktok.com/@adeem7i"
-                       target="_blank" rel="noopener noreferrer" title="TikTok — @adeem7i" aria-label="TikTok">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.85-2.48V9.77a5.68 5.68 0 1 0 4.94 5.63V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z"/>
-                        </svg>
-                    </a>
-                </nav>
+                <!-- ⚖️ LA BARRE DU BAS — les liens utiles ET la signature de
+                     l auteur, sur une seule rangee sous un filet.
+                     ⚠️ LE TIKTOK A QUITTE SON COIN pour venir ici. Seul dans
+                     l angle droit il flottait, sans rien autour a quoi se
+                     rattacher ; avec les liens il forme un pied de page, et
+                     le filet au-dessus donne a l ensemble l air qui lui
+                     manquait.
+                     ⚠️ Elle parait aux memes conditions qu avant : l accueil
+                     seul. Sur le choix des modes ou la saisie du code, on est
+                     en train de faire quelque chose, et des liens qui font
+                     quitter la page y sont au mieux ignores. Les deux pages
+                     legales restent joignables par leur adresse, ce que
+                     Google exige. -->
+                <footer class="v2-pied" v-if="homeScreen === 'hub'">
+                    <nav class="v2-pied-dedans" aria-label="Liens utiles">
+                        <a href="/conditions">Conditions</a>
+                        <span aria-hidden="true">·</span>
+                        <a href="/confidentialite">Confidentialité</a>
+                        <span aria-hidden="true">·</span>
+                        <a href="/signaler">Signaler un bug</a>
+                        <a class="v2-reseau tiktok" href="https://www.tiktok.com/@adeem7i"
+                           target="_blank" rel="noopener noreferrer" title="TikTok — @adeem7i" aria-label="TikTok">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.85-2.48V9.77a5.68 5.68 0 1 0 4.94 5.63V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z"/>
+                            </svg>
+                        </a>
+                        <!-- ⚠️ `rel="noopener noreferrer"` COMME SA VOISINE, et ce
+                             n est pas de la copie : `target="_blank"` donne a la page
+                             ouverte une poignee sur celle-ci (`window.opener`), dont
+                             elle peut se servir pour la rediriger. -->
+                        <a class="v2-reseau x" href="https://x.com/smaster07i"
+                           target="_blank" rel="noopener noreferrer" title="X — @smaster07i" aria-label="X">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </a>
+                    </nav>
+                </footer>
             </div>
 
 
