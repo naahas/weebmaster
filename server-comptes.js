@@ -683,6 +683,65 @@ async function listerComptes() {
 // cliquer sur un bouton qui echouera.
 function colonnesPanneauPretes() { return colonnesPanneauOk !== false; }
 
+// ════════════════════════════════════════════════════════════════
+// 📜 L HISTORIQUE DES QUESTIONS, LIE AU COMPTE
+// ════════════════════════════════════════════════════════════════
+// Colonne `questions_vues` (docs/questions-vues.sql). Jusqu ici « ne pas
+// retomber sur la meme question » ne valait que pour la SESSION : la liste
+// vivait dans la memoire du salon et repartait de zero au salon suivant.
+//
+// ⚠️ DEUX APPELS PAR PARTIE, pas un par question. On lit au demarrage, on
+// reecrit a la fin. Ecrire a chaque tirage ferait une ecriture toutes les
+// dix secondes pendant toute la partie, pour une information dont personne
+// n a besoin avant la partie suivante.
+//
+// ⚠️ Et le defaut est TOUJOURS une liste vide, jamais `null` : l appelant
+// la passe directement a `getRandomQuestions`, qui la mute en place.
+let colonneVuesOk = null;   // null = pas encore testee, false = absente
+
+function vuesAbsente(error) {
+    // Deux codes, comme ailleurs : PostgreSQL dit `42703`, PostgREST `PGRST204`
+    // quand la colonne manque dans son cache de schema.
+    if (!error) return false;
+    const manquante = error.code === '42703' || error.code === 'PGRST204'
+        || /questions_vues/.test(error.message || '');
+    if (manquante && colonneVuesOk !== false) {
+        colonneVuesOk = false;
+        console.error('🚨 Colonne « questions_vues » absente — passe docs/questions-vues.sql.');
+        console.error('   Le jeu tourne, mais l historique des questions reste celui de la session.');
+    }
+    return manquante;
+}
+
+async function lireQuestionsVues(idCompte) {
+    if (!ACTIF || !tableComptesOk || colonneVuesOk === false || !idCompte) return [];
+    try {
+        const { data, error } = await supabase
+            .from('comptes').select('questions_vues').eq('id', idCompte).maybeSingle();
+        if (error) { vuesAbsente(error); return []; }
+        colonneVuesOk = true;
+        return Array.isArray(data && data.questions_vues) ? data.questions_vues : [];
+    } catch (e) { return []; }
+}
+
+// ⚠️ ON ECRIT LA LISTE ENTIERE, on n ajoute pas. C est voulu : le tirage
+// PURGE cette liste quand une difficulte est epuisee (`dbs.js`), et un
+// ajout incrementiel aurait remis aussitot ce qu il venait de retirer. La
+// liste du salon est la verite a la fin de la partie.
+async function enregistrerQuestionsVues(idCompte, ids) {
+    if (!ACTIF || !tableComptesOk || colonneVuesOk === false || !idCompte) return false;
+    if (!Array.isArray(ids)) return false;
+    // Des nombres, uniques, et pas plus que la banque ne peut en contenir.
+    const propres = [...new Set(ids.map(Number).filter((n) => Number.isFinite(n)))];
+    try {
+        const { error } = await supabase
+            .from('comptes').update({ questions_vues: propres }).eq('id', idCompte);
+        if (error) { vuesAbsente(error); return false; }
+        colonneVuesOk = true;
+        return true;
+    } catch (e) { return false; }
+}
+
 // Un compte, par son identifiant. Sert aux routes qui doivent LIRE avant
 // d ecrire — donner un titre demande de savoir ce qu il possede deja.
 async function lireCompte(id) {
@@ -743,6 +802,8 @@ module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
     xpDeLaPartie, partieAssezLongue, crediter,
     listerComptes, lireCompte, majCompte, supprimerCompte, colonnesPanneauPretes,
+    // 📜 L historique des questions, lie au compte (docs/questions-vues.sql).
+    lireQuestionsVues, enregistrerQuestionsVues,
     // Exportes pour `npm run test:comptes` : ce sont les decisions qui se
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.

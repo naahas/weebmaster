@@ -7586,6 +7586,20 @@ body.game-active:has(.poll-game-container) #particles-js {
        0,2rem elles se recollent — c est le plancher, pas un reglage libre. */
     padding: 0.34rem 0;
 }
+/* ── Un mini-filet ENTRE les lignes, jamais autour.
+   ⚠️ `+ div` et non `border-bottom` : une bordure basse sur chaque ligne en
+   poserait une sous la DERNIERE, juste au-dessus du grand filet qui ouvre
+   la zone du niveau — deux traits a trois pixels l un de l autre, qu on lit
+   comme un defaut d affichage.
+   ⚠️ Et il s eteint aux deux bouts, comme les deux grands filets de la
+   carte : c est la meme langue. Un trait net ferait un tableau de ces
+   quatre lignes, alors qu elles ne sont qu une liste. */
+.v2-profil-lignes > div + div {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg,
+        transparent, rgba(255, 215, 0, 0.14) 22%,
+        rgba(255, 215, 0, 0.14) 78%, transparent) 1;
+}
 .v2-profil-lignes .n { color: #9a9aa6; }
 .v2-profil-lignes .v { font-weight: 800; color: var(--neon-primary); }
 /* ⚠️ Verrouillees pour un invite, pas a zero : un « 0 » dit « tu n as rien
@@ -14250,6 +14264,75 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     display: flex;
     gap: 0.55rem;
 }
+
+/* 📜 LE CONSEIL DU COMPTE, a cote du bouton Demarrer.
+   ⚠️ IL PULSE, et c est la seule chose qui le distingue d une pastille
+   d aide ordinaire : il ne repond pas a une question qu on se pose, il
+   signale quelque chose qu on ignore. Un point immobile a cote d un bouton
+   qu on vient cliquer ne se voit pas.
+   ⚠️ La pulsation s arrete DES QU ON OUVRE la bulle : elle a fait son
+   travail, et continuer reviendrait a appeler quelqu un qui est deja la. */
+.v2-start-info {
+    position: relative;
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-left: 0.2rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #0b0910;
+    background: var(--neon-primary, #f0c75e);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    animation: v2StartPulse 2.1s ease-out infinite;
+}
+.v2-start-info.on { animation: none; }
+@keyframes v2StartPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(240, 199, 94, 0.55); }
+    70%  { box-shadow: 0 0 0 0.75rem rgba(240, 199, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(240, 199, 94, 0); }
+}
+/* ⚠️ Le mouvement se coupe, le point reste : qui demande moins d animations
+   doit quand meme voir qu il y a quelque chose a lire. */
+@media (prefers-reduced-motion: reduce) {
+    .v2-start-info { animation: none; }
+}
+
+.v2-start-bulle {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    width: 16rem;
+    max-width: 70vw;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    color: #d7d2e2;
+    background: #15121c;
+    border: 1px solid rgba(240, 199, 94, 0.3);
+    border-radius: 0.6rem;
+    box-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+.v2-start-bulle b { color: var(--neon-primary, #f0c75e); font-weight: 700; }
+.v2-start-bulle-non {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: #7d7791;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.v2-start-bulle-non:hover { color: #b9b3c9; }
 
 /* ⚖️ LA BARRE DU BAS — liens utiles et signature, sous un filet.
    ⚠️ ELLE PREND TOUTE LA LARGEUR, et c est le filet qui l exige : un trait

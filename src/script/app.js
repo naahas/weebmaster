@@ -885,6 +885,15 @@ createApp({
             cerVisible: false,         // le calque est-il dans le DOM
             cerEntree: false,          // la classe qui declenche le fondu
             cerSortie: false,          // et celle qui l eteint d un coup
+
+            // 📜 Le conseil « connecte-toi pour ton historique de questions »,
+            // a cote du bouton Demarrer.
+            // ⚠️ `conseilCompteVu` est retenu dans `localStorage` : un
+            // conseil qu on a lu et ecarte ne doit pas revenir a chaque
+            // salon. C est le genre de rappel qui passe d utile a agacant
+            // en trois parties.
+            conseilCompteOuvert: false,
+            conseilCompteVu: localStorage.getItem('conseilCompteVu') === '1',
             cerGain: null,             // { xp, rubis, victoire, mode }
             cerRang: { nom: '', couleur: '#fff' },   // le rang AFFICHE, qui bascule
             cerSuivant: '',            // le nom du rang d apres
@@ -5015,6 +5024,18 @@ createApp({
                 a.finished.then(sortir).catch(sortir);
                 setTimeout(sortir, 520);
             });
+        },
+
+        // 📜 « Ne plus afficher » le conseil du compte. ⚠️ Il se retient dans
+        // `localStorage`, pas seulement dans l etat : ecarte, il doit le
+        // rester au prochain salon comme au prochain jour.
+        // ⚠️ ET C EST UNE METHODE, pas une calculee — elle ECRIT. Posee par
+        // erreur dans le bloc `computed`, elle y aurait modifie l etat
+        // pendant un rendu, ce que Vue ne pardonne pas longtemps.
+        ignorerConseilCompte() {
+            this.conseilCompteVu = true;
+            this.conseilCompteOuvert = false;
+            try { localStorage.setItem('conseilCompteVu', '1'); } catch (e) {}
         },
 
         async deconnecterCompte() {

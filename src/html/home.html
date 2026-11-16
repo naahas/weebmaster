@@ -800,6 +800,32 @@
                                     <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                     <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
+
+                                <!-- 📜 L APPEL AU COMPTE, a cote du bouton.
+                                     ⚠️ Il ne parait QUE si l hote n est pas
+                                     connecte : a un inscrit il n apprendrait
+                                     rien, et une pastille qui pulse en
+                                     permanence cesse d etre un signal.
+                                     ⚠️ Et il ne parait qu en QUIZ : c est le
+                                     seul mode ou l historique des questions
+                                     existe. Promis ailleurs, il serait faux.
+                                     Il se ferme d un clic, et ne revient pas
+                                     de la session : un conseil qu on a lu et
+                                     ecarte ne doit pas se rappeler a soi. -->
+                                <button class="v2-start-info"
+                                        v-if="isHost && !estConnecte && !conseilCompteVu
+                                              && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
+                                        @click="conseilCompteOuvert = !conseilCompteOuvert"
+                                        :class="{ on: conseilCompteOuvert }"
+                                        aria-label="Pourquoi se connecter">!
+                                    <span class="v2-start-bulle" v-if="conseilCompteOuvert">
+                                        <b>Connecte-toi</b> pour avoir ton propre historique de
+                                        questions et éviter de retomber sur les mêmes.
+                                        <span class="v2-start-bulle-non" @click.stop="ignorerConseilCompte">
+                                            Ne plus afficher
+                                        </span>
+                                    </span>
+                                </button>
                             </div>
                             <span class="v2-room-copied" :class="{ show: codeCopied }">lien copié !</span>
                         </div>

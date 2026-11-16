@@ -1175,8 +1175,33 @@ function generateRoomCode(length = 4) {
 
 // Émet game-ended et enregistre la partie dans l'historique.
 // Toutes les fins de partie passent par ici — ne pas diffuser 'game-ended' directement.
+// 📜 L HISTORIQUE DES QUESTIONS, RENDU AU COMPTE DE L HOTE.
+//
+// ⚠️ ICI, ET PAS DANS `crediterXpDeLaPartie`. Le credit d xp a ses propres
+// planchers — une partie trop courte n y entre pas — alors qu une question
+// posee est une question VUE, meme si la partie n a dure que vingt
+// secondes. Les deux repondent a des questions differentes.
+//
+// ⚠️ On ecrit la liste ENTIERE du salon, pas les ajouts : `getRandomQuestions`
+// la purge en place quand une difficulte est epuisee, et un ajout
+// incrementiel aurait remis aussitot ce qu il venait d en retirer.
+//
+// ⚠️ Et sans `await` : personne n attend cette ecriture pour voir le
+// podium. Un echec se dit dans le journal, il n arrete rien.
+function rendreLHistoriqueAuCompte(gameState) {
+    const id = gameState && gameState._vuesDuCompte;
+    if (!id || !Array.isArray(gameState.usedQuestionIds)) return;
+    gameState._vuesDuCompte = null;
+    comptes.enregistrerQuestionsVues(id, gameState.usedQuestionIds)
+        .then((ok) => {
+            if (ok) console.log(`📜 ${gameState.usedQuestionIds.length} question(s) retenues pour l hote`);
+        })
+        .catch(() => { /* le jeu n en depend pas */ });
+}
+
 function emitGameEnded(gameState, payload) {
     diffuser(gameState, 'game-ended', payload);
+    rendreLHistoriqueAuCompte(gameState);
     recordFinishedGame({
         mode: gameState.lobbyMode,
         playersCount: gameState.initialPlayerCount || (payload.playersData || []).length,
@@ -4573,6 +4598,34 @@ app.post('/admin/start-game', async (req, res) => {
                     teamNames: gameState.teamNames,
                     bonusEnabled: gameState.bonusEnabled // 🎮 Bonus activés
                 });
+            }
+        }
+
+        // 📜 L HISTORIQUE DES QUESTIONS DE L HOTE, s il est inscrit.
+        //
+        // ⚠️ CELUI DE L HOTE, et de lui seul. Les questions s affichent pour
+        // tout le salon : il n y a qu une liste a exclure, et c est celle de
+        // qui ouvre la partie. Croiser les historiques de quinze joueurs
+        // viderait la banque en une soiree, et les departager demanderait de
+        // choisir a qui on epargne un doublon.
+        //
+        // ⚠️ ON SEME `usedQuestionIds` AVANT LE PREMIER TIRAGE, et le reste
+        // marche tout seul : `getRandomQuestions` exclut cette liste, y
+        // ajoute ce qu il tire, et la PURGE en place quand une difficulte est
+        // epuisee. Le mecanisme existait deja pour la session — on lui donne
+        // simplement une liste qui vient de plus loin.
+        //
+        // ⚠️ `await` AVANT le `setTimeout` : lance a cote, la lecture serait
+        // revenue APRES le premier tirage, et la premiere question de chaque
+        // partie aurait echappe a l historique.
+        if (estUnCompte(gameState.hostPlayerId)) {
+            const vues = await comptes.lireQuestionsVues(gameState.hostPlayerId);
+            if (vues.length) {
+                gameState.usedQuestionIds = vues.slice();
+                gameState._vuesDuCompte = gameState.hostPlayerId;
+                console.log(`📜 ${vues.length} question(s) deja vues par l hote, exclues`);
+            } else {
+                gameState._vuesDuCompte = gameState.hostPlayerId;
             }
         }
 
