@@ -5086,6 +5086,48 @@ app.post('/admin/set-no-spoil', (req, res) => {
 });
 
 
+// 📜 VIDER L HISTORIQUE DES QUESTIONS DU COMPTE DE L HOTE
+//
+// ⚠️ CE N EST PAS UN REGLAGE DE SALON, et c est la seule route de ce fichier
+// dont l effet survit au salon : elle efface une colonne en base, pour de bon.
+// Elle vit quand meme sous le garde-fou d hote parce que c est de la qu on
+// l appelle — le tiroir des reglages — et que le jeton d hote prouve deja de
+// quel salon il s agit.
+//
+// ⚠️ ON EFFACE AUSSI LA LISTE DU SALON EN COURS. Sans ca, le geste n aurait
+// aucun effet visible : `rendreLHistoriqueAuCompte` reecrit a la fin de la
+// partie la liste que le salon porte en memoire, et elle aurait remis en base
+// tout ce qu on venait d en retirer. Le vidage doit traverser les deux.
+app.post('/admin/historique/vider', async (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
+
+    // ⚠️ Pendant une partie, non : les questions deja posees sont dans
+    // `usedQuestionIds`, et les vider ferait retomber sur elles au tour
+    // suivant. On vide entre deux parties, c est le seul moment ou ca a un
+    // sens.
+    if (gameState.inProgress) {
+        return res.status(400).json({
+            error: 'Impossible de vider l historique pendant une partie',
+            blocked: true,
+        });
+    }
+
+    const id = gameState.hostPlayerId;
+    if (!id || !estUnCompte(id)) {
+        return res.status(403).json({ error: 'Il faut un compte connecté' });
+    }
+
+    const ok = await comptes.enregistrerQuestionsVues(id, []);
+    if (!ok) return res.status(503).json({ error: 'La base n a pas répondu' });
+
+    gameState.usedQuestionIds = [];
+    gameState._vuesDuCompte = null;
+    console.log(`📜 Historique des questions vidé pour l hôte du salon ${gameState.roomCode}`);
+
+    res.json({ success: true });
+});
+
+
 // Route pour obtenir les statistiques des séries (nombre de questions)
 app.get('/admin/serie-stats', async (req, res) => {
 

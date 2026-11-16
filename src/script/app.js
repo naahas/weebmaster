@@ -921,6 +921,10 @@ createApp({
             // ce qu on croit savoir.
             invitesAutorises: false,
             invitesBusy: false,
+            // 📜 Le vidage de l historique des questions : la fenetre de
+            // confirmation, et l attente pendant l ecriture en base.
+            histConfirme: false,
+            histBusy: false,
             // Le bandeau sobre de refus, en haut de l ecran.
             bandeau: '',
             bandeauT: null,
@@ -2886,6 +2890,13 @@ createApp({
             let last = 0;
             document.addEventListener('mousemove', (e) => {
                 if (this.gameInProgress || this.hasJoined) return;
+                // 🖥️ Rien à semer quand le navigateur dessine au processeur :
+                // vingt-quatre éléments par seconde créés et détruits dans le
+                // document, c'est exactement ce qu'il ne faut pas lui donner.
+                // ⚠️ Le test est DANS l'écouteur et pas autour : la cadence
+                // peut conclure au rendu logiciel bien après le montage, et
+                // un écouteur déjà posé ne se reposerait pas la question.
+                if (this._renduLogiciel()) return;
                 const now = Date.now();
                 if (now - last < 42) return;   // ~24 particules/s : assez dense, sans saturer le DOM
                 last = now;
@@ -5256,6 +5267,34 @@ createApp({
             this.invitesBusy = false;
         },
 
+        // 📜 Vider l'historique des questions du compte.
+        //
+        // ⚠️ LE BANDEAU DIT AUSSI LA REUSSITE, et c'est l'exception : partout
+        // ailleurs il ne porte que des refus. Ici il le faut — un effacement
+        // réussi ne change RIEN à l'écran, et sans un mot on ne saurait pas
+        // s'il a eu lieu. C'est la seule trace que le geste laisse.
+        async viderHistorique() {
+            if (this.histBusy) return;
+            this.histBusy = true;
+            try {
+                const rep = await this.hostFetch('/admin/historique/vider', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}',
+                });
+                const r = await rep.json();
+                if (r && r.success) {
+                    this.histConfirme = false;
+                    this.direBandeau('Historique vidé.');
+                } else {
+                    this.direBandeau((r && r.error) || 'Impossible de vider pour le moment.');
+                }
+            } catch (e) {
+                this.direBandeau('Impossible de vider pour le moment.');
+            }
+            this.histBusy = false;
+        },
+
         // 📢 Le bandeau sobre, en haut de l'écran. Il porte des refus, donc il
         // s'efface tout seul : un message d'erreur qui reste finit par être
         // lu comme un état de la page.
@@ -5785,9 +5824,28 @@ createApp({
             } catch (e) { /* contexte deja ferme */ }
         },
 
+        // 🖥️ Le navigateur dessine-t-il au processeur ?
+        //
+        // ⚠️ ON LIT LA CLASSE, on ne refait pas la detection. Elle est posee
+        // par le script du `<head>` de home.html, qui a deux moyens de
+        // conclure dont un differe d une seconde ; refaire le test ici
+        // donnerait une autre reponse que le CSS, et l on aurait un decor
+        // allege avec des gerbes de particules par-dessus.
+        _renduLogiciel() {
+            try { return document.documentElement.classList.contains('rendu-logiciel'); }
+            catch (e) { return false; }
+        },
+
         // ⚠️ Le mouvement se coupe, l INFORMATION reste : qui demande moins
         // d animations voit la barre se poser a sa valeur, sans gerbe.
+        //
+        // ⚠️ LE RENDU LOGICIEL COMPTE AUSSI, et c est la seule chose qu il
+        // partage avec le mouvement reduit : une gerbe de particules, c est
+        // des dizaines d elements animes en meme temps. Le decor, lui, suit
+        // des regles a part (`html.rendu-logiciel` dans home.css) — les deux
+        // modes ne repondent pas a la meme question.
         _reduitLeMouvement() {
+            if (this._renduLogiciel()) return true;
             try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
             catch (e) { return false; }
         },

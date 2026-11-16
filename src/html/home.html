@@ -28,6 +28,96 @@
     <link rel="stylesheet" href="home-ascension.css">
     <link rel="stylesheet" href="home-collect.css">
     <link rel="stylesheet" href="home-codanime.css">
+    <!-- ══════════════════════════════════════════════════════════════
+         🖥️ LE RENDU LOGICIEL SE DETECTE, IL NE SE DEMANDE PAS
+         ══════════════════════════════════════════════════════════════
+         Quand « Utiliser l'accélération graphique si disponible » est
+         décoché, le navigateur dessine tout au processeur. Et la page a
+         trois couches qui, dans ce cas, coûtent chacune plus cher que tout
+         le reste réuni : trois aurores de 46vw floutées à 90 px et animées
+         en permanence, une grille en perspective de quatre fois l'écran qui
+         défile sous un masque, et dix-neuf `backdrop-filter` qui relisent
+         le fond à chaque image. Sur GPU ce sont des calques composés une
+         fois ; au processeur, c'est un flou gaussien par image.
+
+         ⚠️ ON NE PREVIENT PAS L UTILISATEUR, ON DEGRADE. Un bandeau « va
+         changer un réglage de ton navigateur » est du bruit pour l immense
+         majorité, qui a l accélération active par défaut, et il se lit
+         surtout comme un aveu que le site est lourd. Ceux que ça concerne
+         ne veulent pas un conseil, ils veulent que ça glisse.
+
+         ⚠️ EN SYNCHRONE DANS LE `<head>`, et pas au montage de Vue : la
+         classe doit être posée AVANT la première image, sinon on voit la
+         version lourde une seconde puis la page change sous les yeux.
+
+         ⚠️ ET DANS UNE IIFE. Une `const` au premier niveau d un script de
+         page vit dans l environnement lexical GLOBAL : `CHIFFRES`, déclaré
+         comme ça, est déjà entré en collision avec `niveaux.js` et a tué le
+         script de la page sans un mot dans la console.
+
+         Deux détections, parce qu'aucune ne suffit seule :
+         1. `UNMASKED_RENDERER_WEBGL` — Chrome y écrit « SwiftShader » noir
+            sur blanc quand il rend au processeur. C est le signal certain.
+            Mais Firefox le masque sous `privacy.resistFingerprinting`, et
+            il ne dit rien d une machine simplement lente.
+         2. Le compte d images sur une seconde, mesuré APRES le démarrage
+            pour ne pas confondre la lenteur du boot avec celle du rendu.
+            Un faux positif ne coûte qu'une page un peu plus plate. -->
+    <script>
+        (function () {
+            var H = document.documentElement;
+            var poser = function (raison) {
+                if (H.classList.contains('rendu-logiciel')) return;
+                H.classList.add('rendu-logiciel');
+                try { console.info('🖥️ Rendu logiciel détecté (' + raison + ') — décor allégé.'); }
+                catch (e) { /* console absente */ }
+            };
+
+            // ── 1. Le nom du moteur de rendu ────────────────────────
+            var logiciel = false;
+            try {
+                var c = document.createElement('canvas');
+                var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                if (!gl) {
+                    // Aucun contexte du tout : pas de GPU joignable.
+                    logiciel = true;
+                } else {
+                    var ext = gl.getExtension('WEBGL_debug_renderer_info');
+                    var nom = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '') : '';
+                    if (/swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(nom)) {
+                        logiciel = true;
+                    }
+                }
+            } catch (e) { /* un refus n est pas une preuve : on laisse la mesure trancher */ }
+            if (logiciel) { poser('moteur'); return; }
+
+            // ── 2. Le compte d images, en second recours ────────────
+            // ⚠️ Démarré APRES `load` et après une seconde de battement :
+            // pendant le boot, Vue monte le gabarit et les polices
+            // arrivent — tout le monde rame à ce moment-là, GPU ou pas.
+            if (!window.requestAnimationFrame) return;
+            window.addEventListener('load', function () {
+                setTimeout(function () {
+                    var images = 0;
+                    var debut = 0;
+                    var compter = function (t) {
+                        if (!debut) debut = t;
+                        images++;
+                        if (t - debut < 1000) { requestAnimationFrame(compter); return; }
+                        // ⚠️ Un onglet en arrière-plan ne reçoit presque
+                        // aucune image : sans ce garde-fou, revenir sur
+                        // l onglet suffisait à faire croire au rendu
+                        // logiciel. En dessous de cinq images, on ne
+                        // conclut rien.
+                        if (document.hidden || images < 5) return;
+                        if ((images * 1000) / (t - debut) < 35) poser('cadence');
+                    };
+                    requestAnimationFrame(compter);
+                }, 1000);
+            });
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Archivo:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
@@ -822,6 +912,37 @@
                         <div class="v2-room-code-block" v-if="isHost && roomCode">
                             <span class="v2-room-code-label">Copie le lien du salon</span>
                             <div class="v2-room-code-row">
+                                <!-- 📜 L APPEL AU COMPTE, DANS LA GOUTTIERE A GAUCHE DU CODE.
+                                     ⚠️ HORS DU FLUX, ET C EST OBLIGATOIRE ICI. Pose
+                                     normalement devant le code, il decalait tout le
+                                     bloc de 81 px vers la droite : le code ne tombait
+                                     plus sous son etiquette « COPIE LE LIEN DU SALON »,
+                                     et la colonne entiere partait de travers. Sorti du
+                                     flux, il se pend a gauche sans que rien ne bouge —
+                                     mesure a 0 px de decalage sur l etiquette, le code
+                                     et le bouton.
+                                     ⚠️ IL EST EN PREMIER DANS LE GABARIT, et c est
+                                     pour la lecture a voix haute : le positionnement
+                                     ne change pas l ordre ou un lecteur d ecran passe.
+                                     ⚠️ Il ne parait QUE si l hote n est pas connecte :
+                                     a un inscrit il n apprendrait rien, et une
+                                     pastille qui pulse en permanence cesse d etre un
+                                     signal. L inscrit a, lui, le reglage « Historique »
+                                     dans le tiroir — les deux ne se croisent jamais.
+                                     ⚠️ Et il ne parait qu en QUIZ : c est le seul mode
+                                     ou l historique des questions existe. Promis
+                                     ailleurs, il serait faux.
+                                     ⚠️ La bulle s ouvre au SURVOL, comme les « ! » des
+                                     reglages — meme langue, meme ecran. `tabindex` et
+                                     `:focus-visible` la rendent joignable au clavier,
+                                     ou il n y a pas de survol. -->
+                                <span class="v2-start-info"
+                                      v-if="isHost && !estConnecte
+                                            && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
+                                      tabindex="0" aria-label="Pourquoi se connecter">!
+                                    <span class="v2-start-bulle" v-html="conseilHistorique"></span>
+                                </span>
+
                                 <button class="v2-room-code" @click="copyRoomCode" title="Copier le lien du salon">
                                     <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
                                 </button>
@@ -833,35 +954,6 @@
                                     <svg class="v2-start-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                     <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
-
-                                <!-- 📜 L APPEL AU COMPTE, A DROITE DU BOUTON.
-                                     ⚠️ ICI IL NE POUSSE RIEN, et c est tout
-                                     l interet de cette place. On l a essaye a
-                                     gauche du code, puis au bout de l etiquette
-                                     « COPIE LE LIEN DU SALON » : a gauche il
-                                     decalait le bloc entier de 81 px, et il
-                                     avait fallu le sortir du flux pour que la
-                                     colonne reste dans son axe. En fin de
-                                     rangee il n a personne devant lui, et il
-                                     redevient un element comme un autre.
-                                     ⚠️ Il ne parait QUE si l hote n est pas
-                                     connecte : a un inscrit il n apprendrait
-                                     rien, et une pastille qui pulse en
-                                     permanence cesse d etre un signal.
-                                     ⚠️ Et il ne parait qu en QUIZ : c est le
-                                     seul mode ou l historique des questions
-                                     existe. Promis ailleurs, il serait faux.
-                                     ⚠️ La bulle s ouvre au SURVOL, comme les
-                                     « ! » des reglages — meme langue, meme
-                                     ecran. `tabindex` et `:focus-visible` la
-                                     rendent joignable au clavier, ou il n y a
-                                     pas de survol. -->
-                                <span class="v2-start-info"
-                                      v-if="isHost && !estConnecte
-                                            && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
-                                      tabindex="0" aria-label="Pourquoi se connecter">!
-                                    <span class="v2-start-bulle" v-html="conseilHistorique"></span>
-                                </span>
 
                                 <!-- 📜 LA MEME PHRASE, EN CLAIR, POUR TELEPHONE.
                                      ⚠️ Un second element et non la pastille
@@ -1267,6 +1359,25 @@
                                     <span class="v2-set-label">Bonus &amp; défis</span>
                                     <button class="v2-switch" :class="{ on: bonusEnabled }"
                                             @click="applySetting('/admin/set-bonus-enabled', { enabled: !bonusEnabled }, () => bonusEnabled = !bonusEnabled)"><span></span></button>
+                                </div>
+
+                                <!-- 📜 L HISTORIQUE DES QUESTIONS, ET SON BOUTON DE VIDAGE.
+                                     ⚠️ SEULEMENT POUR UN COMPTE CONNECTE. Sans compte il
+                                     n y a pas d historique a vider : la liste vit dans la
+                                     memoire du salon et meurt avec lui. La ligne n a donc
+                                     rien a dire a un invite, et la pastille de la gouttiere
+                                     — qui invite a se connecter — ne parait, elle, que dans
+                                     l autre cas. Les deux ne se croisent jamais.
+                                     ⚠️ UN BOUTON, PAS UN INTERRUPTEUR : ce n est pas un
+                                     etat qu on bascule, c est un geste qui ne se defait
+                                     pas. D ou la confirmation qui suit.
+                                     ⚠️ Et il ne parait qu en QUIZ, comme le reste de ce
+                                     bloc : c est le seul mode ou l historique existe. -->
+                                <div class="v2-set static" v-if="estConnecte" data-info="hist-vider">
+                                    <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>
+                                    <span class="v2-set-label">Historique</span>
+                                    <button class="v2-hist-vider" :disabled="histBusy"
+                                            @click="histConfirme = true">{{ histBusy ? '…' : 'Vider' }}</button>
                                 </div>
                             </template>
                             <!-- 🏔️ Ascension -->
@@ -1822,6 +1933,18 @@
                      approchant — le survol se propage dans le DOM, pas à l'écran.
                      « data-info » les rattache à leur ligne, placerInfosReglages()
                      fait le reste. -->
+                <!-- 📜 ⚠️ MEMES CONDITIONS QUE SA LIGNE, au mot près. Les « ! »
+                     vivent hors du tiroir et ne sont rattachés au leur que par
+                     `data-pour` : une pastille dont la ligne n'est pas rendue
+                     flotterait toute seule dans la gouttière, calée sur rien. -->
+                <template v-if="isHost && estConnecte
+                                && (lobbyMode === 'classic' || lobbyMode === 'rivalry')">
+                    <span class="v2-set-info" data-pour="hist-vider" tabindex="0">!
+                        <span class="v2-set-bulle">Vide ton historique de questions déjà
+                            tombées.</span>
+                    </span>
+                </template>
+
                 <template v-if="isHost && lobbyMode === 'ascension'">
                     <span class="v2-set-info" data-pour="asc-timer" tabindex="0">!
                         <span class="v2-set-bulle">Le temps laissé sur chaque étage. Dépassé,
@@ -1909,6 +2032,31 @@
                     <span class="v2-set-bulle">Autorise ou non les joueurs non connectés
                         à rejoindre la partie.</span>
                 </span>
+
+                <!-- 📜 VIDER L HISTORIQUE : LA CONFIRMATION.
+                     ⚠️ UNE FENETRE, et pas une seconde pression sur le bouton.
+                     L effacement est definitif et ne se voit nulle part une fois
+                     fait — rien a l ecran ne dira jamais « il y avait 400
+                     questions ici ». Un geste qu on ne peut ni annuler ni
+                     constater merite qu on le nomme avant de le faire.
+                     ⚠️ ELLE VIT HORS DU TIROIR, au meme niveau que les « ! ».
+                     Le panneau coupe ce qui depasse (`overflow: hidden`) : une
+                     fenetre posee dedans y serait rognee.
+                     ⚠️ Le voile ferme, la fenetre ne se ferme pas quand on
+                     clique DEDANS (`@click.stop`) — sans ca, viser le bouton
+                     « Vider » fermait la fenetre au passage. -->
+                <div class="v2-hist-voile" v-if="histConfirme" @click="histConfirme = false">
+                    <div class="v2-hist-modale" @click.stop>
+                        <h3 class="v2-hist-titre">Vider l'historique ?</h3>
+                        <p class="v2-hist-txt">Les questions déjà tombées pourront revenir
+                            dans tes prochaines parties. C'est définitif.</p>
+                        <div class="v2-hist-actions">
+                            <button class="v2-hist-annuler" @click="histConfirme = false">Annuler</button>
+                            <button class="v2-hist-ok" :disabled="histBusy"
+                                    @click="viderHistorique">{{ histBusy ? 'Un instant…' : 'Vider' }}</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 

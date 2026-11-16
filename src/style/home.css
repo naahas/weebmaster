@@ -6857,6 +6857,77 @@ body.game-active:has(.poll-game-container) #particles-js {
     background: radial-gradient(80% 70% at 50% 45%, transparent 40%, rgba(0, 0, 0, 0.72) 100%);
 }
 
+/* ════════════════════════════════════════════════════════════════
+   🖥️ LE DECOR, QUAND LE NAVIGATEUR DESSINE AU PROCESSEUR
+   ════════════════════════════════════════════════════════════════
+   La classe est posee dans le `<head>` de home.html, avant la premiere
+   image — voir le commentaire la-bas pour la detection.
+
+   ⚠️ CE N EST PAS LE MODE « MOUVEMENT REDUIT », et les deux ne se
+   confondent pas. `prefers-reduced-motion` repond a « ce mouvement me gene » :
+   on coupe les animations, on garde le decor. Ici on repond a « ma machine
+   n y arrive pas » : on garde ce qui ne coute rien a l image — les
+   degrades, qui sont peints une fois — et on retire ce qui se recalcule a
+   chaque image. Deux questions differentes, deux reponses differentes.
+
+   ⚠️ ET ON NE TOUCHE PAS AUX ANIMATIONS D INTERFACE. Le survol d un
+   bouton, la jauge d xp, la pulsation de la pastille : ce sont de petites
+   surfaces, elles ne coutent rien, et les retirer donnerait une page morte
+   pour ne rien gagner. On ne vise que les trois couches plein ecran. */
+
+/* ── 1. Les aurores : c est L ANIMATION qui coutait, pas le flou ──
+   ⚠️ C EST LE `animation: none` QUI FAIT TOUT LE TRAVAIL, et il faut le
+   comprendre pour ne pas defaire ce reglage plus tard. Un flou n est cher
+   que s il est RECALCULE : fige, le calque est peint une fois et reservi
+   tel quel. Anime, il se refait entierement a chaque image — 46vw de flou
+   gaussien, soixante fois par seconde, au processeur.
+   ⚠️ D ou un flou REDUIT et non supprime. A 90 px fige, la premiere peinture
+   coute encore quelques centaines de millisecondes au chargement ; a 28 px
+   elle est immediate, et le degrade etant deja doux de lui-meme
+   (`transparent 68%`), l oeil ne fait pas la difference. Supprimer le flou
+   tout court, essaye d abord, rendait la grille brutale : c est le halo qui
+   l adoucissait.
+   ⚠️ `will-change` part AUSSI : il force la creation d un calque, qui en
+   rendu logiciel est de la memoire et une composition de plus pour rien. */
+html.rendu-logiciel .v2-bg-aurora {
+    filter: blur(28px);
+    will-change: auto;
+    animation: none;
+}
+
+/* ── 2. La grille : elle reste, elle ne defile plus ───────────────
+   ⚠️ La couche fait QUATRE FOIS L ECRAN (`inset: -50%`), elle est en
+   perspective et elle passe sous un masque radial. Peinte une fois, elle
+   ne coute plus rien ; animee, elle se recalcule entierement a chaque
+   image. On garde donc l image et on arrete le defilement.
+   ⚠️ Et on la retient un peu : avec un halo moins large, les memes lignes
+   ressortent davantage et le fond devenait graphique la ou il doit rester
+   une profondeur. `opacity` sur une couche figee ne coute rien. */
+html.rendu-logiciel .v2-bg-grid {
+    animation: none;
+    will-change: auto;
+    opacity: 0.72;
+}
+
+/* ── 3. Les flous de fond : relire le fond coute trop cher ────────
+   ⚠️ `!important` ET UN SELECTEUR GENERAL, les deux assumes. Il y a
+   dix-neuf `backdrop-filter` dans ce fichier, dont plusieurs voiles plein
+   ecran, et chacun oblige le navigateur a relire ce qu il y a derriere.
+   Les enumerer un par un, c est oublier le vingtieme qu on ecrira demain.
+   ⚠️ Et aucune surface ne devient illisible : toutes portent DEJA leur
+   propre couleur de fond — verifie, de `rgba(255,255,255,0.025)` a
+   `rgba(5,5,7,0.9)`. Elles paraissent plus plates, elles se lisent. */
+html.rendu-logiciel * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ── 4. La trainee de curseur ─────────────────────────────────────
+   Vingt-quatre elements par seconde crees et detruits dans le document.
+   Le JS cesse d en semer (`initCursorDust`) ; cette regle acheve ceux qui
+   volaient encore au moment ou la mesure a conclu. */
+html.rendu-logiciel .v2-dust { display: none; }
+
 /* Traînée de curseur */
 .v2-dust {
     position: fixed;
@@ -9399,12 +9470,12 @@ input, textarea,
     align-items: center;
     gap: clamp(1.5rem, 4vw, 3.5rem);
     flex-wrap: wrap;
-    /* ℹ️ PLUS DE `position: relative` ICI. La rangee servait de repere a la
-       pastille d aide, qui se posait hors du flux a gauche du code ; la
-       pastille est revenue DANS le flux, apres le bouton, et sa bulle
-       s accroche a elle. Un repere que plus personne ne vise est un piege :
-       il capturerait le premier `position: absolute` qu on ecrira la-dedans,
-       qui se croirait cale sur la carte. */
+    /* ⚠️ REPERE DE LA PASTILLE D AIDE, qui se pend HORS DU FLUX a gauche du
+       code (`.v2-start-info` plus bas). Sans cette ligne elle remonterait se
+       caler sur le premier ancetre positionne — la carte du salon, voire la
+       page — et partirait ailleurs sans qu aucune erreur ne le dise. C est
+       exactement ce qui est arrive le jour ou cette regle a saute. */
+    position: relative;
 }
 
 
@@ -9907,6 +9978,112 @@ input, textarea,
     color: var(--text-secondary);
     opacity: 0.75;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   📜 VIDER L HISTORIQUE DES QUESTIONS
+   ════════════════════════════════════════════════════════════════
+   ⚠️ LE BOUTON RESTE SOBRE, ET C EST DELIBERE. Un bouton rouge dans un
+   tiroir de reglages tire l oeil vers la seule chose qu on ne veut pas que
+   l on fasse par curiosite. Il prend la taille et le gris des autres
+   commandes de la ligne ; c est la fenetre de confirmation qui porte le
+   poids du geste. Le rouge n apparait qu au survol, quand la main est deja
+   dessus et que l intention est prise. */
+.v2-hist-vider {
+    flex: 0 0 auto;
+    padding: 0.28rem 0.7rem;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.45rem;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.v2-hist-vider:hover:not(:disabled) {
+    color: #ffb4b4;
+    background: rgba(255, 90, 90, 0.12);
+    border-color: rgba(255, 90, 90, 0.35);
+}
+.v2-hist-vider:disabled { opacity: 0.5; cursor: default; }
+
+/* ⚠️ `position: fixed` ET z-index 1000 — l etage des modales, au-dessus des
+   voiles (900) et du jeu (800). La fenetre est posee hors du tiroir dans le
+   gabarit : celui-ci coupe ce qui depasse, et elle y aurait ete rognee.
+   ⚠️ AUCUN ANCETRE NE DOIT PORTER DE `transform`, sans quoi ce `fixed` se
+   calerait sur lui et non sur l ecran. Elle vit pour ca au meme niveau que
+   les « ! » d aide, qui ont deja ce probleme resolu. */
+.v2-hist-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1.2rem;
+    background: rgba(4, 4, 6, 0.72);
+}
+
+.v2-hist-modale {
+    width: min(23rem, 100%);
+    padding: 1.4rem 1.4rem 1.2rem;
+    text-align: left;
+    background: #15121c;
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.9rem;
+    box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.6);
+}
+
+.v2-hist-titre {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary, #f2f0f7);
+}
+
+.v2-hist-txt {
+    margin: 0 0 1.2rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #9c96ab;
+}
+
+.v2-hist-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.v2-hist-annuler,
+.v2-hist-ok {
+    padding: 0.5rem 1rem;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* ⚠️ « Annuler » EST LE CHEMIN LARGE : c est la reponse la plus probable, et
+   celle qui ne coute rien. Il est donc lisible et franc, pas efface. Une
+   confirmation ou seul le bouton dangereux se voit n en est plus une. */
+.v2-hist-annuler {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    border: 0.06rem solid rgba(255, 255, 255, 0.1);
+}
+.v2-hist-annuler:hover { color: var(--text-primary, #f2f0f7); background: rgba(255, 255, 255, 0.1); }
+
+.v2-hist-ok {
+    color: #ffb4b4;
+    background: rgba(255, 90, 90, 0.14);
+    border: 0.06rem solid rgba(255, 90, 90, 0.38);
+}
+.v2-hist-ok:hover:not(:disabled) { background: rgba(255, 90, 90, 0.24); border-color: rgba(255, 90, 90, 0.6); }
+.v2-hist-ok:disabled { opacity: 0.6; cursor: default; }
 
 /* ── Mobile ── */
 @media (max-width: 900px) {
@@ -14307,19 +14484,34 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     gap: 0.55rem;
 }
 
-/* 📜 LE CONSEIL DU COMPTE, a cote du bouton Demarrer.
+/* 📜 LE CONSEIL DU COMPTE, DANS LA GOUTTIERE A GAUCHE DU CODE.
    ⚠️ IL PULSE, et c est la seule chose qui le distingue d une pastille
    d aide ordinaire : il ne repond pas a une question qu on se pose, il
    signale quelque chose qu on ignore. Un point immobile a cote d un bouton
    qu on vient cliquer ne se voit pas.
    ⚠️ La pulsation s arrete DES QU ON OUVRE la bulle : elle a fait son
-   travail, et continuer reviendrait a appeler quelqu un qui est deja la. */
+   travail, et continuer reviendrait a appeler quelqu un qui est deja la.
+
+   ⚠️ `position: absolute` ET `right: 100%` : le repere est la RANGEE, dont
+   le bord gauche est aussi celui du code. La pastille se pose donc juste
+   avant le premier caractere, et `margin-right` l en ecarte. Posee dans le
+   flux, elle decalait tout le bloc de 81 px — le code ne tombait plus sous
+   son etiquette. Hors du flux, elle ne pese rien : 0 px de decalage mesure
+   sur l etiquette, le code et le bouton.
+
+   ⚠️ LE CENTRAGE PASSE PAR `transform`, et il faut s en souvenir : un
+   `transform` cree un bloc conteneur, et tout `position: fixed` qu on
+   mettrait LA-DEDANS se calerait sur la pastille au lieu de l ecran. La
+   bulle, elle, est en `absolute` — elle ne craint rien. */
 .v2-start-info {
-    position: relative;
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
     flex: 0 0 auto;
     width: 1.5rem;
     height: 1.5rem;
-    margin-right: 0.35rem;
+    margin-right: 1.15rem;
     padding: 0;
     display: grid;
     place-items: center;
