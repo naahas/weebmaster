@@ -14390,11 +14390,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (min-width: 769px) {
     .v2-start-info {
         position: absolute;
-        /* ⚠️ 1,6rem d ecart, pas 0,65. Trop pres, la pastille se lisait
-           comme un cinquieme caractere du code — une case de plus dans la
-           rangee « R 9 H 2 ». Il lui faut assez d air pour qu on la voie
-           comme un objet a part, pose a cote. */
-        right: calc(100% + 1.6rem);
+        /* ⚠️ 2,2rem d ecart, et on y est venu en deux fois. A 0,65 la
+           pastille se lisait comme un cinquieme caractere du code — une case
+           de plus dans la rangee « S Y J K » ; a 1,6 elle en restait
+           voisine. Il lui faut assez d air pour qu on la voie comme un objet
+           a part, pose a cote. La place ne manque pas : le tiroir des
+           reglages s arrete 170 px plus a gauche. */
+        right: calc(100% + 2.2rem);
         top: 50%;
         transform: translateY(-50%);
         margin: 0;
