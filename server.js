@@ -1178,6 +1178,15 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     const partieId = randomUUID();
     const reglages = reglagesDeLaPartie(gameState) || {};
     const recueil = recoltePourLeClassement(gameState, mode);
+    // 🤖 La regle retenue est « pas de record dans une partie avec bot ».
+    //
+    // ⚠️ ON L ECRIT, ON NE L APPLIQUE PAS ICI. Mettre `score` a null quand un
+    // bot est present rendrait la decision irreversible : le jour ou l on
+    // voudrait un palmares « avec partenaire », ou seulement savoir combien
+    // de parties en comptaient un, il n y aurait plus rien a lire. C est une
+    // regle de CLASSEMENT, donc de lecture — la ligne dit ce qui s est passe,
+    // la requete dit ce qui compte.
+    const avecBots = [...gameState.players.values()].some((p) => p.estBot);
     comptes.enregistrerParties(lignes.map((l) => ({
         compte_id: l.id,
         partie_id: partieId,
@@ -1188,6 +1197,7 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         xp_gagne: l.xp || 0,
         rubis_gagnes: l.rubis || 0,
         hote: l.id === gameState.hostPlayerId,
+        avec_bots: avecBots,
         reglages,
         // `null` quand le mode n a pas de record : la colonne est indexee en
         // `nulls last`, ces lignes ne remonteront jamais dans un palmares.

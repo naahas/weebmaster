@@ -119,7 +119,31 @@ D'où `reglages` en `jsonb` sur chaque ligne, et un classement **par seau** :
 
 ---
 
-## 5. Ce qui a été oublié, et qu'il faut trancher
+## 5. Ce qui a été tranché — 16 novembre 2026
+
+Ces décisions sont prises. Le §6 qui suit garde le raisonnement qui y a mené : il
+explique **pourquoi**, et c'est lui qu'il faudra relire le jour où l'une d'elles sera
+remise en cause.
+
+| Question | Décidé |
+|---|---|
+| Minimum de parties | **10, tous modes confondus** — comme la v1. Un joueur n'apparaît dans aucun classement en dessous. |
+| Seau de réglages | **Oui, un classement par jeu de paramètres** pour chaque mode concerné : Ascension par étages, Rush par durée et filtre, BombAnime par série, Collect par paramètres. |
+| Parties avec bot | **Aucun record.** ⚠️ Mais c'est une règle de **lecture** : la colonne `avec_bots` est écrite, le score aussi, et c'est la requête qui écarte. Effacer le score à l'écriture rendrait la décision irréversible. |
+| Ex æquo | **Le premier à l'avoir atteint passe devant** — `order by … , cree_le asc`. |
+| Pseudos et avatars | **Publics.** La [page de confidentialité](../src/html/confidentialite.html) a été corrigée le jour même : elle a maintenant une section « Le classement » qui dit ce qui en sort et pour qui. |
+| Classement des rubis | **Non**, pas pour l'instant. La colonne `rubis_gagnes` reste : elle ne coûte rien et ne se rattrape pas. |
+| Classement des hôtes | **Non.** La colonne `hote` reste, pour la même raison. |
+| Nombre de parties | **Oui**, c'est un classement à part entière. |
+| Progression du mois | **Oui.** Sort de `sum(xp_gagne)` sur trente jours, sans rien ajouter. |
+
+Reste ouvert : **la durée d'une saison**. Le mois ne laisse pas le temps de remonter,
+trois mois donne des saisons qui veulent dire quelque chose. Rien à écrire en base dans
+un cas comme dans l'autre — `cree_le` suffit, la décision peut attendre la page.
+
+---
+
+## 6. Le raisonnement derrière ces décisions
 
 Ce ne sont pas des détails de présentation : chacun change ce qu'on écrit en base ou ce
 qui s'affiche, et trois d'entre eux ont déjà coulé des classements ailleurs.
@@ -187,7 +211,7 @@ d'une requête à l'autre sous les yeux du joueur.
 
 ---
 
-## 6. Volume
+## 7. Volume
 
 Une ligne par compte et par partie. À huit inscrits et cinquante parties par jour :
 400 lignes par jour, ~150 000 par an, environ 30 Mo — sur les 500 Mo du palier gratuit

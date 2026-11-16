@@ -42,6 +42,17 @@ create table if not exists public.parties_jouees (
     joueurs     integer not null default 0,
     duree       integer not null default 0,
 
+    -- 🤖 Y avait-il un bot dans la partie ?
+    --
+    -- ⚠️ UNE COLONNE PLUTÔT QU'UN `score` MIS À NULL, et la nuance est tout
+    -- l'esprit de cette table. La règle retenue est « pas de record dans une
+    -- partie avec bot » — c'est une règle de CLASSEMENT, donc de lecture.
+    -- L'appliquer à l'écriture en effaçant le score rendrait la décision
+    -- irréversible : le jour où l'on voudrait un palmarès « avec partenaire »,
+    -- ou simplement savoir combien de parties en comptaient un, il n'y aurait
+    -- plus rien. Un booléen coûte un bit et garde la question ouverte.
+    avec_bots   boolean not null default false,
+
     -- Ce que CETTE partie a rapporté. ⚠️ C'est la colonne des saisons : un
     -- « top XP du mois » est une somme sur une plage de dates, et il est
     -- impossible à tirer du cumul de `comptes`, qui n'a pas de date.
@@ -100,8 +111,28 @@ alter table public.parties_jouees enable row level security;
 -- select mode, count(*), sum(gagnant::int) as victoires
 --   from public.parties_jouees group by mode order by count(*) desc;
 --
--- Le meilleur score de Rush en 90 secondes :
+-- Le meilleur score de Rush en 90 secondes. ⚠️ Les trois clauses de la
+-- règle y sont : pas de bot, le seau de réglages, et `cree_le asc` qui
+-- départage les ex æquo — le PREMIER à l'avoir atteint passe devant.
 -- select c.pseudo, p.score, p.cree_le
 --   from public.parties_jouees p join public.comptes c on c.id = p.compte_id
---   where p.mode = 'rush' and p.reglages @> '{"duree":90}'::jsonb
+--   where p.mode = 'rush' and p.avec_bots = false
+--     and p.reglages @> '{"duree":90}'::jsonb
 --   order by p.score desc, p.cree_le asc limit 10;
+--
+-- Le classement du taux de victoire. ⚠️ Le plancher de dix parties est
+-- TOUS MODES CONFONDUS : il se compte donc avant de filtrer sur un mode.
+-- select c.pseudo, count(*) as parties,
+--        sum(p.gagnant::int) as victoires,
+--        round(100.0 * sum(p.gagnant::int) / count(*)) as taux
+--   from public.parties_jouees p join public.comptes c on c.id = p.compte_id
+--   group by c.id, c.pseudo
+--   having count(*) >= 10
+--   order by taux desc, victoires desc, min(p.cree_le) asc limit 50;
+--
+-- La progression du mois : qui a pris le plus d'xp sur trente jours, quel
+-- que soit son total. C'est le seul classement où un nouveau peut figurer.
+-- select c.pseudo, sum(p.xp_gagne) as xp
+--   from public.parties_jouees p join public.comptes c on c.id = p.compte_id
+--   where p.cree_le >= now() - interval '30 days'
+--   group by c.id, c.pseudo order by xp desc limit 50;
