@@ -1020,7 +1020,12 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         if (p.disconnectedAt && !comptes.SANS_LIMITES) continue;
         // Un invite ne cumule rien : il n a pas de ligne ou l ecrire. C est la
         // seule difference que le compte fait pendant une partie.
-        if (!estUnCompte(p.playerId)) continue;
+        // ⚠️ `p.compte` ET NON `estUnCompte(p.playerId)`. Le second ne
+        // regarde qu un identifiant, que tout le salon a sous les yeux :
+        // qui en recopiait un se faisait crediter SUR LE COMPTE DE L AUTRE —
+        // xp, rubis, et jusqu au pseudo, que `crediter` reecrit. `p.compte`
+        // est pose a l entree a partir de ce que la SOCKET a prouve.
+        if (!p.compte) continue;
         const r = comptes.xpDeLaPartie(mode, {
             gagnant: gagne.has(p.playerId),
             joueurs: nbJoueurs,
@@ -2133,8 +2138,37 @@ function classementCamps(gameState) {
 // de ce qui vient du client n'y arrive directement.
 const comptesVerifies = new Set();
 
+// ⚠️ CETTE FONCTION NE DIT PAS « CETTE CONNEXION EST CE COMPTE ». Elle dit
+// « cet identifiant a, un jour, prouve un compte sur ce processus ». C est
+// une question sur un ID, pas sur un interlocuteur, et elle ne sert plus qu a
+// une chose : savoir si l HOTE d un salon est inscrit.
+//
+// ⚠️ ELLE NE DOIT JAMAIS SERVIR DE PREUVE A L ENTREE. Le `playerId` vient du
+// client, et les identifiants circulent : `lobby-update` les envoie a tout le
+// salon. Posee a la porte, cette fonction laissait donc passer quiconque
+// recopiait l identifiant d un inscrit — sans jeton, sans rien. Pire, ce
+// faux inscrit touchait l xp de la partie, qui s ecrit SUR LE COMPTE de
+// l identifiant annonce, pseudo compris. Pour l entree, c est
+// `socketInscrite`.
 function estUnCompte(playerId) {
     return !!playerId && comptesVerifies.has(playerId);
+}
+
+// 👤 LA PREUVE, ET ELLE TIENT A LA CONNEXION.
+//
+// `socket.data.compteId` n est pose qu une fois : dans le retour de
+// `comptes.identifier`, c est-a-dire apres que Supabase a valide le jeton ET
+// que son porteur a ete reconnu comme etant bien le `playerId` annonce. Rien
+// venu du client ne l ecrit.
+//
+// ⚠️ ET ELLE S EFFACE A LA DECONNEXION (`compte-deconnecte`). C est tout le
+// defaut qu on vient de corriger : un joueur deconnecte dans son onglet
+// gardait son `playerId` de compte — volontairement, pour ne pas devenir
+// quelqu un d autre en plein salon — et le serveur, lui, n avait aucune
+// raison de l oublier. Il entrait donc dans un salon ferme aux invites, avec
+// le losange des inscrits, alors que sa carte affichait « Profil local ».
+function socketInscrite(socket, playerId) {
+    return !!playerId && !!socket && !!socket.data && socket.data.compteId === playerId;
 }
 
 // 🔐 LA PORTE, EN UN SEUL ENDROIT.
@@ -2168,20 +2202,41 @@ function porteOuverteAuxInvites(gameState) {
 // figure déjà. ⚠️ Il PEUT figurer dans plusieurs salons à la fois — c'est le
 // cas courant de qui enchaîne deux parties —, donc on les parcourt tous
 // plutôt que de chercher « son » salon, qui n'existe pas toujours.
-function marquerCompte(playerId) {
-    if (!playerId || comptesVerifies.has(playerId)) {
-        if (playerId) comptesVerifies.add(playerId);
-        return;
-    }
+// ⚠️ `socketId` EST OBLIGATOIRE, et c est une correction de securite. La
+// version d avant allumait le losange sur TOUTE entree portant ce
+// `playerId`, dans tous les salons — y compris celle d un inconnu qui avait
+// recopie l identifiant. On ne marque donc que l entree de la socket QUI
+// VIENT DE PROUVER, et seulement celle-la.
+function marquerCompte(playerId, socketId) {
+    if (!playerId) return;
     comptesVerifies.add(playerId);
+    if (!socketId) return;
     for (const gs of rooms.values()) {
-        let touche = false;
-        for (const p of gs.players.values()) {
-            if (p.playerId === playerId && !p.compte) { p.compte = true; touche = true; }
-        }
+        const p = gs.players.get(socketId);
+        if (!p || p.playerId !== playerId || p.compte) continue;
+        p.compte = true;
         // On ne rediffuse que les salons qui ont vraiment bougé : à cinquante
         // salons ouverts, une diffusion par connexion coûterait pour rien.
-        if (touche) broadcastLobbyUpdate(gs);
+        broadcastLobbyUpdate(gs);
+    }
+}
+
+// 🚪 LA DECONNEXION, COTE SERVEUR. Le navigateur revoque sa session Supabase
+// de son cote ; sans ce message, le serveur gardait la preuve posee sur la
+// socket et continuait de traiter l onglet comme un inscrit jusqu a sa
+// fermeture.
+//
+// ⚠️ On ne touche PAS a `comptesVerifies` : ce compte existe toujours, c est
+// seulement CETTE connexion qui ne le prouve plus. L effacer rouvrirait la
+// porte d un salon dont l hote s est deconnecte ailleurs.
+function oublierCompteDeLaSocket(socket) {
+    if (!socket || !socket.data || !socket.data.compteId) return;
+    socket.data.compteId = null;
+    for (const gs of rooms.values()) {
+        const p = gs.players.get(socket.id);
+        if (!p || !p.compte) continue;
+        p.compte = false;
+        broadcastLobbyUpdate(gs);
     }
 }
 
@@ -2582,6 +2637,12 @@ app.get('/prototypes/ceremonie2', (req, res) => {
 // objet qui n est pas celui du jeu.
 app.get('/prototypes/titre', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-titre.html');
+});
+
+// 🔥 La montee de la jauge d xp, six effets sur la VRAIE barre. Meme parti
+// que le banc du titre : `home.css` est charge, seul l effet change.
+app.get('/prototypes/jauge', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-jauge.html');
 });
 
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
@@ -9866,6 +9927,12 @@ io.on('connection', (socket) => {
         if (typeof repondre === 'function') repondre(Date.now());
     });
 
+    // 🚪 Le navigateur vient de revoquer sa session : la preuve posee sur
+    // cette socket tombe, et le losange avec elle. Sans ce message, l onglet
+    // restait un inscrit aux yeux du serveur jusqu a sa fermeture — il
+    // entrait dans un salon ferme aux invites en affichant « Profil local ».
+    socket.on('compte-deconnecte', () => oublierCompteDeLaSocket(socket));
+
     socket.on('register-authenticated', (data) => {
         // Le pseudo passe au tamis dès l'entrée : tout ce qui suit le reprend.
         if (data) data.username = pseudoPropre(data.username) || 'Joueur';
@@ -9905,7 +9972,12 @@ io.on('connection', (socket) => {
                 nettoyer: pseudoPropre,
             }).then((r) => {
                 if (!r || r.playerId !== data.playerId) return;
-                marquerCompte(data.playerId);
+                // 👤 LA PREUVE SE POSE SUR LA SOCKET, et c est elle que la
+                // porte lira. `marquerCompte` ne fait plus que deux choses :
+                // retenir que cet identifiant a un compte, et allumer le
+                // losange sur l entree DE CETTE SOCKET.
+                socket.data.compteId = data.playerId;
+                marquerCompte(data.playerId, socket.id);
                 // ⚠️ Le profil part vers CETTE socket seulement, jamais au
                 // salon : les statistiques d'un joueur ne regardent que lui.
                 // Et on n'envoie PAS le niveau — il se déduit de l'XP, des
@@ -10139,10 +10211,14 @@ io.on('connection', (socket) => {
         // `/admin/set-invites` refuse de fermer, l'interrupteur reste ouvert,
         // l'arrivant entre. Les trois disent la même chose parce qu'ils la
         // demandent au même endroit.
+        // ⚠️ `socketInscrite` ET NON `estUnCompte` : la porte demande une
+        // PREUVE, pas une declaration. `estUnCompte` ne regarde qu un
+        // identifiant, et les identifiants circulent — `lobby-update` les
+        // envoie a tout le salon. Quiconque en recopiait un passait.
         const estLHote = !!data.hostToken && data.hostToken === gameState.hostToken;
         if (!isReconnection && !estLHote
             && !porteOuverteAuxInvites(gameState)
-            && !estUnCompte(data.playerId)) {
+            && !socketInscrite(socket, data.playerId)) {
             console.log(`🔐 ${data.username} refusé dans ${gameState.roomCode} : pas de compte`);
             return socket.emit('error', {
                 message: 'Compte connecté requis',
@@ -10229,11 +10305,14 @@ io.on('connection', (socket) => {
             // Après un refresh on reprend son camp : le retirer au hasard
             // ferait sauter les joueurs d'un côté à l'autre à chaque rechargement.
             team: gameState.lobbyMode === 'rivalry' ? (campPrecedent || campLeMoinsFourni(gameState)) : null,
-            // ⚠️ Le losange vient de ce que le SERVEUR a déjà vérifié, jamais
+            // ⚠️ Le losange vient de ce que CETTE SOCKET a prouvé, jamais
             // d'un champ envoyé par le client. `data` arrive du navigateur :
             // y lire un `compte: true` reviendrait à laisser chacun se
             // décerner le signe, et il ne vaudrait plus rien.
-            compte: estUnCompte(data.playerId),
+            // ⚠️ Et `socketInscrite`, pas `estUnCompte` : le second ne
+            // regarde qu'un identifiant, que n'importe quel joueur du salon
+            // a sous les yeux. Le losange se portait donc en le recopiant.
+            compte: socketInscrite(socket, data.playerId),
             isAdmin: data.isAdmin || false
         });
 
@@ -10368,7 +10447,13 @@ io.on('connection', (socket) => {
             // ⚠️ APRÈS les retours anticipés plus haut : à BombAnime le partant
             // RESTE à la table, éteint, et doit continuer de voir le cercle.
             socket.leave(gameState.roomCode);
-            console.log(`👋 ${data.username} a quitté le lobby`);
+            // ⚠️ LE NOM VIENT DE L ENTREE DU SALON, pas de `data`. Cet
+            // evenement s emet sans charge utile en une ligne, et le serveur
+            // tombait ALORS TOUT ENTIER sur un `data.username` indefini —
+            // tous les salons, toutes les parties en cours, d un message a
+            // trois mots. Trouve en ecrivant le filet de la porte.
+            // `player` est garanti ici : on est dans son `if`.
+            console.log(`👋 ${player.username} a quitté le lobby`);
 
             broadcastLobbyUpdate(gameState);
 

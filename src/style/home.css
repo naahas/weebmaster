@@ -7613,8 +7613,12 @@ body.game-active:has(.poll-game-container) #particles-js {
        il est le plus haut des deux contenus, et l air qui lui reste au-dessus
        vaut `(hauteur - bordures - 1,15rem) / 2`. A 1,75rem il n en restait que
        4 px et la pastille paraissait serree du haut — c est le gemme qu on
-       voyait toucher le bord, jamais le chiffre. */
-    height: 2.2rem;
+       voyait toucher le bord, jamais le chiffre.
+       ⚠️ 2,45rem : l air au-dessus du gemme passe de 7,4 a 9,4 px. Et c est
+       la HAUTEUR qu on touche, pas un padding vertical — la pastille est un
+       `inline-flex` centre, un padding haut-bas n y ajouterait rien tant que
+       la hauteur est posee. */
+    height: 2.45rem;
     /* ⚠️ Le padding DROIT est le gros : c est la part qui passe sous le
        portrait. Trop court, le nombre disparait dessous ; c est lui qui
        repousse le texte hors de la zone couverte.
@@ -7659,7 +7663,7 @@ body.game-active:has(.poll-game-container) #particles-js {
        ⚠️ Le padding DROIT et la marge negative ne bougent PAS d un seul cote :
        ils se repondent, et resserrer l un sans l autre ferait sortir la
        pastille de sous le portrait ou y enfoncerait le nombre. */
-    .v2-moi-rubis { font-size: 0.78rem; gap: 0.35rem; height: 2rem; padding: 0 1.95rem 0 0.88rem; margin-right: -1.05rem; }
+    .v2-moi-rubis { font-size: 0.78rem; gap: 0.35rem; height: 2.2rem; padding: 0 1.95rem 0 0.88rem; margin-right: -1.05rem; }
     .v2-moi-rubis img { height: 1rem; }
 }
 
@@ -15757,8 +15761,8 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(58% 52% at 50% 50%, rgba(4, 4, 7, 0.975), rgba(4, 4, 7, 0.88) 72%),
-        rgba(4, 4, 7, 0.86);
+        radial-gradient(58% 52% at 50% 50%, rgba(4, 4, 7, 0.95), rgba(4, 4, 7, 0.83) 72%),
+        rgba(4, 4, 7, 0.79);
     opacity: 0;
     transition: opacity 0.45s ease;
 }
@@ -15897,8 +15901,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     color: #6e6e7b;
 }
 /* Le rang suivant prend SA couleur, en retrait : c est une promesse, pas un
-   etat. Pose en plein, il se disputait le regard avec le rang atteint. */
-.v2-cer-suiv { opacity: 0.5; }
+   etat. Pose en plein, il se disputait le regard avec le rang atteint.
+   ⚠️ 0,72 ET NON PLUS 0,5. Le voile s etant eclairci, un demi-ton sur un
+   fond moins noir ne faisait plus une promesse mais une ligne qu on devine :
+   a 0,5 le nom du palier suivant etait a la limite du lisible. Il reste en
+   retrait du rang atteint — qui est, lui, en pleine couleur et quatre fois
+   plus gros. */
+.v2-cer-suiv { opacity: 0.72; }
 
 .v2-cer-piste {
     position: relative;

@@ -5003,6 +5003,15 @@ createApp({
             // securite.
             if (sb) { try { sb.auth.signOut(); } catch (e) {} }
 
+            // ⚠️ ET ON LE DIT AU SERVEUR, dans le meme souffle. Revoquer la
+            // session Supabase ne regarde que le navigateur : le serveur,
+            // lui, garde sur la socket la preuve posee a la connexion. Sans
+            // ce message, l onglet restait un inscrit a ses yeux — il entrait
+            // dans un salon ferme aux invites, avec le losange des comptes,
+            // pendant que sa propre carte affichait « Profil local ».
+            // Constate en jouant, d un navigateur a l autre.
+            try { this.socket.emit('compte-deconnecte'); } catch (e) {}
+
             await this.animerDevidage();
 
             this.estConnecte = false;

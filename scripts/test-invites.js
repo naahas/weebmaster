@@ -129,6 +129,44 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
         ouv.corps.reglages && ouv.corps.reglages.invitesAutorises === false,
         JSON.stringify(ouv.corps.reglages && ouv.corps.reglages.invitesAutorises));
 
+    // ── 2 bis. ⚠️ L IDENTIFIANT D UN INSCRIT N EST PAS UNE CLEF ──
+    // Les `playerId` circulent : `lobby-update` les envoie a tout le salon.
+    // La porte s appuyait sur « cet identifiant a-t-il un compte ? », une
+    // question sur un ID et non sur l interlocuteur — donc quiconque
+    // recopiait celui d un inscrit entrait, portait son losange, et se
+    // faisait crediter SUR SON COMPTE en fin de partie, pseudo compris.
+    // Elle demande maintenant une preuve posee sur la socket.
+    //
+    // ⚠️ CES DEUX CONTROLES PASSENT AVANT QUE L HOTE N ENTRE, et c est
+    // necessaire : une fois son entree posee, un arrivant qui annonce le meme
+    // `playerId` est traite comme une RECONNEXION, et la porte ne s applique
+    // pas aux reconnexions — par dessein, c est le telephone qui verrouille
+    // son ecran. Ce chemin-la est une autre question, notee a part.
+    const f1 = client(); await attendre(250);
+    const rF1 = await rejoindre(f1, { code, playerId: ID, username: 'Faussaire' });
+    check('2 bis. ⚠️ recopier le playerId d’un INSCRIT ne passe pas',
+        !!rF1.erreur && rF1.erreur.compteRequis === true, JSON.stringify(rF1));
+
+    // ── 2 ter. ⚠️ SE DECONNECTER REND INVITE, TOUT DE SUITE ──────
+    // Le navigateur garde son `playerId` de compte apres deconnexion — c est
+    // voulu, pour ne pas devenir quelqu un d autre en plein salon. Le serveur
+    // doit donc oublier la preuve de son cote, sans quoi l onglet reste un
+    // inscrit a ses yeux jusqu a sa fermeture : c est le defaut constate en
+    // jouant, d un navigateur a l autre.
+    const f2 = client(); await attendre(250);
+    f2.emit('register-authenticated', { playerId: ID, username: 'Cobaye2', jeton: jetonCompte });
+    await attendre(900);
+    const avantDeconnexion = await rejoindre(f2, { code, playerId: ID, username: 'Cobaye2' });
+    check('   … alors qu’une socket qui a PROUVE entre bien',
+        !!avantDeconnexion.ok, JSON.stringify(avantDeconnexion.erreur));
+    f2.emit('leave-lobby');
+    await attendre(400);
+    f2.emit('compte-deconnecte');
+    await attendre(300);
+    const rF2 = await rejoindre(f2, { code, playerId: ID, username: 'Cobaye2' });
+    check('2 ter. ⚠️ apres « compte-deconnecte », la porte se referme sur lui',
+        !!rF2.erreur && rF2.erreur.compteRequis === true, JSON.stringify(rF2));
+
     const rH = await rejoindre(hote, { code, playerId: ID, username: 'Cobaye', isHost: true, hostToken: jeton });
     check('   l’hôte inscrit entre dans son salon', !!rH.ok, JSON.stringify(rH.erreur));
 
@@ -199,7 +237,7 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     const rG = await rejoindre(g, { code: ouv2.corps.roomCode, playerId: 'invite-G', username: 'InviteG' });
     check('   … donc son salon reste ouvert aux invités', !!rG.ok, JSON.stringify(rG.erreur));
 
-    [hote, b, c, d, e2, g].forEach(s => { try { s.disconnect(); } catch (x) {} });
+    [hote, b, c, d, e2, g, f1, f2].forEach(s => { try { s.disconnect(); } catch (x) {} });
     await poster('/admin/toggle-game', {}, jeton);
     await poster('/admin/toggle-game', {}, jeton2);
     await menage();
