@@ -1376,15 +1376,15 @@
                                 <div class="v2-set" v-if="estConnecte" data-info="hist-vider">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>
                                     <span class="v2-set-label">Historique</span>
-                                    <!-- ⚠️ LA PASTILLE AU REPOS N EST PAS LE BOUTON. Les
-                                         autres lignes montrent leur VALEUR au repos et
-                                         ouvrent leur tiroir au survol ; celle-ci n a pas
-                                         de valeur a montrer, mais elle a besoin de dire
-                                         qu il se passe quelque chose quand on la survole.
-                                         D ou cette pastille, que le tiroir recouvre des
-                                         qu il s ouvre : on ne voit jamais les deux. -->
-                                    <span class="v2-hist-pastille">Vider</span>
-                                    <!-- ⚠️ `.v2-set-opts` ET `.v2-set-opt`, les classes des
+                                    <!-- ⚠️ RIEN A DROITE AU REPOS, et c est voulu. Les
+                                         autres lignes y montrent leur VALEUR ; celle-ci
+                                         n en a pas — « vider » est un geste, pas un etat.
+                                         Une pastille grise y avait ete posee pour annoncer
+                                         le tiroir : elle doublait le bouton qui la
+                                         recouvrait une demi-seconde plus tard, et deux
+                                         fois le meme mot a la meme place, c est un de
+                                         trop. Le survol suffit, comme partout ici.
+                                         ⚠️ `.v2-set-opts` ET `.v2-set-opt`, les classes des
                                          autres reglages, et pas un bouton a part : c est la
                                          seule facon que le tiroir ait exactement le meme
                                          fond, le meme lisere, la meme ouverture et la meme
@@ -1392,7 +1392,7 @@
                                          diverge au premier ajustement de l un des deux. -->
                                     <span class="v2-set-opts">
                                         <button class="v2-set-opt danger" :disabled="histBusy"
-                                                @click="histConfirme = true">{{ histBusy ? 'Un instant…' : 'Vider l\'historique' }}</button>
+                                                @click="ouvrirVidageHistorique">{{ histBusy ? 'Un instant…' : 'Vider l\'historique' }}</button>
                                     </span>
                                 </div>
                             </template>
@@ -2065,10 +2065,27 @@
                     <div class="v2-hist-modale" @click.stop>
                         <h3 class="v2-hist-titre">Vider l'historique ?</h3>
                         <p class="v2-hist-txt">Les questions déjà tombées pourront revenir
-                            dans tes prochaines parties. C'est définitif.</p>
+                            dans tes prochaines parties.</p>
+                        <!-- ⚠️ TROIS ETATS, pas deux. `null` = le serveur n a pas
+                             encore repondu, et l on n ecrit RIEN plutot qu un zero
+                             qui serait faux une demi-seconde. Un echec laisse la
+                             ligne vide pour la meme raison : mieux vaut pas de
+                             nombre qu un mauvais nombre dans une confirmation.
+                             ⚠️ ET LE PARAGRAPHE EST TOUJOURS LA, vide ou non — pas
+                             de `v-if`. Monte a l arrivee de la reponse, il aurait
+                             fait grandir la fenetre sous le curseur, qui vise deja
+                             « Annuler ». Sa hauteur est reservee des l ouverture. -->
+                        <p class="v2-hist-compte">
+                            <template v-if="histNombre !== null">{{ histNombre }}
+                                question{{ histNombre > 1 ? 's' : '' }} dans ton
+                                historique</template>
+                        </p>
                         <div class="v2-hist-actions">
                             <button class="v2-hist-annuler" @click="histConfirme = false">Annuler</button>
-                            <button class="v2-hist-ok" :disabled="histBusy"
+                            <!-- ⚠️ Desactive sur un historique deja vide : le geste
+                                 n aurait aucun effet, et un bouton qui ne fait rien
+                                 se lit comme un bouton casse. -->
+                            <button class="v2-hist-ok" :disabled="histBusy || histNombre === 0"
                                     @click="viderHistorique">{{ histBusy ? 'Un instant…' : 'Vider' }}</button>
                         </div>
                     </div>

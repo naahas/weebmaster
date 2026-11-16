@@ -9987,29 +9987,12 @@ input, textarea,
    redefini ici de l ouverture, du fond, du lisere ni de la hauteur — un
    style recopie aurait diverge au premier ajustement de l un des deux.
 
-   ⚠️ CE QUI RESTE CI-DESSOUS NE CONCERNE QUE DEUX CHOSES : la pastille du
-   repos, qui n existe pas ailleurs parce que les autres lignes ont une
-   valeur a montrer, et la teinte rouge du bouton, qui n existe nulle part
-   ailleurs non plus. */
+   ⚠️ CE QUI RESTE CI-DESSOUS NE CONCERNE QU UNE CHOSE : la teinte rouge du
+   bouton, qui n existe nulle part ailleurs. La ligne, elle, ne montre rien
+   a droite au repos — « vider » est un geste, pas un etat, et il n y a donc
+   pas de valeur a afficher.
 
-/* La pastille du repos : elle dit qu il y a quelque chose a faire ici, et le
-   tiroir la recouvre entierement des qu il s ouvre. `margin-left: auto` la
-   pousse a droite, a la place qu occupe la valeur sur les autres lignes. */
-.v2-hist-pastille {
-    margin-left: auto;
-    flex: 0 0 auto;
-    padding: 0.28rem 0.7rem;
-    font-size: 0.66rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.06);
-    border: 0.06rem solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.45rem;
-}
-
-/* ⚠️ LE ROUGE N APPARAIT QU AU SURVOL DU BOUTON, et c est delibere : un
+   ⚠️ LE ROUGE N APPARAIT QU AU SURVOL DU BOUTON, et c est delibere : un
    bouton rouge au repos dans un tiroir de reglages tire l oeil vers la
    seule chose qu on ne veut pas qu on fasse par curiosite. Au repos il est
    gris comme ses voisins ; la couleur vient quand la main est deja dessus
@@ -10039,8 +10022,8 @@ input, textarea,
 
 .v2-hist-modale {
     width: min(23rem, 100%);
-    padding: 1.4rem 1.4rem 1.2rem;
-    text-align: left;
+    padding: 1.5rem 1.4rem 1.3rem;
+    text-align: center;
     background: #15121c;
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 0.9rem;
@@ -10055,16 +10038,34 @@ input, textarea,
 }
 
 .v2-hist-txt {
-    margin: 0 0 1.2rem;
+    margin: 0;
     font-size: 0.82rem;
     line-height: 1.55;
     color: #9c96ab;
 }
 
+/* ⚠️ PLUS PETIT ET PLUS SOMBRE QUE LA PHRASE AU-DESSUS, volontairement :
+   c est une precision, pas un argument. Lu en premier, un chiffre en gros
+   aurait fait de la fenetre un bilan au lieu d une question.
+   ⚠️ `min-height` : le paragraphe est rendu VIDE tant que le serveur n a pas
+   repondu, et il doit deja occuper sa place. Sans ca la fenetre grandissait
+   une demi-seconde apres son ouverture, sous un curseur qui visait deja
+   « Annuler ». */
+.v2-hist-compte {
+    margin: 0.5rem 0 0;
+    min-height: 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #6e6880;
+    font-variant-numeric: tabular-nums;
+}
+
 .v2-hist-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 0.6rem;
+    margin-top: 1.3rem;
 }
 
 .v2-hist-annuler,

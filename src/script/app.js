@@ -925,6 +925,8 @@ createApp({
             // confirmation, et l attente pendant l ecriture en base.
             histConfirme: false,
             histBusy: false,
+            // `null` tant que le serveur n a pas repondu — voir la fenetre.
+            histNombre: null,
             // Le bandeau sobre de refus, en haut de l ecran.
             bandeau: '',
             bandeauT: null,
@@ -5265,6 +5267,25 @@ createApp({
                 this.direBandeau('Réglage impossible pour le moment.');
             }
             this.invitesBusy = false;
+        },
+
+        // 📜 Ouvrir la confirmation, et aller chercher le nombre.
+        //
+        // ⚠️ LA FENETRE S OUVRE TOUT DE SUITE, le nombre arrive après. L'ordre
+        // inverse — attendre la réponse pour ouvrir — aurait donné un clic
+        // sans effet pendant le temps de l'aller-retour, et c'est exactement
+        // ce qui fait recliquer.
+        // ⚠️ Et `histNombre` repart à `null` à chaque ouverture : laissé à sa
+        // valeur de la fois d'avant, il aurait affiché un chiffre périmé le
+        // temps que le nouveau revienne.
+        async ouvrirVidageHistorique() {
+            this.histNombre = null;
+            this.histConfirme = true;
+            try {
+                const rep = await this.hostFetch('/admin/historique');
+                const r = await rep.json();
+                if (r && r.success) this.histNombre = r.vues;
+            } catch (e) { /* pas de nombre : la fenêtre marche sans */ }
         },
 
         // 📜 Vider l'historique des questions du compte.

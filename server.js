@@ -5086,6 +5086,25 @@ app.post('/admin/set-no-spoil', (req, res) => {
 });
 
 
+// 📜 COMBIEN DE QUESTIONS DANS L HISTORIQUE DU COMPTE DE L HOTE
+//
+// ⚠️ DEMANDE A L OUVERTURE DE LA FENETRE, et pas envoye avec le profil a la
+// connexion. Le nombre change a chaque fin de partie : pose une fois au
+// branchement, il aurait vieilli en silence, et une confirmation qui annonce
+// « 380 questions » quand il y en a 460 est pire que pas de nombre du tout.
+// Un aller-retour au moment ou on ouvre la fenetre ne coute rien — personne
+// ne confirme deux fois par seconde.
+app.get('/admin/historique', async (req, res) => {
+    const gameState = req.room;   // posée par le garde-fou d'hôte
+    const id = gameState.hostPlayerId;
+    if (!id || !estUnCompte(id)) {
+        return res.status(403).json({ error: 'Il faut un compte connecté' });
+    }
+    const vues = await comptes.lireQuestionsVues(id);
+    res.json({ success: true, vues: vues.length });
+});
+
+
 // 📜 VIDER L HISTORIQUE DES QUESTIONS DU COMPTE DE L HOTE
 //
 // ⚠️ CE N EST PAS UN REGLAGE DE SALON, et c est la seule route de ce fichier
