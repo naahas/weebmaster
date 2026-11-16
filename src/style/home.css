@@ -14398,39 +14398,52 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
            MORTS — le defaut le plus silencieux qui soit. */
         pointer-events: auto;
     }
-    /* ⚠️ TOUT SE REPLIE EN UNE SEULE RANGEE QUI PASSE A LA LIGNE, et les
-       deux groupes se DISSOLVENT pour ca (`display: contents`). Tant qu ils
-       restaient des boites, les icones ne pouvaient se poser qu a cote du
-       bloc de liens entier — donc sous lui, sur une troisieme ligne. Une
-       fois dissous, leurs enfants deviennent des elements de la meme rangee
-       et les icones viennent a la suite du DERNIER lien, dans la place que
-       la seconde ligne laisse libre.
-       ℹ️ Un detour par la colonne avait ete essaye d abord : il mettait les
-       icones au-dessus, ce qui marchait mais ajoutait une ligne a un pied
-       qui en a deja deux. */
+    /* ⚠️ DEUX RANGEES, ET CHACUNE D UNE SEULE NATURE. C est le vrai defaut
+       qu on corrige ici, et ce n etait pas le nombre de lignes : a plat,
+       « SIGNALER UN BUG », deux icones et un copyright se suivaient avec le
+       MEME ecart, comme s ils etaient de meme rang. Trois natures alignees
+       sans hierarchie font une bouillie — meme bien espacees.
+       En haut les liens, qui se replient entre eux ; en bas la signature.
+       L ecart entre les deux rangees (1,15rem) est plus grand que celui qui
+       separe deux liens (0,8rem) : c est lui qui dit qu on change d objet. */
     .v2-pied-dedans {
-        gap: 0.5rem 1.05rem;
+        row-gap: 1.15rem;
+        column-gap: 0;
         font-size: 0.64rem;
         letter-spacing: 0.12em;
     }
-    .v2-pied-liens,
-    .v2-pied-sign { display: contents; }
-    /* ⚠️ LES POINTS MEDIANS DISPARAISSENT SUR TELEPHONE. Separateurs d une
-       liste qui tient sur une ligne, ils deviennent des orphelins des
-       qu elle se replie : la premiere ligne se terminait par un « · » qui
-       ne separait plus rien. Aucun selecteur CSS ne sait « ce point est en
-       fin de ligne » — on les retire tous, et c est l ecart qui separe.
-       Il s elargit pour ca, de 0,7 a 1,05rem. */
+
+    /* ⚠️ `flex: 1 0 100%` PLUTOT QU UNE COLONNE SUR LE PARENT. Passer le
+       parent en colonne aurait fait du copyright une TROISIEME rangee, lui
+       qui doit rester avec les icones. En prenant toute la largeur, le bloc
+       de liens pousse simplement ce qui suit a la ligne suivante — et ce
+       qui suit y reste ensemble. */
+    .v2-pied-liens {
+        display: flex;
+        flex: 1 0 100%;
+        gap: 0.45rem 0.8rem;
+        line-height: 1.1;
+    }
+    /* ⚠️ LES POINTS MEDIANS DISPARAISSENT. Separateurs d une liste qui tient
+       sur une ligne, ils deviennent des orphelins des qu elle se replie : la
+       premiere ligne se terminait par un « · » qui ne separait plus rien.
+       Aucun selecteur CSS ne sait « ce point est en fin de ligne » — on les
+       retire tous, et c est l ecart qui separe. */
     .v2-pied-liens > span[aria-hidden] { display: none; }
-    /* ⚠️ Les marges reviennent sur les icones elles-memes : dissous, le
-       groupe n a plus de boite a laquelle en accrocher une. */
-    .v2-pied-sign { margin-left: 0; }
-    .v2-pied .v2-reseau { width: 1.6rem; height: 1.6rem; }
-    .v2-pied .v2-reseau:first-of-type { margin-left: 0.15rem; }
-    .v2-pied .v2-reseau + .v2-reseau { margin-left: -0.25rem; }
-    /* La signature ferme la marche sur telephone : en tete elle poussait
-       les quatre liens d un cran et cassait la premiere ligne. */
-    .v2-pied-marque { order: 1; margin-right: 0; }
+
+    /* La signature : les deux icones ET le copyright, sur la meme ligne
+       parce qu ils disent la meme chose — qui a fait ca. Le copyright y est
+       plus petit et plus sourd que les liens du dessus : il se lit en
+       dernier, et c est sa place. */
+    .v2-pied-sign { gap: 0.45rem; margin-left: 0; }
+    .v2-pied .v2-reseau { width: 1.55rem; height: 1.55rem; }
+    .v2-pied .v2-reseau + .v2-reseau { margin-left: -0.1rem; }
+    .v2-pied-marque {
+        order: 1;
+        margin: 0 0 0 0.6rem;
+        font-size: 0.58rem;
+        letter-spacing: 0.1em;
+    }
 }
 
 .v2-reseau {
