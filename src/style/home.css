@@ -14263,8 +14263,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
-    font-size: 0.72rem;
+    /* ⚠️ EN CAPITALES, DONC INTERLETTRE. Des capitales sans espacement se
+       tassent — elles n ont ni jambages ni hampes pour aerer la ligne, c est
+       la meme raison qui a fait sortir le titre porte du tout-capitales. A
+       cette taille, sans les 0,14em, « CONFIDENTIALITE » devient un bloc.
+       Et la taille BAISSE en meme temps : des capitales paraissent plus
+       grosses que des minuscules de meme corps, un pied de page ne doit pas
+       grandir en changeant de casse. */
+    gap: 0.95rem;
+    font-size: 0.67rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: #4b4658;
     user-select: none;
 }
@@ -14301,8 +14311,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         margin-top: auto;
         padding-top: 1.5rem;
         justify-content: center;
-        font-size: 0.7rem;
-        gap: 0.4rem;
+        font-size: 0.64rem;
+        gap: 0.7rem;
+        letter-spacing: 0.12em;
     }
 }
 
