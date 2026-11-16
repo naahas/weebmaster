@@ -266,9 +266,25 @@
                                  — @change ne se declenche QUE si la valeur a bouge,
                                  la ou @blur rejouerait la validation a chaque
                                  fermeture du panneau. -->
-                            <input class="v2-profil-nom" ref="profilPseudo" v-model="pseudoInput"
-                                   @keyup.enter="setPseudo" @change="setPseudo"
-                                   maxlength="16" autocomplete="off" spellcheck="false">
+                            <!-- ✎ LE CRAYON DU PSEUDO. Le nom EST le champ, sans
+                                 boite ni bouton — c est la bonne decision pour qui
+                                 l a compris, et invisible pour les autres : rien ne
+                                 disait qu on pouvait cliquer dessus. Ce crayon le
+                                 dit, en gris et en petit.
+                                 ⚠️ Il est DANS le label : cliquer dessus pose donc
+                                 le curseur dans le champ sans une ligne de script,
+                                 et c est ce qu on attend de lui. -->
+                            <label class="v2-profil-nom-ligne">
+                                <input class="v2-profil-nom" ref="profilPseudo" v-model="pseudoInput"
+                                       @keyup.enter="setPseudo" @change="setPseudo"
+                                       maxlength="16" autocomplete="off" spellcheck="false">
+                                <svg class="v2-profil-nom-crayon" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                                </svg>
+                            </label>
                             <!-- ⚠️ « Profil local » et non « Compte invité » : le
                                  second est mot pour mot ce qu affiche Kyara, et il
                                  etiquette le joueur comme un sous-compte. Celui-ci
@@ -720,10 +736,18 @@
                             <span aria-hidden="true">·</span>
                             <a href="/rangs">Rangs</a>
                             <span aria-hidden="true">·</span>
-                            <a href="/conditions">Conditions</a>
-                            <span aria-hidden="true">·</span>
-                            <a href="/confidentialite">Confidentialité</a>
-                            <span aria-hidden="true">·</span>
+                            <!-- ⚠️ CES DEUX-LA SE CACHENT SUR TELEPHONE, pour
+                                 que la liste tienne sur une ligne. Elles
+                                 restent JOIGNABLES : le pied de chacune des
+                                 autres pages — règles, rangs, signaler — les
+                                 porte toutes les deux. C est un clic de plus,
+                                 pas une impasse, et ça compte : un lien
+                                 public vers la politique de confidentialité
+                                 est ce que Google exige pour la connexion. -->
+                            <a class="v2-pied-legal" href="/conditions">Conditions</a>
+                            <span class="v2-pied-legal" aria-hidden="true">·</span>
+                            <a class="v2-pied-legal" href="/confidentialite">Confidentialité</a>
+                            <span class="v2-pied-legal" aria-hidden="true">·</span>
                             <a href="/signaler">Signaler un bug</a>
                         </span>
                         <span class="v2-pied-sign">

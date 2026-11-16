@@ -7247,7 +7247,7 @@ body.game-active:has(.poll-game-container) #particles-js {
    voile plus lent le ferait paraitre flotter avant que le fond ne cede. */
 @media (max-width: 768px) {
     .v2-profil-voile {
-        background: rgba(6, 5, 11, 0.72);
+        background: rgba(6, 5, 11, 0.86);
         animation: v2VoileProfil 0.16s ease-out both;
     }
 }
@@ -7415,6 +7415,31 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-profil-id { flex: 1; min-width: 0; }
 
 /* Le nom EST le champ : pas de boite, pas de bouton « Valider ». */
+/* ✎ Le champ et son crayon, sur une ligne. ⚠️ Le pointille du champ passe
+   SOUS les deux : c est le `border-bottom` du label qui le porte maintenant,
+   sinon le trait s arretait avant le crayon et celui-ci paraissait pose a
+   cote du champ plutot que dedans. */
+.v2-profil-nom-ligne {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    cursor: text;
+}
+/* ⚠️ GRIS, et nettement plus sourd que le pseudo. C est un indice, pas un
+   bouton : plus clair, il se disputerait la ligne avec le nom, qui est la
+   premiere chose qu on lit de la carte. Il s eclaire au survol du couple et
+   quand le champ prend le focus — les deux moments ou l on s y interesse. */
+.v2-profil-nom-crayon {
+    flex: 0 0 auto;
+    width: 0.72rem;
+    height: 0.72rem;
+    color: #5f5a6e;
+    transition: color 0.15s ease;
+}
+.v2-profil-nom-ligne:hover .v2-profil-nom-crayon,
+.v2-profil-nom:focus + .v2-profil-nom-crayon { color: var(--neon-primary, #f0c75e); }
+
 .v2-profil-nom {
     width: 100%;
     font-family: inherit;
@@ -9368,7 +9393,11 @@ input, textarea,
     align-items: center;
     gap: clamp(1.5rem, 4vw, 3.5rem);
     flex-wrap: wrap;
+    /* ⚠️ Repere pour la pastille d aide, qui se pose HORS DU FLUX juste a sa
+       gauche — voir `.v2-start-info` en dessous. */
+    position: relative;
 }
+
 
 .v2-room-code {
     display: flex;
@@ -14340,6 +14369,30 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-start-info:hover .v2-start-bulle,
 .v2-start-info:focus-visible .v2-start-bulle { opacity: 1; visibility: visible; }
 
+/* ⚠️ LA PASTILLE SORT DU FLUX SUR GRAND ECRAN. En element de rangee, elle
+   poussait le code de 81 px vers la droite : le bloc ne tombait plus sous son
+   etiquette « COPIE LE LIEN DU SALON », ni dans l axe du reste de la colonne.
+   Un repere d aide ne doit rien deplacer de ce qu il commente. Elle se pend
+   donc a gauche de la rangee, dans la gouttiere — 532 px y sont libres a
+   cette largeur.
+   ⚠️ ET CETTE REGLE DOIT VENIR APRES LA REGLE DE BASE. Posee plus haut dans
+   le fichier, elle perdait : `@media` n ajoute AUCUNE specificite, et a
+   specificite egale c est l ordre qui tranche. La pastille restait
+   `position: relative` et continuait de pousser le code — mesure, pas
+   devine.
+   ℹ️ Sur telephone elle RESTE dans le flux : la rangee y devient une colonne
+   centree, il n y a plus d axe a casser, et 14 px seulement separent la
+   colonne du bord de l ecran. */
+@media (min-width: 769px) {
+    .v2-start-info {
+        position: absolute;
+        right: calc(100% + 0.65rem);
+        top: 50%;
+        transform: translateY(-50%);
+        margin: 0;
+    }
+}
+
 /* ⚖️ LA BARRE DU BAS — liens utiles et signature, sous un filet.
    ⚠️ ELLE PREND TOUTE LA LARGEUR, et c est le filet qui l exige : un trait
    qui s arrete au bord du texte souligne les liens au lieu de separer deux
@@ -14360,6 +14413,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     z-index: 20;
     padding: 0.85rem 1rem clamp(0.8rem, 2vh, 1.2rem);
     pointer-events: none;
+    /* ⚠️ UN FOND NOIR UNI, et non la transparence. La barre se posait sur le
+       degre d aurore et sur la grille en perspective, qui montent tous deux
+       vers le bas de l ecran : les liens se lisaient sur un fond qui changeait
+       de teinte d un bout a l autre de la ligne. Un aplat les detache, et
+       donne au pied une assise — c est le bas de la page, il peut peser.
+       ℹ️ Il reste sous le filet, qui le separe du jeu. */
+    background: #07060b;
 }
 .v2-pied::before {
     content: '';
@@ -14519,6 +14579,15 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        Aucun selecteur CSS ne sait « ce point est en fin de ligne » — on les
        retire tous, et c est l ecart qui separe. */
     .v2-pied-liens > span[aria-hidden] { display: none; }
+
+    /* ⚠️ CONDITIONS ET CONFIDENTIALITE DISPARAISSENT SUR TELEPHONE, pour que
+       les liens tiennent sur une ligne. Ce sont les deux dont on n a pas
+       besoin depuis l accueil — et elles restent joignables : le pied de
+       chacune des autres pages les porte. Un clic de plus, pas une impasse.
+       ⚠️ Et la signature part avec : a elle seule elle ajoutait une
+       troisieme rangee a un pied qui n en veut que deux. */
+    .v2-pied-legal,
+    .v2-pied-marque { display: none; }
 
     /* La signature : les deux icones ET le copyright, sur la meme ligne
        parce qu ils disent la meme chose — qui a fait ca. Le copyright y est
