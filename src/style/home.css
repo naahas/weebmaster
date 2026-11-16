@@ -15909,18 +15909,50 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    plus gros. */
 .v2-cer-suiv { opacity: 0.72; }
 
+/* ⚠️ `overflow: visible` ET NON PLUS `hidden`. Les etincelles de la montee
+   sont posees DANS la piste et doivent en sortir — c est tout l effet. Rien
+   n y perd : la jauge est calee `inset: 0 auto 0 0` sur une largeur en
+   pourcentage, elle n a jamais rien eu a deborder. Ce qui apparait en
+   revanche, c est son halo de tete, qui etait coupe jusqu ici. */
 .v2-cer-piste {
     position: relative;
     height: 2px;
     background: rgba(255, 255, 255, 0.1);
-    overflow: hidden;
+    overflow: visible;
 }
 .v2-cer-jauge {
     position: absolute;
     inset: 0 auto 0 0;
     width: 0;
     background: linear-gradient(90deg, #6fa0f5, var(--neon-primary));
+    /* 🔥 Le halo de tete : la barre pousse une lueur devant elle, et elle
+       donne aux etincelles un foyer d ou partir. Il ne coute rien — une
+       ombre portee, pas un objet de plus.
+       ⚠️ ET IL RESTE PETIT. Une premiere version portait un second halo de
+       24 px : il noyait la gerbe entiere, on ne voyait plus qu une tache.
+       C est la gerbe qu on a choisie, la lueur n est que son foyer. */
+    box-shadow: 0 0 9px 1px rgba(240, 199, 94, 0.75);
     transition: width 1.3s cubic-bezier(.22, .8, .28, 1);
+}
+
+/* ✨ LES ETINCELLES DE LA MONTEE — retenues au banc /prototypes/jauge.
+   ⚠️ Elles sont jetees par la TETE de la barre pendant qu elle avance, donc
+   creees au fil de l animation et detruites a leur arrivee. Leur mouvement
+   est pose en JS (API Web Animations) : une classe CSS sur un element que
+   Vue repeint serait silencieusement ecrasee au premier rendu.
+   ⚠️ `pointer-events: none` : il en vole une centaine au plus fort de la
+   montee, juste sous le bloc. Sans ca elles avaleraient le clic qui ferme. */
+.v2-cer-sp {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    height: 3px;
+    margin: -1px 0 0 -1px;
+    border-radius: 50%;
+    background: #fff3cf;
+    box-shadow: 0 0 6px 1px rgba(240, 199, 94, 0.9);
+    pointer-events: none;
+    will-change: transform, opacity;
 }
 /* ⚠️ A LA BASCULE DE RANG, la jauge revient a zero SANS transition. Avec, on
    la verrait REDESCENDRE sur toute sa longueur — ce qui raconte exactement

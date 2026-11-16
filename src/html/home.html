@@ -5255,8 +5255,11 @@
                         <span class="v2-cer-xp">+{{ cerXpAffiche }}<span class="u">XP</span></span>
                         <span class="v2-cer-reste">{{ cerDansRang }} / {{ cerParRang }}</span>
                     </div>
-                    <div class="v2-cer-piste">
-                        <div class="v2-cer-jauge" :class="{ sec: cerSansTransition }"
+                    <!-- ✨ La piste porte les etincelles de la montee : elles
+                         naissent sur la tete de la barre et en sortent. D ou
+                         la reference, et d ou son `overflow: visible`. -->
+                    <div class="v2-cer-piste" ref="cerPiste">
+                        <div class="v2-cer-jauge" ref="cerJauge" :class="{ sec: cerSansTransition }"
                              :style="{ width: cerPart + '%' }"></div>
                     </div>
                     <div class="v2-cer-ligne bas">

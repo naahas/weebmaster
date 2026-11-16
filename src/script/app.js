@@ -5528,11 +5528,85 @@ createApp({
                     // La jauge va au bout si l on monte, a sa valeur sinon.
                     this.cerSansTransition = false;
                     this.cerPart = this.cerPromu ? 100 : this.partDeRang(rangAvant, this._cerApres);
+                    // ✨ La gerbe part AVEC la barre. 1300 ms, soit la duree
+                    // exacte de la transition : au-dela, la tete ne bouge
+                    // plus et les grains s empileraient sur place.
+                    this.semerEtincelles(1300);
                 }, 180);
 
                 if (!this.cerPromu) return;
                 this._cerT2 = setTimeout(() => this.basculerRang(), 1800);
             });
+        },
+
+        // ✨ LES ETINCELLES DE LA MONTEE — effet retenu au banc
+        // /prototypes/jauge, parmi six.
+        //
+        // La tete de la barre en jette tant qu elle avance. ⚠️ Sa position se
+        // LIT sur la jauge a chaque image plutot que de se recalculer : la
+        // transition a sa propre courbe (`cubic-bezier(.22,.8,.28,1)`), et
+        // refaire ce calcul a cote aurait donne des grains en avance ou en
+        // retard sur la barre qu ils sont censes suivre. Lire est exact par
+        // construction.
+        //
+        // ⚠️ API WEB ANIMATIONS, jamais une classe CSS. Ces grains vivent
+        // dans un bloc que Vue repeint a chaque image — les deux nombres s y
+        // incrementent — et une classe y serait silencieusement ecrasee.
+        //
+        // ⚠️ ET LA BOUCLE S ARRETE A TROIS CONDITIONS, pas une : la duree
+        // ecoulee, la fermeture de la ceremonie, et la disparition de la
+        // piste. Sans les deux dernieres, fermer pendant la montee laissait
+        // un `requestAnimationFrame` tourner sur un element detache.
+        semerEtincelles(duree) {
+            if (this._reduitLeMouvement()) return;
+            const piste = this.$refs.cerPiste;
+            const jauge = this.$refs.cerJauge;
+            if (!piste || !jauge) return;
+
+            this._cerSp = (this._cerSp || 0) + 1;
+            const jeton = this._cerSp;
+            const debut = performance.now();
+
+            const semer = () => {
+                if (jeton !== this._cerSp || !this.cerVisible) return;
+                if (!piste.isConnected) return;
+                if (performance.now() - debut > duree) return;
+
+                const x = jauge.getBoundingClientRect().width;
+                for (let i = 0; i < 4; i++) {
+                    const p = document.createElement('i');
+                    p.className = 'v2-cer-sp';
+                    p.style.left = x + 'px';
+                    // Un grain sur trois est plus gros : sans cette
+                    // irregularite la gerbe ressemble a une trame, pas a des
+                    // etincelles.
+                    if (i === 0) { p.style.width = '4px'; p.style.height = '4px'; }
+                    piste.appendChild(p);
+                    const dx = (Math.random() * 26) - 6;
+                    const dy = (Math.random() * 34) - 17;
+                    p.animate([
+                        { opacity: 1, transform: 'translate(0,0) scale(1)' },
+                        { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(0.25)` },
+                    ], { duration: 460 + Math.random() * 320, easing: 'cubic-bezier(.2,.7,.4,1)' })
+                        .finished.then(() => p.remove()).catch(() => p.remove());
+                }
+                requestAnimationFrame(semer);
+            };
+            requestAnimationFrame(semer);
+        },
+
+        // ⚠️ Le mouvement se coupe, l INFORMATION reste : qui demande moins
+        // d animations voit la barre se poser a sa valeur, sans gerbe.
+        _reduitLeMouvement() {
+            try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+            catch (e) { return false; }
+        },
+
+        // Coupe la gerbe et balaie ce qui vole encore.
+        couperEtincelles() {
+            this._cerSp = (this._cerSp || 0) + 1;
+            const piste = this.$refs.cerPiste;
+            if (piste) piste.querySelectorAll('.v2-cer-sp').forEach((p) => p.remove());
         },
 
         // Pose a l ecran le rang `n` et le remplissage correspondant a `xp`.
@@ -5573,6 +5647,15 @@ createApp({
                 requestAnimationFrame(() => {
                     this.cerSansTransition = false;
                     this.cerPart = this.partDeRang(cible, this._cerApres);
+                    // ✨ La SECONDE montee en a droit aussi. Sans elle, la
+                    // gerbe accompagnait la course vers 100 % puis le nouveau
+                    // rang se remplissait en silence — c est pourtant la
+                    // moitie qu on regarde, celle d apres la promotion.
+                    // ⚠️ `couperEtincelles` d abord : la gerbe de la
+                    // premiere montee tourne peut-etre encore, et deux
+                    // boucles sur la meme piste doubleraient la densite.
+                    this.couperEtincelles();
+                    this.semerEtincelles(1300);
                 });
                 this.$nextTick(() => this.jouerEclats());
             });
@@ -5697,6 +5780,9 @@ createApp({
         oublierCeremonie() {
             clearTimeout(this._cerT); clearTimeout(this._cerT1);
             clearTimeout(this._cerT2); clearTimeout(this._cerFin);
+            // ✨ Et la gerbe : une boucle laissee tourner continuerait de
+            // semer sur une piste detachee du document.
+            this.couperEtincelles();
             this._cerT = null;
         },
 
