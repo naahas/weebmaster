@@ -7692,25 +7692,32 @@ body.game-active:has(.poll-game-container) #particles-js {
        de l en-tete plutot que comme la premiere du corps. 1,65rem en tout,
        contre 1,25 avant. */
     padding: 0.5rem 0 0.55rem;
-    /* 🎖️ RAJDHANI EN CAPITALES ESPACEES — retenu au banc /prototypes/titre,
-       parmi six. La police est deja chargee par la page, elle n ajoute aucun
-       aller-retour.
-       ⚠️ ET LE RANG EST JUSTE AU-DESSUS, lui aussi en capitales espacees.
-       Les deux se ressemblent donc par la casse, ce qui etait precisement le
-       defaut qu on avait corrige en passant le titre en italique. Quatre
-       choses les separent maintenant, et il faut les garder toutes les
-       quatre : le rang est PLUS PETIT (0,67 contre 0,95rem), plus GRAS (800
-       contre 600), MOINS espace (0,16 contre 0,22em) et porte la couleur de
-       son palier quand celui-ci est dore. Retirer une seule de ces quatre
-       differences, et l en-tete et le corps se relisent comme une seule
-       phrase coupee en deux. */
-    font-family: 'Rajdhani', system-ui, sans-serif;
-    font-size: 0.95rem;
+    /* 🎖️ CORMORANT GARAMOND EN CAPITALES, SANS ITALIQUE — retenu au banc
+       /prototypes/titre, parmi six. La police est deja chargee par la page
+       (elle sert a `.fs-master-tag`, la ligne d honneur de l ecran de fin),
+       elle n ajoute aucun aller-retour.
+       ⚠️ C EST LE SEUL SERIF DE CETTE CARTE, et c est ce qui le distingue :
+       tout le reste y est en Poppins. La casse ne porte donc plus seule la
+       difference avec le rang — ce qui tombe bien, car le rang est lui aussi
+       en capitales espacees.
+       ⚠️ ET IL RESTE QUATRE AUTRES DIFFERENCES AVEC LUI, a garder toutes :
+       le rang est plus PETIT (0,67 contre 0,92rem), bien plus GRAS (800
+       contre 600), MOINS espace (0,16 contre 0,15em a taille bien moindre)
+       et grisé la ou le titre est dore. Les ramener l un vers l autre, et
+       l en-tete et le corps se relisent comme une seule phrase coupee en
+       deux — le defaut que l italique corrigeait avant.
+       ⚠️ 0,92rem ET 0,15em, ET C EST MESURE : a 0,98 / 0,2em du banc,
+       « Shinigami des ombres » passait sur DEUX lignes dans une carte de
+       16rem. Les titres plus longs encore (« Le plus grand de la plèbe »)
+       passeront a la ligne quoi qu on fasse, et c est voulu — un titre se
+       gagne, il doit se lire en entier plutot que d etre coupe. */
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.92rem;
     font-style: normal;
     font-weight: 600;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #cfa93a;
+    color: #d4af37;
     /* ⚠️ IL PASSE A LA LIGNE, il ne se coupe PAS. « Shinigami des ombres »
        est un titre de longueur ordinaire et il sortait tronque — mesure :
        « Shinigami des ombr… » dans une carte de 16rem. Un titre qu on ne peut
