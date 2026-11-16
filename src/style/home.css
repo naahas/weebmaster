@@ -7685,8 +7685,13 @@ html.rendu-logiciel .v2-dust { display: none; }
     font-size: 0.8rem;
     /* L air entre les lignes : serrees, les trois formaient un bloc gris ou
        l on ne distinguait plus une ligne de sa voisine. ⚠️ En dessous de
-       0,2rem elles se recollent — c est le plancher, pas un reglage libre. */
-    padding: 0.34rem 0;
+       0,2rem elles se recollent — c est le plancher, pas un reglage libre.
+       ⚠️ ET CE PADDING EST CE QUI SEPARE LE TEXTE DES MINI-FILETS, pas
+       seulement les lignes entre elles : le filet est pose sur le bord HAUT
+       de chaque ligne (`+ div`), donc tout ce qu on retire ici colle le
+       chiffre au trait. A 0,34rem les deux se touchaient presque ; 0,56
+       laisse le texte respirer des deux cotes du filet. */
+    padding: 0.56rem 0;
 }
 /* ── Un mini-filet ENTRE les lignes, jamais autour.
    ⚠️ `+ div` et non `border-bottom` : une bordure basse sur chaque ligne en
