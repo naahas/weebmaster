@@ -209,6 +209,52 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
         check('⚠️ … et il ne le PORTE plus non plus', !c.titre_prefixe, String(c.titre_prefixe));
     }
 
+    // ── 5 quater. Le titre de depart ─────────────────────────────
+    // ⚠️ UN AUTRE COBAYE, ET IL PASSE PAR `toucherCompte`. Le premier a ete
+    // insere a la main plus haut (`insert` direct), donc il n a jamais vu le
+    // chemin qui pose le titre de depart. C est ce chemin-la qu on eprouve :
+    // celui qu emprunte un vrai joueur a sa premiere connexion.
+    console.log('\n=== 5 quater. Le titre de depart ===');
+    const comptesMod = require('../server-comptes');
+    const { data: ne2 } = await supabase.auth.admin.createUser({
+        email: 'depart-' + Date.now() + '@exemple.invalid', email_confirm: true,
+    });
+    if (!ne2 || !ne2.user) {
+        console.log('  ⏭️  second cobaye impossible — on saute.');
+    } else {
+        const ID2 = ne2.user.id;
+        const neuf = await comptesMod.toucherCompte(ID2, { pseudoFournisseur: 'Arrivant' });
+        const dep = catalogue.TITRE_DEPART;
+        check('un compte NEUF porte le titre de depart',
+            !!neuf && neuf.titre_prefixe === dep.prefixe && neuf.titre_suffixe === dep.suffixe,
+            neuf && catalogue.composerTitre(neuf.titre_prefixe, neuf.titre_suffixe));
+        check('⚠️ … qui est bien un COUPLE, pas un prefixe seul',
+            catalogue.composerTitre(dep.prefixe, dep.suffixe).split(' ').length >= 2,
+            catalogue.composerTitre(dep.prefixe, dep.suffixe));
+        check('… et il POSSEDE ses deux pieces',
+            !!neuf && (neuf.titres || []).includes(dep.prefixe) && (neuf.titres || []).includes(dep.suffixe),
+            JSON.stringify(neuf && neuf.titres));
+
+        // ⚠️ LE CONTROLE QUI COMPTE VRAIMENT. Le titre se pose a la creation
+        // et nulle part ailleurs : un joueur qui a change de titre puis
+        // revient ne doit PAS etre rhabille en arrivant, ni voir sa
+        // collection ecrasee par les deux pieces du depart.
+        await supabase.from('comptes')
+            .update({ titre_prefixe: 'shinigami', titre_suffixe: 'desombres',
+                      titres: ['shinigami', 'desombres'] }).eq('id', ID2);
+        const retour = await comptesMod.toucherCompte(ID2, {});
+        check('⚠️ un compte qui REVIENT garde son titre',
+            !!retour && retour.titre_prefixe === 'shinigami' && retour.titre_suffixe === 'desombres',
+            retour && catalogue.composerTitre(retour.titre_prefixe, retour.titre_suffixe));
+        check('⚠️ … et sa collection n est pas ecrasee',
+            !!retour && !(retour.titres || []).includes(dep.prefixe),
+            JSON.stringify(retour && retour.titres));
+
+        await supabase.auth.admin.deleteUser(ID2);
+        const { data: reste } = await supabase.from('comptes').select('id').eq('id', ID2).maybeSingle();
+        check('🧹 second cobaye efface', !reste);
+    }
+
     // ── 6. Les compteurs ─────────────────────────────────────────
     console.log('\n=== 6. Les compteurs, et leur second mot de passe ===');
     let z = await post('/admin/site/compte/chiffres', { id: ID, xp: 0, parties: 0, victoires: 0 });

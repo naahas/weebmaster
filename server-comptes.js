@@ -26,6 +26,11 @@
 // visible, donc on la refuse AU DEMARRAGE plutot que d esperer.
 
 const { supabase } = require('./dbs');
+// 🎖️ Le catalogue partage, pour le seul `TITRE_DEPART` : les deux pieces que
+// tout compte neuf recoit. Meme fichier que le navigateur charge en
+// `<script>` — il n a ni `import` ni `export`, seulement le garde-fou
+// `module.exports` a la fin.
+const { TITRE_DEPART } = require('./src/script/titres');
 
 const URL_SUPABASE = process.env.SUPABASE_URL || '';
 const CLE_PUBLIQUE = process.env.SUPABASE_ANON_KEY || '';
@@ -244,6 +249,25 @@ async function toucherCompte(idCompte, { pseudo, pseudoFournisseur, avatar } = {
         const aEcrire = pseudoAPoser(pseudo, pseudoFournisseur, deja && deja.pseudo);
         if (aEcrire) ligne.pseudo = aEcrire;
 
+        // 🎖️ LE TITRE DE DEPART, pose A LA CREATION ET NULLE PART AILLEURS.
+        // Tout compte neuf porte « Vagabond de l'aube » et possede ses deux
+        // pieces : un titre se COMPOSE, et un emplacement vide le premier jour
+        // ne l apprend a personne.
+        //
+        // ⚠️ `!eLecture` AUTANT QUE `!deja`. La lecture rend `null` quand le
+        // compte n existe pas, mais AUSSI quand elle echoue — une coupure
+        // reseau, un souci Supabase. Sur le seul `!deja`, le premier
+        // rafraichissement de page apres un hoquet aurait rhabille en
+        // « Vagabond de l'aube » un joueur qui portait son titre depuis des
+        // mois, et ecrase sa collection avec deux entrees. On ne pose ce
+        // titre que lorsqu on est SUR qu il n y avait rien.
+        const estNouveau = !eLecture && !deja;
+        if (estNouveau) {
+            ligne.titre_prefixe = TITRE_DEPART.prefixe;
+            ligne.titre_suffixe = TITRE_DEPART.suffixe;
+            ligne.titres = [TITRE_DEPART.prefixe, TITRE_DEPART.suffixe];
+        }
+
         // ⚠️ Pas de `niveau` : il se deduit de l xp (src/script/niveaux.js).
         // `titre` et `pseudo_impose`, eux, SONT des colonnes — ils ne se
         // deduisent de rien, ils se posent a la main depuis le panneau. Et on
@@ -252,6 +276,14 @@ async function toucherCompte(idCompte, { pseudo, pseudoFournisseur, avatar } = {
             .from('comptes').upsert(ligne, { onConflict: 'id' })
             .select(champsProfil()).single();
         if (colonnesManquantes(error)) {
+            // ⚠️ ON RETIRE AUSSI LES TROIS CHAMPS DE TITRE DE LA LIGNE, et pas
+            // seulement du SELECT. Le repli existe pour une base ou le SQL n a
+            // pas ete passe : ses colonnes de titre n existent pas, et
+            // reecrire la meme ligne telle quelle aurait echoue une seconde
+            // fois sur la meme 42703 — le repli n aurait rien rattrape.
+            delete ligne.titre_prefixe;
+            delete ligne.titre_suffixe;
+            delete ligne.titres;
             ({ data, error } = await supabase
                 .from('comptes').upsert(ligne, { onConflict: 'id' })
                 .select(CHAMPS_BASE).single());
@@ -715,6 +747,12 @@ module.exports = {
     // rejouent sans base ni reseau, et celles qui coutent cher si elles
     // changent en silence.
     natureDeLaClef, pseudoAPoser, XP_MODES,
+    // 🎖️ Exportee pour `npm run test:comptes-panneau`, qui eprouve le titre
+    // de depart. C est le chemin d une PREMIERE connexion, et la suite n a
+    // pas de jeton Supabase a presenter a `identifier` : elle appelle donc
+    // l etage du dessous. Rien d autre ne doit s en servir — le jeu passe
+    // toujours par `identifier`.
+    toucherCompte,
     // ⏳ Pour que le demarrage l annonce : un interrupteur de mise au point
     // qu on ne voit pas est un interrupteur qu on oublie allume.
     SANS_LIMITES,

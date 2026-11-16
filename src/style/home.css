@@ -7704,6 +7704,12 @@ body.game-active:has(.poll-game-container) #particles-js {
    filet net d un bord a l autre redonnerait les traits de separation qu on a
    justement retires de cette carte — d ou un trait qui s eteint aux deux
    bouts et porte un losange au centre, le meme signe que le joueur inscrit. */
+/* ⚠️ Celui du HAUT respire plus que celui du bas. En dessous, le filet
+   separe deux blocs de lignes serrees ; ici il separe un titre — centre, seul
+   sur sa ligne — d un tableau de chiffres, et la marge de 0.22rem le collait
+   au titre au point qu on l aurait pris pour un soulignement. */
+.v2-profil-sep.haut { margin: 0.7rem 0 0.85rem; }
+
 .v2-profil-sep {
     position: relative;
     height: 1px;

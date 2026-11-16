@@ -51,6 +51,13 @@
 // joueurs perdent leur titre. D ou des identifiants sans accent ni espace.
 
 const TITRES_CATALOGUE = [
+    // ── Le titre de depart ────────────────────────────────────────
+    // ⚠️ `source: 'depart'` — ces deux-la ne se gagnent pas et ne s achetent
+    // pas : tout nouveau compte les recoit. Les laisser en `gagne` aurait mis
+    // en recompense deux titres que le monde entier porte deja le jour de son
+    // inscription. Voir `TITRE_DEPART`, plus bas.
+    { id: 'vagabond',     nom: 'Vagabond',      type: 'prefixe', source: 'depart', prix: null },
+
     // ── Préfixes, a gagner ────────────────────────────────────────
     { id: 'capitaine',    nom: 'Capitaine',     type: 'prefixe', source: 'gagne', prix: null },
     { id: 'shinigami',    nom: 'Shinigami',     type: 'prefixe', source: 'gagne', prix: null },
@@ -59,7 +66,6 @@ const TITRES_CATALOGUE = [
     { id: 'chasseur',     nom: 'Chasseur',      type: 'prefixe', source: 'gagne', prix: null },
     { id: 'pirate',       nom: 'Pirate',        type: 'prefixe', source: 'gagne', prix: null },
     { id: 'chevalier',    nom: 'Chevalier',     type: 'prefixe', source: 'gagne', prix: null },
-    { id: 'vagabond',     nom: 'Vagabond',      type: 'prefixe', source: 'gagne', prix: null },
     { id: 'mage',         nom: 'Mage',          type: 'prefixe', source: 'gagne', prix: null },
     { id: 'ronin',        nom: 'Ronin',         type: 'prefixe', source: 'gagne', prix: null },
     { id: 'ghoule',       nom: 'Ghoule',        type: 'prefixe', source: 'gagne', prix: null },
@@ -99,6 +105,10 @@ const TITRES_CATALOGUE = [
     { id: 'heros',        nom: 'Héros',         type: 'prefixe', source: 'boutique', prix: null },
     { id: 'ange',         nom: 'Ange',          type: 'prefixe', source: 'boutique', prix: null },
 
+    // ── Le suffixe de depart ──────────────────────────────────────
+    // Son pendant : « Vagabond de l'aube », le titre de tout arrivant.
+    { id: 'delaube',      nom: "de l'aube",     type: 'suffixe', source: 'depart', prix: null },
+
     // ── Suffixes, a gagner ────────────────────────────────────────
     { id: 'courageux',    nom: 'courageux',     type: 'suffixe', source: 'gagne', prix: null },
     { id: 'desombres',    nom: 'des ombres',    type: 'suffixe', source: 'gagne', prix: null },
@@ -107,7 +117,6 @@ const TITRES_CATALOGUE = [
     { id: 'duchaos',      nom: 'du chaos',      type: 'suffixe', source: 'gagne', prix: null },
     { id: 'eternel',      nom: 'éternel',       type: 'suffixe', source: 'gagne', prix: null },
     { id: 'solitaire',    nom: 'solitaire',     type: 'suffixe', source: 'gagne', prix: null },
-    { id: 'delaube',      nom: "de l'aube",     type: 'suffixe', source: 'gagne', prix: null },
 
     // ── Suffixes, en boutique ─────────────────────────────────────
     // ⚠️ Trois d entre eux portent le meme nom qu un prefixe (paisible,
@@ -153,6 +162,28 @@ const TITRES_CATALOGUE = [
     { id: 'noir',         nom: 'noir',          type: 'suffixe', source: 'boutique', prix: null },
 ];
 
+// ════════════════════════════════════════════════════════════════
+// 🎁 LE TITRE DE DEPART — « Vagabond de l'aube »
+// ════════════════════════════════════════════════════════════════
+// Tout compte neuf arrive avec ces deux pieces : il les PORTE et il les
+// POSSEDE. C est `server-comptes.js` qui les pose, a la creation du compte
+// et a ce moment-la seulement.
+//
+// ⚠️ DEUX PIECES, ET C EST TOUT L OBJET. Un prefixe seul — « Chasseur » —
+// ne montre pas qu un titre SE COMPOSE : le joueur qui gagnera « des
+// ombres » ne saurait pas ou ca se range. Avec un couple sous les yeux des
+// le premier jour, l emplacement vide n existe jamais et la mecanique se
+// comprend sans qu on l explique.
+//
+// ⚠️ LE MEME POUR TOUT LE MONDE, et pas un tirage. Changer de titre devient
+// alors le signe visible qu on a joue — un tirage aurait donne a l arrivee
+// une identite que personne n a gagnee, et deux joueurs se seraient demande
+// pourquoi l un a « Shinigami » et l autre « Idiot ».
+//
+// ⚠️ Et il dit ce qu il est : un vagabond, a l aube. On ne commence rien
+// en etant deja quelqu un.
+const TITRE_DEPART = { prefixe: 'vagabond', suffixe: 'delaube' };
+
 // Index par identifiant, construit une fois. Une recherche lineaire sur
 // quatre-vingt-dix entrees a chaque affichage d une carte de joueur serait
 // gratuite a payer.
@@ -179,5 +210,5 @@ function composerTitre(idPrefixe, idSuffixe) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { TITRES_CATALOGUE, TITRES_PAR_ID, composerTitre };
+    module.exports = { TITRES_CATALOGUE, TITRES_PAR_ID, TITRE_DEPART, composerTitre };
 }

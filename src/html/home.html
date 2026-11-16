@@ -328,6 +328,16 @@
                          joueurs n en ont aucun, et une ligne vide laissee a sa
                          place ferait croire a un defaut d affichage. -->
                     <div class="v2-profil-exploit" v-if="estConnecte && titrePorte">{{ titrePorte }}</div>
+                    <!-- ✦ Qui l on EST au-dessus, ce qu on a FAIT en dessous.
+                         ⚠️ LE MEME FILET QUE PLUS BAS, et pas un second trait
+                         invente pour l occasion : cette carte a deja perdu
+                         toutes ses separations nettes une fois, parce que leur
+                         accumulation la faisait paraitre brouillonne. Celui-ci
+                         s eteint aux deux bouts et porte le meme losange.
+                         ⚠️ Il ne parait QU AVEC le titre. Seul, il couperait la
+                         carte sans rien separer — les comptes d avant le titre
+                         de depart n en portent aucun. -->
+                    <div class="v2-profil-sep haut" v-if="estConnecte && titrePorte"></div>
                     <div class="v2-profil-err" v-if="pseudoError">{{ pseudoError }}</div>
 
                     <!-- ⚠️ Rien ne s affiche si la connexion n est pas configuree

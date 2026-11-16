@@ -3470,7 +3470,11 @@ function peindreTitres() {
         $(compteur).textContent = l.length || '';
         $(cible).innerHTML = l.length ? l.map(t =>
             '<span class="tit ' + (type === 'prefixe' ? 'pre' : 'suf') + '" data-donner="' + ech(t.id) +
-            '" title="' + (t.source === 'boutique' ? 'Boutique' : 'À gagner') + ' — cliquer pour le donner">' +
+            // ⚠️ Trois sources depuis le titre de départ : sans ce cas,
+            // « Vagabond » et « de l'aube » se seraient annoncés « À gagner »
+            // alors que tout compte neuf les reçoit.
+            '" title="' + (t.source === 'boutique' ? 'Boutique'
+                : t.source === 'depart' ? 'Titre de départ' : 'À gagner') + ' — cliquer pour le donner">' +
             ech(t.nom) + '</span>').join('')
             : '<span class="tit-vide">' + (q ? 'Rien ici.' : 'Il les a tous.') + '</span>';
     }
