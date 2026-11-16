@@ -7226,10 +7226,34 @@ body.game-active:has(.poll-game-container) #particles-js {
 .v2-moi-stylo svg { width: 58%; height: 58%; fill: currentColor; display: block; }
 
 /* ───── Le panneau ───── */
+/* ⚠️ TRANSPARENT SUR GRAND ECRAN : ce n est la qu un attrape-clic, pour que
+   cliquer a cote referme le panneau. Assombrir toute la page derriere une
+   bulle de 16rem accrochee a l avatar serait hors de proportion — on ne
+   coupe pas l ecran pour un objet qui en occupe un douzieme. */
 .v2-profil-voile {
     position: fixed;
     inset: 0;
     z-index: 900;
+}
+
+/* ⚠️ SUR TELEPHONE IL S ASSOMBRIT, et le rapport s inverse : le panneau y
+   prend la moitie de la hauteur, et sans voile l accueil continuait de
+   vivre derriere lui — le logo, la grille, les poussieres — si bien qu on
+   ne savait plus lequel des deux ecrans repondait au doigt.
+   ⚠️ Pas de `backdrop-filter` : il coute cher sur les telephones d entree
+   de gamme, et c est precisement ceux-la qui jouent. Un aplat suffit a
+   couper le fond.
+   Le fondu est court — 0,16 s. Le panneau, lui, arrive en meme temps : un
+   voile plus lent le ferait paraitre flotter avant que le fond ne cede. */
+@media (max-width: 768px) {
+    .v2-profil-voile {
+        background: rgba(6, 5, 11, 0.72);
+        animation: v2VoileProfil 0.16s ease-out both;
+    }
+}
+@keyframes v2VoileProfil {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .v2-profil {
@@ -12517,7 +12541,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        fenêtre, et ne descendaient pas jusqu'en bas. */
     .v2-hub { animation: none; }
 
-    .v2-home { padding-bottom: 4rem; }
+    /* ⚠️ 0,9rem, ET PLUS 4rem. Ces quatre rem reservaient la place de la
+       barre de chiffres, qui etait `position: fixed` en bas de l ecran : il
+       fallait que le contenu puisse defiler jusqu au-dessus d elle. Les
+       chiffres ne paraissent plus sur telephone, et la reserve laissait donc
+       47 px de vide sous le pied de page — une bande morte que rien
+       n expliquait a l ecran. */
+    .v2-home { padding-bottom: 0.9rem; }
 
     .v2-choices {
         flex-direction: row;
@@ -14303,6 +14333,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    s ajoutait au `gap` ENTRE les deux et les eloignait l une de l autre : les
    signatures doivent former un groupe, c est la liste de liens dont elles
    doivent s ecarter. */
+/* © La signature. ⚠️ PLUS SOURDE QUE LES LIENS, et sans survol : elle n est
+   pas cliquable, et rien ne doit laisser croire le contraire. La marge a sa
+   droite la detache de la liste, comme celle des icones a l autre bout — le
+   pied se lit alors en trois temps : qui, quoi, ou. */
+.v2-pied-marque {
+    margin-right: 0.3rem;
+    color: #3d3949;
+    white-space: nowrap;
+}
+
 /* ⚠️ LA MARGE EST SUR LE GROUPE, plus sur la premiere icone. Depuis que les
    signatures sont reunies dans leur propre `span`, c est lui qui doit
    s ecarter de la liste — une marge posee sur l icone aurait aussi agi en
@@ -14346,27 +14386,51 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         bottom: auto;
         margin-top: auto;
         padding: 1.1rem 0 0.2rem;
+        /* ℹ️ PAS DE MARGE NEGATIVE ICI. Une premiere version en posait une
+           pour rattraper la bande vide sous le pied — c etait soigner le
+           symptome : le vide venait d une reserve de 4rem laissee pour une
+           barre de chiffres qui ne s affiche plus. La reserve a ete reduite
+           a sa source (`.v2-home`, plus bas), et il n y a plus rien a
+           rattraper. */
         /* ⚠️ Repasse dans le flux, la barre ne peut plus avaler de clic :
            elle ne couvre que sa propre hauteur. On rend donc les
            evenements, sans quoi le filet separerait une rangee de liens
            MORTS — le defaut le plus silencieux qui soit. */
         pointer-events: auto;
     }
-    /* ⚠️ LES ICONES PASSENT AU-DESSUS DES LIENS. A quatre liens, la rangee
-       se replie toute seule sur un ecran etroit, et les deux signatures
-       tombaient alors n importe ou — a la suite du dernier lien, ou seules
-       sur une troisieme ligne. En colonne, l ordre est decide : les icones
-       d abord, les liens ensuite.
-       `order` plutot qu un second bloc dans le gabarit : le HTML garde
-       l ordre de LECTURE, ou les liens passent avant une signature. */
+    /* ⚠️ TOUT SE REPLIE EN UNE SEULE RANGEE QUI PASSE A LA LIGNE, et les
+       deux groupes se DISSOLVENT pour ca (`display: contents`). Tant qu ils
+       restaient des boites, les icones ne pouvaient se poser qu a cote du
+       bloc de liens entier — donc sous lui, sur une troisieme ligne. Une
+       fois dissous, leurs enfants deviennent des elements de la meme rangee
+       et les icones viennent a la suite du DERNIER lien, dans la place que
+       la seconde ligne laisse libre.
+       ℹ️ Un detour par la colonne avait ete essaye d abord : il mettait les
+       icones au-dessus, ce qui marchait mais ajoutait une ligne a un pied
+       qui en a deja deux. */
     .v2-pied-dedans {
-        flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem 1.05rem;
         font-size: 0.64rem;
         letter-spacing: 0.12em;
     }
-    .v2-pied-sign { order: -1; margin-left: 0; }
+    .v2-pied-liens,
+    .v2-pied-sign { display: contents; }
+    /* ⚠️ LES POINTS MEDIANS DISPARAISSENT SUR TELEPHONE. Separateurs d une
+       liste qui tient sur une ligne, ils deviennent des orphelins des
+       qu elle se replie : la premiere ligne se terminait par un « · » qui
+       ne separait plus rien. Aucun selecteur CSS ne sait « ce point est en
+       fin de ligne » — on les retire tous, et c est l ecart qui separe.
+       Il s elargit pour ca, de 0,7 a 1,05rem. */
+    .v2-pied-liens > span[aria-hidden] { display: none; }
+    /* ⚠️ Les marges reviennent sur les icones elles-memes : dissous, le
+       groupe n a plus de boite a laquelle en accrocher une. */
+    .v2-pied-sign { margin-left: 0; }
     .v2-pied .v2-reseau { width: 1.6rem; height: 1.6rem; }
+    .v2-pied .v2-reseau:first-of-type { margin-left: 0.15rem; }
+    .v2-pied .v2-reseau + .v2-reseau { margin-left: -0.25rem; }
+    /* La signature ferme la marche sur telephone : en tete elle poussait
+       les quatre liens d un cran et cassait la premiere ligne. */
+    .v2-pied-marque { order: 1; margin-right: 0; }
 }
 
 .v2-reseau {

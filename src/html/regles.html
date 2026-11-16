@@ -47,6 +47,22 @@
 
         .r-resume { margin: 0 0 1rem; }
 
+        /* ── « D apres… » : le jeu dont le mode s inspire.
+           ⚠️ SOUS LE TITRE ET AVANT LA REGLE, pas noye dedans. Qui connait
+           BombParty a compris le mode en une ligne et peut passer a la
+           suivante ; qui ne le connait pas lit la regle, et la mention ne
+           lui a rien coute. Dite au milieu d un paragraphe, elle n aurait
+           servi ni a l un ni a l autre.
+           ⚠️ Et c est une ATTRIBUTION, pas une decoration : ces deux modes
+           sont des transpositions de jeux existants, autant le dire
+           nous-memes et en toutes lettres. */
+        .r-dapres {
+            margin: 0 0 0.85rem;
+            font-size: 0.85rem;
+            color: var(--l-doux);
+        }
+        .r-dapres b { color: var(--l-texte); font-weight: 600; }
+
         /* Les reglages de l hote : une liste serree, pas des paragraphes.
            Ce sont des entrees d un tiroir, elles se lisent en diagonale. */
         .r-reglages {
@@ -160,6 +176,7 @@
                 <h2>BombAnime</h2>
                 <span class="r-joueurs"><b>1</b> à <b>15</b> joueurs</span>
             </div>
+            <p class="r-dapres">Une variante de <b>BombParty</b>, transposée à l'anime.</p>
             <p class="r-resume">Le jeu de la bombe, version anime. Une série est tirée, la bombe passe d'un
                 joueur à l'autre, et <strong>chacun doit citer un personnage de cette série avant qu'elle
                 n'explose sur lui</strong>. Un nom déjà donné ne compte pas. Le dernier survivant gagne.</p>
@@ -275,6 +292,7 @@
                 <h2>Codanime</h2>
                 <span class="r-joueurs"><b>4</b> à <b>8</b> joueurs · deux équipes</span>
             </div>
+            <p class="r-dapres">Une variante de <b>Codenames</b>, transposée à l'anime.</p>
             <p class="r-resume">Une grille de portraits, deux équipes. Dans chaque camp, <strong>un espion
                 voit lesquels sont les siens</strong> et doit les faire deviner à son équipe —
                 <strong>avec un seul mot</strong>, et un nombre : combien de portraits ce mot désigne.</p>

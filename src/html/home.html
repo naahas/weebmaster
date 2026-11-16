@@ -700,6 +700,16 @@
                              ouvre pour JOUER ; les autres, on les cherche quand on
                              les cherche. L'ordre d'un pied de page n'est pas
                              alphabétique, il est celui de l'utilité. -->
+                        <!-- © LA SIGNATURE, a gauche des liens.
+                             ⚠️ CE N EST PAS UN LIEN, et elle ne doit pas en
+                             avoir l air : pas de survol, une teinte plus
+                             sourde que les quatre autres. Habillee pareil,
+                             on la cliquerait, et un element qui ne repond
+                             pas au clic est pire qu absent.
+                             ⚠️ L annee est CALCULEE (`annee`), jamais ecrite
+                             en dur : un « © 2026 » fige trahit un site
+                             abandonne des le 1er janvier suivant. -->
+                        <span class="v2-pied-marque">ShonenMaster © {{ annee }}</span>
                         <!-- ⚠️ DEUX GROUPES, et c est ce qui permet la bascule
                              mobile. A plat, passer la rangee en colonne aurait
                              empile CHAQUE lien et chaque point median sur sa

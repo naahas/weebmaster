@@ -1278,6 +1278,16 @@ createApp({
             return composerTitre(this.titrePrefixe, this.titreSuffixe);
         },
 
+        // © L ANNEE DU PIED DE PAGE.
+        //
+        // ⚠️ CALCULEE, JAMAIS ECRITE EN DUR. Un « © 2026 » fige est le genre
+        // de detail qui trahit un site laisse a l abandon des le 1er janvier
+        // suivant — et personne ne pense a le changer, parce que personne ne
+        // le relit. Une ligne de code vaut mieux qu un rappel annuel.
+        annee() {
+            return new Date().getFullYear();
+        },
+
         // 📊 LE TAUX DE VICTOIRE — victoires sur parties jouees.
         //
         // ⚠️ Il se CALCULE ici et ne vient pas de la base : les deux nombres
