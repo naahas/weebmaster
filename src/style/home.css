@@ -14373,6 +14373,45 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-start-info:hover .v2-start-bulle,
 .v2-start-info:focus-visible .v2-start-bulle { opacity: 1; visibility: visible; }
 
+/* 📜 ⚠️ SUR TELEPHONE, PLUS DE PASTILLE : LA PHRASE S AFFICHE EN CLAIR.
+   Une bulle au survol n a pas de sens la ou il n y a pas de curseur — il
+   aurait fallu la toucher, et rien n indique qu un rond de 24 px se touche.
+   Le conseil se lit donc directement sous le bouton, en gris et en petit.
+   ⚠️ C EST LE MEME ELEMENT, pas un second bloc dans le gabarit : la phrase
+   n est ecrite qu une fois, et les deux formes ne peuvent pas diverger. Le
+   rond perd son fond et sa pulsation, le « ! » est efface par `font-size: 0`
+   — que la bulle annule pour elle-meme. */
+@media (max-width: 768px) {
+    .v2-start-info {
+        width: auto;
+        height: auto;
+        max-width: 22rem;
+        margin: -0.35rem 0 0;
+        font-size: 0;
+        color: transparent;
+        background: none;
+        border-radius: 0;
+        cursor: default;
+        animation: none;
+    }
+    .v2-start-bulle {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        width: auto;
+        max-width: none;
+        padding: 0;
+        font-size: 0.74rem;
+        line-height: 1.45;
+        text-align: center;
+        color: #837d96;
+        background: none;
+        border: 0;
+        box-shadow: none;
+    }
+    .v2-start-bulle b { color: #b9b3c9; }
+}
+
 /* ℹ️ ELLE EST REVENUE EN FIN DE RANGEE, ET ELLE Y RESTE DANS LE FLUX.
    A gauche du code elle poussait tout le bloc de 81 px vers la droite — il
    ne tombait plus sous son etiquette « COPIE LE LIEN DU SALON » — et il
