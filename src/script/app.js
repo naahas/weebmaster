@@ -884,6 +884,7 @@ createApp({
             // entier a qui vient d ouvrir la page.
             cerVisible: false,         // le calque est-il dans le DOM
             cerEntree: false,          // la classe qui declenche le fondu
+            cerSortie: false,          // et celle qui l eteint d un coup
             cerGain: null,             // { xp, rubis, victoire, mode }
             cerRang: { nom: '', couleur: '#fff' },   // le rang AFFICHE, qui bascule
             cerSuivant: '',            // le nom du rang d apres
@@ -4669,6 +4670,15 @@ createApp({
                 localStorage.setItem('isHost', 'true');
                 this.lobbyMode = this.selectedMode;
 
+                // 👥 ⚠️ LA LISTE REPART VIDE, ici AUSSI. `quitterSalonLocalement`
+                // la vide deja, mais on n ouvre pas toujours un salon en
+                // sortant proprement d un autre : un salon ferme par le
+                // serveur, un retour de podium, un onglet laisse ouvert. Ce
+                // salon-ci est NEUF et n a encore personne — c est vrai
+                // AVANT la premiere diffusion comme apres.
+                this.lobbyPlayers = [];
+                this.playerCount = 0;
+
                 // Le salon existe : plus besoin d'attendre une diffusion pour l'afficher
                 this.isGameActive = true;
                 this.homeScreen = 'hub';
@@ -5653,11 +5663,23 @@ createApp({
         // calque couvre « Rejouer » et « Retour », qui resteraient morts si
         // l on se contentait de le rendre transparent — l opacite ne retire
         // rien du flux des evenements.
+        // ⚠️ ON N ENLEVE PAS `on`, ON AJOUTE `sort`. Retirer la classe
+        // d entree rejouait l arrivee a l envers : le bloc redescendait en
+        // glissant pendant 0,6 s. Ici le conteneur entier s eteint en 0,13 s
+        // et les enfants gardent leur etat final — une image qui s efface.
         fermerCeremonie() {
-            if (!this.cerVisible) return;
-            this.cerEntree = false;
+            if (!this.cerVisible || this.cerSortie) return;
+            this.cerSortie = true;
             this.oublierCeremonie();
-            this._cerFin = setTimeout(() => { this.cerVisible = false; }, 320);
+            // ⚠️ `cerVisible` tombe A LA FIN, jamais au clic : le calque doit
+            // avoir fini de s eteindre avant de disparaitre du gabarit, sinon
+            // la zone saute au lieu de s effacer. Et 150 > 130, pour que la
+            // transition soit finie et non coupee a mi-chemin.
+            this._cerFin = setTimeout(() => {
+                this.cerVisible = false;
+                this.cerEntree = false;
+                this.cerSortie = false;
+            }, 150);
         },
 
         // Coupe tout ce qui est en attente. ⚠️ Sans ca, une promotion
@@ -5675,6 +5697,11 @@ createApp({
             this.oublierCeremonie();
             this.cerVisible = false;
             this.cerEntree = false;
+            // ⚠️ La classe de sortie aussi : une ceremonie fermee pendant que
+            // la partie repart laisserait `sort` pose, et la SUIVANTE
+            // s ouvrirait dans un calque deja eteint — invisible, sans qu un
+            // seul message ne le dise.
+            this.cerSortie = false;
             this.cerGain = null;
             this.cerPromu = false;
             this.cerPart = 0;
@@ -7822,6 +7849,15 @@ createApp({
             this.hasJoined = false;
             this.isGameActive = false;
             this.shouldRejoinLobby = false;
+            // 👥 ⚠️ ET LA LISTE DES JOUEURS, qui n etait vidée NULLE PART.
+            // Seul le serveur l ecrit, a la premiere diffusion du salon. On
+            // quittait un salon, on en rouvrait un dans la foulee, et pendant
+            // les quelques secondes qui separent l ouverture de la premiere
+            // « lobby-update » on voyait les joueurs de l ANCIEN salon dans le
+            // neuf — des noms qui ne sont pas la, et un compteur qui ment, sur
+            // l ecran qu un streamer montre a son audience.
+            this.lobbyPlayers = [];
+            this.playerCount = 0;
             this.selectedTeam = null;
             this.homeScreen = 'hub';
             localStorage.removeItem('isHost');

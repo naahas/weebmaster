@@ -7674,12 +7674,14 @@ body.game-active:has(.poll-game-container) #particles-js {
     text-transform: uppercase;
 }
 
-/* 🎖️ LE TITRE PORTE, sous le rang.
-   ⚠️ Deliberement DIFFERENT du rang, et pas seulement en couleur : en
-   minuscules, en italique, sans l espacement des capitales. Les deux sont de
-   petites lignes grises sous un pseudo — habillees pareil, on les aurait lues
-   comme une seule phrase coupee en deux (« VÉTÉRAN SHINIGAMI DES OMBRES »).
-   La casse separe mieux que la teinte a cette taille. */
+/* 🎖️ LE TITRE PORTE, en tete du corps.
+   ⚠️ IL N EST PLUS EN ITALIQUE MINUSCULE. Cette note disait que la casse le
+   separait du rang mieux que la teinte — c etait vrai tant qu il vivait
+   A COTE du rang, dans l en-tete. Il a depuis sa propre ligne, de l autre
+   cote de la frontiere teintee, avec un filet sous lui : la separation est
+   faite par la mise en page, et la casse est redevenue libre. Ce qui les
+   distingue maintenant est detaille dans la regle ci-dessous — quatre
+   differences, toutes necessaires. */
 .v2-profil-exploit {
     /* Sur TOUTE la largeur du corps, en tete : il a quitte l en-tete, ou il
        n avait que la moitie de la carte et sortait tronque. */
@@ -7690,9 +7692,25 @@ body.game-active:has(.poll-game-container) #particles-js {
        de l en-tete plutot que comme la premiere du corps. 1,65rem en tout,
        contre 1,25 avant. */
     padding: 0.5rem 0 0.55rem;
-    font-size: 0.88rem;
-    font-style: italic;
-    color: #c9a227;
+    /* 🎖️ RAJDHANI EN CAPITALES ESPACEES — retenu au banc /prototypes/titre,
+       parmi six. La police est deja chargee par la page, elle n ajoute aucun
+       aller-retour.
+       ⚠️ ET LE RANG EST JUSTE AU-DESSUS, lui aussi en capitales espacees.
+       Les deux se ressemblent donc par la casse, ce qui etait precisement le
+       defaut qu on avait corrige en passant le titre en italique. Quatre
+       choses les separent maintenant, et il faut les garder toutes les
+       quatre : le rang est PLUS PETIT (0,67 contre 0,95rem), plus GRAS (800
+       contre 600), MOINS espace (0,16 contre 0,22em) et porte la couleur de
+       son palier quand celui-ci est dore. Retirer une seule de ces quatre
+       differences, et l en-tete et le corps se relisent comme une seule
+       phrase coupee en deux. */
+    font-family: 'Rajdhani', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #cfa93a;
     /* ⚠️ IL PASSE A LA LIGNE, il ne se coupe PAS. « Shinigami des ombres »
        est un titre de longueur ordinaire et il sortait tronque — mesure :
        « Shinigami des ombr… » dans une carte de 16rem. Un titre qu on ne peut
@@ -15703,6 +15721,26 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     z-index: 900;
 }
 
+/* ⚠️ LA SORTIE NE REJOUE PAS L ENTREE A L ENVERS. Fermer est un geste, pas un
+   moment : on a clique la croix, la zone doit partir tout de suite. Sans
+   cette classe, le bloc redescendait en glissant pendant 0,6 s, le voile
+   s eclaircissait en 0,45 s et la croix attendait son delai de 0,45 s avant
+   meme de commencer — on regardait l animation d arrivee jouee a l envers,
+   apres avoir demande a ne plus la voir.
+   Le CONTENEUR s eteint donc en 0,13 s et les enfants ne bougent plus d un
+   pixel : c est une image qui s efface, pas un objet qui s en va.
+   ⚠️ `pointer-events: none` des la premiere image. Ces 130 ms tombent
+   exactement sur le clic suivant, et « Rejouer » est dessous. */
+.v2-cer.sort {
+    opacity: 0;
+    transition: opacity 0.13s linear;
+    pointer-events: none;
+}
+.v2-cer.sort .v2-cer-voile,
+.v2-cer.sort .v2-cer-bloc,
+.v2-cer.sort .v2-cer-fermer { transition: none; }
+.v2-cer.sort .v2-cer-bloc { opacity: 1; transform: none; }
+
 /* ⚠️ PLUS SOMBRE AU CENTRE, et c est une mesure. A plat, 82 % laissaient le
    podium transparaitre A TRAVERS le texte : la couronne et le pseudo du
    vainqueur sont a fort contraste, et le bloc n a aucune carte derriere lui.
@@ -15818,7 +15856,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    le titre : `line-height: 0.92` colle deja le bas des lettres a leur boite,
    si bien que « NOVICE I » tombait presque sur le « +230 ». On l ecarte par
    le bas du couple, la ou se trouve l air. */
-.v2-cer-ligne.haut { margin-top: 0.8rem; margin-bottom: 0.45rem; }
+.v2-cer-ligne.haut { margin-top: 1.2rem; margin-bottom: 0.45rem; }
 .v2-cer-ligne.bas { margin-top: 0.8rem; }
 
 .v2-cer-xp {
@@ -15904,7 +15942,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-cer-promu-zone { height: 2.5rem; }
     /* Le titre perd 0.6rem : l air qui l en separe suit, sinon l ecart
        paraitrait plus grand sur l ecran le plus serre. */
-    .v2-cer-ligne.haut { margin-top: 0.6rem; }
+    .v2-cer-ligne.haut { margin-top: 0.95rem; }
 }
 
 /* ⚠️ Le mouvement se coupe, l INFORMATION reste. Sans transition la barre se

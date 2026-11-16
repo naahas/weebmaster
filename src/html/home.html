@@ -5218,7 +5218,7 @@
              fin (`.v2-end`, `.rush-fin`, `.chx-fin`) ont des mises en page
              differentes ; celle-ci se pose PAR-DESSUS et ne leur demande
              rien, donc elle ne s ecrit qu une fois. -->
-        <div class="v2-cer" v-if="cerVisible" :class="{ on: cerEntree }">
+        <div class="v2-cer" v-if="cerVisible" :class="{ on: cerEntree, sort: cerSortie }">
             <!-- ⚠️ Le voile ET le calque central portent la fermeture. Le
                  central est en `inset: 0` PAR-DESSUS le voile : sans lui, un
                  clic tombe a cote du bloc n atteindrait jamais le voile, et
