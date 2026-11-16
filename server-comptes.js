@@ -427,7 +427,16 @@ const XP_MODES = {
     // ⏱️ 25 s et pas davantage : la manche la plus courte que le salon
     // propose vaut 30 s. Monter le plancher au-dessus éteindrait un réglage
     // parfaitement normal.
-    rush:      { partie:  80, victoire: 150, seuil: 4, duree: 25, rubis: 300, rubisVictoire:  800 },
+    // ⚡ ⚠️ 55 s ET NON 25. Rush etait le mode le plus farmable du jeu : 80 xp
+    // de participation pour une manche de 25 s, soit pres de 200 xp a la
+    // minute, la ou les autres modes demandent 45 a 60 s. Et il n y avait
+    // rien d anormal a detecter — une manche de 25 s farmee est une VRAIE
+    // manche de 25 s. C est le plancher qui etait trop bas, pas le joueur
+    // qui trichait.
+    // ⚠️ 55 et pas 60 : la plus courte manche reglable dure 60 s, et une
+    // partie s arrete quelques dixiemes avant son chrono. A 60 pile, une
+    // manche honnete serait tombee du mauvais cote du plancher.
+    rush:      { partie:  80, victoire: 150, seuil: 4, duree: 55, rubis: 300, rubisVictoire:  800 },
     bombanime: { partie:  25, victoire:  75, seuil: 4, duree: 45, rubis: 200, rubisVictoire:  500 },
     // ⚠️ Collect est le SEUL a trois, et c est son PLAFOND qui le decide :
     // le mode se joue a cinq au maximum. A quatre, la fenetre ou une victoire

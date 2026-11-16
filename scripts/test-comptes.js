@@ -170,10 +170,21 @@ verif('⚠️ Codanime suicidé sur l assassin (25 s) : refusé', false, c.parti
 verif('⚠️ Classique à 2 sans réponse (20 s) : refusé', false, c.partieAssezLongue('classic', 20));
 verif('⚠️ Ascension abandonnée (10 s) : refusé', false, c.partieAssezLongue('ascension', 10));
 
-// ⚠️ Et ce qu il ne faut SURTOUT pas fermer : la manche de Rush la plus
-// courte que le salon propose vaut 30 s. Un plancher global à 60 s aurait
-// éteint l xp d un réglage parfaitement normal.
-verif('⚠️ une VRAIE manche de Rush à 30 s passe', true, c.partieAssezLongue('rush', 30));
+// ⚡ RUSH A CHANGE DE PLANCHER : 25 s → 55 s, et le reglage de manche ne
+// descend plus en dessous de 60 s (`RUSH_CONFIG.DUREES`).
+//
+// ⚠️ CE CONTROLE DISAIT L INVERSE, et il avait raison a l epoque : tant que
+// le salon proposait des manches de 30 s, les refuser aurait eteint l xp
+// d un reglage parfaitement normal. Les deux valeurs ont bouge ENSEMBLE —
+// c est ce qui rend le nouveau plancher tenable, et c est aussi pourquoi
+// toucher a l un sans l autre casserait ce test. Il est la pour ca.
+verif('⚠️ une manche de Rush à 30 s est refusée (le réglage n existe plus)',
+    false, c.partieAssezLongue('rush', 30));
+// ⚠️ 55 et pas 60 : une manche de 60 s s arrete quelques dixiemes avant son
+// chrono. A 60 pile, la plus courte manche reglable serait tombee du mauvais
+// cote du plancher une fois sur deux.
+verif('⚠️ une manche de 58 s passe quand même — la marge sous les 60 s réglés',
+    true, c.partieAssezLongue('rush', 58));
 verif('une manche de Rush à 60 s passe', true, c.partieAssezLongue('rush', 60));
 verif('un BombAnime de 2 min passe', true, c.partieAssezLongue('bombanime', 120));
 verif('un Collect de 2 min 30 passe', true, c.partieAssezLongue('collect', 150));

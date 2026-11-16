@@ -216,7 +216,15 @@ const RUSH_CONFIG = {
     // Pas de plafond : le mode est solo-simultane, personne n attend son tour.
     // La constante MAX_PLAYERS vivait ici sans etre lue nulle part — elle
     // laissait croire a une limite de trente qui n a jamais ete appliquee.
-    DUREES: [30, 60, 90],       // durée de la manche, en secondes
+    // ⚠️ 30 s A ETE RETIRE, et c est volontaire. Une manche de 30 s payait
+    // 80 xp de participation : le meilleur rapport du jeu, et rien
+    // d anormal a detecter puisque la manche etait vraie. Le plancher d xp
+    // de Rush est passe a 55 s (XP_MODES, server-comptes.js) ; laisser le
+    // reglage descendre a 30 aurait donne une manche jouable mais qui ne
+    // rapporte RIEN, ce qui est pire qu une manche absente — on ne comprend
+    // pas pourquoi.
+    // 120 prend sa place : trois choix restent trois choix.
+    DUREES: [60, 90, 120],      // durée de la manche, en secondes
     DUREE_DEFAUT: 60,
     PERSO_DEFAUT: 8,            // secondes par personnage, 0 = sans limite
     PERSO_MIN: 5,

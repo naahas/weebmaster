@@ -7442,6 +7442,12 @@ body.game-active:has(.poll-game-container) #particles-js {
 
 .v2-profil-nom {
     width: 100%;
+    /* ⚠️ `min-width: 0` SUR UN CHAMP DANS UN FLEX. Un `<input>` a une largeur
+       intrinseque qui l empeche de retrecir sous son contenu : avec un pseudo
+       long, il gardait sa place et le crayon se posait PAR-DESSUS le texte.
+       C est la meme regle que pour les deux boutons de connexion, et elle se
+       voit rarement avant qu un nom de seize caracteres n arrive. */
+    min-width: 0;
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 700;
@@ -14386,7 +14392,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         width: auto;
         height: auto;
         max-width: 22rem;
-        margin: -0.35rem 0 0;
+        /* ⚠️ Marge POSITIVE, et plus negative. Elle remontait la phrase pour
+           rattraper le `gap` de la colonne ; collee ainsi sous le bouton,
+           elle se lisait comme sa legende plutot que comme un conseil a
+           part. Elle respire maintenant de 0,2rem au-dela du gap. */
+        margin: 0.2rem 0 0;
         font-size: 0;
         color: transparent;
         background: none;

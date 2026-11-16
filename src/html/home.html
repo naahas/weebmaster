@@ -325,7 +325,14 @@
                                 <span v-if="!estConnecte">Profil local</span>
                             </div>
                         </div>
-                        <button class="v2-profil-fermer" @click="fermerProfil" title="Fermer">✕</button>
+                        <!-- ℹ️ PLUS DE CROIX ICI. Le panneau se ferme en cliquant
+                             a cote — `.v2-profil-voile` couvre tout l ecran et
+                             porte `fermerProfil` — et en recliquant l avatar qui
+                             l a ouvert. Sur telephone le voile est sombre, donc
+                             visible : on voit qu il y a un dehors.
+                             ⚠️ Un bouton de moins dans un en-tete qui portait
+                             deja le pseudo, le rang et l avatar. -->
+                        <!-- Croix retiree : voir ci-dessus. -->
                     </div>
 
                     <!-- ⚠️ LE CORPS EST UNE SURFACE A PART, et c est tout le parti
@@ -1274,7 +1281,12 @@
                                     <span class="v2-set-label">Durée</span>
                                     <span class="v2-set-value">{{ rush.duree }}s</span>
                                     <span class="v2-set-opts">
-                                        <button v-for="d in [30, 60, 90]" :key="d"
+                                        <!-- ⚠️ 30 s a disparu : le plancher d xp de
+                                             Rush est a 55 s, une manche de 30 ne
+                                             rapporterait rien. La liste doit suivre
+                                             `RUSH_CONFIG.DUREES` (server.js), qui
+                                             refuse tout ce qui n y figure pas. -->
+                                        <button v-for="d in [60, 90, 120]" :key="d"
                                                 class="v2-set-opt" :class="{ on: rush.duree === d }"
                                                 @click="applySetting('/admin/rush/set-duree', { duree: d }, () => rush.duree = d)">{{ d }}</button>
                                     </span>
