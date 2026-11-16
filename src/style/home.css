@@ -14241,15 +14241,28 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    l icone TikTok sur un ecran etroit — deux calques `fixed` ne se poussent
    pas l un l autre, ils se superposent. Les 4,5rem reserves valent la
    largeur de l icone plus son air. */
+/* ⚠️ CENTRE, PAS DANS LE COIN. Pose a gauche, il se lisait comme un oubli :
+   un bloc de texte seul dans un angle vide, pendant que le coin droit porte
+   deja la signature. Au milieu il se lit comme ce qu il est, un pied de page.
+   ⚠️ `left: 50%` + `translateX(-50%)` ET NON `left: 0; right: 0`. La seconde
+   forme ferait un calque FIXE sur toute la largeur de l ecran : invisible,
+   mais il avalerait les clics sur toute la bande du bas — dont ceux qui
+   visent l icone du coin. Ici l element ne fait que la largeur de son
+   contenu.
+   ⚠️ Et la largeur reste bornee : centre, il doit laisser de chaque cote la
+   place de l icone (2,7rem) plus sa gouttiere. 9rem couvrent les deux cotes
+   avec de la marge. */
 .v2-pied {
     position: fixed;
-    left: clamp(1rem, 2.5vw, 2.2rem);
+    left: 50%;
+    transform: translateX(-50%);
     bottom: clamp(1rem, 2.5vh, 1.8rem);
     z-index: 20;
-    max-width: calc(100% - 4.5rem - clamp(2rem, 5vw, 4.4rem));
+    max-width: min(calc(100% - 9rem), 40rem);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.45rem;
     font-size: 0.72rem;
     color: #4b4658;
@@ -14280,6 +14293,10 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
         position: static;
         left: auto;
         bottom: auto;
+        /* ⚠️ La translation se retire AUSSI. Laissee en place sur un element
+           repasse dans le flux, elle le decalerait d une demi-largeur vers
+           la gauche — a moitie hors de l ecran. */
+        transform: none;
         max-width: none;
         margin-top: auto;
         padding-top: 1.5rem;
