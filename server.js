@@ -7887,9 +7887,17 @@ const server = app.listen(PORT, () => {
     // ⏳ Un interrupteur de mise au point qu on ne voit pas est un
     // interrupteur qu on oublie allume. Celui-ci paie l xp pleine a toute
     // partie, bonus de victoire en solo compris : il doit crier.
+    // ⚠️ ET LES DEUX ETATS SE DISENT, depuis qu il est ouvert par defaut hors
+    // production. Ne parler que du cas ouvert laissait le cas ferme muet —
+    // c est-a-dire exactement la situation ou l on cherche pourquoi une
+    // partie ne s est pas comptee.
     if (comptes.SANS_LIMITES) {
-        console.log('⏳ XP_SANS_LIMITES=1 — duree minimale et seuil de joueurs LEVES.');
-        console.log('   Mise au point seulement. La variable est ignoree en production.');
+        console.log('⏳ Hors production — duree minimale et seuil de joueurs LEVES.');
+        console.log('   Toute partie compte, bonus de victoire en solo compris.');
+        console.log('   `XP_SANS_LIMITES=0` remet les planchers.');
+    } else if (process.env.NODE_ENV !== 'production') {
+        console.log('⏱️ XP_SANS_LIMITES=0 — planchers de duree et de joueurs EN PLACE.');
+        console.log('   Une partie trop courte ne comptera ni xp, ni victoire, ni « +1 partie ».');
     }
 
     loadRecentGamesFromDb();

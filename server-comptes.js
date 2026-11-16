@@ -440,22 +440,36 @@ function partieAssezLongue(mode, duree) {
     return (Number(duree) || 0) >= b.duree;
 }
 
-// ⏳ MISE AU POINT SEULEMENT — `XP_SANS_LIMITES=1` leve LES DEUX planchers :
-// la duree minimale d une partie et le nombre de joueurs qu exige le bonus de
-// victoire. Sans elle, regler l ecran de gain demanderait une vraie partie a
+// ⏳ MISE AU POINT — LES DEUX PLANCHERS SONT LEVES HORS PRODUCTION : la duree
+// minimale d une partie, et le nombre de joueurs qu exige le bonus de
+// victoire. Sans ca, regler l ecran de gain demanderait une vraie partie a
 // huit pendant une minute, a chaque essai — on ne met pas une animation au
 // point a ce prix-la, et l on finirait par la regler « a peu pres ».
 //
-// ⚠️ REFUSEE EN PRODUCTION, et pas seulement deconseillee : oubliee sur
-// Heroku, elle paierait l xp PLEINE a toute partie de dix secondes, bonus de
-// victoire en solo compris — exactement les six portes qu on a passe un
-// chantier a fermer. Le garde-fou est celui des bots de mise au point.
+// ⚠️ C EST UN DEFAUT, ET PLUS UNE VARIABLE A POSER. Elle l a ete, et deux
+// fois de suite le serveur de developpement a tourne sans elle : les parties
+// d essai ne s ecrivaient nulle part, le profil restait a « 0 partie, 0
+// victoire », et rien a l ecran ne disait pourquoi. Un interrupteur de mise
+// au point qu on doit penser a allumer est un interrupteur qu on oublie. Il
+// se lit donc a l envers, comme les bots de mise au point : ouvert en
+// developpement, ferme en production, rien a poser.
+//
+// ⚠️ FERMEE EN PRODUCTION, et pas seulement deconseillee : laissee ouverte
+// sur Heroku, elle paierait l xp PLEINE a toute partie de dix secondes, bonus
+// de victoire en solo compris — exactement les six portes qu on a passe un
+// chantier a fermer. `NODE_ENV` y vaut `production`, et c est deja lui qui
+// ferme les bots : une seule chose a ne pas casser, pas deux.
+//
+// ⚠️ `XP_SANS_LIMITES=0` REMET LES PLANCHERS hors production. C est la seule
+// facon d eprouver le bareme pour de vrai sur une machine de developpement,
+// et `test:comptes` s en sert — il le pose LUI-MEME avant de charger ce
+// fichier, parce qu un `const` lu au chargement ne se change plus apres.
 //
 // ⚠️ Elle est lue ICI, a la source, et non dans `crediterXpDeLaPartie` : les
 // deux planchers vivent dans ce fichier, et un interrupteur pose plus haut en
 // aurait laisse un des deux debout sans que rien ne le dise.
-const SANS_LIMITES = process.env.XP_SANS_LIMITES === '1'
-    && process.env.NODE_ENV !== 'production';
+const SANS_LIMITES = process.env.NODE_ENV !== 'production'
+    && process.env.XP_SANS_LIMITES !== '0';
 
 // Pure : ni base, ni reseau, ni etat. C est la seule decision du bareme, donc
 // c est celle que `npm run test:comptes` rejoue.

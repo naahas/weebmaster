@@ -17,6 +17,18 @@
 // ⚠️ La suite ne lit AUCUN secret : elle fabrique ses propres jetons d essai.
 
 require('dotenv').config();
+
+// ⏳ ⚠️ LES PLANCHERS, REMIS A LA MAIN — ET AVANT LE `require`.
+// Hors production, `server-comptes` leve les deux planchers par defaut (la
+// duree minimale et le seuil de joueurs du bonus de victoire), pour qu une
+// partie d essai se compte sans variable a poser. Cette suite eprouve le
+// BAREME : sans cette ligne, « Collect gagne a 2 » toucherait le bonus et la
+// moitie des controles ci-dessous deviendraient faux — en passant au vert,
+// qui plus est, puisqu ils verifient des montants plus hauts.
+// Elle doit etre posee AVANT le chargement du module : `SANS_LIMITES` est un
+// `const` lu une fois, il ne se change plus apres.
+process.env.XP_SANS_LIMITES = '0';
+
 const c = require('../server-comptes');
 
 let ok = 0, ko = 0;
