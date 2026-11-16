@@ -1357,7 +1357,12 @@ body:not(.entre) { overflow: hidden; }
         </button>
         <button class="onglet" data-vue="suggestions" aria-selected="false">
             <svg width="17" height="17" viewBox="0 0 24 24"><use href="#i-ampoule"/></svg>
-            Suggestions
+            <!-- ⚠️ « BombAnime » DANS LE NOM, pas seulement dans le
+                 sous-titre : l onglet « Retours » juste en dessous recueille
+                 aussi des suggestions, celles du formulaire /signaler. Deux
+                 boites, deux contenus — le rail doit le dire sans qu on
+                 ouvre. -->
+            Suggestions BombAnime
             <span class="compte pastille" id="compte-sug" hidden>0</span>
         </button>
         <!-- 📮 ⚠️ A NE PAS CONFONDRE AVEC « Suggestions » juste au-dessus :
@@ -1597,13 +1602,13 @@ body:not(.entre) { overflow: hidden; }
         <div class="carte">
             <div class="carte-tete">
                 <svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-ampoule"/></svg>
+                <!-- ℹ️ PLUS DE FILTRES PAR ETAT. « Accepter » et « refuser » ne
+                     faisaient rien d autre que ranger une suggestion dans une
+                     case : le travail reel, c est de l ajouter a la main a la
+                     banque, puis de la supprimer d ici. Une suggestion est donc
+                     soit a traiter, soit effacee — un seul etat, pas de filtre
+                     a offrir. -->
                 Ce que les joueurs proposent <small id="s-note"></small>
-                <span class="filtres" id="s-filtres">
-                    <button class="filtre" data-s="pending" aria-pressed="true">En attente</button>
-                    <button class="filtre" data-s="approved" aria-pressed="false">Acceptées</button>
-                    <button class="filtre" data-s="rejected" aria-pressed="false">Refusées</button>
-                    <button class="filtre" data-s="all" aria-pressed="false">Toutes</button>
-                </span>
             </div>
             <div class="defile" id="s-liste">
                 <div class="etat">Lecture…</div>
@@ -2043,7 +2048,7 @@ const TITRES = {
     comptes: ['Comptes', 'Les joueurs inscrits, leur progression et leurs titres'],
     questions: ['Questions', 'La banque du mode Classique'],
     choice: ['Vrai / Faux', 'La banque du mode Choice'],
-    suggestions: ['Suggestions', 'Les personnages proposés depuis BombAnime'],
+    suggestions: ['Suggestions BombAnime', 'Les personnages que les joueurs proposent en jeu'],
     retours: ['Retours', 'Bugs, idées et remarques envoyés depuis /signaler'],
 };
 // Chaque section ne va chercher ses données qu'à sa première ouverture :
@@ -3218,7 +3223,6 @@ $('c-form').onsubmit = async (e) => {
 // ════════════════════════════════════════════
 // LES SUGGESTIONS
 // ════════════════════════════════════════════
-let S_STATUT = 'pending';
 
 function quandSug(iso) {
     if (!iso) return '';
@@ -3235,12 +3239,17 @@ async function lireSuggestions() {
     const zone = $('s-liste');
     zone.innerHTML = '<div class="etat">Lecture…</div>';
     try {
-        const r = await appel('/api/suggestions?status=' + encodeURIComponent(S_STATUT));
+        // ⚠️ `status=all` : il n y a plus qu un etat. Une suggestion est la
+        // ou elle n y est plus, et demander « pending » laisserait dehors
+        // celles que la v1 avait marquees acceptees ou refusees — elles
+        // existent encore en base, et il faut pouvoir les effacer.
+        const r = await appel('/api/suggestions?status=all');
         if (!r.ok) throw new Error('Erreur ' + r.status);
-        const { suggestions, counts } = await r.json();
+        const { suggestions } = await r.json();
 
-        // La pastille du rail ne compte que ce qui ATTEND une décision.
-        const attente = (counts && counts.pending) || 0;
+        // La pastille du rail compte ce qui reste a traiter, c est-a-dire
+        // tout ce qui est encore la.
+        const attente = (suggestions || []).length;
         $('compte-sug').textContent = attente;
         $('compte-sug').hidden = attente === 0;
         $('s-note').textContent = '· ' + (suggestions || []).length;
@@ -3249,27 +3258,25 @@ async function lireSuggestions() {
             zone.innerHTML = '<div class="etat">Rien à relire ici.</div>';
             return;
         }
-        const ETATS = { pending: 'en attente', approved: 'acceptée', rejected: 'refusée' };
+        // ℹ️ PLUS D ETAT AFFICHE NI DE BOUTONS « Accepter / Refuser ». Ils ne
+        // faisaient que ranger une ligne dans une case, alors que le travail
+        // reel se passe ailleurs : on ajoute le personnage a la banque a la
+        // main, puis on efface la suggestion. Un seul bouton reste, et il
+        // fait exactement ce geste.
         zone.innerHTML = suggestions.map(s =>
             '<div class="s">' +
             '<span class="s-nom" data-corr="characterName" data-id="' + s.id +
             '" title="Cliquer pour corriger">' + ech(s.character_name) + '</span>' +
             '<span class="s-serie" data-corr="anime" data-id="' + s.id +
             '" title="Cliquer pour corriger">' + ech(s.anime) + '</span>' +
-            '<span class="s-etat" data-e="' + ech(s.status) + '">' +
-            ech(ETATS[s.status] || s.status) + '</span>' +
             '<span class="s-meta">par ' + ech(s.submitted_by || 'anonyme') +
             ' · ' + ech(quandSug(s.created_at)) + '</span>' +
             '<span class="s-actions">' +
-            '<button class="mini ok" data-s="approved" data-id="' + s.id + '">Accepter</button>' +
-            '<button class="mini non" data-s="rejected" data-id="' + s.id + '">Refuser</button>' +
             '<button class="mini danger" data-s="del" data-id="' + s.id + '">Supprimer</button>' +
             '</span></div>').join('');
 
         zone.querySelectorAll('.mini[data-s]').forEach(b => {
-            b.onclick = () => (b.dataset.s === 'del'
-                ? supprimerSuggestion(parseInt(b.dataset.id, 10))
-                : statuerSuggestion(parseInt(b.dataset.id, 10), b.dataset.s));
+            b.onclick = () => supprimerSuggestion(parseInt(b.dataset.id, 10));
         });
         zone.querySelectorAll('[data-corr]').forEach(el => { el.onclick = () => corriger(el); });
     } catch (e) {
@@ -3338,29 +3345,18 @@ function corriger(el) {
     champ.onblur = valider;
 }
 
-$('s-filtres').querySelectorAll('.filtre').forEach(b => {
-    b.onclick = () => {
-        S_STATUT = b.dataset.s;
-        $('s-filtres').querySelectorAll('.filtre').forEach(x =>
-            x.setAttribute('aria-pressed', String(x === b)));
-        lireSuggestions();
-    };
-});
+// ℹ️ `statuerSuggestion` ET LE BRANCHEMENT DES FILTRES ONT ETE RETIRES avec
+// les boutons qui les appelaient. La route `/api/suggestion-status` existe
+// toujours cote serveur : la v1 s en servait, des lignes portent encore
+// `approved` ou `rejected`, et rien n oblige a la fermer aujourd hui. Mais
+// plus rien ne l appelle depuis ce panneau.
 
-async function statuerSuggestion(id, status) {
-    try {
-        const r = await appel('/api/suggestion-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, status }),
-        });
-        if (!r.ok) throw new Error('Erreur ' + r.status);
-        lireSuggestions();
-    } catch (e) { alert(e.message); }
-}
-
+// ⚠️ PAS DE CONFIRMATION. On supprime ces lignes par dizaines, une par une,
+// apres avoir ajoute le personnage a la main : une boite de dialogue par
+// suppression doublait le nombre de clics d une tache deja repetitive. Et
+// une suggestion effacee par erreur ne coute rien — le joueur la reproposera
+// au premier mot refuse.
 async function supprimerSuggestion(id) {
-    if (!confirm('Supprimer cette suggestion ?')) return;
     try {
         const r = await appel('/api/delete-suggestion', {
             method: 'POST',
