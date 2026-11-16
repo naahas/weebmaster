@@ -59,11 +59,19 @@
 // d atteinte, donc un rang que personne ne porte, donc un rang qui ne dit rien.
 const PALIERS = [
     { nom: 'Novice',  pas:  300, couleur: '#9a9aa6' },
-    { nom: 'Éveillé', pas:  700, couleur: '#7fd4a0' },
-    { nom: 'Prodige', pas: 1200, couleur: '#5fc9e8' },
-    { nom: 'Élite',   pas: 2000, couleur: '#6fa0f5' },
+    // ⚠️ LES NOMS SONT EN ANGLAIS, et c est la seule chose du jeu qui le
+    // soit — tout le reste de l interface est en francais. Un rang est un
+    // nom propre, pas une phrase : « Legend III » se lit pareil dans les
+    // deux langues, et c est le registre des jeux ou ces echelles viennent.
+    // ⚠️ `Oracle` remplace `Éveillé`, qui n avait pas d equivalent anglais
+    // qui tienne — « Awakened » sonnait comme une traduction.
+    // ⚠️ ET AUCUN ACCENT NE SUBSISTE, ce qui est un gain : ces noms
+    // voyagent en base, dans le panneau et sur l ecran d un streamer.
+    { nom: 'Oracle',  pas:  700, couleur: '#7fd4a0' },
+    { nom: 'Prodigy', pas: 1200, couleur: '#5fc9e8' },
+    { nom: 'Elite',   pas: 2000, couleur: '#6fa0f5' },
     { nom: 'Expert',  pas: 3000, couleur: '#a97bf5' },
-    { nom: 'Légende', pas: 6500, couleur: '#f5a65b' },
+    { nom: 'Legend',  pas: 6500, couleur: '#f5a65b' },
     { nom: 'Eternal', pas: 9000, couleur: '#FFD700' },
     // ⚠️ MASTER EST LE SOMMET, et il a pris la place de « Divin » — le site
     // s appelle ShonenMaster, le dernier rang porte donc son nom. Master

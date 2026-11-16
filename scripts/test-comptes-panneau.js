@@ -96,17 +96,17 @@ const get = (chemin, code = PANEL) => fetch(BASE + chemin, {
     if (!c) { await menage(ID); process.exit(1); }
 
     // ⚠️ Le rang vient de `src/script/niveaux.js`, le MEME fichier que le
-    // navigateur charge. 1 800 xp = 5e rang = Éveillé II : si ce controle
+    // navigateur charge. 1 800 xp = 5e rang = Oracle II : si ce controle
     // tombe, c est que les deux cotes ont diverge — exactement ce que le
     // fichier partage existe pour empecher.
     check('⚠️ le niveau est calcule par le serveur', c.niveau === 5, 'niveau ' + c.niveau);
     // ⚠️ LE NOM PORTE SA DIVISION. Le rang n est plus « Combattant » mais
-    // « Éveillé II » : s il revenait sans son chiffre romain, le panneau
+    // « Oracle II » : s il revenait sans son chiffre romain, le panneau
     // afficherait le bon palier au mauvais cran, et trois rangs sur trois se
     // ressembleraient.
-    check('⚠️ … et son rang suit, division comprise', c.titreNiveau === 'Éveillé II', c.titreNiveau);
+    check('⚠️ … et son rang suit, division comprise', c.titreNiveau === 'Oracle II', c.titreNiveau);
     // ⚠️ `xpDuNiveau` est le prix du rang COURANT vers le suivant, pas celui
-    // qu il a coute pour y arriver. 1 800 tombe DANS Éveillé II (ouvert a
+    // qu il a coute pour y arriver. 1 800 tombe DANS Oracle II (ouvert a
     // 1 600), d ou 200 de faits sur les 700 que vaut une division de ce
     // palier. Les confondre donnerait une barre qui deborde ou qui n arrive
     // jamais au bout.
