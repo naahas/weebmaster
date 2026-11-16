@@ -137,9 +137,16 @@ remise en cause.
 | Nombre de parties | **Oui**, c'est un classement à part entière. |
 | Progression du mois | **Oui.** Sort de `sum(xp_gagne)` sur trente jours, sans rien ajouter. |
 
-Reste ouvert : **la durée d'une saison**. Le mois ne laisse pas le temps de remonter,
-trois mois donne des saisons qui veulent dire quelque chose. Rien à écrire en base dans
-un cas comme dans l'autre — `cree_le` suffit, la décision peut attendre la page.
+**La durée d'une saison** penche vers **un mois**, sans être arrêtée. Rien à écrire en
+base dans un cas comme dans l'autre — `cree_le` suffit, la décision peut attendre la
+page.
+
+⚠️ Mais une distinction se joue là, et elle n'est pas une question de durée : **une
+saison n'a de sens que pour les classements de performance** — victoires, XP, parties.
+**Les records, eux, sont all-time.** Un « meilleur temps d'Ascension du mois de mars »
+ne veut rien dire : un record est une marque, pas un bilan, et le remettre à zéro tous
+les trente jours le vide de ce qui en fait le prix. Un mois convient très bien aux
+premiers et ne doit pas s'appliquer aux seconds.
 
 ---
 
