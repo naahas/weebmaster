@@ -63,15 +63,28 @@ const PALIERS = [
     { nom: 'Prodige', pas: 1200, couleur: '#5fc9e8' },
     { nom: 'Élite',   pas: 2000, couleur: '#6fa0f5' },
     { nom: 'Expert',  pas: 3000, couleur: '#a97bf5' },
-    { nom: 'Master',  pas: 4500, couleur: '#f06fc4' },
     { nom: 'Légende', pas: 6500, couleur: '#f5a65b' },
     { nom: 'Eternal', pas: 9000, couleur: '#FFD700' },
-    // ⚠️ DIVIN N A PAS DE DIVISIONS, et c est ce qui en fait le sommet : on
-    // n y « progresse » pas, on y est. Son `pas` ne sert donc a rien — rien ne
+    // ⚠️ MASTER EST LE SOMMET, et il a pris la place de « Divin » — le site
+    // s appelle ShonenMaster, le dernier rang porte donc son nom. Master
+    // etait avant le sixieme palier, a 4500 par division : ce palier-la
+    // disparait purement, Legende et Eternal se decalent d un cran.
+    //
+    // ⚠️ LES AUTRES PALIERS GARDENT LEUR PROPRE `pas`. Legende a toujours
+    // coute 6500 par division, Eternal 9000 : leur faire reprendre les
+    // valeurs de la place qu ils occupent desormais (4500 et 6500) aurait
+    // rapproche le sommet d un tiers — 54 600 au lieu de 68 100. L ecart
+    // entre Expert et Legende se creuse donc d un coup (3000 → 6500), et
+    // c est voulu : la derniere ligne droite doit se meriter.
+    //
+    // ⚠️ IL N A PAS DE DIVISIONS, et c est ce qui en fait le sommet : on n y
+    // « progresse » pas, on y est. Son `pas` ne sert donc a rien — rien ne
     // vient apres. `unique` le dit explicitement plutot que de le deduire de
     // sa place dans la liste : un palier ajoute apres lui casserait la
     // deduction en silence.
-    { nom: 'Divin',   pas:    0, couleur: '#fff1c1', unique: true },
+    // ⚠️ Il reprend l or pale de l ancien Divin, pas le rose de l ancien
+    // Master : c est la couleur du sommet, pas celle du nom.
+    { nom: 'Master',  pas:    0, couleur: '#fff1c1', unique: true },
 ];
 
 const CHIFFRES = ['', 'I', 'II', 'III'];
