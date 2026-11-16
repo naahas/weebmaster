@@ -9714,9 +9714,18 @@ input, textarea,
     vertical-align: middle;
     /* En `em` : le losange suit la taille du pseudo, qui va de 1,15 rem dans
        le salon à 0,62 rem sur un hexagone de téléphone. En pixels, il aurait
-       fallu le redéfinir à chaque palier. */
-    width: 0.32em;
-    height: 0.32em;
+       fallu le redéfinir à chaque palier.
+       ⚠️ 0,38 ET NON 0,32 : un pixel de plus, demandé après l'avoir vu en
+       vrai dans les deux contextes. Et c'est bien UN pixel là où ça compte —
+       dans le salon (pseudo à 18,4 px) et sur l'hexagone de bureau (16 px),
+       le losange passe de 5,9 à 7,0 et de 5,1 à 6,1. Sur l'hexagone à 44 px
+       il ne gagne que 0,6 px, et c'est tant mieux : à cette taille le pseudo
+       est déjà coupé par l'ellipse, le badge n'a pas à lui prendre plus de
+       largeur qu'il n'en a besoin. Un `em` ne peut pas ajouter le même
+       nombre de pixels à trois tailles de police — il fallait choisir
+       laquelle sert de référence, et c'est celle qu'on regarde. */
+    width: 0.38em;
+    height: 0.38em;
     margin-right: 0.45em;
     background: currentColor;
     opacity: 0.8;
