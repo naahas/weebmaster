@@ -2130,9 +2130,14 @@ function estUnCompte(playerId) {
 // reproduire l'état même dans lequel il était né. Un interrupteur à sens
 // unique, bloqué sur un état qu'il n'avait jamais vraiment eu.
 //
-// ⚠️ Et elle se recalcule à chaque lecture, elle ne se range nulle part :
-// l'hôte peut se connecter APRÈS avoir ouvert son salon. Sa porte se ferme
-// alors d'elle-même, ce qui est précisément le défaut voulu pour un inscrit.
+// ⚠️ Elle se recalcule à chaque lecture, elle ne se range nulle part. Ce
+// n'est pas pour un écran de connexion dans le salon : il n'y en a PAS —
+// `.v2-home`, qui porte l'avatar et les boutons, s'efface dès qu'on est hôte
+// d'un salon actif, et il faut fermer pour revenir se connecter. C'est pour
+// la course du chargement : le navigateur présente son jeton par socket
+// pendant que la page s'ouvre, et rien ne garantit qu'il soit vérifié avant
+// le clic sur « créer un salon ». Rangée une fois pour toutes, la porte
+// d'un inscrit pressé serait restée ouverte pour la vie du salon.
 function porteOuverteAuxInvites(gameState) {
     return !!gameState.invitesAutorises || !estUnCompte(gameState.hostPlayerId);
 }
