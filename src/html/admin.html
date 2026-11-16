@@ -495,6 +495,44 @@ tbody tr:hover .jeter, .jeter:focus-visible { opacity: 1; }
 }
 
 /* ── Les états ───────────────────────────── */
+/* ── 📮 Les retours des joueurs ──────────────────────────────────
+   ⚠️ UN BLOC PAR RETOUR, et pas une ligne de tableau comme les
+   suggestions : un retour porte un TEXTE LIBRE de plusieurs phrases, que
+   personne n'a mis en forme pour nous. Dans une cellule il serait tronqué
+   ou ferait exploser la hauteur de la rangée. */
+.ret {
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--bord, rgba(255,255,255,.07));
+}
+.ret.faite { opacity: .45; }
+.ret-tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .6rem;
+    font-size: .82rem;
+    margin-bottom: .45rem;
+}
+.ret-qui { color: var(--doux, #8b8699); }
+.ret-quand { margin-left: auto; color: var(--doux, #8b8699); font-variant-numeric: tabular-nums; }
+/* ⚠️ `pre-wrap` : le joueur a saisi des retours a la ligne, ils veulent
+   dire quelque chose — « voila ce que je faisais / voila ce qui est
+   arrive ». Les ecraser rend le texte deux fois plus penible a lire. */
+.ret-msg {
+    margin: 0 0 .5rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+}
+.ret-ctc { margin: 0 0 .35rem; font-size: .85rem; color: var(--accent-clair, #f0c75e); }
+.ret-ctx {
+    margin: 0 0 .6rem;
+    font-size: .74rem;
+    color: var(--doux, #8b8699);
+    overflow-wrap: anywhere;
+}
+.ret-actions { display: flex; gap: .4rem; }
+
 .etat {
     color: var(--tres-doux); text-align: center; padding: 2.2rem 1rem;
     font-size: .88rem;
@@ -1322,6 +1360,15 @@ body:not(.entre) { overflow: hidden; }
             Suggestions
             <span class="compte pastille" id="compte-sug" hidden>0</span>
         </button>
+        <!-- 📮 ⚠️ A NE PAS CONFONDRE AVEC « Suggestions » juste au-dessus :
+             celui-la ne parle que des PERSONNAGES proposés depuis BombAnime.
+             Celui-ci recueille ce que les joueurs écrivent depuis /signaler —
+             bugs, idées, remarques. Deux boîtes, deux usages. -->
+        <button class="onglet" data-vue="retours" aria-selected="false">
+            <svg width="17" height="17" viewBox="0 0 24 24"><use href="#i-crayon"/></svg>
+            Retours
+            <span class="compte pastille" id="compte-ret" hidden>0</span>
+        </button>
     </div>
 
     <div class="rail-bas">
@@ -1559,6 +1606,25 @@ body:not(.entre) { overflow: hidden; }
                 </span>
             </div>
             <div class="defile" id="s-liste">
+                <div class="etat">Lecture…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 📮 LES RETOURS DES JOUEURS — ce qui arrive de /signaler. -->
+    <section class="vue vue-pleine" data-vue="retours">
+        <div class="carte">
+            <div class="carte-tete">
+                <svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-crayon"/></svg>
+                Ce que les joueurs nous écrivent <small id="r-note"></small>
+                <span class="filtres" id="r-filtres">
+                    <button class="filtre" data-r="atraiter" aria-pressed="true">À traiter</button>
+                    <button class="filtre" data-r="bug" aria-pressed="false">Bugs</button>
+                    <button class="filtre" data-r="suggestion" aria-pressed="false">Idées</button>
+                    <button class="filtre" data-r="tous" aria-pressed="false">Tous</button>
+                </span>
+            </div>
+            <div class="defile" id="r-liste">
                 <div class="etat">Lecture…</div>
             </div>
         </div>
@@ -1978,6 +2044,7 @@ const TITRES = {
     questions: ['Questions', 'La banque du mode Classique'],
     choice: ['Vrai / Faux', 'La banque du mode Choice'],
     suggestions: ['Suggestions', 'Les personnages proposés depuis BombAnime'],
+    retours: ['Retours', 'Bugs, idées et remarques envoyés depuis /signaler'],
 };
 // Chaque section ne va chercher ses données qu'à sa première ouverture :
 // tout charger au départ ferait trois requêtes dont deux inutiles.
@@ -2006,8 +2073,116 @@ document.querySelectorAll('.onglet').forEach(o => {
         }
         if (v === 'comptes' && !CHARGE.comptes) { CHARGE.comptes = true; lireComptes(); }
         if (v === 'suggestions' && !CHARGE.suggestions) { CHARGE.suggestions = true; lireSuggestions(); }
+        if (v === 'retours' && !CHARGE.retours) { CHARGE.retours = true; lireRetours(); }
     };
 });
+
+// ════════════════════════════════════════════════════════════════
+// 📮 LES RETOURS DES JOUEURS
+// ════════════════════════════════════════════════════════════════
+// ⚠️ LE FILTRE EST POSE ICI, PAS DANS LA REQUETE. Trois cents retours au
+// plus tiennent en memoire, et filtrer au serveur aurait demandé un
+// aller-retour par clic sur un onglet de filtre — pour trier une liste qu on
+// a deja entiere sous la main.
+let R_FILTRE = 'atraiter';
+let R_TOUT = [];
+
+const R_ETIQ = { bug: '🐛 Bug', suggestion: '💡 Idée', autre: '💬 Autre' };
+
+document.querySelectorAll('#r-filtres .filtre').forEach((b) => {
+    b.onclick = () => {
+        R_FILTRE = b.dataset.r;
+        document.querySelectorAll('#r-filtres .filtre').forEach((o) =>
+            o.setAttribute('aria-pressed', String(o === b)));
+        rendreRetours();
+    };
+});
+
+async function lireRetours() {
+    const zone = $('r-liste');
+    zone.innerHTML = '<div class="etat">Lecture…</div>';
+    try {
+        const r = await appel('/admin/site/retours');
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || ('Erreur ' + r.status));
+        R_TOUT = d.retours || [];
+        // La pastille du rail ne compte que ce qui ATTEND, comme celle des
+        // suggestions : un nombre qui ne descend jamais n est pas une alerte.
+        const n = d.aTraiter || 0;
+        $('compte-ret').textContent = n;
+        $('compte-ret').hidden = !n;
+        rendreRetours();
+    } catch (e) {
+        zone.innerHTML = '<div class="etat">' + ech(e.message) + '</div>';
+    }
+}
+
+function rendreRetours() {
+    const zone = $('r-liste');
+    const l = R_TOUT.filter((x) => {
+        if (R_FILTRE === 'tous') return true;
+        if (R_FILTRE === 'atraiter') return !x.traite;
+        return x.type === R_FILTRE;
+    });
+    $('r-note').textContent = l.length ? l.length + ' sur ' + R_TOUT.length : '';
+
+    if (!l.length) {
+        zone.innerHTML = '<div class="etat">' +
+            (R_TOUT.length ? 'Rien dans ce filtre.' : 'Aucun retour pour l’instant.') + '</div>';
+        return;
+    }
+
+    zone.innerHTML = l.map((x) => {
+        const ctx = x.contexte || {};
+        const quand = new Date(x.cree_le).toLocaleString('fr-FR',
+            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        // ⚠️ `ech()` sur TOUT ce qui vient du joueur — message, pseudo,
+        // contact, agent. C est le seul endroit du panneau ou du texte libre
+        // ecrit par un inconnu s affiche, et il s affiche chez l administrateur.
+        return '<div class="ret' + (x.traite ? ' faite' : '') + '" data-id="' + x.id + '">' +
+            '<div class="ret-tete">' +
+                '<b>' + R_ETIQ[x.type] + '</b>' +
+                '<span class="ret-qui">' + (x.pseudo ? ech(x.pseudo) : 'anonyme') +
+                    (x.auteur_id ? ' <span title="Compte vérifié">◆</span>' : '') + '</span>' +
+                '<span class="ret-quand">' + quand + '</span>' +
+            '</div>' +
+            '<p class="ret-msg">' + ech(x.message) + '</p>' +
+            (x.contact ? '<p class="ret-ctc">Contact : ' + ech(x.contact) + '</p>' : '') +
+            '<p class="ret-ctx">' + ech([ctx.ecran, ctx.agent].filter(Boolean).join(' · ')) + '</p>' +
+            '<div class="ret-actions">' +
+                '<button class="mini" data-traite="' + (x.traite ? '0' : '1') + '">' +
+                    (x.traite ? 'À retraiter' : 'Marquer traité') + '</button>' +
+                '<button class="mini danger" data-suppr="1">Supprimer</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    zone.querySelectorAll('[data-traite]').forEach((b) => {
+        b.onclick = () => majRetour(b.closest('.ret').dataset.id,
+            { traite: b.dataset.traite === '1' });
+    });
+    zone.querySelectorAll('[data-suppr]').forEach((b) => {
+        b.onclick = () => {
+            if (!confirm('Supprimer ce retour ? C’est définitif.')) return;
+            majRetour(b.closest('.ret').dataset.id, { supprimer: true });
+        };
+    });
+}
+
+async function majRetour(id, quoi) {
+    try {
+        const r = await appel('/admin/site/retour', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({ id: Number(id) }, quoi)),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || ('Erreur ' + r.status));
+        lireRetours();
+    } catch (e) {
+        alert(e.message);
+    }
+}
 
 // ── Le direct ───────────────────────────────────────────────────────
 async function lireDirect() {

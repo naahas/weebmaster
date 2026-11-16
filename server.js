@@ -3391,6 +3391,117 @@ app.get('/conditions', (req, res) => {
     res.sendFile(__dirname + '/src/html/conditions.html');
 });
 
+// 📮 LA PAGE DES RETOURS — bugs, suggestions, remarques.
+// ⚠️ Declaree AVANT `/:code`, comme ses deux voisines : le motif a quatre
+// caracteres ne peut pas l avaler (huit lettres), mais c est l ordre qui
+// protege toutes les adresses du site, et on ne compte pas sur la longueur
+// d un mot pour tenir une route.
+app.get('/signaler', (req, res) => {
+    res.sendFile(__dirname + '/src/html/signaler.html');
+});
+
+// ════════════════════════════════════════════════════════════════
+// 📮 LES RETOURS DES JOUEURS
+// ════════════════════════════════════════════════════════════════
+// Table `retours` (docs/retours.sql), fermee par RLS : le navigateur n y
+// touche jamais, tout passe par ici.
+//
+// ⚠️ UN FREIN PAR IP, en memoire. Un formulaire public sans frein se remplit
+// tout seul le jour ou quelqu un s en amuse, et c est la base de production
+// qui encaisse. Trois envois par dix minutes suffisent largement a qui
+// signale un vrai bug, et coupent court a tout le reste.
+// ⚠️ EN MEMOIRE DU DYNO, donc oublie a chaque recyclage — comme les salons.
+// C est un frein, pas une serrure : il arrete le remplissage distrait, pas
+// quelqu un de determine. Pour celui-la il faudrait un stockage partage,
+// qu on n a pas, et le jeu n en vaut pas la chandelle.
+const freinRetours = new Map();
+const RETOURS_FENETRE_MS = 10 * 60 * 1000;
+const RETOURS_PAR_FENETRE = 3;
+
+function retourTropFrequent(ip) {
+    const maintenant = Date.now();
+    const vus = (freinRetours.get(ip) || []).filter((t) => maintenant - t < RETOURS_FENETRE_MS);
+    if (vus.length >= RETOURS_PAR_FENETRE) { freinRetours.set(ip, vus); return true; }
+    vus.push(maintenant);
+    freinRetours.set(ip, vus);
+    // Un menage de temps en temps : sans lui la carte garde une entree par
+    // visiteur jusqu au prochain redemarrage.
+    if (freinRetours.size > 500) {
+        for (const [k, v] of freinRetours) {
+            if (!v.some((t) => maintenant - t < RETOURS_FENETRE_MS)) freinRetours.delete(k);
+        }
+    }
+    return false;
+}
+
+const RETOUR_TYPES = new Set(['bug', 'suggestion', 'autre']);
+
+// ⚠️ DEUX CODES, PAS UN. Une table absente se signale `42P01` quand l erreur
+// vient de PostgreSQL, mais `PGRST205` quand c est PostgREST qui repond — et
+// c est LUI qu on a en face via supabase-js. Mesure : la table manquante rend
+// « PGRST205 / Could not find the table 'public.retours' in the schema cache »,
+// avec un 404. Ne tester que `42P01` renvoyait donc « envoi impossible » au
+// joueur la ou il fallait dire « le SQL n a pas ete passe ».
+function tableAbsente(e) {
+    return !!e && (e.code === '42P01' || e.code === 'PGRST205');
+}
+
+app.post('/api/retour', async (req, res) => {
+    if (!supabase) return res.status(503).json({ error: 'Base indisponible.' });
+
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'inconnue';
+    if (retourTropFrequent(ip)) {
+        return res.status(429).json({ error: 'Doucement — réessaie dans quelques minutes.' });
+    }
+
+    const corps = req.body || {};
+    const type = RETOUR_TYPES.has(corps.type) ? corps.type : 'bug';
+    // ⚠️ On COUPE plutot que de refuser au-dela de 2000 : un joueur qui a
+    // ecrit trois paragraphes ne doit pas les perdre sur un refus. La
+    // contrainte SQL est la meme borne, elle n a donc jamais a mordre.
+    const message = String(corps.message || '').trim().slice(0, 2000);
+    if (message.length < 5) {
+        return res.status(400).json({ error: 'Dis-nous un peu plus — cinq caractères au moins.' });
+    }
+
+    // Le pseudo passe au MEME tamis que celui du jeu : ce texte s affichera
+    // dans le panneau, et rien ne dit qu il n ira jamais ailleurs.
+    const pseudo = pseudoPropre(corps.pseudo) || null;
+    const contact = String(corps.contact || '').trim().slice(0, 120) || null;
+
+    // ⚠️ `auteur_id` n est accepte que s il s agit d un compte VERIFIE sur
+    // cette socket… qu on n a pas ici, c est une route HTTP. On ne garde donc
+    // l identifiant QUE s il a deja prouve un compte a un moment sur ce
+    // processus : au pire il est faux et ne sert qu a nous, jamais a lui
+    // donner un droit. Aucune decision ne depend de ce champ.
+    const auteur = typeof corps.playerId === 'string' && estUnCompte(corps.playerId)
+        ? corps.playerId : null;
+
+    try {
+        const { error } = await supabase.from('retours').insert({
+            type, message, pseudo, contact, auteur_id: auteur,
+            contexte: {
+                // Ce que le navigateur dit de lui-meme. ⚠️ Pas d adresse IP :
+                // elle n aide pas a reproduire un bug, et c est une donnee
+                // personnelle de plus a proteger.
+                agent: String(corps.agent || req.get('user-agent') || '').slice(0, 300),
+                ecran: String(corps.ecran || '').slice(0, 40),
+                page: String(corps.page || '').slice(0, 200),
+            },
+        });
+        if (error) throw error;
+        console.log(`📮 Retour reçu (${type})${pseudo ? ' de ' + pseudo : ''}`);
+        res.json({ success: true });
+    } catch (e) {
+        if (tableAbsente(e)) {
+            console.error('🚨 Table « retours » absente — passe docs/retours.sql.');
+            return res.status(503).json({ error: 'Le formulaire n’est pas encore branché.' });
+        }
+        console.error('❌ Retour impossible :', e.message);
+        res.status(500).json({ error: 'Envoi impossible pour le moment.' });
+    }
+});
+
 // 🔗 Un code de salon dans l adresse : shonenmaster.com/YRWD.
 //
 // Rejoindre demandait cinq gestes a un viewer : quitter le stream, ouvrir un
@@ -7230,6 +7341,60 @@ app.post('/admin/site/supprimer', async (req, res) => {
 // IRREVERSIBLES — remise a zero et suppression — exigent EN PLUS le second
 // mot de passe, le meme que celui qui efface une question. Etre entre dans le
 // panneau ne suffit pas a effacer le profil de quelqu un.
+
+// ════════════════════════════════════════════════════════════════
+// 📮 LES RETOURS, COTE PANNEAU
+// ════════════════════════════════════════════════════════════════
+// Derriere `gardePanneau` comme le reste : un retour peut contenir le pseudo
+// et le courriel de qui l a ecrit.
+app.get('/admin/site/retours', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    if (!supabase) return res.status(503).json({ error: 'Base indisponible.' });
+    try {
+        // Les non traites D ABORD, puis les plus recents : c est l ordre dans
+        // lequel on travaille cette liste, pas l ordre chronologique.
+        const { data, error } = await supabase
+            .from('retours')
+            .select('id, type, message, pseudo, contact, auteur_id, contexte, traite, cree_le')
+            .order('traite', { ascending: true })
+            .order('cree_le', { ascending: false })
+            .limit(300);
+        if (error) throw error;
+        const lignes = data || [];
+        res.json({
+            retours: lignes,
+            aTraiter: lignes.filter((r) => !r.traite).length,
+        });
+    } catch (e) {
+        if (tableAbsente(e)) {
+            return res.status(503).json({ error: 'Table « retours » absente — passe docs/retours.sql.' });
+        }
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Marquer traite / non traite, ou supprimer. ⚠️ Les deux gestes dans UNE
+// route : le panneau n a que deux boutons par ligne, et deux routes de trois
+// lignes auraient demande deux garde-fous a tenir d accord.
+app.post('/admin/site/retour', async (req, res) => {
+    if (!gardePanneau(req, res)) return;
+    if (!supabase) return res.status(503).json({ error: 'Base indisponible.' });
+    const id = parseInt(req.body && req.body.id, 10);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: 'Identifiant manquant.' });
+    try {
+        if (req.body.supprimer === true) {
+            const { error } = await supabase.from('retours').delete().eq('id', id);
+            if (error) throw error;
+            return res.json({ success: true, supprime: true });
+        }
+        const traite = req.body.traite === true;
+        const { error } = await supabase.from('retours').update({ traite }).eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, traite });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 app.get('/admin/site/comptes', async (req, res) => {
     if (!gardePanneau(req, res)) return;

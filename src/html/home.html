@@ -668,6 +668,26 @@
                     </div>
                 </section>
 
+                <!-- ⚖️ LE PIED DE PAGE. Trois liens, en bas a GAUCHE — les
+                     reseaux tiennent le coin droit, et deux choses dans le
+                     meme coin se disputent le regard.
+                     ⚠️ Il parait aux MEMES conditions que les reseaux :
+                     l accueil seul. Sur le choix des modes ou la saisie du
+                     code, on est en train de faire quelque chose, et des
+                     liens qui font quitter la page y sont au mieux ignores.
+                     Les deux pages legales restent joignables directement
+                     par leur adresse, ce qui est ce que Google exige.
+                     ⚠️ Et « Signaler un bug » est le SEUL des trois qui
+                     serve au joueur. Il est donc en dernier mais ecrit en
+                     clair, pas cache derriere un « Contact ». -->
+                <nav class="v2-pied" v-if="homeScreen === 'hub'" aria-label="Liens utiles">
+                    <a href="/conditions">Conditions</a>
+                    <span aria-hidden="true">·</span>
+                    <a href="/confidentialite">Confidentialité</a>
+                    <span aria-hidden="true">·</span>
+                    <a href="/signaler">Signaler un bug</a>
+                </nav>
+
                 <!-- Le reseau de l auteur, dans le coin. Eteint tant qu on ne le regarde
                      pas : c est une signature, pas un appel. Il ne parait que sur
                      l accueil meme — ni sur le choix des modes, ni sur la saisie du

@@ -14233,6 +14233,62 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     gap: 0.55rem;
 }
 
+/* ⚖️ LE PIED DE PAGE — conditions, confidentialite, signalement.
+   ⚠️ MEME `bottom` QUE LES RESEAUX, a la valeur pres : les deux sont des
+   coins bas et doivent s aligner, sinon on voit un decalage de six pixels
+   qu on n arrive pas a nommer.
+   ⚠️ ET UNE LARGEUR BORNEE : sans elle, les trois liens passent SOUS
+   l icone TikTok sur un ecran etroit — deux calques `fixed` ne se poussent
+   pas l un l autre, ils se superposent. Les 4,5rem reserves valent la
+   largeur de l icone plus son air. */
+.v2-pied {
+    position: fixed;
+    left: clamp(1rem, 2.5vw, 2.2rem);
+    bottom: clamp(1rem, 2.5vh, 1.8rem);
+    z-index: 20;
+    max-width: calc(100% - 4.5rem - clamp(2rem, 5vw, 4.4rem));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    color: #4b4658;
+    user-select: none;
+}
+.v2-pied a {
+    color: #6d6880;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+.v2-pied a:hover,
+.v2-pied a:focus-visible { color: var(--neon-primary, #f0c75e); }
+
+/* ⚠️ SUR TELEPHONE IL REPASSE DANS LE FLUX, et ce n est pas un reglage de
+   confort : rendu, le pied fixe se posait PAR-DESSUS la barre de chiffres
+   (« 6 modes · +2400 questions · +310 parties »), qui occupe exactement ce
+   coin-la sur un ecran etroit. Deux calques poses au meme endroit ne se
+   poussent pas l un l autre, ils se superposent — et les deux devenaient
+   illisibles. Mesure prise a 390 px, pas calculee : c est le genre de
+   chevauchement qu aucune largeur additionnee ne laisse deviner.
+   `margin-top: auto` le colle au bas de la zone defilante quand le contenu
+   est plus court que l ecran, et le laisse suivre quand il est plus long.
+   ⚠️ Le seuil est 768 px, celui ou `.v2-reseaux` passe en haut a gauche :
+   les deux coins bas se liberent au meme moment, ils doivent changer
+   ensemble. */
+@media (max-width: 768px) {
+    .v2-pied {
+        position: static;
+        left: auto;
+        bottom: auto;
+        max-width: none;
+        margin-top: auto;
+        padding-top: 1.5rem;
+        justify-content: center;
+        font-size: 0.7rem;
+        gap: 0.4rem;
+    }
+}
+
 .v2-reseau {
     display: grid;
     place-items: center;

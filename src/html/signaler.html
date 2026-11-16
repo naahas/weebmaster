@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaler un bug — ShonenMaster</title>
+    <meta name="description"
+        content="Signale un bug, propose une idée ou laisse une remarque sur ShonenMaster. Tout est lu.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- ⚠️ LA MEME FEUILLE QUE LES PAGES LEGALES. Cette page vit a cote
+         d elles, dans le pied de l accueil : lui donner son propre habillage
+         aurait fait trois pages qui se ressemblent presque, ce qui se
+         remarque bien plus qu une difference franche. -->
+    <link rel="stylesheet" href="/legal.css">
+    <style>
+        /* ── Le formulaire. Une seule colonne, des champs larges : on ecrit
+           ici depuis un telephone aussi souvent que depuis un bureau. ── */
+        .f-champ { margin: 0 0 1.25rem; }
+
+        .f-label {
+            display: block;
+            margin: 0 0 0.45rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--l-or, #f0c75e);
+        }
+
+        .f-aide {
+            display: block;
+            margin: 0.4rem 0 0;
+            font-size: 0.82rem;
+            color: #8b8699;
+        }
+
+        .f-types { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+        .f-type {
+            flex: 1 1 8rem;
+            padding: 0.7rem 0.9rem;
+            font: inherit;
+            font-size: 0.9rem;
+            text-align: left;
+            color: #cfcadb;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s, color .15s;
+        }
+        .f-type:hover { border-color: rgba(240, 199, 94, 0.45); color: #fff; }
+        .f-type[aria-pressed="true"] {
+            color: #0b0910;
+            background: var(--l-or, #f0c75e);
+            border-color: var(--l-or, #f0c75e);
+            font-weight: 600;
+        }
+
+        .f-saisie, .f-zone {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            font: inherit;
+            font-size: 0.95rem;
+            color: #ece9f3;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+        .f-saisie:focus, .f-zone:focus {
+            outline: none;
+            border-color: var(--l-or, #f0c75e);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .f-zone { min-height: 9rem; resize: vertical; line-height: 1.6; }
+
+        .f-compteur { float: right; font-size: 0.78rem; color: #6f6a80; font-variant-numeric: tabular-nums; }
+
+        .f-deux { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+        .f-deux > * { flex: 1 1 13rem; }
+
+        .f-envoyer {
+            padding: 0.8rem 2rem;
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #0b0910;
+            background: var(--l-or, #f0c75e);
+            border: 0;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+        .f-envoyer[disabled] { opacity: .5; cursor: default; }
+
+        .f-mot {
+            margin: 1rem 0 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            min-height: 1.6em;
+        }
+        .f-mot.ok { color: #34d399; }
+        .f-mot.ko { color: #f87171; }
+
+        /* L'accusé de réception remplace le formulaire : laisser le
+           formulaire rempli sous un « merci » invite à renvoyer la même
+           chose, et c'est ce qu'on reçoit en double. */
+        .f-merci { display: none; }
+        .f-merci h2 { margin-top: 0; }
+        body.envoye .f-formulaire { display: none; }
+        body.envoye .f-merci { display: block; }
+    </style>
+</head>
+
+<body>
+    <main class="l-page">
+
+        <a class="l-retour" href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Retour au jeu
+        </a>
+
+        <h1 class="l-titre">Signaler quelque chose</h1>
+        <p class="l-date">Un bug, une idée, une remarque — tout est lu.</p>
+
+        <div class="l-resume">
+            <p><strong>Ce qui aide le plus :</strong> dire ce que tu faisais, ce que tu attendais, et ce qui
+                s'est passé à la place. Le mode de jeu et le moment précis valent mieux qu'une longue
+                explication.</p>
+        </div>
+
+        <form class="f-formulaire" id="formulaire" novalidate>
+
+            <div class="f-champ">
+                <span class="f-label" id="lbl-type">De quoi s'agit-il ?</span>
+                <div class="f-types" role="group" aria-labelledby="lbl-type">
+                    <button type="button" class="f-type" data-type="bug" aria-pressed="true">
+                        🐛 Un bug
+                    </button>
+                    <button type="button" class="f-type" data-type="suggestion" aria-pressed="false">
+                        💡 Une idée
+                    </button>
+                    <button type="button" class="f-type" data-type="autre" aria-pressed="false">
+                        💬 Autre chose
+                    </button>
+                </div>
+            </div>
+
+            <div class="f-champ">
+                <label class="f-label" for="message">
+                    Raconte <span class="f-compteur"><span id="n">0</span> / 2000</span>
+                </label>
+                <textarea class="f-zone" id="message" maxlength="2000"
+                    placeholder="J'étais en BombAnime à 4 joueurs, j'ai validé un nom et la bombe a sauté quand même…"></textarea>
+                <span class="f-aide">Cinq caractères au minimum. Rien d'autre n'est obligatoire.</span>
+            </div>
+
+            <div class="f-deux">
+                <div class="f-champ">
+                    <label class="f-label" for="pseudo">Ton pseudo <span style="text-transform:none;font-weight:400;color:#6f6a80">(facultatif)</span></label>
+                    <input class="f-saisie" id="pseudo" maxlength="16" autocomplete="off" placeholder="Tengu553">
+                </div>
+                <div class="f-champ">
+                    <label class="f-label" for="contact">Pour te répondre <span style="text-transform:none;font-weight:400;color:#6f6a80">(facultatif)</span></label>
+                    <input class="f-saisie" id="contact" maxlength="120" autocomplete="off"
+                        placeholder="Discord, courriel…">
+                </div>
+            </div>
+
+            <button class="f-envoyer" id="envoyer" type="submit">Envoyer</button>
+            <p class="f-mot" id="mot" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="f-merci" id="merci">
+            <h2>Reçu, merci.</h2>
+            <p>C'est arrivé. Si tu as laissé de quoi te répondre et que la question appelle une réponse,
+                elle viendra.</p>
+            <p><a class="l-retour" href="/" style="margin-top:1.5rem">Retour au jeu</a></p>
+        </div>
+
+        <footer class="l-pied">
+            <a href="/conditions">Conditions d'utilisation</a> ·
+            <a href="/confidentialite">Confidentialité</a>
+        </footer>
+    </main>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let type = 'bug';
+
+        document.querySelectorAll('.f-type').forEach((b) => {
+            b.onclick = () => {
+                type = b.dataset.type;
+                document.querySelectorAll('.f-type').forEach((o) =>
+                    o.setAttribute('aria-pressed', String(o === b)));
+            };
+        });
+
+        // Le compteur, pour qu'on voie venir la limite plutôt que de la
+        // découvrir en étant coupé.
+        $('message').addEventListener('input', () => {
+            $('n').textContent = $('message').value.length;
+        });
+
+        $('formulaire').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = $('message').value.trim();
+            const mot = $('mot');
+            mot.className = 'f-mot';
+
+            if (message.length < 5) {
+                mot.className = 'f-mot ko';
+                mot.textContent = 'Dis-nous un peu plus — cinq caractères au moins.';
+                $('message').focus();
+                return;
+            }
+
+            $('envoyer').disabled = true;
+            mot.textContent = 'Envoi…';
+
+            try {
+                const r = await fetch('/api/retour', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type, message,
+                        pseudo: $('pseudo').value.trim() || null,
+                        contact: $('contact').value.trim() || null,
+                        // ⚠️ Le playerId du jeu, s'il y en a un dans ce
+                        // navigateur : il permet de relier un retour à un
+                        // compte sans RIEN demander de plus. Le serveur ne
+                        // le garde que s'il correspond à un compte qu'il a
+                        // déjà vérifié, et aucune décision n'en dépend.
+                        playerId: localStorage.getItem('playerId') || null,
+                        // De quoi reproduire, sans le demander au joueur.
+                        agent: navigator.userAgent,
+                        ecran: window.innerWidth + '×' + window.innerHeight,
+                        page: document.referrer || '',
+                    }),
+                });
+                const d = await r.json().catch(() => ({}));
+                if (r.ok && d.success) {
+                    document.body.classList.add('envoye');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                mot.className = 'f-mot ko';
+                mot.textContent = d.error || 'Envoi impossible pour le moment.';
+            } catch (err) {
+                mot.className = 'f-mot ko';
+                mot.textContent = 'Pas de réseau — réessaie dans un instant.';
+            }
+            $('envoyer').disabled = false;
+        });
+    </script>
+</body>
+
+</html>
