@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les règles des modes — ShonenMaster</title>
+    <meta name="description"
+        content="Comment se joue chaque mode de ShonenMaster : Classique, BombAnime, Rush, Ascension, Collect, Codanime. Règles, réglages et nombre de joueurs.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- ⚠️ LA MEME FEUILLE QUE LES PAGES LEGALES, et c est voulu : ce sont
+         les pages « a cote du jeu », celles du pied de page. Leur donner
+         chacune son habillage ferait trois pages qui se ressemblent PRESQUE,
+         ce qui se remarque bien plus qu une difference franche. -->
+    <link rel="stylesheet" href="/legal.css">
+    <style>
+        /* ── La fiche d un mode : un en-tete qui porte le nom et le nombre
+           de joueurs, puis la regle. ── */
+        .r-mode { margin: 0 0 2.75rem; }
+
+        .r-tete {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.6rem 1rem;
+            margin: 0 0 0.6rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--l-trait);
+        }
+        .r-tete h2 { margin: 0; border: 0; padding: 0; }
+
+        /* Le nombre de joueurs se lit AVEC le nom, pas trois lignes plus
+           bas : c est la premiere chose qu on vient verifier quand on
+           choisit un mode a cinq. */
+        .r-joueurs {
+            margin-left: auto;
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--l-doux);
+            white-space: nowrap;
+        }
+        .r-joueurs b { color: var(--l-or); font-weight: 600; }
+
+        .r-resume { margin: 0 0 1rem; }
+
+        /* Les reglages de l hote : une liste serree, pas des paragraphes.
+           Ce sont des entrees d un tiroir, elles se lisent en diagonale. */
+        .r-reglages {
+            margin: 1rem 0 0;
+            padding: 0.9rem 1.15rem;
+            background: var(--l-carte);
+            border: 1px solid var(--l-trait);
+            border-radius: 0.5rem;
+            font-size: 0.92rem;
+        }
+        .r-reglages h3 {
+            margin: 0 0 0.6rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--l-doux);
+        }
+        .r-reglages ul { margin: 0; padding-left: 1.1rem; }
+        .r-reglages li { margin: 0 0 0.35rem; }
+        .r-reglages li:last-child { margin-bottom: 0; }
+        .r-reglages b { color: var(--l-or); font-weight: 600; }
+
+        /* Le sommaire : on arrive ici pour UN mode, pas pour les six. */
+        .r-sommaire {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1.5rem 0 2.5rem;
+        }
+        .r-sommaire a {
+            padding: 0.5rem 0.9rem;
+            font-size: 0.88rem;
+            color: var(--l-texte);
+            text-decoration: none;
+            background: var(--l-carte);
+            border: 1px solid var(--l-trait);
+            border-radius: 999px;
+            transition: border-color .15s, color .15s;
+        }
+        .r-sommaire a:hover,
+        .r-sommaire a:focus-visible { border-color: var(--l-or); color: var(--l-or); }
+
+        .r-bientot { opacity: 0.6; }
+    </style>
+</head>
+
+<body>
+    <main class="l-page">
+
+        <a class="l-retour" href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Retour au jeu
+        </a>
+
+        <h1 class="l-titre">Les règles</h1>
+        <p class="l-date">Six modes, et ce qu'il faut savoir pour chacun</p>
+
+        <div class="l-resume">
+            <p><strong>Ce qui vaut partout :</strong> un joueur ouvre un salon et partage son code à quatre
+                lettres — ou le lien direct. Tout le monde entre, l'hôte règle la partie dans son tiroir, puis
+                la lance. Les réglages ci-dessous sont les siens : les autres joueurs les subissent, ils ne les
+                choisissent pas.</p>
+        </div>
+
+        <nav class="r-sommaire" aria-label="Aller à un mode">
+            <a href="#classique">Classique</a>
+            <a href="#bombanime">BombAnime</a>
+            <a href="#rush">Rush</a>
+            <a href="#ascension">Ascension</a>
+            <a href="#collect">Collect</a>
+            <a href="#codanime">Codanime</a>
+        </nav>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="classique">
+            <div class="r-tete">
+                <h2>Classique</h2>
+                <span class="r-joueurs"><b>8</b> joueurs minimum</span>
+            </div>
+            <p class="r-resume">Le quiz anime et manga. <strong>La même question s'affiche pour tout le
+                monde en même temps</strong>, avec un temps limité pour répondre. On marque en répondant
+                juste, et plus vite que les autres si le bonus de rapidité est en jeu.</p>
+            <p>Deux façons de perdre selon le réglage de l'hôte : en <strong>vies</strong>, une mauvaise
+                réponse en coûte une et l'on sort quand elles sont épuisées ; en <strong>points</strong>,
+                personne ne sort et c'est le meilleur score à la fin qui l'emporte.</p>
+            <p>Le mode se joue aussi <strong>en deux équipes</strong> — c'est le réglage « Format ». Chaque
+                camp marque ensemble, et le classement de fin oppose les deux camps plutôt que les joueurs.</p>
+
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Format</b> — solo, ou deux équipes.</li>
+                    <li><b>Vies</b> — combien de mauvaises réponses avant de sortir.</li>
+                    <li><b>Temps</b> — les secondes accordées par question.</li>
+                    <li><b>Réponses</b> — deux ou quatre propositions à l'écran.</li>
+                    <li><b>Difficulté</b> — fixe, ou <b>croissante</b> : les questions durcissent au fil
+                        de la partie.</li>
+                    <li><b>Série</b> — tout l'univers, ou une seule œuvre.</li>
+                    <li><b>Anti-spoil</b> — écarte les questions qui dévoilent une intrigue.</li>
+                    <li><b>Bonus &amp; défis</b> — la jauge de combo et les coups spéciaux.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="bombanime">
+            <div class="r-tete">
+                <h2>BombAnime</h2>
+                <span class="r-joueurs"><b>1</b> à <b>15</b> joueurs</span>
+            </div>
+            <p class="r-resume">Le jeu de la bombe, version anime. Une série est tirée, la bombe passe d'un
+                joueur à l'autre, et <strong>chacun doit citer un personnage de cette série avant qu'elle
+                n'explose sur lui</strong>. Un nom déjà donné ne compte pas. Le dernier survivant gagne.</p>
+            <p><strong>Le nom doit être entier.</strong> Taper « naru » ne vaut pas Naruto : le jeu attend
+                un nom complet, et il accepte les orthographes courantes d'un même personnage — un seul des
+                noms suffit, mais il faut qu'il soit écrit en entier.</p>
+            <p>Un joueur qui part en cours de partie <strong>reste à la table</strong>, éteint : la bombe
+                le saute. Cela évite que le cercle se redistribue au milieu d'un tour.</p>
+
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Série</b> — l'œuvre dans laquelle il faut piocher.</li>
+                    <li><b>Vies</b> — combien d'explosions chacun encaisse avant de sortir.</li>
+                    <li><b>Ordre</b> — <b>horaire</b>, la bombe tourne dans l'ordre ; <b>aléatoire</b>, elle
+                        désigne au hasard, l'un après l'autre.</li>
+                    <li><b>Mèche</b> — <b>par tour</b>, elle se restaure à chaque bonne réponse ;
+                        <b>continue</b>, elle se consume sans jamais repartir.</li>
+                    <li><b>Mouvement</b> — montrer ou non la mèche se consumer à l'écran.</li>
+                    <li><b>Temps</b> — la durée de la mèche.</li>
+                    <li><b>Bot</b> — un partenaire qui joue vraiment, pour s'entraîner à deux.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="rush">
+            <div class="r-tete">
+                <h2>Rush</h2>
+                <span class="r-joueurs"><b>2</b> joueurs minimum</span>
+            </div>
+            <p class="r-resume">Des portraits s'enchaînent à l'écran, l'un après l'autre. Il faut
+                <strong>nommer le personnage avant que le suivant n'arrive</strong>. Une erreur, ou le temps
+                écoulé, et la série casse : c'est la plus longue série d'affilée qui compte, pas le total.</p>
+            <p>La manche est chronométrée pour tout le monde en même temps, chacun sur son écran. Deux
+                <strong>jokers</strong> sont posés à côté du portrait quand l'hôte les autorise : ils passent
+                un personnage <strong>sans casser la série</strong>.</p>
+
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Séquence</b> — <b>commune</b>, les mêmes portraits pour tous dans le même ordre ;
+                        <b>propre</b>, chacun la sienne au hasard.</li>
+                    <li><b>Temps</b> — les secondes par portrait. À l'infini, seul le chrono général arrête
+                        la manche.</li>
+                    <li><b>Jokers</b> — les deux passes, ou aucune.</li>
+                    <li><b>Multiplicateur</b> — la récompense des longues séries.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="ascension">
+            <div class="r-tete">
+                <h2>Ascension</h2>
+                <span class="r-joueurs"><b>2</b> joueurs minimum</span>
+            </div>
+            <p class="r-resume">Une tour à gravir étage par étage, <strong>chacun à son rythme</strong> — on
+                ne s'attend pas. Chaque étage est une épreuve différente, et il faut la réussir pour monter.
+                Le premier arrivé au sommet gagne.</p>
+            <p>Rater une épreuve ne fait pas redescendre : <strong>on reste où l'on est et l'étage
+                recommence</strong>, avec une nouvelle épreuve. C'est le temps perdu qui coûte, pas la place.</p>
+
+            <div class="r-reglages">
+                <h3>Les huit épreuves</h3>
+                <ul>
+                    <li><b>Devine le perso</b> — cinq portraits, il faut taper les noms.</li>
+                    <li><b>Cible</b> — une planche de personnages, et des consignes : « clique sur X ».</li>
+                    <li><b>Intrus</b> — trente personnages, trois ne sont pas du bon anime.</li>
+                    <li><b>Lettres communes</b> — retrouver un nom lettre après lettre.</li>
+                    <li><b>Classement</b> — remettre des arcs dans l'ordre.</li>
+                    <li><b>Relie</b> — personnage et anime, couples, techniques, armes, rivaux, voix,
+                        studios.</li>
+                    <li><b>Anagramme</b> — les lettres d'un nom, mélangées.</li>
+                    <li><b>L'Œil</b> — cinq portraits clignotent puis se retournent : il faut avoir retenu
+                        <strong>où ils étaient</strong>. Le seul étage qui ne demande aucune connaissance.</li>
+                </ul>
+            </div>
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Temps</b> — les secondes accordées par étage.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="collect">
+            <div class="r-tete">
+                <h2>Collect</h2>
+                <span class="r-joueurs"><b>2</b> à <b>5</b> joueurs</span>
+            </div>
+            <p class="r-resume">Un jeu de cartes. Chacun a une main de personnages et doit
+                <strong>réunir ceux d'un même anime</strong> pour les poser au milieu de la table. Le premier
+                à boucler ses séries gagne.</p>
+            <p>On joue chacun son tour, et un tour, c'est une action. <strong>Piocher</strong> une carte,
+                <strong>échanger</strong> avec la table, <strong>scanner</strong> pour apprendre ce qu'un autre
+                détient, <strong>voler</strong> une carte à un adversaire — un vol peut rater — ou
+                <strong>poser</strong> une série terminée, ce qui la met à l'abri.</p>
+
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Temps</b> — les secondes accordées par tour.</li>
+                    <li><b>Séries</b> — combien il faut en poser pour gagner.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode" id="codanime">
+            <div class="r-tete">
+                <h2>Codanime</h2>
+                <span class="r-joueurs"><b>4</b> à <b>8</b> joueurs · deux équipes</span>
+            </div>
+            <p class="r-resume">Une grille de portraits, deux équipes. Dans chaque camp, <strong>un espion
+                voit lesquels sont les siens</strong> et doit les faire deviner à son équipe —
+                <strong>avec un seul mot</strong>, et un nombre : combien de portraits ce mot désigne.</p>
+            <p>L'équipe retourne les cartes qu'elle croit bonnes. Une carte du bon camp, elle continue ; une
+                carte neutre ou adverse, le tour passe. Et <strong>l'assassin fait perdre sur-le-champ</strong>
+                l'équipe qui le retourne, quel que soit le score.</p>
+            <p>Le premier camp à retrouver tous ses portraits gagne.</p>
+
+            <div class="r-reglages">
+                <h3>Ce que l'hôte règle</h3>
+                <ul>
+                    <li><b>Assassin</b> — poser ou non la carte qui fait perdre instantanément.</li>
+                    <li><b>Séries</b> — l'univers dans lequel la grille est tirée.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════ -->
+        <section class="r-mode r-bientot">
+            <div class="r-tete">
+                <h2>Et un septième</h2>
+                <span class="r-joueurs">bientôt</span>
+            </div>
+            <p class="r-resume">Un mode est terminé et attend d'avoir assez de matière pour ouvrir. Ses
+                règles arriveront ici le jour où il paraîtra.</p>
+        </section>
+
+        <footer class="l-pied">
+            <a href="/conditions">Conditions d'utilisation</a> ·
+            <a href="/confidentialite">Confidentialité</a> ·
+            <a href="/signaler">Signaler un bug</a>
+        </footer>
+    </main>
+</body>
+
+</html>

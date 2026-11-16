@@ -3400,6 +3400,12 @@ app.get('/signaler', (req, res) => {
     res.sendFile(__dirname + '/src/html/signaler.html');
 });
 
+// 📖 LES REGLES DES MODES. Meme famille que les deux pages legales : les
+// pages « a cote du jeu », celles du pied de page.
+app.get('/regles', (req, res) => {
+    res.sendFile(__dirname + '/src/html/regles.html');
+});
+
 // ════════════════════════════════════════════════════════════════
 // 📮 LES RETOURS DES JOUEURS
 // ════════════════════════════════════════════════════════════════

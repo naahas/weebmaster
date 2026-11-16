@@ -695,11 +695,26 @@
                      Google exige. -->
                 <footer class="v2-pied" v-if="homeScreen === 'hub'">
                     <nav class="v2-pied-dedans" aria-label="Liens utiles">
-                        <a href="/conditions">Conditions</a>
-                        <span aria-hidden="true">·</span>
-                        <a href="/confidentialite">Confidentialité</a>
-                        <span aria-hidden="true">·</span>
-                        <a href="/signaler">Signaler un bug</a>
+                        <!-- ⚠️ « Règles » EN PREMIER, et les deux pages légales
+                             ensuite. C'est le seul des quatre liens qu'un joueur
+                             ouvre pour JOUER ; les autres, on les cherche quand on
+                             les cherche. L'ordre d'un pied de page n'est pas
+                             alphabétique, il est celui de l'utilité. -->
+                        <!-- ⚠️ DEUX GROUPES, et c est ce qui permet la bascule
+                             mobile. A plat, passer la rangee en colonne aurait
+                             empile CHAQUE lien et chaque point median sur sa
+                             propre ligne. Reunis, les liens restent une ligne et
+                             les signatures une autre. -->
+                        <span class="v2-pied-liens">
+                            <a href="/regles">Règles</a>
+                            <span aria-hidden="true">·</span>
+                            <a href="/conditions">Conditions</a>
+                            <span aria-hidden="true">·</span>
+                            <a href="/confidentialite">Confidentialité</a>
+                            <span aria-hidden="true">·</span>
+                            <a href="/signaler">Signaler un bug</a>
+                        </span>
+                        <span class="v2-pied-sign">
                         <a class="v2-reseau tiktok" href="https://www.tiktok.com/@adeem7i"
                            target="_blank" rel="noopener noreferrer" title="TikTok — @adeem7i" aria-label="TikTok">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -716,6 +731,7 @@
                                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                             </svg>
                         </a>
+                        </span>
                     </nav>
                 </footer>
             </div>
