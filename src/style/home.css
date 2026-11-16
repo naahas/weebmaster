@@ -14277,7 +14277,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     flex: 0 0 auto;
     width: 1.5rem;
     height: 1.5rem;
-    margin-left: 0.2rem;
+    margin-right: 0.35rem;
     padding: 0;
     display: grid;
     place-items: center;
@@ -14288,10 +14288,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     background: var(--neon-primary, #f0c75e);
     border: 0;
     border-radius: 50%;
-    cursor: pointer;
+    cursor: help;
     animation: v2StartPulse 2.1s ease-out infinite;
 }
-.v2-start-info.on { animation: none; }
+/* La pulsation s arrete pendant qu on lit : elle a fait son travail, et
+   continuer reviendrait a appeler quelqu un qui est deja la. */
+.v2-start-info:hover,
+.v2-start-info:focus-visible { animation: none; outline: none; }
 @keyframes v2StartPulse {
     0%   { box-shadow: 0 0 0 0 rgba(240, 199, 94, 0.55); }
     70%  { box-shadow: 0 0 0 0.75rem rgba(240, 199, 94, 0); }
@@ -14303,12 +14306,21 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-start-info { animation: none; }
 }
 
+/* ⚠️ LA BULLE S OUVRE AU SURVOL, et elle est TOUJOURS dans le document —
+   seule sa visibilite change. Montee et demontee par un `v-if`, elle serait
+   reapparue vide le temps d un rendu de Vue, qui repeint cette zone a chaque
+   joueur qui entre dans le salon.
+   ⚠️ `left: 0` ET NON un centrage : la pastille est au bord GAUCHE de la
+   colonne, et une bulle de 16rem centree sur elle sortait de l ecran par la
+   gauche. Elle s ouvre donc vers la droite, du cote ou il y a la place. */
 .v2-start-bulle {
     position: absolute;
     top: calc(100% + 0.6rem);
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     z-index: 30;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s;
     width: 16rem;
     max-width: 70vw;
     padding: 0.7rem 0.85rem;
@@ -14324,15 +14336,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     cursor: default;
 }
 .v2-start-bulle b { color: var(--neon-primary, #f0c75e); font-weight: 700; }
-.v2-start-bulle-non {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.72rem;
-    color: #7d7791;
-    text-decoration: underline;
-    cursor: pointer;
-}
-.v2-start-bulle-non:hover { color: #b9b3c9; }
+
+.v2-start-info:hover .v2-start-bulle,
+.v2-start-info:focus-visible .v2-start-bulle { opacity: 1; visibility: visible; }
 
 /* ⚖️ LA BARRE DU BAS — liens utiles et signature, sous un filet.
    ⚠️ ELLE PREND TOUTE LA LARGEUR, et c est le filet qui l exige : un trait
