@@ -748,12 +748,21 @@
                                 <span class="v2-live-dot"></span>
                                 En attente du lancement par l'hôte…
                             </p>
+                            <!-- ⚠️ PLUS DE « x minimum » ICI, et c'est un
+                                 revirement assume. On l'y avait mis en se
+                                 disant que l'invité attend sans savoir
+                                 pourquoi rien ne démarre — le bouton gris de
+                                 l'hôte, il ne le voit pas. Mais il n'y peut
+                                 RIEN : remplir le salon est l'affaire de
+                                 l'hôte, et « 2 joueurs · 8 minimum » se lit
+                                 comme un mur plutôt que comme une attente.
+                                 La ligne du dessus dit déjà ce qu'il a
+                                 besoin de savoir : on attend l'hôte.
+                                 Le chiffre reste chez l'hôte, dans sa liste
+                                 de joueurs, où il demande quelque chose à
+                                 quelqu'un qui peut agir. -->
                             <p class="v2-room-guest-count">
-                                <b>{{ playerCount }}</b> joueur<span v-if="playerCount > 1">s</span> dans le salon<!--
-                                ⚠️ L'invité aussi : c'est lui qui attend sans savoir
-                                pourquoi rien ne démarre. Le bouton gris de l'hôte, il
-                                ne le voit même pas.
-                           --><span class="v2-room-min" v-if="joueursManquants"> · {{ minPourDemarrer }} minimum</span>
+                                <b>{{ playerCount }}</b> joueur<span v-if="playerCount > 1">s</span> dans le salon
                             </p>
                         </div>
 
