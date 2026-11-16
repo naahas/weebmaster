@@ -116,96 +116,116 @@
         }
 
         /* ════════════════════════════════════════════════════════
-           LES SIX TRAITEMENTS
-           ════════════════════════════════════════════════════════ */
+           SECONDE SERIE — « UN PEU TROP GROS »
+           ════════════════════════════════════════════════════════
+           Le reproche fait au Cormorant capitales retenu : il prend toute la
+           largeur de la carte et pese autant que le pseudo. Les cinq
+           propositions tirent donc toutes dans le meme sens — plus petit,
+           plus fin, moins large — et explorent les trois leviers qui font
+           qu un titre « pese » : la TAILLE, la GRAISSE, et surtout la CASSE
+           (des capitales occupent un tiers de largeur de plus a taille
+           egale, et n ont ni jambages ni hampes pour aerer la ligne).
+           Le 1 est l actuel, pose la pour comparer. */
 
-        /* 1 — L ACTUEL, pour comparer. Poppins italique, dore eteint. */
-
-        /* 2 — CORMORANT ITALIQUE. La voix d honneur que le jeu a deja
-           (`.fs-master-tag`). Serif, donc rien d autre ne lui ressemble sur
-           cette carte : le titre cesse d etre une ligne de plus. */
-        .t2 .v2-profil-exploit {
+        /* 1 — L ACTUEL : Cormorant capitales, 0,92rem / 600 / 0,15em. */
+        .t1 .v2-profil-exploit {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-style: italic;
-            font-size: 1.25rem;
-            font-weight: 500;
-            letter-spacing: 0.01em;
-            color: #dcb64c;
+            font-size: 0.92rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #d4af37;
         }
 
-        /* 3 — CORMORANT EN CAPITALES. Le meme serif, mais grave : capitales
-           espacees, pas d italique. Il se lit comme une inscription. */
-        .t3 .v2-profil-exploit {
+        /* 2 — LE MEME, RESSERRE. Deux crans en dessous sur la taille et un
+           sur la graisse, l espacement augmente pour compenser : une ligne
+           petite mais aeree se lit mieux qu une ligne petite et tassee. */
+        .t2 .v2-profil-exploit {
             font-family: 'Cormorant Garamond', Georgia, serif;
-            font-style: normal;
-            font-size: 0.98rem;
-            font-weight: 600;
+            font-size: 0.78rem;
+            font-weight: 500;
             letter-spacing: 0.2em;
             text-transform: uppercase;
             color: #d4af37;
         }
 
-        /* 4 — RAJDHANI. La voix « interface de jeu » : condensee, capitales
-           larges. Elle parle le meme langage que les rangs du jeu. */
+        /* 3 — LE PLUS DISCRET. Encore plus petit, graisse normale, dore
+           eteint : le titre devient une mention, au meme niveau que le rang
+           de l en-tete plutot qu au-dessus de lui. */
+        .t3 .v2-profil-exploit {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            color: #bb9a39;
+        }
+
+        /* 4 — CASSE NORMALE. ⚠️ LE SEUL QUI CHANGE VRAIMENT LA LARGEUR : les
+           minuscules prennent un tiers de moins que les capitales a taille
+           egale. On peut donc garder une taille genereuse — 1,15rem — et
+           occuper MOINS de place qu a 0,92 en capitales. Les jambages et
+           les hampes aerent la ligne au lieu du seul interlettrage. */
         .t4 .v2-profil-exploit {
-            font-family: 'Rajdhani', system-ui, sans-serif;
-            font-style: normal;
-            font-size: 0.95rem;
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.15rem;
             font-weight: 600;
+            letter-spacing: 0.015em;
+            text-transform: none;
+            color: #d9b44a;
+        }
+
+        /* 5 — PETITES CAPITALES. Le compromis classique de la typographie
+           d edition : une capitale a l initiale, des petites capitales pour
+           le reste. On garde l air d inscription sans la largeur ni le poids
+           du tout-capitales.
+           ⚠️ `font-variant-caps` ET le texte en casse normale : applique a
+           un texte deja en majuscules, il ne fait RIEN — il n a plus de
+           minuscules a reduire. D ou le `text-transform: none` ici. */
+        .t5 .v2-profil-exploit {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: none;
+            font-variant-caps: small-caps;
+            color: #d4af37;
+        }
+
+        /* 6 — SANS SERIF, FIN. Pour voir si le reproche vise le serif ou
+           seulement la taille : meme discretion que le 3, dans la voix
+           « interface » du jeu. */
+        .t6 .v2-profil-exploit {
+            font-family: 'Rajdhani', system-ui, sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
             letter-spacing: 0.22em;
             text-transform: uppercase;
             color: #cfa93a;
-        }
-
-        /* 5 — SPACE GROTESK ITALIQUE. Moderne et neutre, sans serif :
-           l ecart le plus faible avec l actuel, pour qui trouverait le serif
-           trop solennel. */
-        .t5 .v2-profil-exploit {
-            font-family: 'Space Grotesk', system-ui, sans-serif;
-            font-style: italic;
-            font-size: 0.95rem;
-            font-weight: 500;
-            letter-spacing: 0.005em;
-            color: #e3c268;
-        }
-
-        /* 6 — CORMORANT, DEGRADE D OR. Le meme que le 2, avec le degrade
-           metallique du jeu.
-           ⚠️ `background-clip: text` EXIGE une couleur transparente : sans
-           `color: transparent`, le texte se peint par-dessus son propre
-           degrade et l on ne voit rien du traitement. */
-        .t6 .v2-profil-exploit {
-            font-family: 'Cormorant Garamond', Georgia, serif;
-            font-style: italic;
-            font-size: 1.25rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-            background: linear-gradient(100deg, #b08528 0%, #f6dd86 46%, #c9972f 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            filter: drop-shadow(0 0 10px rgba(240, 199, 94, 0.18));
         }
     </style>
 </head>
 
 <body>
-    <h1>La police du titre porté</h1>
-    <p class="intro">Six traitements sur la vraie carte — <code>home.css</code> est chargé, seule la
-        classe du titre change. Les six polices sont déjà chargées par le jeu : aucune n'ajoute un
-        aller-retour réseau. La seconde rangée montre un titre long, qui est ce qui décide.</p>
+    <h1>La police du titre porté — seconde série</h1>
+    <p class="intro">Le reproche fait à l'actuel : trop gros. Les cinq propositions tirent toutes dans
+        le même sens, et explorent les trois leviers qui font qu'un titre pèse — la <strong>taille</strong>,
+        la <strong>graisse</strong>, et surtout la <strong>casse</strong> : des capitales prennent un
+        tiers de largeur de plus à taille égale, et n'ont ni jambages ni hampes pour aérer la ligne.
+        Le 1 est l'actuel, posé là pour comparer. La seconde rangée montre un titre long, qui est
+        ce qui décide.</p>
 
     <div class="grille" id="grille"></div>
 
     <script>
         // Les six cas, et les deux titres qui les eprouvent.
         const CAS = [
-            ['t1', '1 · Actuel', 'Poppins italique, 0,88rem. La ligne se lit comme une légende : au même rythme que « Parties jouées » juste en dessous.'],
-            ['t2', '2 · Cormorant italique', 'Le serif que le jeu réserve déjà aux lignes d’honneur. Rien d’autre ne lui ressemble sur cette carte.'],
-            ['t3', '3 · Cormorant capitales', 'Le même serif, gravé. Il se lit comme une inscription — mais il parle fort, juste sous le rang.'],
-            ['t4', '4 · Rajdhani capitales', 'La voix « interface de jeu ». ⚠️ Très proche du rang de l’en-tête, qui est déjà en capitales espacées.'],
-            ['t5', '5 · Space Grotesk italique', 'Le plus petit écart avec l’actuel : moderne, sans serif, un peu plus de présence.'],
-            ['t6', '6 · Cormorant dégradé', 'Le 2 avec l’or métallique du jeu. Le plus riche — et le seul qui coûte un dégradé par carte.'],
+            ['t1', '1 · Actuel', 'Cormorant capitales, 0,92rem / 600 / 0,15em. Posé là pour comparer — c’est lui qu’on trouve trop gros.'],
+            ['t2', '2 · Resserré', 'Le même, deux crans plus petit et un cran plus fin, avec plus d’air entre les lettres : une ligne petite mais aérée se lit mieux qu’une ligne petite et tassée.'],
+            ['t3', '3 · Le plus discret', '0,7rem, doré éteint. Le titre devient une mention, au même niveau que le rang de l’en-tête plutôt qu’au-dessus de lui.'],
+            ['t4', '4 · Casse normale', '⚠️ Le seul qui change vraiment la LARGEUR : les minuscules prennent un tiers de moins que les capitales. 1,15rem y occupe moins de place que 0,92 en capitales.'],
+            ['t5', '5 · Petites capitales', 'Le compromis de la typographie d’édition : une capitale à l’initiale, des petites capitales ensuite. L’air d’inscription sans la largeur.'],
+            ['t6', '6 · Sans serif, fin', 'Pour trancher : si le reproche vise le serif et pas seulement la taille, c’est celui-ci qui le dira.'],
         ];
         const TITRES = ["Vagabond de l'aube", 'Shinigami des ombres'];
 
