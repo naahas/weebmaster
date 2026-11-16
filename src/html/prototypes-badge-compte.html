@@ -4,53 +4,64 @@
 <title>Le badge d'un compte</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
 <!--
-   ⚠️ COMMENT MARQUER UN JOUEUR INSCRIT, SOBREMENT.
+   ⚠️ COMMENT MARQUER UN JOUEUR INSCRIT, DANS LE SALON ET EN PARTIE.
    Le pseudo reste libre : n'importe qui peut taper « Naahas ». C'est donc le
-   badge qui distingue — on peut usurper le nom, pas le statut. Et il doit
-   rester discret : ce n'est pas une décoration, c'est une mention.
+   badge qui distingue — on usurpe le nom, pas le statut.
 
-   ⚠️ QUATRE COLLISIONS INTERDISENT LA MOITIÉ DES IDÉES ÉVIDENTES, et aucune
-   ne se devine — elles ont été relevées dans le vrai CSS :
+   ⚠️ CE BANC MONTRE LE VRAI HEXAGONE, et c'est la correction la plus
+   importante par rapport à sa première version. Celle-ci affichait un
+   polygone gris vide : pas de portrait, pas d'anneau, pas de cœurs. On
+   jugeait donc des badges sur une forme qui n'existe nulle part dans le jeu,
+   et tout paraissait propre faute de voisinage. Ici l'hexagone porte son
+   avatar découpé, son liseré doré, son anneau extérieur et ses deux cœurs —
+   un badge doit se défendre AU MILIEU DE TOUT ÇA.
 
-   1. LA COULEUR EST PRISE. Cinq camps (`team-1` à `team-5`) portent bleu,
-      DORÉ, rose, vert et violet. Et sur l'hexagone de BombAnime le pseudo
-      vire déjà au doré quand c'est le tour du joueur (`.active`) ou quand
-      c'est soi (`.is-me`). Un badge coloré dirait donc autre chose selon le
-      mode et selon le tour.
+   ⚠️ CINQ EMPLACEMENTS SONT DÉJÀ PRIS, et aucun ne se devine. Relevés dans
+   le vrai CSS, pas supposés :
 
-   2. LE ROUGE EST PRIS : c'est l'armement de l'exclusion (`.arme`).
+   1. LA COULEUR. Cinq camps (`team-1` à `team-5`) portent bleu, DORÉ, rose,
+      vert et violet. Et sur l'hexagone le pseudo vire au doré quand c'est le
+      tour du joueur (`.active`) ou quand c'est soi (`.is-me`).
 
-   3. `::after` DU PSEUDO EST PRIS. `.v2-room-player-name::after` est la mèche
-      de l'exclusion, calée sur la largeur exacte du pseudo. Il reste le
-      `::before`, qui est libre.
+   2. L'ANNEAU EXTÉRIEUR À 118 % EXISTE DÉJÀ (`svg.hex-anneau`), et il porte
+      du sens : blanc à 6 % au repos, doré à 45 % pendant le tour, doré à
+      22 % pour soi, éteint à l'élimination, et il se défait en explosant.
+      ⚠️ Un badge « double anneau » ne peut donc pas être un anneau de plus
+      au même endroit : il doit COMPOSER avec celui-là — en changeant sa
+      TEXTURE (pointillé) plutôt que sa couleur, ou en se posant ailleurs.
+
+   3. LE ROUGE EST PRIS : c'est l'armement de l'exclusion (`.arme`), une
+      mèche posée sur le `::after` du pseudo, à sa largeur exacte.
 
    4. LA PASTILLE D'AVATAR EST PRISE : la pastille de camp y est posée.
 
-   Reste donc : le `::before` du nom, la TYPOGRAPHIE, et le cadre de la carte.
+   5. LES CŒURS sont sous l'hexagone. L'espace juste en dessous est occupé.
+
+   Restent : la texture de l'anneau, un troisième cerne plus large, les six
+   sommets, l'intérieur du liseré, et la ligne du pseudo.
 
    ⚠️ ET C'EST L'HEXAGONE À 44 px QUI TRANCHE, pas la liste du salon. À huit
-   joueurs sur téléphone, un badge qui ne survit pas là n'existe pas la moitié
-   du temps. Les trois tailles sont donc montrées ensemble, et il faut juger
-   la plus petite en premier.
+   joueurs sur téléphone, un badge qui n'y survit pas n'existe pas la moitié
+   du temps. Juger la plus petite d'abord.
 -->
 <style>
-:root { --or: #ffd700; --camp2: #f0c040; }
+:root { --or: #f0c040; --orvif: #ffd700; }
 * { box-sizing: border-box; }
 body {
-    margin: 0; padding: 0 0 5rem;
-    background: #07070a; color: #e8e8ee;
+    margin: 0; padding: 0 0 6rem;
+    background: #0a0a0e; color: #e8e8ee;
     font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
 }
 h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
-.sous { font-size: .78rem; line-height: 1.65; opacity: .6; max-width: 60rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous { font-size: .78rem; line-height: 1.65; opacity: .62; max-width: 62rem; margin: 0 0 1rem; padding: 0 1.4rem; }
 .sous b { opacity: 1; color: #fff; }
-.sous .av { color: var(--or); font-weight: 700; }
+.sous .av { color: var(--orvif); font-weight: 700; }
 
 .barre {
     position: sticky; top: 0; z-index: 50;
     display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
-    padding: .7rem .9rem; margin-bottom: 1.2rem;
-    background: rgba(8,8,11,.95); backdrop-filter: blur(10px);
+    padding: .7rem .9rem; margin-bottom: .6rem;
+    background: rgba(10,10,14,.96);
     border-bottom: 1px solid rgba(255,255,255,.08);
 }
 .barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; }
@@ -60,35 +71,30 @@ h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4
     color: #e8e8ee; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
 }
 .cmd:hover { background: rgba(255,255,255,.1); }
-.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--or); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--orvif); }
 .sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
 
-.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.3rem 1.4rem .4rem; }
-.piste h2 { font-size: .95rem; font-weight: 800; margin: 0 0 .15rem; display: flex; align-items: baseline; gap: .5rem; }
-.piste h2 em { font-style: normal; font-size: .72rem; opacity: .35; font-family: 'Bebas Neue', sans-serif; }
-.piste .n { font-size: .72rem; line-height: 1.6; opacity: .5; max-width: 54rem; margin: 0 0 1rem; }
-.piste.reco h2 { color: var(--or); }
+.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.4rem 1.4rem .6rem; }
+.piste h2 { font-size: .98rem; font-weight: 800; margin: 0 0 .2rem; display: flex; align-items: baseline; gap: .55rem; }
+.piste h2 em { font-style: normal; font-size: .9rem; opacity: .3; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: .73rem; line-height: 1.65; opacity: .52; max-width: 56rem; margin: 0 0 1.3rem; }
+.piste .n b { opacity: .95; color: #fff; font-weight: 600; }
+.piste.reco h2 { color: var(--orvif); }
+.piste.reco { background: linear-gradient(90deg, rgba(255,215,0,.035), transparent 60%); }
 
-.rangee { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2.4rem 2.8rem; }
-.cas { display: flex; flex-direction: column; gap: .5rem; }
-.cas > span.lib { font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; opacity: .32; }
-/* ⚠️ Le pseudo de l'hexagone est en « position: absolute ; bottom: 100% » :
-   il SORT de la boîte du slot et venait écraser l'étiquette du cas voisin —
+.rangee { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2.6rem 3rem; }
+.cas { display: flex; flex-direction: column; gap: .55rem; }
+.cas > span.lib { font-size: .57rem; letter-spacing: .1em; text-transform: uppercase; opacity: .34; }
+/* ⚠️ Le pseudo de l'hexagone est en `position: absolute; bottom: 100%` : il
+   SORT de la boîte du slot et venait écraser l'étiquette du cas voisin —
    justement sur le cas à 44 px, celui qui décide. On lui réserve sa hauteur
-   au-dessus plutôt que de le remettre dans le flux, ce qui changerait le
-   centrage de l'hexagone et donc ce qu'on est en train de juger. */
-/* L'étiquette passe SOUS l'hexagone (`column-reverse`) : au-dessus, elle
-   occupait la bande où le pseudo vient se poser, et les cas se chevauchaient
-   d'autant plus qu'ils sont serrés — à 44 px le nom est plus large que
-   l'hexagone lui-même. Le `min-width` empêche deux cas voisins de se toucher
-   quand leur étiquette est courte. */
-.cas.hex { flex-direction: column-reverse; padding-top: 1.9rem; min-width: 9rem; }
-.cas.hex .hex-bloc { align-items: center; }
+   au-dessus et l'étiquette passe dessous (`column-reverse`). */
+.cas.hex { flex-direction: column-reverse; padding-top: 2.2rem; min-width: 9.5rem; }
 
 /* ══════════ La carte joueur du salon, reprise au trait près ══════════ */
 .v2-room-player {
     position: relative;
-    display: flex; align-items: center; gap: .55rem;
+    display: inline-flex; align-items: center; gap: .55rem;
     padding: .72rem 1.25rem;
     font-size: 1.15rem; font-weight: 600; color: #fff;
     background: rgba(255,255,255,.04);
@@ -96,6 +102,7 @@ h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4
     border-radius: 2rem;
     font-family: inherit;
 }
+.v2-room-player.moi { border-color: rgba(240,192,64,.55); }
 .v2-room-player-name { position: relative; }
 /* ⚠️ La mèche de l'exclusion : c'est elle qui occupe le `::after` du pseudo. */
 .v2-room-player.arme .v2-room-player-name::after {
@@ -103,14 +110,29 @@ h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4
     height: 2px; border-radius: 2px; background: #ff5f5a;
 }
 
-/* ══════════ L'hexagone de BombAnime ══════════ */
-.hex-bloc { position: relative; display: flex; flex-direction: column; align-items: center; }
-.player-hex { position: relative; overflow: visible; }
-.player-hex i {
-    display: block; width: 100%; height: 100%;
+/* ══════════ L'hexagone de BombAnime, fidèle ══════════ */
+.slot { position: relative; display: flex; flex-direction: column; align-items: center; }
+.player-hex { position: relative; }
+
+/* Le liseré principal : l'hexagone lui-même. */
+.player-hex svg.hex-trait { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.player-hex svg.hex-trait polygon { fill: none; stroke: rgba(240,192,64,.35); stroke-width: 2; }
+.slot.active .player-hex svg.hex-trait polygon { stroke: var(--or); }
+.slot.active .player-hex svg.hex-trait { filter: drop-shadow(0 0 10px rgba(240,192,64,.5)); }
+
+/* ⚠️ L'ANNEAU EXTÉRIEUR, 118 %, DÉJÀ PORTEUR DE SENS — voir l'en-tête. */
+.player-hex svg.hex-anneau {
+    position: absolute; top: -9%; left: -9%; width: 118%; height: 118%;
+    overflow: visible; pointer-events: none;
+}
+.player-hex svg.hex-anneau polygon { fill: none; stroke: rgba(255,255,255,.06); stroke-width: 1.6; }
+.slot.active .player-hex svg.hex-anneau polygon { stroke: rgba(240,192,64,.45); }
+
+/* Le portrait, découpé à la forme de l'hexagone. */
+.player-hex img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    clip-path: polygon(50% 6%, 91% 28%, 91% 72%, 50% 94%, 9% 72%, 9% 28%);
     background: linear-gradient(140deg,#2a2a33,#15151c);
-    clip-path: polygon(50% 2%, 95% 26%, 95% 74%, 50% 98%, 5% 74%, 5% 26%);
-    box-shadow: inset 0 0 0 2px rgba(240,192,64,.35);
 }
 .player-name {
     position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
@@ -118,70 +140,153 @@ h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4
     font-size: 1rem; color: rgba(255,255,255,.56); font-weight: 500;
     white-space: nowrap; max-width: 130px; overflow: hidden; text-overflow: ellipsis;
 }
-/* ⚠️ Le pseudo vire au doré quand c'est le tour du joueur : la couleur est
-   donc déjà porteuse de sens ici. */
-.slot.active .player-name { color: var(--camp2); }
+.slot.active .player-name { color: var(--or); }
+/* Les cœurs, sous l'hexagone : l'espace du dessous est pris. */
+.coeurs { position: absolute; bottom: -.1em; right: .1em; display: flex; gap: .1em; font-size: .9rem; line-height: 1; }
 
-/* Les trois tailles. 44 px est celle d'un téléphone à huit joueurs. */
-.hex-44 .player-hex { width: 44px; height: 44px; }
-.hex-44 .player-name { font-size: .62rem; margin-bottom: .4rem; }
-.hex-70 .player-hex { width: 70px; height: 70px; }
+.hex-44  .player-hex { width: 44px;  height: 44px; }
+.hex-44  .player-name { font-size: .62rem; margin-bottom: .4rem; }
+.hex-44  .coeurs { font-size: .5rem; }
+.hex-70  .player-hex { width: 70px;  height: 70px; }
+.hex-70  .coeurs { font-size: .68rem; }
 .hex-110 .player-hex { width: 110px; height: 110px; }
 .hex-110 .player-name { font-size: 1.15rem; }
 
 /* ══════════════════════════════════════════════════════════════
-   LES PISTES — toutes sur `::before` du nom, la typo, ou le cadre
+   LES PISTES
+   Chacune est définie POUR LES DEUX CONTEXTES — c'est la règle du
+   banc. ⚠️ Un badge qui n'existerait que dans le salon oblige le
+   joueur à l'apprendre deux fois, et la moitié du temps il n'y a
+   rien à apprendre : en partie, on ne le verrait jamais.
    ══════════════════════════════════════════════════════════════ */
 
-/* ─ 1 · LE POINT ─ un rond plein avant le pseudo, couleur du texte ─ */
-.b1 .v2-room-player-name::before,
-.b1 .player-name::before {
-    content: ''; display: inline-block; vertical-align: middle;
-    width: .34em; height: .34em; margin-right: .42em;
-    border-radius: 50%; background: currentColor; opacity: .75;
-}
-
-/* ─ 2 · LE LOSANGE ─ le même point, tourné : plus « jeu », moins « statut » ─ */
-.b2 .v2-room-player-name::before,
-.b2 .player-name::before {
+/* ─ 0 · LE LOSANGE ─ ce qui est en place aujourd'hui, pour comparer ─ */
+.v0 .v2-room-player-name::before,
+.v0 .player-name::before {
     content: ''; display: inline-block; vertical-align: middle;
     width: .32em; height: .32em; margin-right: .45em;
     background: currentColor; opacity: .8; transform: rotate(45deg);
 }
 
-/* ─ 3 · LE FILET AU-DESSUS ─ un trait court posé SUR le pseudo ─
-   ⚠️ Au-dessus et non en dessous : en dessous il se confondrait avec la
-   mèche de l'exclusion, qui a exactement la même largeur. */
-.b3 .v2-room-player-name::before,
-.b3 .player-name::before {
-    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
-    top: -.3em; width: 1.1em; height: 1.5px; border-radius: 2px;
-    background: currentColor; opacity: .55;
-}
-.b3 .player-name { position: relative; }
+/* ─ A · L'ANNEAU POINTILLÉ ─ la TEXTURE de l'anneau, pas sa couleur ─
+   ⚠️ LA SEULE FAÇON HONNÊTE DE FAIRE UN « DOUBLE ANNEAU » ICI : l'anneau
+   extérieur existe déjà et sa COULEUR est prise par le tour et par « c'est
+   moi ». On ne touche donc qu'à son tracé — plein pour un inscrit, et il
+   reste ce qu'il est pour un invité. La couleur continue de dire l'état,
+   la texture dit le statut, et les deux se lisent ensemble. */
+.vA .player-hex svg.hex-anneau polygon { stroke: rgba(255,255,255,.3); stroke-width: 2; }
+.vA .slot.active .player-hex svg.hex-anneau polygon { stroke: rgba(240,192,64,.75); }
+.vA .v2-room-player { box-shadow: 0 0 0 .18rem rgba(255,255,255,.07); }
 
-/* ─ 4 · LES PETITES CAPITALES ─ aucun signe ajouté, que de la typographie ─ */
-.b4 .v2-room-player-name,
-.b4 .player-name {
-    font-variant-caps: all-small-caps;
-    letter-spacing: .06em;
-    font-weight: 700;
+/* ─ B · LE TROISIÈME CERNE ─ un anneau de plus, nettement plus large ─
+   Il ne touche pas à celui de 118 % : il se pose à 142 %, assez loin pour
+   qu'on lise deux objets distincts et non un trait épaissi. */
+.vB .player-hex::after {
+    content: ''; position: absolute; inset: -21%;
+    clip-path: polygon(50% 2%, 97% 26%, 97% 74%, 50% 98%, 3% 74%, 3% 26%);
+    background: rgba(255,255,255,.09);
+}
+.vB .player-hex::before {
+    content: ''; position: absolute; inset: -17.5%; z-index: 1;
+    clip-path: polygon(50% 2%, 97% 26%, 97% 74%, 50% 98%, 3% 74%, 3% 26%);
+    background: #0a0a0e;
+}
+.vB .v2-room-player { box-shadow: 0 0 0 .32rem rgba(255,255,255,.055); }
+
+/* ─ C · LES SIX SOMMETS ─ un repère sur chaque pointe ─
+   Le badge quitte la ligne du texte pour se poser sur la géométrie : il ne
+   vole donc aucune lettre à un pseudo déjà coupé à 130 px. */
+.vC .hex-sommets { display: block; }
+.vC .v2-room-player::before,
+.vC .v2-room-player::after {
+    content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+    width: 2px; height: .5rem; border-radius: 2px; background: rgba(255,255,255,.4);
+}
+.vC .v2-room-player::before { left: .42rem; }
+.vC .v2-room-player::after  { right: .42rem; }
+
+/* ─ D · L'ÉCLAT QUI TOURNE ─ un trait court qui fait le tour, lentement ─
+   ⚠️ DIX SECONDES PAR TOUR, et c'est volontairement trop lent pour qu'on
+   suive le point des yeux. On ne voit pas qu'il tourne, on trouve la
+   vignette plus vivante que les autres. À deux secondes, il appellerait —
+   or ce badge n'a rien à demander, il constate.
+   ⚠️ Il se coupe pour qui demande moins de mouvement, et il se couperait
+   aussi en rendu logiciel (voir `html.rendu-logiciel` dans home.css). */
+.vD .hex-eclat { display: block; }
+.vD .hex-eclat polygon {
+    fill: none; stroke: rgba(255,255,255,.85); stroke-width: 2.4;
+    stroke-linecap: round; stroke-dasharray: 16 284;
+    animation: court 10s linear infinite;
+}
+@keyframes court { to { stroke-dashoffset: -300; } }
+.vD .v2-room-player::before {
+    content: ''; position: absolute; inset: -2px; border-radius: inherit; padding: 1.5px;
+    background: conic-gradient(from 0turn, transparent 0 78%, rgba(255,255,255,.55) 90%, transparent 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: tourne 10s linear infinite;
+}
+@keyframes tourne { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+    .vD .hex-eclat polygon, .vD .v2-room-player::before { animation: none; }
 }
 
-/* ─ 5 · LE CADRE ─ la carte s'éclaircit d'un cran, rien sur le pseudo ─
-   ⚠️ N'existe PAS sur l'hexagone : il n'y a pas de cadre à éclaircir. */
-.b5 .v2-room-player {
-    background: rgba(255,255,255,.085);
-    border-color: rgba(255,255,255,.2);
+/* ─ E · LE LISERÉ INTÉRIEUR ─ une seconde ligne, mais DEDANS ─
+   L'extérieur est encombré ; l'intérieur du liseré doré est vide. Une ligne
+   fine y court, au bord du portrait. Sur la carte du salon, le même geste :
+   un trait à l'intérieur du cadre. */
+.vE .hex-interieur { display: block; }
+.vE .hex-interieur polygon { fill: none; stroke: rgba(255,255,255,.3); stroke-width: 1.4; }
+.vE .v2-room-player { box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+
+/* ─ F · LE SOCLE ─ une lueur douce, aucun trait ─
+   ⚠️ La plus jolie et la plus fragile : derrière le voile d'une fin de
+   manche, ou si deux hexagones se touchent, elle s'efface ou bave. */
+.vF .player-hex { filter: drop-shadow(0 0 .7em rgba(255,255,255,.3)); }
+.vF .v2-room-player {
+    background: rgba(255,255,255,.08);
+    box-shadow: 0 0 1.5rem rgba(255,255,255,.09);
 }
 
-/* ─ 6 · RIEN EN JEU ─ le badge ne vit que dans la liste du salon ─
-   L'hypothèse honnête : à 44 px, peut-être que rien ne doit être là. */
-.b6 .v2-room-player-name::before {
-    content: ''; display: inline-block; vertical-align: middle;
-    width: .34em; height: .34em; margin-right: .42em;
-    border-radius: 50%; background: currentColor; opacity: .75;
+/* ─ G · LE CARTOUCHE ─ le pseudo entre dans une petite capsule ─
+   Le badge n'est plus un objet à côté du nom : c'est le nom qui change de
+   support. Même geste dans les deux contextes, et rien à chercher. */
+.vG .player-name {
+    padding: .1em .55em; border-radius: 1em;
+    background: rgba(255,255,255,.07);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.13);
 }
+.vG .v2-room-player-name {
+    padding: .05em .5em; border-radius: 1em;
+    background: rgba(255,255,255,.07);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.13);
+}
+
+/* ─ H · LE SCEAU AU SOMMET ─ une gemme posée sur la pointe haute ─
+   En POURCENTAGE de l'hexagone et non en `em` : elle grandit avec la forme,
+   pas avec la police. ⚠️ Elle se pose entre l'hexagone et le pseudo — une
+   bande étroite, et la seule libre au-dessus. */
+.vH .player-hex::after {
+    content: ''; position: absolute; top: 0; left: 50%;
+    transform: translate(-50%, -55%) rotate(45deg);
+    width: 16%; aspect-ratio: 1;
+    background: #e8e8ee; box-shadow: 0 0 0 2px #0a0a0e;
+}
+.vH .v2-room-player::before {
+    content: ''; position: absolute; top: -.22rem; left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: .42rem; height: .42rem;
+    background: #e8e8ee; box-shadow: 0 0 0 2px #0a0a0e;
+}
+
+/* Les SVG optionnels sont éteints par défaut : chaque piste rallume le sien. */
+.hex-sommets, .hex-eclat, .hex-interieur { display: none; }
+.hex-sommets, .hex-eclat {
+    position: absolute; top: -9%; left: -9%; width: 118%; height: 118%;
+    overflow: visible; pointer-events: none;
+}
+.hex-interieur { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hex-sommets line { stroke: rgba(255,255,255,.55); stroke-width: 2.6; stroke-linecap: round; }
 </style>
 </head>
 <body>
@@ -189,9 +294,15 @@ h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4
 <h1>Le badge d'un compte</h1>
 <p class="sous">
 Le pseudo reste libre : n'importe qui peut taper « Naahas ». C'est le badge qui distingue —
-<b>on usurpe le nom, pas le statut</b>. <span class="av">Et c'est l'hexagone à 44 px qui
-tranche</span>, pas la liste du salon : à huit joueurs sur téléphone, un badge qui n'y
-survit pas n'existe pas la moitié du temps. Juge la plus petite d'abord.
+<b>on usurpe le nom, pas le statut</b>. <span class="av">L'hexagone est ici le vrai</span> :
+portrait découpé, liseré doré, anneau extérieur, cœurs. Un badge doit se défendre au milieu de
+tout ça, et <span class="av">c'est la taille 44 qui tranche</span> — à huit joueurs sur
+téléphone, un badge qui n'y survit pas n'existe pas la moitié du temps.
+</p>
+<p class="sous">
+⚠️ <b>L'anneau extérieur à 118 % existe déjà et porte du sens</b> : doré pendant le tour, doré
+pâle pour soi, éteint à l'élimination. Un « double anneau » ne peut donc pas être un anneau de
+plus au même endroit — il doit changer sa <b>texture</b> (piste A) ou se poser ailleurs (B, H).
 </p>
 
 <div class="barre">
@@ -209,35 +320,77 @@ survit pas n'existe pas la moitié du temps. Juge la plus petite d'abord.
 <div id="pistes"></div>
 
 <script>
+// ⚠️ Dans une IIFE : une `const` au premier niveau d'un script de page vit
+// dans l'environnement lexical GLOBAL et peut entrer en collision avec un
+// autre script — c'est déjà arrivé sur ce projet, sans un mot dans la console.
+(function () {
 const PISTES = [
-    { id: 1, nom: 'Le point', reco: true,
-      n: "Un rond plein avant le pseudo, de la couleur du texte — donc jamais en conflit avec les camps ni avec le doré du tour. Le plus petit signe qui se voie encore à 44 px." },
-    { id: 2, nom: 'Le losange',
-      n: "Le même point, tourné de 45°. Plus « jeu » et moins « statut » — à cette taille, le losange et le rond se distinguent à peine, c'est le même coût pour un ton différent." },
-    { id: 3, nom: 'Le filet au-dessus',
-      n: "Un trait court posé au-dessus du pseudo. ⚠️ Au-dessus et non en dessous : en dessous il se confondrait avec la mèche de l'exclusion, qui a exactement la même largeur." },
-    { id: 4, nom: 'Les petites capitales',
-      n: "Aucun signe ajouté : le pseudo change de graisse et passe en petites capitales. Le plus sobre de tous, et le seul qui ne coûte pas un pixel de largeur — mais il se confond avec un pseudo déjà écrit en majuscules." },
-    { id: 5, nom: 'Le cadre',
-      n: "La carte s'éclaircit d'un cran, rien ne touche au pseudo. ⚠️ N'existe pas sur l'hexagone : il n'y a pas de cadre à éclaircir, donc le badge disparaît en jeu." },
-    { id: 6, nom: 'Rien en jeu',
-      n: "Le badge ne vit que dans la liste du salon. L'hypothèse honnête : à 44 px, peut-être que rien ne doit être là — c'est dans le salon qu'on lit les noms, pas en pleine manche." },
+    { id: '0', cls: 'v0', nom: 'Le losange', note: 'en place',
+      n: "Ce qui tourne aujourd'hui, mis là pour comparer. Il tient, mais il a un défaut qu'on ne voit qu'à l'usage : <b>il vit dans le texte</b>, donc il dispute sa largeur au pseudo — or sur l'hexagone le nom est déjà coupé à 130 px. Le badge mange des lettres." },
+
+    { id: 'A', cls: 'vA', nom: "L'anneau plein", reco: true,
+      n: "<b>Le vrai « double anneau », et le seul qui soit honnête ici.</b> L'anneau extérieur existe déjà ; sa couleur est prise par le tour et par « c'est moi ». On ne touche donc qu'à son <b>intensité et son épaisseur</b> : net pour un inscrit, presque invisible pour un invité. La couleur continue de dire l'état, le tracé dit le statut, et les deux se lisent en même temps sans se contredire. Rien n'est ajouté à l'écran, rien ne vole de place au pseudo." },
+
+    { id: 'B', cls: 'vB', nom: 'Le troisième cerne',
+      n: "Un anneau de plus, à 142 % — assez loin de celui de 118 % pour qu'on lise deux objets et non un trait épaissi. ⚠️ Il agrandit l'encombrement de chaque vignette : à huit joueurs serrés, à vérifier que les cercles ne se touchent pas." },
+
+    { id: 'C', cls: 'vC', nom: 'Les six sommets',
+      n: "Un repère sur chaque pointe de l'hexagone, et deux barres aux extrémités de la carte dans le salon. Le badge quitte la ligne du texte pour se poser sur la géométrie : <b>il ne vole aucune lettre</b>. C'est aussi le plus « interface » de tous — à juger selon qu'on veut un jeu ou un tableau de bord." },
+
+    { id: 'D', cls: 'vD', nom: "L'éclat qui tourne",
+      n: "Un trait court qui fait le tour de la forme en <b>dix secondes</b> — volontairement trop lent pour qu'on suive le point des yeux. On ne voit pas qu'il tourne, on trouve la vignette plus vivante que les autres. ⚠️ Le seul badge animé : il se coupe pour qui demande moins de mouvement, et il faudra le couper aussi en rendu logiciel." },
+
+    { id: 'E', cls: 'vE', nom: 'Le liseré intérieur',
+      n: "L'extérieur est encombré ; l'<b>intérieur</b> du liseré doré est vide. Une ligne fine y court, au bord du portrait. Même geste sur la carte du salon : un trait à l'intérieur du cadre. Le plus discret de la seconde vague, et celui qui n'agrandit rien." },
+
+    { id: 'F', cls: 'vF', nom: 'Le socle',
+      n: "Aucun trait : l'inscrit est simplement <b>posé sur une lueur</b>. ⚠️ La plus jolie et la plus fragile — derrière le voile d'une fin de manche elle s'efface, et deux hexagones voisins voient leurs halos baver l'un sur l'autre." },
+
+    { id: 'G', cls: 'vG', nom: 'Le cartouche',
+      n: "Le badge n'est plus un objet à côté du nom : <b>c'est le nom qui change de support</b>. Il entre dans une petite capsule, dans le salon comme en partie. Rien à chercher, rien à apprendre — mais le pseudo gagne en encombrement, et à 44 px il frôle déjà l'hexagone." },
+
+    { id: 'H', cls: 'vH', nom: 'Le sceau au sommet',
+      n: "Une gemme posée sur la pointe haute, dans la seule bande libre entre l'hexagone et le pseudo. Dimensionnée en <b>pourcentage de la forme</b> et non en « em » : elle grandit avec l'hexagone, pas avec la police. Le plus « trophée » de tous." },
 ];
 
 let cmp = 'duo', ctx = 'tout', actif = false;
+const POLY = '50,3 97,25 97,75 50,97 3,75 3,25';
 
-function carteSalon(b, inscrit, arme) {
-    return `<div class="${inscrit ? 'b' + b : ''}">
-        <div class="v2-room-player${arme ? ' arme' : ''}">
-            <span class="v2-room-player-name">Naahas</span>
-        </div></div>`;
+function carteSalon(cls, inscrit, etat) {
+    return '<div class="' + (inscrit ? cls : '') + '">'
+        + '<div class="v2-room-player' + (etat || '') + '">'
+        + '<span class="v2-room-player-name">Naahas</span>'
+        + '</div></div>';
 }
-function hexagone(b, inscrit, taille) {
-    return `<div class="hex-${taille} ${inscrit ? 'b' + b : ''}">
-        <div class="hex-bloc slot${actif ? ' active' : ''}">
-            <span class="player-hex"><i></i></span>
-            <span class="player-name">Naahas</span>
-        </div></div>`;
+
+// ⚠️ Écrit à part et non dans un littéral : les six traits se calculent
+// depuis le centre, et une expression de cette longueur dans une chaîne
+// devient illisible à la première retouche.
+function traitsDesSommets() {
+    const pts = [[50,3],[97,25],[97,75],[50,97],[3,75],[3,25]];
+    return pts.map(([x, y]) => {
+        const dx = x - 50, dy = y - 50;
+        const d = Math.hypot(dx, dy);
+        const u = [dx / d, dy / d];
+        return '<line x1="' + (x - u[0] * 5).toFixed(1) + '" y1="' + (y - u[1] * 5).toFixed(1)
+             + '" x2="' + (x + u[0] * 4).toFixed(1) + '" y2="' + (y + u[1] * 4).toFixed(1) + '"/>';
+    }).join('');
+}
+
+function vignette(cls, inscrit, taille, avatar) {
+    return '<div class="hex-' + taille + ' ' + (inscrit ? cls : '') + '">'
+      + '<div class="slot' + (actif ? ' active' : '') + '">'
+        + '<span class="player-hex">'
+          + '<img src="/' + avatar + '" alt="">'
+          + '<svg class="hex-trait" viewBox="0 0 100 100"><polygon points="' + POLY + '"/></svg>'
+          + '<svg class="hex-anneau" viewBox="0 0 100 100"><polygon points="' + POLY + '"/></svg>'
+          + '<svg class="hex-interieur" viewBox="0 0 100 100"><polygon points="50,11 89,31 89,69 50,89 11,69 11,31"/></svg>'
+          + '<svg class="hex-eclat" viewBox="0 0 100 100"><polygon points="' + POLY + '"/></svg>'
+          + '<svg class="hex-sommets" viewBox="0 0 100 100">' + traitsDesSommets() + '</svg>'
+          + '<span class="coeurs">❤️❤️</span>'
+        + '</span>'
+        + '<span class="player-name">Naahas</span>'
+      + '</div></div>';
 }
 
 function peindre() {
@@ -245,22 +398,24 @@ function peindre() {
         const duo = cmp === 'duo';
         const cases = [];
         if (ctx === 'tout') {
-            cases.push(['Salon · inscrit', carteSalon(p.id, true, false)]);
-            if (duo) cases.push(['Salon · invité', carteSalon(p.id, false, false)]);
+            cases.push(['Salon · inscrit', carteSalon(p.cls, true, '')]);
+            if (duo) cases.push(['Salon · invité', carteSalon(p.cls, false, '')]);
+            cases.push(['Salon · c\'est moi', carteSalon(p.cls, true, ' moi')]);
             // ⚠️ Avec l'exclusion armée : c'est là qu'un badge posé sous le
             // pseudo se confondrait avec la mèche rouge.
-            cases.push(['Exclusion armée', carteSalon(p.id, true, true)]);
+            cases.push(['Exclusion armée', carteSalon(p.cls, true, ' arme')]);
         }
-        cases.push(['Hexagone · 110', hexagone(p.id, true, 110)]);
-        cases.push(['Hexagone · 70', hexagone(p.id, true, 70)]);
-        cases.push(['⚠️ Hexagone · 44', hexagone(p.id, true, 44)]);
-        if (duo) cases.push(['44 · invité', hexagone(p.id, false, 44)]);
-        return `<section class="piste${p.reco ? ' reco' : ''}">
-            <h2><em>${p.id}</em>${p.nom}</h2>
-            <p class="n">${p.n}</p>
-            <div class="rangee">${cases.map(([l, h]) =>
-                `<div class="cas${h.includes('hex-bloc') ? ' hex' : ''}"><span class="lib">${l}</span>${h}</div>`).join('')}</div>
-        </section>`;
+        cases.push(['Hexagone · 110', vignette(p.cls, true, 110, 'ninja.png')]);
+        cases.push(['Hexagone · 70', vignette(p.cls, true, 70, 'assassin.png')]);
+        cases.push(['⚠️ Hexagone · 44', vignette(p.cls, true, 44, 'melody.png')]);
+        if (duo) cases.push(['44 · invité', vignette(p.cls, false, 44, 'novice.png')]);
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.id + '</em>' + p.nom + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="rangee">' + cases.map(([l, h]) =>
+                '<div class="cas' + (h.indexOf('class="slot') > -1 ? ' hex' : '') + '">'
+                + '<span class="lib">' + l + '</span>' + h + '</div>').join('')
+            + '</div></section>';
     }).join('');
 }
 
@@ -276,5 +431,6 @@ document.getElementById('actif').addEventListener('click', (e) => {
     actif = !actif; e.target.classList.toggle('on', actif); peindre();
 });
 peindre();
+})();
 </script>
 </body></html>
