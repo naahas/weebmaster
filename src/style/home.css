@@ -7696,32 +7696,33 @@ body.game-active:has(.poll-game-container) #particles-js {
        de l en-tete plutot que comme la premiere du corps. 1,65rem en tout,
        contre 1,25 avant. */
     padding: 0.5rem 0 0.55rem;
-    /* 🎖️ CORMORANT GARAMOND EN CAPITALES, SANS ITALIQUE — retenu au banc
-       /prototypes/titre, parmi six. La police est deja chargee par la page
-       (elle sert a `.fs-master-tag`, la ligne d honneur de l ecran de fin),
-       elle n ajoute aucun aller-retour.
-       ⚠️ C EST LE SEUL SERIF DE CETTE CARTE, et c est ce qui le distingue :
-       tout le reste y est en Poppins. La casse ne porte donc plus seule la
-       difference avec le rang — ce qui tombe bien, car le rang est lui aussi
-       en capitales espacees.
-       ⚠️ ET IL RESTE QUATRE AUTRES DIFFERENCES AVEC LUI, a garder toutes :
-       le rang est plus PETIT (0,67 contre 0,92rem), bien plus GRAS (800
-       contre 600), MOINS espace (0,16 contre 0,15em a taille bien moindre)
-       et grisé la ou le titre est dore. Les ramener l un vers l autre, et
-       l en-tete et le corps se relisent comme une seule phrase coupee en
-       deux — le defaut que l italique corrigeait avant.
-       ⚠️ 0,92rem ET 0,15em, ET C EST MESURE : a 0,98 / 0,2em du banc,
-       « Shinigami des ombres » passait sur DEUX lignes dans une carte de
-       16rem. Les titres plus longs encore (« Le plus grand de la plèbe »)
-       passeront a la ligne quoi qu on fasse, et c est voulu — un titre se
-       gagne, il doit se lire en entier plutot que d etre coupe. */
+    /* 🎖️ CORMORANT GARAMOND, CASSE NORMALE — retenu au banc
+       /prototypes/titre apres deux series. La police est deja chargee par la
+       page (elle sert a `.fs-master-tag`, la ligne d honneur de l ecran de
+       fin), elle n ajoute aucun aller-retour.
+       ⚠️ LA CASSE EST LE REGLAGE QUI COMPTE, pas la taille. En capitales a
+       0,92rem le titre prenait 89 % de la largeur de la carte et pesait
+       autant que le pseudo ; en minuscules a 1,15rem — donc BIEN PLUS GROS —
+       il n en prend que 69 %. Des capitales occupent un tiers de plus a
+       taille egale, et n ont ni jambages ni hampes pour aerer la ligne. On
+       garde donc une taille genereuse en pesant moins.
+       ⚠️ C EST LE SEUL SERIF DE CETTE CARTE, et c est ce qui le distingue du
+       rang : tout le reste y est en Poppins. La casse s en charge aussi,
+       maintenant — le rang est en capitales espacees, le titre ne l est
+       plus. Les deux ne peuvent plus se lire comme une seule phrase coupee
+       en deux.
+       ℹ️ Et la largeur gagnee suffit : meme « Le plus grand de la plèbe »,
+       le plus long du catalogue, tient desormais sur UNE ligne dans une
+       carte de 16rem. En capitales il en demandait deux. Le repli reste en
+       place — un titre trop long passerait a la ligne plutot que d etre
+       coupe, parce qu un titre se gagne et doit se lire en entier. */
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 1.15rem;
     font-style: normal;
     font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #d4af37;
+    letter-spacing: 0.015em;
+    text-transform: none;
+    color: #d9b44a;
     /* ⚠️ IL PASSE A LA LIGNE, il ne se coupe PAS. « Shinigami des ombres »
        est un titre de longueur ordinaire et il sortait tronque — mesure :
        « Shinigami des ombr… » dans une carte de 16rem. Un titre qu on ne peut
