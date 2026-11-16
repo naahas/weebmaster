@@ -1721,10 +1721,16 @@
                      UNE phrase, comme la meche et le mouvement : le reglage est un
                      oui/non, la bulle n a qu a dire DE QUOI on parle. Le maintien
                      des invites deja entres n y figure plus — il se voit au moment
-                     ou il compte, puisque personne ne disparait de la liste. -->
+                     ou il compte, puisque personne ne disparait de la liste.
+                     ⚠️ « AUTORISE », et surtout pas « interdit ». La bulle doit se
+                     lire DANS LE SENS DE L INTERRUPTEUR : allume vaut `admis`
+                     (set-invites, `autorises: true`). Dite a l envers, elle faisait
+                     comprendre l inverse de l etat affiche — eteint par defaut
+                     passait pour « non interdit », donc pour une porte ouverte,
+                     alors que c est exactement la porte fermee. -->
                 <span class="v2-set-info" data-pour="invites" v-if="isHost" tabindex="0">!
-                    <span class="v2-set-bulle">Interdit ou non aux joueurs non connectés
-                        de rejoindre la partie.</span>
+                    <span class="v2-set-bulle">Autorise ou non les joueurs non connectés
+                        à rejoindre la partie.</span>
                 </span>
             </div>
 
