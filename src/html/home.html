@@ -1373,11 +1373,27 @@
                                      pas. D ou la confirmation qui suit.
                                      ⚠️ Et il ne parait qu en QUIZ, comme le reste de ce
                                      bloc : c est le seul mode ou l historique existe. -->
-                                <div class="v2-set static" v-if="estConnecte" data-info="hist-vider">
+                                <div class="v2-set" v-if="estConnecte" data-info="hist-vider">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>
                                     <span class="v2-set-label">Historique</span>
-                                    <button class="v2-hist-vider" :disabled="histBusy"
-                                            @click="histConfirme = true">{{ histBusy ? '…' : 'Vider' }}</button>
+                                    <!-- ⚠️ LA PASTILLE AU REPOS N EST PAS LE BOUTON. Les
+                                         autres lignes montrent leur VALEUR au repos et
+                                         ouvrent leur tiroir au survol ; celle-ci n a pas
+                                         de valeur a montrer, mais elle a besoin de dire
+                                         qu il se passe quelque chose quand on la survole.
+                                         D ou cette pastille, que le tiroir recouvre des
+                                         qu il s ouvre : on ne voit jamais les deux. -->
+                                    <span class="v2-hist-pastille">Vider</span>
+                                    <!-- ⚠️ `.v2-set-opts` ET `.v2-set-opt`, les classes des
+                                         autres reglages, et pas un bouton a part : c est la
+                                         seule facon que le tiroir ait exactement le meme
+                                         fond, le meme lisere, la meme ouverture et la meme
+                                         hauteur que ses voisins. Un style recopie aurait
+                                         diverge au premier ajustement de l un des deux. -->
+                                    <span class="v2-set-opts">
+                                        <button class="v2-set-opt danger" :disabled="histBusy"
+                                                @click="histConfirme = true">{{ histBusy ? 'Un instant…' : 'Vider l\'historique' }}</button>
+                                    </span>
                                 </div>
                             </template>
                             <!-- 🏔️ Ascension -->

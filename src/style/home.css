@@ -9982,33 +9982,44 @@ input, textarea,
 /* ════════════════════════════════════════════════════════════════
    📜 VIDER L HISTORIQUE DES QUESTIONS
    ════════════════════════════════════════════════════════════════
-   ⚠️ LE BOUTON RESTE SOBRE, ET C EST DELIBERE. Un bouton rouge dans un
-   tiroir de reglages tire l oeil vers la seule chose qu on ne veut pas que
-   l on fasse par curiosite. Il prend la taille et le gris des autres
-   commandes de la ligne ; c est la fenetre de confirmation qui porte le
-   poids du geste. Le rouge n apparait qu au survol, quand la main est deja
-   dessus et que l intention est prise. */
-.v2-hist-vider {
+   ⚠️ LE TIROIR EST CELUI DE TOUT LE MONDE : la ligne porte `.v2-set-opts`
+   et son bouton `.v2-set-opt`, comme Format, Mode ou Difficulte. Rien n est
+   redefini ici de l ouverture, du fond, du lisere ni de la hauteur — un
+   style recopie aurait diverge au premier ajustement de l un des deux.
+
+   ⚠️ CE QUI RESTE CI-DESSOUS NE CONCERNE QUE DEUX CHOSES : la pastille du
+   repos, qui n existe pas ailleurs parce que les autres lignes ont une
+   valeur a montrer, et la teinte rouge du bouton, qui n existe nulle part
+   ailleurs non plus. */
+
+/* La pastille du repos : elle dit qu il y a quelque chose a faire ici, et le
+   tiroir la recouvre entierement des qu il s ouvre. `margin-left: auto` la
+   pousse a droite, a la place qu occupe la valeur sur les autres lignes. */
+.v2-hist-pastille {
+    margin-left: auto;
     flex: 0 0 auto;
     padding: 0.28rem 0.7rem;
-    font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.06);
     border: 0.06rem solid rgba(255, 255, 255, 0.1);
     border-radius: 0.45rem;
-    cursor: pointer;
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
-.v2-hist-vider:hover:not(:disabled) {
+
+/* ⚠️ LE ROUGE N APPARAIT QU AU SURVOL DU BOUTON, et c est delibere : un
+   bouton rouge au repos dans un tiroir de reglages tire l oeil vers la
+   seule chose qu on ne veut pas qu on fasse par curiosite. Au repos il est
+   gris comme ses voisins ; la couleur vient quand la main est deja dessus
+   et que l intention est prise. C est la fenetre de confirmation qui porte
+   le poids du geste, pas la couleur. */
+.v2-set-opt.danger:hover:not(:disabled) {
     color: #ffb4b4;
-    background: rgba(255, 90, 90, 0.12);
-    border-color: rgba(255, 90, 90, 0.35);
+    background: rgba(255, 90, 90, 0.16);
 }
-.v2-hist-vider:disabled { opacity: 0.5; cursor: default; }
+.v2-set-opt.danger:disabled { opacity: 0.55; cursor: default; }
 
 /* ⚠️ `position: fixed` ET z-index 1000 — l etage des modales, au-dessus des
    voiles (900) et du jeu (800). La fenetre est posee hors du tiroir dans le
