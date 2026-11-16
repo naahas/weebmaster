@@ -3439,6 +3439,30 @@ app.get('/rangs', (req, res) => {
     res.sendFile(__dirname + '/src/html/rangs.html');
 });
 
+// 📊 LES DEUX SEUILS PAR MODE, pour la page des rangs.
+//
+// ⚠️ SERVIS PLUTOT QU ECRITS DANS LA PAGE. `XP_MODES` vit dans
+// `server-comptes.js` et ne peut pas etre charge par le navigateur : une
+// table recopiee a la main dans `rangs.html` aurait diverge au premier
+// reglage change, et la page se serait mise a annoncer des seuils que le
+// jeu n applique plus. C est le meme parti que `niveaux.js`, par un autre
+// chemin — le fichier d un cote, une route de l autre.
+//
+// ⚠️ Rien de sensible : ces deux nombres, un joueur les decouvre de toute
+// facon en jouant. Ce sont les MONTANTS d xp qu on ne publie pas, et ils ne
+// sortent pas d ici.
+app.get('/api/bareme', (req, res) => {
+    const out = {};
+    for (const [mode, b] of Object.entries(comptes.XP_MODES || {})) {
+        out[mode] = {
+            nom: MODE_LABELS[mode] || mode,
+            joueurs: b.seuil,
+            duree: b.duree,
+        };
+    }
+    res.json({ modes: out });
+});
+
 // ════════════════════════════════════════════════════════════════
 // 📮 LES RETOURS DES JOUEURS
 // ════════════════════════════════════════════════════════════════

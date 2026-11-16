@@ -102,6 +102,33 @@
         .g-liste li { margin: 0 0 0.5rem; }
         .g-liste b { color: var(--l-or); font-weight: 600; }
 
+        /* ── La table des seuils ──
+           ⚠️ Les deux colonnes de nombres sont a DROITE et en chasse fixe :
+           on les compare entre lignes, et des chiffres de largeurs
+           differentes alignes a gauche ne se comparent pas du regard. */
+        .g-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        .g-table th,
+        .g-table td {
+            padding: 0.55rem 0.7rem;
+            text-align: left;
+            border-bottom: 1px solid var(--l-trait);
+        }
+        .g-table th {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--l-doux);
+        }
+        .g-table td:not(:first-child),
+        .g-table th:not(:first-child) {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .g-table td:not(:first-child) { color: var(--l-or); font-weight: 600; }
+        .g-table tbody tr:last-child td { border-bottom: 0; }
+
         .g-note {
             margin: 1.5rem 0 0;
             padding: 0.9rem 1.15rem;
@@ -138,13 +165,10 @@
 
         <div class="g-echelle" id="echelle"></div>
 
-        <div class="g-note">
-            <strong>L'expérience nécessaire à chaque rang n'est écrite nulle part</strong>, et c'est
-            délibéré. La barre affichée sous le pseudo indique en permanence la progression dans le rang
-            en cours et le rang qui suit — c'est la seule information utile en jouant. Le reste tient en
-            une phrase : <strong>chaque palier demande plus que le précédent</strong>, et nettement.
-            Atteindre Oracle est l'affaire de quelques soirées, atteindre Master celle de beaucoup.
-        </div>
+        <!-- ℹ️ Un encadre expliquait ici pourquoi les seuils d xp ne sont pas
+             ecrits. Retire : se justifier de ne pas dire quelque chose attire
+             l attention dessus. L echelle au-dessus se suffit, et la barre du
+             jeu dit a chacun ou il en est. -->
 
         <h2>Ce qui rapporte</h2>
         <p>Une partie terminée rapporte, victoire ou non. La victoire ajoute un bonus, et c'est le seul
@@ -159,21 +183,6 @@
                 victoire en solo, ou à deux contre un bot, n'en est pas une.</li>
         </ul>
 
-        <div class="g-deux">
-            <div class="g-carte">
-                <h3>L'expérience</h3>
-                <p>Elle ne fait qu'une chose : faire monter de rang. Elle ne se dépense pas, ne se perd
-                    jamais, et rien ne la fait redescendre.</p>
-                <p>Un rang gagné est gagné.</p>
-            </div>
-            <div class="g-carte">
-                <h3>Les rubis</h3>
-                <p>Ils tombent en même temps que l'expérience, sur les mêmes règles. Ils serviront à acheter
-                    — titres, avatars — dans une boutique qui n'est pas encore ouverte.</p>
-                <p>Aucun ne s'achète avec de l'argent réel. Il n'y a rien à payer sur ce site.</p>
-            </div>
-        </div>
-
         <h2>Deux garde-fous</h2>
         <p>Deux règles existent pour que les gains veuillent dire quelque chose. Elles ne gênent pas une
             partie jouée normalement.</p>
@@ -186,11 +195,18 @@
                 partir ; une coupure brève, non.</li>
         </ul>
 
-        <div class="g-note">
-            <strong>Tout cela demande un compte.</strong> Un invité joue exactement les mêmes parties,
-            mais son expérience n'a aucun endroit où s'écrire. Les rangs, les rubis et l'historique des
-            questions sont liés au compte — c'est la seule différence que la connexion fait pendant une
-            partie.
+        <h2>Les seuils, mode par mode</h2>
+        <p>Chaque mode a ses deux nombres : le <strong>nombre de joueurs</strong> à partir duquel le bonus
+            de victoire tombe, et la <strong>durée minimale</strong> en dessous de laquelle la partie ne
+            rapporte rien du tout.</p>
+
+        <div class="l-table-cadre">
+            <table class="g-table" id="bareme">
+                <thead>
+                    <tr><th>Mode</th><th>Joueurs pour le bonus</th><th>Durée minimale</th></tr>
+                </thead>
+                <tbody><tr><td colspan="3">Lecture…</td></tr></tbody>
+            </table>
         </div>
 
         <footer class="l-pied">
@@ -225,6 +241,28 @@
                 return '<div class="g-palier" style="--ton:' + p.couleur + '">' +
                     '<span class="g-nom">' + p.nom + '</span>' + droite + '</div>';
             }).join('');
+        })();
+
+        // 📊 La table des seuils, DEMANDEE AU SERVEUR.
+        // ⚠️ Les valeurs vivent dans `XP_MODES` (server-comptes.js), que le
+        // navigateur ne peut pas charger : une table recopiee ici aurait
+        // diverge au premier reglage change, et la page se serait mise a
+        // annoncer des seuils que le jeu n applique plus.
+        // ⚠️ Et si la requete echoue, la table DISPARAIT au lieu d afficher
+        // « Lecture… » pour toujours : une page qui dit « je charge » sans
+        // jamais finir est pire qu une page qui ne promet rien.
+        (function () {
+            const cadre = document.getElementById('bareme');
+            fetch('/api/bareme')
+                .then((r) => r.json())
+                .then((d) => {
+                    const l = Object.values((d && d.modes) || {});
+                    if (!l.length) throw new Error('vide');
+                    cadre.querySelector('tbody').innerHTML = l.map((m) =>
+                        '<tr><td>' + m.nom + '</td><td>' + m.joueurs +
+                        '</td><td>' + m.duree + ' s</td></tr>').join('');
+                })
+                .catch(() => { cadre.closest('.l-table-cadre').remove(); });
         })();
     </script>
 </body>
