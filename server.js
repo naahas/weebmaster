@@ -722,7 +722,10 @@ function reglagesDuSalon(gameState) {
         teamNames: gameState.teamNames,
         // 🔐 Commun aux sept modes, comme le format : il décide qui peut
         // entrer, pas comment on joue.
-        invitesAutorises: gameState.invitesAutorises,
+        // ⚠️ L'ÉTAT RÉEL DE LA PORTE, pas le drapeau : voir
+        // `porteOuverteAuxInvites`. L'interrupteur doit montrer ce que le
+        // salon fait, sinon il annonce une restriction qui n'existe pas.
+        invitesAutorises: porteOuverteAuxInvites(gameState),
 
         bombanime: {
             serie: gameState.bombanime.serie,
@@ -783,7 +786,8 @@ function reglagesDeLaPartie(gameState) {
     // JOUR MEME, sinon les parties de l intervalle ne l auront jamais. En le
     // posant ici, les sept le recoivent d un coup et aucune branche ne peut
     // l oublier.
-    const avec = x => Object.assign({ hote, invites: !!g.invitesAutorises }, x);
+    // ⚠️ L etat REEL de la porte, pas le drapeau — `porteOuverteAuxInvites`.
+    const avec = x => Object.assign({ hote, invites: porteOuverteAuxInvites(g) }, x);
 
     switch (g.lobbyMode) {
         case 'bombanime': {
@@ -2109,6 +2113,28 @@ const comptesVerifies = new Set();
 
 function estUnCompte(playerId) {
     return !!playerId && comptesVerifies.has(playerId);
+}
+
+// 🔐 LA PORTE, EN UN SEUL ENDROIT.
+//
+// `invitesAutorises` dit ce que l'hôte VEUT ; cette fonction dit ce que le
+// salon FAIT. Les deux divergent dans un cas, et c'est voulu : un hôte sans
+// compte ne peut pas exiger un compte des autres — sans quoi il se
+// verrouillerait hors de son propre salon à la première coupure de socket —
+// donc sa porte reste ouverte quoi que dise le drapeau.
+//
+// ⚠️ C'EST ELLE QU'ON AFFICHE, et plus le drapeau brut. Montrer le drapeau
+// faisait mentir l'interrupteur chez un hôte sans compte : éteint par défaut,
+// il annonçait un salon restreint qui laissait pourtant tout le monde entrer,
+// et une fois ouvert il ne se refermait plus — le serveur refusait de
+// reproduire l'état même dans lequel il était né. Un interrupteur à sens
+// unique, bloqué sur un état qu'il n'avait jamais vraiment eu.
+//
+// ⚠️ Et elle se recalcule à chaque lecture, elle ne se range nulle part :
+// l'hôte peut se connecter APRÈS avoir ouvert son salon. Sa porte se ferme
+// alors d'elle-même, ce qui est précisément le défaut voulu pour un inscrit.
+function porteOuverteAuxInvites(gameState) {
+    return !!gameState.invitesAutorises || !estUnCompte(gameState.hostPlayerId);
 }
 
 // Le jeton vient d'être vérifié : on allume le losange partout où ce joueur
@@ -4657,12 +4683,15 @@ app.post('/admin/set-invites', (req, res) => {
         });
     }
     gameState.invitesAutorises = vouluOuvert;
-    console.log(`🔐 Invités dans ${gameState.roomCode} : ${gameState.invitesAutorises ? 'admis' : 'refusés'}`);
+    // ⚠️ On renvoie et on diffuse l'état RÉEL de la porte, jamais le drapeau :
+    // c'est la seule réponse que l'interrupteur puisse afficher sans mentir.
+    const ouverte = porteOuverteAuxInvites(gameState);
+    console.log(`🔐 Invités dans ${gameState.roomCode} : ${ouverte ? 'admis' : 'refusés'}`);
 
     // Les joueurs voient le réglage changer : il décide qui peut les
     // rejoindre, ce n'est pas une affaire privée de l'hôte.
-    diffuser(gameState, 'lobby-settings', { invitesAutorises: gameState.invitesAutorises });
-    res.json({ success: true, invitesAutorises: gameState.invitesAutorises });
+    diffuser(gameState, 'lobby-settings', { invitesAutorises: ouverte });
+    res.json({ success: true, invitesAutorises: ouverte });
 });
 
 // 🎮 Route pour activer/désactiver les bonus (jauge combo, bonus, défis)
@@ -10060,13 +10089,14 @@ io.on('connection', (socket) => {
         // pas exiger des autres ce qu'on n'a pas fait soi-même, et la règle
         // n'est pas qu'un principe : sans elle, un hôte sans compte
         // referme la porte, se la prend en revenant, et son salon meurt avec
-        // lui. La route `/admin/set-invites` refuse d'ailleurs de la fermer
-        // dans ce cas — les deux disent la même chose, l'une à l'hôte,
-        // l'autre à l'arrivant.
+        // lui. C'est `porteOuverteAuxInvites` qui porte cette condition, et
+        // l'écran de l'hôte lit la MÊME fonction : la route
+        // `/admin/set-invites` refuse de fermer, l'interrupteur reste ouvert,
+        // l'arrivant entre. Les trois disent la même chose parce qu'ils la
+        // demandent au même endroit.
         const estLHote = !!data.hostToken && data.hostToken === gameState.hostToken;
         if (!isReconnection && !estLHote
-            && !gameState.invitesAutorises
-            && estUnCompte(gameState.hostPlayerId)
+            && !porteOuverteAuxInvites(gameState)
             && !estUnCompte(data.playerId)) {
             console.log(`🔐 ${data.username} refusé dans ${gameState.roomCode} : pas de compte`);
             return socket.emit('error', {

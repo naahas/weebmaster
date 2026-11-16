@@ -109,6 +109,16 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     check('   … et il obtient un vrai jeton de session', !!jetonCompte);
 
     // ── 2. Le salon, ouvert par ce compte ────────────────────────
+    // ⚠️ LE COMPTE SE FAIT RECONNAÎTRE AVANT D'OUVRIR LE SALON, et l'ordre
+    // n'est pas un détail : la porte se calcule à la lecture, et un salon
+    // ouvert par un inconnu naît porte OUVERTE. C'est l'ordre réel, celui du
+    // navigateur — il présente son jeton dès le chargement de la page, bien
+    // avant que l'hôte ne clique sur « créer un salon ».
+    const hote = client();
+    await attendre(300);
+    hote.emit('register-authenticated', { playerId: ID, username: 'Cobaye', jeton: jetonCompte });
+    await attendre(900);
+
     const ouv = await poster('/admin/toggle-game', { lobbyMode: 'bombanime', playerId: ID });
     const jeton = ouv.corps.hostToken;
     const code = ouv.corps.roomCode;
@@ -119,12 +129,6 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
         ouv.corps.reglages && ouv.corps.reglages.invitesAutorises === false,
         JSON.stringify(ouv.corps.reglages && ouv.corps.reglages.invitesAutorises));
 
-    // L'hôte se branche avec son jeton : c'est ce qui le rend « inscrit » aux
-    // yeux du serveur, et donc ce qui arme la porte.
-    const hote = client();
-    await attendre(300);
-    hote.emit('register-authenticated', { playerId: ID, username: 'Cobaye', jeton: jetonCompte });
-    await attendre(900);
     const rH = await rejoindre(hote, { code, playerId: ID, username: 'Cobaye', isHost: true, hostToken: jeton });
     check('   l’hôte inscrit entre dans son salon', !!rH.ok, JSON.stringify(rH.erreur));
 
@@ -168,11 +172,29 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     // ── 8. Un hôte SANS compte ne peut pas fermer ────────────────
     const ouv2 = await poster('/admin/toggle-game', { lobbyMode: 'bombanime', playerId: 'hote-sans-compte' });
     const jeton2 = ouv2.corps.hostToken;
+
+    // ⚠️ SON SALON NAÎT PORTE OUVERTE, et l'interrupteur doit le dire. C'est
+    // le piège trouvé à l'écran : le drapeau valant `false` pour tout le
+    // monde, son salon s'affichait restreint alors qu'il laissait entrer
+    // n'importe qui — et refermer ce qu'il montrait déjà fermé était refusé.
+    // Un interrupteur à sens unique, bloqué sur un état qu'il n'avait jamais
+    // eu. Le serveur affiche désormais l'état RÉEL de la porte.
+    check('8. ⚠️ le salon d’un hôte SANS compte s’affiche PORTE OUVERTE',
+        ouv2.corps.reglages && ouv2.corps.reglages.invitesAutorises === true,
+        JSON.stringify(ouv2.corps.reglages && ouv2.corps.reglages.invitesAutorises));
+
     const refus = await poster('/admin/set-invites', { autorises: false }, jeton2);
-    check('8. ⚠️ un hôte SANS compte ne peut pas fermer la porte',
-        refus.statut === 403, 'HTTP ' + refus.statut);
-    check('   … et le refus explique pourquoi',
+    check('   … et il ne peut pas la fermer', refus.statut === 403, 'HTTP ' + refus.statut);
+    check('   … le refus explique pourquoi',
         typeof refus.corps.error === 'string' && /onnecte/.test(refus.corps.error), refus.corps.error);
+
+    // Ouvrir ce qui est déjà ouvert, puis tenter de refermer : le refus doit
+    // être le même. Sinon on aurait rétabli le sens unique par une autre porte.
+    const o2 = await poster('/admin/set-invites', { autorises: true }, jeton2);
+    const refus2 = await poster('/admin/set-invites', { autorises: false }, jeton2);
+    check('   … et l’avoir « ouverte » d’abord n’y change rien',
+        o2.corps.invitesAutorises === true && refus2.statut === 403,
+        JSON.stringify({ ouvre: o2.corps.invitesAutorises, ferme: refus2.statut }));
     const g = client(); await attendre(250);
     const rG = await rejoindre(g, { code: ouv2.corps.roomCode, playerId: 'invite-G', username: 'InviteG' });
     check('   … donc son salon reste ouvert aux invités', !!rG.ok, JSON.stringify(rG.erreur));
