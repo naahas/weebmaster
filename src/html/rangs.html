@@ -196,16 +196,14 @@
         </ul>
 
         <h2>Les seuils, mode par mode</h2>
-        <p>Chaque mode a ses deux nombres : le <strong>nombre de joueurs</strong> à partir duquel le bonus
-            de victoire tombe, et la <strong>durée minimale</strong> en dessous de laquelle la partie ne
-            rapporte rien du tout.</p>
+        <p>Chaque mode demande un <strong>nombre minimum de joueurs</strong> pour que la partie rapporte.</p>
 
         <div class="l-table-cadre">
             <table class="g-table" id="bareme">
                 <thead>
-                    <tr><th>Mode</th><th>Joueurs pour le bonus</th><th>Durée minimale</th></tr>
+                    <tr><th>Mode</th><th>Joueurs requis pour gagner de l'XP</th></tr>
                 </thead>
-                <tbody><tr><td colspan="3">Lecture…</td></tr></tbody>
+                <tbody><tr><td colspan="2">Lecture…</td></tr></tbody>
             </table>
         </div>
 
@@ -259,8 +257,7 @@
                     const l = Object.values((d && d.modes) || {});
                     if (!l.length) throw new Error('vide');
                     cadre.querySelector('tbody').innerHTML = l.map((m) =>
-                        '<tr><td>' + m.nom + '</td><td>' + m.joueurs +
-                        '</td><td>' + m.duree + ' s</td></tr>').join('');
+                        '<tr><td>' + m.nom + '</td><td>' + m.joueurs + '</td></tr>').join('');
                 })
                 .catch(() => { cadre.closest('.l-table-cadre').remove(); });
         })();

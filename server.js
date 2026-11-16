@@ -3451,13 +3451,22 @@ app.get('/rangs', (req, res) => {
 // ⚠️ Rien de sensible : ces deux nombres, un joueur les decouvre de toute
 // facon en jouant. Ce sont les MONTANTS d xp qu on ne publie pas, et ils ne
 // sortent pas d ici.
+// ⚠️ DEUX MODES SONT ECARTES DE CETTE LISTE, et pas du jeu :
+//   • `rivalry` est le format EN EQUIPES du Classique, pas un mode a part.
+//     Il porte les memes seuils, et le voir sur sa propre ligne donnait deux
+//     entrees identiques qu on cherchait a distinguer.
+//   • `choice` n est pas ouvert. Annoncer les seuils d un mode auquel on ne
+//     peut pas jouer n apprend rien et promet une date.
+// Les deux restent intacts dans `XP_MODES` : c est l AFFICHAGE qui les tait.
+const BAREME_CACHES = new Set(['rivalry', 'choice']);
+
 app.get('/api/bareme', (req, res) => {
     const out = {};
     for (const [mode, b] of Object.entries(comptes.XP_MODES || {})) {
+        if (BAREME_CACHES.has(mode)) continue;
         out[mode] = {
             nom: MODE_LABELS[mode] || mode,
             joueurs: b.seuil,
-            duree: b.duree,
         };
     }
     res.json({ modes: out });
