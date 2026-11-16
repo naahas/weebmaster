@@ -835,11 +835,15 @@
                                 </button>
 
                                 <!-- 📜 L APPEL AU COMPTE, A DROITE DU BOUTON.
-                                     ⚠️ ICI IL NE POUSSE RIEN. A gauche du code
-                                     il fallait le sortir du flux pour que le
-                                     bloc reste dans l axe de sa colonne ; en
-                                     fin de rangee il n a personne devant lui,
-                                     et il redevient un element comme un autre.
+                                     ⚠️ ICI IL NE POUSSE RIEN, et c est tout
+                                     l interet de cette place. On l a essaye a
+                                     gauche du code, puis au bout de l etiquette
+                                     « COPIE LE LIEN DU SALON » : a gauche il
+                                     decalait le bloc entier de 81 px, et il
+                                     avait fallu le sortir du flux pour que la
+                                     colonne reste dans son axe. En fin de
+                                     rangee il n a personne devant lui, et il
+                                     redevient un element comme un autre.
                                      ⚠️ Il ne parait QUE si l hote n est pas
                                      connecte : a un inscrit il n apprendrait
                                      rien, et une pastille qui pulse en
@@ -856,11 +860,27 @@
                                       v-if="isHost && !estConnecte
                                             && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
                                       tabindex="0" aria-label="Pourquoi se connecter">!
-                                    <span class="v2-start-bulle">
-                                        <b>Connecte-toi</b> pour avoir ton propre historique de
-                                        questions et éviter de retomber sur les mêmes.
-                                    </span>
+                                    <span class="v2-start-bulle" v-html="conseilHistorique"></span>
                                 </span>
+
+                                <!-- 📜 LA MEME PHRASE, EN CLAIR, POUR TELEPHONE.
+                                     ⚠️ Un second element et non la pastille
+                                     redecoupee : sur grand ecran c est un rond
+                                     a survoler, ici une ligne a lire, et une
+                                     bulle au survol n a pas de sens sans
+                                     curseur — il aurait fallu la toucher, et
+                                     rien n indique qu un rond de 24 px se
+                                     touche. Chacune s affiche a sa largeur,
+                                     l autre est masquee.
+                                     ⚠️ Mais LA PHRASE N EST ECRITE QU UNE FOIS :
+                                     les deux lisent `conseilHistorique`. Deux
+                                     litteraux auraient diverge au premier
+                                     remaniement, et personne ne relit la version
+                                     qu il ne voit pas. -->
+                                <span class="v2-start-conseil"
+                                      v-if="isHost && !estConnecte
+                                            && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
+                                      v-html="conseilHistorique"></span>
                             </div>
                             <span class="v2-room-copied" :class="{ show: codeCopied }">lien copié !</span>
                         </div>

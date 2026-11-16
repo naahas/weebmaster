@@ -886,12 +886,24 @@ createApp({
             cerEntree: false,          // la classe qui declenche le fondu
             cerSortie: false,          // et celle qui l eteint d un coup
 
-            // ℹ️ Le conseil « connecte-toi pour ton historique » n a PLUS
-            // d etat. Il s ouvrait au clic et pouvait s ecarter pour de bon ;
-            // il s ouvre maintenant au SURVOL, comme les « ! » des reglages,
-            // et le CSS suffit. Deux variables et une methode sont parties
-            // avec — un reglage qui ne se regle plus n a pas a survivre a
-            // l interface qui le reglait.
+            // 📜 LE CONSEIL DU COMPTE, ECRIT UNE SEULE FOIS.
+            //
+            // ⚠️ Il s affiche a DEUX endroits : dans la bulle de la pastille
+            // au bout de l etiquette sur grand ecran, et en clair sous le
+            // bouton sur telephone. Deux litteraux dans le gabarit auraient
+            // diverge au premier remaniement — on ne relit pas la version
+            // qu on ne voit pas.
+            //
+            // ⚠️ `v-html`, et c est sans risque ICI : cette phrase est ecrite
+            // dans ce fichier et nulle part ailleurs. Rien de ce qu un joueur
+            // saisit n y passe. Ca cesserait d etre vrai le jour ou elle
+            // viendrait de la base.
+            //
+            // ℹ️ Il n a plus d etat : il s ouvrait au clic et pouvait
+            // s ecarter pour de bon, il s ouvre maintenant au survol et le
+            // CSS suffit.
+            conseilHistorique: '<b>Connecte-toi</b> pour avoir ton propre historique '
+                + 'de questions et éviter de retomber sur les mêmes.',
             cerGain: null,             // { xp, rubis, victoire, mode }
             cerRang: { nom: '', couleur: '#fff' },   // le rang AFFICHE, qui bascule
             cerSuivant: '',            // le nom du rang d apres
