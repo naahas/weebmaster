@@ -14373,35 +14373,17 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-start-info:hover .v2-start-bulle,
 .v2-start-info:focus-visible .v2-start-bulle { opacity: 1; visibility: visible; }
 
-/* ⚠️ LA PASTILLE SORT DU FLUX SUR GRAND ECRAN. En element de rangee, elle
-   poussait le code de 81 px vers la droite : le bloc ne tombait plus sous son
-   etiquette « COPIE LE LIEN DU SALON », ni dans l axe du reste de la colonne.
-   Un repere d aide ne doit rien deplacer de ce qu il commente. Elle se pend
-   donc a gauche de la rangee, dans la gouttiere — 532 px y sont libres a
-   cette largeur.
-   ⚠️ ET CETTE REGLE DOIT VENIR APRES LA REGLE DE BASE. Posee plus haut dans
-   le fichier, elle perdait : `@media` n ajoute AUCUNE specificite, et a
-   specificite egale c est l ordre qui tranche. La pastille restait
-   `position: relative` et continuait de pousser le code — mesure, pas
-   devine.
-   ℹ️ Sur telephone elle RESTE dans le flux : la rangee y devient une colonne
-   centree, il n y a plus d axe a casser, et 14 px seulement separent la
-   colonne du bord de l ecran. */
-@media (min-width: 769px) {
-    .v2-start-info {
-        position: absolute;
-        /* ⚠️ 2,2rem d ecart, et on y est venu en deux fois. A 0,65 la
-           pastille se lisait comme un cinquieme caractere du code — une case
-           de plus dans la rangee « S Y J K » ; a 1,6 elle en restait
-           voisine. Il lui faut assez d air pour qu on la voie comme un objet
-           a part, pose a cote. La place ne manque pas : le tiroir des
-           reglages s arrete 170 px plus a gauche. */
-        right: calc(100% + 2.2rem);
-        top: 50%;
-        transform: translateY(-50%);
-        margin: 0;
-    }
-}
+/* ℹ️ ELLE EST REVENUE EN FIN DE RANGEE, ET ELLE Y RESTE DANS LE FLUX.
+   A gauche du code elle poussait tout le bloc de 81 px vers la droite — il
+   ne tombait plus sous son etiquette « COPIE LE LIEN DU SALON » — et il
+   avait fallu la sortir du flux pour la pendre dans la gouttiere. Passee
+   apres le bouton, elle n a plus personne devant elle : il n y a plus rien a
+   compenser, et la regle qui la positionnait est partie avec le probleme
+   qu elle reglait.
+   ⚠️ Ce detour a enseigne une chose qui resservira : `@media` n ajoute
+   AUCUNE specificite. La regle de position avait d abord ete posee plus haut
+   dans le fichier que la regle de base — elle perdait a l ordre, et la
+   pastille continuait de pousser le code sans qu aucune erreur ne le dise. */
 
 /* ⚖️ LA BARRE DU BAS — liens utiles et signature, sous un filet.
    ⚠️ ELLE PREND TOUTE LA LARGEUR, et c est le filet qui l exige : un trait

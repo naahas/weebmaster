@@ -815,29 +815,6 @@
                         <div class="v2-room-code-block" v-if="isHost && roomCode">
                             <span class="v2-room-code-label">Copie le lien du salon</span>
                             <div class="v2-room-code-row">
-                                <!-- 📜 L APPEL AU COMPTE, A GAUCHE DU CODE.
-                                     ⚠️ Il ne parait QUE si l hote n est pas
-                                     connecte : a un inscrit il n apprendrait
-                                     rien, et une pastille qui pulse en
-                                     permanence cesse d etre un signal.
-                                     ⚠️ Et il ne parait qu en QUIZ : c est le
-                                     seul mode ou l historique des questions
-                                     existe. Promis ailleurs, il serait faux.
-                                     ⚠️ La bulle s ouvre au SURVOL, comme les
-                                     « ! » des reglages — c est la meme langue
-                                     dans le meme ecran. `tabindex` et
-                                     `:focus-visible` la rendent joignable au
-                                     clavier, ou il n y a pas de survol. -->
-                                <span class="v2-start-info"
-                                      v-if="isHost && !estConnecte
-                                            && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
-                                      tabindex="0" aria-label="Pourquoi se connecter">!
-                                    <span class="v2-start-bulle">
-                                        <b>Connecte-toi</b> pour avoir ton propre historique de
-                                        questions et éviter de retomber sur les mêmes.
-                                    </span>
-                                </span>
-
                                 <button class="v2-room-code" @click="copyRoomCode" title="Copier le lien du salon">
                                     <span v-for="(ch, i) in roomCode.split('')" :key="i" class="v2-room-code-char">{{ ch }}</span>
                                 </button>
@@ -850,6 +827,33 @@
                                     <span class="v2-start-txt">{{ startingGame ? 'Lancement…' : 'Démarrer' }}</span>
                                 </button>
 
+                                <!-- 📜 L APPEL AU COMPTE, A DROITE DU BOUTON.
+                                     ⚠️ ICI IL NE POUSSE RIEN. A gauche du code
+                                     il fallait le sortir du flux pour que le
+                                     bloc reste dans l axe de sa colonne ; en
+                                     fin de rangee il n a personne devant lui,
+                                     et il redevient un element comme un autre.
+                                     ⚠️ Il ne parait QUE si l hote n est pas
+                                     connecte : a un inscrit il n apprendrait
+                                     rien, et une pastille qui pulse en
+                                     permanence cesse d etre un signal.
+                                     ⚠️ Et il ne parait qu en QUIZ : c est le
+                                     seul mode ou l historique des questions
+                                     existe. Promis ailleurs, il serait faux.
+                                     ⚠️ La bulle s ouvre au SURVOL, comme les
+                                     « ! » des reglages — meme langue, meme
+                                     ecran. `tabindex` et `:focus-visible` la
+                                     rendent joignable au clavier, ou il n y a
+                                     pas de survol. -->
+                                <span class="v2-start-info"
+                                      v-if="isHost && !estConnecte
+                                            && (lobbyMode === 'classic' || lobbyMode === 'rivalry')"
+                                      tabindex="0" aria-label="Pourquoi se connecter">!
+                                    <span class="v2-start-bulle">
+                                        <b>Connecte-toi</b> pour avoir ton propre historique de
+                                        questions et éviter de retomber sur les mêmes.
+                                    </span>
+                                </span>
                             </div>
                             <span class="v2-room-copied" :class="{ show: codeCopied }">lien copié !</span>
                         </div>
