@@ -2856,6 +2856,48 @@ createApp({
             }
         },
 
+        // 🪑 ══════════ LES JETONS DE SIEGE ══════════
+        //
+        // Un secret par salon, rangé dans `localStorage`. Il prouve que cette
+        // place est la nôtre quand on se reconnecte — sans lui, n'importe qui
+        // ayant lu notre `playerId` dans la console prenait notre siège.
+        //
+        // ⚠️ `localStorage` ET PAS LA MEMOIRE DE LA PAGE : le cas qu'on
+        // couvre est justement celui où la page a été rechargée, ou le
+        // téléphone verrouillé puis rouvert. Un jeton gardé en mémoire aurait
+        // disparu exactement quand il sert.
+        //
+        // ⚠️ TOUT EST ENVELOPPE DE `try` : en navigation privée, ou avec les
+        // données de site bloquées, `localStorage` LÈVE au lieu de rendre
+        // vide. Sans ça, la moindre lecture faisait tomber l'émission qui
+        // l'entoure — et donc la reconnexion elle-même.
+        _lireSieges() {
+            try { return JSON.parse(localStorage.getItem('sieges') || '{}') || {}; }
+            catch (e) { return {}; }
+        },
+
+        mesSieges() {
+            const t = this._lireSieges();
+            return (t && typeof t === 'object') ? t : {};
+        },
+
+        retenirSiege(roomCode, jeton) {
+            try {
+                const t = this._lireSieges();
+                t[String(roomCode).toUpperCase()] = jeton;
+                // ⚠️ On ne garde que les huit derniers. Un joueur qui ouvre
+                // vingt salons dans la soirée accumulerait vingt entrées
+                // mortes — les salons, eux, vivent en mémoire du serveur et
+                // disparaissent. Huit couvre largement « la partie en cours
+                // et les précédentes ».
+                const cles = Object.keys(t);
+                if (cles.length > 8) {
+                    for (const c of cles.slice(0, cles.length - 8)) delete t[c];
+                }
+                localStorage.setItem('sieges', JSON.stringify(t));
+            } catch (e) { /* stockage refusé : on jouera sans reprise de siège */ }
+        },
+
         makePlayerId() {
             return crypto.randomUUID
                 ? crypto.randomUUID()
@@ -8652,7 +8694,38 @@ createApp({
         // ========== Socket.IO ==========
         initSocket() {
             this.socket = io({ autoConnect: false });
-            
+
+            // 🪑 LES JETONS DE SIEGE PARTENT AVEC LES DEUX EVENEMENTS QUI
+            // REPRENNENT UNE PLACE, d'où qu'ils soient émis.
+            //
+            // ⚠️ POURQUOI UN HABILLAGE ET PAS SEPT AJOUTS. `register-authenticated`
+            // part de cinq endroits de ce fichier et `reconnect-player` de
+            // quatre, chacun construisant sa charge à la main. Recopier le
+            // champ neuf fois, c'est l'oublier à la dixième — et l'oubli ne
+            // se verrait qu'au moment où un joueur coupé n'arrive plus à
+            // reprendre sa partie, c'est-à-dire chez lui, pas ici. Posé une
+            // fois sur l'émetteur, l'invariant tient quoi qu'on écrive après.
+            //
+            // ⚠️ On ne touche QU'À CES DEUX événements et on ne modifie pas
+            // la charge d'origine (`Object.assign` sur un objet neuf) : un
+            // appelant qui réutilise son objet ne doit pas le voir changer
+            // sous lui.
+            const emettre = this.socket.emit.bind(this.socket);
+            this.socket.emit = (evenement, charge, ...reste) => {
+                if ((evenement === 'register-authenticated' || evenement === 'reconnect-player')
+                    && charge && typeof charge === 'object') {
+                    charge = Object.assign({}, charge, { sieges: this.mesSieges() });
+                }
+                return emettre(evenement, charge, ...reste);
+            };
+
+            // 🪑 Le serveur donne son jeton à l'entrée du salon, à cette
+            // socket et à personne d'autre. On le garde pour le lui rendre
+            // après une coupure.
+            this.socket.on('siege', (d) => {
+                if (d && d.roomCode && d.jeton) this.retenirSiege(d.roomCode, d.jeton);
+            });
+
             this.socket.on('connect', () => {
 
                 // 🕰️ On mesure l'écart entre notre horloge et celle du serveur,

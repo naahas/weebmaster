@@ -2273,6 +2273,51 @@ function oublierCompteDeLaSocket(socket) {
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🪑 LE JETON DE SIEGE
+// ════════════════════════════════════════════════════════════════
+// Reprendre sa place apres une coupure ne demandait qu un `playerId`. Or
+// `playerId` N EST PAS UN SECRET : `broadcastLobbyUpdate` l envoie a TOUS
+// les joueurs du salon, pour chacun d eux. N importe qui dans la partie le
+// lisait dans la console, se reconnectait en l annoncant, et le serveur lui
+// transferait le siege d un autre — score, vies, reponses — en sortant la
+// victime de la table. Le code du salon, lui, s affiche a l ecran pendant un
+// direct : il n ajoutait aucune difficulte.
+//
+// ⚠️ UN SECRET PAR SIEGE, pas par joueur ni par compte. Il est cree quand on
+// entre dans un salon, il meurt avec l entree, et il ne vaut que la. Un
+// secret de compte vole aurait tout ouvert ; celui-ci ne rend qu une place
+// dans une partie qui se termine.
+//
+// ⚠️ AUCUN ALLER-RETOUR : c est un nombre tire sur place et compare sur
+// place. La version naive — reverifier le jeton Supabase a chaque
+// reconnexion — ajoutait deux cents millisecondes au milieu d une manche,
+// pendant lesquelles le joueur voyait son ecran vide.
+//
+// ⚠️ ET IL NE VOYAGE JAMAIS DANS UNE DIFFUSION. Il part par `socket.emit`
+// vers la seule socket concernee. Mis dans `lobby-update` par distraction,
+// il aurait recree exactement le trou qu il ferme.
+function nouveauJetonSiege() {
+    return randomUUID();
+}
+
+// Le client renvoie ses jetons sous la forme `{ ABCD: '…', EFGH: '…' }` : il
+// peut etre assis dans plusieurs salons a la fois, et c est le cas courant —
+// un joueur qui quitte une partie y reste inscrit dix minutes.
+//
+// ⚠️ UNE ENTREE SANS JETON EST ACCEPTEE, et ce n est pas un trou. Les salons
+// vivent en memoire : un deploiement les efface tous, donc toute entree creee
+// apres cette mise en ligne en porte un. Le cas « sans jeton » ne couvre que
+// les bots, qui ne se reconnectent jamais, et d eventuelles entrees d avant.
+// Refuser ces cas-la aurait enferme des joueurs hors de leur propre partie
+// pour fermer une porte qui n existe plus.
+function siegeProuve(data, gameState, entree) {
+    if (!entree || !entree.jetonSiege) return true;
+    const sieges = data && data.sieges;
+    if (!sieges || typeof sieges !== 'object') return false;
+    return sieges[gameState.roomCode] === entree.jetonSiege;
+}
+
 function broadcastLobbyUpdate(gameState) {
     // Mettre à jour les compteurs d'équipe
     if (gameState.lobbyMode === 'rivalry') {
@@ -9534,7 +9579,17 @@ function getBombanimePlayersData(gameState) {
                 alphabet: Array.from(gameState.bombanime.playerAlphabets.get(playerId) || []),
                 lastAnswer: gameState.bombanime.playerLastAnswers.get(playerId) || '',
                 position: index,
-                avatarUrl: player.avatarUrl || 'novice.png'
+                avatarUrl: player.avatarUrl || 'novice.png',
+                // 💠 Joueur inscrit. ⚠️ LE GABARIT L ATTENDAIT DEPUIS LE
+                // DEBUT — `:class="{ compte: player.compte }"` sur le pseudo
+                // de l hexagone — et ce champ ne partait pas d ici : la
+                // classe ne s est donc jamais posee, sans la moindre erreur
+                // pour le dire. Un `undefined` dans un objet de liaison est
+                // silencieux des deux cotes.
+                // ⚠️ C est le SERVEUR qui l affirme, comme dans le salon : il
+                // vient de `socketInscrite`, donc d un jeton Supabase
+                // verifie, jamais d une declaration du client.
+                compte: !!player.compte,
             });
         }
     });
@@ -10364,8 +10419,18 @@ io.on('connection', (socket) => {
         // branché (aucun `disconnectedAt`), sinon la coupure la plus FRAÎCHE,
         // et à égalité le salon le plus récent.
         const entree = (r) => [...r.players.values()].find(p => p.playerId === data.playerId);
+        // 🪑 ⚠️ LE JETON DE SIEGE FILTRE LES CANDIDATS, et c est le seul
+        // endroit de ce gestionnaire ou il intervient. Un salon ou le joueur
+        // figure mais dont il ne porte pas le jeton n est tout simplement pas
+        // un candidat : la suite — le classement par fraicheur, le transfert
+        // de l entree — ne le voit jamais.
+        // ⚠️ Filtrer ICI plutot que juste avant le transfert n est pas un
+        // detail : plus bas, la socket a deja rejoint la room et pose son
+        // `socket.data.roomCode`. Un refus a ce moment-la aurait laisse une
+        // socket branchee sur un salon qu elle n a pas le droit d ecouter.
         const candidats = data.playerId
-            ? [...rooms.values()].filter(r => !!entree(r)) : [];
+            ? [...rooms.values()].filter(r => !!entree(r) && siegeProuve(data, r, entree(r)))
+            : [];
 
         // ⚠️ LE CLIENT SAIT, LUI, quel salon il joue : il le porte dans son
         // `localStorage` et l'envoie désormais ici. On le croit — mais SEULEMENT
@@ -10669,7 +10734,19 @@ io.on('connection', (socket) => {
             // regarde qu'un identifiant, que n'importe quel joueur du salon
             // a sous les yeux. Le losange se portait donc en le recopiant.
             compte: socketInscrite(socket, data.playerId),
+            // 🪑 Le secret qui rend cette place a son occupant, et a lui
+            // seul — voir `siegeProuve`. Il ne sort d ici que par le
+            // `socket.emit` juste en dessous.
+            jetonSiege: nouveauJetonSiege(),
             isAdmin: data.isAdmin || false
+        });
+
+        // 🪑 ⚠️ `socket.emit` ET SURTOUT PAS `diffuser` : ce jeton ne vaut que
+        // tant qu il n est connu que de son porteur. Envoye au salon, il
+        // rouvrirait mot pour mot le trou qu il bouche.
+        socket.emit('siege', {
+            roomCode: gameState.roomCode,
+            jeton: gameState.players.get(socket.id).jetonSiege,
         });
 
         console.log(`✅ ${data.username} a rejoint le lobby${data.team ? ` (Team ${data.team})` : ''}`);
@@ -11020,6 +11097,20 @@ io.on('connection', (socket) => {
         const gameState = roomDeSocket(socket) || roomParCode(data && data.code);
         if (!gameState || !gameState.isActive) {
             return socket.emit('error', { message: 'Aucune partie active' });
+        }
+
+        // 🪑 ⚠️ LE SIEGE SE PROUVE AVANT QUE LA SOCKET N ENTRE DANS LA ROOM.
+        // C est le SECOND chemin par lequel on reprend une place — l autre
+        // est le remappage de `register-authenticated` —, et il ne demandait
+        // lui non plus qu un `playerId`, que tout le salon connait.
+        // ⚠️ Le `socket.join` est DESSOUS, et il doit y rester : branchee
+        // d abord, une socket refusee ensuite continuerait d entendre les
+        // diffusions d une partie qui ne la regarde pas.
+        const sonEntree = [...gameState.players.values()]
+            .find(p => p.playerId === (data && data.playerId));
+        if (sonEntree && !siegeProuve(data, gameState, sonEntree)) {
+            console.log(`🪑 Reprise de siège refusée dans ${gameState.roomCode} : jeton absent ou faux`);
+            return socket.emit('error', { message: 'Reconnexion impossible' });
         }
 
         // La socket est neuve : elle doit rentrer dans la room pour entendre la suite
