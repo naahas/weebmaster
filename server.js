@@ -1191,7 +1191,21 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         compte_id: l.id,
         partie_id: partieId,
         mode,
-        gagnant: !!l.victoire,
+        // 🏆 A-T-IL GAGNE LA PARTIE — pas « sa victoire a-t-elle rapporte ».
+        //
+        // ⚠️ `gagne` ET NON `l.victoire`, et la nuance est tout sauf un
+        // detail. `l.victoire` vaut faux des que le salon n atteint pas le
+        // seuil du bonus : une vraie victoire a deux en Rush, qui en demande
+        // quatre, s y serait ecrite `gagnant: false`. Le classement aurait
+        // alors compte zero victoire a quelqu un qui en a gagne vingt, et
+        // l erreur aurait ete INVISIBLE — le profil, lui, affiche bien zero,
+        // puisque son compteur suit volontairement le bonus.
+        //
+        // La ligne dit ce qui s est passe ; `joueurs` est sur la meme ligne,
+        // donc une requete qui ne veut que les parties « serieuses » les
+        // filtre d elle-meme. Ecrire la regle dans la donnee l aurait rendue
+        // irreversible — meme raison que pour `avec_bots`.
+        gagnant: gagne.has(l.id),
         joueurs: nbJoueurs,
         duree: Math.round(Number(duree) || 0),
         xp_gagne: l.xp || 0,
