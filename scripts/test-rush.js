@@ -41,10 +41,18 @@ const nomDuPortrait = async (playerId) => {
     check('les filtres sont annoncés', e.rush && e.rush.filtres.length >= 2,
         e.rush ? e.rush.filtres.map(f => f.id + '(' + f.compte + ')').join(' ') : '');
 
-    const d = await post('/admin/rush/set-duree', { duree: 30 });
-    check('la durée se change', d.status === 200 && d.body.duree === 30, d.body.error || '30s');
+    // ⚠️ 90 ET NON 30. Le barème est passé à [60, 90, 120] le jour où le
+    // plancher d'xp de Rush est monté à 55 s : une manche de 30 ne rapporte
+    // plus rien, elle a donc disparu du réglage. Ce test demandait encore 30
+    // et échouait depuis — il n'avait pas été repassé après ce changement.
+    const d = await post('/admin/rush/set-duree', { duree: 90 });
+    check('la durée se change', d.status === 200 && d.body.duree === 90, d.body.error || '90s');
     const mauvaise = await post('/admin/rush/set-duree', { duree: 45 });
     check('une durée hors barème est refusée', mauvaise.status === 400, 'HTTP ' + mauvaise.status);
+    // On rejoue la manche à la durée la plus courte du barème : le test doit
+    // attendre qu'elle se termine pour de vrai, et 90 s d'attente pour
+    // vérifier la même chose ne valent pas la minute de plus.
+    await post('/admin/rush/set-duree', { duree: 60 });
 
     const sansLimite = await post('/admin/rush/set-limite', { limite: 0 });
     check('la limite par portrait peut être retirée', sansLimite.status === 200 && sansLimite.body.limite === 0);
@@ -65,10 +73,17 @@ const nomDuPortrait = async (playerId) => {
         s.on('rush-portrait', (x) => vu.portraits.push(x));
         s.on('rush-classement', (x) => vu.classements.push(x));
         s.on('rush-game-ended', (x) => vu.fins.push(x));
+        // 🪑 Le jeton de siege, que le serveur donne a l entree du salon et
+        // que le vrai client range dans son `localStorage`. Sans lui, la
+        // socket neuve du F5 plus bas ne peut pas reprendre cette place —
+        // c est tout l interet du jeton, et le test doit le porter comme le
+        // navigateur le porte.
+        const sieges = {};
+        s.on('siege', (d) => { if (d && d.roomCode && d.jeton) sieges[d.roomCode] = d.jeton; });
         s.emit('register-authenticated', { playerId: id, username: nom });
         await wait(120);
         s.emit('join-lobby', { playerId: id, username: nom, code });
-        joueurs.push({ s, id, nom, vu });
+        joueurs.push({ s, id, nom, vu, sieges });
     }
     await wait(700);
 
@@ -143,7 +158,11 @@ const nomDuPortrait = async (playerId) => {
     await new Promise(r => neuve.on('connect', r));
     let repriseF5 = null;
     neuve.on('rush-reprise', (d) => { repriseF5 = d; });
-    neuve.emit('register-authenticated', { playerId: a.id, username: a.nom });
+    // ⚠️ `sieges` VOYAGE AVEC, comme le fait le navigateur : il les relit dans
+    // son `localStorage`, qui survit au rafraichissement. Sans eux le serveur
+    // refuse de rendre la place — c est exactement ce que le jeton protege,
+    // et le laisser tomber ici ferait echouer le test pour la bonne raison.
+    neuve.emit('register-authenticated', { playerId: a.id, username: a.nom, sieges: a.sieges });
     neuve.emit('rush-get-state');
     await wait(600);
     check('apres un F5, la socket neuve retrouve la manche',
@@ -188,8 +207,12 @@ const nomDuPortrait = async (playerId) => {
         partant ? partant.username : 'absent du classement');
 
     // ── La fin de manche ──
-    console.log('   (on attend la fin des 30 s…)');
-    for (let i = 0; i < 80 && a.vu.fins.length === 0; i++) await wait(500);
+    // ⚠️ L'attente suit le barème : la manche la plus courte fait 60 s depuis
+    // que 30 a disparu, et la boucle en comptait 40. Elle abandonnait donc
+    // AVANT la fin et déclarait trois échecs pour une manche qui allait très
+    // bien — le genre de faux rouge qui apprend à ne plus lire les tests.
+    console.log('   (on attend la fin des 60 s…)');
+    for (let i = 0; i < 150 && a.vu.fins.length === 0; i++) await wait(500);
     check('la manche se termine seule', a.vu.fins.length === 1);
     const fin = a.vu.fins[0];
     check('elle désigne le vainqueur', fin && fin.winner && fin.winner.username === 'Un',

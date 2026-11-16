@@ -807,8 +807,51 @@ async function supprimerCompte(id) {
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🏆 UNE LIGNE PAR JOUEUR ET PAR PARTIE (docs/classement.sql)
+// ════════════════════════════════════════════════════════════════
+// Les colonnes cumulees de `comptes` — xp, parties, victoires — ne savent ni
+// QUAND ni A QUEL MODE. Le classement par mode, les saisons, les series de
+// victoires et les records ne s en deduisent pas : chaque partie jouee sans
+// cette table leur est perdue pour toujours. D ou son existence AVANT la
+// page qui la lira. La conception est dans docs/classement.md.
+//
+// ⚠️ ECRITE SANS QUE PERSONNE N ATTENDE, et son echec ne doit rien casser :
+// un classement est un agrement, le credit d xp est le jeu. L appelant ne
+// met donc pas d `await` dessus.
+let tablePartiesOk = null;   // null = pas encore testee, false = absente
+
+function partiesAbsente(error) {
+    // Deux codes pour la meme chose, comme ailleurs : PostgreSQL dit `42P01`,
+    // PostgREST `PGRST205` quand la table manque dans son cache de schema.
+    if (!error) return false;
+    const manquante = error.code === '42P01' || error.code === 'PGRST205';
+    if (manquante && tablePartiesOk !== false) {
+        tablePartiesOk = false;
+        console.error('🚨 Table « parties_jouees » absente — passe docs/classement.sql.');
+        console.error('   Le jeu tourne, mais le classement ne se construit pas : ces parties sont perdues pour lui.');
+    }
+    return manquante;
+}
+
+// ⚠️ UNE SEULE REQUETE POUR TOUTE LA TABLE. Une insertion par joueur, c est
+// huit allers-retours a la fin de chaque manche, au moment precis ou le
+// serveur diffuse le podium a tout le salon.
+async function enregistrerParties(lignes) {
+    if (!ACTIF || tablePartiesOk === false) return false;
+    if (!Array.isArray(lignes) || !lignes.length) return false;
+    try {
+        const { error } = await supabase.from('parties_jouees').insert(lignes);
+        if (error) { partiesAbsente(error); return false; }
+        tablePartiesOk = true;
+        return true;
+    } catch (e) { return false; }
+}
+
 module.exports = {
     ACTIF, configPourNavigateur, verifierJeton, identifier,
+    // 🏆 Le classement (docs/classement.sql).
+    enregistrerParties,
     xpDeLaPartie, partieAssezLongue, crediter,
     listerComptes, lireCompte, majCompte, supprimerCompte, colonnesPanneauPretes,
     // 📜 L historique des questions, lie au compte (docs/questions-vues.sql).

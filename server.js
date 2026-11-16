@@ -975,6 +975,114 @@ async function recordFinishedGame({ mode, playersCount, winnerName, duration, ga
 // coupee en plein milieu n ecrit rien, et c est architectural. Crediter au fil
 // de l eau n y changerait rien de bon — ca multiplierait seulement les ecritures
 // pour un resultat aussi perdu.
+// ════════════════════════════════════════════════════════════════
+// 🏆 LE RECORD DE LA MANCHE, MODE PAR MODE (docs/classement.md)
+// ════════════════════════════════════════════════════════════════
+// Rend deux fonctions, `score(playerId)` et `details(playerId)`, ou rien
+// quand le mode n a pas de record defendable.
+//
+// ⚠️ LE SENS N EST PAS LE MEME PARTOUT : on cherche le PLUS GRAND en
+// BombAnime, en Rush et en Classique, le PLUS PETIT en Ascension et en
+// Collect, ou le record est un temps. La colonne `score` ne le dit pas —
+// c est la page qui trie, et elle doit le savoir. Ecrit ici une fois pour
+// qu on ne le redevine pas a chaque requete.
+//
+// ⚠️ ET LE RECORD NE VAUT QU A REGLAGES EGAUX. L hote regle la partie : il
+// peut mettre Ascension a trois etages et signer le meilleur temps de
+// l histoire. C est `reglages`, ecrit sur la meme ligne, qui fait le seau —
+// sans lui, cette colonne serait un piege.
+function recoltePourLeClassement(gameState, mode) {
+    if (!gameState) return {};
+
+    switch (mode) {
+        // 💣 Les personnages que CE joueur a trouves. ⚠️ Pas
+        // `persosTrouves`, qui est le compteur du salon : a huit joueurs,
+        // les huit auraient le meme record.
+        case 'bombanime': {
+            const parJoueur = (gameState.bombanime || {}).persosParJoueur;
+            if (!parJoueur) return {};
+            return {
+                score: (id) => parJoueur.get(id) || 0,
+                details: (id) => ({ persos: parJoueur.get(id) || 0 }),
+            };
+        }
+
+        // ⚡ La plus longue enfilade, pas le score : le score depend du
+        // multiplicateur, donc de la duree reglee. La serie, non.
+        case 'rush': {
+            const joueurs = (gameState.rush || {}).joueurs;
+            if (!joueurs || typeof joueurs.get !== 'function') return {};
+            return {
+                score: (id) => (joueurs.get(id) || {}).serieMax || 0,
+                details: (id) => {
+                    const e = joueurs.get(id) || {};
+                    return { serie: e.serieMax || 0, points: e.record || 0,
+                             trouves: e.trouves || 0, rates: e.rates || 0 };
+                },
+            };
+        }
+
+        // 🏔️ Le temps pour atteindre le SOMMET, en secondes. ⚠️ `null` pour
+        // qui n y est pas arrive : un temps de celui qui s est arrete au
+        // quatrieme etage serait le meilleur de tous, et le palmares
+        // recompenserait l abandon le plus rapide.
+        case 'ascension': {
+            const a = gameState.ascension || {};
+            if (!a.startedAt || !Array.isArray(a.finishedPlayers)) return {};
+            const temps = (id) => {
+                const f = a.finishedPlayers.find((x) => x.playerId === id);
+                if (!f || !f.reachedSummit || !f.finishedAt) return null;
+                return Math.round((f.finishedAt - a.startedAt) / 1000);
+            };
+            return {
+                score: temps,
+                details: (id) => {
+                    const f = a.finishedPlayers.find((x) => x.playerId === id) || {};
+                    return { secondes: temps(id), sommet: !!f.reachedSummit, rang: f.rank || null };
+                },
+            };
+        }
+
+        // 🧪 Le temps du VAINQUEUR seul : les autres n ont pas fini, et la
+        // duree de la manche est la meme pour tout le monde — elle ne dirait
+        // rien d eux.
+        case 'collect': {
+            const c = gameState.collect || {};
+            if (!c.debut) return {};
+            const secondes = Math.round((Date.now() - c.debut) / 1000);
+            return {
+                score: (id) => (c.vainqueur && c.vainqueur === id ? secondes : null),
+                details: (id) => (c.vainqueur === id ? { secondes } : {}),
+            };
+        }
+
+        // 🎯 La plus longue suite de bonnes reponses. ⚠️ Le SEUL chiffre du
+        // Classique qui se compare sans seau : il ne depend ni du nombre de
+        // questions, ni du bonus de vitesse, ni du nombre de joueurs. Le
+        // score, lui, depend des trois.
+        case 'classic':
+        case 'rivalry': {
+            const par = new Map();
+            for (const p of gameState.players.values()) {
+                if (p.playerId) par.set(p.playerId, p);
+            }
+            return {
+                score: (id) => (par.get(id) || {}).serieMax || 0,
+                details: (id) => {
+                    const p = par.get(id) || {};
+                    return { serie: p.serieMax || 0, bonnes: p.correctAnswers || 0 };
+                },
+            };
+        }
+
+        // 🕵️ Codanime : rien. C est un jeu d equipe ou la performance est
+        // collective — un record individuel y mentirait, et un chiffre faux
+        // coute plus cher qu un chiffre absent.
+        default:
+            return {};
+    }
+}
+
 async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     if (!comptes.ACTIF || !gameState || !gameState.players) return;
 
@@ -1049,6 +1157,43 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
 
     const profils = await comptes.crediter(lignes);
     if (!profils || !profils.length) return;
+
+    // 🏆 UNE LIGNE PAR JOUEUR DANS `parties_jouees` (docs/classement.md).
+    //
+    // ⚠️ ICI ET NON AILLEURS, et c est le seul endroit qui convienne : on y a
+    // deja sous la main la liste des comptes RETENUS — ceux qui n ont ni
+    // abandonne ni ete coupes, dedoublonnes, bots ecartes —, le nombre de
+    // joueurs distincts, la duree, le mode et les reglages. Ecrire ces
+    // lignes ailleurs demanderait de refaire ce tri, et deux tris qui se
+    // ressemblent finissent toujours par diverger.
+    //
+    // ⚠️ PAS D `await`, et l echec ne remonte pas : un classement est un
+    // agrement, le credit d xp est le jeu. Une table absente le dit une fois
+    // dans le journal et n arrete rien.
+    //
+    // ⚠️ `partie_id` EST TIRE UNE FOIS POUR TOUT LE MONDE : c est lui qui dit
+    // que cette victoire et cette defaite sont la MEME manche. Un identifiant
+    // par ligne aurait rendu la table illisible pour tout ce qui compare des
+    // joueurs entre eux.
+    const partieId = randomUUID();
+    const reglages = reglagesDeLaPartie(gameState) || {};
+    const recueil = recoltePourLeClassement(gameState, mode);
+    comptes.enregistrerParties(lignes.map((l) => ({
+        compte_id: l.id,
+        partie_id: partieId,
+        mode,
+        gagnant: !!l.victoire,
+        joueurs: nbJoueurs,
+        duree: Math.round(Number(duree) || 0),
+        xp_gagne: l.xp || 0,
+        rubis_gagnes: l.rubis || 0,
+        hote: l.id === gameState.hostPlayerId,
+        reglages,
+        // `null` quand le mode n a pas de record : la colonne est indexee en
+        // `nulls last`, ces lignes ne remonteront jamais dans un palmares.
+        score: recueil.score ? recueil.score(l.id) : null,
+        details: recueil.details ? recueil.details(l.id) : {},
+    }))).catch(() => { /* le jeu n en depend pas */ });
 
     // Renvoyer a chacun SON total : c est ce qui fait monter la barre sans
     // rechargement.
@@ -4640,6 +4785,17 @@ app.post('/admin/start-game', async (req, res) => {
 
         // Initialiser les joueurs selon le mode
         gameState.players.forEach((player, socketId) => {
+            // 🏆 La suite de bonnes reponses repart de zero a chaque manche
+            // (docs/classement.md).
+            //
+            // ⚠️ HORS DE LA BRANCHE `lives` / `points`, et c est tout le
+            // piege : `correctAnswers` n est remis a zero QU EN mode Vies —
+            // en Points il est simplement supprime. Une serie posee dans la
+            // branche aurait survecu d une manche a l autre dans l autre
+            // mode, et le record aurait grossi sans qu on rejoue : trois
+            // manches de dix auraient affiche trente d affilee.
+            player.serie = 0;
+            player.serieMax = 0;
             if (gameState.mode === 'lives') {
                 player.lives = gameState.lives;
                 player.correctAnswers = 0;
@@ -5819,6 +5975,16 @@ function revealAnswers(gameState, correctAnswer) {
             } else if (playerAnswer.answer === correctAnswer) {
                 stats.correct++;
                 player.correctAnswers++;
+                // 🏆 LA SERIE DE BONNES REPONSES D AFFILEE (docs/classement.md).
+                //
+                // ⚠️ `correctAnswers` compte le TOTAL, pas la suite : dix
+                // bonnes réponses dispersées dans trente questions y valent
+                // autant que dix d affilée. Le record du mode Classique est
+                // la suite, et c est le seul chiffre du mode qui se compare
+                // SANS seau de réglages — il ne dépend ni du nombre de
+                // questions, ni du bonus de vitesse, ni du nombre de joueurs.
+                player.serie = (player.serie || 0) + 1;
+                if (player.serie > (player.serieMax || 0)) player.serieMax = player.serie;
                 status = 'correct';
                 isCorrect = true;
 
@@ -5832,6 +5998,12 @@ function revealAnswers(gameState, correctAnswer) {
 
             } else {
                 stats.wrong++;
+                // 🏆 La suite s arrête ici. ⚠️ Dans le `else` ET NON sur le
+                // seul « wrong » : une réponse protégée par un bouclier reste
+                // une mauvaise réponse, et un « d affilée » qui survit à une
+                // erreur ne veut plus rien dire. Le bouclier sauve une vie,
+                // pas une série.
+                player.serie = 0;
                 if (!allWillLose) {
                     // 🛡️ Shield protège contre la mauvaise réponse
                     if (hasShield) {
@@ -9434,6 +9606,19 @@ function submitBombanimeName(gameState, socketId, name) {
     // n était pas encore pris, donc ce personnage est neuf.
     gameState.bombanime.persosTrouves++;
 
+    // 🏆 LE MEME, MAIS AU COMPTE DU JOUEUR (docs/classement.md).
+    //
+    // ⚠️ `persosTrouves` EST UN COMPTEUR DE SALON, et il l est resté : il
+    // sert l affichage de la manche, « 42 personnages trouvés », qui est
+    // collectif. Il ne peut donc pas servir de record — à huit joueurs, les
+    // huit en auraient le même. Celui-ci est personnel, et c est lui que le
+    // classement lira.
+    // ⚠️ Posé ICI et pas ailleurs : c est le seul point du fichier où un
+    // personnage est reconnu neuf, et où l on sait de qui il vient.
+    if (!gameState.bombanime.persosParJoueur) gameState.bombanime.persosParJoueur = new Map();
+    const dejaLui = gameState.bombanime.persosParJoueur.get(player.playerId) || 0;
+    gameState.bombanime.persosParJoueur.set(player.playerId, dejaLui + 1);
+
     console.log(`🔒 Noms bloqués: ${allVariants.join(', ')}`);
     
     gameState.bombanime.lastValidName = normalizedName;
@@ -9620,6 +9805,10 @@ async function startBombanimeGame(gameState) {
     gameState.bombanime.active = true;
     gameState.bombanime.usedNames = new Set();
     gameState.bombanime.persosTrouves = 0;
+    // 🏆 Le compte PAR JOUEUR repart lui aussi (docs/classement.md) : sans
+    // ca, la deuxieme manche d un salon aurait herite des personnages de la
+    // premiere, et le record aurait grossi sans qu on rejoue.
+    gameState.bombanime.persosParJoueur = new Map();
     gameState.bombanime.playerAlphabets = new Map();
     // Les lettres demandées, tirées à CHAQUE manche : deux parties d affilée
     // dans le même salon n en donnent pas les mêmes.
@@ -10035,6 +10224,14 @@ function rushAvancer(gameState, playerId, issue) {
         etat.serie++;
         etat.trouves++;
         if (etat.score > etat.record) etat.record = etat.score;
+        // 🏆 LE SOMMET DE LA SERIE, retenu (docs/classement.md).
+        //
+        // ⚠️ `etat.serie` RETOMBE A ZERO a la premiere erreur — c est son
+        // travail, elle nourrit le multiplicateur. A la fin de la manche elle
+        // ne vaut donc que la derniere enfilade, pas la meilleure, et le
+        // record « plus longue serie » n existait nulle part. Une ligne ici,
+        // et il existe. Sans elle, chaque manche jouee lui etait perdue.
+        if (etat.serie > (etat.serieMax || 0)) etat.serieMax = etat.serie;
     } else if (issue === 'rate') {
         etat.serie = 0;
         etat.score = 0;
@@ -10222,6 +10419,10 @@ function resetBombanimeState(gameState) {
     gameState.bombanime.currentPlayerId = null;
     gameState.bombanime.usedNames = new Set();
     gameState.bombanime.persosTrouves = 0;
+    // 🏆 Le compte PAR JOUEUR repart lui aussi (docs/classement.md) : sans
+    // ca, la deuxieme manche d un salon aurait herite des personnages de la
+    // premiere, et le record aurait grossi sans qu on rejoue.
+    gameState.bombanime.persosParJoueur = new Map();
     gameState.bombanime.playerAlphabets = new Map();
     gameState.bombanime.playerLastAnswers = new Map();
     gameState.bombanime.turnTimeout = null;
