@@ -3431,6 +3431,14 @@ app.get('/regles', (req, res) => {
     res.sendFile(__dirname + '/src/html/regles.html');
 });
 
+// 🏅 LES RANGS : les neuf paliers, et comment on gagne xp et rubis.
+// ⚠️ La page charge `niveaux.js` par une balise `<script>` — le MEME fichier
+// que le jeu. Recopier l echelle l aurait fait diverger au premier palier
+// ajoute, et la page se serait mise a mentir sans que rien ne le signale.
+app.get('/rangs', (req, res) => {
+    res.sendFile(__dirname + '/src/html/rangs.html');
+});
+
 // ════════════════════════════════════════════════════════════════
 // 📮 LES RETOURS DES JOUEURS
 // ════════════════════════════════════════════════════════════════
