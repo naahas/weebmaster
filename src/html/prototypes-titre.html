@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — la police du titre porté</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Archivo:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!--
+        🎖️ LA POLICE DU TITRE PORTE — six traitements, la vraie carte.
+
+        ⚠️ CE BANC CHARGE `home.css`, il ne recopie pas la carte. Une copie
+        aurait diverge au premier reglage, et l on aurait choisi une police
+        sur un objet qui n est pas celui du jeu. Les six cartes ci-dessous
+        sont le vrai `.v2-profil` : seule la classe du titre change.
+
+        ⚠️ ET LES SIX POLICES SONT DEJA CHARGEES PAR LE JEU. Aucune des
+        propositions n ajoute un aller-retour reseau : elles se servent de la
+        meme balise Google Fonts que `home.html`. Une septieme police pour une
+        ligne de treize caracteres aurait coute un chargement sur une page
+        dont la premiere seconde est ce qui decide un streamer.
+
+        ⚠️ Cormorant Garamond n est PAS un ajout : le jeu s en sert deja pour
+        `.fs-master-tag`, la ligne d honneur de l ecran de fin. La reprendre
+        ici fait une voix, pas une exception.
+
+        Le titre montre est « Vagabond de l'aube », celui de tout compte neuf.
+        La deuxieme rangee le remplace par « Shinigami des ombres », plus
+        long : c est lui qui dit si la police tient sur deux lignes.
+    -->
+    <!-- ⚠️ CHEMIN ABSOLU, et c est obligatoire ici. Cette page est servie a
+         `/prototypes/titre` : un `href="home.css"` relatif y chercherait
+         `/prototypes/home.css`, qui n existe pas. La page s affichait alors
+         SANS le style de la carte, c est-a-dire exactement ce qu elle est
+         censee montrer. Meme raison pour l avatar plus bas. -->
+    <link rel="stylesheet" href="/home.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem 1.5rem 4rem;
+            background: #0b0910;
+            font-family: 'Poppins', system-ui, sans-serif;
+            color: #e8e4f0;
+        }
+
+        h1 {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #8a7fa0;
+            margin: 0 0 0.4rem;
+        }
+
+        p.intro {
+            margin: 0 0 2.2rem;
+            font-size: 0.85rem;
+            color: #6f6886;
+            max-width: 56ch;
+            line-height: 1.6;
+        }
+
+        .grille {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.4rem 2rem;
+        }
+
+        .cas {
+            width: 17rem;
+        }
+
+        .etiq {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #f0c75e;
+            margin-bottom: 0.1rem;
+        }
+
+        .note {
+            font-size: 0.72rem;
+            color: #6f6886;
+            line-height: 1.5;
+            margin: 0 0 0.7rem;
+            min-height: 3.2em;
+        }
+
+        /* ⚠️ On DESANCRE la carte, et c est tout ce qu on lui change. Dans le
+           jeu elle est `position: fixed` sous l avatar ; ici il en faut six
+           cote a cote. Le reste — fond, bordure, pointe, en-tete teinte — est
+           celui de `home.css`. */
+        .cas .v2-profil {
+            position: static;
+            width: 100%;
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+
+        .cas .v2-profil::before,
+        .cas .v2-profil::after {
+            display: none;
+        }
+
+        /* ── L ESPACE DEMANDE, applique partout : « un poil » de plus entre le
+           titre et la bande teintee. Le corps donne deja 1,15rem ; le titre
+           passe de 0,1 a 0,5rem, soit 1,65rem en tout. */
+        .cas .v2-profil-exploit {
+            padding-top: 0.5rem;
+        }
+
+        /* ════════════════════════════════════════════════════════
+           LES SIX TRAITEMENTS
+           ════════════════════════════════════════════════════════ */
+
+        /* 1 — L ACTUEL, pour comparer. Poppins italique, dore eteint. */
+
+        /* 2 — CORMORANT ITALIQUE. La voix d honneur que le jeu a deja
+           (`.fs-master-tag`). Serif, donc rien d autre ne lui ressemble sur
+           cette carte : le titre cesse d etre une ligne de plus. */
+        .t2 .v2-profil-exploit {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-style: italic;
+            font-size: 1.25rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            color: #dcb64c;
+        }
+
+        /* 3 — CORMORANT EN CAPITALES. Le meme serif, mais grave : capitales
+           espacees, pas d italique. Il se lit comme une inscription. */
+        .t3 .v2-profil-exploit {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-style: normal;
+            font-size: 0.98rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #d4af37;
+        }
+
+        /* 4 — RAJDHANI. La voix « interface de jeu » : condensee, capitales
+           larges. Elle parle le meme langage que les rangs du jeu. */
+        .t4 .v2-profil-exploit {
+            font-family: 'Rajdhani', system-ui, sans-serif;
+            font-style: normal;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #cfa93a;
+        }
+
+        /* 5 — SPACE GROTESK ITALIQUE. Moderne et neutre, sans serif :
+           l ecart le plus faible avec l actuel, pour qui trouverait le serif
+           trop solennel. */
+        .t5 .v2-profil-exploit {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            font-style: italic;
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.005em;
+            color: #e3c268;
+        }
+
+        /* 6 — CORMORANT, DEGRADE D OR. Le meme que le 2, avec le degrade
+           metallique du jeu.
+           ⚠️ `background-clip: text` EXIGE une couleur transparente : sans
+           `color: transparent`, le texte se peint par-dessus son propre
+           degrade et l on ne voit rien du traitement. */
+        .t6 .v2-profil-exploit {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-style: italic;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            background: linear-gradient(100deg, #b08528 0%, #f6dd86 46%, #c9972f 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 10px rgba(240, 199, 94, 0.18));
+        }
+    </style>
+</head>
+
+<body>
+    <h1>La police du titre porté</h1>
+    <p class="intro">Six traitements sur la vraie carte — <code>home.css</code> est chargé, seule la
+        classe du titre change. Les six polices sont déjà chargées par le jeu : aucune n'ajoute un
+        aller-retour réseau. La seconde rangée montre un titre long, qui est ce qui décide.</p>
+
+    <div class="grille" id="grille"></div>
+
+    <script>
+        // Les six cas, et les deux titres qui les eprouvent.
+        const CAS = [
+            ['t1', '1 · Actuel', 'Poppins italique, 0,88rem. La ligne se lit comme une légende : au même rythme que « Parties jouées » juste en dessous.'],
+            ['t2', '2 · Cormorant italique', 'Le serif que le jeu réserve déjà aux lignes d’honneur. Rien d’autre ne lui ressemble sur cette carte.'],
+            ['t3', '3 · Cormorant capitales', 'Le même serif, gravé. Il se lit comme une inscription — mais il parle fort, juste sous le rang.'],
+            ['t4', '4 · Rajdhani capitales', 'La voix « interface de jeu ». ⚠️ Très proche du rang de l’en-tête, qui est déjà en capitales espacées.'],
+            ['t5', '5 · Space Grotesk italique', 'Le plus petit écart avec l’actuel : moderne, sans serif, un peu plus de présence.'],
+            ['t6', '6 · Cormorant dégradé', 'Le 2 avec l’or métallique du jeu. Le plus riche — et le seul qui coûte un dégradé par carte.'],
+        ];
+        const TITRES = ["Vagabond de l'aube", 'Shinigami des ombres'];
+
+        const carte = (cls, titre) => `
+        <div class="cas ${cls}">
+            <div class="v2-profil">
+                <div class="v2-profil-tete">
+                    <button class="v2-profil-av" type="button">
+                        <img src="/novice.png" alt="" draggable="false">
+                        <svg class="v2-moi-xp" viewBox="0 0 56 56" aria-hidden="true">
+                            <circle class="piste" cx="28" cy="28" r="24.2"></circle>
+                            <circle class="jauge" cx="28" cy="28" r="24.2"
+                                    stroke-dasharray="152.1" stroke-dashoffset="112"></circle>
+                        </svg>
+                        <span class="v2-profil-crayon">✎</span>
+                    </button>
+                    <div class="v2-profil-id">
+                        <input class="v2-profil-nom" value="Tengu553" readonly>
+                        <div class="v2-profil-rang">
+                            <span class="v2-profil-titre" style="color:#9a9aa6">Novice I</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="v2-profil-corps">
+                    <div class="v2-profil-exploit">${titre}</div>
+                    <div class="v2-profil-sep haut"></div>
+                    <div class="v2-profil-lignes">
+                        <div><span class="n">Parties jouées</span><span class="v">7</span></div>
+                        <div><span class="n">Victoires</span><span class="v">2</span></div>
+                    </div>
+                    <div class="v2-profil-sep"></div>
+                    <div class="v2-profil-niveau">
+                        <div class="v2-profil-niv-ligne"><span>Niveau 2</span><span>80 / 300</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="etiq" style="margin-top:.7rem">${cls === 't1' ? '' : ''}</div>
+        </div>`;
+
+        let html = '';
+        for (const titre of TITRES) {
+            for (const [cls, nom, note] of CAS) {
+                html += `<div class="cas-bloc" style="width:17rem">
+                    <div class="etiq">${nom}</div>
+                    <p class="note">${titre === TITRES[0] ? note : '&nbsp;'}</p>
+                    ${carte(cls, titre)}
+                </div>`;
+            }
+        }
+        document.getElementById('grille').innerHTML = html;
+    </script>
+</body>
+
+</html>

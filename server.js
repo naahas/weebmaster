@@ -2554,6 +2554,14 @@ app.get('/prototypes/ceremonie2', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-ceremonie2.html');
 });
 
+// 🎖️ La police du titre porte, six traitements sur la VRAIE carte.
+// ⚠️ Ce banc charge `home.css` plutot que de recopier le panneau : une copie
+// aurait diverge au premier reglage, et l on aurait choisi une police sur un
+// objet qui n est pas celui du jeu.
+app.get('/prototypes/titre', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-titre.html');
+});
+
 // 🔑 Ou pose-t-on « Se connecter » : la barre du haut ou le tiroir du pseudo.
 // ⚠️ Ecarte — les deux chargeaient la barre. Garde comme trace du pourquoi.
 app.get('/prototypes/compte-place', (req, res) => {

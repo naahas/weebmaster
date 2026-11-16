@@ -7684,7 +7684,12 @@ body.game-active:has(.poll-game-container) #particles-js {
     /* Sur TOUTE la largeur du corps, en tete : il a quitte l en-tete, ou il
        n avait que la moitie de la carte et sortait tronque. */
     text-align: center;
-    padding: 0.1rem 0 0.55rem;
+    /* ⚠️ 0,5rem EN HAUT, et non plus 0,1. Le corps en donne deja 1,15, mais
+       cet air-la est celui du BLOC : le titre s y posait tout en haut, a
+       deux doigts de la bande teintee, et se lisait comme la derniere ligne
+       de l en-tete plutot que comme la premiere du corps. 1,65rem en tout,
+       contre 1,25 avant. */
+    padding: 0.5rem 0 0.55rem;
     font-size: 0.88rem;
     font-style: italic;
     color: #c9a227;
