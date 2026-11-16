@@ -5466,9 +5466,13 @@ createApp({
         // sept modes. Les y brancher plutot que de poser un delai fixe evite
         // de deviner la duree d un classement dont le nombre de lignes change
         // a chaque partie.
+        // ⚠️ DEUX SECONDES, et pas une. La premiere version en laissait une :
+        // le voile tombait pendant qu on lisait encore le podium, c est-a-dire
+        // pendant le seul moment que les autres joueurs regardent. Le
+        // classement a le temps de se poser avant qu on parle de soi.
         programmerCeremonie() {
             if (!this.cerGain || this.cerVisible || this._cerT) return;
-            this._cerT = setTimeout(() => this.ouvrirCeremonie(), 1000);
+            this._cerT = setTimeout(() => this.ouvrirCeremonie(), 2000);
         },
 
         ouvrirCeremonie() {

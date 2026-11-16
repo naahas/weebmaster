@@ -5214,15 +5214,24 @@
                  clic tombe a cote du bloc n atteindrait jamais le voile, et
                  « cliquer a cote » ne fermerait rien. -->
             <div class="v2-cer-voile" @click="fermerCeremonie"></div>
-            <button class="v2-cer-fermer" @click="fermerCeremonie" aria-label="Fermer">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
-                    <path d="M5 5l14 14M19 5L5 19"/>
-                </svg>
-            </button>
             <div class="v2-cer-centre" @click="fermerCeremonie">
                 <!-- `.stop` : un clic SUR le bloc est le geste de qui veut le
                      regarder, pas de qui veut le fermer. -->
                 <div class="v2-cer-bloc" @click.stop>
+                    <!-- ⚠️ LA CROIX EST DANS LE BLOC, et plus sur la page.
+                         Posee au coin de l ecran, elle n appartenait a rien :
+                         a mille pixels du seul objet qu elle ferme, elle
+                         ressemblait a la fermeture de la PARTIE. Ici elle
+                         touche ce qu elle ferme, et peut etre discrete sans
+                         devenir introuvable.
+                         ⚠️ Son clic porte quand meme : le `.stop` du bloc
+                         n arrete la propagation qu APRES les gestionnaires de
+                         l element clique. -->
+                    <button class="v2-cer-fermer" @click="fermerCeremonie" aria-label="Fermer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                            <path d="M5 5l14 14M19 5L5 19"/>
+                        </svg>
+                    </button>
                     <div class="v2-cer-feu" ref="cerFeu"></div>
                     <!-- ⚠️ La place de « Rang supérieur » est RESERVEE en
                          permanence : son apparition pousserait sinon tout le
