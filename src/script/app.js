@@ -1277,6 +1277,23 @@ createApp({
         titrePorte() {
             return composerTitre(this.titrePrefixe, this.titreSuffixe);
         },
+
+        // 📊 LE TAUX DE VICTOIRE — victoires sur parties jouees.
+        //
+        // ⚠️ Il se CALCULE ici et ne vient pas de la base : les deux nombres
+        // y sont deja, et une troisieme colonne a tenir d accord avec elles
+        // finirait par diverger le jour ou l on corrigera un compteur depuis
+        // le panneau.
+        //
+        // ⚠️ AUCUNE PARTIE REND UN TIRET, pas « 0 % ». Zero pour cent se lit
+        // « tu perds toujours », ce qui est faux de qui n a jamais joue —
+        // c est le meme tiret que les autres lignes montrent a un invite.
+        tauxVictoire() {
+            const parties = Number(this.compteParties) || 0;
+            if (!parties) return '—';
+            const victoires = Number(this.compteVictoires) || 0;
+            return Math.round((victoires / parties) * 100) + ' %';
+        },
         // ⚠️ L anneau est un trace SVG, pas un degrade conique : seul un trace
         // peut avoir des BOUTS ARRONDIS, et sans eux une progression de 3 %
         // ressemble a un eclat de poussiere plutot qu au debut de quelque
@@ -5532,6 +5549,9 @@ createApp({
                     // exacte de la transition : au-dela, la tete ne bouge
                     // plus et les grains s empileraient sur place.
                     this.semerEtincelles(1300);
+                    // 🔊 Et le son, sur la MEME duree : il est bati a la
+                    // mesure de la montee, pas coupe au jugé.
+                    this.jouerSonJauge(1300);
                 }, 180);
 
                 if (!this.cerPromu) return;
@@ -5595,6 +5615,147 @@ createApp({
             requestAnimationFrame(semer);
         },
 
+        // 🔊 LE SON DE LA MONTEE — synthetise, pas un fichier.
+        //
+        // ⚠️ ET C EST UN CHOIX, pas un pis-aller. Un mp3 aurait une duree
+        // FIXE, la ou la barre, elle, monte pendant exactement 1,3 s puis se
+        // pose : il aurait fallu le couper au milieu ou le laisser trainer
+        // apres l arret. Ici le son est bati a la duree qu on lui donne, et
+        // les trois couches suivent la meme course que la gerbe.
+        //
+        // Trois couches, et chacune fait une chose :
+        //   1. une tenue qui MONTE — c est la progression elle-meme ;
+        //   2. un souffle filtre qui s ouvre — c est la matiere, le grain ;
+        //   3. des grains aigus semes au hasard — ce sont les etincelles.
+        // Puis deux notes a l arrivee, pour que l arret se dise.
+        //
+        // ⚠️ `soundMuted` ET `soundVolume` sont respectes comme pour les
+        // `<audio>` : un son qui ignore le reglage du joueur est un son qu il
+        // coupe en fermant l onglet.
+        jouerSonJauge(duree) {
+            if (this.soundMuted) return;
+            const vol = Math.max(0, Math.min(1, (this.soundVolume || 0) / 100));
+            if (!vol) return;
+            const ctx = this._contexteAudio();
+            if (!ctx) return;
+
+            const t = ctx.currentTime + 0.02;
+            const d = Math.max(0.2, duree / 1000);
+
+            // La sortie commune : un seul endroit ou regler le niveau, et un
+            // seul a couper si la ceremonie se ferme en cours de route.
+            const sortie = ctx.createGain();
+            sortie.gain.value = 0.17 * vol;
+            sortie.connect(ctx.destination);
+            this._sonJauge = sortie;
+
+            // ── 1. La tenue qui monte ────────────────────────────
+            // ⚠️ `exponentialRampToValueAtTime` et non `linear` : l oreille
+            // entend les hauteurs en rapports, pas en ecarts. Une rampe
+            // lineaire semble ralentir vers la fin, exactement quand la
+            // barre, elle, ralentit deja.
+            const o = ctx.createOscillator();
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(330, t);
+            o.frequency.exponentialRampToValueAtTime(1150, t + d);
+            const go = ctx.createGain();
+            go.gain.setValueAtTime(0.0001, t);
+            go.gain.exponentialRampToValueAtTime(0.28, t + 0.14);
+            go.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.14);
+            o.connect(go).connect(sortie);
+            o.start(t); o.stop(t + d + 0.2);
+
+            // ── 2. Le souffle qui s ouvre ────────────────────────
+            const n = ctx.createBufferSource();
+            n.buffer = this._bruitBlanc(ctx);
+            n.loop = true;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.Q.value = 1.4;
+            bp.frequency.setValueAtTime(700, t);
+            bp.frequency.exponentialRampToValueAtTime(4200, t + d);
+            const gn = ctx.createGain();
+            gn.gain.setValueAtTime(0.0001, t);
+            gn.gain.exponentialRampToValueAtTime(0.1, t + 0.2);
+            gn.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.1);
+            n.connect(bp).connect(gn).connect(sortie);
+            n.start(t); n.stop(t + d + 0.15);
+
+            // ── 3. Les grains, semes comme les etincelles ────────
+            // Leur hauteur MONTE avec la barre : des grains a hauteur fixe
+            // sonnent comme un compteur, pas comme une progression.
+            const grains = Math.round(d * 14);
+            for (let i = 0; i < grains; i++) {
+                const q = (i + Math.random()) / grains;
+                const tg = t + q * d;
+                const g = ctx.createOscillator();
+                g.type = 'sine';
+                g.frequency.value = 1500 + q * 2600 + Math.random() * 600;
+                const gg = ctx.createGain();
+                gg.gain.setValueAtTime(0.0001, tg);
+                gg.gain.exponentialRampToValueAtTime(0.085 + Math.random() * 0.05, tg + 0.008);
+                gg.gain.exponentialRampToValueAtTime(0.0001, tg + 0.09);
+                g.connect(gg).connect(sortie);
+                g.start(tg); g.stop(tg + 0.1);
+            }
+
+            // ── 4. L arrivee ─────────────────────────────────────
+            // Deux notes, une quinte : c est ce qui fait entendre « c est
+            // fini » plutot que « ca s arrete ».
+            [[0, 1320], [0.085, 1976]].forEach(([retard, hz]) => {
+                const a = ctx.createOscillator();
+                a.type = 'sine';
+                a.frequency.value = hz;
+                const ga = ctx.createGain();
+                const ta = t + d + retard;
+                ga.gain.setValueAtTime(0.0001, ta);
+                ga.gain.exponentialRampToValueAtTime(0.2, ta + 0.012);
+                ga.gain.exponentialRampToValueAtTime(0.0001, ta + 0.42);
+                a.connect(ga).connect(sortie);
+                a.start(ta); a.stop(ta + 0.45);
+            });
+        },
+
+        // ⚠️ UN SEUL CONTEXTE POUR TOUTE LA PAGE. Les navigateurs en
+        // plafonnent le nombre, et un contexte par ceremonie finirait par
+        // rendre la page muette sans un mot d explication.
+        // ⚠️ Et on le REVEILLE : ouvert avant le premier geste du joueur, il
+        // naît « suspended » et tout ce qu on y joue part dans le vide.
+        _contexteAudio() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            if (!this._actx) {
+                try { this._actx = new AC(); } catch (e) { return null; }
+            }
+            if (this._actx.state === 'suspended') this._actx.resume().catch(() => {});
+            return this._actx;
+        },
+
+        // Une seconde de bruit, fabriquee une fois et resservie.
+        _bruitBlanc(ctx) {
+            if (this._bruit) return this._bruit;
+            const b = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+            const d = b.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+            this._bruit = b;
+            return b;
+        },
+
+        // Coupe le son en cours — en 80 ms, jamais net : une coupure franche
+        // fait un « clac » audible, c est le bruit du signal qui tombe a zero
+        // d un echantillon a l autre.
+        couperSonJauge() {
+            const s = this._sonJauge;
+            if (!s) return;
+            this._sonJauge = null;
+            try {
+                const ctx = this._actx;
+                s.gain.cancelScheduledValues(ctx.currentTime);
+                s.gain.setValueAtTime(s.gain.value, ctx.currentTime);
+                s.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+            } catch (e) { /* contexte deja ferme */ }
+        },
+
         // ⚠️ Le mouvement se coupe, l INFORMATION reste : qui demande moins
         // d animations voit la barre se poser a sa valeur, sans gerbe.
         _reduitLeMouvement() {
@@ -5656,6 +5817,12 @@ createApp({
                     // boucles sur la meme piste doubleraient la densite.
                     this.couperEtincelles();
                     this.semerEtincelles(1300);
+                    // 🔊 ⚠️ Le son de la PREMIERE montee vient de poser ses
+                    // deux notes d arrivee : on le coupe avant d en lancer un
+                    // second, sinon les deux tenues se superposent et l on
+                    // entend un accord au lieu d une progression.
+                    this.couperSonJauge();
+                    this.jouerSonJauge(1300);
                 });
                 this.$nextTick(() => this.jouerEclats());
             });
@@ -5783,6 +5950,9 @@ createApp({
             // ✨ Et la gerbe : une boucle laissee tourner continuerait de
             // semer sur une piste detachee du document.
             this.couperEtincelles();
+            // 🔊 Et le son. Fermer l ecran pendant la montee laissait la
+            // tenue finir sa course toute seule, sur un podium vide.
+            this.couperSonJauge();
             this._cerT = null;
         },
 

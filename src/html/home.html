@@ -389,6 +389,14 @@
                         <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
                             <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
+                            <!-- 📊 Le taux de victoire, SOUS les deux nombres
+                                 dont il sort : on lit 9, puis 5, puis ce que
+                                 ça fait. Place au-dessus, il aurait fallu
+                                 redescendre pour comprendre d'où il vient.
+                                 ⚠️ Il se calcule dans `tauxVictoire`, il ne
+                                 vient pas de la base — les deux nombres y
+                                 sont déjà. -->
+                            <div><span class="n">Taux de victoire</span><span class="v">{{ estConnecte ? tauxVictoire : '—' }}</span></div>
                             <!-- 💎 LA MONNAIE, ici AUSSI. Elle vit d abord dans
                                  la barre, ou elle se voit sans rien ouvrir ;
                                  cette ligne-ci est son chiffre exact, a cote

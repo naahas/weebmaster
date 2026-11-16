@@ -15783,21 +15783,26 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     top: -0.4rem;
     right: -0.4rem;
     z-index: 3;
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 2rem;
+    height: 2rem;
     padding: 0;
     display: grid;
     place-items: center;
     background: none;
     border: 0;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.2);
+    /* ⚠️ 0,42 ET NON 0,2. A deux dixiemes sur un voile deja sombre, la croix
+       etait une suggestion : on la cherchait. Discrete veut dire qu elle ne
+       dispute rien au rang, pas qu il faut deviner ou cliquer — et c est le
+       SEUL moyen de fermer avec le clic a cote. */
+    color: rgba(255, 255, 255, 0.42);
     opacity: 0;
     transition: color 0.18s ease, opacity 0.4s ease 0.45s;
 }
 .v2-cer.on .v2-cer-fermer { opacity: 1; }
-.v2-cer-fermer:hover { color: rgba(255, 255, 255, 0.75); }
-.v2-cer-fermer svg { width: 0.8rem; height: 0.8rem; display: block; }
+.v2-cer-fermer:hover { color: rgba(255, 255, 255, 0.92); }
+/* 16 px au lieu de 12,8 : trois pixels de plus sur chaque trait. */
+.v2-cer-fermer svg { width: 1rem; height: 1rem; display: block; }
 
 .v2-cer-centre {
     position: absolute;
