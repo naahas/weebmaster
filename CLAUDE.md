@@ -559,10 +559,18 @@ que `comptes`, qui garde la sienne.
 
 ## Tables Supabase (via `dbs.js`)
 
-`questions`, `bombanime_suggestions`, `reported_questions`, `keep_alive`.
+Lues et écrites : `questions`, `choice_questions`, `comptes`, `game_history`,
+`bombanime_suggestions`, `reported_questions`, `retours`, `keep_alive`.
 
-Les tables de comptes (`users`, `games`, `player_games`, `titles`, `badges`, `shop_items`,
-`user_purchases`, `used_questions`, `visits`) ne sont plus lues ni écrites.
+⚠️ **L'historique des questions d'un joueur n'est pas une table** : c'est la colonne
+`comptes.questions_vues` (`integer[]`, [docs/questions-vues.sql](docs/questions-vues.sql)), lue une
+fois au lancement de la partie et réécrite une fois à la fin. La table `used_questions` de la v1,
+qui faisait ça en une ligne par question vue, a été supprimée.
+
+Les tables de comptes de la v1 (`users`, `games`, `player_games`, `titles`, `badges`,
+`shop_items`, `user_purchases`, `visits`) ne sont plus lues ni écrites —
+[docs/tables-v1-a-supprimer.sql](docs/tables-v1-a-supprimer.sql) les supprime, sauf `shop_items`
+qu'on garde le temps du chantier boutique.
 
 Le workflow GitHub `.github/workflows/main.yml` ping `keep_alive` 3x/semaine pour éviter la mise en
 veille du projet Supabase free tier.
