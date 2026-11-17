@@ -3722,7 +3722,64 @@ function ligneDeClassement(r, valeur) {
     };
 }
 
+// 🧪 DES JOUEURS POUR VOIR LA PAGE PLEINE — hors production uniquement.
+//
+// ⚠️ UN CLASSEMENT NE SE REGLE PAS A UNE LIGNE. Le podium, le dégradé des
+// couleurs de rang sur le bord gauche, l'alignement des chiffres, le
+// comportement d'un pseudo long : rien de tout ça ne se voit avec un seul
+// joueur, et rien ne se devine en lisant le CSS. Il faut un tableau rempli.
+//
+// ⚠️ ET SURTOUT PAS DE FAUSSES LIGNES EN BASE. La tentation était d'écrire
+// des parties fictives dans `parties_jouees` : elles seraient entrées dans
+// un classement PUBLIC, mêlées aux vraies, et il aurait fallu se souvenir de
+// les retirer — avec le risque d'en oublier une et de ne jamais savoir
+// laquelle était vraie. Ici rien n'est écrit : les lignes sont fabriquées à
+// la volée et meurent avec la réponse.
+//
+// ⚠️ `NODE_ENV === 'production'` REFUSE, et le test est dans ce sens : une
+// variable absente doit FERMER la porte, jamais l'ouvrir. En ligne, `?demo`
+// ne fait rien du tout.
+const DEMO_NOMS = ['nahass', 'slayer', 'Kitsune822', 'Shinobi357', 'Senpai970', 'Hokage915',
+    'Ronin802', 'Akuma_', 'TanjiroFan', 'Yuki', 'MomoNoSuke', 'Ryu', 'Hinata_sama',
+    'Zoro', 'Levi', 'Gojo', 'Makima', 'Asuka', 'Nami', 'Kenshin', 'Bakugo', 'Mikasa',
+    'Itachi', 'Sanji', 'Killua', 'Todoroki', 'Rem', 'Eren', 'Shanks', 'Ichigo'];
+const DEMO_AVATARS = ['sasuke.webp', 'ninja.png', 'assassin.png', 'melody.png', 'knight.png',
+    'girl.png', 'sorcier.png', 'totoro.png', 'novice.png', 'knight2.png'];
+
+function classementDeDemo(type) {
+    return DEMO_NOMS.map((pseudo, i) => {
+        // Une décroissance douce plutôt que linéaire : elle traverse les huit
+        // paliers, et c'est ce qui fait apparaître le dégradé de couleurs.
+        const xp = Math.round(72000 * Math.pow(0.84, i)) + 120;
+        const parties = Math.max(10, 160 - i * 5);
+        const victoires = Math.max(0, Math.round(parties * (0.62 - i * 0.018)));
+        const l = {
+            pseudo, avatar: DEMO_AVATARS[i % DEMO_AVATARS.length], xp,
+            titrePrefixe: i % 3 === 0 ? 'vagabond' : null,
+            titreSuffixe: i % 3 === 0 ? 'delaube' : null,
+            parties, victoires,
+            taux: Math.round((victoires / parties) * 100),
+            serie: Math.max(1, 15 - Math.floor(i / 2)),
+            valeur: 0,
+        };
+        const v = {
+            rang: xp, victoires: l.taux, serie: l.serie, parties,
+            progression: Math.round(xp / 9), records: l.serie + 9,
+        };
+        l.valeur = v[type] === undefined ? xp : v[type];
+        return l;
+    });
+}
+
 app.get('/api/classement', async (req, res) => {
+    if (req.query.demo && process.env.NODE_ENV !== 'production') {
+        const t = String(req.query.type || 'rang');
+        return res.json({
+            lignes: classementDeDemo(t),
+            record: { libelle: 'Plus longue série', sens: 'max', unite: '' },
+            demo: true,
+        });
+    }
     if (!comptes.ACTIF) return res.json({ actif: false, lignes: [] });
 
     const type = String(req.query.type || 'rang');
@@ -3843,6 +3900,10 @@ app.get('/api/classement', async (req, res) => {
 // afficherait « 30 s » pour Rush des mois après sa disparition du barème, et
 // manquerait le réglage ajouté la veille.
 app.get('/api/classement/seaux', async (req, res) => {
+    if (req.query.demo && process.env.NODE_ENV !== 'production') {
+        return res.json({ nom: 'Durée', seaux: [
+            { valeur: '60', parties: 42 }, { valeur: '90', parties: 18 }, { valeur: '120', parties: 7 }] });
+    }
     const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
     const def = mode && CLASSEMENT_RECORDS[mode];
     if (!def || !def.seau) return res.json({ seaux: [] });

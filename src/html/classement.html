@@ -152,6 +152,11 @@ var TABLEAUX = {
 };
 
 var etat = { type: 'rang', mode: null, periode: 'all', seau: 'tous' };
+// 🧪 `?demo` remplit la page de joueurs fabriqués, pour la régler. ⚠️ Le
+// serveur le REFUSE en production : ici on ne fait que transmettre, la
+// décision n'est pas prise côté navigateur — un drapeau que le client
+// contrôle n'en est pas un.
+var DEMO = /(\?|&)demo\b/.test(location.search) ? '&demo=1' : '';
 var seauxConnus = { nom: null, liste: [] };
 var requeteEnCours = 0;
 
@@ -294,7 +299,7 @@ async function charger() {
     // la peindre une fois complète que la voir s'allonger sous le curseur.
     if (def.modeObligatoire) {
         try {
-            var rs = await fetch('/api/classement/seaux?mode=' + encodeURIComponent(etat.mode || ''));
+            var rs = await fetch('/api/classement/seaux?mode=' + encodeURIComponent(etat.mode || '') + DEMO);
             var js = await rs.json();
             if (monTour !== requeteEnCours) return;
             seauxConnus = { nom: js.nom, liste: js.seaux || [] };
@@ -305,7 +310,7 @@ async function charger() {
     var url = '/api/classement?type=' + encodeURIComponent(etat.type)
         + (etat.mode ? '&mode=' + encodeURIComponent(etat.mode) : '')
         + (def.periodes ? '&periode=' + encodeURIComponent(etat.periode) : '')
-        + (def.modeObligatoire ? '&seau=' + encodeURIComponent(etat.seau) : '');
+        + (def.modeObligatoire ? '&seau=' + encodeURIComponent(etat.seau) : '') + DEMO;
 
     try {
         var rep = await fetch(url);

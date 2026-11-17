@@ -243,6 +243,27 @@
                         <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
                         <span class="v2-logo-ring"></span>
                     </button>
+
+                    <!-- 🧭 LA NAVIGATION DU SITE.
+                         ⚠️ DANS LA BARRE DE L ACCUEIL UNIQUEMENT, jamais dans
+                         celle du salon (plus bas, meme classe). Un lien qui
+                         emmene ailleurs n a rien a faire a cote d une partie
+                         qui commence : un clic de travers et l hote quitte son
+                         propre salon devant ses joueurs.
+                         ⚠️ `margin-right: auto` la pousse a gauche et tient la
+                         place du logo sur l accueil, ou il est masque — sans
+                         elle, les liens se colleraient a l avatar. -->
+                    <nav class="v2-nav" aria-label="Le site">
+                        <a class="v2-nav-lien" href="/classement">Classement</a>
+                        <!-- ⚠️ PAS UN LIEN tant que la page n existe pas. Un
+                             lien mort dans une barre permanente se teste au
+                             premier clic de chaque visiteur, et il dit que le
+                             site est casse. Un mot grise avec « bientot » dit
+                             qu il se prepare quelque chose — ce qui est vrai. -->
+                        <span class="v2-nav-lien soon" aria-disabled="true">
+                            Boutique<em>soon</em>
+                        </span>
+                    </nav>
                     <!-- 👤 DEUX ELEMENTS, PAS TROIS : le pseudo, puis l avatar qui
                          ouvre tout. Il y avait avant une pastille d avatar ET une
                          pastille de pseudo avec son crayon ; ajouter la connexion
@@ -852,13 +873,14 @@
                              propre ligne. Reunis, les liens restent une ligne et
                              les signatures une autre. -->
                         <span class="v2-pied-liens">
-                            <!-- 🏆 EN PREMIER, et c est le seul lien du pied
-                                 qui soit un endroit ou l on va plutot qu une
-                                 page qu on consulte une fois. Regles et Rangs
-                                 s ouvrent quand on a une question ; le
-                                 classement, on y retourne. -->
-                            <a href="/classement">Classement</a>
-                            <span aria-hidden="true">·</span>
+                            <!-- ℹ️ PAS DE « Classement » ICI : il vit dans la
+                                 barre du haut. Le pied porte ce qu on consulte
+                                 une fois — des regles, un bareme, une mention
+                                 legale ; la navigation porte les endroits ou
+                                 l on retourne. Mettre le meme lien aux deux
+                                 bouts de la page aurait brouille cette
+                                 distinction, qui est tout ce qui separe les
+                                 deux barres. -->
                             <a href="/regles">Règles</a>
                             <span aria-hidden="true">·</span>
                             <a href="/rangs">Rangs</a>

@@ -7103,6 +7103,105 @@ html.rendu-logiciel .v2-dust { display: none; }
 
 .v2-topbar .v2-logo { margin-right: auto; }
 
+/* ════════════════════════════════════════════════════════════
+   🧭 LA NAVIGATION DU SITE, dans la barre du haut
+   ════════════════════════════════════════════════════════════
+   ⚠️ DELIBEREMENT AUTRE CHOSE QUE LE PIED DE PAGE. Les deux portent des
+   liens, mais pas le meme rang : le pied est une mention legale et un
+   renvoi — petites capitales grises, separees par des points medians, qu on
+   lit une fois et qu on oublie. La navigation est un ENDROIT OU L ON VA, et
+   le classement s y retourne. D ou la casse normale, la taille plus grande,
+   le gris plus clair, et surtout le filet dore qui pousse au survol : le
+   pied n a aucun de ces quatre signes.
+   ℹ️ La police ne change pas — c est elle qui fait la famille. Ce sont le
+   ton et le poids qui separent les deux barres, pas le dessin des lettres.
+
+   ⚠️ `margin-right: auto` : sur l accueil le logo est masque, et sans elle
+   les liens iraient se coller a l avatar dans le coin droit. */
+.v2-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-right: auto;
+}
+.v2-topbar .v2-logo + .v2-nav { margin-left: 0.4rem; }
+
+.v2-nav-lien {
+    position: relative;
+    padding: 0.2rem 0;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #b9b3c9;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.18s ease;
+}
+/* Le filet pousse depuis la gauche. ⚠️ `scaleX` et non une `width` qui
+   s anime : une largeur fait recalculer la mise en page a chaque image,
+   une transformation ne touche qu a la composition. */
+.v2-nav-lien::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.18rem;
+    height: 1.5px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--neon-primary, #f0c75e), rgba(240, 199, 94, 0.25));
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.v2-nav-lien:hover,
+.v2-nav-lien:focus-visible { color: #fff; }
+.v2-nav-lien:hover::after,
+.v2-nav-lien:focus-visible::after { transform: scaleX(1); }
+
+/* ⚠️ « Bientot » N EST PAS UN LIEN, et il ne doit pas en avoir l air : pas
+   de curseur de main, pas de filet au survol, un gris plus sourd. Un lien
+   mort dans une barre permanente se teste au premier clic de chaque
+   visiteur, et il dit que le site est casse. */
+.v2-nav-lien.soon {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    color: #6d6880;
+    cursor: default;
+}
+.v2-nav-lien.soon::after { content: none; }
+/* ⚠️ « SOON », PAS « BIENTOT », ET EN CREUX PLUTOT QU EN PLEIN. Deux
+   raisons, et la premiere ne se voit qu au rendu : la banniere du nouveau
+   mode, centree sur la MEME LIGNE, dit deja « bientot disponible ». Deux
+   fois le meme mot a trois centimetres l un de l autre, et aucun des deux
+   n est cru. « soon » est par ailleurs le mot que la liste des modes
+   emploie deja (`.v2-mode-row-soon`) — c est le mot de la maison.
+   ⚠️ Et un fond plein en or tirait l oeil plus fort que la banniere, qui
+   est la vraie nouvelle. Un contour suffit a dire « pas encore ». */
+.v2-nav-lien.soon em {
+    font-style: normal;
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(240, 199, 94, 0.8);
+    background: rgba(255, 215, 0, 0.07);
+    border: 0.06rem solid rgba(255, 215, 0, 0.26);
+    padding: 0.14rem 0.4rem;
+    border-radius: 0.28rem;
+}
+
+/* ⚠️ SUR TELEPHONE, « Boutique · bientot » DISPARAIT et « Classement »
+   reste. La barre y porte deja l avatar et le solde ; a 390 px, deux liens
+   plus une pastille poussaient l avatar hors de l ecran. On garde celui
+   qu on vient chercher, et la boutique reviendra dans cette barre le jour
+   ou elle existe — avec, a ce moment-la, une place a lui faire. */
+@media (max-width: 560px) {
+    .v2-nav { gap: 1rem; }
+    .v2-nav-lien { font-size: 0.8rem; }
+    .v2-nav-lien.soon { display: none; }
+}
+
 .v2-logo {
     position: relative;
     display: grid;
