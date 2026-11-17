@@ -215,25 +215,9 @@
                      ⚠️ DEUX LIBELLES, un par largeur. La phrase longue passait a la
                      ligne sur telephone et la banniere prenait trois etages, juste
                      au-dessus du titre. -->
-                <!-- ⚠️ UN SIMPLE BLOC, PLUS UN BOUTON : elle ne mène nulle part.
-                     Un clic qui emmenait vers la carte du mode donnait son nom une
-                     touche plus loin, ce que l'accueil tait exprès. Et la flèche est
-                     partie avec le lien — une flèche promet une destination. -->
-                <div class="v2-annonce"
-                     v-if="homeScreen === 'hub' && modeAVenir">
-                    <!-- Le point et son onde : deux calques, UN mouvement chacun.
-                         Le noyau respire, l anneau s ouvre et s efface — voir le
-                         CSS, qui dit pourquoi ils ne peuvent pas partager
-                         d element. -->
-                    <span class="v2-annonce-point" aria-hidden="true"></span>
-                    <span class="v2-annonce-sur">Nouveau mode</span>
-                    <!-- ⚠️ LE NOM DU MODE NE PARAIT PAS ICI, et c'est voulu : sa
-                         carte cache deja son portrait derriere une silhouette noire
-                         pour qu'on ne sache meme pas qui c'est. L'annoncer en toutes
-                         lettres sur l'accueil defairait ce travail. La banniere dit
-                         qu'il se prepare quelque chose, rien de plus. -->
-                    <span class="v2-annonce-txt">bientôt disponible</span>
-                </div>
+                <!-- ℹ️ LA BANNIERE DU MODE A VENIR N EST PLUS ICI : elle a
+                     rejoint le haut de la colonne « Créer / Rejoindre », ou
+                     elle ne dispute plus la bande du haut a la navigation. -->
 
                 <header class="v2-topbar">
                     <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du
@@ -255,14 +239,11 @@
                          elle, les liens se colleraient a l avatar. -->
                     <nav class="v2-nav" aria-label="Le site">
                         <a class="v2-nav-lien" href="/classement">Classement</a>
-                        <!-- ⚠️ PAS UN LIEN tant que la page n existe pas. Un
-                             lien mort dans une barre permanente se teste au
-                             premier clic de chaque visiteur, et il dit que le
-                             site est casse. Un mot grise avec « bientot » dit
-                             qu il se prepare quelque chose — ce qui est vrai. -->
-                        <span class="v2-nav-lien soon" aria-disabled="true">
-                            Boutique<em>soon</em>
-                        </span>
+                        <!-- ⚠️ UN VRAI LIEN, et `/boutique` N EXISTE PAS ENCORE :
+                             c est assume, la page arrive au prochain envoi. D ici
+                             la il rend une 404 — le dire ici pour que personne ne
+                             cherche la panne ailleurs. -->
+                        <a class="v2-nav-lien" href="/boutique">Boutique</a>
                     </nav>
                     <!-- 👤 DEUX ELEMENTS, PAS TROIS : le pseudo, puis l avatar qui
                          ouvre tout. Il y avait avant une pastille d avatar ET une
@@ -653,6 +634,33 @@
                     </div>
 
                     <div class="v2-choices">
+                        <!-- 📣 LA BANNIERE DU MODE A VENIR, au-dessus de « Créer ».
+                             ⚠️ ELLE A QUITTE LE HAUT DE L ECRAN, ou elle partageait
+                             la ligne de la navigation : deux objets centres sur la
+                             meme bande se disputaient l oeil, et la barre du haut
+                             doit appartenir a la navigation seule.
+                             ⚠️ ET ELLE EST REVENUE DANS LE FLUX. En haut elle etait
+                             `position: absolute` par necessite — posee dans la
+                             colonne, elle poussait la barre du haut vers le bas.
+                             Ici elle a sa place : elle coiffe les deux cartes et
+                             les decale de sa hauteur, ce qui est exactement ce
+                             qu on veut. -->
+                        <div class="v2-annonce" v-if="modeAVenir">
+                            <!-- Le point et son onde : deux calques, UN mouvement
+                                 chacun. Le noyau respire, l anneau s ouvre et
+                                 s efface — voir le CSS, qui dit pourquoi ils ne
+                                 peuvent pas partager d element. -->
+                            <span class="v2-annonce-point" aria-hidden="true"></span>
+                            <span class="v2-annonce-sur">Nouveau mode</span>
+                            <!-- ⚠️ LE NOM DU MODE NE PARAIT PAS ICI, et c'est voulu :
+                                 sa carte cache deja son portrait derriere une
+                                 silhouette noire pour qu'on ne sache meme pas qui
+                                 c'est. L'annoncer en toutes lettres sur l'accueil
+                                 defairait ce travail. La banniere dit qu'il se
+                                 prepare quelque chose, rien de plus. -->
+                            <span class="v2-annonce-txt">bientôt disponible</span>
+                        </div>
+
                         <button
                             class="v2-choice v2-choice-create"
                             :class="{ dimmed: hubHover === 'join' }"

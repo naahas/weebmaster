@@ -6974,18 +6974,20 @@ html.rendu-logiciel .v2-dust { display: none; }
    rien au visiteur qui revient le lendemain — or c'est exactement lui qu'on
    veut prévenir. */
 .v2-annonce {
-    /* ⚠️ HORS DU FLUX, et c'est obligatoire. Posée dans la colonne de
-       `.v2-home`, elle POUSSAIT tout ce qui la suit : la barre du haut, donc
-       l'avatar et le pseudo, descendaient de sa hauteur. En absolu elle garde
-       exactement la même place à l'écran et ne coûte sa hauteur à personne.
+    /* ⚠️ DANS LE FLUX, EN TETE DE LA COLONNE DES DEUX CARTES. Elle était
+       `position: absolute` en haut de l'écran, et elle devait l'être : posée
+       dans la colonne de `.v2-home`, elle poussait la barre du haut — donc
+       l'avatar et le solde — vers le bas de sa hauteur.
 
-       `top` se mesure depuis le bord de la boîte, padding compris : les
-       2,45 rem valent les 1,9 rem de marge de `.v2-home` plus le cheveu d'air
-       qu'on voulait au-dessus. */
-    position: absolute;
-    top: 2.45rem;
-    left: 50%;
-    transform: translateX(-50%);
+       Ici elle n'a plus ce problème : elle coiffe « Créer » et « Rejoindre »,
+       et les décaler de sa hauteur est précisément ce qu'on veut. Le haut de
+       l'écran revient à la navigation, qui y est seule.
+
+       ⚠️ `align-self: flex-start` : la colonne est en `stretch` par défaut,
+       et la bannière se serait étirée sur toute la largeur des cartes — ses
+       deux filets, calés sur sa boîte, seraient devenus un cadre. */
+    align-self: flex-start;
+    margin-bottom: 0.1rem;
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
@@ -7118,20 +7120,43 @@ html.rendu-logiciel .v2-dust { display: none; }
 
    ⚠️ `margin-right: auto` : sur l accueil le logo est masque, et sans elle
    les liens iraient se coller a l avatar dans le coin droit. */
+/* ⚠️ CENTREE SUR L ECRAN, PAS DANS LA BARRE. Les deux ne sont pas la même
+   chose : la barre porte l'avatar et le solde à droite, le logo à gauche, et
+   leurs largeurs sont différentes — un simple `margin: auto` aurait centré
+   la navigation entre ces deux-là, donc décalée de l'axe de l'écran, et le
+   décalage aurait changé selon que le solde est affiché ou non.
+   `position: absolute` + `left: 50%` la cale sur l'écran une fois pour
+   toutes. Elle sort du flux, donc elle ne pousse plus rien.
+
+   ⚠️ ET `pointer-events` : la boîte centrée est plus large que ses liens et
+   traverse la barre, où elle avalerait les clics destinés au logo. Elle les
+   laisse passer, seuls les liens les reprennent. C'est le même piège que la
+   barre du pied, pleine largeur et fixe. */
 .v2-nav {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 1.5rem;
-    margin-right: auto;
+    height: 2.9rem;
+    pointer-events: none;
 }
-.v2-topbar .v2-logo + .v2-nav { margin-left: 0.4rem; }
+.v2-nav > * { pointer-events: auto; }
 
+/* ⚠️ EN CAPITALES, ET IL FAUT SAVOIR CE QUE CA COUTE : le pied de page l est
+   aussi, donc les deux barres se ressemblent d un cran de plus. Les trois
+   autres ecarts tiennent et suffisent a les distinguer — la taille (0,8 contre
+   0,62 rem), la couleur (clair contre gris sourd), et le filet dore qui pousse
+   au survol, que le pied n a pas. */
 .v2-nav-lien {
     position: relative;
     padding: 0.2rem 0;
-    font-size: 0.86rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
     color: #b9b3c9;
     text-decoration: none;
     white-space: nowrap;

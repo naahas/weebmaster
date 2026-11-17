@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La barre de navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Orbitron:wght@700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   ⚠️ SIX FACONS DE POSER LA NAVIGATION EN HAUT DE L ACCUEIL.
+
+   Le banc montre chacune SUR LE VRAI FOND — noir, aurore doree, grille en
+   perspective — parce qu une barre se juge sur ce qu elle traverse. Posee
+   sur du gris neutre, une capsule translucide parait toujours propre ; sur
+   un degrade qui monte, elle peut se perdre ou faire tache.
+
+   ⚠️ ET CHACUNE EST MONTREE A DEUX, QUATRE ET SIX LIENS. C est la vraie
+   question : il y en a deux aujourd hui et il y en aura plus. Une barre qui
+   tient a deux et casse a cinq n est pas une barre, c est un detail qu il
+   faudra refaire. Le selecteur du haut change le nombre pour toutes.
+
+   ⚠️ Trois contraintes viennent de l accueil et ne se voient pas ici :
+   1. L AVATAR ET LE SOLDE occupent le coin droit, le logo le coin gauche.
+      La barre ne peut donc pas prendre toute la largeur : elle vit AU
+      MILIEU, entre deux objets de largeurs differentes — d ou le centrage
+      sur l ECRAN et non sur la barre.
+   2. ELLE SE POSE SUR UN FOND QUI BOUGE. Les aurores derivent, la grille
+      defile : une barre sans fond propre change de contraste toute seule.
+   3. SUR TELEPHONE elle partage la ligne avec l avatar. A 390 px il reste
+      environ 250 px — deux liens courts, pas davantage.
+-->
+<style>
+:root { --or: #f0c75e; --orvif: #ffd700; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 0 0 5rem;
+    background: #08080b; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
+.sous { font-size: .78rem; line-height: 1.7; opacity: .6; max-width: 58rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--orvif); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem; margin-bottom: 1rem;
+    background: rgba(8,8,11,.96);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; }
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--orvif); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+
+.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.4rem 1.4rem .3rem; }
+.piste h2 { font-size: .98rem; font-weight: 800; margin: 0 0 .2rem; display: flex; align-items: baseline; gap: .55rem; }
+.piste h2 em { font-style: normal; font-size: .9rem; opacity: .3; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: .73rem; line-height: 1.65; opacity: .52; max-width: 56rem; margin: 0 0 1rem; }
+.piste .n b { opacity: .95; color: #fff; font-weight: 600; }
+.piste.reco h2 { color: var(--orvif); }
+
+/* ══════════ LA SCENE : le vrai fond de l accueil ══════════ */
+.scene {
+    position: relative; overflow: hidden;
+    height: 7.5rem; border-radius: .8rem;
+    background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
+    border: 1px solid rgba(255,255,255,.06);
+}
+.scene i.aurore {
+    position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55;
+    width: 26rem; height: 26rem; top: -14rem; left: 12%;
+    background: radial-gradient(circle, rgba(255,190,40,.45), transparent 68%);
+}
+.scene i.grille {
+    position: absolute; inset: -50%;
+    background-image:
+        linear-gradient(rgba(255,215,0,.05) .06rem, transparent .06rem),
+        linear-gradient(90deg, rgba(255,215,0,.05) .06rem, transparent .06rem);
+    background-size: 3.2rem 3.2rem;
+    transform: perspective(45rem) rotateX(58deg) translateY(-8%);
+    mask-image: radial-gradient(70% 55% at 50% 30%, #000 0%, transparent 78%);
+    -webkit-mask-image: radial-gradient(70% 55% at 50% 30%, #000 0%, transparent 78%);
+}
+/* Les deux voisins du coin : ils ne sont pas decoratifs, ils disent
+   l encombrement reel dont la barre doit s accommoder. */
+.coin { position: absolute; top: .9rem; z-index: 3; display: flex; align-items: center; gap: .5rem; }
+.coin.g { left: 1rem; }
+.coin.d { right: 1rem; }
+.pastille { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: #23232b;
+            border: 2px solid rgba(240,199,94,.55); }
+.solde { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .6rem;
+         font-size: .72rem; font-weight: 700; color: var(--or);
+         background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 2rem; }
+
+/* La barre elle-meme, centree sur la SCENE comme elle le serait sur l ecran. */
+.nav { position: absolute; top: .9rem; left: 50%; transform: translateX(-50%); z-index: 4;
+       display: flex; align-items: center; height: 2.3rem; }
+.nav a { text-decoration: none; white-space: nowrap; }
+
+/* ─────────── 1 · NUE ─────────── */
+.v1 .nav { gap: 1.5rem; }
+.v1 .nav a {
+    position: relative; padding: .2rem 0; font-size: .86rem; font-weight: 600;
+    color: #b9b3c9; transition: color .18s ease;
+}
+.v1 .nav a::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -.2rem; height: 1.5px;
+    border-radius: 2px; background: linear-gradient(90deg, var(--or), rgba(240,199,94,.25));
+    transform: scaleX(0); transform-origin: left center;
+    transition: transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.v1 .nav a:hover { color: #fff; }
+.v1 .nav a:hover::after { transform: scaleX(1); }
+
+/* ─────────── 2 · LA CAPSULE ─────────── */
+.v2 .nav {
+    gap: .2rem; padding: .25rem; border-radius: 2rem;
+    background: rgba(18,18,22,.72);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 .5rem 1.6rem rgba(0,0,0,.45);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.v2 .nav a {
+    padding: .42rem .95rem; border-radius: 2rem; font-size: .82rem; font-weight: 600;
+    color: #a8a2b8; transition: color .18s ease, background .18s ease;
+}
+.v2 .nav a:hover { color: #fff; background: rgba(255,255,255,.07); }
+.v2 .nav a.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--or)); }
+
+/* ─────────── 3 · LA PILULE QUI GLISSE ─────────── */
+/* ⚠️ UN SEUL element se deplace sous les liens, au lieu d un fond par lien :
+   le mouvement RELIE les deux positions au lieu d en eteindre une et d en
+   allumer une autre. C est ce qui fait la difference entre « moderne » et
+   « anime ». */
+.v3 .nav {
+    position: absolute; gap: .2rem; padding: .25rem; border-radius: 2rem;
+    background: rgba(18,18,22,.72); border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 .5rem 1.6rem rgba(0,0,0,.45);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.v3 .pilule {
+    position: absolute; top: .25rem; bottom: .25rem; left: 0; width: 0;
+    border-radius: 2rem; background: rgba(255,255,255,.09);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+    transition: transform .3s cubic-bezier(.3,.9,.3,1), width .3s cubic-bezier(.3,.9,.3,1), opacity .2s ease;
+    opacity: 0; pointer-events: none;
+}
+.v3 .nav:hover .pilule { opacity: 1; }
+.v3 .nav a {
+    position: relative; z-index: 1;
+    padding: .42rem .95rem; border-radius: 2rem; font-size: .82rem; font-weight: 600;
+    color: #a8a2b8; transition: color .18s ease;
+}
+.v3 .nav a:hover { color: #fff; }
+.v3 .nav a.on { color: var(--orvif); }
+
+/* ─────────── 4 · LE FILET SOUS LA BARRE ─────────── */
+.v4 .nav { gap: 1.7rem; height: 2.6rem; align-items: flex-start; padding-top: .35rem; }
+.v4 .nav a {
+    position: relative; padding: 0 0 .7rem; font-size: .84rem; font-weight: 600;
+    letter-spacing: .02em; color: #9a94aa; transition: color .18s ease;
+}
+.v4 .nav a::after {
+    content: ''; position: absolute; left: 50%; bottom: 0; width: 0; height: 2px;
+    border-radius: 2px; background: var(--or);
+    transition: width .24s cubic-bezier(.2,.8,.2,1), left .24s cubic-bezier(.2,.8,.2,1);
+}
+.v4 .nav a:hover { color: #fff; }
+.v4 .nav a:hover::after { left: 0; width: 100%; }
+.v4 .nav a.on { color: #fff; }
+.v4 .nav a.on::after { left: 0; width: 100%; }
+/* Le filet continu sous toute la bande : il ancre la barre au lieu de la
+   laisser flotter. */
+.v4 .scene-filet {
+    position: absolute; top: 3.5rem; left: 0; right: 0; height: 1px; z-index: 2;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.12) 20%,
+                rgba(255,255,255,.12) 80%, transparent);
+}
+
+/* ─────────── 5 · LES SEPARATEURS ─────────── */
+.v5 .nav { gap: 0; }
+.v5 .nav a {
+    position: relative; padding: .3rem 1.1rem; font-size: .76rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: #8b8598;
+    transition: color .18s ease;
+}
+.v5 .nav a + a::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 1px; height: .9rem; background: rgba(255,255,255,.14);
+}
+.v5 .nav a:hover { color: var(--orvif); }
+.v5 .nav a.on { color: #fff; }
+
+/* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
+.v6 .nav {
+    gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
+    background: rgba(18,18,22,.72); border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 .5rem 1.6rem rgba(0,0,0,.45);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.v6 .marque {
+    display: grid; place-items: center; width: 1.8rem; height: 1.8rem; margin-right: .45rem;
+    font-family: 'Orbitron', sans-serif; font-size: .78rem; font-weight: 800;
+    color: #14100a; background: linear-gradient(135deg,#ffe066,var(--or));
+    border-radius: 50%;
+}
+.v6 .nav a {
+    padding: .4rem .9rem; border-radius: 2rem; font-size: .82rem; font-weight: 600;
+    color: #a8a2b8; transition: color .18s ease, background .18s ease;
+}
+.v6 .nav a:hover { color: #fff; background: rgba(255,255,255,.07); }
+.v6 .nav a.on { color: var(--orvif); background: rgba(255,215,0,.1); }
+</style>
+</head>
+<body>
+
+<h1>La barre de navigation</h1>
+<p class="sous">
+Chacune est posée <span class="av">sur le vrai fond de l'accueil</span> — l'aurore, la grille,
+et les deux voisins du coin : le logo à gauche, le solde et l'avatar à droite. Une barre se juge
+sur ce qu'elle traverse, pas sur du gris neutre.
+</p>
+<p class="sous">
+⚠️ <b>Le nombre de liens est le vrai test.</b> Il y en a deux aujourd'hui et il y en aura plus.
+Une barre qui tient à deux et casse à cinq n'est pas une barre, c'est un détail qu'il faudra
+refaire. Change le nombre ci-dessous et regarde.
+</p>
+
+<div class="barre">
+    <label>Liens</label>
+    <button class="cmd" data-n="2">2</button>
+    <button class="cmd on" data-n="4">4</button>
+    <button class="cmd" data-n="6">6</button>
+    <span class="sep"></span>
+    <label>Largeur</label>
+    <button class="cmd on" data-w="plein">Ordinateur</button>
+    <button class="cmd" data-w="mobile">Téléphone · 390</button>
+</div>
+
+<div id="pistes"></div>
+
+<script>
+// ⚠️ Dans une IIFE : une `const` au premier niveau d un script de page vit
+// dans l environnement lexical GLOBAL, et une collision y tue le script sans
+// un mot dans la console. C est deja arrive sur ce projet.
+(function () {
+var LIENS = ['Classement', 'Boutique', 'Règles', 'Rangs', 'Communauté', 'Saisons'];
+
+var PISTES = [
+    { id: 1, cls: 'v1', nom: 'Nue', note: 'en place',
+      n: "Ce qui tourne aujourd'hui : du texte, et un filet doré qui pousse depuis la gauche au survol. <b>Rien ne la sépare du fond</b> — c'est sa force et sa faiblesse. Elle ne pèse rien, mais quand l'aurore passe dessous, le contraste change tout seul." },
+    { id: 2, cls: 'v2', nom: 'La capsule',
+      n: "Un bloc arrondi translucide, flouté, avec les liens dedans. <b>Elle se porte son propre fond</b>, donc elle garde le même contraste quoi qu'il y ait derrière — c'est la réponse directe au défaut de la première. L'actif est en plein doré." },
+    { id: 3, cls: 'v3', nom: 'La pilule qui glisse', reco: true,
+      n: "La même capsule, mais <b>un seul élément se déplace sous les liens</b> au lieu d'un fond qui s'allume et s'éteint. Le mouvement relie les deux positions : c'est exactement ce qui sépare « moderne » de « animé ». Et plus il y a de liens, plus le geste se voit — c'est la seule qui gagne à s'allonger." },
+    { id: 4, cls: 'v4', nom: 'Le filet sous la barre',
+      n: "Un trait continu sous toute la bande, et un soulignement doré qui s'ouvre du centre vers les bords. <b>Elle ancre la barre</b> au lieu de la laisser flotter — c'est la plus « site », la moins « jeu ». ⚠️ Le filet traverse l'écran : il coupera la page en deux sous l'avatar." },
+    { id: 5, cls: 'v5', nom: 'Les séparateurs',
+      n: "Petites capitales espacées, séparées par des traits fins. <b>C'est le langage du pied de page</b>, remonté en haut. Sobre et dense, elle encaisse beaucoup de liens — mais elle ne se distingue plus du pied, et les deux barres cessent de dire des choses différentes." },
+    { id: 6, cls: 'v6', nom: 'La capsule et la marque',
+      n: "La capsule, avec le <b>S</b> posé dedans à gauche. Elle devient un objet complet plutôt qu'un groupe de liens, et le logo du coin gauche n'a plus de raison d'être. ⚠️ Sur l'accueil le logotype géant porte déjà le nom au centre : trois marques à l'écran, c'en est une de trop." },
+];
+
+var n = 4, largeur = 'plein';
+
+function peindre() {
+    var liens = LIENS.slice(0, n);
+    document.getElementById('pistes').innerHTML = PISTES.map(function (p) {
+        var a = liens.map(function (l, i) {
+            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+        }).join('');
+        var marque = p.cls === 'v6' ? '<span class="marque">S</span>' : '';
+        var pilule = p.cls === 'v3' ? '<span class="pilule"></span>' : '';
+        var filet = p.cls === 'v4' ? '<span class="scene-filet"></span>' : '';
+        var coinG = p.cls === 'v6' ? '' : '<span class="coin g"><span class="pastille"></span></span>';
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.id + '</em>' + p.nom + (p.note ? ' <span style="font-size:.6rem;opacity:.45;font-weight:600">· ' + p.note + '</span>' : '') + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="' + p.cls + '" style="max-width:' + (largeur === 'mobile' ? '390px' : 'none') + '">'
+              + '<div class="scene">'
+                + '<i class="aurore"></i><i class="grille"></i>' + filet + coinG
+                + '<span class="coin d"><span class="solde">2 400</span><span class="pastille"></span></span>'
+                + '<nav class="nav">' + pilule + marque + a + '</nav>'
+              + '</div>'
+            + '</div></section>';
+    }).join('');
+    brancherPilule();
+}
+
+// La pilule suit le lien survolé. ⚠️ Mesurée au survol et non calculée une
+// fois : les largeurs dépendent de la police, qui peut finir de charger
+// après le premier rendu.
+function brancherPilule() {
+    document.querySelectorAll('.v3 .nav').forEach(function (nav) {
+        var pil = nav.querySelector('.pilule');
+        nav.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('mouseenter', function () {
+                var r = a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+                pil.style.width = r.width + 'px';
+                pil.style.transform = 'translateX(' + (r.left - b.left) + 'px)';
+            });
+        });
+        // Au départ, sous l'actif : sans ça elle naît à gauche et traverse
+        // toute la barre au premier survol.
+        var actif = nav.querySelector('a.on');
+        if (actif) {
+            requestAnimationFrame(function () {
+                var r = actif.getBoundingClientRect(), b = nav.getBoundingClientRect();
+                pil.style.width = r.width + 'px';
+                pil.style.transform = 'translateX(' + (r.left - b.left) + 'px)';
+            });
+        }
+    });
+}
+
+document.querySelector('.barre').addEventListener('click', function (e) {
+    var b = e.target.closest('.cmd');
+    if (!b) return;
+    if (b.dataset.n) {
+        n = parseInt(b.dataset.n, 10);
+        document.querySelectorAll('[data-n]').forEach(function (o) { o.classList.toggle('on', o === b); });
+    } else if (b.dataset.w) {
+        largeur = b.dataset.w;
+        document.querySelectorAll('[data-w]').forEach(function (o) { o.classList.toggle('on', o === b); });
+    }
+    peindre();
+});
+
+peindre();
+})();
+</script>
+</body></html>

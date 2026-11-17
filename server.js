@@ -3324,6 +3324,10 @@ app.get('/prototypes/badge-compte', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-badge-compte.html');
 });
 
+app.get('/prototypes/navbar', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-navbar.html');
+});
+
 app.get('/prototypes/annonce', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-annonce.html');
 });
@@ -3900,9 +3904,25 @@ app.get('/api/classement', async (req, res) => {
 // afficherait « 30 s » pour Rush des mois après sa disparition du barème, et
 // manquerait le réglage ajouté la veille.
 app.get('/api/classement/seaux', async (req, res) => {
+    // 🧪 ⚠️ LE SEAU DE DEMO SUIT LE MODE, comme le vrai. La première version
+    // rendait « 60 · 90 · 120 » quel que soit le mode : on voyait donc une
+    // DURÉE proposée sur BombAnime, qui n'en a pas, et sur Classique, qui
+    // n'a aucun seau du tout. Un banc de démo qui ment sur la forme des
+    // données fait régler l'écran sur un cas qui n'existe pas.
     if (req.query.demo && process.env.NODE_ENV !== 'production') {
-        return res.json({ nom: 'Durée', seaux: [
-            { valeur: '60', parties: 42 }, { valeur: '90', parties: 18 }, { valeur: '120', parties: 7 }] });
+        const m = String(req.query.mode || '');
+        const def = CLASSEMENT_RECORDS[m];
+        if (!def || !def.seau) return res.json({ seaux: [] });
+        const faux = {
+            rush: ['60', '90', '120'],
+            bombanime: ['overall', 'naruto', 'onepiece', 'jujutsu'],
+            ascension: ['10', '15', '20'],
+            collect: ['4', '5', '6'],
+        }[m] || [];
+        return res.json({
+            nom: def.seauNom,
+            seaux: faux.map((v, i) => ({ valeur: v, parties: 40 - i * 9 })),
+        });
     }
     const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
     const def = mode && CLASSEMENT_RECORDS[mode];

@@ -76,6 +76,21 @@ body::before {
 .c-retour:hover { color: var(--c-or); }
 .c-retour svg { width: 1rem; height: 1rem; }
 
+/* ───── Le titre et les onglets, sur une ligne ─────
+   ⚠️ `flex-wrap` et `align-items: baseline` : sur un écran étroit les
+   onglets passent SOUS le titre d'eux-mêmes, et tant qu'ils tiennent à côté
+   ils s'alignent sur sa ligne de base plutôt que sur son milieu — un titre
+   de 2,6 rem et des pilules de 0,78 rem centrés ensemble donnent toujours
+   l'impression que les secondes flottent. */
+.c-tete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem 1.5rem;
+    margin-bottom: 0.9rem;
+}
+
 /* ───── Le titre ───── */
 .c-titre {
     font-family: 'Orbitron', sans-serif;
@@ -92,19 +107,11 @@ body::before {
        `text-fill-color: transparent` devient INVISIBLE. */
     color: var(--c-or);
 }
-.c-chapeau {
-    margin-top: 0.5rem;
-    max-width: 38rem;
-    font-size: 0.9rem;
-    color: var(--c-doux);
-}
-
 /* ───── Les onglets : quel tableau ───── */
 .c-onglets {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 1.8rem 0 0.9rem;
+    gap: 0.35rem;
 }
 .c-onglet {
     padding: 0.5rem 0.95rem;
@@ -127,42 +134,78 @@ body::before {
     font-weight: 700;
 }
 
-/* ───── Les filtres : mode, période, seau ───── */
+/* ════════════════════════════════════════════════════════════
+   LES FILTRES
+   ════════════════════════════════════════════════════════════
+   ⚠️ PLUS DE BOUTONS ENCADRES. Chaque filtre portait sa propre bordure, si
+   bien que la rangée comptait une douzaine de petites boîtes de même poids
+   — un formulaire, pas une barre d'outils. Et ces bordures concurrençaient
+   celles du tableau juste dessous, qui, elles, portent du sens.
+
+   Ici c'est le GROUPE qui a un fond, pas chaque puce : un rail sombre d'un
+   seul tenant, dans lequel l'actif seul s'allume. L'œil compte alors deux
+   objets — « mode » et « période » — au lieu de douze.
+
+   ⚠️ L'ACTIF N'EST PAS UN APLAT DORE. Il l'était, et il pesait plus lourd
+   que l'onglet choisi juste au-dessus : on ne savait plus lequel des deux
+   commandait. Il prend la couleur, pas la surface. */
 .c-filtres {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.8rem 0 0;
+    gap: 0.5rem 0.75rem;
+    padding: 0.85rem 0 0;
     border-top: 1px solid var(--c-trait);
 }
+.c-groupe {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.2rem;
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.6rem;
+}
 .c-filtres-nom {
-    margin-right: 0.3rem;
-    font-size: 0.6rem;
+    padding: 0 0.5rem 0 0.35rem;
+    font-size: 0.58rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--c-faible);
+    white-space: nowrap;
 }
 .c-puce {
-    padding: 0.32rem 0.7rem;
+    position: relative;
+    padding: 0.3rem 0.62rem;
     font: inherit;
-    font-size: 0.73rem;
+    font-size: 0.74rem;
     font-weight: 600;
     color: var(--c-doux);
     background: transparent;
-    border: 1px solid var(--c-trait);
-    border-radius: 0.45rem;
+    border: 0;
+    border-radius: 0.42rem;
     cursor: pointer;
-    transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+    white-space: nowrap;
+    transition: color 0.16s ease, background 0.16s ease;
 }
-.c-puce:hover { color: var(--c-texte); background: rgba(255, 255, 255, 0.04); }
+.c-puce:hover { color: var(--c-texte); background: rgba(255, 255, 255, 0.055); }
 .c-puce[aria-pressed="true"] {
     color: var(--c-or);
-    background: rgba(255, 215, 0, 0.1);
-    border-color: rgba(255, 215, 0, 0.42);
+    background: rgba(255, 215, 0, 0.09);
 }
-.c-sep { width: 1px; height: 1.1rem; margin: 0 0.45rem; background: var(--c-trait); }
+/* Un filet doré sous l'actif : il dit « choisi » sans peser autant qu'un
+   aplat, et il reprend le geste des onglets du jeu. */
+.c-puce[aria-pressed="true"]::after {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.1rem;
+    height: 1.5px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.3), var(--c-or), rgba(255, 215, 0, 0.3));
+}
 
 /* ───── Ce que la colonne de droite mesure ───── */
 .c-mesure {
@@ -362,6 +405,57 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
     .c-squelette span { animation: none; }
     .c-ligne:hover { transform: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LES ARRIVEES
+   ════════════════════════════════════════════════════════════
+   ⚠️ CE N EST PAS DE LA DECORATION, c est ce qui dit qu on a change de
+   tableau. Sans animation, cliquer un onglet remplace la liste d une image
+   a l autre : rien ne bouge, et l oeil ne sait pas s il regarde un nouveau
+   classement ou le meme. Les lignes qui montent une par une racontent le
+   remplacement.
+
+   ⚠️ UN DECALAGE PAR LIGNE, POSE EN `--i` PAR LE JS. Les `nth-child`
+   auraient demande cinquante regles, et la cinquante-et-unieme ligne
+   n aurait rien eu.
+
+   ⚠️ ET TOUT RESTE COURT. 0,34 s par element, 22 ms entre deux : au-dela, on
+   ATTEND le tableau, et une page qu on consulte dix fois par soiree ne doit
+   jamais faire attendre. Le dernier arrive avant la demi-seconde.
+
+   ⚠️ `backwards` : sans lui, un element en attente de son delai s affiche a
+   son etat FINAL puis saute a l etat initial au demarrage — il clignote. */
+@keyframes c-monte {
+    from { opacity: 0; transform: translateY(0.7rem); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes c-pose {
+    from { opacity: 0; transform: translateY(-0.5rem) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+.c-ligne {
+    animation: c-monte 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 22ms + 90ms);
+}
+/* Le podium descend au lieu de monter, et il arrive EN PREMIER : les trois
+   marches se posent, puis la liste se deroule dessous. L inverse donnait
+   l impression que le podium etait pousse par la liste. */
+.c-marche {
+    animation: c-pose 0.42s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+/* Le bandeau de mesure et le compte suivent le meme mouvement, sinon ils
+   restent figes pendant que tout bouge sous eux. */
+.c-mesure { animation: c-monte 0.3s ease backwards; }
+
+/* ⚠️ RIEN DE TOUT CA POUR QUI DEMANDE MOINS DE MOUVEMENT. Et surtout pas
+   une duree a zero : `animation: none` est la seule forme sure — une
+   animation de 0 s laisse parfois l element a son etat de depart. */
+@media (prefers-reduced-motion: reduce) {
+    .c-ligne, .c-marche, .c-mesure { animation: none; }
 }
 
 /* ───── La note du bas ───── */
