@@ -51,7 +51,7 @@
             <nav class="c-onglets" role="tablist" aria-label="Les classements">
                 <button class="c-onglet" role="tab" data-type="rang">Rang</button>
                 <button class="c-onglet" role="tab" data-type="victoires">Victoires</button>
-                <button class="c-onglet" role="tab" data-type="serie">Séries</button>
+                <button class="c-onglet" role="tab" data-type="serie">Streak</button>
                 <button class="c-onglet" role="tab" data-type="records">Records</button>
                 <button class="c-onglet" role="tab" data-type="parties">Parties</button>
                 <button class="c-onglet" role="tab" data-type="progression">Du mois</button>
@@ -107,18 +107,15 @@
              rien n'empêche qu'on en ajoute un demain. -->
         <div class="c-moi" id="maplace" hidden></div>
 
-        <p class="c-note">
-            À égalité, le premier à être arrivé là passe devant.
-            <br>
-            <b>Le classement ne reprend pas l'historique.</b> Il se construit à partir des parties
-            terminées depuis sa mise en place : un compte peut donc avoir plus de parties sur son
-            profil qu'ici. Le <b>rang</b>, lui, suit l'expérience de toute la vie du compte — c'est
-            celui que le joueur porte.
-            <br>
-            Les <b>records</b> ne comptent pas les parties où un bot était présent, et se comparent
-            à réglages égaux : un temps d'Ascension à cinq étages ne se mesure pas à un temps à
-            quinze.
-        </p>
+        <!-- ℹ️ LA NOTE DU BAS EST PARTIE. Elle disait trois choses vraies — le
+             départage des ex æquo, le fait que le classement ne reprend pas
+             l'historique, l'exclusion des parties avec bot — mais aucune ne
+             se lit au bas d'une page qu'on parcourt pour chercher un nom.
+             Les deux premières sont des détails de mécanique, la troisième
+             est dite à sa place : sous le tableau des records, où elle
+             s'applique. La seule règle qu'un joueur doit connaître — les dix
+             parties — est en haut, sous les filtres. -->
+
 
     </main>
 
@@ -457,10 +454,15 @@ async function charger() {
                 return fmt(v) + (rec.unite ? ' <small>' + rec.unite + '</small>' : '');
             };
             def.appoint = null;
-            $('mesure').textContent = (rec.libelle || 'Record')
-                + (rec.sens === 'min' ? ' — le plus court' : ' — le plus élevé');
+            // ⚠️ LE LIBELLE EN CLAIR ET EN COULEUR, le reste en gris. Toute
+            // la ligne était du même gris minuscule : on ne savait pas ce que
+            // mesurait la colonne de droite sans la lire mot à mot. Le nom de
+            // la mesure est la seule chose qu'on doit saisir d'un coup d'œil.
+            $('mesure').innerHTML = '<b>' + echappe(rec.libelle || 'Record') + '</b>'
+                + '<em>' + (rec.sens === 'min' ? 'le plus court' : 'le plus élevé')
+                + (rec.precision ? ' · ' + echappe(rec.precision) : '') + '</em>';
         } else {
-            $('mesure').textContent = def.titre;
+            $('mesure').innerHTML = '<b>' + echappe(def.titre) + '</b>';
         }
 
         if (!lignes.length) {

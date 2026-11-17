@@ -7116,10 +7116,40 @@ html.rendu-logiciel .v2-dust { display: none; }
     justify-content: flex-end;
     gap: 1rem;
     flex: 0 0 auto;
-    /* L air sous la barre, avant le filet : colle a lui, l avatar se lisait
-       comme posé SUR le trait plutôt que dans la bande. */
-    padding: 0.5rem 0 1.1rem;
+    /* ⚠️ LA BANDE S EST RESSERREE, et le profil avec. Elle faisait presque
+       cent pixels de haut — plus que le pied de page, pour deux liens et un
+       avatar. C est l AVATAR qui la dictait : a 2,8rem plus ses marges, il
+       imposait sa hauteur a toute la barre. On l a donc reduit en meme
+       temps, sinon le padding n aurait rien gagne. */
+    padding: 0.15rem 0 0.7rem;
 }
+
+/* ── LE FOND NOIR DU BANDEAU ──
+   Le meme aplat que le pied de page, et pour la meme raison : la barre se
+   pose sur le degrade d aurore et sur la grille en perspective, qui montent
+   tous deux vers le haut de l ecran. Les liens se lisaient sur un fond qui
+   changeait de teinte d un bout a l autre de la ligne.
+   ⚠️ Il deborde la gouttiere comme le filet, par des decalages negatifs —
+   pas par `width: 100vw`, qui amene une barre de defilement horizontale des
+   qu une barre verticale existe. */
+.v2-topbar::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--home-pad-y) * -1);
+    bottom: 0;
+    left: calc(var(--gouttiere) * -1);
+    right: calc(var(--gouttiere) * -1);
+    z-index: -1;
+    background: #07060b;
+    pointer-events: none;
+}
+
+/* ⚠️ L avatar passe de 2,8 a 2,2rem et le solde suit. C est lui qui fixait
+   la hauteur de la bande : la rogner sans le reduire n aurait rien donne. */
+.v2-topbar .v2-moi-av { width: 2.2rem; height: 2.2rem; }
+.v2-topbar .v2-moi-rubis { padding: 0.2rem 0.55rem; font-size: 0.78rem; }
+.v2-topbar .v2-moi-rubis img { height: 0.8rem; }
+.v2-topbar .v2-moi-stylo { width: 0.95rem; height: 0.95rem; }
 
 /* ── LE FILET SOUS LE BANDEAU ──
    Le meme que celui du pied de page : il s eteint a ses deux bouts plutot
@@ -7176,7 +7206,7 @@ html.rendu-logiciel .v2-dust { display: none; }
    barre du pied, pleine largeur et fixe. */
 .v2-nav {
     position: absolute;
-    top: 0.5rem;
+    top: 0.15rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -7186,7 +7216,10 @@ html.rendu-logiciel .v2-dust { display: none; }
        se serait pose DANS le vide entre deux liens et n aurait appartenu a
        aucun des deux — il aurait fallu un troisieme element par couple. */
     gap: 0;
-    height: 2.9rem;
+    /* ⚠️ Elle suit la hauteur de l avatar, qui fixe celle de la bande : plus
+       haute, elle depasserait du bandeau noir ; plus basse, les liens ne
+       seraient plus sur l axe de l avatar. */
+    height: 2.2rem;
     pointer-events: none;
 }
 .v2-nav > * { pointer-events: auto; }

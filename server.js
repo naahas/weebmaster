@@ -3700,13 +3700,36 @@ const CLASSEMENT_MODES = ['classic', 'rivalry', 'bombanime', 'rush', 'ascension'
 // pas : on cherche le plus GRAND en BombAnime et en Rush, le plus PETIT en
 // Ascension et en Collect, où le record est un temps. Écrit une fois, lu par
 // la requête et par la page.
+// ⚠️ UN SEUL SEAU PAR MODE, CELUI DES REGLAGES PAR DEFAUT — sauf BombAnime.
+//
+// La première version offrait un filtre par valeur jouée : « Rush en 60, en
+// 90, en 120 », « Ascension à 10, 15, 20 étages ». C'était honnête mais ça
+// éparpillait le palmarès en autant de tableaux presque vides, dont aucun
+// n'était LE record du mode. Un record doit être unique pour avoir du prix.
+//
+// On fige donc le seau sur les réglages par défaut, et `defaut` le dit.
+// ⚠️ C'est une règle de LECTURE : les parties jouées avec d'autres réglages
+// sont enregistrées comme les autres, avec leur score. Le jour où l'on
+// voudrait un palmarès « Rush en 120 », il suffira de changer cette ligne —
+// rien n'aura été perdu.
+//
+// BombAnime est l'exception, et elle est justifiée : ses séries ne sont pas
+// des réglages de difficulté, ce sont des SUJETS différents. Trouver 40
+// personnages de Naruto et 40 toutes séries confondues ne sont pas la même
+// performance, et aucun des deux n'est « le » record du mode.
 const CLASSEMENT_RECORDS = {
-    bombanime: { libelle: 'Personnages trouvés', sens: 'max', unite: '', seau: 'serie', seauNom: 'Série' },
-    rush:      { libelle: 'Plus longue série',   sens: 'max', unite: '', seau: 'duree', seauNom: 'Durée' },
-    classic:   { libelle: 'Bonnes réponses d’affilée', sens: 'max', unite: '', seau: null, seauNom: null },
-    rivalry:   { libelle: 'Bonnes réponses d’affilée', sens: 'max', unite: '', seau: null, seauNom: null },
-    ascension: { libelle: 'Temps jusqu’au sommet', sens: 'min', unite: 's', seau: 'etages', seauNom: 'Étages' },
-    collect:   { libelle: 'Temps pour gagner',   sens: 'min', unite: 's', seau: 'main', seauNom: 'Main' },
+    classic:   { libelle: 'Plus longue série de bonnes réponses', sens: 'max', unite: '',
+                 seau: 'serie', defaut: 'overall', precision: 'toutes séries' },
+    rivalry:   { libelle: 'Plus longue série de bonnes réponses', sens: 'max', unite: '',
+                 seau: 'serie', defaut: 'overall', precision: 'toutes séries' },
+    bombanime: { libelle: 'Personnages trouvés', sens: 'max', unite: '',
+                 seau: 'serie', defaut: null, seauNom: 'Série' },
+    rush:      { libelle: 'Portraits trouvés d’affilée', sens: 'max', unite: '',
+                 seau: 'duree', defaut: 60, precision: 'en 60 secondes' },
+    ascension: { libelle: 'Temps jusqu’au sommet', sens: 'min', unite: 's',
+                 seau: 'etages', defaut: 15, precision: 'tour de 15 étages' },
+    collect:   { libelle: 'Temps pour gagner', sens: 'min', unite: 's',
+                 seau: 'main', defaut: 4, precision: 'main de 4 cartes' },
 };
 
 // Ce qu'on renvoie d'un compte. ⚠️ Pas l'identifiant : il n'a rien à faire
@@ -3778,9 +3801,16 @@ function classementDeDemo(type) {
 app.get('/api/classement', async (req, res) => {
     if (req.query.demo && process.env.NODE_ENV !== 'production') {
         const t = String(req.query.type || 'rang');
+        // ⚠️ LE VRAI LIBELLE DU MODE, pas un texte figé. La démo rendait
+        // « Plus longue série » pour les six modes : on réglait donc l'écran
+        // sur un cas qui n'existe pas, et l'on n'aurait jamais vu qu'un temps
+        // d'Ascension et un nombre de personnages ne se présentent pas
+        // pareil. Un banc qui ment sur la forme des données ne sert à rien.
+        const m = CLASSEMENT_MODES.includes(String(req.query.mode))
+            ? String(req.query.mode) : 'bombanime';
         return res.json({
             lignes: classementDeDemo(t),
-            record: { libelle: 'Plus longue série', sens: 'max', unite: '' },
+            record: CLASSEMENT_RECORDS[m] || CLASSEMENT_RECORDS.bombanime,
             demo: true,
         });
     }
@@ -3814,7 +3844,14 @@ app.get('/api/classement', async (req, res) => {
             }
             // Le seau de comparaison : sans lui, un temps d'Ascension à
             // trois étages battrait tous les autres.
-            const seau = req.query.seau;
+            //
+            // ⚠️ LE DEFAUT L EMPORTE SUR LA DEMANDE. Quand le mode a des
+            // réglages de référence (`defaut`), c'est eux et rien d'autre :
+            // le client ne peut pas demander « Rush en 120 », parce qu'il n'y
+            // a qu'un record de Rush. Seul BombAnime laisse choisir, ses
+            // séries étant des sujets et non des difficultés.
+            const seau = def.defaut !== null && def.defaut !== undefined
+                ? def.defaut : req.query.seau;
             if (def.seau && seau !== undefined && seau !== '' && seau !== 'tous') {
                 q = q.filter('reglages->>' + def.seau, 'eq', String(seau));
             }
@@ -3992,21 +4029,19 @@ app.get('/api/classement/seaux', async (req, res) => {
     if (req.query.demo && process.env.NODE_ENV !== 'production') {
         const m = String(req.query.mode || '');
         const def = CLASSEMENT_RECORDS[m];
-        if (!def || !def.seau) return res.json({ seaux: [] });
-        const faux = {
-            rush: ['60', '90', '120'],
-            bombanime: ['overall', 'naruto', 'onepiece', 'jujutsu'],
-            ascension: ['10', '15', '20'],
-            collect: ['4', '5', '6'],
-        }[m] || [];
+        // ⚠️ Rien pour les modes à réglages figés : la démo doit montrer la
+        // page telle qu'elle sera, pas une version avec des filtres en plus.
+        if (!def || !def.seau || def.defaut !== null) return res.json({ seaux: [] });
+        const faux = ['overall', 'prota', 'manganime', 'naruto', 'onepiece', 'bleach', 'dragonball', 'pokemon'];
         return res.json({
             nom: def.seauNom,
-            seaux: faux.map((v, i) => ({ valeur: v, parties: 40 - i * 9 })),
+            seaux: faux.map((v, i) => ({ valeur: v, parties: 60 - i * 7 })),
         });
     }
     const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
     const def = mode && CLASSEMENT_RECORDS[mode];
-    if (!def || !def.seau) return res.json({ seaux: [] });
+    // Un mode dont le seau est figé n'offre aucun filtre : il n'a qu'un record.
+    if (!def || !def.seau || def.defaut !== null) return res.json({ seaux: [] });
     try {
         const { data, error } = await supabase.from('parties_jouees')
             .select('reglages').eq('mode', mode).eq('avec_bots', false)
