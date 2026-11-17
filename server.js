@@ -3731,9 +3731,9 @@ const CLASSEMENT_RECORDS = {
                  seau: 'serie', defaut: null, seauNom: 'Série' },
     rush:      { libelle: 'Portraits trouvés d’affilée', sens: 'max', unite: '',
                  seau: 'duree', defaut: 60, precision: 'en 60 secondes' },
-    ascension: { libelle: 'Temps jusqu’au sommet', sens: 'min', unite: 's',
+    ascension: { libelle: 'Meilleur temps jusqu’au sommet', sens: 'min', unite: 's',
                  seau: 'etages', defaut: 15, precision: 'tour de 15 étages' },
-    collect:   { libelle: 'Temps pour gagner', sens: 'min', unite: 's',
+    collect:   { libelle: 'Meilleur temps pour gagner', sens: 'min', unite: 's',
                  seau: 'main', defaut: 4, precision: 'main de 4 cartes' },
 };
 

@@ -241,12 +241,24 @@ body::before {
 }
 .c-mesure em {
     font-style: normal;
-    margin-left: 0.6rem;
+    /* ⚠️ 1,1rem : le nom de la mesure et sa precision sont tous deux en
+       capitales espacees, donc l oeil ne voit pas ou l un finit et ou
+       l autre commence. A 0,6rem on lisait « PERSONNAGES TROUVES LE PLUS
+       ELEVE » d un seul tenant. C est l ecart qui fait la ponctuation. */
+    margin-left: 1.1rem;
     font-size: 0.64rem;
     font-weight: 600;
     letter-spacing: 0.1em;
     color: var(--c-faible);
 }
+
+/* ⚠️ LES SERIES EN CAPITALES, et SEULEMENT elles. Ce sont des identifiants
+   techniques — `overall`, `onepiece`, `dragonball` — pas des noms ecrits
+   pour etre lus : en bas-de-casse ils ressemblaient a des mots qu on aurait
+   oublie de mettre en forme. Les capitales les assument comme des etiquettes.
+   Le selecteur vise `.serie` et non toutes les puces : les modes, eux, ont
+   de vrais noms qui se lisent tres bien en casse normale. */
+.c-puce.serie { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.68rem; }
 
 /* ════════════════════════════════════════════════════════════
    LE PODIUM
@@ -264,9 +276,13 @@ body::before {
     grid-template-columns: repeat(3, 1fr);
     align-items: end;
     gap: 0.7rem;
-    /* ⚠️ L avatar déborde du haut de chaque carte : sans cette marge il
-       passerait sous la ligne de mesure. Elle vaut sa moitié. */
-    margin: 2.4rem 0 1.4rem;
+    /* ⚠️ 3,4rem, ET LA MOITIE NE SE VOIT PAS. L avatar déborde du haut de
+       chaque carte de la moitié de sa hauteur — 2,2rem environ. Sur les
+       3,4rem de marge, il n en reste donc qu'un peu plus d'un entre la
+       ligne de mesure et le sommet des portraits. A 2,4 il n en restait
+       qu'un cinquième, et la ligne paraissait collée au podium alors que la
+       marge, elle, semblait généreuse dans la feuille. */
+    margin: 3.4rem 0 1.4rem;
 }
 .c-marche {
     position: relative;

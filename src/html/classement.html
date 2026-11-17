@@ -51,8 +51,8 @@
             <nav class="c-onglets" role="tablist" aria-label="Les classements">
                 <button class="c-onglet" role="tab" data-type="rang">Rang</button>
                 <button class="c-onglet" role="tab" data-type="victoires">Victoires</button>
-                <button class="c-onglet" role="tab" data-type="serie">Streak</button>
                 <button class="c-onglet" role="tab" data-type="records">Records</button>
+                <button class="c-onglet" role="tab" data-type="serie">Streak</button>
                 <button class="c-onglet" role="tab" data-type="parties">Parties</button>
                 <button class="c-onglet" role="tab" data-type="progression">Du mois</button>
             </nav>
@@ -296,7 +296,7 @@ function peindreFiltres() {
 
     if (def.periodes) {
         h += '<span class="c-groupe"><span class="c-filtres-nom">Période</span>'
-           + '<button class="c-puce" data-periode="all" aria-pressed="' + (etat.periode === 'all') + '">Toujours</button>'
+           + '<button class="c-puce" data-periode="all" aria-pressed="' + (etat.periode === 'all') + '">All time</button>'
            + '<button class="c-puce" data-periode="mois" aria-pressed="' + (etat.periode === 'mois') + '">30 jours</button>'
            + '</span>';
     }
@@ -305,12 +305,16 @@ function peindreFiltres() {
     // vient du serveur — « Durée » pour Rush, « Série » pour BombAnime,
     // « Étages » pour Ascension. Les modes qui n'ont pas de réglage
     // comparable, comme le Classique, n'affichent rien du tout.
-    if (def.modeObligatoire && seauxConnus.liste.length > 1) {
-        h += '<span class="c-groupe"><span class="c-filtres-nom">' + echappe(seauxConnus.nom || 'Réglage') + '</span>'
-           + '<button class="c-puce" data-seau="tous" aria-pressed="' + (etat.seau === 'tous') + '">Tous</button>';
+    // ⚠️ PAS DE « TOUS » ICI. Il en avait un, et il ne voulait rien dire :
+    // mélanger les personnages trouvés en Naruto et ceux trouvés toutes
+    // séries confondues ne donne pas un record, ça donne un tas. Chaque
+    // série est un sujet, et chacune a le sien. On en choisit donc toujours
+    // une — la plus jouée par défaut.
+    if (def.modeObligatoire && seauxConnus.liste.length) {
+        h += '<span class="c-groupe"><span class="c-filtres-nom">' + echappe(seauxConnus.nom || 'Réglage') + '</span>';
         for (var j = 0; j < seauxConnus.liste.length; j++) {
             var s = seauxConnus.liste[j];
-            h += '<button class="c-puce" data-seau="' + echappe(s.valeur) + '" '
+            h += '<button class="c-puce serie" data-seau="' + echappe(s.valeur) + '" '
                + 'aria-pressed="' + (etat.seau === String(s.valeur)) + '">' + echappe(s.valeur) + '</button>';
         }
         h += '</span>';
@@ -417,6 +421,15 @@ async function charger() {
             var js = await rs.json();
             if (monTour !== requeteEnCours) return;
             seauxConnus = { nom: js.nom, liste: js.seaux || [] };
+            // ⚠️ Il n'y a plus de « Tous » : il faut donc qu'une série soit
+            // choisie avant le premier affichage, sinon le serveur rendrait
+            // toutes les parties mêlées — exactement ce qu'on vient de
+            // retirer. La première de la liste est la plus jouée, le serveur
+            // les trie par nombre de parties.
+            if (seauxConnus.liste.length
+                && !seauxConnus.liste.some(function (s) { return String(s.valeur) === etat.seau; })) {
+                etat.seau = String(seauxConnus.liste[0].valeur);
+            }
         } catch (e) { seauxConnus = { nom: null, liste: [] }; }
         peindreFiltres();
     }
