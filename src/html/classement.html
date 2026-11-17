@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement — ShonenMaster</title>
+    <meta name="description"
+        content="Le classement de ShonenMaster : les meilleurs rangs, les taux de victoire par mode, les séries et les records de chaque jeu.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Poppins:wght@400;600;700&family=Bebas+Neue&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/classement.css">
+
+    <!-- ⚠️ LES RANGS SONT CHARGÉS, JAMAIS RECOPIÉS. Les huit paliers, leurs
+         couleurs et leurs divisions vivent dans `niveaux.js`, et le jeu les
+         lit au même endroit : une liste recopiée ici aurait divergé au
+         premier palier ajouté, et cette page se serait mise à mentir sans
+         que rien ne le signale. Même chose pour les titres portés.
+         Ni l'un ni l'autre n'a d'`import` — une balise suffit, ils posent
+         leurs constantes dans la page. -->
+    <script src="/niveaux.js"></script>
+    <script src="/titres.js"></script>
+</head>
+
+<body>
+    <main class="c-page">
+
+        <a class="c-retour" href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Retour au jeu
+        </a>
+
+        <h1 class="c-titre">Classement</h1>
+        <p class="c-chapeau">
+            Les comptes figurent ici à partir de <b>dix parties jouées</b>, tous modes confondus.
+            À égalité, le premier à être arrivé là passe devant.
+        </p>
+
+        <!-- Quel tableau. ⚠️ `role="tablist"` et `aria-selected` : au clavier
+             et au lecteur d'écran, ce sont des onglets, pas six boutons
+             indépendants. -->
+        <nav class="c-onglets" role="tablist" aria-label="Les classements">
+            <button class="c-onglet" role="tab" data-type="rang">Rang</button>
+            <button class="c-onglet" role="tab" data-type="victoires">Victoires</button>
+            <button class="c-onglet" role="tab" data-type="serie">Séries</button>
+            <button class="c-onglet" role="tab" data-type="records">Records</button>
+            <button class="c-onglet" role="tab" data-type="parties">Parties</button>
+            <button class="c-onglet" role="tab" data-type="progression">Du mois</button>
+        </nav>
+
+        <!-- Les filtres se remplissent selon l'onglet : voir `peindreFiltres`.
+             ⚠️ On n'offre jamais un filtre qui ne rendrait rien — les seaux
+             de comparaison sont fabriqués depuis les parties réellement
+             jouées, pas écrits en dur. -->
+        <div class="c-filtres" id="filtres"></div>
+
+        <div class="c-mesure">
+            <span id="mesure">—</span>
+            <span id="compte"></span>
+        </div>
+
+        <div id="tableau"></div>
+
+        <p class="c-note">
+            <b>Le classement ne reprend pas l'historique.</b> Il se construit à partir des parties
+            terminées depuis sa mise en place : un compte peut donc avoir plus de parties sur son
+            profil qu'ici. Le <b>rang</b>, lui, suit l'expérience de toute la vie du compte — c'est
+            celui que le joueur porte.
+            <br>
+            Les <b>records</b> ne comptent pas les parties où un bot était présent, et se comparent
+            à réglages égaux : un temps d'Ascension à cinq étages ne se mesure pas à un temps à
+            quinze.
+        </p>
+
+    </main>
+
+<script>
+// ⚠️ TOUT DANS UNE IIFE. Une `const` au premier niveau d'un script de page
+// vit dans l'environnement lexical GLOBAL : `CHIFFRES`, déclaré comme ça
+// dans une autre page, est déjà entré en collision avec `niveaux.js` et a
+// tué le script sans un mot dans la console. Ici deux fichiers sont chargés
+// avant nous — `niveaux.js` et `titres.js` —, le risque est double.
+(function () {
+'use strict';
+
+var MODES = [
+    { id: null,        nom: 'Tous' },
+    { id: 'classic',   nom: 'Classique' },
+    { id: 'rivalry',   nom: 'Rivalité' },
+    { id: 'bombanime', nom: 'BombAnime' },
+    { id: 'rush',      nom: 'Rush' },
+    { id: 'ascension', nom: 'Ascension' },
+    { id: 'collect',   nom: 'Collect' },
+];
+
+// Ce que chaque onglet mesure, et comment l'écrire.
+//
+// ⚠️ `modes` dit si le tableau se décline par mode, et `nul` ce qu'on montre
+// quand il est vide. Les six onglets partagent tout le reste — le podium, la
+// liste, les filtres — et n'ont que cette table pour différer. Six fonctions
+// auraient divergé à la première retouche.
+var TABLEAUX = {
+    rang: {
+        titre: 'Expérience totale',
+        modes: false, periodes: false,
+        format: function (v) { return fmt(v) + ' <small>XP</small>'; },
+        appoint: function (l) { return l.parties ? fmt(l.parties) + ' parties' : 'aucune partie'; },
+        vide: 'Aucun compte pour le moment.',
+    },
+    victoires: {
+        titre: 'Taux de victoire',
+        modes: true, periodes: false,
+        format: function (v) { return v + ' <small>%</small>'; },
+        appoint: function (l) { return l.victoires + ' / ' + l.parties; },
+        vide: 'Personne n’a encore atteint dix parties.',
+    },
+    serie: {
+        titre: 'Plus longue série de victoires',
+        modes: true, periodes: false,
+        format: function (v) { return fmt(v) + ' <small>d’affilée</small>'; },
+        appoint: function (l) { return l.victoires + ' victoire' + (l.victoires > 1 ? 's' : ''); },
+        vide: 'Aucune série enregistrée pour le moment.',
+    },
+    parties: {
+        titre: 'Parties jouées',
+        modes: true, periodes: false,
+        format: function (v) { return fmt(v) + ' <small>parties</small>'; },
+        appoint: function (l) { return l.victoires + ' gagnée' + (l.victoires > 1 ? 's' : ''); },
+        vide: 'Personne n’a encore atteint dix parties.',
+    },
+    progression: {
+        titre: 'Expérience des 30 derniers jours',
+        modes: false, periodes: false,
+        format: function (v) { return '+' + fmt(v) + ' <small>XP</small>'; },
+        appoint: function (l) { return fmt(l.parties) + ' parties au total'; },
+        vide: 'Aucune partie sur les trente derniers jours.',
+    },
+    records: {
+        titre: 'Records',
+        modes: true, periodes: true, modeObligatoire: true,
+        // Rempli par la réponse du serveur : le libellé et l'unité dépendent
+        // du mode, et c'est le serveur qui en est la source.
+        format: null,
+        appoint: null,
+        vide: 'Aucun record pour ce réglage.',
+    },
+};
+
+var etat = { type: 'rang', mode: null, periode: 'all', seau: 'tous' };
+var seauxConnus = { nom: null, liste: [] };
+var requeteEnCours = 0;
+
+function $(id) { return document.getElementById(id); }
+function fmt(n) { return (Number(n) || 0).toLocaleString('fr-FR'); }
+function echappe(s) {
+    return String(s === null || s === undefined ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Le rang d'un joueur, depuis son xp. ⚠️ Calculé ICI et non envoyé par le
+// serveur : les deux côtés lisent le même `niveaux.js`, donc un palier
+// ajouté là-bas se voit ici sans toucher à l'API.
+function rangDe(xp) {
+    try { return titrePourNiveau(niveauPourXp(xp)); }
+    catch (e) { return { nom: '', couleur: '#8f8f99' }; }
+}
+
+// Le titre porté, composé depuis le catalogue partagé.
+function titreDe(l) {
+    try {
+        if (!l.titrePrefixe && !l.titreSuffixe) return '';
+        return composerTitre(l.titrePrefixe, l.titreSuffixe) || '';
+    } catch (e) { return ''; }
+}
+
+function avatar(l) {
+    // ⚠️ `onerror` vide l'image plutôt que de laisser l'icône de lien cassé :
+    // un avatar supprimé du dossier ne doit pas trouer la ligne.
+    var src = l.avatar ? '/' + encodeURIComponent(l.avatar) : '/novice.png';
+    return '<img class="c-ava" src="' + src + '" alt="" loading="lazy" '
+         + 'onerror="this.style.visibility=\'hidden\'">';
+}
+
+// ───── Les filtres ─────
+function peindreFiltres() {
+    var def = TABLEAUX[etat.type];
+    var h = '';
+
+    if (def.modes) {
+        h += '<span class="c-filtres-nom">Mode</span>';
+        for (var i = 0; i < MODES.length; i++) {
+            var m = MODES[i];
+            // ⚠️ « Tous » disparaît pour les records : un record n'a de sens
+            // que dans son mode. Mélanger un temps d'Ascension et un nombre
+            // de personnages donnerait un tableau qui ne veut rien dire.
+            if (def.modeObligatoire && m.id === null) continue;
+            h += '<button class="c-puce" data-mode="' + (m.id || '') + '" '
+               + 'aria-pressed="' + (etat.mode === m.id) + '">' + m.nom + '</button>';
+        }
+    }
+
+    if (def.periodes) {
+        h += '<span class="c-sep"></span><span class="c-filtres-nom">Période</span>'
+           + '<button class="c-puce" data-periode="all" aria-pressed="' + (etat.periode === 'all') + '">Toujours</button>'
+           + '<button class="c-puce" data-periode="mois" aria-pressed="' + (etat.periode === 'mois') + '">30 jours</button>';
+    }
+
+    if (def.modeObligatoire && seauxConnus.liste.length > 1) {
+        h += '<span class="c-sep"></span><span class="c-filtres-nom">' + echappe(seauxConnus.nom || 'Réglage') + '</span>'
+           + '<button class="c-puce" data-seau="tous" aria-pressed="' + (etat.seau === 'tous') + '">Tous</button>';
+        for (var j = 0; j < seauxConnus.liste.length; j++) {
+            var s = seauxConnus.liste[j];
+            h += '<button class="c-puce" data-seau="' + echappe(s.valeur) + '" '
+               + 'aria-pressed="' + (etat.seau === String(s.valeur)) + '">' + echappe(s.valeur) + '</button>';
+        }
+    }
+
+    $('filtres').innerHTML = h;
+    $('filtres').style.display = h ? '' : 'none';
+}
+
+// ───── Le tableau ─────
+function marche(l, place, def) {
+    var r = rangDe(l.xp);
+    var t = titreDe(l);
+    return '<div class="c-marche p' + place + '" style="--teinte:' + r.couleur + '">'
+        + '<span class="c-place">#' + place + '</span>'
+        + avatar(l)
+        + '<span class="c-ident">'
+          + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
+          + '<span class="c-rang">' + echappe(r.nom) + (t ? ' · ' + echappe(t) : '') + '</span>'
+        + '</span>'
+        + '<span class="c-val">' + def.format(l.valeur) + '</span>'
+        + '</div>';
+}
+
+function ligne(l, place, def) {
+    var r = rangDe(l.xp);
+    var appoint = def.appoint ? def.appoint(l) : '';
+    return '<li class="c-ligne" style="--teinte:' + r.couleur + '">'
+        + '<span class="c-num">' + place + '</span>'
+        + avatar(l)
+        + '<span class="c-ident">'
+          + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
+          + '<span class="c-sous"><b>' + echappe(r.nom) + '</b>' + (appoint ? ' · ' + echappe(appoint) : '') + '</span>'
+        + '</span>'
+        + '<span class="c-droite"><span class="c-val">' + def.format(l.valeur) + '</span></span>'
+        + '</li>';
+}
+
+function peindre(lignes, def) {
+    var h = '';
+    var podium = lignes.slice(0, 3);
+    var reste = lignes.slice(3);
+
+    if (podium.length) {
+        h += '<div class="c-podium">';
+        for (var i = 0; i < podium.length; i++) h += marche(podium[i], i + 1, def);
+        h += '</div>';
+    }
+    if (reste.length) {
+        h += '<ol class="c-liste">';
+        for (var j = 0; j < reste.length; j++) h += ligne(reste[j], j + 4, def);
+        h += '</ol>';
+    }
+    $('tableau').innerHTML = h;
+}
+
+function etatVide(titre, texte) {
+    $('tableau').innerHTML = '<div class="c-etat"><strong>' + echappe(titre) + '</strong>'
+        + '<p>' + texte + '</p></div>';
+}
+
+function squelette() {
+    var h = '<div class="c-squelette">';
+    for (var i = 0; i < 6; i++) h += '<span></span>';
+    $('tableau').innerHTML = h + '</div>';
+}
+
+// ───── Aller chercher ─────
+async function charger() {
+    var def = TABLEAUX[etat.type];
+    var monTour = ++requeteEnCours;
+    squelette();
+    $('compte').textContent = '';
+
+    // Les seaux d'abord : ils changent la barre de filtres, et il vaut mieux
+    // la peindre une fois complète que la voir s'allonger sous le curseur.
+    if (def.modeObligatoire) {
+        try {
+            var rs = await fetch('/api/classement/seaux?mode=' + encodeURIComponent(etat.mode || ''));
+            var js = await rs.json();
+            if (monTour !== requeteEnCours) return;
+            seauxConnus = { nom: js.nom, liste: js.seaux || [] };
+        } catch (e) { seauxConnus = { nom: null, liste: [] }; }
+        peindreFiltres();
+    }
+
+    var url = '/api/classement?type=' + encodeURIComponent(etat.type)
+        + (etat.mode ? '&mode=' + encodeURIComponent(etat.mode) : '')
+        + (def.periodes ? '&periode=' + encodeURIComponent(etat.periode) : '')
+        + (def.modeObligatoire ? '&seau=' + encodeURIComponent(etat.seau) : '');
+
+    try {
+        var rep = await fetch(url);
+        var data = await rep.json();
+        // ⚠️ Une réponse qui arrive APRÈS qu'on a changé d'onglet ne doit
+        // rien peindre : sans ce garde-fou, cliquer vite sur trois onglets
+        // laisse le plus LENT gagner, et le tableau affiché ne correspond
+        // plus à l'onglet allumé.
+        if (monTour !== requeteEnCours) return;
+
+        if (data.vuesAbsentes) {
+            return etatVide('Le classement n’est pas encore branché',
+                'Les vues de la base n’ont pas été créées. Rien n’est perdu : les parties sont enregistrées, le tableau apparaîtra dès qu’elles le seront.');
+        }
+        if (data.actif === false) {
+            return etatVide('Les comptes ne sont pas activés',
+                'Le classement suit les comptes, et il n’y en a pas sur ce serveur.');
+        }
+
+        var lignes = data.lignes || [];
+        $('compte').textContent = lignes.length
+            ? lignes.length + (lignes.length > 1 ? ' joueurs' : ' joueur') : '';
+
+        // Les records portent leur propre libellé et leur sens : c'est le
+        // serveur qui les donne, parce que c'est lui qui les décide.
+        if (etat.type === 'records') {
+            var rec = data.record || {};
+            def.format = function (v) {
+                return fmt(v) + (rec.unite ? ' <small>' + rec.unite + '</small>' : '');
+            };
+            def.appoint = null;
+            $('mesure').textContent = (rec.libelle || 'Record')
+                + (rec.sens === 'min' ? ' — le plus court' : ' — le plus élevé');
+        } else {
+            $('mesure').textContent = def.titre;
+        }
+
+        if (!lignes.length) {
+            return etatVide('Rien à montrer pour l’instant',
+                echappe(def.vide) + ' Le classement se remplit à chaque partie terminée par un compte connecté.');
+        }
+        peindre(lignes, def);
+    } catch (e) {
+        if (monTour !== requeteEnCours) return;
+        etatVide('Classement indisponible', 'Le serveur n’a pas répondu. Réessaie dans un instant.');
+    }
+}
+
+// ───── Les clics ─────
+function choisirOnglet(type) {
+    etat.type = type;
+    var def = TABLEAUX[type];
+    // ⚠️ Un onglet qui EXIGE un mode en prend un par défaut : sans ça
+    // « Records » s'ouvrirait sur « Tous », que le serveur refuse, et la
+    // page paraîtrait cassée au premier clic.
+    if (def.modeObligatoire && !etat.mode) etat.mode = 'bombanime';
+    if (!def.modes) etat.mode = null;
+    etat.seau = 'tous';
+    seauxConnus = { nom: null, liste: [] };
+
+    var ongl = document.querySelectorAll('.c-onglet');
+    for (var i = 0; i < ongl.length; i++) {
+        ongl[i].setAttribute('aria-selected', String(ongl[i].dataset.type === type));
+    }
+    peindreFiltres();
+    charger();
+}
+
+document.querySelector('.c-onglets').addEventListener('click', function (e) {
+    var b = e.target.closest('.c-onglet');
+    if (b) choisirOnglet(b.dataset.type);
+});
+
+$('filtres').addEventListener('click', function (e) {
+    var b = e.target.closest('.c-puce');
+    if (!b) return;
+    if (b.dataset.mode !== undefined) {
+        etat.mode = b.dataset.mode || null;
+        etat.seau = 'tous';
+        seauxConnus = { nom: null, liste: [] };
+    } else if (b.dataset.periode !== undefined) {
+        etat.periode = b.dataset.periode;
+    } else if (b.dataset.seau !== undefined) {
+        etat.seau = b.dataset.seau;
+    }
+    peindreFiltres();
+    charger();
+});
+
+choisirOnglet('rang');
+})();
+</script>
+</body>
+
+</html>

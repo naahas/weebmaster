@@ -3661,6 +3661,211 @@ app.get('/rangs', (req, res) => {
     res.sendFile(__dirname + '/src/html/rangs.html');
 });
 
+app.get('/classement', (req, res) => {
+    res.sendFile(__dirname + '/src/html/classement.html');
+});
+
+// ════════════════════════════════════════════════════════════════
+// 🏆 LE CLASSEMENT (docs/classement.md, docs/classement-vues.sql)
+// ════════════════════════════════════════════════════════════════
+// Une seule route pour tous les tableaux : le type, le mode et la période
+// sont des paramètres. Six routes auraient partagé le même plancher, le
+// même départage et la même mise en forme — et auraient divergé à la
+// première retouche de l'une d'elles.
+//
+// ⚠️ LE NAVIGATEUR NE TOUCHE JAMAIS LA BASE. Les vues sont lues par
+// `service_role`, depuis ici. C'est aussi ce qui permet d'appliquer les
+// règles de lecture — plancher, bots, départage — à un seul endroit.
+
+// Le plancher d'apparition, TOUS MODES CONFONDUS, comme en v1. Sans lui, un
+// joueur à une partie et une victoire afficherait 100 % et dominerait le
+// tableau : c'est le défaut le plus courant des classements, et il le vide
+// de son sens dès la première semaine.
+const CLASSEMENT_MIN_PARTIES = parseInt(process.env.CLASSEMENT_MIN_PARTIES, 10) || 10;
+const CLASSEMENT_LIGNES = 50;
+
+// ⚠️ Les modes classables ne sont pas tous les modes. `choice` n'est pas
+// sorti, et `codanime` n'a pas de classement individuel défendable — la
+// performance y est collective, un palmarès personnel y mentirait.
+const CLASSEMENT_MODES = ['classic', 'rivalry', 'bombanime', 'rush', 'ascension', 'collect'];
+
+// 🏅 Le record de chaque mode : ce qu'on y mesure, dans quel sens, et le
+// réglage qui fait le seau de comparaison.
+//
+// ⚠️ LE SENS EST ICI ET NULLE PART AILLEURS. La colonne `score` ne le porte
+// pas : on cherche le plus GRAND en BombAnime et en Rush, le plus PETIT en
+// Ascension et en Collect, où le record est un temps. Écrit une fois, lu par
+// la requête et par la page.
+const CLASSEMENT_RECORDS = {
+    bombanime: { libelle: 'Personnages trouvés', sens: 'max', unite: '', seau: 'serie', seauNom: 'Série' },
+    rush:      { libelle: 'Plus longue série',   sens: 'max', unite: '', seau: 'duree', seauNom: 'Durée' },
+    classic:   { libelle: 'Bonnes réponses d’affilée', sens: 'max', unite: '', seau: null, seauNom: null },
+    rivalry:   { libelle: 'Bonnes réponses d’affilée', sens: 'max', unite: '', seau: null, seauNom: null },
+    ascension: { libelle: 'Temps jusqu’au sommet', sens: 'min', unite: 's', seau: 'etages', seauNom: 'Étages' },
+    collect:   { libelle: 'Temps pour gagner',   sens: 'min', unite: 's', seau: 'main', seauNom: 'Main' },
+};
+
+// Ce qu'on renvoie d'un compte. ⚠️ Pas l'identifiant : il n'a rien à faire
+// dans une page publique, et le pseudo suffit à afficher une ligne.
+function ligneDeClassement(r, valeur) {
+    return {
+        pseudo: r.pseudo,
+        avatar: r.avatar || null,
+        xp: r.xp || 0,
+        titrePrefixe: r.titre_prefixe || null,
+        titreSuffixe: r.titre_suffixe || null,
+        parties: r.parties || 0,
+        victoires: r.victoires || 0,
+        taux: r.taux === null || r.taux === undefined ? null : Number(r.taux),
+        serie: r.meilleure_serie || 0,
+        valeur,
+    };
+}
+
+app.get('/api/classement', async (req, res) => {
+    if (!comptes.ACTIF) return res.json({ actif: false, lignes: [] });
+
+    const type = String(req.query.type || 'rang');
+    const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
+    // `mois` = les trente derniers jours glissants. ⚠️ Et non le mois
+    // calendaire : un classement qui se vide le 1er à minuit n'intéresse
+    // plus personne le 2.
+    const periode = req.query.periode === 'mois' ? 'mois' : 'all';
+
+    try {
+        // ── Les records : lus sur les parties, pas sur une vue ──
+        // ⚠️ Ici on veut UNE ligne, celle de la meilleure performance, pas
+        // un cumul. Et c'est le seul tableau où `avec_bots` intervient : la
+        // règle est « pas de record dans une partie avec bot », et elle
+        // s'applique à la lecture — la ligne, elle, a été écrite quand même.
+        if (type === 'records') {
+            const m = mode || 'bombanime';
+            const def = CLASSEMENT_RECORDS[m];
+            if (!def) return res.json({ lignes: [], seaux: [] });
+
+            let q = supabase.from('parties_jouees')
+                .select('score, reglages, cree_le, comptes!inner(pseudo, avatar, titre_prefixe, titre_suffixe, xp)')
+                .eq('mode', m)
+                .eq('avec_bots', false)
+                .not('score', 'is', null);
+            if (periode === 'mois') {
+                q = q.gte('cree_le', new Date(Date.now() - 30 * 86400000).toISOString());
+            }
+            // Le seau de comparaison : sans lui, un temps d'Ascension à
+            // trois étages battrait tous les autres.
+            const seau = req.query.seau;
+            if (def.seau && seau !== undefined && seau !== '' && seau !== 'tous') {
+                q = q.filter('reglages->>' + def.seau, 'eq', String(seau));
+            }
+            // ⚠️ `cree_le` en SECOND critère, toujours croissant : à score
+            // égal, le premier à l'avoir atteint passe devant.
+            q = q.order('score', { ascending: def.sens === 'min' })
+                 .order('cree_le', { ascending: true })
+                 .limit(200);
+
+            const { data, error } = await q;
+            if (error) throw error;
+
+            // ⚠️ UN SEUL RECORD PAR JOUEUR. Sans ce tamis, celui qui joue
+            // beaucoup occuperait les dix premières lignes avec ses dix
+            // meilleures parties — un palmarès de joueurs, pas de parties.
+            const vus = new Set();
+            const lignes = [];
+            for (const r of data || []) {
+                const c = r.comptes || {};
+                if (!c.pseudo || vus.has(c.pseudo)) continue;
+                vus.add(c.pseudo);
+                lignes.push(Object.assign(
+                    ligneDeClassement({ pseudo: c.pseudo, avatar: c.avatar, xp: c.xp,
+                                        titre_prefixe: c.titre_prefixe, titre_suffixe: c.titre_suffixe },
+                                       Number(r.score)),
+                    { le: r.cree_le, reglages: r.reglages || {} }));
+                if (lignes.length >= CLASSEMENT_LIGNES) break;
+            }
+            return res.json({ lignes, record: def });
+        }
+
+        // ── Les tableaux cumulés, lus sur les vues ──
+        const vue = mode ? 'v_classement_mode' : 'v_classement';
+        let q = supabase.from(vue).select('*');
+        if (mode) q = q.eq('mode', mode);
+
+        // ⚠️ LE PLANCHER PORTE SUR LE TOTAL, jamais sur le mode. Dix parties
+        // de BombAnime pour figurer au classement de BombAnime enfermerait
+        // chaque tableau dans ses habitués ; la règle dit « dix parties »,
+        // pas « dix parties de ce mode ».
+        const colonneTotal = mode ? 'parties_total' : 'parties';
+        // Le classement général par rang échappe au plancher : il mesure
+        // l'xp d'une vie de compte, pas une moyenne — rien n'y est faussé
+        // par le petit nombre.
+        if (type !== 'rang') q = q.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
+
+        const tris = {
+            rang:        [['xp', false]],
+            victoires:   [['taux', false], ['victoires', false]],
+            parties:     [['parties', false]],
+            serie:       [['meilleure_serie', false]],
+            progression: [['xp_30j', false]],
+        };
+        for (const [col, asc] of (tris[type] || tris.rang)) {
+            q = q.order(col, { ascending: asc, nullsFirst: false });
+        }
+        q = q.order('premiere_partie', { ascending: true, nullsFirst: false }).limit(CLASSEMENT_LIGNES);
+
+        const { data, error } = await q;
+        if (error) throw error;
+
+        const valeurs = {
+            rang:        (r) => r.xp || 0,
+            victoires:   (r) => (r.taux === null ? 0 : Number(r.taux)),
+            parties:     (r) => r.parties || 0,
+            serie:       (r) => r.meilleure_serie || 0,
+            progression: (r) => r.xp_30j || 0,
+        };
+        const valeur = valeurs[type] || valeurs.rang;
+        res.json({ lignes: (data || []).map((r) => ligneDeClassement(r, valeur(r))) });
+    } catch (e) {
+        // ⚠️ Les vues manquantes se disent, et une seule fois : sans ça on
+        // cherche longtemps pourquoi la page est vide.
+        if (e && (e.code === '42P01' || e.code === 'PGRST205' || /v_classement/.test(e.message || ''))) {
+            console.error('🚨 Vues du classement absentes — passe docs/classement-vues.sql.');
+            return res.json({ lignes: [], vuesAbsentes: true });
+        }
+        console.error('❌ Classement :', e.message);
+        res.status(500).json({ error: 'Classement indisponible' });
+    }
+});
+
+// Les seaux de comparaison réellement joués pour un mode : la page n'offre
+// que des filtres qui rendent quelque chose.
+//
+// ⚠️ Fabriqués DEPUIS LES PARTIES et non écrits en dur. Une liste figée
+// afficherait « 30 s » pour Rush des mois après sa disparition du barème, et
+// manquerait le réglage ajouté la veille.
+app.get('/api/classement/seaux', async (req, res) => {
+    const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
+    const def = mode && CLASSEMENT_RECORDS[mode];
+    if (!def || !def.seau) return res.json({ seaux: [] });
+    try {
+        const { data, error } = await supabase.from('parties_jouees')
+            .select('reglages').eq('mode', mode).eq('avec_bots', false)
+            .not('score', 'is', null).limit(1000);
+        if (error) throw error;
+        const vus = new Map();
+        for (const r of data || []) {
+            const v = r.reglages && r.reglages[def.seau];
+            if (v === undefined || v === null || v === '') continue;
+            vus.set(String(v), (vus.get(String(v)) || 0) + 1);
+        }
+        res.json({
+            nom: def.seauNom,
+            seaux: [...vus.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ valeur: v, parties: n })),
+        });
+    } catch (e) {
+        res.json({ seaux: [] });
+    }
+});
+
 // 📊 LES DEUX SEUILS PAR MODE, pour la page des rangs.
 //
 // ⚠️ SERVIS PLUTOT QU ECRITS DANS LA PAGE. `XP_MODES` vit dans
