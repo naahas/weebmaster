@@ -3897,6 +3897,86 @@ app.get('/api/classement', async (req, res) => {
     }
 });
 
+// 🔎 LA PLACE D UN JOUEUR, où qu'il soit dans le classement.
+//
+// ⚠️ CALCULEE EN BASE, PAS EN COMPTANT LES LIGNES RENDUES. La page n'en
+// reçoit que cinquante : chercher le 312e dedans ne le trouverait jamais, et
+// l'absence se lirait comme « ce joueur n'existe pas ». On compte donc
+// combien le devancent, ce qui est une seule requête quel que soit son rang.
+//
+// Elle sert à deux choses d'un coup — la recherche d'un joueur, et la barre
+// du bas qui montre au visiteur sa propre place. Deux routes auraient
+// partagé exactement ce calcul.
+app.get('/api/classement/joueur', async (req, res) => {
+    const pseudo = String(req.query.pseudo || '').trim();
+    if (!pseudo) return res.json({ trouve: false });
+
+    const type = String(req.query.type || 'rang');
+    const mode = CLASSEMENT_MODES.includes(String(req.query.mode)) ? String(req.query.mode) : null;
+
+    if (req.query.demo && process.env.NODE_ENV !== 'production') {
+        const faux = classementDeDemo(type);
+        const i = faux.findIndex((l) => l.pseudo.toLowerCase() === pseudo.toLowerCase());
+        if (i < 0) return res.json({ trouve: false });
+        return res.json({ trouve: true, position: i + 1, total: faux.length, ligne: faux[i] });
+    }
+    if (!comptes.ACTIF) return res.json({ trouve: false });
+
+    // ⚠️ Les records sont exclus : ils classent des PARTIES, pas des joueurs.
+    // « Ta place » n'y veut rien dire — on y figure autant de fois qu'on a
+    // joué, et le tableau n'en garde que la meilleure.
+    if (type === 'records') return res.json({ trouve: false, horsSujet: true });
+
+    const colonnes = { rang: 'xp', victoires: 'taux', parties: 'parties',
+                       serie: 'meilleure_serie', progression: 'xp_30j' };
+    const col = colonnes[type] || 'xp';
+    const vue = mode ? 'v_classement_mode' : 'v_classement';
+    const colonneTotal = mode ? 'parties_total' : 'parties';
+
+    try {
+        // ⚠️ `ilike` et non `eq` : on cherche « Nahass » comme « nahass ».
+        let q = supabase.from(vue).select('*').ilike('pseudo', pseudo).limit(1);
+        if (mode) q = q.eq('mode', mode);
+        const { data, error } = await q;
+        if (error) throw error;
+        if (!data || !data[0]) return res.json({ trouve: false });
+        const moi = data[0];
+
+        // ⚠️ Le joueur sous le plancher n'a pas de place : il n'est dans
+        // aucun tableau. On le dit, plutôt que de lui donner un rang qu'il
+        // ne verrait nulle part.
+        if (type !== 'rang' && (moi[colonneTotal] || 0) < CLASSEMENT_MIN_PARTIES) {
+            return res.json({
+                trouve: true, souslePlancher: true,
+                parties: moi[colonneTotal] || 0, manque: CLASSEMENT_MIN_PARTIES - (moi[colonneTotal] || 0),
+            });
+        }
+
+        let c = supabase.from(vue).select('*', { count: 'exact', head: true }).gt(col, moi[col] || 0);
+        let t = supabase.from(vue).select('*', { count: 'exact', head: true });
+        if (mode) { c = c.eq('mode', mode); t = t.eq('mode', mode); }
+        if (type !== 'rang') {
+            c = c.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
+            t = t.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
+        }
+        const [devant, total] = await Promise.all([c, t]);
+
+        const valeurs = {
+            rang: (r) => r.xp || 0, victoires: (r) => (r.taux === null ? 0 : Number(r.taux)),
+            parties: (r) => r.parties || 0, serie: (r) => r.meilleure_serie || 0,
+            progression: (r) => r.xp_30j || 0,
+        };
+        res.json({
+            trouve: true,
+            position: (devant.count || 0) + 1,
+            total: total.count || 0,
+            ligne: ligneDeClassement(moi, (valeurs[type] || valeurs.rang)(moi)),
+        });
+    } catch (e) {
+        res.json({ trouve: false });
+    }
+});
+
 // Les seaux de comparaison réellement joués pour un mode : la page n'offre
 // que des filtres qui rendent quelque chose.
 //

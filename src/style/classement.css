@@ -297,26 +297,108 @@ body::before {
     box-shadow: 0 0.4rem 1.4rem rgba(0, 0, 0, 0.45);
 }
 
-/* ── L EFFET DU PREMIER : une lueur qui tourne derrière la carte ──
-   ⚠️ DERRIERE, et non sur le bord : un contour animé attire l oeil sur le
-   CADRE, c est-à-dire sur la boîte plutôt que sur le joueur. Une lueur
-   diffuse qui tourne lentement fait respirer la carte sans jamais devenir
-   la chose qu on regarde.
-   ⚠️ DOUZE SECONDES. À deux, on suit la lumière des yeux et l on ne lit
-   plus le nom. À douze, on ne la voit pas tourner — on trouve seulement que
-   le premier n est pas tout à fait immobile. */
-.c-marche.p1::after {
+/* ════════════════════════════════════════════════════════════
+   LE BRILLANT DU PODIUM
+   ════════════════════════════════════════════════════════════
+   ⚠️ LA VERSION D AVANT ETAIT CASSEE, et il vaut la peine de dire pourquoi :
+   c'était une lueur en `conic-gradient` posée en `z-index: -1` DERRIERE la
+   carte. Or la carte a un fond opaque — la lueur ne s en échappait que par
+   les bords, et le flou en faisait une tache dorée informe au-dessus, qui
+   ne suivait ni la forme ni le coin arrondi.
+
+   La règle qu on en tire : un effet qui doit se voir SUR une carte opaque
+   se met DEDANS, et c est la carte qui le coupe. D où `overflow: hidden`
+   ici — tout ce qui suit est clippé par le rayon de la carte, et rien ne
+   peut baver sur ses voisines.
+
+   ⚠️ `isolation: isolate` : sans lui, un enfant en `z-index` négatif
+   passerait derrière le fond de la carte. On crée un contexte propre, et
+   les couches s'empilent à l'intérieur. */
+/* ⚠️ LA CARTE NE COUPE RIEN, et c'est une correction. On lui avait mis
+   `overflow: hidden` pour que le reflet et les étincelles ne débordent
+   pas — et l'avatar, qui est À CHEVAL sur le bord haut, s'est retrouvé
+   tranché net en deux. Deux besoins contraires sur la même boîte.
+   La solution est un CALQUE intérieur qui coupe, à la place de la carte :
+   `.c-etincelles` est posé en `inset: 0` avec son propre `overflow`, et
+   c'est lui qui porte les deux effets. L'avatar, hors de ce calque, sort
+   librement. */
+.c-marche { isolation: isolate; }
+
+/* ── 1. Le reflet qui balaie ──
+   Une bande de lumière traverse la carte en diagonale. ⚠️ Elle passe une
+   fois toutes les SEPT secondes et traverse en une seconde : l animation
+   dure sept secondes dont six d attente, posées dans les pourcentages des
+   images-clés. Un balayage continu ferait une carte qui clignote. */
+.c-etincelles::before {
     content: '';
     position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: inherit;
-    background: conic-gradient(from 0turn,
-        transparent 0 58%, rgba(255, 215, 0, 0.5) 74%, transparent 88%);
-    filter: blur(10px);
-    animation: c-tourne 12s linear infinite;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(104deg,
+        transparent 38%,
+        rgba(255, 255, 255, 0.05) 46%,
+        rgba(255, 228, 150, 0.16) 50%,
+        rgba(255, 255, 255, 0.05) 54%,
+        transparent 62%);
+    transform: translateX(-130%);
+    animation: c-reflet 7s cubic-bezier(0.35, 0, 0.2, 1) infinite;
 }
-@keyframes c-tourne { to { transform: rotate(1turn); } }
+.p2 .c-etincelles::before { animation-delay: 1.2s; }
+.p3 .c-etincelles::before { animation-delay: 2.4s; }
+@keyframes c-reflet {
+    0%   { transform: translateX(-130%); }
+    16%  { transform: translateX(130%); }
+    100% { transform: translateX(130%); }
+}
+
+/* ── 2. Les étincelles ──
+   Cinq points qui montent lentement. ⚠️ Posés en `%` et non en pixels :
+   la carte du premier est plus haute que les deux autres, et des positions
+   fixes auraient fait monter les siennes moins haut.
+   ⚠️ Chaque point a sa propre durée ET son propre retard, tous premiers
+   entre eux : avec des durées voisines ils se resynchronisent au bout de
+   quelques tours et montent en rang, ce qui se voit immédiatement. */
+/* Le calque qui coupe : il porte le reflet ET les étincelles, et il épouse
+   le rayon de la carte. C'est lui, et non la carte, qui a l'`overflow`. */
+.c-etincelles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: inherit;
+}
+.c-etincelles i {
+    position: absolute;
+    bottom: -6%;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255, 220, 130, 0.9);
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
+    opacity: 0;
+    animation: c-monte-etincelle linear infinite;
+}
+.c-etincelles i:nth-child(1) { left: 14%; animation-duration: 5.3s;  animation-delay: 0s; }
+.c-etincelles i:nth-child(2) { left: 33%; animation-duration: 6.7s;  animation-delay: 1.1s; }
+.c-etincelles i:nth-child(3) { left: 52%; animation-duration: 4.9s;  animation-delay: 2.3s; }
+.c-etincelles i:nth-child(4) { left: 71%; animation-duration: 7.1s;  animation-delay: 0.7s; }
+.c-etincelles i:nth-child(5) { left: 87%; animation-duration: 6.1s;  animation-delay: 3.1s; }
+@keyframes c-monte-etincelle {
+    0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+    12%  { opacity: 1; }
+    80%  { opacity: 0.7; }
+    100% { transform: translateY(-620%) scale(1); opacity: 0; }
+}
+/* ⚠️ Les deux autres marches en ont MOINS. Quinze points qui montent sur
+   trois cartes côte à côte, c'est une pluie — le premier doit rester celui
+   qu'on regarde. */
+.p2 .c-etincelles i:nth-child(n+4),
+.p3 .c-etincelles i:nth-child(n+3) { display: none; }
+.p2 .c-etincelles i, .p3 .c-etincelles i { opacity: 0; background: rgba(255, 220, 130, 0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+    .c-etincelles { display: none; }
+}
 
 /* ── L avatar, à cheval sur le bord haut ── */
 .c-couronne {
@@ -339,27 +421,20 @@ body::before {
 }
 .p1 .c-ava { width: 4.4rem; height: 4.4rem; }
 
-/* La place, en pastille sur le coin de l avatar. */
-.c-place {
+/* La médaille, sur le coin de l'avatar. ⚠️ Le chiffre a disparu avec elle :
+   l'escalier et l'ordre disent déjà la place, et un « 1 » posé sur une
+   médaille d'or répète ce qu'elle signifie. */
+.c-medaille {
     position: absolute;
-    right: -0.35rem;
-    bottom: -0.35rem;
-    display: grid;
-    place-items: center;
+    right: -0.45rem;
+    bottom: -0.5rem;
     width: 1.5rem;
     height: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    line-height: 1;
-    color: #0b0b0e;
-    background: var(--c-doux);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--c-fond);
+    line-height: 0;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
 }
-.p1 .c-place { width: 1.75rem; height: 1.75rem; font-size: 1.2rem;
-               background: linear-gradient(135deg, #ffe066, var(--c-or)); }
-.p2 .c-place { background: linear-gradient(135deg, #fff, var(--c-argent)); }
-.p3 .c-place { background: linear-gradient(135deg, #e0a575, var(--c-bronze)); }
+.c-medaille svg { width: 100%; height: 100%; display: block; }
+.p1 .c-medaille { width: 1.8rem; height: 1.8rem; right: -0.5rem; bottom: -0.55rem; }
 
 .c-nom {
     font-weight: 700;
@@ -372,9 +447,14 @@ body::before {
     white-space: nowrap;
 }
 .p1 .c-nom { font-size: 1.05rem; }
-/* La valeur est poussée au bas de la marche : les trois chiffres tombent
-   alors à des hauteurs différentes, ce qui dessine l escalier. */
-.c-marche .c-val { margin-top: auto; }
+/* ⚠️ `margin: auto 0` SUR L IDENTITE, et non `margin-top: auto` sur la
+   valeur. Les deux poussent le chiffre en bas, mais seule la première
+   CENTRE le pseudo dans l'espace qui reste : avec la seconde il restait
+   collé sous l'avatar, tout en haut d'une carte de douze centimètres, et
+   les trois noms ne tombaient même pas à la même hauteur puisque les
+   marches n'en ont pas. */
+.c-marche .c-ident { margin: auto 0; position: relative; z-index: 1; }
+.c-marche .c-val { position: relative; z-index: 1; }
 
 .c-rang {
     font-size: 0.6rem;
@@ -548,6 +628,125 @@ body::before {
    animation de 0 s laisse parfois l element a son etat de depart. */
 @media (prefers-reduced-motion: reduce) {
     .c-ligne, .c-marche, .c-mesure { animation: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LE RANG SUR LA LIGNE DU PSEUDO, ET LA RECHERCHE
+   ════════════════════════════════════════════════════════════ */
+.c-tete-ligne {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+/* ⚠️ `flex: 0 1 auto` ET `min-width: 0` sur le nom : sans eux, un pseudo
+   long pousse la puce du rang hors de la ligne au lieu de se tronquer
+   lui-même. C'est le nom qui doit céder, pas le rang. */
+.c-tete-ligne .c-nom { flex: 0 1 auto; min-width: 0; }
+.c-puce-rang {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.42rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--teinte, var(--c-doux));
+    background: color-mix(in srgb, var(--teinte, #8f8f99) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teinte, #8f8f99) 32%, transparent);
+    border-radius: 0.3rem;
+}
+
+.c-chercher {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding: 0.42rem 0.8rem;
+    color: var(--c-faible);
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.6rem;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+.c-chercher:focus-within {
+    border-color: rgba(255, 215, 0, 0.35);
+    background: rgba(255, 255, 255, 0.05);
+}
+.c-chercher svg { width: 0.95rem; height: 0.95rem; flex: 0 0 auto; }
+.c-chercher input {
+    flex: 1 1 auto;
+    /* ⚠️ `min-width: 0` : un `<input>` a une largeur intrinsèque et refuse
+       de rétrécir dans un conteneur flex sans ça — il déborde la boîte. */
+    min-width: 0;
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--c-texte);
+    background: none;
+    border: 0;
+    outline: none;
+}
+.c-chercher input::placeholder { color: var(--c-faible); }
+/* La croix native de `type="search"` est grise sur fond sombre et quasi
+   invisible : on la rend au moins visible. */
+.c-chercher input::-webkit-search-cancel-button { filter: invert(0.6); cursor: pointer; }
+
+/* ════════════════════════════════════════════════════════════
+   LA LIGNE DU VISITEUR
+   ════════════════════════════════════════════════════════════
+   Deux usages, une seule mise en forme : le résultat d'une recherche (dans
+   le flux, sous le champ) et la barre « ta place » (collée en bas).
+   ⚠️ `position: fixed` AVEC `left`/`right` calés sur la largeur de la page
+   plutôt qu'au ras de l'écran : la barre doit se lire comme la suite du
+   tableau, pas comme un bandeau de site. */
+/* ⚠️ `[hidden]` D ABORD, ET IL EN FAUT UN. L attribut `hidden` pose
+   `display: none` dans la feuille du navigateur — une règle d auteur qui
+   pose `display: grid` l écrase, et la boîte restait visible, vide, sous le
+   champ de recherche. Le piège est d autant plus sûr qu on croit que
+   `hidden` cache toujours. */
+.c-moi[hidden] { display: none; }
+
+.c-moi {
+    display: grid;
+    grid-template-columns: 3rem 2.4rem 1fr auto;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.7rem 1rem;
+    background: #16161c;
+    border: 1px solid rgba(255, 215, 0, 0.26);
+    border-radius: 0.6rem;
+}
+.c-moi.trouve { margin-top: 0.6rem; }
+.c-moi:not(.trouve) {
+    position: fixed;
+    left: 50%;
+    bottom: 0.9rem;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: min(55.5rem, calc(100% - 1.8rem));
+    box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.6);
+    animation: c-monte 0.3s ease backwards;
+}
+.c-moi-rang {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--c-or);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+.c-moi-rang sup { font-size: 0.6em; }
+/* Le message sans ligne de joueur — « pas encore classé », « aucun compte » —
+   prend toute la largeur : la grille n'a alors qu'une colonne à remplir. */
+.c-moi-txt { grid-column: 1 / -1; font-size: 0.8rem; color: var(--c-doux); }
+.c-moi-txt b { color: var(--c-texte); }
+
+/* La ligne du visiteur, quand il est DANS la liste : un cerne, pas un fond.
+   ⚠️ Pas de couleur de fond : la ligne porte déjà la teinte de son rang sur
+   l'avatar, et deux signaux sur la même ligne se neutralisent. */
+.c-ligne.moi {
+    border-color: rgba(255, 215, 0, 0.35);
+    background: rgba(255, 215, 0, 0.035);
 }
 
 /* ───── La note du bas ───── */

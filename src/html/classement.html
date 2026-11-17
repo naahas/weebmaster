@@ -73,12 +73,39 @@
             Les comptes figurent ici à partir de <b>dix parties jouées</b>, tous modes confondus.
         </p>
 
+        <!-- 🔎 ⚠️ UNE RECHERCHE SERVEUR, pas un filtre de la liste affichée.
+             La page n'en reçoit que cinquante lignes : y chercher le 312e ne
+             le trouverait jamais, et son absence se lirait comme « ce joueur
+             n'existe pas ». -->
+        <label class="c-chercher">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>
+            </svg>
+            <input id="recherche" type="search" autocomplete="off"
+                   placeholder="Chercher un joueur…" aria-label="Chercher un joueur">
+        </label>
+
+        <div class="c-moi trouve" id="trouve" hidden></div>
+
         <div class="c-mesure">
             <span id="mesure">—</span>
             <span id="compte"></span>
         </div>
 
         <div id="tableau"></div>
+
+        <!-- 👤 LA BARRE DU VISITEUR, collée en bas de l'écran.
+             ⚠️ FIXE, et elle ne paraît QUE si le joueur n'est pas déjà dans
+             la liste affichée. Doublée d'une ligne qu'on voit juste au-dessus,
+             elle ferait répéter la page ; absente quand on est 312e, on
+             n'aurait aucun moyen de savoir où l'on est — c'est précisément
+             le cas qu'elle sert.
+             ⚠️ Elle est HORS du conteneur de la page, après lui : un
+             `position: fixed` dont un ancêtre porte un `transform` se cale
+             sur cet ancêtre et non sur l'écran. Ici il n'y en a pas, mais
+             rien n'empêche qu'on en ajoute un demain. -->
+        <div class="c-moi" id="maplace" hidden></div>
 
         <p class="c-note">
             À égalité, le premier à être arrivé là passe devant.
@@ -173,6 +200,17 @@ var etat = { type: 'rang', mode: null, periode: 'all', seau: 'tous' };
 // décision n'est pas prise côté navigateur — un drapeau que le client
 // contrôle n'en est pas un.
 var DEMO = /(\?|&)demo\b/.test(location.search) ? '&demo=1' : '';
+
+// 👤 QUI REGARDE. ⚠️ Lu dans `localStorage`, où le jeu range le pseudo
+// (`pseudo`) : cette page est servie en statique, elle n'a pas de session.
+// Ce n'est pas une preuve d'identité et ça n'a pas à en être une — on ne
+// fait que SURLIGNER une ligne et montrer une place, deux choses déjà
+// publiques. Rien ici ne donne de droit.
+var monPseudo = (function () {
+    try { return (localStorage.getItem('pseudo') || '').trim(); }
+    catch (e) { return ''; }
+})();
+var maPlaceEnCours = 0;
 var seauxConnus = { nom: null, liste: [] };
 var requeteEnCours = 0;
 
@@ -198,6 +236,32 @@ function titreDe(l) {
         if (!l.titrePrefixe && !l.titreSuffixe) return '';
         return composerTitre(l.titrePrefixe, l.titreSuffixe) || '';
     } catch (e) { return ''; }
+}
+
+// 🏅 LA MEDAILLE DU PODIUM, en SVG plutôt qu'en chiffre.
+//
+// ⚠️ UN DESSIN, PAS UN EMOJI. 🥇🥈🥉 auraient suffi en une ligne, mais ils
+// sont rendus par la police du système : gris et plats chez les uns, en
+// couleurs chez les autres, et d'une taille qui ne suit aucune règle du
+// reste de la page. Un SVG garde la même forme partout et prend la teinte
+// qu'on lui donne.
+// ⚠️ Et le CHIFFRE A DISPARU : l'escalier et l'ordre le disent déjà. Un « 1 »
+// posé sur une médaille d'or répète ce qu'elle signifie.
+function medaille(place) {
+    var or = { 1: ['#fff3bf', '#f0b429'], 2: ['#ffffff', '#b9bec7'], 3: ['#f0c39a', '#b5733f'] }[place]
+          || ['#fff', '#999'];
+    return '<span class="c-medaille m' + place + '">'
+        + '<svg viewBox="0 0 24 24" aria-hidden="true">'
+          + '<defs><linearGradient id="g' + place + '" x1="0" y1="0" x2="0" y2="1">'
+            + '<stop offset="0" stop-color="' + or[0] + '"/>'
+            + '<stop offset="1" stop-color="' + or[1] + '"/>'
+          + '</linearGradient></defs>'
+          // Les deux rubans, puis le disque par-dessus.
+          + '<path d="M8.2 2h3.1l2.6 6.4-3.1 1.2z" fill="' + or[1] + '" opacity=".75"/>'
+          + '<path d="M15.8 2h-3.1l-2.6 6.4 3.1 1.2z" fill="' + or[1] + '" opacity=".5"/>'
+          + '<circle cx="12" cy="15.2" r="6.4" fill="url(#g' + place + ')"/>'
+          + '<circle cx="12" cy="15.2" r="4.3" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1"/>'
+        + '</svg></span>';
 }
 
 function avatar(l) {
@@ -270,8 +334,12 @@ function marche(l, place, def) {
     // qu on regarde en premier — le visage — sort du cadre.
     return '<div class="c-marche p' + place + '" style="--teinte:' + r.couleur
         + ';--i:' + (place - 1) + '">'
-        + '<span class="c-couronne">' + avatar(l)
-          + '<span class="c-place">' + place + '</span></span>'
+        // ⚠️ Les étincelles sont DANS la carte, qui coupe ce qui dépasse :
+        // c'est la seule façon qu'elles ne bavent jamais sur les voisines.
+        + '<span class="c-etincelles" aria-hidden="true">'
+          + '<i></i><i></i><i></i><i></i><i></i>'
+        + '</span>'
+        + '<span class="c-couronne">' + avatar(l) + medaille(place) + '</span>'
         + '<span class="c-ident">'
           + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
           + '<span class="c-rang">' + echappe(r.nom) + (t ? ' · ' + echappe(t) : '') + '</span>'
@@ -283,12 +351,24 @@ function marche(l, place, def) {
 function ligne(l, place, def) {
     var r = rangDe(l.xp);
     var appoint = def.appoint ? def.appoint(l) : '';
-    return '<li class="c-ligne" style="--teinte:' + r.couleur + ';--i:' + (place - 4) + '">'
+    // Le visiteur se reconnaît dans la liste. ⚠️ Comparé en minuscules :
+    // le pseudo rangé par le navigateur peut différer de celui de la base
+    // par la casse — `Nahass` et `nahass` sont le même joueur.
+    var moi = monPseudo && l.pseudo && l.pseudo.toLowerCase() === monPseudo.toLowerCase();
+    // ⚠️ LE RANG EST SUR LA LIGNE DU PSEUDO, dans une puce à sa droite, et
+    // non en dessous. En dessous il se lisait comme une légende du nom ; à
+    // côté, il se lit comme ce qu'il est — un titre que le joueur porte. Ce
+    // qui reste en seconde ligne, c'est le décompte, qui n'est qu'un détail.
+    return '<li class="c-ligne' + (moi ? ' moi' : '') + '" style="--teinte:' + r.couleur
+        + ';--i:' + (place - 4) + '">'
         + '<span class="c-num">' + place + '</span>'
         + avatar(l)
         + '<span class="c-ident">'
-          + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
-          + '<span class="c-sous"><b>' + echappe(r.nom) + '</b>' + (appoint ? ' · ' + echappe(appoint) : '') + '</span>'
+          + '<span class="c-tete-ligne">'
+            + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
+            + '<span class="c-puce-rang">' + echappe(r.nom) + '</span>'
+          + '</span>'
+          + (appoint ? '<span class="c-sous">' + echappe(appoint) + '</span>' : '')
         + '</span>'
         + '<span class="c-droite"><span class="c-val">' + def.format(l.valeur) + '</span></span>'
         + '</li>';
@@ -384,15 +464,120 @@ async function charger() {
         }
 
         if (!lignes.length) {
+            maPlace(null, def);
             return etatVide('Rien à montrer pour l’instant',
                 echappe(def.vide) + ' Le classement se remplit à chaque partie terminée par un compte connecté.');
         }
         peindre(lignes, def);
+        maPlace(lignes, def);
     } catch (e) {
         if (monTour !== requeteEnCours) return;
         etatVide('Classement indisponible', 'Le serveur n’a pas répondu. Réessaie dans un instant.');
     }
 }
+
+// ───── « Ta place », en bas de l'écran ─────
+//
+// ⚠️ On ne la demande au serveur QUE si le joueur n'est pas déjà visible.
+// Dans le cas courant — le podium ou les cinquante premiers — la barre ne
+// sert à rien et la requête serait du bruit à chaque changement d'onglet.
+async function maPlace(lignes, def) {
+    var boite = $('maplace');
+    var demande = ++maPlaceEnCours;
+    if (!monPseudo || etat.type === 'records') { boite.hidden = true; return; }
+    if (lignes && lignes.some(function (l) {
+        return l.pseudo && l.pseudo.toLowerCase() === monPseudo.toLowerCase();
+    })) { boite.hidden = true; return; }
+
+    try {
+        var rep = await fetch('/api/classement/joueur?pseudo=' + encodeURIComponent(monPseudo)
+            + '&type=' + encodeURIComponent(etat.type)
+            + (etat.mode ? '&mode=' + encodeURIComponent(etat.mode) : '') + DEMO);
+        var d = await rep.json();
+        if (demande !== maPlaceEnCours) return;
+        if (!d.trouve) { boite.hidden = true; return; }
+
+        if (d.souslePlancher) {
+            boite.innerHTML = '<span class="c-moi-rang">—</span>'
+                + '<span class="c-moi-txt"><b>' + echappe(monPseudo) + '</b>'
+                + ' n’est pas encore classé — encore <b>' + d.manque + ' partie'
+                + (d.manque > 1 ? 's' : '') + '</b></span>';
+            boite.hidden = false;
+            return;
+        }
+        var r = rangDe(d.ligne.xp);
+        boite.style.setProperty('--teinte', r.couleur);
+        boite.innerHTML = '<span class="c-moi-rang">' + d.position + '<sup>e</sup></span>'
+            + avatar(d.ligne)
+            + '<span class="c-ident"><span class="c-tete-ligne">'
+              + '<span class="c-nom">' + echappe(d.ligne.pseudo) + '</span>'
+              + '<span class="c-puce-rang">' + echappe(r.nom) + '</span>'
+            + '</span><span class="c-sous">sur ' + fmt(d.total) + ' joueurs classés</span></span>'
+            + '<span class="c-val">' + def.format(d.ligne.valeur) + '</span>';
+        boite.hidden = false;
+    } catch (e) { boite.hidden = true; }
+}
+
+// ───── Chercher un joueur ─────
+//
+// ⚠️ LA RECHERCHE PASSE PAR LE SERVEUR, elle ne filtre pas la liste
+// affichée : celle-ci n'a que cinquante lignes, et chercher le 312e dedans
+// ne le trouverait jamais — l'absence se lirait comme « ce joueur n'existe
+// pas », ce qui est faux.
+var chercheEnCours = 0;
+async function chercher(pseudo) {
+    var boite = $('trouve');
+    var demande = ++chercheEnCours;
+    pseudo = (pseudo || '').trim();
+    if (!pseudo) { boite.hidden = true; return; }
+    if (etat.type === 'records') {
+        boite.innerHTML = '<span class="c-moi-txt">La recherche ne s’applique pas aux records :'
+            + ' ils classent des parties, pas des joueurs.</span>';
+        boite.hidden = false;
+        return;
+    }
+    try {
+        var rep = await fetch('/api/classement/joueur?pseudo=' + encodeURIComponent(pseudo)
+            + '&type=' + encodeURIComponent(etat.type)
+            + (etat.mode ? '&mode=' + encodeURIComponent(etat.mode) : '') + DEMO);
+        var d = await rep.json();
+        if (demande !== chercheEnCours) return;
+        var def = TABLEAUX[etat.type];
+        if (!d.trouve) {
+            boite.innerHTML = '<span class="c-moi-txt">Aucun compte nommé <b>'
+                + echappe(pseudo) + '</b>.</span>';
+            boite.hidden = false;
+            return;
+        }
+        if (d.souslePlancher) {
+            boite.innerHTML = '<span class="c-moi-txt"><b>' + echappe(pseudo) + '</b> a joué '
+                + d.parties + ' partie' + (d.parties > 1 ? 's' : '')
+                + ' — il en faut dix pour figurer au classement.</span>';
+            boite.hidden = false;
+            return;
+        }
+        var r = rangDe(d.ligne.xp);
+        boite.style.setProperty('--teinte', r.couleur);
+        boite.innerHTML = '<span class="c-moi-rang">' + d.position + '<sup>e</sup></span>'
+            + avatar(d.ligne)
+            + '<span class="c-ident"><span class="c-tete-ligne">'
+              + '<span class="c-nom">' + echappe(d.ligne.pseudo) + '</span>'
+              + '<span class="c-puce-rang">' + echappe(r.nom) + '</span>'
+            + '</span><span class="c-sous">sur ' + fmt(d.total) + ' joueurs classés</span></span>'
+            + '<span class="c-val">' + def.format(d.ligne.valeur) + '</span>';
+        boite.hidden = false;
+    } catch (e) { boite.hidden = true; }
+}
+
+// ⚠️ On attend 320 ms après la dernière touche. Sans ce délai, « Shinobi »
+// part en huit requêtes dont sept jetées — et la septième peut revenir
+// après la huitième.
+var minuteurRecherche = null;
+$('recherche').addEventListener('input', function (e) {
+    var v = e.target.value;
+    clearTimeout(minuteurRecherche);
+    minuteurRecherche = setTimeout(function () { chercher(v); }, 320);
+});
 
 // ───── Les clics ─────
 function choisirOnglet(type) {

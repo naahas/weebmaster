@@ -6986,6 +6986,13 @@ html.rendu-logiciel .v2-dust { display: none; }
        ⚠️ `align-self: flex-start` : la colonne est en `stretch` par défaut,
        et la bannière se serait étirée sur toute la largeur des cartes — ses
        deux filets, calés sur sa boîte, seraient devenus un cadre. */
+    /* ⚠️ `position: relative` OBLIGATOIRE, et son absence a fait un bug qui
+       ne se voyait pas ici. Les deux filets de la banniere sont
+       `position: absolute; left: 0; right: 0` : sans repere sur leur parent,
+       ils remontaient se caler sur le premier ancetre positionne et
+       tiraient un trait de 1216 px EN HAUT DE LA PAGE, sous la navigation.
+       On cherchait d ou venait cette ligne parasite, elle venait d ici. */
+    position: relative;
     align-self: flex-start;
     margin-bottom: 0.1rem;
     display: inline-flex;
@@ -7095,13 +7102,48 @@ html.rendu-logiciel .v2-dust { display: none; }
     .v2-annonce-point::after { display: none; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   LA BARRE DU HAUT, devenue un vrai bandeau
+   ════════════════════════════════════════════════════════════
+   ⚠️ `position: relative` SERT DE REPERE A DEUX CHOSES : la navigation,
+   centree sur l ecran, et le filet ci-dessous. Sans lui elles remonteraient
+   se caler sur `.v2-home`, qui est `fixed` — donc sur l ecran entier, et le
+   filet se poserait tout en haut au lieu de suivre la barre. */
 .v2-topbar {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 1rem;
     flex: 0 0 auto;
+    /* L air sous la barre, avant le filet : colle a lui, l avatar se lisait
+       comme posé SUR le trait plutôt que dans la bande. */
+    padding: 0.5rem 0 1.1rem;
 }
+
+/* ── LE FILET SOUS LE BANDEAU ──
+   Le meme que celui du pied de page : il s eteint a ses deux bouts plutot
+   que de s arreter net. Un trait franc d un bord a l autre ferait une
+   frontiere de tableau ; celui-ci est une respiration.
+   ⚠️ IL DEBORDE LA GOUTTIERE par des decalages negatifs, et non par
+   `width: 100vw` : la seconde amene une barre de defilement horizontale des
+   qu une barre verticale existe, puisque `100vw` compte sa largeur. */
+.v2-topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: calc(var(--gouttiere) * -1);
+    right: calc(var(--gouttiere) * -1);
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, rgba(240, 199, 94, 0.16) 22%,
+        rgba(240, 199, 94, 0.16) 78%, transparent);
+    pointer-events: none;
+}
+
+/* ⚠️ L avatar et le solde rentrent un peu : colles au bord, ils sortaient
+   de la bande que le filet dessine maintenant. */
+.v2-moi-grp { margin-right: 0.4rem; }
 
 .v2-topbar .v2-logo { margin-right: auto; }
 
@@ -7134,12 +7176,16 @@ html.rendu-logiciel .v2-dust { display: none; }
    barre du pied, pleine largeur et fixe. */
 .v2-nav {
     position: absolute;
-    top: 0;
+    top: 0.5rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    /* ⚠️ AUCUN `gap` : l ecart est porte par le padding des liens, parce que
+       c est lui qui doit contenir les separateurs. Avec un `gap`, le trait
+       se serait pose DANS le vide entre deux liens et n aurait appartenu a
+       aucun des deux — il aurait fallu un troisieme element par couple. */
+    gap: 0;
     height: 2.9rem;
     pointer-events: none;
 }
@@ -7152,8 +7198,8 @@ html.rendu-logiciel .v2-dust { display: none; }
    au survol, que le pied n a pas. */
 .v2-nav-lien {
     position: relative;
-    padding: 0.2rem 0;
-    font-size: 0.8rem;
+    padding: 0.2rem 1.15rem;
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.13em;
     text-transform: uppercase;
@@ -7161,6 +7207,21 @@ html.rendu-logiciel .v2-dust { display: none; }
     text-decoration: none;
     white-space: nowrap;
     transition: color 0.18s ease;
+}
+
+/* Le trait entre deux liens. ⚠️ Porte par le SECOND des deux (`+`), et non
+   pose entre eux : un separateur qui appartient a un lien suit ses marges
+   et son alignement sans qu on ait rien a tenir d accord. Et le premier
+   lien n en a pas, ce qui est exactement voulu. */
+.v2-nav-lien + .v2-nav-lien::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 0.85rem;
+    background: rgba(255, 255, 255, 0.14);
 }
 .v2-nav-lien:hover,
 .v2-nav-lien:focus-visible { color: #fff; }

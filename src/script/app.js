@@ -5349,8 +5349,12 @@ createApp({
             if (!nav || !filet || !e || !e.currentTarget) return;
             const r = e.currentTarget.getBoundingClientRect();
             const b = nav.getBoundingClientRect();
-            filet.style.width = r.width + 'px';
-            filet.style.transform = 'translateX(' + (r.left - b.left) + 'px)';
+            // ⚠️ On rentre du padding horizontal : le filet souligne le MOT,
+            // pas la zone cliquable, qui deborde de part et d autre pour
+            // porter les separateurs. Sans ca le trait passe sous eux.
+            const marge = 18;
+            filet.style.width = Math.max(0, r.width - marge * 2) + 'px';
+            filet.style.transform = 'translateX(' + (r.left - b.left + marge) + 'px)';
         },
 
         async viderHistorique() {
