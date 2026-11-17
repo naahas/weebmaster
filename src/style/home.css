@@ -7162,26 +7162,42 @@ html.rendu-logiciel .v2-dust { display: none; }
     white-space: nowrap;
     transition: color 0.18s ease;
 }
-/* Le filet pousse depuis la gauche. ⚠️ `scaleX` et non une `width` qui
-   s anime : une largeur fait recalculer la mise en page a chaque image,
-   une transformation ne touche qu a la composition. */
-.v2-nav-lien::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -0.18rem;
-    height: 1.5px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--neon-primary, #f0c75e), rgba(240, 199, 94, 0.25));
-    transform: scaleX(0);
-    transform-origin: left center;
-    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
 .v2-nav-lien:hover,
 .v2-nav-lien:focus-visible { color: #fff; }
-.v2-nav-lien:hover::after,
-.v2-nav-lien:focus-visible::after { transform: scaleX(1); }
+
+/* ── LE FILET QUI SUIT ──
+   ⚠️ UN SEUL ELEMENT pour toute la barre, deplace d un lien a l autre.
+   Chaque lien avait son propre soulignement : il s allumait sur l un et
+   s eteignait sur l autre, soit deux evenements sans rapport. Un trait qui
+   GLISSE relie les deux positions, et l oeil suit le mouvement au lieu de
+   constater le changement.
+   ⚠️ `transform` ET `width`, pas `left` : une position animee fait
+   recalculer la mise en page a chaque image, une transformation ne touche
+   qu a la composition. La largeur, elle, ne peut pas y couper — mais le
+   filet ne contient rien, donc il n y a rien a remettre en page dedans. */
+.v2-nav-filet {
+    position: absolute;
+    left: 0;
+    bottom: 0.55rem;
+    width: 0;
+    height: 1.5px;
+    border-radius: 2px;
+    background: linear-gradient(90deg,
+        rgba(240, 199, 94, 0.3), var(--neon-primary, #f0c75e), rgba(240, 199, 94, 0.3));
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1),
+                width 0.28s cubic-bezier(0.3, 0.9, 0.3, 1),
+                opacity 0.18s ease;
+}
+.v2-nav:hover .v2-nav-filet,
+.v2-nav:focus-within .v2-nav-filet { opacity: 1; }
+
+/* ⚠️ Le mouvement se coupe pour qui en demande moins, mais le filet reste :
+   sans lui, plus rien ne dirait quel lien est survole. */
+@media (prefers-reduced-motion: reduce) {
+    .v2-nav-filet { transition: opacity 0.18s ease; }
+}
 
 /* ⚠️ « Bientot » N EST PAS UN LIEN, et il ne doit pas en avoir l air : pas
    de curseur de main, pas de filet au survol, un gris plus sourd. Un lien
@@ -7986,11 +8002,24 @@ html.rendu-logiciel .v2-dust { display: none; }
        place — un titre trop long passerait a la ligne plutot que d etre
        coupe, parce qu un titre se gagne et doit se lire en entier. */
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 1.15rem;
+    /* ⚠️ CAPITALES, ET LA TAILLE BAISSE AVEC. Des capitales occupent environ
+       un tiers de plus qu un bas-de-casse a taille egale : a 1,15rem le
+       titre aurait repris 89 % de la largeur de la carte, ce que le banc
+       /prototypes/titre avait justement ecarte.
+       ⚠️ 0,8rem ET 0,05em, TROUVES EN MESURANT, pas estimes. A 0,92rem avec
+       0,1em d interlettrage, « Vagabond de l'aube » — un titre de longueur
+       ORDINAIRE — passait deja sur deux lignes. A ces valeurs-ci, « Le plus
+       grand de la plèbe », le plus long du catalogue, tient sur une seule.
+       ⚠️ ET IL PERD UNE DISTINCTION. La casse separait le titre du rang
+       affiche juste au-dessus, qui est lui aussi en capitales espacees. Il
+       en reste deux, et elles suffisent : le titre est le SEUL serif de la
+       carte, et il est dore quand le rang est gris. Si un jour les deux
+       lignes paraissent se confondre, c est de la que ca viendra. */
+    font-size: 0.8rem;
     font-style: normal;
-    font-weight: 600;
-    letter-spacing: 0.015em;
-    text-transform: none;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: #d9b44a;
     /* ⚠️ IL PASSE A LA LIGNE, il ne se coupe PAS. « Shinigami des ombres »
        est un titre de longueur ordinaire et il sortait tronque — mesure :

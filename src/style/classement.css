@@ -207,6 +207,16 @@ body::before {
     background: linear-gradient(90deg, rgba(255, 215, 0, 0.3), var(--c-or), rgba(255, 215, 0, 0.3));
 }
 
+/* La règle d'entrée, juste sous les filtres : c'est là qu'on se demande
+   pourquoi on n'y figure pas, pas en bas de page après l'avoir parcourue. */
+.c-regle {
+    margin: 0.9rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--c-faible);
+}
+.c-regle b { color: var(--c-doux); font-weight: 600; }
+
 /* ───── Ce que la colonne de droite mesure ───── */
 .c-mesure {
     margin: 1.5rem 0 0.7rem;
@@ -237,20 +247,24 @@ body::before {
     grid-template-columns: repeat(3, 1fr);
     align-items: end;
     gap: 0.7rem;
-    margin-bottom: 1.1rem;
+    /* ⚠️ L avatar déborde du haut de chaque carte : sans cette marge il
+       passerait sous la ligne de mesure. Elle vaut sa moitié. */
+    margin: 2.4rem 0 1.4rem;
 }
 .c-marche {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.45rem;
-    padding: 1.1rem 0.7rem 0.9rem;
+    /* ⚠️ L air entre l avatar et le pseudo se regle ICI et non par une marge
+       sur le pseudo : ils sont tous deux dans la colonne, et un `gap` ne se
+       double jamais avec la marge du voisin. */
+    gap: 0.7rem;
+    padding: 2.6rem 0.7rem 1rem;
     text-align: center;
     background: linear-gradient(180deg, var(--c-carte-haut), var(--c-carte));
     border: 1px solid var(--c-trait);
     border-radius: 0.85rem;
-    overflow: hidden;
 }
 /* La couleur du rang, en filet haut : la marche porte la teinte du joueur
    qui s'y trouve, pas une couleur de place. */
@@ -263,34 +277,89 @@ body::before {
     background: var(--teinte, var(--c-or));
     opacity: 0.85;
 }
-.c-marche.p1 { order: 2; padding-top: 1.6rem; padding-bottom: 1.3rem; }
-.c-marche.p2 { order: 1; }
-.c-marche.p3 { order: 3; }
+
+/* ⚠️ TROIS HAUTEURS, ET C EST CE QUI FAIT LE PODIUM. Trois cartes de même
+   taille sont une liste posée de travers ; des marches étagées se lisent
+   comme un classement avant qu'on ait lu un seul chiffre. L ordre visuel
+   reste 2 · 1 · 3, l ordre du DOM 1 · 2 · 3 — c est `order` qui déplace,
+   donc la tabulation et les lecteurs d écran gardent le bon. */
+.c-marche.p1 { order: 2; min-height: 12.4rem; padding-bottom: 1.3rem; }
+.c-marche.p2 { order: 1; min-height: 10.9rem; }
+.c-marche.p3 { order: 3; min-height: 9.8rem; }
+
 /* ⚠️ Seul le premier reçoit une lueur. Trois lueurs ne distinguent personne. */
+/* ⚠️ L OMBRE A BAISSE depuis que la lueur tourne derrière : les deux
+   s additionnaient et la carte traînait une tache dorée d une quarantaine
+   de pixels sous elle. La lueur fait le travail, l ombre ne fait plus que
+   poser la carte. */
 .c-marche.p1 {
     border-color: rgba(255, 215, 0, 0.35);
-    box-shadow: 0 0 2.4rem rgba(255, 215, 0, 0.12);
+    box-shadow: 0 0.4rem 1.4rem rgba(0, 0, 0, 0.45);
 }
 
-.c-place {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    line-height: 1;
-    letter-spacing: 0.04em;
+/* ── L EFFET DU PREMIER : une lueur qui tourne derrière la carte ──
+   ⚠️ DERRIERE, et non sur le bord : un contour animé attire l oeil sur le
+   CADRE, c est-à-dire sur la boîte plutôt que sur le joueur. Une lueur
+   diffuse qui tourne lentement fait respirer la carte sans jamais devenir
+   la chose qu on regarde.
+   ⚠️ DOUZE SECONDES. À deux, on suit la lumière des yeux et l on ne lit
+   plus le nom. À douze, on ne la voit pas tourner — on trouve seulement que
+   le premier n est pas tout à fait immobile. */
+.c-marche.p1::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from 0turn,
+        transparent 0 58%, rgba(255, 215, 0, 0.5) 74%, transparent 88%);
+    filter: blur(10px);
+    animation: c-tourne 12s linear infinite;
 }
-.p1 .c-place { color: var(--c-or); font-size: 2rem; }
-.p2 .c-place { color: var(--c-argent); }
-.p3 .c-place { color: var(--c-bronze); }
+@keyframes c-tourne { to { transform: rotate(1turn); } }
 
+/* ── L avatar, à cheval sur le bord haut ── */
+.c-couronne {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    line-height: 0;
+}
 .c-ava {
-    width: 3.2rem;
-    height: 3.2rem;
-    border-radius: 0.7rem;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 0.8rem;
     object-fit: cover;
     background: #1c1c22;
     border: 2px solid var(--teinte, var(--c-trait));
+    /* Le fond de la page derrière l avatar : sans lui, le filet coloré du
+       haut de la carte passerait au travers. */
+    box-shadow: 0 0 0 4px var(--c-fond);
 }
-.p1 .c-ava { width: 4.2rem; height: 4.2rem; }
+.p1 .c-ava { width: 4.4rem; height: 4.4rem; }
+
+/* La place, en pastille sur le coin de l avatar. */
+.c-place {
+    position: absolute;
+    right: -0.35rem;
+    bottom: -0.35rem;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    line-height: 1;
+    color: #0b0b0e;
+    background: var(--c-doux);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--c-fond);
+}
+.p1 .c-place { width: 1.75rem; height: 1.75rem; font-size: 1.2rem;
+               background: linear-gradient(135deg, #ffe066, var(--c-or)); }
+.p2 .c-place { background: linear-gradient(135deg, #fff, var(--c-argent)); }
+.p3 .c-place { background: linear-gradient(135deg, #e0a575, var(--c-bronze)); }
 
 .c-nom {
     font-weight: 700;
@@ -303,6 +372,9 @@ body::before {
     white-space: nowrap;
 }
 .p1 .c-nom { font-size: 1.05rem; }
+/* La valeur est poussée au bas de la marche : les trois chiffres tombent
+   alors à des hauteurs différentes, ce qui dessine l escalier. */
+.c-marche .c-val { margin-top: auto; }
 
 .c-rang {
     font-size: 0.6rem;
@@ -333,22 +405,32 @@ body::before {
 /* ════════════════════════════════════════════════════════════
    LE TABLEAU
    ════════════════════════════════════════════════════════════ */
-.c-liste { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+.c-liste { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
 
+/* ⚠️ PLUS DE BORD GAUCHE COLORE. Chaque ligne en portait un, de la couleur
+   du rang : sur trente lignes ça faisait trente petits traits de six teintes
+   différentes, et la colonne devenait un code-barres. L idée était de rendre
+   la hiérarchie visible d un coup — elle l était, mais au prix du calme de
+   la page.
+   La couleur n est pas perdue pour autant : elle tient le CERCLE de l avatar
+   et le NOM DU RANG sous le pseudo. Deux endroits où elle veut dire quelque
+   chose, au lieu d un trait qui ne désigne rien. */
 .c-ligne {
     display: grid;
-    grid-template-columns: 2.4rem 2.2rem 1fr auto;
+    grid-template-columns: 2.4rem 2.4rem 1fr auto;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0.9rem 0.6rem 0.75rem;
+    gap: 0.9rem;
+    padding: 0.72rem 1rem;
     background: var(--c-carte);
-    /* La teinte du rang en bord gauche : la liste dessine alors un dégradé
-       du haut vers le bas, et l'on voit la hiérarchie avant de lire. */
-    border-left: 2px solid var(--teinte, var(--c-trait));
-    border-radius: 0.5rem;
-    transition: background 0.16s ease, transform 0.16s ease;
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
+    transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
-.c-ligne:hover { background: var(--c-carte-haut); transform: translateX(2px); }
+.c-ligne:hover {
+    background: var(--c-carte-haut);
+    border-color: rgba(255, 255, 255, 0.07);
+    transform: translateX(2px);
+}
 
 .c-num {
     font-family: 'Bebas Neue', sans-serif;
@@ -358,12 +440,22 @@ body::before {
     color: var(--c-faible);
     font-variant-numeric: tabular-nums;
 }
-.c-ligne .c-ava { width: 2.2rem; height: 2.2rem; border-radius: 0.45rem; border-width: 1px; }
+.c-ligne .c-ava {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.5rem;
+    border-width: 1.5px;
+    box-shadow: none;
+}
 
-.c-ident { min-width: 0; display: flex; flex-direction: column; gap: 0.05rem; }
-.c-ident .c-nom { font-size: 0.88rem; text-align: left; }
+/* ⚠️ `gap` ET `line-height: 1.35` : le pseudo et sa ligne de rang étaient
+   collés — 0,05 rem d écart sur deux textes de tailles différentes se lit
+   comme un seul bloc mal composé. */
+.c-ident { min-width: 0; display: flex; flex-direction: column; gap: 0.18rem; }
+.c-ident .c-nom { font-size: 0.9rem; text-align: left; line-height: 1.2; }
 .c-sous {
-    font-size: 0.66rem;
+    font-size: 0.68rem;
+    line-height: 1.35;
     color: var(--c-faible);
     white-space: nowrap;
     overflow: hidden;
@@ -479,20 +571,43 @@ body::before {
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 620px) {
     .c-page { padding: 1.8rem 0.9rem 5rem; }
-    .c-podium { grid-template-columns: 1fr; align-items: stretch; }
-    .c-marche { flex-direction: row; text-align: left; gap: 0.8rem; padding: 0.7rem 0.9rem; }
-    .c-marche.p1 { order: 0; padding: 0.85rem 0.9rem; }
+    .c-podium { grid-template-columns: 1fr; align-items: stretch; gap: 0.55rem; margin: 1.1rem 0 1.4rem; }
+    /* ⚠️ Les trois marches reprennent la MEME hauteur empilees : l escalier
+       ne veut rien dire sur une colonne, et trois cartes de hauteurs
+       differentes les unes sous les autres se lisent comme un defaut. */
+    .c-marche,
+    .c-marche.p1, .c-marche.p2, .c-marche.p3 {
+        flex-direction: row; text-align: left; gap: 0.8rem;
+        padding: 0.7rem 0.9rem 0.7rem 0.8rem; min-height: 0;
+    }
+    .c-marche.p1 { order: 0; }
     .c-marche.p2 { order: 1; }
     .c-marche.p3 { order: 2; }
     .c-marche::before { top: 0; left: 0; right: 0; height: 2px; }
-    .c-marche .c-ident { flex: 1 1 auto; }
+    /* ⚠️ L avatar RENTRE DANS LA CARTE sur telephone. A cheval sur le bord
+       haut, il empietait sur la carte precedente de la pile — les trois se
+       touchent, il n y a plus de place libre au-dessus. */
+    /* ⚠️ `relative` ET NON `static`. En `static` l enveloppe cesse d etre un
+       repere, et la pastille du numero — qui est en `absolute` — remonte se
+       caler sur la CARTE : les trois chiffres allaient flotter dans le coin
+       bas droit, loin de l avatar qu ils designent. Elle doit sortir du
+       placement absolu sans cesser d etre un repere. */
+    .c-couronne { position: relative; top: auto; left: auto; transform: none; flex: 0 0 auto; }
+    .c-ava, .p1 .c-ava { width: 2.6rem; height: 2.6rem; box-shadow: none; }
+    .c-place, .p1 .c-place { width: 1.25rem; height: 1.25rem; font-size: 0.86rem;
+                             right: -0.3rem; bottom: -0.3rem; }
+    .c-marche .c-ident { flex: 1 1 auto; min-width: 0; }
     .c-marche .c-nom, .c-marche .c-rang { text-align: left; }
-    .p1 .c-ava { width: 3rem; height: 3rem; }
-    .p1 .c-place, .c-place { font-size: 1.3rem; width: 1.6rem; flex: 0 0 auto; }
+    .p1 .c-nom { font-size: 0.95rem; }
     .p1 .c-val { font-size: 1.1rem; }
-    .c-marche .c-val { margin-left: auto; }
+    .c-marche .c-val { margin-left: auto; margin-top: 0; }
+    /* Pas de lueur tournante sur telephone : trois cartes collees, elle
+       baverait sur ses voisines — et c est l effet qui coute le plus cher
+       la ou la machine est la plus faible. */
+    .c-marche.p1::after { content: none; }
 
-    .c-ligne { grid-template-columns: 1.8rem 1.9rem 1fr auto; gap: 0.55rem; padding: 0.55rem 0.7rem; }
-    .c-ligne .c-ava { width: 1.9rem; height: 1.9rem; }
-    .c-ident .c-nom { font-size: 0.82rem; }
+    .c-liste { gap: 0.45rem; }
+    .c-ligne { grid-template-columns: 1.7rem 2rem 1fr auto; gap: 0.6rem; padding: 0.6rem 0.75rem; }
+    .c-ligne .c-ava { width: 2rem; height: 2rem; }
+    .c-ident .c-nom { font-size: 0.84rem; }
 }

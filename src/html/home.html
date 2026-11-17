@@ -237,13 +237,28 @@
                          ⚠️ `margin-right: auto` la pousse a gauche et tient la
                          place du logo sur l accueil, ou il est masque — sans
                          elle, les liens se colleraient a l avatar. -->
-                    <nav class="v2-nav" aria-label="Le site">
-                        <a class="v2-nav-lien" href="/classement">Classement</a>
+                    <nav class="v2-nav" aria-label="Le site" ref="nav">
+                        <!-- 🧭 LE FILET QUI SUIT : un SEUL trait doré glisse
+                             d un lien a l autre, au lieu d un soulignement par
+                             lien qui s allume et s eteint. La difference n est
+                             pas cosmetique — deux soulignements donnent deux
+                             evenements sans rapport, celui-ci RELIE les deux
+                             positions et l oeil suit le mouvement au lieu de
+                             constater le changement. C est aussi le seul geste
+                             qui gagne a ce qu il y ait plus de liens.
+                             ⚠️ Sa largeur se MESURE au survol (`poserFilet`) et
+                             ne se calcule pas une fois : elle depend de la
+                             police, qui peut finir de charger apres le premier
+                             rendu. -->
+                        <span class="v2-nav-filet" ref="navFilet" aria-hidden="true"></span>
+                        <a class="v2-nav-lien" href="/classement"
+                           @mouseenter="poserFilet($event)">Classement</a>
                         <!-- ⚠️ UN VRAI LIEN, et `/boutique` N EXISTE PAS ENCORE :
                              c est assume, la page arrive au prochain envoi. D ici
                              la il rend une 404 — le dire ici pour que personne ne
                              cherche la panne ailleurs. -->
-                        <a class="v2-nav-lien" href="/boutique">Boutique</a>
+                        <a class="v2-nav-lien" href="/boutique"
+                           @mouseenter="poserFilet($event)">Boutique</a>
                     </nav>
                     <!-- 👤 DEUX ELEMENTS, PAS TROIS : le pseudo, puis l avatar qui
                          ouvre tout. Il y avait avant une pastille d avatar ET une

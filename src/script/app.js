@@ -5336,6 +5336,23 @@ createApp({
         // ailleurs il ne porte que des refus. Ici il le faut — un effacement
         // réussi ne change RIEN à l'écran, et sans un mot on ne saurait pas
         // s'il a eu lieu. C'est la seule trace que le geste laisse.
+        // 🧭 Le filet de la navigation se pose sous le lien survolé.
+        //
+        // ⚠️ MESURÉ, ET NON CALCULÉ UNE FOIS AU DÉMARRAGE. La largeur d'un
+        // mot dépend de la police, qui peut finir de charger après le premier
+        // rendu — un filet posé trop tôt serait décalé de quelques pixels et
+        // ne se recalerait jamais. On mesure au moment du survol, quand tout
+        // est en place.
+        poserFilet(e) {
+            const nav = this.$refs.nav;
+            const filet = this.$refs.navFilet;
+            if (!nav || !filet || !e || !e.currentTarget) return;
+            const r = e.currentTarget.getBoundingClientRect();
+            const b = nav.getBoundingClientRect();
+            filet.style.width = r.width + 'px';
+            filet.style.transform = 'translateX(' + (r.left - b.left) + 'px)';
+        },
+
         async viderHistorique() {
             if (this.histBusy) return;
             this.histBusy = true;

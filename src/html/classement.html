@@ -64,6 +64,15 @@
              jouées, pas écrits en dur. -->
         <div class="c-filtres" id="filtres"></div>
 
+        <!-- ⚠️ LA REGLE EST REMONTEE SOUS LES FILTRES. Elle vivait en bas de
+             page, et c est l endroit ou personne ne la lit : la question
+             « pourquoi je n y suis pas » se pose en REGARDANT le tableau, pas
+             apres l avoir parcouru jusqu au bout. Une seule phrase, celle qui
+             repond a cette question-la — le reste est descendu. -->
+        <p class="c-regle">
+            Les comptes figurent ici à partir de <b>dix parties jouées</b>, tous modes confondus.
+        </p>
+
         <div class="c-mesure">
             <span id="mesure">—</span>
             <span id="compte"></span>
@@ -72,7 +81,6 @@
         <div id="tableau"></div>
 
         <p class="c-note">
-            <b>Les comptes figurent ici à partir de dix parties jouées</b>, tous modes confondus.
             À égalité, le premier à être arrivé là passe devant.
             <br>
             <b>Le classement ne reprend pas l'historique.</b> Il se construit à partir des parties
@@ -256,10 +264,14 @@ function marche(l, place, def) {
     // ⚠️ `--i` porte le rang d'arrivée : c'est lui qui décale l'animation.
     // En CSS pur il aurait fallu une règle `nth-child` par ligne, et la
     // cinquante-et-unième n'aurait rien eu.
+    // ⚠️ L AVATAR DEBORDE PAR LE HAUT de la carte, et le numero de place est
+    // une pastille posee sur son coin. C est ce qui transforme trois
+    // rectangles alignes en un podium : la carte devient un socle, et ce
+    // qu on regarde en premier — le visage — sort du cadre.
     return '<div class="c-marche p' + place + '" style="--teinte:' + r.couleur
         + ';--i:' + (place - 1) + '">'
-        + '<span class="c-place">#' + place + '</span>'
-        + avatar(l)
+        + '<span class="c-couronne">' + avatar(l)
+          + '<span class="c-place">' + place + '</span></span>'
         + '<span class="c-ident">'
           + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
           + '<span class="c-rang">' + echappe(r.nom) + (t ? ' · ' + echappe(t) : '') + '</span>'
