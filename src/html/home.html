@@ -134,6 +134,29 @@
     <link rel="shortcut icon" type="image/png" href="favicon-192.png">
     <link rel="apple-touch-icon" href="favicon-192.png">
 
+    <!-- ── PAS DE VIGNETTE DANS LES RESULTATS GOOGLE ──
+         ⚠️ CETTE BALISE NE TOUCHE QUE GOOGLE. Les apercus de Discord, X et
+         WhatsApp lisent `og:image` juste en dessous et ignorent `robots` : le
+         lien garde donc sa banniere en partage, c est seulement la vignette
+         du moteur de recherche qui disparait.
+
+         La raison : Google recadre la banniere EN CARRE pour la poser a cote
+         du resultat. Elle fait 1200 x 630 avec le logo sur toute la largeur,
+         si bien que le carre central n en montrait que « HONENMAST » — le
+         « S » et le « ER » tombaient hors cadre.
+
+         ℹ️ L autre reparation, si l on veut recuperer la vignette un jour :
+         refaire `og-image.png` au meme format mais avec le logo REDUIT pour
+         tenir dans le carre central de 630 x 630 (de x=285 a x=915). Le
+         recadrage de Google montrerait alors le logo entier, et la banniere
+         resterait belle en partage. C est la meilleure des deux solutions —
+         une vignette propre fait cliquer —, elle demande juste de reprendre
+         l image.
+
+         ⚠️ Et Google ne le reprendra qu a son prochain passage : des jours,
+         parfois des semaines. Comme pour la description plus haut. -->
+    <meta name="robots" content="max-image-preview:none">
+
     <!-- ── La vignette de partage ──
          Celle qui parait quand on colle le lien sur Discord, X ou WhatsApp.
          L adresse doit etre absolue : les robots ne resolvent pas les chemins
