@@ -183,6 +183,9 @@ createApp({
             // dit qu il savait ouvrir une connexion — un bouton qui echoue
             // vaut moins que pas de bouton.
             profilOuvert: false,
+            // ☰ Le tiroir de navigation, sur telephone uniquement. Sur
+            // ordinateur les liens sont dans la barre et il ne sert a rien.
+            menuOuvert: false,
             authActive: false,
             estConnecte: false,
             fournisseur: null,      // 'discord' | 'google'

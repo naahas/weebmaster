@@ -7130,12 +7130,19 @@ html.rendu-logiciel .v2-dust { display: none; }
        1,3rem met le meme air des deux cotes, et la bande tombe a 54 px.
        ℹ️ Tout ce qui suit remonte d autant, ce qui donne un peu d air au
        logotype — c est voulu, pas un effet de bord subi. */
-    /* ⚠️ CALCULEE DEPUIS `--home-pad-y`, PAS ECRITE EN DUR. Elle valait
-       -1,3rem, ce qui equilibrait la bande sur ordinateur (padding 1,9rem)
-       et la desequilibrait sur telephone, ou le padding tombe a 1,5 : il
-       restait 3 px au-dessus des liens pour 10 en dessous. En la calculant,
-       le contenu part toujours a 0,6rem du bord, quelle que soit la
-       gouttiere verticale du moment. */
+}
+
+/* ⚠️ `.site` : LE BANDEAU N EST QUE SUR L ACCUEIL. La barre du SALON porte
+   la meme classe `.v2-topbar`, et elle avait herite du fond, du filet et de
+   la marge negative — un bandeau de navigation au-dessus d une partie qui
+   commence, alors qu il n y a aucun lien dedans. Tout ce qui suit est donc
+   reserve a celle qui porte vraiment la navigation.
+   ⚠️ CALCULEE DEPUIS `--home-pad-y`, PAS ECRITE EN DUR. Elle valait
+   -1,3rem, ce qui equilibrait la bande sur ordinateur (padding 1,9rem) et
+   la desequilibrait sur telephone, ou le padding tombe a 1,5 : il restait
+   3 px au-dessus des liens pour 10 en dessous. En la calculant, le contenu
+   part toujours a 0,78rem du bord, quelle que soit la gouttiere du moment. */
+.v2-topbar.site {
     margin-top: calc((var(--home-pad-y) - 0.78rem) * -1);
     padding: 0 0 0.78rem;
 }
@@ -7148,7 +7155,7 @@ html.rendu-logiciel .v2-dust { display: none; }
    ⚠️ Il deborde la gouttiere comme le filet, par des decalages negatifs —
    pas par `width: 100vw`, qui amene une barre de defilement horizontale des
    qu une barre verticale existe. */
-.v2-topbar::before {
+.v2-topbar.site::before {
     content: '';
     position: absolute;
     /* La marge negative de la barre a deja remonte le contenu a 0,78rem du
@@ -7171,9 +7178,14 @@ html.rendu-logiciel .v2-dust { display: none; }
     pointer-events: none;
 }
 
-/* ⚠️ L avatar passe de 2,8 a 2,2rem. C est lui qui fixait la hauteur de la
-   bande : la rogner sans le reduire n aurait rien donne. */
-.v2-topbar .v2-moi-av { width: 2.2rem; height: 2.2rem; }
+/* ⚠️ ON CHANGE LA VARIABLE, PAS L ELEMENT. Le haut de ce fichier dit
+   « changer `--moi-av` suffit, tout suit » — et c est vrai : le `top` du
+   panneau de profil se calcule dessus. En codant 2,2rem directement sur
+   `.v2-moi-av`, l avatar retrecissait mais le panneau continuait de se
+   placer sous un avatar de 3,5rem, et il tombait trop bas.
+   ⚠️ Et la variable est posee sur `.v2-home`, pas sur `:root` : la barre du
+   SALON porte la meme classe et garde son avatar d origine. */
+.v2-home { --moi-av: 2.2rem; }
 .v2-topbar .v2-moi-stylo { width: 0.95rem; height: 0.95rem; }
 
 /* ⏳ LE SOLDE EST MASQUE, TEMPORAIREMENT. Il n a rien a dire tant que la
@@ -7193,7 +7205,7 @@ html.rendu-logiciel .v2-dust { display: none; }
    ⚠️ IL DEBORDE LA GOUTTIERE par des decalages negatifs, et non par
    `width: 100vw` : la seconde amene une barre de defilement horizontale des
    qu une barre verticale existe, puisque `100vw` compte sa largeur. */
-.v2-topbar::after {
+.v2-topbar.site::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -7208,7 +7220,7 @@ html.rendu-logiciel .v2-dust { display: none; }
 
 /* ⚠️ L avatar et le solde rentrent un peu : colles au bord, ils sortaient
    de la bande que le filet dessine maintenant. */
-.v2-moi-grp { margin-right: 0.4rem; }
+.v2-topbar.site .v2-moi-grp { margin-right: 0.4rem; }
 
 .v2-topbar .v2-logo { margin-right: auto; }
 
@@ -7268,11 +7280,19 @@ html.rendu-logiciel .v2-dust { display: none; }
    autres ecarts tiennent et suffisent a les distinguer — la taille (0,8 contre
    0,62 rem), la couleur (clair contre gris sourd), et le filet dore qui pousse
    au survol, que le pied n a pas. */
+/* ⚠️ LA TAILLE N ETAIT PAS LE PROBLEME, ET LA MESURE LE DIT : les liens du
+   haut faisaient 11,52 px contre 10,72 en bas — huit dixiemes d ecart, pas
+   trois pixels. Ce qui les faisait paraitre gros, c est la GRAISSE (700
+   contre 500) et la couleur (clair contre gris sourd). On cale donc la
+   taille a un pixel au-dessus du pied, comme demande, et on descend la
+   graisse a 600 : c est elle qui portait l impression.
+   ℹ️ La couleur, elle, reste claire — c est ce qui dit que la navigation est
+   d un rang au-dessus du pied, et il ne reste plus qu elle pour le dire. */
 .v2-nav-lien {
     position: relative;
     padding: 0.2rem 1.15rem;
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: 0.733rem;
+    font-weight: 600;
     letter-spacing: 0.13em;
     text-transform: uppercase;
     color: #b9b3c9;
@@ -7373,10 +7393,101 @@ html.rendu-logiciel .v2-dust { display: none; }
    plus une pastille poussaient l avatar hors de l ecran. On garde celui
    qu on vient chercher, et la boutique reviendra dans cette barre le jour
    ou elle existe — avec, a ce moment-la, une place a lui faire. */
-@media (max-width: 560px) {
-    .v2-nav { gap: 1rem; }
-    .v2-nav-lien { font-size: 0.8rem; }
-    .v2-nav-lien.soon { display: none; }
+/* ════════════════════════════════════════════════════════════
+   ☰ LE TIROIR DE TELEPHONE
+   ════════════════════════════════════════════════════════════
+   ⚠️ UN TIROIR PLUTOT QU UNE RANGEE QUI SE REPLIE. A 390 px, trois liens en
+   capitales espacees ne tiennent pas sur une ligne a cote de l avatar ; et
+   empiles sous la barre, ils pousseraient le logotype hors de l ecran. Le
+   tiroir sort de la page au lieu de la deformer.
+   ⚠️ IL VIENT DE LA GAUCHE parce que le bouton y est : un panneau qui
+   s ouvre a l oppose du doigt qui l appelle paraît toujours venir d
+   ailleurs.
+   ⚠️ Et le menu est pose sur `.v2-nav` PLUTOT QUE DUPLIQUE : les memes
+   liens, le meme gabarit, deux presentations. Deux listes auraient diverge
+   au premier lien ajoute — et c est exactement ce qui vient d arriver avec
+   « Rangs ». */
+.v2-burger {
+    position: relative;
+    z-index: 4;
+    display: grid;
+    align-content: center;
+    gap: 0.28rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    margin-right: auto;
+    padding: 0 0.3rem;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+.v2-burger span {
+    display: block;
+    height: 1.8px;
+    border-radius: 2px;
+    background: #cfc8dc;
+    transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+}
+/* Les trois barres deviennent une croix : celle du milieu s efface, les
+   deux autres se croisent. ⚠️ Le `translateY` vaut la hauteur d une barre
+   plus le `gap`, sinon elles ne se rejoignent pas au centre. */
+.v2-burger.ouvert span:nth-child(1) { transform: translateY(0.47rem) rotate(45deg); }
+.v2-burger.ouvert span:nth-child(2) { opacity: 0; }
+.v2-burger.ouvert span:nth-child(3) { transform: translateY(-0.47rem) rotate(-45deg); }
+
+.v2-nav-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    background: rgba(4, 4, 7, 0.6);
+}
+
+/* ⚠️ `translateX(-100%)` ET NON `display: none` : un tiroir qui apparait
+   d un coup n est pas un tiroir. Il reste dans le document, hors cadre, et
+   glisse — c est ce qui dit d ou il vient. */
+.v2-nav.tiroir {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    z-index: 3;
+    width: min(15rem, 76vw);
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 4.6rem 0 1rem;
+    background: #0f0e14;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.6);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: auto;
+}
+.v2-nav.tiroir.ouvert { transform: translateX(0); }
+
+.v2-nav.tiroir .v2-nav-lien {
+    padding: 0.95rem 1.4rem;
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+}
+/* ⚠️ Le separateur vertical devient HORIZONTAL : empiles, les liens sont
+   separes par une ligne entre eux, pas par un trait debout. */
+.v2-nav.tiroir .v2-nav-lien + .v2-nav-lien::before {
+    left: 1.4rem;
+    right: 1.4rem;
+    top: 0;
+    transform: none;
+    width: auto;
+    height: 1px;
+}
+/* Le filet qui suit n a plus de sens empile : il se poserait a l horizontale
+   sous un lien pendant qu on en survole un autre, a la verticale. */
+.v2-nav.tiroir .v2-nav-filet { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .v2-nav.tiroir, .v2-burger span { transition: none; }
 }
 
 .v2-logo {
@@ -7616,7 +7727,15 @@ html.rendu-logiciel .v2-dust { display: none; }
        deborde sous le cercle, et les 7 px de la pointe.
        `right` = la gouttiere de `.v2-home`, donc le bord droit du panneau est
        exactement celui de l avatar. */
-    top: calc(var(--home-pad-y) + var(--moi-av) + 1.3rem);
+    /* ⚠️ `0.78rem` ET NON `--home-pad-y` : depuis que la barre du haut porte
+       une marge negative pour coller son bandeau au bord de l ecran,
+       l avatar ne part plus du padding de la page mais de 0,78rem — la meme
+       valeur que la marge et le padding de `.v2-topbar.site`. Les trois
+       doivent rester d accord ; c est ce qui faisait tomber le panneau trop
+       bas sous l avatar.
+       ℹ️ `--moi-av` vaut 2,2rem sur l accueil, pose sur `.v2-home` : tout
+       suit toujours la variable, comme l annonce le haut du fichier. */
+    top: calc(0.78rem + var(--moi-av) + 1.3rem);
     right: var(--gouttiere);
     /* ℹ️ La largeur n entre plus dans le calcul de la pointe : celle-ci se
        cale sur le CENTRE DE L AVATAR, qui est a un demi-avatar du bord droit

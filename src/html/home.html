@@ -219,7 +219,22 @@
                      rejoint le haut de la colonne « Créer / Rejoindre », ou
                      elle ne dispute plus la bande du haut a la navigation. -->
 
-                <header class="v2-topbar">
+                <header class="v2-topbar site">
+                    <!-- ☰ LE MENU DE TELEPHONE.
+                         ⚠️ IL N EXISTE QUE LA, et il ouvre un tiroir a GAUCHE
+                         plutot que de deplier les liens sous la barre : a
+                         390 px, trois liens en capitales espacees ne tiennent
+                         pas sur une ligne a cote de l avatar, et empiles ils
+                         pousseraient le logotype hors de l ecran.
+                         ⚠️ Le bouton est en PREMIER dans le gabarit, donc en
+                         premier a la tabulation : c est la commande qui ouvre
+                         tout le reste de la navigation. -->
+                    <button class="v2-burger" v-if="isMobile" @click="menuOuvert = !menuOuvert"
+                            :class="{ ouvert: menuOuvert }"
+                            :aria-expanded="menuOuvert ? 'true' : 'false'"
+                            aria-label="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
                     <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du
                          coin ferait doublon. Il reprend sa place des qu'on entre dans
                          les modes ou le code, ou plus rien ne nomme le site. -->
@@ -237,7 +252,15 @@
                          ⚠️ `margin-right: auto` la pousse a gauche et tient la
                          place du logo sur l accueil, ou il est masque — sans
                          elle, les liens se colleraient a l avatar. -->
-                    <nav class="v2-nav" aria-label="Le site" ref="nav">
+                    <!-- 📜 LE VOILE DU TIROIR. ⚠️ Il ferme au clic a cote,
+                         et il est AVANT le tiroir dans le gabarit pour
+                         passer dessous sans qu on ait a empiler des
+                         `z-index` : l ordre du document suffit quand deux
+                         elements positionnes se suivent. -->
+                    <div class="v2-nav-voile" v-if="isMobile && menuOuvert"
+                         @click="menuOuvert = false"></div>
+                    <nav class="v2-nav" aria-label="Le site" ref="nav"
+                         :class="{ tiroir: isMobile, ouvert: menuOuvert }">
                         <!-- 🧭 LE FILET QUI SUIT : un SEUL trait doré glisse
                              d un lien a l autre, au lieu d un soulignement par
                              lien qui s allume et s eteint. La difference n est
@@ -253,6 +276,8 @@
                         <span class="v2-nav-filet" ref="navFilet" aria-hidden="true"></span>
                         <a class="v2-nav-lien" href="/classement"
                            @mouseenter="poserFilet($event)">Classement</a>
+                        <a class="v2-nav-lien" href="/rangs"
+                           @mouseenter="poserFilet($event)">Rangs</a>
                         <!-- ⚠️ UN VRAI LIEN, et `/boutique` N EXISTE PAS ENCORE :
                              c est assume, la page arrive au prochain envoi. D ici
                              la il rend une 404 — le dire ici pour que personne ne
