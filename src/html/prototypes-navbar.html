@@ -62,6 +62,11 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .piste .n { font-size: .73rem; line-height: 1.65; opacity: .52; max-width: 56rem; margin: 0 0 1rem; }
 .piste .n b { opacity: .95; color: #fff; font-weight: 600; }
 .piste.reco h2 { color: var(--orvif); }
+.vague {
+    margin: 2.4rem 0 0; padding: 0 1.4rem .2rem;
+    font-size: .6rem; font-weight: 700; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--orvif); opacity: .65;
+}
 
 /* ══════════ LA SCENE : le vrai fond de l accueil ══════════ */
 .scene {
@@ -195,6 +200,116 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .v5 .nav a:hover { color: var(--orvif); }
 .v5 .nav a.on { color: #fff; }
 
+/* ══════════════════════════════════════════════════════════════
+   SECONDE VAGUE — « LES SEPARATEURS », DECLINE
+   ══════════════════════════════════════════════════════════════
+   La cinquieme tient : petites capitales espacees, traits fins entre les
+   liens. Ce qui lui manque, ce n est pas une forme de plus, c est de la
+   VIE — elle arrive d un bloc et ne repond presque pas au survol.
+
+   ⚠️ Toutes partagent la meme base (`.sep5`) et n ajoutent qu une chose
+   chacune. C est ce qui rend la comparaison lisible : si chaque variante
+   changeait aussi la taille et l espacement, on ne saurait plus ce qu on
+   compare.
+
+   ⚠️ ET L ARRIVEE EST COURTE PARTOUT — 40 ms entre deux liens, 0,3 s en
+   tout. Une barre de navigation se voit a CHAQUE chargement : une seconde
+   d animation qu on trouve elegante la premiere fois devient une seconde
+   d attente la dixieme. */
+.sep5 .nav { gap: 0; }
+.sep5 .nav a {
+    position: relative; padding: .3rem 1.1rem; font-size: .76rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: #8b8598;
+    transition: color .2s ease, letter-spacing .25s ease;
+}
+.sep5 .nav a + a::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 1px; height: .9rem; background: rgba(255,255,255,.14);
+}
+.sep5 .nav a.on { color: #fff; }
+
+/* L arrivee, commune aux cinq : les liens montent un par un, les traits se
+   deploient apres eux. ⚠️ `backwards` est obligatoire — sans lui, un
+   element qui attend son delai s affiche a son etat FINAL puis saute a son
+   etat initial au demarrage. Il clignote. */
+@keyframes n-monte { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } }
+@keyframes n-trait { from { transform: translateY(-50%) scaleY(0); } to { transform: translateY(-50%) scaleY(1); } }
+.arrive .nav a {
+    animation: n-monte .34s cubic-bezier(.2,.8,.2,1) backwards;
+    animation-delay: calc(var(--i, 0) * 40ms);
+}
+.arrive .nav a + a::before {
+    animation: n-trait .3s ease backwards;
+    animation-delay: calc(var(--i, 0) * 40ms + 120ms);
+}
+
+/* ─── A · LE FILET QUI SUIT ───
+   Un seul trait dore glisse d un lien a l autre. ⚠️ UN SEUL, et c est tout
+   l effet : un soulignement par lien qui s allume et s eteint donne deux
+   evenements sans rapport ; celui-ci RELIE les deux positions, et l oeil
+   suit le mouvement au lieu de constater le changement. */
+.vA .nav { position: absolute; }
+.vA .filet {
+    position: absolute; bottom: .1rem; left: 0; width: 0; height: 2px;
+    border-radius: 2px; background: linear-gradient(90deg, rgba(240,199,94,.35), var(--or), rgba(240,199,94,.35));
+    opacity: 0; pointer-events: none;
+    transition: transform .28s cubic-bezier(.3,.9,.3,1), width .28s cubic-bezier(.3,.9,.3,1), opacity .18s ease;
+}
+.vA .nav:hover .filet { opacity: 1; }
+.vA .nav a:hover { color: #fff; }
+
+/* ─── B · L INTERLETTRAGE ───
+   Le mot s OUVRE au survol : l espacement passe de .1 a .22em. Rien ne
+   s ajoute a l ecran, c est la lettre elle-meme qui repond.
+   ⚠️ Le `padding` se resserre d autant que l espacement s ouvre, sinon le
+   lien s elargit et POUSSE ses voisins — toute la barre bouge au survol
+   d un seul mot. */
+.vB .nav a:hover { color: var(--orvif); letter-spacing: .22em; padding-left: .8rem; padding-right: .8rem; }
+
+/* ─── C · LA LUEUR ───
+   Une lueur doree derriere le mot, et les deux traits voisins qui
+   s effacent. ⚠️ C est l effacement qui fait l effet, pas la lueur : le
+   lien survole se detache parce que son entourage recule. */
+.vC .nav a::after {
+    content: ''; position: absolute; inset: -.1rem .4rem;
+    border-radius: .5rem; z-index: -1;
+    background: radial-gradient(60% 100% at 50% 50%, rgba(255,215,0,.16), transparent 72%);
+    opacity: 0; transition: opacity .22s ease;
+}
+.vC .nav a:hover { color: #fff; }
+.vC .nav a:hover::after { opacity: 1; }
+.vC .nav:hover a + a::before { background: rgba(255,255,255,.05); transition: background .25s ease; }
+
+/* ─── D · LE LOSANGE ───
+   Un losange dore devant l actif — le meme signe que le badge des comptes
+   inscrits. ⚠️ Il prend sa place DES LE DEPART en `opacity: 0` : apparu en
+   `display`, il pousserait le mot d un demi-caractere a chaque survol. */
+.vD .nav a { padding-left: 1.5rem; }
+.vD .nav a:first-child { padding-left: 1.1rem; }
+.vD .nav a::after {
+    content: ''; position: absolute; left: .75rem; top: 50%;
+    width: .3rem; height: .3rem; margin-top: -.15rem;
+    background: currentColor; transform: rotate(45deg) scale(.4);
+    opacity: 0; transition: opacity .2s ease, transform .25s cubic-bezier(.3,1.4,.4,1);
+}
+.vD .nav a:first-child::after { left: .35rem; }
+.vD .nav a:hover { color: #fff; }
+.vD .nav a.on, .vD .nav a:hover { color: var(--orvif); }
+.vD .nav a.on::after, .vD .nav a:hover::after { opacity: 1; transform: rotate(45deg) scale(1); }
+
+/* ─── E · LE VOLET ───
+   Le mot est double : la copie du dessus glisse vers le haut et la copie du
+   dessous prend sa place. ⚠️ `overflow: hidden` sur une boite a la hauteur
+   exacte d une ligne — c est elle qui coupe, et c est pour ca que la
+   hauteur doit etre fixe et non `auto`. */
+.vE .nav a { overflow: hidden; height: 1.3rem; line-height: 1.3rem; padding-top: 0; padding-bottom: 0; }
+.vE .nav a i {
+    display: block; font-style: normal;
+    transition: transform .28s cubic-bezier(.3,.9,.3,1);
+}
+.vE .nav a i + i { color: var(--orvif); }
+.vE .nav a:hover i { transform: translateY(-1.3rem); }
+
 /* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
 .v6 .nav {
     gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
@@ -239,6 +354,11 @@ refaire. Change le nombre ci-dessous et regarde.
     <label>Largeur</label>
     <button class="cmd on" data-w="plein">Ordinateur</button>
     <button class="cmd" data-w="mobile">Téléphone · 390</button>
+    <span class="sep"></span>
+    <!-- ⚠️ L arrivee ne se joue qu une fois par rendu : sans ce bouton il
+         faudrait recharger la page pour la revoir, et l on ne compare pas
+         six animations en rechargeant six fois. -->
+    <button class="cmd" id="rejouer">↻ Rejouer l'arrivée</button>
 </div>
 
 <div id="pistes"></div>
@@ -263,6 +383,18 @@ var PISTES = [
       n: "Petites capitales espacées, séparées par des traits fins. <b>C'est le langage du pied de page</b>, remonté en haut. Sobre et dense, elle encaisse beaucoup de liens — mais elle ne se distingue plus du pied, et les deux barres cessent de dire des choses différentes." },
     { id: 6, cls: 'v6', nom: 'La capsule et la marque',
       n: "La capsule, avec le <b>S</b> posé dedans à gauche. Elle devient un objet complet plutôt qu'un groupe de liens, et le logo du coin gauche n'a plus de raison d'être. ⚠️ Sur l'accueil le logotype géant porte déjà le nom au centre : trois marques à l'écran, c'en est une de trop." },
+
+    { vague: 'Seconde vague — « Les séparateurs », décliné',
+      id: 'A', cls: 'sep5 vA arrive', nom: 'Le filet qui suit', sep: true, filet: true, reco: true,
+      n: "<b>Un seul filet doré glisse d'un lien à l'autre.</b> C'est tout l'effet : un soulignement par lien qui s'allume et s'éteint donne deux événements sans rapport ; celui-ci relie les deux positions, et l'œil suit le mouvement au lieu de constater le changement. C'est aussi celui qui tient le mieux quand les liens se multiplient." },
+    { id: 'B', cls: 'sep5 vB arrive', nom: 'L’interlettrage', sep: true,
+      n: "<b>Le mot s'ouvre au survol</b> — l'espacement passe de .1 à .22em. Rien ne s'ajoute à l'écran : c'est la lettre elle-même qui répond. ⚠️ Le padding se resserre d'autant, sinon le lien s'élargit et pousse ses voisins — toute la barre bouge au survol d'un seul mot." },
+    { id: 'C', cls: 'sep5 vC arrive', nom: 'La lueur', sep: true,
+      n: "Une lueur dorée derrière le mot, et <b>les traits voisins qui s'effacent</b>. ⚠️ C'est l'effacement qui fait l'effet, pas la lueur : le lien survolé se détache parce que son entourage recule d'un cran." },
+    { id: 'D', cls: 'sep5 vD arrive', nom: 'Le losange', sep: true,
+      n: "Un <b>losange doré</b> devant le mot survolé et devant l'actif — le même signe que le badge des comptes inscrits, donc un vocabulaire que le joueur connaît déjà. ⚠️ Il occupe sa place dès le départ en opacité zéro : apparu en display, il pousserait le mot d'un demi-caractère à chaque survol." },
+    { id: 'E', cls: 'sep5 vE arrive', nom: 'Le volet', sep: true, volet: true,
+      n: "<b>Le volet</b> : le mot est doublé, celui du dessus glisse vers le haut et sa copie dorée prend sa place. Le plus spectaculaire des cinq, et le plus risqué — répété à chaque survol sur une barre permanente, il peut vite lasser." },
 ];
 
 var n = 4, largeur = 'plein';
@@ -271,24 +403,51 @@ function peindre() {
     var liens = LIENS.slice(0, n);
     document.getElementById('pistes').innerHTML = PISTES.map(function (p) {
         var a = liens.map(function (l, i) {
-            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+            // ⚠️ `--i` porte le rang : c'est lui qui décale l'arrivée. En CSS
+            // pur il aurait fallu une règle `nth-child` par lien, et le
+            // septième n'aurait rien eu.
+            var dedans = p.volet ? '<i>' + l + '</i><i>' + l + '</i>' : l;
+            return '<a href="#" style="--i:' + i + '" class="' + (i === 0 ? 'on' : '') + '">'
+                 + dedans + '</a>';
         }).join('');
         var marque = p.cls === 'v6' ? '<span class="marque">S</span>' : '';
         var pilule = p.cls === 'v3' ? '<span class="pilule"></span>' : '';
         var filet = p.cls === 'v4' ? '<span class="scene-filet"></span>' : '';
+        var glis = p.filet ? '<span class="filet"></span>' : '';
         var coinG = p.cls === 'v6' ? '' : '<span class="coin g"><span class="pastille"></span></span>';
-        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
-            + '<h2><em>' + p.id + '</em>' + p.nom + (p.note ? ' <span style="font-size:.6rem;opacity:.45;font-weight:600">· ' + p.note + '</span>' : '') + '</h2>'
+        var vague = p.vague ? '<h3 class="vague">' + p.vague + '</h3>' : '';
+        return vague + '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.id + '</em>' + (p.nom || '') + (p.note ? ' <span style="font-size:.6rem;opacity:.45;font-weight:600">· ' + p.note + '</span>' : '') + '</h2>'
             + '<p class="n">' + p.n + '</p>'
             + '<div class="' + p.cls + '" style="max-width:' + (largeur === 'mobile' ? '390px' : 'none') + '">'
               + '<div class="scene">'
                 + '<i class="aurore"></i><i class="grille"></i>' + filet + coinG
                 + '<span class="coin d"><span class="solde">2 400</span><span class="pastille"></span></span>'
-                + '<nav class="nav">' + pilule + marque + a + '</nav>'
+                + '<nav class="nav">' + pilule + glis + marque + a + '</nav>'
               + '</div>'
             + '</div></section>';
     }).join('');
     brancherPilule();
+    brancherFilet();
+}
+
+// Le filet doré suit le lien survolé. ⚠️ Mesuré AU SURVOL et non calculé une
+// fois au départ : les largeurs dépendent de la police, qui peut finir de
+// charger après le premier rendu — et elles changent à chaque fois qu'on
+// modifie le nombre de liens.
+function brancherFilet() {
+    document.querySelectorAll('.vA .nav').forEach(function (nav) {
+        var f = nav.querySelector('.filet');
+        nav.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('mouseenter', function () {
+                var r = a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+                // On rentre de la moitié du padding : le filet souligne le MOT,
+                // pas la zone cliquable, qui déborde de chaque côté.
+                f.style.width = (r.width - 28) + 'px';
+                f.style.transform = 'translateX(' + (r.left - b.left + 14) + 'px)';
+            });
+        });
+    });
 }
 
 // La pilule suit le lien survolé. ⚠️ Mesurée au survol et non calculée une
@@ -320,6 +479,7 @@ function brancherPilule() {
 document.querySelector('.barre').addEventListener('click', function (e) {
     var b = e.target.closest('.cmd');
     if (!b) return;
+    if (b.id === 'rejouer') { peindre(); return; }
     if (b.dataset.n) {
         n = parseInt(b.dataset.n, 10);
         document.querySelectorAll('[data-n]').forEach(function (o) { o.classList.toggle('on', o === b); });
