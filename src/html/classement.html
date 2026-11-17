@@ -128,10 +128,12 @@
 (function () {
 'use strict';
 
+// ⚠️ PAS DE « Rivalité ». Ce n'est pas un mode, c'est le réglage Format du
+// quiz : mêmes questions, même barème. Deux chips côte à côte faisaient
+// croire à deux jeux différents. Ses parties comptent dans « Tous ».
 var MODES = [
     { id: null,        nom: 'Tous' },
     { id: 'classic',   nom: 'Classique' },
-    { id: 'rivalry',   nom: 'Rivalité' },
     { id: 'bombanime', nom: 'BombAnime' },
     { id: 'rush',      nom: 'Rush' },
     { id: 'ascension', nom: 'Ascension' },

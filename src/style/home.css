@@ -7120,8 +7120,24 @@ html.rendu-logiciel .v2-dust { display: none; }
        cent pixels de haut — plus que le pied de page, pour deux liens et un
        avatar. C est l AVATAR qui la dictait : a 2,8rem plus ses marges, il
        imposait sa hauteur a toute la barre. On l a donc reduit en meme
-       temps, sinon le padding n aurait rien gagne. */
-    padding: 0.15rem 0 0.7rem;
+       temps, sinon le padding n aurait rien gagne.
+
+       ⚠️ ET LA MARGE NEGATIVE EST CE QUI L EQUILIBRE. Le bandeau noir doit
+       toucher le haut de l ecran — un ruban qui flotte a trente pixels du
+       bord n est pas un bandeau. Mais `.v2-home` donne 1,9rem de padding en
+       haut, si bien qu il y avait 33 px au-dessus des liens pour 11 en
+       dessous : la barre paraissait lourde du haut. Remonter le contenu de
+       1,3rem met le meme air des deux cotes, et la bande tombe a 54 px.
+       ℹ️ Tout ce qui suit remonte d autant, ce qui donne un peu d air au
+       logotype — c est voulu, pas un effet de bord subi. */
+    /* ⚠️ CALCULEE DEPUIS `--home-pad-y`, PAS ECRITE EN DUR. Elle valait
+       -1,3rem, ce qui equilibrait la bande sur ordinateur (padding 1,9rem)
+       et la desequilibrait sur telephone, ou le padding tombe a 1,5 : il
+       restait 3 px au-dessus des liens pour 10 en dessous. En la calculant,
+       le contenu part toujours a 0,6rem du bord, quelle que soit la
+       gouttiere verticale du moment. */
+    margin-top: calc((var(--home-pad-y) - 0.6rem) * -1);
+    padding: 0 0 0.6rem;
 }
 
 /* ── LE FOND NOIR DU BANDEAU ──
@@ -7135,21 +7151,36 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-topbar::before {
     content: '';
     position: absolute;
-    top: calc(var(--home-pad-y) * -1);
+    /* La marge negative de la barre a deja remonte le contenu a 0,6rem du
+       bord : il reste exactement ca a couvrir pour toucher l ecran. */
+    top: -0.6rem;
     bottom: 0;
     left: calc(var(--gouttiere) * -1);
     right: calc(var(--gouttiere) * -1);
     z-index: -1;
-    background: #07060b;
+    /* ⚠️ PAS UN NOIR PLEIN. Le pied de page en porte un parce qu il ferme la
+       page ; en haut, un aplat aussi sombre que `#07060b` coupait l aurore
+       net et la bande se lisait comme une barre d application posee sur le
+       jeu. Un gris tres sombre a peine translucide laisse passer un soupcon
+       de la lueur sans que les liens perdent leur fond. */
+    background: rgba(17, 16, 23, 0.9);
     pointer-events: none;
 }
 
-/* ⚠️ L avatar passe de 2,8 a 2,2rem et le solde suit. C est lui qui fixait
-   la hauteur de la bande : la rogner sans le reduire n aurait rien donne. */
+/* ⚠️ L avatar passe de 2,8 a 2,2rem. C est lui qui fixait la hauteur de la
+   bande : la rogner sans le reduire n aurait rien donne. */
 .v2-topbar .v2-moi-av { width: 2.2rem; height: 2.2rem; }
-.v2-topbar .v2-moi-rubis { padding: 0.2rem 0.55rem; font-size: 0.78rem; }
-.v2-topbar .v2-moi-rubis img { height: 0.8rem; }
 .v2-topbar .v2-moi-stylo { width: 0.95rem; height: 0.95rem; }
+
+/* ⏳ LE SOLDE EST MASQUE, TEMPORAIREMENT. Il n a rien a dire tant que la
+   boutique n existe pas : un chiffre qui monte sans qu on puisse le
+   depenser intrigue puis lasse. Il reprendra sa place le jour ou il mene
+   quelque part.
+   ⚠️ `display: none` ET NON une suppression du gabarit : le compteur
+   continue d etre tenu a jour par `compte-profil`, et le rendre visible
+   redevient une ligne a effacer. Le retirer du gabarit demanderait de
+   retrouver ou il se branchait. */
+.v2-topbar .v2-moi-rubis { display: none; }
 
 /* ── LE FILET SOUS LE BANDEAU ──
    Le meme que celui du pied de page : il s eteint a ses deux bouts plutot
@@ -7206,7 +7237,11 @@ html.rendu-logiciel .v2-dust { display: none; }
    barre du pied, pleine largeur et fixe. */
 .v2-nav {
     position: absolute;
-    top: 0.15rem;
+    /* ⚠️ Zero, et c est mesure : a 0,15rem il restait 12 px au-dessus des
+       liens pour 7 en dessous. La boite de la navigation fait la hauteur de
+       l avatar, donc elle se centre d elle-meme une fois posee en haut du
+       contenu de la barre. */
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     display: flex;

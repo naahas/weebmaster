@@ -3691,7 +3691,12 @@ const CLASSEMENT_LIGNES = 50;
 // ⚠️ Les modes classables ne sont pas tous les modes. `choice` n'est pas
 // sorti, et `codanime` n'a pas de classement individuel défendable — la
 // performance y est collective, un palmarès personnel y mentirait.
-const CLASSEMENT_MODES = ['classic', 'rivalry', 'bombanime', 'rush', 'ascension', 'collect'];
+// ⚠️ `rivalry` N EST PAS DANS LA LISTE, et ses parties ne sont pas perdues
+// pour autant : elles comptent dans « Tous », comme toutes les autres. Ce
+// qui disparait, c est le FILTRE — parce que la Rivalite n est pas un mode,
+// c est le reglage Format du quiz. Deux chips cote a cote pour les memes
+// questions et le meme bareme faisaient croire a deux jeux differents.
+const CLASSEMENT_MODES = ['classic', 'bombanime', 'rush', 'ascension', 'collect'];
 
 // 🏅 Le record de chaque mode : ce qu'on y mesure, dans quel sens, et le
 // réglage qui fait le seau de comparaison.
