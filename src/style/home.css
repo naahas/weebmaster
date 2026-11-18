@@ -7225,6 +7225,60 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-topbar .v2-logo { margin-right: auto; }
 
 /* ════════════════════════════════════════════════════════════
+   🏷️ LA MARQUE ECRITE, dans la barre du site
+   ════════════════════════════════════════════════════════════
+   Le troisieme appui de la barre. Elle remplace le S du coin, qui etait
+   masque sur l accueil pour ne pas doubler le logotype geant — et laissait
+   donc le tiers gauche vide, ce qui etait tout le defaut.
+
+   ⚠️ `margin-right: auto` LA POUSSE A GAUCHE et c est tout ce qu elle fait :
+   la navigation est en `position: absolute` centree sur l ECRAN, elle ne
+   fait donc pas partie du flux et ne peut etre ni poussee ni decentree par
+   ce qui l entoure. La marque et l avatar peuvent changer de largeur
+   librement, les liens ne bougent pas d un pixel.
+
+   ⚠️ LE REPLI DE COULEUR EST OBLIGATOIRE. `background-clip: text` avec
+   `-webkit-text-fill-color: transparent` rend le mot INVISIBLE partout ou
+   le decoupage echoue. Le `color` sous le degrade est ce qui reste alors —
+   un or plein, lisible, au lieu d un trou dans la barre. */
+.v2-marque {
+    flex: 0 0 auto;
+    margin-right: auto;
+    padding: 0.2rem 0;
+    font-family: 'Orbitron', 'Poppins', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: var(--neon-primary);
+    background-image: linear-gradient(100deg, #ffffff 8%, #ffd700 58%, #f0c75e 96%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: filter 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.v2-marque:hover {
+    filter: drop-shadow(0 0 0.6rem rgba(255, 190, 40, 0.45));
+    transform: translateY(-1px);
+}
+.v2-marque:active { transform: translateY(0) scale(0.97); }
+/* ⚠️ Le contour de tabulation ne peut pas etre porte par le texte : il est
+   transparent. Il se pose donc sur la boite, avec un peu d air. */
+.v2-marque:focus-visible {
+    outline: 2px solid rgba(255, 215, 0, 0.7);
+    outline-offset: 0.3rem;
+    border-radius: 0.2rem;
+}
+@media (prefers-reduced-motion: reduce) {
+    .v2-marque { transition: none; }
+    .v2-marque:hover, .v2-marque:active { transform: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
    🧭 LA NAVIGATION DU SITE, dans la barre du haut
    ════════════════════════════════════════════════════════════
    ⚠️ DELIBEREMENT AUTRE CHOSE QUE LE PIED DE PAGE. Les deux portent des
@@ -7288,10 +7342,18 @@ html.rendu-logiciel .v2-dust { display: none; }
    graisse a 600 : c est elle qui portait l impression.
    ℹ️ La couleur, elle, reste claire — c est ce qui dit que la navigation est
    d un rang au-dessus du pied, et il ne reste plus qu elle pour le dire. */
+/* ⚠️ ET ON REDESCEND D UN PIXEL, parce que la barre a change de composition.
+   La taille avait ete calee un pixel AU-DESSUS du pied de page, a une epoque
+   ou les liens etaient seuls dans la barre : il fallait bien que quelque
+   chose dise que la navigation est d un rang au-dessus d une mention legale.
+   Depuis, la marque ecrite tient ce role a elle seule, et les liens n ont
+   plus a le porter. 0,733rem = 11,73 px, on passe a 0,67rem = 10,72 px —
+   exactement la taille du pied. Ce qui les distingue reste entier : la
+   couleur claire, le filet dore qui pousse, et le nom a cote. */
 .v2-nav-lien {
     position: relative;
     padding: 0.2rem 1.15rem;
-    font-size: 0.733rem;
+    font-size: 0.67rem;
     font-weight: 600;
     letter-spacing: 0.13em;
     text-transform: uppercase;
@@ -7415,7 +7477,13 @@ html.rendu-logiciel .v2-dust { display: none; }
     gap: 0.28rem;
     width: 2.2rem;
     height: 2.2rem;
-    margin-right: auto;
+    /* ⚠️ PLUS DE `margin-right: auto` ICI — c est la marque qui le porte
+       desormais. Avec les deux, le navigateur partageait le vide en parts
+       EGALES entre eux : mesure a 390 px, il restait 67 px de chaque cote
+       du nom, qui se posait donc a peu pres au milieu sans y etre jamais
+       exactement (192 contre 195). Un mot presque centre se voit tout de
+       suite, et c est le genre de defaut qu on ne sait pas nommer. Le nom
+       suit maintenant le bouton, comme sur ordinateur. */
     padding: 0 0.3rem;
     background: none;
     border: 0;
@@ -7614,6 +7682,14 @@ html.rendu-logiciel .v2-dust { display: none; }
     border: 0.095rem solid rgba(255, 215, 0, 0.62);
     transition: border-color 0.25s ease;
 }
+/* ⚠️ LE CERNE DU PORTRAIT DEVIENT NEUTRE QUAND L ANNEAU EXISTE. Deux ors
+   colles l un a l autre se lisaient comme UNE SEULE bordure epaisse, et la
+   progression disparaissait dans le cadre. Neutre, le cerne redevient un
+   contour, et l or ne sert plus qu a une chose : l avancement.
+   ⚠️ Conditionne a `.inscrit`, pas applique a tout le monde : sans anneau,
+   un invite se retrouverait avec un disque entierement gris dans un coin ou
+   plus rien n accrocherait l oeil. L or ne part que s il reparait ailleurs. */
+.v2-moi-av.inscrit img { border-color: rgba(255, 255, 255, 0.17); }
 .v2-moi-av:hover img,
 .v2-moi-av.ouvert img { border-color: var(--neon-primary); }
 
@@ -7637,6 +7713,17 @@ html.rendu-logiciel .v2-dust { display: none; }
     pointer-events: none;
     overflow: visible;
 }
+/* ⚠️ LE VIDE EST CE QUI FAIT LE DOUBLE ANNEAU. Colle au portrait, le trace
+   se lit comme une bordure epaisse de plus ; ecarte, il se lit comme une
+   MESURE. C est le seul changement entre les deux, et il fait tout.
+   ⚠️ Ecart porte UNIQUEMENT par la barre de l accueil, et c est une entorse
+   assumee au principe « le meme signe dit la meme chose aux deux endroits » :
+   l avatar du panneau fait 2,9rem contre 2,2 ici, et le meme ecart en rem y
+   serait proportionnellement plus serre. Les deux ne sont deja pas de la
+   meme taille ni du meme liisere — c est le GESTE qui est commun, pas la cote.
+   ⚠️ Le crayon continue d interrompre proprement le trace : a cet ecart
+   l anneau passe toujours dans son disque, donc sous son cerne de fond. */
+.v2-topbar.site .v2-moi-xp { inset: -0.44rem; }
 /* ⚠️ DEUX ANNEAUX FINS, PAS UN EPAIS. Le cercle de l avatar en porte deja un ;
    celui-ci est le second, et c est leur ECART qui les fait lire comme une
    paire. Un seul trait epais aurait dit « cadre », deux traits fins disent

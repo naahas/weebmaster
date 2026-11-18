@@ -235,12 +235,24 @@
                             aria-label="Menu">
                         <span></span><span></span><span></span>
                     </button>
-                    <!-- Sur l'accueil le logotype porte deja le nom au centre : le S du
-                         coin ferait doublon. Il reprend sa place des qu'on entre dans
-                         les modes ou le code, ou plus rien ne nomme le site. -->
-                    <button class="v2-logo" v-if="homeScreen !== 'hub'" @click="reloadHome" title="Accueil">
-                        <img class="v2-logo-img" src="logo-sm.png" alt="ShonenMaster" draggable="false">
-                        <span class="v2-logo-ring"></span>
+                    <!-- 🏷️ LE NOM ECRIT, ET PAS LE PICTOGRAMME. Le S du coin
+                         partait du principe inverse : il etait masque sur
+                         l accueil pour ne pas doubler le logotype geant, et
+                         le tiers gauche restait donc vide — c etait tout le
+                         defaut de la barre.
+                         ⚠️ IL EST VISIBLE PARTOUT, accueil compris, et c est
+                         assume : sur le hub il dit deux fois le nom, mais le
+                         hub n est qu un ecran sur quatre et c est le seul ou
+                         le doublon existe. Un appui qui disparait trois fois
+                         sur quatre n est pas un appui.
+                         ⚠️ Un BOUTON et non un titre : il ramene a l accueil,
+                         ce qu on attend d un nom pose dans un coin de barre.
+                         ⚠️ `aria-label` explicite — le degrade decoupe dans
+                         le texte ne change rien a ce qui est lu, mais le role
+                         de retour, lui, ne se devine pas du mot seul. -->
+                    <button class="v2-marque" @click="reloadHome"
+                            title="Accueil" aria-label="ShonenMaster — retour à l'accueil">
+                        ShonenMaster
                     </button>
 
                     <!-- 🧭 LA NAVIGATION DU SITE.
@@ -334,8 +346,15 @@
                         <img src="smoney.webp" alt="" draggable="false">
                         <b>{{ compteRubis.toLocaleString('fr-FR') }}</b>
                     </span>
+                    <!-- ⚠️ `inscrit` existe POUR LE LISERE DU PORTRAIT. Avec le
+                         double anneau, l or ne dit plus qu une chose :
+                         l avancement. Le portrait reprend donc un cerne neutre
+                         — mais seulement quand l anneau est la pour porter l or,
+                         c est-a-dire quand on est connecte. Sans cette classe,
+                         un invite se retrouvait avec un disque entierement gris
+                         dans un coin ou plus rien n accrochait l oeil. -->
                     <button class="v2-moi-av" @click="basculerProfil"
-                            :class="{ ouvert: profilOuvert }" title="Mon profil">
+                            :class="{ ouvert: profilOuvert, inscrit: estConnecte }" title="Mon profil">
                         <img :src="srcAvatar(avatar)" alt="" draggable="false"
                              @error="$event.target.src='novice.png'">
                         <span class="v2-moi-stylo">
