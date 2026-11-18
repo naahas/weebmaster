@@ -7304,8 +7304,19 @@ html.rendu-logiciel .v2-dust { display: none; }
    ⚠️ Et du cote de l avatar, c est l anneau qui mene : il deborde son bouton
    de 7 px, exactement ce que la marge de `.v2-moi-grp` compense. La marge du
    separateur se lit donc directement comme l air visible. */
-.v2-marque + .v2-sep-barre { margin: 0 -0.4rem 0 0.75rem; }
-.v2-nav + .v2-sep-barre { margin: 0 0.75rem 0 -0.4rem; }
+/* ⚠️ LES DEUX COTES DE CHAQUE TRAIT GRANDISSENT ENSEMBLE. Le separateur est
+   un objet : en n ecartant que le nom, le trait se serait retrouve colle a
+   « Classement » et l ecart se serait lu comme un defaut plutot que comme
+   une respiration. On ouvre donc les deux marges de la meme quantite — les
+   16 px de chaque cote deviennent 26, chaque trait reste au milieu de son
+   vide, et le groupe se recentrant, le nom part vers la gauche pendant que
+   l avatar part vers la droite.
+   ⚠️ LES DEUX REGLES SONT LE MIROIR L UNE DE L AUTRE, et il faut le voir
+   pour les relire : 1,4rem du cote exterieur — le nom, l avatar — et
+   0,22rem du cote des liens, parce que ceux-ci apportent deja 18,4 px de
+   padding. Les chiffres different, l air est le meme. */
+.v2-marque + .v2-sep-barre { margin: 0 0.22rem 0 1.4rem; }
+.v2-nav + .v2-sep-barre { margin: 0 1.4rem 0 0.22rem; }
 
 /* ⚠️ L AVATAR DESCEND D UN PIXEL, par `top` et non par une marge : il est
    deja en `position: relative`, le decalage ne touche donc a aucune mise en
