@@ -389,6 +389,40 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .c6 .marque-c { display: flex; align-items: center; gap: .5rem; margin: 0 1.6rem; }
 .c6 .pastille { position: absolute; right: 1.1rem; }
 
+/* ══════════════════════════════════════════════════════════════
+   QUATRIEME VAGUE — LE NOM ECRIT DANS LA BARRE
+   ══════════════════════════════════════════════════════════════
+   ⚠️ UNE QUESTION A TRANCHER AVANT DE REGARDER : sur l ACCUEIL, le logotype
+   geant porte deja « SHONENMASTER » au milieu de l ecran. Un nom ecrit dans
+   la barre y fait donc doublon — deux fois le meme mot a dix centimetres.
+   Mais l accueil n est qu un ecran sur quatre : des qu on passe aux modes ou
+   a la saisie du code, le logotype disparait et plus rien ne nomme le site.
+   C est exactement pour ca que le petit S du coin existait.
+   Les compositions ci-dessous valent donc selon la reponse a : « la barre
+   doit-elle nommer le site, ou seulement y ramener ? » */
+.comp .mot-sm {
+    font-family: 'Orbitron', sans-serif; font-size: .74rem; font-weight: 800;
+    letter-spacing: .06em; white-space: nowrap;
+    background: linear-gradient(100deg,#fff 10%, var(--orvif) 60%, var(--or) 95%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    /* ⚠️ Repli obligatoire : sans lui, un navigateur qui ignore
+       `background-clip: text` rend un nom INVISIBLE. */
+    color: var(--orvif);
+}
+.comp .marque-g { display: flex; align-items: center; gap: .55rem; flex: 0 0 auto; }
+/* Le trait qui separe la marque des liens : sans lui le nom se lit comme un
+   lien de plus, puisqu il est a la meme hauteur et sur la meme ligne. */
+.comp .mur {
+    width: 1px; height: 1.3rem; background: rgba(255,255,255,.12);
+    margin: 0 .35rem; flex: 0 0 auto;
+}
+/* d3 / d4 : le nom au centre, cale sur l ECRAN et non entre ses voisins —
+   sinon il se decale selon la largeur des liens, qui n est pas symetrique. */
+.d3 .marque-c, .d4 .marque-c {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: .55rem;
+}
+
 /* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
 .v6 .nav {
     gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
@@ -605,6 +639,18 @@ var COMPOS = [
       n: "La bande se fonce et porte une ombre : elle <b>flotte au-dessus</b> de la page au lieu d'en faire partie. C'est la plus « site », la moins « jeu » — et sur un fond qui bouge, c'est aussi la plus stable." },
     { cls: 'c6', nom: 'La marque au centre',
       n: "Les liens de part et d'autre du nom, l'avatar a droite. Elegant et symetrique, <b>mais il faut un nombre PAIR de liens</b> : a trois, l'un des deux cotes pese toujours plus lourd. Et l'accueil porte deja son nom en grand au milieu." },
+
+    { vague: 'Quatrième vague — le nom écrit dans la barre',
+      cls: 'd1', nom: 'Le nom à gauche, les liens à côté', reco: true,
+      n: "Logo et nom groupés à gauche, un trait, puis les liens. <b>La composition la plus répandue, et ce n'est pas un hasard</b> : l'œil part toujours du coin haut-gauche, et il y trouve d'abord qui parle, ensuite où aller. Le trait est indispensable — sans lui le nom se lit comme un lien de plus." },
+    { cls: 'd2', nom: 'Le nom à gauche, les liens à droite',
+      n: "Les deux blocs aux deux bouts, le vide au milieu. <b>Elle respire</b>, et elle met les liens à portée de l'avatar — donc tout ce qui est « moi » du même côté. ⚠️ Mais le centre reste vide, qui est exactement le reproche fait à la barre actuelle : on déplace le trou, on ne le comble pas." },
+    { cls: 'd3', nom: 'Le nom au centre, les liens à gauche', reco: true,
+      n: "Le nom tient le milieu, les liens partent du coin gauche, l'avatar ferme à droite. <b>Les trois appuis y sont, et le plus voyant est le nom</b> — c'est la composition d'un site qui se présente avant de se laisser parcourir. ⚠️ À regarder sur l'accueil : le logotype géant dit déjà le nom, trente centimètres plus bas." },
+    { cls: 'd4', nom: 'Le nom au centre, les liens à droite',
+      n: "Même chose, les liens passés à droite contre l'avatar. <b>Le coin gauche redevient vide</b> — c'est la composition la plus proche de celle d'aujourd'hui, avec un nom en plus au milieu. Elle vaut si l'on tient au nom mais pas aux liens en évidence." },
+    { cls: 'd5', nom: 'Le nom seul au centre',
+      n: "Pas de logo : juste le nom, en petit, au milieu — les liens à gauche, l'avatar à droite. <b>La plus sobre</b>, et celle qui ressemble le moins à une barre de produit. Elle suppose que le S du coin ne manque à personne." },
 ];
 
 function peindreCompos() {
@@ -614,8 +660,28 @@ function peindreCompos() {
             return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
         }).join('');
         var marque = '<span class="lg">S</span>';
+        // La marque complete : le S et le nom, groupes.
+        var signe = '<span class="marque-g">' + marque + '<span class="mot-sm">SHONENMASTER</span></span>';
         var dedans;
-        if (p.cls === 'c2') {
+        if (p.cls === 'd1') {
+            dedans = signe + '<span class="mur"></span><span class="liens">' + a + '</span>'
+                   + '<span class="fant"></span><span class="pastille"></span>';
+        } else if (p.cls === 'd2') {
+            dedans = signe + '<span class="fant"></span><span class="liens">' + a + '</span>'
+                   + '<span class="pastille"></span>';
+        } else if (p.cls === 'd3') {
+            dedans = '<span class="liens">' + a + '</span>'
+                   + '<span class="marque-c">' + marque + '<span class="mot-sm">SHONENMASTER</span></span>'
+                   + '<span class="fant"></span><span class="pastille"></span>';
+        } else if (p.cls === 'd4') {
+            dedans = '<span class="fant"></span>'
+                   + '<span class="marque-c">' + marque + '<span class="mot-sm">SHONENMASTER</span></span>'
+                   + '<span class="liens">' + a + '</span><span class="pastille"></span>';
+        } else if (p.cls === 'd5') {
+            dedans = '<span class="liens">' + a + '</span>'
+                   + '<span class="marque-c"><span class="mot-sm">SHONENMASTER</span></span>'
+                   + '<span class="fant"></span><span class="pastille"></span>';
+        } else if (p.cls === 'c2') {
             dedans = marque + '<span class="liens">' + a + '</span><span class="fant"></span>'
                    + '<span class="pastille"></span>';
         } else if (p.cls === 'c4') {
@@ -632,8 +698,9 @@ function peindreCompos() {
             dedans = marque + '<span class="fant"></span><span class="liens">' + a + '</span>'
                    + '<span class="fant"></span><span class="pastille"></span>';
         }
-        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
-            + '<h2><em>' + p.cls.slice(1) + '</em>' + p.nom + '</h2>'
+        var vague = p.vague ? '<h3 class="vague">' + p.vague + '</h3>' : '';
+        return vague + '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.cls.toUpperCase() + '</em>' + p.nom + '</h2>'
             + '<p class="n">' + p.n + '</p>'
             + '<div class="comp ' + p.cls + '" style="max-width:' + (largeur === 'mobile' ? '390px' : 'none') + '">'
               + '<div class="scene"><i class="aurore"></i><i class="grille"></i>'
