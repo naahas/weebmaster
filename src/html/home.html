@@ -271,6 +271,19 @@
                          elements positionnes se suivent. -->
                     <div class="v2-nav-voile" v-if="isMobile && menuOuvert"
                          @click="menuOuvert = false"></div>
+                    <!-- ⚠️ LES DEUX BORNES DU GROUPE DE LIENS. Depuis que le
+                         nom, les liens et l avatar forment un seul bloc
+                         centre, les trois se lisaient d un trait — le nom
+                         pouvait passer pour un lien de plus et l avatar
+                         collait au dernier. Ces deux traits disent ou
+                         commence et ou finit la navigation.
+                         ⚠️ `v-if="!isMobile"` : sur telephone les liens
+                         vivent dans un tiroir, il n y a plus de groupe a
+                         borner — les traits y separeraient le nom de rien.
+                         ⚠️ `aria-hidden` : c est un signe, pas une
+                         information. Un lecteur d ecran n a rien a en
+                         dire. -->
+                    <span class="v2-sep-barre" v-if="!isMobile" aria-hidden="true"></span>
                     <nav class="v2-nav" aria-label="Le site" ref="nav"
                          :class="{ tiroir: isMobile, ouvert: menuOuvert }">
                         <!-- 🧭 LE FILET QUI SUIT : un SEUL trait doré glisse
@@ -297,6 +310,7 @@
                         <a class="v2-nav-lien" href="/boutique"
                            @mouseenter="poserFilet($event)">Boutique</a>
                     </nav>
+                    <span class="v2-sep-barre" v-if="!isMobile" aria-hidden="true"></span>
                     <!-- 👤 DEUX ELEMENTS, PAS TROIS : le pseudo, puis l avatar qui
                          ouvre tout. Il y avait avant une pastille d avatar ET une
                          pastille de pseudo avec son crayon ; ajouter la connexion

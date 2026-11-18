@@ -7264,8 +7264,72 @@ html.rendu-logiciel .v2-dust { display: none; }
    porte sur ce qui se VOIT et non sur une boite plus etroite que son
    contenu. Les deux ensemble : l air est egal et le groupe est centre. */
 .v2-topbar.site .v2-moi-grp { margin: 0 0.44rem; }
+
+/* ── LES DEUX BORNES DU GROUPE DE LIENS ──
+   Un cheveu dore qui s eteint a ses deux bouts, avec un petit losange a son
+   cœur. ⚠️ LE LOSANGE N EST PAS UN ORNEMENT TIRE AU HASARD : c est deja le
+   signe du joueur inscrit dans le salon et celui du rang sur la carte. Un
+   motif de plus aurait fait un vocabulaire de plus a retenir ; celui-la est
+   deja connu de l oeil.
+   ⚠️ Et le trait S ETEINT plutot que de s arreter net, comme le filet du
+   bandeau et celui du pied : un trait franc fait une cellule de tableau. */
+.v2-sep-barre {
+    position: relative;
+    flex: 0 0 auto;
+    width: 1px;
+    height: 1.35rem;
+    background: linear-gradient(180deg,
+        transparent, rgba(240, 199, 94, 0.32) 26%,
+        rgba(240, 199, 94, 0.32) 74%, transparent);
+}
+.v2-sep-barre::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.26rem;
+    height: 0.26rem;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--neon-primary);
+    opacity: 0.8;
+    box-shadow: 0 0 0.4rem rgba(255, 215, 0, 0.55);
+}
+
+/* ⚠️ LES MARGES SONT ASYMETRIQUES, ET C EST UN CALCUL, PAS UN TATONNEMENT.
+   Les liens portent 1,15rem de padding interne : leur BOITE deborde leur MOT
+   de 18,4 px de chaque cote. Un separateur pose a mi-chemin entre deux
+   boites se retrouve donc colle au nom et loin du mot — 12 px d un cote
+   pour 30 de l autre. On compense d une marge negative DU COTE DES LIENS :
+   l air se mesure alors entre ce qui se VOIT, le nom et le mot.
+   ⚠️ Et du cote de l avatar, c est l anneau qui mene : il deborde son bouton
+   de 7 px, exactement ce que la marge de `.v2-moi-grp` compense. La marge du
+   separateur se lit donc directement comme l air visible. */
+.v2-marque + .v2-sep-barre { margin: 0 -0.4rem 0 0.75rem; }
+.v2-nav + .v2-sep-barre { margin: 0 0.75rem 0 -0.4rem; }
+
+/* ⚠️ L AVATAR DESCEND D UN PIXEL, par `top` et non par une marge : il est
+   deja en `position: relative`, le decalage ne touche donc a aucune mise en
+   page et ne peut rien pousser. Un `margin-top` dans un conteneur en
+   `align-items: center` n aurait decale que de la MOITIE de sa valeur —
+   c est la boite des marges qui s y centre, pas la boite de bordure.
+   ⚠️ UN PIXEL ENTIER. A 1,5 px, l anneau et le liisere du portrait tombent
+   entre deux rangees de pixels et se rendent flous sur un ecran sans
+   densite doublee. */
+.v2-topbar.site .v2-moi-grp { top: 1px; }
+/* ⚠️ `relative`, SURTOUT PAS `static`. Il faut deux choses a la fois : que
+   la navigation revienne DANS LE FLUX pour se centrer avec ses voisins, et
+   qu elle reste le BLOC CONTENEUR du filet dore.
+   `poserFilet` calcule `r.left - b.left`, c est-a-dire un decalage RELATIF
+   A LA NAVIGATION, puis l applique a un filet en `position: absolute;
+   left: 0`. Passee en `static`, la navigation cesse d etre son ancetre
+   positionne : le filet s accroche alors a `.v2-topbar`, qui est en
+   `relative` et fait toute la largeur — le trait partait donc se poser a
+   l extreme gauche de la barre, sous le vide.
+   ⚠️ Et `left: auto` + `transform: none` restent indispensables : sans eux,
+   le `left: 50%` de la regle de base, inoffensif en `static`, redeviendrait
+   actif et decalerait la navigation d une demi-barre. */
 .v2-topbar.site .v2-nav:not(.tiroir) {
-    position: static;
+    position: relative;
     left: auto;
     transform: none;
 }
