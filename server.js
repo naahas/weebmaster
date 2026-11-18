@@ -2841,6 +2841,14 @@ app.get('/prototypes/connexion', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-connexion.html');
 });
 
+// 🃏 La carte du joueur, au survol d un pseudo en salon : six peaux, les
+// memes donnees. ⚠️ Elle charge `/niveaux.js` pour en deduire le niveau et
+// le rang exactement comme l accueil — une carte qui recalculerait la courbe
+// de son cote finirait par annoncer un autre rang que le profil.
+app.get('/prototypes/carte-joueur', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-carte-joueur.html');
+});
+
 // 💎 Ou poser le SOLDE a cote de l avatar : huit formes, sur une maquette du
 // vrai coin haut-droit. ⚠️ Le fond n y est pas decoratif — un badge dore se
 // juge sur le degrade d or de l accueil, pas sur du noir, et c est justement

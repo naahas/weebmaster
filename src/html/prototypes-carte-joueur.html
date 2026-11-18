@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La carte du joueur</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Orbitron:wght@700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   🃏 SIX CARTES DE JOUEUR, POUR LE SURVOL D UN PSEUDO EN SALON.
+
+   ⚠️ CE QU ON PEUT REELLEMENT AFFICHER, ET D OU CA VIENT. La question n est
+   pas « qu est-ce qui serait joli » mais « qu est-ce que le serveur sait ».
+   La table `comptes` porte : pseudo, avatar, xp, parties, victoires, titre,
+   titre_prefixe, titre_suffixe, cree_le. Le NIVEAU et le RANG ne sont pas
+   stockes — ils se deduisent de l xp par `niveaux.js`, qui est charge ici
+   comme il l est sur l accueil. Les rubis existent mais SONT EXCLUS : le
+   solde d un autre joueur ne le regarde pas.
+   La PLACE AU CLASSEMENT vient d ailleurs — la vue `v_classement`, posee
+   cette semaine. Elle coute une requete, d ou la remarque plus bas.
+
+   ⚠️ LA COULEUR DE LA CARTE N EST PAS UN CHOIX DE DECORATEUR. Chaque rang
+   de `niveaux.js` porte deja sa `couleur` — gris pour Novice, vert pour
+   Oracle, bleu pour Elite, orange pour Legend, or pour Master. La carte la
+   reprend, donc un meme joueur garde la meme teinte partout et deux cartes
+   cote a cote se distinguent sans qu on lise un mot. Change de joueur dans
+   la barre du haut et regarde : ce n est pas six fois la meme carte doree.
+
+   ⚠️ LE SURVOL EST UNE CONTRAINTE, PAS UN DETAIL D INTEGRATION.
+   1. Elle apparait et disparait des que le curseur traverse la liste. Une
+      arrivee spectaculaire devient insupportable au huitieme survol — d ou
+      des entrees COURTES, et un retard a l ouverture pour que traverser la
+      liste n allume pas six cartes.
+   2. Elle doit se lire en une seconde. Une carte dense en chiffres rate ce
+      test, aussi complete soit-elle.
+   3. Elle ne doit RIEN couvrir : ni la liste des joueurs, ni le tiroir des
+      reglages a gauche, ni le bouton de depart.
+   4. ⚠️ ORDINATEUR SEULEMENT. Sur telephone il n y a ni survol ni place a
+      droite, et une carte au toucher entrerait en conflit avec le clic qui
+      exclut un joueur.
+   5. ⚠️ ET SEULEMENT POUR LES INSCRITS. Un invite n a ni xp, ni rang, ni
+      titre : sa carte serait une fiche vide. L interrupteur « Invite » en
+      haut montre ce qui doit se passer — RIEN.
+-->
+<script src="/niveaux.js"></script>
+<style>
+:root { --or: #f0c75e; --orvif: #ffd700; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 0 0 6rem;
+    background: #08080b; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
+.sous { font-size: .78rem; line-height: 1.7; opacity: .6; max-width: 60rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--orvif); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem; margin-bottom: 1rem;
+    background: rgba(8,8,11,.96);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; }
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--orvif); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+
+.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.6rem 1.4rem .4rem; }
+.piste h2 { font-size: .98rem; font-weight: 800; margin: 0 0 .2rem; display: flex; align-items: baseline; gap: .55rem; }
+.piste h2 em { font-style: normal; font-size: .9rem; opacity: .3; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: .73rem; line-height: 1.65; opacity: .52; max-width: 58rem; margin: 0 0 1.3rem; }
+.piste .n b { opacity: .95; color: #fff; font-weight: 600; }
+.piste.reco h2 { color: var(--orvif); }
+.vague {
+    margin: 2.4rem 0 0; padding: 0 1.4rem .2rem;
+    font-size: .6rem; font-weight: 700; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--orvif); opacity: .65;
+}
+
+/* ══════════ LE FOND : celui du salon ══════════ */
+.fond {
+    position: relative; overflow: hidden; border-radius: .9rem;
+    background: radial-gradient(130% 100% at 50% 0%, #14100a 0%, #0c0c0e 48%, #08080a 100%);
+    border: 1px solid rgba(255,255,255,.06);
+}
+.fond i.aurore {
+    position: absolute; border-radius: 50%; filter: blur(70px); opacity: .5;
+    width: 34rem; height: 34rem; top: -19rem; left: 24%;
+    background: radial-gradient(circle, rgba(255,190,40,.42), transparent 68%);
+}
+.fond i.grille {
+    position: absolute; inset: -40%;
+    background-image:
+        linear-gradient(rgba(255,215,0,.05) .06rem, transparent .06rem),
+        linear-gradient(90deg, rgba(255,215,0,.05) .06rem, transparent .06rem);
+    background-size: 3.4rem 3.4rem;
+    transform: perspective(48rem) rotateX(60deg) translateY(12%);
+    mask-image: radial-gradient(70% 60% at 50% 70%, #000 0%, transparent 78%);
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 70%, #000 0%, transparent 78%);
+}
+
+/* ══════════ LE FAUX SALON ══════════ */
+.salon { position: relative; z-index: 2; min-height: 30rem; padding: 1.6rem 1.6rem 2rem; }
+.salon-code { display: flex; gap: .4rem; justify-content: center; margin-bottom: 1.4rem; }
+.salon-code span {
+    display: grid; place-items: center; width: 2.6rem; height: 2.6rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--orvif);
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,215,0,.25); border-radius: .5rem;
+}
+.salon-n { text-align: center; font-size: .76rem; opacity: .55; margin: 0 0 1.1rem; }
+.salon-n b { font-size: 1rem; color: var(--orvif); opacity: 1; }
+/* ⚠️ La liste ne prend PAS toute la largeur : la carte vit a droite, et
+   c est justement la place qu il faut lui laisser. Elle est bornee ici
+   pour qu on voie tout de suite si la carte mord dessus. */
+.liste {
+    display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center;
+    max-width: 44rem; margin: 0 auto;
+}
+.pion {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .62rem 1.15rem; border-radius: 2rem; cursor: default;
+    font-size: .88rem; font-weight: 600; white-space: nowrap;
+    background: rgba(20,19,26,.8); border: 1px solid rgba(255,255,255,.12);
+    transition: border-color .18s ease, background .18s ease;
+}
+.pion:hover { border-color: rgba(255,215,0,.55); background: rgba(32,28,18,.9); }
+/* Le losange de l inscrit — le meme signe que dans le vrai salon. */
+.pion b {
+    width: .42rem; height: .42rem; flex: 0 0 auto;
+    background: var(--orvif); transform: rotate(45deg);
+}
+.pion.invite { opacity: .72; }
+.pion.invite:hover { border-color: rgba(255,255,255,.2); background: rgba(20,19,26,.8); }
+
+/* ══════════ LA CARTE — le socle commun ══════════
+   ⚠️ TOUTES LES VARIANTES PARTAGENT CE BLOC. Les six ne changent que de
+   PEAU : meme gabarit, memes donnees, meme largeur. Sans ce socle, on
+   comparerait six mises en page ET six jeux d informations, et l on
+   n aurait jamais su ce qui plait. */
+.scene3d { perspective: 62rem; }
+.carte {
+    position: relative; width: 20.5rem; padding: 1.3rem 1.3rem 1.15rem;
+    border-radius: 1.1rem; overflow: hidden;
+    transform-style: preserve-3d;
+    /* La teinte du rang, posee par le script. Le repli sert si jamais le
+       rang ne se resout pas : une carte sans couleur reste lisible. */
+    --rang: #9a9aa6;
+    background: linear-gradient(165deg, rgba(26,24,33,.97), rgba(13,12,18,.98));
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,.6);
+}
+/* ⚠️ LE HALO DE RANG EST DANS LA CARTE, PAS DERRIERE. Pose dessous, il ne
+   depasserait que par les bords d une carte opaque — l erreur deja faite
+   sur le podium du classement. Ici c est une nappe interieure, donc elle
+   se voit vraiment. */
+.carte .nappe {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 70% at 50% -10%, var(--rang), transparent 62%);
+    opacity: .22;
+}
+.carte > * { position: relative; }
+
+.c-tete { display: flex; align-items: center; gap: .85rem; margin-bottom: .95rem; }
+.c-portrait { position: relative; width: 4.1rem; height: 4.1rem; flex: 0 0 auto; }
+.c-portrait img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    background: #23232b; border: .1rem solid rgba(255,255,255,.14);
+}
+.c-portrait svg { position: absolute; inset: -.42rem; transform: rotate(-90deg); overflow: visible; }
+.c-portrait .piste2 { fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2.3; }
+.c-portrait .jauge2 { fill: none; stroke: var(--rang); stroke-width: 2.3; stroke-linecap: round; }
+.c-ident { min-width: 0; }
+.c-pseudo {
+    margin: 0 0 .22rem; font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.c-rang {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-family: 'Orbitron', sans-serif; font-size: .64rem; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--rang);
+}
+.c-rang::before {
+    content: ''; width: .4rem; height: .4rem; background: var(--rang); transform: rotate(45deg);
+}
+/* Le titre porte. ⚠️ Il peut etre LONG — « Le plus grand de la plèbe » fait
+   vingt-cinq caracteres — donc il a droit a deux lignes et pas une. */
+.c-titre {
+    margin: 0 0 1rem; font-size: .775rem; font-style: italic; line-height: 1.45;
+    color: #d9d2e6; opacity: .85;
+}
+.c-xp { margin-bottom: 1rem; }
+.c-xp-tete {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: .64rem; letter-spacing: .1em; text-transform: uppercase;
+    color: #9a93a8; margin-bottom: .4rem;
+}
+.c-xp-tete b { font-size: .8rem; letter-spacing: 0; text-transform: none; color: #fff; font-variant-numeric: tabular-nums; }
+.c-jauge { height: .3rem; border-radius: 2rem; background: rgba(255,255,255,.09); overflow: hidden; }
+.c-jauge i { display: block; height: 100%; border-radius: 2rem; background: var(--rang); }
+.c-reste { display: block; margin-top: .36rem; font-size: .64rem; color: #8d869c; }
+.c-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 0 0 .9rem; }
+.c-stats div {
+    padding: .55rem .4rem; border-radius: .6rem; text-align: center;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+}
+.c-stats dt { font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: #8d869c; }
+.c-stats dd {
+    margin: .2rem 0 0; font-size: .95rem; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.c-pied {
+    display: flex; justify-content: space-between; align-items: center; gap: .6rem;
+    padding-top: .75rem; border-top: 1px solid rgba(255,255,255,.08);
+    font-size: .645rem; color: #8d869c;
+}
+.c-place { color: var(--rang); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ─────────── A · LA CARTE HOLO ───────────
+   Le reflet suit le curseur. ⚠️ `mix-blend-mode: overlay` et non une
+   opacite : le reflet doit ECLAIRER ce qu il traverse, pas le voiler. Pose
+   en blanc semi-transparent, il blanchissait le portrait. */
+.vA .carte { border-color: color-mix(in srgb, var(--rang) 42%, transparent); }
+.vA .carte::before {
+    content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    mix-blend-mode: overlay;
+    background:
+        radial-gradient(22rem 22rem at var(--mx, 50%) var(--my, 0%),
+            rgba(255,255,255,.5), transparent 58%);
+    opacity: var(--brille, 0); transition: opacity .25s ease;
+}
+/* Les bandes irisees, qui ne se voient QUE sous le reflet. */
+.vA .carte::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    mix-blend-mode: color-dodge; opacity: calc(var(--brille, 0) * .4);
+    background: repeating-linear-gradient(104deg,
+        rgba(255,120,180,.16) 0 .7rem, rgba(120,220,255,.16) .7rem 1.4rem,
+        rgba(180,255,160,.16) 1.4rem 2.1rem, transparent 2.1rem 4.2rem);
+    transition: opacity .25s ease;
+}
+
+/* ─────────── B · LA FICHE DE VERRE ───────────
+   Pas d inclinaison du tout. La profondeur vient de la MATIERE : un fond
+   tres transparent, un flou qui prend le salon dessous, un liisere clair
+   sur l arete haute. */
+.vB .carte {
+    background: rgba(18,17,25,.52);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.vB .carte .nappe { opacity: .16; }
+
+/* ─────────── C · LES STRATES ───────────
+   ⚠️ C est la seule vraiment « semi-3D » : les plans se SEPARENT quand la
+   carte tourne, au lieu de tourner ensemble. Le portrait sort du cadre, le
+   texte reste au fond. Il faut `transform-style: preserve-3d` sur la carte
+   ET un `translateZ` par plan — sans le premier, les `translateZ` sont
+   aplatis et il ne se passe rien. */
+.vC .carte { padding-top: 1.6rem; }
+.vC .c-portrait { transform: translateZ(3.4rem); }
+.vC .c-ident { transform: translateZ(2rem); }
+.vC .c-titre { transform: translateZ(1.2rem); }
+.vC .c-stats { transform: translateZ(.8rem); }
+.vC .carte::before {
+    content: ''; position: absolute; inset: .5rem; border-radius: .8rem;
+    border: 1px solid color-mix(in srgb, var(--rang) 30%, transparent);
+    transform: translateZ(.3rem); pointer-events: none;
+}
+
+/* ─────────── D · LE PORTRAIT PLEIN CADRE ───────────
+   L avatar devient le FOND. ⚠️ Le voile n est pas decoratif : sans lui,
+   aucun texte ne passe sur un dessin clair. Il descend de transparent en
+   haut a presque opaque en bas, la ou vit le texte. */
+.vD .carte { padding-top: 9.5rem; }
+.vD .c-fond {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+}
+/* ⚠️ L IMAGE SE DISSOUT, ELLE NE S ARRETE PAS. Sans le masque elle se
+   coupait net a 13rem : un trait horizontal traversait la carte juste sous
+   le rang, et l oeil le lisait comme une bordure ratee.
+   ⚠️ UN MASQUE, ET NON UN DEGRADE DE LA COULEUR DU FOND. Le fond de la
+   carte est lui-meme un degrade (165deg, deux gris differents) : aucune
+   couleur fixe ne peut le rejoindre exactement, et le raccord se verrait
+   a un autre endroit. Le masque, lui, ne suppose rien de ce qu il y a
+   dessous — il efface l image, c est tout. */
+.vD .c-fond img {
+    width: 100%; height: 13rem; object-fit: cover; object-position: center 22%;
+    display: block; filter: saturate(1.1);
+    mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 97%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 97%);
+}
+/* Le voile ne sert plus qu a UNE chose depuis le masque : rendre le pseudo
+   lisible sur un dessin clair. Il peut donc rester leger en bas, ou il n y
+   a plus d image a cacher. */
+.vD .c-fond::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,9,14,.05) 0%, rgba(10,9,14,.42) 38%,
+                rgba(10,9,14,.78) 56%, transparent 72%);
+}
+.vD .c-tete { display: block; margin-bottom: .8rem; }
+.vD .c-portrait { display: none; }
+.vD .c-pseudo { font-size: 1.32rem; }
+.vD .carte .nappe { opacity: .17; }
+
+/* ─────────── E · LA PLAQUE DE RANG ───────────
+   Le rang passe devant tout le reste : un ecusson, son nom en grand, et le
+   pseudo seulement ensuite. ⚠️ Elle suppose que le rang est ce qu on veut
+   savoir d un joueur qu on survole — c est un pari, pas une evidence. */
+.vE .carte { text-align: center; padding-top: 1.5rem; }
+.vE .c-tete { flex-direction: column; gap: .7rem; align-items: center; }
+.vE .c-ecusson {
+    position: relative; display: grid; place-items: center;
+    width: 5.2rem; height: 5.2rem; margin: 0 auto;
+}
+.vE .c-ecusson::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--rang) 85%, #fff),
+                color-mix(in srgb, var(--rang) 55%, #000));
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+}
+.vE .c-ecusson img {
+    position: relative; width: 86%; height: 86%; object-fit: cover; display: block;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+    background: #15141c;
+}
+.vE .c-rang {
+    font-size: .95rem; letter-spacing: .2em;
+    text-shadow: 0 0 1.4rem color-mix(in srgb, var(--rang) 60%, transparent);
+}
+.vE .c-rang::before { content: none; }
+.vE .c-pseudo { font-size: .96rem; font-weight: 700; color: #cfc8dc; }
+.vE .c-portrait { display: none; }
+.vE .c-stats { text-align: center; }
+.vE .c-pied { justify-content: center; gap: 1rem; }
+
+/* ─────────── F · LA BANDE COMPACTE ───────────
+   Deux fois moins haute, et c est tout l argument : au survol, on ne lit
+   pas une fiche, on jette un oeil. */
+.vF .carte { width: 17.5rem; padding: 1rem 1.1rem; }
+.vF .c-portrait { width: 3.1rem; height: 3.1rem; }
+.vF .c-pseudo { font-size: .98rem; }
+.vF .c-titre { display: none; }
+.vF .c-stats { grid-template-columns: repeat(3, 1fr); gap: .35rem; margin-bottom: 0; }
+.vF .c-stats div { padding: .4rem .3rem; }
+.vF .c-stats dd { font-size: .82rem; }
+.vF .c-pied { display: none; }
+.vF .c-xp { margin-bottom: .75rem; }
+.vF .c-reste { display: none; }
+
+/* ══════════ EN SITUATION : la carte posee a droite du salon ══════════ */
+.perchoir {
+    position: absolute; top: 50%; right: 2rem; z-index: 5;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+/* ⚠️ L ENTREE EST COURTE ET DISCRETE, et c est une decision, pas un reglage.
+   Le curseur traverse la liste : une carte qui arrive de loin en pivotant
+   se joue huit fois en deux secondes. 0,18s, un souffle de translation. */
+.perchoir .scene3d { animation: entre .18s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes entre {
+    from { opacity: 0; transform: translateX(1.1rem); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .perchoir .scene3d { animation: none; }
+    .carte { transition: none !important; }
+}
+.vide {
+    position: absolute; top: 50%; right: 2rem; transform: translateY(-50%);
+    width: 20.5rem; text-align: center; font-size: .72rem; line-height: 1.7;
+    color: #6e6880; pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<h1>La carte du joueur</h1>
+<p class="sous">
+Six peaux pour la carte qui s'ouvre quand on survole un pseudo en salon. ⚠️ <b>Toutes portent
+exactement les mêmes informations</b> — sans ça on comparerait six mises en page <em>et</em> six
+jeux de données, et on n'aurait jamais su ce qui plaît.
+</p>
+<p class="sous">
+⚠️ <b>Ce qui est affiché vient de la base, pas d'une idée.</b> La table <b>comptes</b> porte
+pseudo, avatar, xp, parties, victoires, titre et date d'inscription ; le <b>niveau</b> et le
+<b>rang</b> s'en déduisent par <b>niveaux.js</b>, chargé ici comme sur l'accueil. Les
+<span class="av">rubis sont exclus</span> — le solde d'un autre joueur ne le regarde pas.
+⚠️ La <b>place au classement</b>, elle, vient de la vue <b>v_classement</b> : une requête de plus
+à chaque survol si on ne la met pas en cache.
+</p>
+<p class="sous">
+⚠️ <b>La couleur n'est pas un choix de décorateur.</b> Chaque rang porte déjà sa teinte dans
+<b>niveaux.js</b> — gris Novice, vert Oracle, bleu Elite, orange Legend, or Master. La carte la
+reprend, donc deux joueurs se distinguent sans qu'on lise un mot.
+<span class="av">Change de joueur ci-dessous et regarde.</span>
+</p>
+
+<div class="barre">
+    <label>Joueur</label>
+    <span id="joueurs"></span>
+    <span class="sep"></span>
+    <!-- ⚠️ L inclinaison est un INTERRUPTEUR : « quelle peau » et « ca bouge
+         ou pas » sont deux questions, et les melanger forcerait a choisir
+         l une pour l autre. -->
+    <button class="cmd on" id="pivot">⟲ Inclinaison au curseur</button>
+    <span class="sep"></span>
+    <button class="cmd" id="invite">👤 Survoler un invité</button>
+</div>
+
+<h3 class="vague">En situation — la carte dans le salon</h3>
+<p class="sous">
+Survole un pseudo. ⚠️ <b>C'est ici que ça se joue, pas sur les cartes isolées plus bas</b> : une
+carte se juge à ce qu'elle couvre et à la vitesse où on la lit, pas à son dessin. Passe le
+curseur vite d'un nom à l'autre — <span class="av">c'est le vrai test</span>.
+</p>
+<p class="sous">
+Le choix de la peau se fait avec les boutons ci-dessous.
+</p>
+
+<div class="piste" style="padding-top:0">
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem" id="peaux"></div>
+    <div class="fond" id="situ">
+        <i class="aurore"></i><i class="grille"></i>
+        <div class="salon">
+            <div class="salon-code"><span>M</span><span>7</span><span>J</span><span>N</span></div>
+            <p class="salon-n"><b>11</b> joueurs dans le salon</p>
+            <div class="liste" id="liste"></div>
+        </div>
+        <div id="perchoir"></div>
+    </div>
+</div>
+
+<h3 class="vague">Les six peaux, en grand</h3>
+<div id="cartes"></div>
+
+<script>
+// ⚠️ Dans une IIFE. Une `const` au premier niveau d un script de page vit
+// dans l environnement lexical GLOBAL — et `niveaux.js` y a deja pose RANGS,
+// niveauPourXp et titrePourNiveau. Une collision tuerait le script sans un
+// mot dans la console ; c est deja arrive sur ce projet avec CHIFFRES.
+(function () {
+
+// ⚠️ DES PROFILS QUI COUVRENT LA COURBE, pas cinq fois le meme. L interet de
+// la teinte de rang ne se voit qu a condition de changer de rang — et le
+// dernier titre est le plus LONG qu on ait rencontre, pour que le gabarit
+// soit mis a l epreuve et non flatte.
+var JOUEURS = [
+    { pseudo: 'Kitsune73',  av: 'ninja.png',    xp: 420,    parties: 14,   vict: 3,
+      titre: 'Novice courageux',          depuis: 'mars 2026',  place: null },
+    { pseudo: 'Shinobi470', av: 'assassin.png', xp: 2500,   parties: 86,   vict: 21,
+      titre: 'Chasseur de séries',        depuis: 'janv. 2026', place: 412 },
+    { pseudo: 'Senpai664',  av: 'knight.png',   xp: 9000,   parties: 240,  vict: 77,
+      titre: 'Maître du BombAnime',       depuis: 'oct. 2025',  place: 58 },
+    { pseudo: 'Hokage342',  av: 'sorcier.png',  xp: 30000,  parties: 615,  vict: 203,
+      titre: 'Légende du Rush',           depuis: 'juin 2025',  place: 9 },
+    { pseudo: 'slayer',     av: 'melody.png',   xp: 120000, parties: 1480, vict: 622,
+      titre: 'Le plus grand de la plèbe', depuis: 'mai 2025',   place: 1 },
+];
+
+var PEAUX = [
+    { cls: 'vA', nom: 'La carte holo', reco: true,
+      n: "Le reflet SUIT le curseur, et des bandes irisées n'apparaissent que sous lui. <b>C'est le registre de la carte à collectionner</b>, et c'est le seul qui donne envie de survoler un deuxième joueur. ⚠️ Le reflet est en <b>mix-blend-mode: overlay</b> et non en blanc semi-transparent : il doit ÉCLAIRER ce qu'il traverse, pas le voiler — posé en blanc, il délavait le portrait." },
+    { cls: 'vB', nom: 'La fiche de verre',
+      n: "Aucune inclinaison. La profondeur vient de la <b>matière</b> : un fond très transparent, un flou qui prend le salon dessous, un liseré clair sur l'arête haute. ⚠️ La plus lisible des six, et la plus sage. Mais le flou sur un fond animé coûte cher à la carte graphique — c'est exactement la machine sans accélération dont on parlait." },
+    { cls: 'vC', nom: 'Les strates', reco: true,
+      n: "La seule vraiment <b>semi-3D</b> : les plans se SÉPARENT quand la carte tourne au lieu de tourner ensemble. Le portrait sort du cadre, le texte reste au fond. ⚠️ Il faut <b>transform-style: preserve-3d</b> sur la carte ET un <b>translateZ</b> par plan — sans le premier, les translateZ sont aplatis et il ne se passe strictement rien." },
+    { cls: 'vD', nom: 'Le portrait plein cadre',
+      n: "L'avatar devient le <b>fond</b> de la carte, le texte passe par-dessus. La plus cinématographique, et celle qui met le personnage choisi en avant — ce qui est, après tout, ce que le joueur a choisi. ⚠️ Le voile dégradé n'est pas décoratif : sans lui aucun texte ne passe sur un dessin clair." },
+    { cls: 'vE', nom: 'La plaque de rang',
+      n: "Le rang passe devant tout : un écusson, son nom en grand, le pseudo seulement ensuite. <b>Elle parie que le rang est ce qu'on veut savoir d'un joueur qu'on survole</b> — c'est un pari, pas une évidence. ⚠️ Et elle reprend l'hexagone de la pastille de compte, donc une cohérence gagnée sans rien dessiner." },
+    { cls: 'vF', nom: 'La bande compacte',
+      n: "Deux fois moins haute, et c'est tout l'argument : <b>au survol on ne lit pas une fiche, on jette un œil</b>. Pas de titre, pas de pied. ⚠️ Elle est là pour poser la vraie question — est-ce qu'une grande carte se lit vraiment, quand le curseur ne s'arrête pas ?" },
+];
+
+var iJoueur = 2, peau = 'vA', pivot = true, invite = false;
+
+function nf(n) { return Number(n).toLocaleString('fr-FR'); }
+
+// Tout ce que la carte affiche, derive une fois. ⚠️ Le niveau et le rang ne
+// sont PAS stockes : ils viennent de `niveaux.js`, la meme fonction que
+// l accueil et que le panneau — c est tout l interet du fichier partage.
+function profil(j) {
+    var niveau = niveauPourXp(j.xp);
+    var rang = titrePourNiveau(niveau);
+    var suivant = (niveau < RANGS.length) ? RANGS[niveau] : null;
+    var bas = rang.cumul;
+    var haut = suivant ? suivant.cumul : rang.cumul;
+    var part = suivant ? Math.min(1, (j.xp - bas) / (haut - bas)) : 1;
+    return {
+        niveau: niveau, rang: rang, part: part,
+        reste: suivant ? (haut - j.xp) : null,
+        suivant: suivant,
+        taux: j.parties ? Math.round((j.vict / j.parties) * 100) : 0,
+    };
+}
+
+function carte(j, cls) {
+    var p = profil(j);
+    var per = 2 * Math.PI * 24.2;
+    var fond = (cls === 'vD')
+        ? '<div class="c-fond"><img src="/' + j.av + '" alt=""></div>' : '';
+    var tete = (cls === 'vE')
+        ? '<div class="c-tete"><span class="c-ecusson"><img src="/' + j.av + '" alt=""></span>'
+          + '<div class="c-ident"><span class="c-rang">' + p.rang.nom + '</span>'
+          + '<h3 class="c-pseudo">' + j.pseudo + '</h3></div></div>'
+        : '<div class="c-tete">'
+          + '<span class="c-portrait"><img src="/' + j.av + '" alt="">'
+          + '<svg viewBox="0 0 56 56"><circle class="piste2" cx="28" cy="28" r="24.2"></circle>'
+          + '<circle class="jauge2" cx="28" cy="28" r="24.2" stroke-dasharray="' + per.toFixed(1)
+          + '" stroke-dashoffset="' + (per * (1 - p.part)).toFixed(1) + '"></circle></svg></span>'
+          + '<div class="c-ident"><h3 class="c-pseudo">' + j.pseudo + '</h3>'
+          + '<span class="c-rang">' + p.rang.nom + '</span></div></div>';
+    return '<div class="scene3d ' + cls + '">'
+      + '<article class="carte" style="--rang:' + p.rang.couleur + '">'
+        + '<span class="nappe"></span>' + fond + tete
+        + '<p class="c-titre">« ' + j.titre + ' »</p>'
+        + '<div class="c-xp">'
+          + '<div class="c-xp-tete"><span>Niveau ' + p.niveau + '</span><b>' + nf(j.xp) + ' XP</b></div>'
+          + '<div class="c-jauge"><i style="width:' + (p.part * 100).toFixed(1) + '%"></i></div>'
+          + '<small class="c-reste">' + (p.reste === null
+              ? 'Rang maximal atteint'
+              : nf(p.reste) + ' XP avant ' + p.suivant.nom) + '</small>'
+        + '</div>'
+        + '<dl class="c-stats">'
+          + '<div><dt>Parties</dt><dd>' + nf(j.parties) + '</dd></div>'
+          + '<div><dt>Victoires</dt><dd>' + nf(j.vict) + '</dd></div>'
+          + '<div><dt>Taux</dt><dd>' + p.taux + '&nbsp;%</dd></div>'
+        + '</dl>'
+        + '<div class="c-pied"><span>Membre depuis ' + j.depuis + '</span>'
+          + (j.place ? '<span class="c-place">#' + nf(j.place) + ' au classement</span>' : '')
+        + '</div>'
+      + '</article></div>';
+}
+
+// ⚠️ L INCLINAISON SE MESURE AU MOUVEMENT, elle ne s anime pas toute seule.
+// Et elle est posee en VARIABLES CSS plutot qu en `style.transform` : le
+// reflet de la carte holo a besoin des memes coordonnees, et deux ecritures
+// du meme nombre auraient fini par diverger.
+function brancherPivot(scene) {
+    var c = scene.querySelector('.carte');
+    scene.addEventListener('mousemove', function (e) {
+        if (!pivot) return;
+        var r = c.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width;
+        var y = (e.clientY - r.top) / r.height;
+        c.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+        c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+        c.style.setProperty('--brille', '1');
+        c.style.transform = 'rotateY(' + ((x - .5) * 16).toFixed(2) + 'deg)'
+                          + ' rotateX(' + ((.5 - y) * 13).toFixed(2) + 'deg)';
+    });
+    scene.addEventListener('mouseleave', function () {
+        c.style.setProperty('--brille', '0');
+        c.style.transform = '';
+    });
+}
+
+function peindreSitu() {
+    var p = document.getElementById('perchoir');
+    var j = JOUEURS[iJoueur];
+    if (invite) {
+        // ⚠️ RIEN, et c est la reponse. Un invite n a ni xp, ni rang, ni
+        // titre : lui faire une carte vide serait pire que pas de carte.
+        p.innerHTML = '<p class="vide">Rien ne s\'ouvre.<br>'
+            + 'Un invité n\'a ni rang, ni titre, ni partie enregistrée —<br>'
+            + 'une carte vide dirait seulement qu\'il manque quelque chose.</p>';
+        return;
+    }
+    p.innerHTML = '<div class="perchoir">' + carte(j, peau) + '</div>';
+    brancherPivot(p.querySelector('.scene3d'));
+}
+
+function peindreListe() {
+    document.getElementById('liste').innerHTML = JOUEURS.map(function (j, i) {
+        return '<span class="pion" data-i="' + i + '"><b></b>' + j.pseudo + '</span>';
+    }).join('')
+    + ['Yokai971', 'Nakama541', 'Katana324', 'Ramen83', 'Kaiju761', 'Ronin151']
+      .map(function (n) { return '<span class="pion invite" data-i="-1">' + n + '</span>'; }).join('');
+}
+
+function peindreCartes() {
+    document.getElementById('cartes').innerHTML = PEAUX.map(function (p) {
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+          + '<h2><em>' + p.cls.slice(1) + '</em>' + p.nom + '</h2>'
+          + '<p class="n">' + p.n + '</p>'
+          + '<div class="fond" style="padding:2rem;display:flex;justify-content:center">'
+            + '<i class="aurore"></i><i class="grille"></i>'
+            + '<div style="position:relative;z-index:2">' + carte(JOUEURS[iJoueur], p.cls) + '</div>'
+          + '</div></section>';
+    }).join('');
+    document.querySelectorAll('#cartes .scene3d').forEach(brancherPivot);
+}
+
+function peindreBarre() {
+    document.getElementById('joueurs').innerHTML = JOUEURS.map(function (j, i) {
+        var r = titrePourNiveau(niveauPourXp(j.xp));
+        return '<button class="cmd' + (i === iJoueur ? ' on' : '') + '" data-j="' + i + '">'
+             + j.pseudo + ' <span style="opacity:.6">· ' + r.nom + '</span></button>';
+    }).join(' ');
+    document.getElementById('peaux').innerHTML = PEAUX.map(function (p) {
+        return '<button class="cmd' + (p.cls === peau ? ' on' : '') + '" data-p="' + p.cls + '">'
+             + p.nom + '</button>';
+    }).join('');
+}
+
+function tout() { peindreBarre(); peindreCartes(); peindreSitu(); }
+
+document.addEventListener('click', function (e) {
+    var b = e.target.closest('.cmd');
+    if (!b) return;
+    if (b.id === 'pivot') { pivot = !pivot; b.classList.toggle('on', pivot); return; }
+    if (b.id === 'invite') { invite = !invite; b.classList.toggle('on', invite); peindreSitu(); return; }
+    if (b.dataset.j) { iJoueur = parseInt(b.dataset.j, 10); tout(); return; }
+    if (b.dataset.p) { peau = b.dataset.p; peindreBarre(); peindreSitu(); return; }
+});
+
+// Le survol d un pion change le joueur montre — c est le geste reel.
+document.getElementById('liste').addEventListener('mouseover', function (e) {
+    var p = e.target.closest('.pion');
+    if (!p) return;
+    var i = parseInt(p.dataset.i, 10);
+    var nouveauInvite = (i < 0);
+    if (nouveauInvite === invite && (nouveauInvite || i === iJoueur)) return;
+    invite = nouveauInvite;
+    if (!invite) iJoueur = i;
+    document.getElementById('invite').classList.toggle('on', invite);
+    peindreBarre();
+    peindreSitu();
+});
+
+peindreListe();
+tout();
+})();
+</script>
+</body></html>
