@@ -7212,15 +7212,76 @@ html.rendu-logiciel .v2-dust { display: none; }
     left: calc(var(--gouttiere) * -1);
     right: calc(var(--gouttiere) * -1);
     height: 1px;
+    /* ⚠️ ALLEGE : 0,16 → 0,09. A seize centiemes le filet se lisait comme
+       une FRONTIERE — la barre devenait une fenetre posee sur le jeu. Il
+       doit seulement poser la limite de la bande, pas la fermer. Et il
+       s eteint toujours a ses deux bouts : c est ce qui le distingue d un
+       trait de tableau. */
     background: linear-gradient(90deg,
-        transparent, rgba(240, 199, 94, 0.16) 22%,
-        rgba(240, 199, 94, 0.16) 78%, transparent);
+        transparent, rgba(240, 199, 94, 0.09) 22%,
+        rgba(240, 199, 94, 0.09) 78%, transparent);
     pointer-events: none;
 }
 
 /* ⚠️ L avatar et le solde rentrent un peu : colles au bord, ils sortaient
    de la bande que le filet dessine maintenant. */
 .v2-topbar.site .v2-moi-grp { margin-right: 0.4rem; }
+
+/* ════════════════════════════════════════════════════════════
+   🎯 TOUT LE CONTENU DE LA BARRE EN UN SEUL GROUPE CENTRE
+   ════════════════════════════════════════════════════════════
+   Le nom, les liens et l avatar ne sont plus trois objets poses aux trois
+   tiers : ils forment UN bloc, centre sur la barre. Le nom borde le
+   premier lien, l avatar borde le dernier.
+
+   ⚠️ LA NAVIGATION REPASSE DANS LE FLUX. Elle etait en `position: absolute`
+   + `left: 50%` pour se caler sur l ECRAN malgre des voisins de largeurs
+   differentes. Ce calcul n a plus d objet : si les trois elements sont dans
+   le meme flux, c est le groupe entier qui se centre, et la position de
+   chacun se deduit des deux autres. Une navigation restee absolue aurait
+   flotte PAR-DESSUS le groupe au lieu d en faire partie.
+
+   ⚠️ `:not(.tiroir)` EST INDISPENSABLE. Sur telephone la meme navigation
+   devient un tiroir en `position: fixed`, et `.v2-topbar.site .v2-nav`
+   (0,3,0) ecraserait `.v2-nav.tiroir` (0,2,0) : le tiroir serait repasse
+   dans le flux, donc affiche en travers de la barre au lieu de glisser
+   depuis le bord. Le `:not()` le laisse tranquille sans dependre d une
+   requete de media.
+
+   ⚠️ ET LE `gap` DESCEND A 0,25rem. Les liens portent deja 1,15rem de
+   padding de chaque cote : avec le `gap` d 1rem de la barre, il y aurait eu
+   2,15rem entre le nom et « Classement », et le groupe se serait relu comme
+   trois objets separes — exactement ce qu on vient de defaire. */
+.v2-topbar.site { justify-content: center; gap: 0.25rem; }
+.v2-topbar.site .v2-marque { margin-right: 0; }
+/* ⚠️ 0,44rem DES DEUX COTES, ET C EST L ANNEAU QUI LES DICTE. Il est pose
+   en `inset: -0,44rem`, donc il DEBORDE son bouton de 7 px sans compter
+   dans la mise en page. Mesure : il restait 22 px d air entre le nom et
+   « Classement » pour 15 entre « Boutique » et l anneau — l oeil voit le
+   trace, pas la boite.
+   La marge de GAUCHE rend les 7 px manquants ; celle de DROITE amene le
+   bord de la mise en page sur celui de l anneau, pour que le centrage
+   porte sur ce qui se VOIT et non sur une boite plus etroite que son
+   contenu. Les deux ensemble : l air est egal et le groupe est centre. */
+.v2-topbar.site .v2-moi-grp { margin: 0 0.44rem; }
+.v2-topbar.site .v2-nav:not(.tiroir) {
+    position: static;
+    left: auto;
+    transform: none;
+}
+
+/* ⚠️ SUR TELEPHONE, RIEN DE TOUT CA. Les liens y vivent dans un tiroir,
+   donc hors du flux : le groupe centre ne contiendrait plus que le burger,
+   le nom et l avatar — et le burger quitterait le bord gauche, alors que
+   c est le seul endroit ou on va le chercher. On revient a la disposition
+   d avant : burger a gauche, nom a sa suite, avatar au bord droit.
+   ⚠️ CE BLOC DOIT RESTER APRES CELUI DU DESSUS. Les deux selecteurs ont la
+   meme specificite et une requete de media n en ajoute aucune : c est
+   l ordre du fichier, et lui seul, qui decide lequel gagne. */
+@media (max-width: 768px) {
+    .v2-topbar.site { justify-content: flex-end; gap: 1rem; }
+    .v2-topbar.site .v2-marque { margin-right: auto; }
+}
 
 .v2-topbar .v2-logo { margin-right: auto; }
 
