@@ -423,6 +423,175 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
     display: flex; align-items: center; gap: .55rem;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   CINQUIEME VAGUE — DES BARRES PREMIUM
+   ══════════════════════════════════════════════════════════════
+   ⚠️ LE DEFAUT PRINCIPAL EST UN DEFAUT D ALIGNEMENT, ET IL SE MESURE.
+   Le hub est cale sur une colonne : `.v2-hub { max-width: 76rem }`, soit
+   1216 px, centree. Sur un ecran de 1920 px elle va de x=352 a x=1568.
+   L avatar, lui, est colle a la gouttiere : son bord droit tombe a 1872,
+   soit 304 PX AU-DELA de tout le reste de la page. Il n est donc pas « un
+   peu trop a droite » — il est le SEUL objet de l accueil aligne sur l
+   ECRAN pendant que tous les autres le sont sur la COLONNE.
+   ⚠️ Les pointilles verticaux ci-dessous marquent cette colonne. C est le
+   seul reperage qui permette de juger : une barre pleine largeur parait
+   toujours correcte tant qu on ne voit pas ou tombe le contenu du dessous.
+   ⚠️ Le banc est un peu plus etroit que l ecran reel (il a ses propres
+   marges) : les pointilles sont donc indicatifs, l ecart mesure, lui, est
+   celui de la vraie page. */
+.comp.prem .scene { height: 6.5rem; }
+.comp.prem .bande { display: flex; align-items: flex-start; padding: 0; gap: 0; }
+.comp.prem .dedans {
+    flex: 1 1 auto; display: flex; align-items: center; gap: 1rem;
+    height: 3.4rem; padding: 0 1.1rem; min-width: 0;
+}
+.comp .colonne {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 76rem; height: 3.4rem; z-index: 6;
+    border-left: 1px dashed rgba(255,255,255,.17);
+    border-right: 1px dashed rgba(255,255,255,.17);
+    pointer-events: none;
+}
+.comp .colonne::after {
+    content: 'colonne du hub · 76rem'; position: absolute; left: 50%; bottom: -1.15rem;
+    transform: translateX(-50%); font-size: .55rem; letter-spacing: .12em;
+    text-transform: uppercase; color: rgba(255,255,255,.3); white-space: nowrap;
+}
+
+/* ⚠️ LE CALAGE EST UN INTERRUPTEUR, PAS UNE VARIANTE. En faire une sixieme
+   barre aurait oblige a choisir entre « l ilot » et « cale sur la
+   colonne », alors que ce sont deux questions independantes : l une est
+   une MATIERE, l autre un ALIGNEMENT. Avec l interrupteur, chaque matiere
+   se juge dans les deux etats, et les 304 px se voient en aller-retour. */
+.comp.prem.colle .dedans { max-width: 76rem; margin: 0 auto; padding: 0; }
+
+/* e1 : la barre d aujourd hui, pour la reference. */
+.e1 .bande { background: rgba(17,16,23,.76); }
+
+/* e2 : l ilot. Detache du bord, arrondi, en verre.
+   ⚠️ `flex: 0 0 auto` + `margin: 0 auto` : sans le premier il s etirerait
+   sur toute la largeur et ne serait plus un ilot.
+   ⚠️ ET LE SELECTEUR DOIT PORTER LES TROIS CLASSES. Ecrit `.e2 .dedans`
+   (0,2,0) il perdait contre `.comp.prem .dedans` (0,3,0) : l ilot gardait
+   le `flex: 1 1 auto` et la hauteur de la barre pleine, et se rendait en
+   bande de 1216 px arrondie. Mesure a l appui — c est exactement le piege
+   de specificite que ce fichier documente ailleurs. */
+.comp.prem.e2 .bande { background: none; align-items: flex-start; padding: .62rem 0 0; }
+.comp.prem.e2 .bande::after { content: none; }
+.comp.prem.e2 .dedans {
+    flex: 0 0 auto; margin: 0 auto; height: 2.85rem;
+    padding: 0 .38rem 0 .55rem; border-radius: 2rem;
+    background: rgba(20,19,27,.74);
+    border: 1px solid rgba(255,255,255,.09);
+    box-shadow: 0 .7rem 2rem rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+}
+
+/* e3 : le verre. Meme forme qu aujourd hui, autre MATIERE : un fond plus
+   clair mais plus transparent, un flou qui prend l aurore dessous, et un
+   liisere clair sur l arete haute — c est lui qui fait la profondeur. */
+.e3 .bande {
+    background: rgba(16,15,23,.42);
+    backdrop-filter: blur(22px) saturate(155%);
+    -webkit-backdrop-filter: blur(22px) saturate(155%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* e4 : la barre fine. Moins haute, plus espacee, plus petite. */
+.e4 .bande { height: 2.6rem; background: rgba(17,16,23,.62); }
+.comp.prem.e4 .dedans { height: 2.6rem; }   /* meme piege de specificite qu en e2 */
+.e4 .colonne { height: 2.6rem; }
+.e4 .liens a { font-size: .655rem; letter-spacing: .24em; padding: .2rem .95rem; }
+.e4 .mot-sm { font-size: .655rem; letter-spacing: .24em; }
+.e4 .liens a + a::before { height: .7rem; }
+
+/* e5 : le voile. PAS DE BARRE DU TOUT — un degrade qui s eteint vers le
+   bas. Rien ne coupe l aurore, et pourtant les liens ont de quoi se lire.
+   ⚠️ Donc pas de filet non plus : un trait supposerait une bande, et il
+   n y en a plus. */
+.e5 .bande {
+    height: 6.5rem; align-items: flex-start;
+    background: linear-gradient(180deg, rgba(5,4,9,.86) 0%, rgba(5,4,9,.46) 42%, transparent 100%);
+}
+.e5 .bande::after { content: none; }
+.e5 .dedans { height: 3.4rem; }
+
+/* ══════════════════════════════════════════════════════════════
+   SIXIEME VAGUE — LA ZONE DU COMPTE
+   ══════════════════════════════════════════════════════════════
+   ⚠️ UN DISQUE DE 35 PX NE PEUT PAS TENIR UN TIERS D ECRAN. C est l autre
+   moitie du probleme : a droite il n y a qu un seul petit objet rond, et
+   il est seul a 300 px de tout. Les variantes larges (la capsule) ne sont
+   pas « un avatar de plus » : elles donnent au coin droit une MASSE, donc
+   une raison d etre au bord.
+   ⚠️ Chacune est montree a la taille REELLE de l accueil — 2,2rem. Un
+   avatar se juge a cette taille et pas a une autre : le double anneau et
+   la pastille de niveau sont lisibles a 56 px et illisibles a 35. */
+.comp .av { position: relative; display: block; width: 2.2rem; height: 2.2rem; flex: 0 0 auto; }
+.comp .av img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+    display: block; background: #23232b;
+}
+.comp .av .ring { position: absolute; transform: rotate(-90deg); overflow: visible; }
+.comp .av .ring .piste { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 3.2; }
+.comp .av .ring .jauge { fill: none; stroke: var(--orvif); stroke-width: 3.2; stroke-linecap: round; }
+
+/* f1 : le disque nu. */
+.f1 .av img { border: 1.5px solid rgba(240,199,94,.6); }
+/* f2 : l anneau de progression, tel qu il est aujourd hui. */
+.f2 .av img { border: 2px solid rgba(240,199,94,.5); }
+.f2 .av .ring { inset: -.2rem; width: calc(100% + .4rem); height: calc(100% + .4rem); }
+/* f3 : le double anneau — un vide entre le portrait et la jauge.
+   ⚠️ C est le vide qui fait tout : colle au portrait, l anneau se lit
+   comme une bordure epaisse ; ecarte, il se lit comme une mesure. */
+.f3 .av img { border: 1.5px solid rgba(255,255,255,.12); }
+.f3 .av .ring { inset: -.42rem; width: calc(100% + .84rem); height: calc(100% + .84rem); }
+.f3 .av .ring .piste { stroke-width: 2.4; }
+.f3 .av .ring .jauge { stroke-width: 2.4; }
+/* f4 : la capsule. Le pseudo et le niveau entrent dans la barre. */
+.f4 .chip {
+    display: inline-flex; align-items: center; gap: .5rem; height: 2.2rem; flex: 0 0 auto;
+    padding: .17rem .75rem .17rem .17rem; border-radius: 2rem;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09);
+}
+.f4 .chip:hover { background: rgba(255,255,255,.085); }
+.f4 .chip img { width: 1.82rem; height: 1.82rem; border-radius: 50%; object-fit: cover;
+                border: 1px solid rgba(240,199,94,.45); background: #23232b; display: block; }
+.f4 .chip b { font-size: .735rem; font-weight: 600; color: #e8e8ee; white-space: nowrap; }
+.f4 .chip i {
+    font-style: normal; font-size: .6rem; font-weight: 800; color: var(--orvif);
+    padding: .1rem .4rem; border-radius: .45rem; background: rgba(255,215,0,.13);
+}
+/* f5 : le carre arrondi. Plus « application », moins « forum ». */
+.f5 .av img { border-radius: .66rem; border: 1.5px solid rgba(240,199,94,.55); }
+/* f6 : l hexagone — la MEME forme que la pastille de compte du salon.
+   ⚠️ `clip-path` et non une image detouree : la forme suit la taille, et
+   l anneau dore est un second hexagone pose dessous, agrandi. */
+.f6 .av img {
+    position: relative; z-index: 1; border-radius: 0;
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+}
+/* ⚠️ PAS de `z-index: -1` sur l hexagone dore : `.av` ne cree pas de
+   contexte d empilement, le pseudo-element passerait donc DERRIERE le fond
+   de la bande et disparaitrait. Il reste a 0, le portrait monte a 1. */
+.f6 .av::before {
+    content: ''; position: absolute; inset: -.15rem; z-index: 0;
+    background: linear-gradient(135deg, #ffe066, var(--or));
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+}
+/* f7 : la pastille de niveau, posee en bas a droite. */
+.f7 .av img { border: 1.5px solid rgba(255,255,255,.14); }
+.f7 .av .niv {
+    position: absolute; right: -.3rem; bottom: -.22rem;
+    font-size: .56rem; font-weight: 800; line-height: 1; color: #14100a;
+    padding: .18rem .32rem; border-radius: .5rem;
+    background: linear-gradient(135deg, #ffe066, var(--or));
+    box-shadow: 0 0 0 1.5px rgba(17,16,23,.9);
+}
+/* f8 : le halo. Aucune bordure — une lueur. */
+.f8 .av img { border: 0; box-shadow: 0 0 0 1px rgba(240,199,94,.4), 0 0 1.1rem rgba(255,200,60,.4); }
+
 /* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
 .v6 .nav {
     gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
@@ -472,7 +641,44 @@ refaire. Change le nombre ci-dessous et regarde.
          faudrait recharger la page pour la revoir, et l on ne compare pas
          six animations en rechargeant six fois. -->
     <button class="cmd" id="rejouer">↻ Rejouer l'arrivée</button>
+    <span class="sep"></span>
+    <!-- ⚠️ Un INTERRUPTEUR et non une variante de plus : « quelle matiere »
+         et « cale sur quoi » sont deux questions independantes, et les
+         melanger forcerait a choisir l une pour l autre. -->
+    <button class="cmd" id="colle">⟷ Caler sur la colonne</button>
 </div>
+
+<h3 class="vague">Cinquième vague — des barres premium</h3>
+<p class="sous">
+⚠️ <b>Le défaut se mesure, il ne se discute pas.</b> Le hub est calé sur une colonne de
+<b>76 rem = 1216 px</b>, centrée. Sur un écran de 1920 px elle va de <b>352</b> à <b>1568</b>.
+L'avatar, lui, est collé à la gouttière : son bord droit tombe à <b>1872</b>, soit
+<span class="av">304 px au-delà de tout le reste de la page</span>. Il n'est pas « un peu trop à
+droite » — il est le seul objet de l'accueil aligné sur l'<b>écran</b> pendant que tous les
+autres le sont sur la <b>colonne</b>.
+</p>
+<p class="sous">
+Les <b>pointillés verticaux</b> marquent cette colonne. C'est le seul repère qui permette de
+juger : une barre pleine largeur paraît toujours correcte tant qu'on ne voit pas où tombe le
+contenu du dessous.
+</p>
+
+<div id="premium"></div>
+
+<h3 class="vague">Sixième vague — la zone du compte</h3>
+<p class="sous">
+⚠️ <b>Un disque de 35 px ne peut pas tenir un tiers d'écran.</b> C'est l'autre moitié du
+problème : à droite il n'y a qu'un seul petit objet rond, et il est seul à 300 px de tout. Les
+variantes larges ne sont pas « un avatar de plus » — elles donnent au coin droit une
+<span class="av">masse</span>, donc une raison d'être au bord.
+</p>
+<p class="sous">
+Chacune est montrée à la <b>taille réelle de l'accueil</b>, 2,2 rem. Un avatar se juge à cette
+taille et pas à une autre : le double anneau et la pastille de niveau sont lisibles à 56 px et
+illisibles à 35.
+</p>
+
+<div id="comptes"></div>
 
 <h3 class="vague">Troisième vague — la composition de la barre</h3>
 <p class="sous">
@@ -527,6 +733,10 @@ var PISTES = [
 ];
 
 var n = 4, largeur = 'plein';
+// ⚠️ L etat du calage vit ICI et non dans une classe posee sur le DOM : les
+// barres sont REPEINTES a chaque changement, une classe appliquee a la main
+// serait effacee au rendu suivant.
+var colle = false;
 
 function peindre() {
     var liens = LIENS.slice(0, n);
@@ -609,6 +819,7 @@ document.querySelector('.barre').addEventListener('click', function (e) {
     var b = e.target.closest('.cmd');
     if (!b) return;
     if (b.id === 'rejouer') { peindre(); return; }
+    if (b.id === 'colle') { colle = !colle; b.classList.toggle('on', colle); peindre(); return; }
     if (b.dataset.n) {
         n = parseInt(b.dataset.n, 10);
         document.querySelectorAll('[data-n]').forEach(function (o) { o.classList.toggle('on', o === b); });
@@ -710,11 +921,120 @@ function peindreCompos() {
     }).join('');
 }
 
-// ⚠️ Les deux rendus partagent le selecteur du haut : changer le nombre de
-// liens doit repeindre les DEUX, sinon on compare une composition a quatre
-// liens avec un style a six.
+// ══════════ CINQUIEME VAGUE : DES BARRES PREMIUM ══════════
+//
+// ⚠️ UNE SEULE VARIABLE A LA FOIS. La repartition est tenue CONSTANTE ici
+// — marque a gauche, liens, avatar a droite, la d1 de la vague precedente
+// — et seule la MATIERE change d une barre a l autre. Melanger les deux
+// aurait rendu la comparaison inutilisable : on n aurait jamais su si une
+// barre plait pour sa matiere ou pour sa disposition.
+var PREMIUM = [
+    { cls: 'e1', nom: "La barre d'aujourd'hui",
+      n: "La référence, pour avoir l'écart sous les yeux. <b>Regarde où tombe l'avatar par rapport aux pointillés</b> : il est dehors, de 304 px. Appuie sur « Caler sur la colonne » en haut et reviens — c'est le même geste que fait l'œil quand quelque chose « sonne pas pro » sans qu'on sache dire quoi." },
+    { cls: 'e2', nom: "L'îlot flottant", reco: true,
+      n: "La barre se détache du bord et devient un <b>objet posé sur la page</b> : arrondie, en verre, avec une ombre portée et un liseré clair sur l'arête haute. ⚠️ Elle règle les deux problèmes d'un coup — elle n'a plus de tiers vide puisqu'elle ne fait plus la largeur de l'écran, et l'avatar y est tenu par la forme au lieu d'être exilé au bord. C'est la plus « produit récent » des six." },
+    { cls: 'e3', nom: 'Le verre',
+      n: "Même forme qu'aujourd'hui, autre <b>matière</b> : un fond plus clair mais bien plus transparent, un flou qui prend l'aurore dessous, et un liseré clair sur l'arête haute. ⚠️ C'est le liseré qui fait le premium, pas le flou — sans lui on a juste une vitre sale. ⚠️ Et le flou sur un fond qui bouge coûte cher à la carte graphique : à vérifier sur une machine sans accélération." },
+    { cls: 'e4', nom: 'La barre fine',
+      n: "Moins haute, plus petite, beaucoup plus espacée. <b>Le registre éditorial</b> — une revue, une maison de couture — là où tout le reste de la page est un jeu. ⚠️ Elle est la plus discrète et c'est son intérêt : elle cesse de concurrencer le logotype géant. Mais elle rend les liens plus durs à viser à la souris." },
+    { cls: 'e5', nom: 'Le voile — pas de barre du tout', reco: true,
+      n: "Il n'y a plus de barre : juste un <b>dégradé qui s'éteint vers le bas</b>, assez sombre en haut pour que les liens se lisent. ⚠️ Rien ne coupe l'aurore, donc rien ne sépare la navigation du jeu — c'est ce que font les sites de jeux qui tiennent à leur image. En contrepartie, il n'y a plus de filet doré : un trait supposerait une bande, et il n'y en a plus." },
+];
+
+function peindrePremium() {
+    var liens = LIENS.slice(0, n);
+    document.getElementById('premium').innerHTML = PREMIUM.map(function (p) {
+        var a = liens.map(function (l, i) {
+            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+        }).join('');
+        var dedans = '<span class="marque-g"><span class="lg">S</span>'
+                   + '<span class="mot-sm">SHONENMASTER</span></span>'
+                   + '<span class="mur"></span>'
+                   + '<span class="liens">' + a + '</span>'
+                   + '<span class="fant"></span>'
+                   + '<span class="av"><img src="/knight.png" alt=""></span>';
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.cls.toUpperCase() + '</em>' + p.nom + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="comp prem ' + p.cls + (colle ? ' colle' : '')
+              + '" style="max-width:' + (largeur === 'mobile' ? '390px' : 'none') + '">'
+              + '<div class="scene"><i class="aurore"></i><i class="grille"></i>'
+                + '<div class="bande"><div class="dedans">' + dedans + '</div></div>'
+                + '<i class="colonne"></i>'
+              + '</div>'
+            + '</div></section>';
+    }).join('');
+}
+
+// ══════════ SIXIEME VAGUE : LA ZONE DU COMPTE ══════════
+//
+// ⚠️ MONTREES DANS LA VRAIE BARRE et pas en vignettes alignees. Un avatar
+// isole sur fond neutre parait toujours propre ; ce qu on juge ici, c est
+// ce qu il PESE a cote de trois liens et a 300 px du reste.
+var COMPTES = [
+    { cls: 'f1', nom: 'Le disque nu',
+      n: "Le portrait, un liseré doré fin, rien d'autre. <b>Le plus sobre</b>, et celui qui vieillit le mieux. ⚠️ Mais il ne dit plus le niveau : l'anneau de progression était justement là pour rappeler qu'on avance sans avoir à ouvrir le panneau." },
+    { cls: 'f2', nom: "L'anneau de progression",
+      n: "Ce qu'il y a aujourd'hui : le portrait bordé d'or, l'anneau d'XP collé juste autour. ⚠️ À 35 px les deux cercles se touchent et se lisent comme <b>une seule bordure épaisse</b> — la progression ne se voit plus, elle se devine." },
+    { cls: 'f3', nom: 'Le double anneau', reco: true,
+      n: "Le même anneau, mais <b>écarté du portrait</b>. C'est le vide qui fait tout : collé, il se lit comme une bordure ; écarté, il se lit comme une mesure. ⚠️ Et le portrait reprend un liseré neutre, pour que le doré ne serve plus qu'à une chose — l'avancement." },
+    { cls: 'f4', nom: 'La capsule du compte', reco: true,
+      n: "Le pseudo et le niveau entrent dans la barre, avec le portrait. <b>C'est la seule variante qui règle le coin vide</b> : elle a une largeur, donc une masse, donc une raison d'être au bord. ⚠️ C'est aussi celle qui engage le plus — il faut que le pseudo tienne en un mot, et prévoir ce qu'elle devient quand on n'est pas connecté." },
+    { cls: 'f5', nom: 'Le carré arrondi',
+      n: "La même chose en <b>squircle</b>. Plus « application », moins « forum » — et il s'accorde mieux aux cartes de l'accueil, qui sont des rectangles arrondis. ⚠️ Mais un portrait de personnage dans un carré se recadre mal : les visages sont dessinés pour un rond." },
+    { cls: 'f6', nom: "L'hexagone",
+      n: "La <b>même forme que la pastille de compte du salon</b>, donc une cohérence gagnée gratuitement : le joueur reconnaît le même objet en haut de l'accueil et à côté de son nom en partie. ⚠️ C'est la plus marquée — elle décide d'un style pour tout le site, pas seulement pour un coin." },
+    { cls: 'f7', nom: 'La pastille de niveau',
+      n: "Le niveau écrit en clair, en bas à droite. <b>Un chiffre se lit, un arc se devine</b> — c'est plus direct que n'importe quel anneau. ⚠️ Mais il occupe le coin bas-droit, qui est déjà celui du crayon « changer d'avatar » : il faudra en déplacer un." },
+    { cls: 'f8', nom: 'Le halo',
+      n: "Aucune bordure : <b>une lueur</b>. Le portrait semble éclairé par la page au lieu d'être encadré. ⚠️ La plus douce, et la plus fragile — sur l'aurore dorée le halo doré disparaît presque, c'est précisément l'endroit où il se pose." },
+];
+
+function peindreComptes() {
+    var liens = LIENS.slice(0, n);
+    document.getElementById('comptes').innerHTML = COMPTES.map(function (p) {
+        var a = liens.map(function (l, i) {
+            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+        }).join('');
+        // L anneau : 2 pi r avec r = 24,2 sur une boite de 56, comme la vraie page.
+        var ring = '<svg class="ring" viewBox="0 0 56 56">'
+                 + '<circle class="piste" cx="28" cy="28" r="24.2"></circle>'
+                 + '<circle class="jauge" cx="28" cy="28" r="24.2"'
+                 + ' stroke-dasharray="152.1" stroke-dashoffset="53.2"></circle></svg>';
+        var compte;
+        if (p.cls === 'f4') {
+            compte = '<span class="chip"><img src="/knight.png" alt="">'
+                   + '<b>Adem</b><i>NIV 12</i></span>';
+        } else if (p.cls === 'f7') {
+            compte = '<span class="av"><img src="/knight.png" alt=""><i class="niv">12</i></span>';
+        } else if (p.cls === 'f2' || p.cls === 'f3') {
+            compte = '<span class="av"><img src="/knight.png" alt="">' + ring + '</span>';
+        } else {
+            compte = '<span class="av"><img src="/knight.png" alt=""></span>';
+        }
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.cls.toUpperCase() + '</em>' + p.nom + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="comp ' + p.cls + '" style="max-width:'
+              + (largeur === 'mobile' ? '390px' : 'none') + '">'
+              + '<div class="scene"><i class="aurore"></i><i class="grille"></i>'
+                + '<div class="bande">'
+                  + '<span class="marque-g"><span class="lg">S</span>'
+                  + '<span class="mot-sm">SHONENMASTER</span></span>'
+                  + '<span class="mur"></span>'
+                  + '<span class="liens">' + a + '</span>'
+                  + '<span class="fant"></span>' + compte
+                + '</div>'
+              + '</div>'
+            + '</div></section>';
+    }).join('');
+}
+
+// ⚠️ Les quatre rendus partagent le selecteur du haut : changer le nombre
+// de liens doit TOUS les repeindre, sinon on compare une composition a
+// quatre liens avec un style a six.
 var peindreSeul = peindre;
-peindre = function () { peindreSeul(); peindreCompos(); };
+peindre = function () { peindreSeul(); peindreCompos(); peindrePremium(); peindreComptes(); };
 
 peindre();
 })();
