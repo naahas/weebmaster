@@ -310,6 +310,85 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .vE .nav a i + i { color: var(--orvif); }
 .vE .nav a:hover i { transform: translateY(-1.3rem); }
 
+/* ══════════════════════════════════════════════════════════════
+   TROISIEME VAGUE — LA COMPOSITION DE LA BARRE
+   ══════════════════════════════════════════════════════════════
+   ⚠️ LE PROBLEME N ETAIT PAS LE STYLE DES LIENS. Les deux premieres vagues
+   ne travaillaient que leur dessin — soulignement, capsule, separateurs —
+   alors que ce qui manque se voit a trois metres : LE TIERS GAUCHE EST
+   VIDE. Il l est parce que sur l accueil le logo du coin est masque, le
+   logotype geant portant deja le nom au centre. La barre se lit donc comme
+   trois mots qui flottent, et aucun dessin de lien n y changera rien.
+
+   Une barre d en-tete tient sur trois appuis : une MARQUE a gauche, une
+   NAVIGATION, des ACTIONS a droite. Il en manque un ici. Les six
+   compositions ci-dessous repartissent ces trois appuis autrement.
+
+   ⚠️ Chacune est montree a la LARGEUR REELLE et avec ses vrais voisins.
+   Une composition se juge a la place qu elle laisse vide, pas au detail de
+   ses elements. */
+.comp .scene { height: 5rem; }
+.comp .bande {
+    position: absolute; top: 0; left: 0; right: 0; height: 3.4rem; z-index: 2;
+    display: flex; align-items: center; gap: 1rem; padding: 0 1.1rem;
+    background: rgba(17,16,23,.76);
+}
+.comp .bande::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(240,199,94,.16) 22%,
+                rgba(240,199,94,.16) 78%, transparent);
+}
+.comp .lg {
+    display: grid; place-items: center; width: 1.9rem; height: 1.9rem; flex: 0 0 auto;
+    font-family: 'Orbitron', sans-serif; font-size: .8rem; font-weight: 800;
+    color: #14100a; background: linear-gradient(135deg,#ffe066,var(--or)); border-radius: .5rem;
+}
+.comp .mot {
+    font-family: 'Orbitron', sans-serif; font-size: .82rem; font-weight: 800;
+    letter-spacing: .04em; color: #fff; white-space: nowrap;
+}
+.comp .liens { display: flex; align-items: center; gap: 0; }
+.comp .liens a {
+    position: relative; padding: .2rem 1.05rem; font-size: .73rem; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: #b9b3c9;
+    text-decoration: none; white-space: nowrap;
+}
+.comp .liens a + a::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 1px; height: .85rem; background: rgba(255,255,255,.14);
+}
+.comp .liens a:hover { color: #fff; }
+.comp .pastille { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: #23232b;
+                  border: 2px solid rgba(240,199,94,.55); flex: 0 0 auto; }
+.comp .cta {
+    padding: .42rem .95rem; font: inherit; font-size: .7rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+    color: #14100a; background: linear-gradient(135deg,#ffe066,var(--or));
+    border: 0; border-radius: 2rem; cursor: pointer;
+}
+.comp .fant { flex: 1 1 auto; }
+
+/* c2 : tout groupe a gauche */
+.c2 .liens { margin-left: .6rem; }
+/* c3 : les liens en capsule au centre */
+.c3 .liens {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    padding: .22rem; border-radius: 2rem;
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07);
+}
+.c3 .liens a { padding: .3rem .85rem; }
+.c3 .liens a + a::before { content: none; }
+.c3 .liens a.on { color: #14100a; background: linear-gradient(135deg,#ffe066,var(--or)); border-radius: 2rem; }
+/* c4 : marque a gauche, liens centres, action + avatar a droite */
+.c4 .liens { position: absolute; left: 50%; transform: translateX(-50%); }
+/* c5 : la barre monte d un cran et porte une ombre */
+.c5 .bande { background: rgba(13,12,18,.94); box-shadow: 0 .6rem 1.6rem rgba(0,0,0,.5); }
+.c5 .liens { position: absolute; left: 50%; transform: translateX(-50%); }
+/* c6 : la marque au centre, les liens de part et d autre */
+.c6 .bande { justify-content: center; }
+.c6 .marque-c { display: flex; align-items: center; gap: .5rem; margin: 0 1.6rem; }
+.c6 .pastille { position: absolute; right: 1.1rem; }
+
 /* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
 .v6 .nav {
     gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
@@ -361,6 +440,22 @@ refaire. Change le nombre ci-dessous et regarde.
     <button class="cmd" id="rejouer">↻ Rejouer l'arrivée</button>
 </div>
 
+<h3 class="vague">Troisième vague — la composition de la barre</h3>
+<p class="sous">
+⚠️ <b>Le style des liens n'était pas le problème.</b> Ce qui manque se voit à trois mètres :
+<span class="av">le tiers gauche est vide</span>. Il l'est parce que sur l'accueil le logo du coin
+est masqué, le logotype géant portant déjà le nom au centre — alors la barre se lit comme trois
+mots qui flottent, et aucun dessin de lien n'y changera rien.
+</p>
+<p class="sous">
+Une barre d'en-tête tient sur <b>trois appuis</b> : une <b>marque</b> à gauche, une
+<b>navigation</b>, des <b>actions</b> à droite. Il en manque un. Voilà six façons de les
+répartir — <span class="av">on choisit d'abord une composition, ensuite un style de lien</span>.
+</p>
+
+<div id="compos"></div>
+
+<h3 class="vague">Première et deuxième vagues — le style des liens</h3>
 <div id="pistes"></div>
 
 <script>
@@ -489,6 +584,70 @@ document.querySelector('.barre').addEventListener('click', function (e) {
     }
     peindre();
 });
+
+// ══════════ TROISIEME VAGUE : LES COMPOSITIONS ══════════
+//
+// ⚠️ Rendues a part des six premieres, et c est voulu : celles-la
+// comparaient un DETAIL a decor constant, celles-ci comparent la
+// REPARTITION de toute la barre. Les melanger aurait laisse croire qu on
+// choisit l une OU l autre, alors qu on choisit une composition PUIS un
+// style de lien.
+var COMPOS = [
+    { cls: 'c1', nom: 'La marque revient a gauche', reco: true,
+      n: "Le S reprend sa place dans le coin, les liens restent au centre, l'avatar a droite. <b>C'est le minimum qui manque</b> : une barre d'en-tete tient sur trois appuis — une marque, une navigation, des actions — et il en manquait un. Rien d'autre ne change." },
+    { cls: 'c2', nom: 'Tout a gauche',
+      n: "Marque et liens groupes a gauche, l'avatar seul a droite. La composition de presque tous les produits, et <b>la plus lisible quand les liens se multiplient</b> : ils s'ajoutent vers la droite sans jamais decentrer quoi que ce soit." },
+    { cls: 'c3', nom: 'Les liens en capsule',
+      n: "Marque a gauche, liens dans une pilule au centre, avatar a droite. La capsule <b>donne du poids au centre</b> sans y mettre un objet de plus, et l'actif s'y marque d'un aplat. ⚠️ Mais elle fait concurrence aux deux cartes dorees de l'accueil, qui sont deja les objets les plus voyants de la page." },
+    { cls: 'c4', nom: 'Une action a droite', reco: true,
+      n: "Marque a gauche, liens au centre, et un <b>bouton d'action</b> a cote de l'avatar. C'est lui qui donne son equilibre a la barre : les trois appuis existent enfin, et le plus a droite est celui qui fait faire quelque chose. ⚠️ A verifier avec les cartes « Creer / Rejoindre » juste dessous — le bouton peut faire doublon." },
+    { cls: 'c5', nom: 'Un en-tete assume',
+      n: "La bande se fonce et porte une ombre : elle <b>flotte au-dessus</b> de la page au lieu d'en faire partie. C'est la plus « site », la moins « jeu » — et sur un fond qui bouge, c'est aussi la plus stable." },
+    { cls: 'c6', nom: 'La marque au centre',
+      n: "Les liens de part et d'autre du nom, l'avatar a droite. Elegant et symetrique, <b>mais il faut un nombre PAIR de liens</b> : a trois, l'un des deux cotes pese toujours plus lourd. Et l'accueil porte deja son nom en grand au milieu." },
+];
+
+function peindreCompos() {
+    var liens = LIENS.slice(0, n);
+    document.getElementById('compos').innerHTML = COMPOS.map(function (p) {
+        var a = liens.map(function (l, i) {
+            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+        }).join('');
+        var marque = '<span class="lg">S</span>';
+        var dedans;
+        if (p.cls === 'c2') {
+            dedans = marque + '<span class="liens">' + a + '</span><span class="fant"></span>'
+                   + '<span class="pastille"></span>';
+        } else if (p.cls === 'c4') {
+            dedans = marque + '<span class="liens">' + a + '</span><span class="fant"></span>'
+                   + '<button class="cta">Créer un salon</button><span class="pastille"></span>';
+        } else if (p.cls === 'c6') {
+            var moitie = Math.ceil(liens.length / 2);
+            var g = liens.slice(0, moitie).map(function (l) { return '<a href="#">' + l + '</a>'; }).join('');
+            var d = liens.slice(moitie).map(function (l) { return '<a href="#">' + l + '</a>'; }).join('');
+            dedans = '<span class="liens">' + g + '</span>'
+                   + '<span class="marque-c">' + marque + '<span class="mot">SHONENMASTER</span></span>'
+                   + '<span class="liens">' + d + '</span><span class="pastille"></span>';
+        } else {
+            dedans = marque + '<span class="fant"></span><span class="liens">' + a + '</span>'
+                   + '<span class="fant"></span><span class="pastille"></span>';
+        }
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.cls.slice(1) + '</em>' + p.nom + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="comp ' + p.cls + '" style="max-width:' + (largeur === 'mobile' ? '390px' : 'none') + '">'
+              + '<div class="scene"><i class="aurore"></i><i class="grille"></i>'
+                + '<div class="bande">' + dedans + '</div>'
+              + '</div>'
+            + '</div></section>';
+    }).join('');
+}
+
+// ⚠️ Les deux rendus partagent le selecteur du haut : changer le nombre de
+// liens doit repeindre les DEUX, sinon on compare une composition a quatre
+// liens avec un style a six.
+var peindreSeul = peindre;
+peindre = function () { peindreSeul(); peindreCompos(); };
 
 peindre();
 })();
