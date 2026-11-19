@@ -6663,9 +6663,25 @@ createApp({
         //    pseudos en deux secondes. Sans lui, on allume huit cartes et
         //    huit requetes pour un geste qui n en voulait aucune.
         survolerCarte(p) {
-            if (this.isMobile || !p || !p.compte || p.estBot) return;
+            if (this.isMobile || !p || p.estBot) return;
             if (p.playerId === this.carteId) return;
             clearTimeout(this._carteTimer);
+            // ⚠️ L INVITE A SA CARTE, ET ELLE NE DEMANDE RIEN AU SERVEUR. On
+            // avait d abord decide de ne rien ouvrir pour lui — c etait juste
+            // pour une carte VIDE, pleine de blancs a la place des chiffres.
+            // Celle-ci REPOND : « il n y a rien a savoir » est une
+            // information exacte sur quelqu un qui n a pas de compte, et son
+            // avatar suffit a dire qu il y a bien quelqu un derriere.
+            // ⚠️ Et elle sort du salon, pas de la base : `avatarUrl` et
+            // `username` sont deja diffuses. Une requete pour s entendre
+            // repondre « inconnu » serait un aller-retour pour rien.
+            if (!p.compte) {
+                this._carteTimer = setTimeout(() => {
+                    this.carteId = p.playerId;
+                    this.carteJoueur = { invite: true, pseudo: p.username, avatarUrl: p.avatarUrl };
+                }, 180);
+                return;
+            }
             this._carteTimer = setTimeout(() => this.chargerCarte(p.playerId), 180);
         },
 

@@ -1424,8 +1424,43 @@
                          transform — l erreur qui revient le plus souvent sur
                          ce projet. Verifie au rendu. -->
                     <div class="v2-carte-scene" v-if="carteJoueur" aria-hidden="true">
-                        <article class="v2-carte" :style="{ '--rang': carteRang.couleur }">
+                        <article class="v2-carte" :class="{ invite: carteJoueur.invite }"
+                                 :style="{ '--rang': carteJoueur.invite ? '#6e6880' : carteRang.couleur }">
                             <span class="v2-carte-nappe"></span>
+
+                            <!-- 👤 LA CARTE D UN INVITE. ⚠️ Elle garde SON
+                                 AVATAR et son pseudo : c est ce qu il a
+                                 choisi, c est la seule chose qu il possede, et
+                                 c est ce qui empeche la carte d etre un
+                                 message d erreur — il y a bien quelqu un, il
+                                 n a juste pas d historique.
+                                 ⚠️ `avatarUrl` VIENT DU SALON, pas de la base :
+                                 il est deja diffuse a tout le monde. D ou
+                                 `:src` direct et non `srcAvatar()`, qui
+                                 attend un nom de fichier. -->
+                            <template v-if="carteJoueur.invite">
+                                <div class="v2-carte-tete">
+                                    <span class="v2-carte-portrait">
+                                        <img :src="carteJoueur.avatarUrl" alt="" draggable="false"
+                                             @error="$event.target.src='novice.png'">
+                                    </span>
+                                    <div class="v2-carte-ident">
+                                        <h3 class="v2-carte-pseudo">{{ carteJoueur.pseudo }}</h3>
+                                        <span class="v2-carte-rang">Invité</span>
+                                    </div>
+                                </div>
+                                <!-- ⚠️ `data-mot` PORTE LE MEME TEXTE que le
+                                     contenu : les deux copies decalees du
+                                     glitch le lisent par `content: attr()`.
+                                     Le changer d un cote seulement laisserait
+                                     deux mots differents se superposer. -->
+                                <div class="v2-carte-nodata">
+                                    <b data-mot="NO DATA">NO DATA</b>
+                                    <small>Aucun compte · rien n'est enregistré</small>
+                                </div>
+                            </template>
+
+                            <template v-else>
                             <!-- 👑 ⚠️ UN TRACE, PAS UN EMOJI : un emoji change
                                  de dessin d un systeme a l autre et ne peut pas
                                  prendre la couleur du jeton qui le porte. -->
@@ -1484,6 +1519,7 @@
                                 <span v-if="carteDepuis">Membre depuis {{ carteDepuis }}</span>
                                 <span class="v2-carte-place">#{{ carteJoueur.placeGenerale }} au général</span>
                             </div>
+                            </template>
                         </article>
                     </div>
 

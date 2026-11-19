@@ -7185,18 +7185,24 @@ html.rendu-logiciel .v2-dust { display: none; }
    placer sous un avatar de 3,5rem, et il tombait trop bas.
    ⚠️ Et la variable est posee sur `.v2-home`, pas sur `:root` : la barre du
    SALON porte la meme classe et garde son avatar d origine. */
-.v2-home { --moi-av: 2.2rem; }
+/* ⚠️ `calc(2.2rem - 1px)` ET NON UN REM ARRONDI. Le reglage demande vaut UN
+   pixel : ecrit en rem il serait tombe sur 2,14rem (2,2 - 0,0625), un nombre
+   qu on relit sans comprendre d ou il sort. En `calc`, l intention se lit —
+   et tout ce qui en depend suit : l anneau, le `top` du panneau en colonne,
+   la pointe sous l avatar. */
+.v2-home { --moi-av: calc(2.2rem - 1px); }
 .v2-topbar .v2-moi-stylo { width: 0.95rem; height: 0.95rem; }
 
-/* ⏳ LE SOLDE EST MASQUE, TEMPORAIREMENT. Il n a rien a dire tant que la
-   boutique n existe pas : un chiffre qui monte sans qu on puisse le
-   depenser intrigue puis lasse. Il reprendra sa place le jour ou il mene
-   quelque part.
-   ⚠️ `display: none` ET NON une suppression du gabarit : le compteur
-   continue d etre tenu a jour par `compte-profil`, et le rendre visible
-   redevient une ligne a effacer. Le retirer du gabarit demanderait de
-   retrouver ou il se branchait. */
-.v2-topbar .v2-moi-rubis { display: none; }
+/* 💎 LE SOLDE EST DE RETOUR DANS LA BARRE.
+   ⚠️ IL AVAIT ETE MASQUE EXPRES, et la raison tient toujours : « un chiffre
+   qui monte sans qu on puisse le depenser intrigue puis lasse ». Il devait
+   reparaitre le jour ou il menerait quelque part — or /boutique rend encore
+   404. La decision d afficher est prise en connaissance de cause ; c est la
+   BOUTIQUE qui doit rattraper le chiffre, pas l inverse.
+   ⚠️ Il reste masque sur la barre du SALON (`:not(.site)`) : en partie, le
+   coin de l ecran sert a jouer, et un compteur qu on ne peut pas depenser y
+   est encore plus hors sujet qu sur l accueil. */
+.v2-topbar:not(.site) .v2-moi-rubis { display: none; }
 
 /* ── LE FILET SOUS LE BANDEAU ──
    Le meme que celui du pied de page : il s eteint a ses deux bouts plutot
@@ -8581,6 +8587,26 @@ html.rendu-logiciel .v2-dust { display: none; }
     z-index: 0;
     user-select: none;
 }
+/* 💎 LA PASTILLE PASSE A DROITE DE L AVATAR.
+   ⚠️ PAR `order`, ET NON EN DEPLACANT LA BALISE. Le gabarit continue de
+   placer le solde avant le portrait : dans l ordre de LECTURE, « combien j
+   ai » vient avant « qui je suis », et un lecteur d ecran comme la
+   tabulation suivent cet ordre-la. Seul l ordre VISUEL change.
+   ⚠️ ET TOUT S INVERSE EN MIROIR : le gros padding passe a gauche puisque
+   c est lui qui passe desormais sous le portrait, et la marge negative
+   aussi. En n inversant que l un des deux, le nombre se serait glisse sous
+   l avatar ou la pastille s en serait decollee. */
+.v2-moi-grp .v2-moi-rubis { order: 1; }
+.v2-moi-grp .v2-moi-av { order: 0; }
+.v2-moi-rubis {
+    padding: 0 1rem 0 2.15rem;
+    margin-right: 0;
+    margin-left: -1.15rem;
+}
+@media (max-width: 480px) {
+    .v2-moi-rubis { padding: 0 0.88rem 0 1.95rem; margin-right: 0; margin-left: -1.05rem; }
+}
+
 /* ⚠️ L avatar PASSE DEVANT, et il faut le dire : les deux sont positionnes,
    et sans cet ordre explicite c est la pile du document qui tranche — elle
    marche ici par hasard (l avatar vient apres), elle ne marcherait plus si
@@ -17581,8 +17607,14 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 
 .v2-carte {
     position: relative;
-    width: 20.5rem;
-    padding: 1.5rem 1.6rem 1.35rem;
+    /* ⚠️ 23rem ET NON 20,5, ET LES PADDINGS SUIVENT. A la largeur du banc,
+       tout paraissait comprime une fois la carte posee dans le vrai salon —
+       et l avatar en premier, qui est le plus gros objet et donc celui qui
+       touche ses bords avant les autres. Elargir SANS ouvrir les paddings
+       n aurait rien donne : on aurait eu les memes marges autour d un
+       contenu plus etale. */
+    width: 23rem;
+    padding: 1.85rem 1.95rem 1.6rem;
     border-radius: 1.1rem;
     /* La teinte du rang, posee par le gabarit. Le repli sert si le rang ne
        se resout pas : une carte sans couleur reste lisible. */
@@ -17649,8 +17681,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     pointer-events: none;
 }
 
-.v2-carte-tete { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.95rem; }
-.v2-carte-portrait { position: relative; width: 4.1rem; height: 4.1rem; flex: 0 0 auto; }
+/* ⚠️ L AVATAR EST LE PREMIER A PARAITRE COMPRIME, et c est mecanique : c est
+   le plus gros objet de la carte, donc celui qui touche ses bords avant les
+   autres. Son cerne deborde en plus de 0,4rem sans compter dans la mise en
+   page — l air qu on croit voir autour de lui est toujours plus petit que
+   celui qu on a ecrit. */
+.v2-carte-tete { display: flex; align-items: center; gap: 1.05rem; margin-bottom: 1.15rem; }
+.v2-carte-portrait { position: relative; width: 4.6rem; height: 4.6rem; flex: 0 0 auto; }
 .v2-carte-portrait img {
     width: 100%;
     height: 100%;
@@ -17756,7 +17793,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 .v2-carte-stats.deux { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
 .v2-carte-stats > div {
-    padding: 0.55rem 0.4rem;
+    padding: 0.7rem 0.5rem;
     border-radius: 0.6rem;
     text-align: center;
     background: rgba(255, 255, 255, 0.04);
@@ -17863,6 +17900,114 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
                     inset 0 1px 0 rgba(255, 255, 255, 0.65),
                     0 0 0.7rem rgba(255, 215, 0, 0.45);
     }
+}
+
+/* ════════════ LA CARTE D UN INVITE — « NO DATA » ════════════
+   ⚠️ ON AVAIT DECIDE DE NE RIEN OUVRIR POUR UN INVITE, au motif qu une carte
+   vide dirait seulement qu il manque quelque chose. C etait juste pour une
+   carte VIDE ; ce n en est pas une. Celle-ci ne laisse pas de blancs a la
+   place des chiffres : elle REPOND, et ce qu elle repond — il n y a rien a
+   savoir — est une information exacte sur un joueur qui n a pas de compte.
+   ⚠️ ELLE GARDE SON AVATAR. C est ce que le joueur a choisi, c est la seule
+   chose qu un invite possede, et c est ce qui empeche la carte d etre un
+   message d erreur : il y a bien quelqu un, il n a juste pas d historique. */
+.v2-carte.invite { padding-bottom: 1.85rem; }
+.v2-carte-nodata {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 7rem;
+    transform: translateZ(2.2rem);
+}
+/* ⚠️ TROIS CALQUES DU MEME MOT, et c est ce qui fait le glitch : le texte
+   reel, plus deux copies decalees en cyan et magenta par `::before` et
+   `::after`, qui lisent le mot dans `content: attr(data-mot)`. Un filtre ou
+   une ombre n auraient pas pu DECOUPER le texte par bandes — et c est le
+   decoupage, pas le decalage, qui fait lire « signal » plutot que « flou ». */
+.v2-carte-nodata b {
+    position: relative;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.05rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 0 1.6rem rgba(255, 255, 255, 0.25);
+    animation: v2NoDataSaut 4.4s steps(1) infinite;
+}
+.v2-carte-nodata b::before,
+.v2-carte-nodata b::after {
+    content: attr(data-mot);
+    position: absolute;
+    inset: 0;
+    /* ⚠️ Le fond est celui de la carte, pas `transparent` : les copies
+       doivent MASQUER le mot d origine sur leurs bandes, sinon on lit trois
+       textes superposes au lieu d un seul qui se dechire. */
+    background: #15141b;
+    overflow: hidden;
+}
+.v2-carte-nodata b::before {
+    color: #4ff0ff;
+    animation: v2NoDataGauche 2.9s infinite linear alternate-reverse;
+}
+.v2-carte-nodata b::after {
+    color: #ff4fa3;
+    animation: v2NoDataDroite 3.7s infinite linear alternate-reverse;
+}
+/* Les bandes se deplacent par `clip-path` : a chaque etape, une tranche
+   differente du mot est decalee. */
+@keyframes v2NoDataGauche {
+    0%   { clip-path: inset(18% 0 62% 0); translate: -0.14rem 0; }
+    20%  { clip-path: inset(72% 0 12% 0); translate:  0.12rem 0; }
+    40%  { clip-path: inset(38% 0 46% 0); translate: -0.1rem 0; }
+    60%  { clip-path: inset(8% 0 80% 0);  translate:  0.16rem 0; }
+    80%  { clip-path: inset(56% 0 28% 0); translate: -0.12rem 0; }
+    100% { clip-path: inset(26% 0 58% 0); translate:  0.1rem 0; }
+}
+@keyframes v2NoDataDroite {
+    0%   { clip-path: inset(64% 0 16% 0); translate:  0.12rem 0; }
+    25%  { clip-path: inset(14% 0 70% 0); translate: -0.16rem 0; }
+    50%  { clip-path: inset(44% 0 40% 0); translate:  0.1rem 0; }
+    75%  { clip-path: inset(78% 0 8% 0);  translate: -0.12rem 0; }
+    100% { clip-path: inset(32% 0 52% 0); translate:  0.14rem 0; }
+}
+/* ⚠️ `steps(1)` : le mot entier SAUTE, il ne glisse pas. Un deplacement
+   continu se lit comme un flottement ; une saccade se lit comme une panne,
+   et c est ce qu on raconte. Il reste immobile l essentiel du temps — un
+   glitch permanent devient un decor. */
+@keyframes v2NoDataSaut {
+    0%, 92%, 100% { translate: 0 0; }
+    93%           { translate: 0.18rem -0.06rem; }
+    95%           { translate: -0.14rem 0.08rem; }
+    97%           { translate: 0.08rem 0; }
+}
+.v2-carte-nodata small {
+    display: block;
+    margin-top: 0.7rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #6e6880;
+    text-align: center;
+}
+/* Les lignes de balayage, posees sur la zone entiere : c est ce qui rattache
+   le mot a un ECRAN plutot qu a une typographie abimee. */
+.v2-carte-nodata::after {
+    content: '';
+    position: absolute;
+    inset: -0.5rem;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg,
+        rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 3px);
+    opacity: 0.55;
+}
+@media (prefers-reduced-motion: reduce) {
+    .v2-carte-nodata b,
+    .v2-carte-nodata b::before,
+    .v2-carte-nodata b::after { animation: none; }
+    /* ⚠️ Sans animation, les deux copies resteraient posees A PLAT sur le
+       mot et le rendraient illisible : on les efface. */
+    .v2-carte-nodata b::before,
+    .v2-carte-nodata b::after { display: none; }
 }
 
 /* ⚠️ SOUS 1100 px, PLUS DE CARTE. Elle fait 20,5rem et s ouvre a droite : en

@@ -71,7 +71,13 @@ const PALIERS = [
     { nom: 'Prodigy', pas: 1200, couleur: '#5fc9e8' },
     { nom: 'Elite',   pas: 2000, couleur: '#6fa0f5' },
     { nom: 'Expert',  pas: 3000, couleur: '#a97bf5' },
-    { nom: 'Legend',  pas: 6500, couleur: '#f5a65b' },
+    // ⚠️ ROUGE, ET PAS CELUI DES ERREURS. `--error-color` vaut #ef4444 :
+    // a deux pas de lui, un rang se serait lu comme une alerte sur la carte
+    // d un joueur, dans la barre du profil et sur la page des rangs — partout
+    // ou cette couleur sert. Celui-ci est plus sombre et plus chaud, il tient
+    // sa place entre le violet d Expert et l or d Eternal sans emprunter le
+    // registre du danger.
+    { nom: 'Legend',  pas: 6500, couleur: '#e0564e' },
     { nom: 'Eternal', pas: 9000, couleur: '#FFD700' },
     // ⚠️ MASTER EST LE SOMMET, et il a pris la place de « Divin » — le site
     // s appelle ShonenMaster, le dernier rang porte donc son nom. Master
