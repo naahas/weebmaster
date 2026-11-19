@@ -1166,8 +1166,17 @@
                 <nav class="v2-barre-bas" v-if="isMobile && homeScreen === 'hub'"
                      aria-label="Navigation du site">
                     <a class="v2-bb-lien" href="/classement">Classement</a>
+                    <!-- 🔥 LES SIX BRAISES. ⚠️ DE VRAIS ELEMENTS, et il n y
+                         avait pas le choix : il en faut six avec six retards
+                         differents, et un element n a que deux
+                         pseudo-elements — dont `::before`, deja pris par le
+                         balayage conique.
+                         ⚠️ Ils sont en `position: absolute`, donc hors de la
+                         grille qui centre le logo : en ajouter ou en retirer
+                         ne deplace rien. -->
                     <span class="v2-bb-marque" aria-hidden="true">
                         <img src="logo-sm.png" alt="" draggable="false">
+                        <i></i><i></i><i></i><i></i><i></i><i></i>
                     </span>
                     <a class="v2-bb-lien" href="/rangs">Rangs</a>
                 </nav>

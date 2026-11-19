@@ -15980,59 +15980,108 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     border-radius: 50%;
     background: radial-gradient(circle at 50% 32%, #191521 0%, #0a0910 72%);
     border: 1px solid rgba(240, 199, 94, 0.26);
-    /* ⚠️ LES DEUX OMBRES SONT REPETEES A L IDENTIQUE DANS LES DEUX ETAPES :
-       une `box-shadow` s anime en bloc, en oublier une la ferait disparaitre
-       a mi-course. C est la lecon du jeton de la carte du joueur. */
-    animation: v2BbHalo 4.6s ease-in-out infinite;
+    /* ⚠️ L OMBRE EST FIXE, ET C EST UN CHOIX DE DOSAGE. Elle RESPIRAIT du
+       temps ou l anneau etait un simple arc : il fallait bien que quelque
+       chose vive. L embleme porte desormais DEUX mouvements — le balayage et
+       les braises —, et un troisieme qui bat en permanence n ajoutait plus
+       de la vie mais du bruit. */
+    box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6);
 }
-@keyframes v2BbHalo {
-    0%, 100% { box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
-                           0 0 0 rgba(255, 215, 0, 0); }
-    50%      { box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
-                           0 0 1.25rem rgba(255, 215, 0, 0.26); }
-}
+/* ⚠️ LE LOGO DOIT RESTER AU CENTRE DU CERCLE, et ce n est PAS acquis depuis
+   que les braises existent. `.v2-bb-marque` est une grille a `place-items:
+   center` : avec un seul enfant, il se centre tout seul. Sept enfants en
+   flux creeraient SEPT RANGEES IMPLICITES, et le logo deviendrait la
+   premiere d entre elles — pousse vers le haut, de travers, sans qu aucune
+   regle ne paraisse fautive.
+   C est pour ca que les braises sont en `position: absolute` : elles
+   sortent du flux de la grille, qui ne voit donc plus qu un seul enfant.
+   Mesure au rendu : 0 px d ecart entre le centre du logo et celui du disque. */
 .v2-bb-marque img {
     width: 58%;
     height: auto;
     display: block;
 }
-/* ⚠️ UN ARC QUI TOURNE EN 7 s, ET LA DUREE EST L ESSENTIEL. Le meme anneau
-   a 1 s serait lu comme un INDICATEUR DE CHARGEMENT, et personne n attendrait
-   plus rien de la page. A 7 s il ne se lit pas comme un progres, seulement
-   comme un reflet qui passe.
-   ⚠️ `rotate`, PROPRIETE A PART, et non `transform` : le disque n en porte
-   pas aujourd hui, mais c est l erreur qui revient le plus souvent sur ce
-   projet — des keyframes qui ecrivent `transform` effacent celui qui pose ou
-   centre l element. On prend l habitude partout, pas seulement la ou ca
-   casse deja.
-   ⚠️ Et c est une BORDURE, pas un `conic-gradient` masque : le masque aurait
-   demande `-webkit-mask`, et la ou il n est pas compris on aurait un disque
-   dore plein derriere le logo au lieu d un anneau. */
+
+/* ✨ LE BALAYAGE — une LUEUR conique qui fait le tour, et non un arc net.
+   ⚠️ LA DUREE EST L ESSENTIEL. Le meme anneau a 1 s serait lu comme un
+   INDICATEUR DE CHARGEMENT, et personne n attendrait plus rien de la page.
+   A 6 s il ne se lit pas comme un progres, seulement comme un reflet qui
+   passe.
+   ⚠️ `rotate`, PROPRIETE A PART, et jamais `transform` dans des keyframes :
+   c est l erreur qui revient le plus souvent sur ce projet — elle efface le
+   `transform` qui pose ou centre l element. On prend l habitude partout, pas
+   seulement la ou ca casse deja.
+   ⚠️ LE MASQUE EST CE QUI EN FAIT UN ANNEAU. Un `conic-gradient` remplit le
+   disque entier ; le masque evide le centre. Et `closest-side` est
+   obligatoire : avec la taille par defaut (`farthest-corner`), 100 % vaut la
+   demi-DIAGONALE du carre, le trou deborde du cercle et l anneau disparait.
+   ⚠️ La ou `mask` n est pas compris, il reste un disque dore DERRIERE le
+   logo — degrade acceptable (le logo est opaque et passe devant), mais a
+   savoir : c est le seul endroit du jeu qui en depend. */
 .v2-bb-marque::before {
     content: '';
     position: absolute;
-    inset: -0.3rem;
+    inset: -0.32rem;
     border-radius: 50%;
-    border: 1px solid transparent;
-    border-top-color: rgba(240, 199, 94, 0.55);
-    border-right-color: rgba(240, 199, 94, 0.16);
-    animation: v2BbArc 7s linear infinite;
+    background: conic-gradient(from 0deg,
+        rgba(240, 199, 94, 0) 0deg,
+        rgba(240, 199, 94, 0.65) 90deg,
+        rgba(255, 235, 170, 0.9) 150deg,
+        rgba(240, 199, 94, 0.2) 230deg,
+        rgba(240, 199, 94, 0) 330deg);
+    -webkit-mask: radial-gradient(circle closest-side,
+        transparent 0 calc(100% - 2px), #000 calc(100% - 2px));
+    mask: radial-gradient(circle closest-side,
+        transparent 0 calc(100% - 2px), #000 calc(100% - 2px));
+    animation: v2BbBalayage 6s linear infinite;
 }
-@keyframes v2BbArc {
+@keyframes v2BbBalayage {
     from { rotate: 0deg; }
     to   { rotate: 360deg; }
 }
+
+/* 🔥 LES BRAISES — six grains dores qui montent et s eteignent.
+   ⚠️ `position: absolute` EST OBLIGATOIRE, pas esthetique : voir la note du
+   logo plus haut. En flux, ils feraient six rangees de grille et
+   decentreraient le logo.
+   ⚠️ SIX RETARDS IRREGULIERS, et c est tout le reglage. Repartis
+   regulierement, les grains partent par vagues et l on voit un MOTIF au lieu
+   d un feu ; ces six-la ont ete choisis pour ne jamais retomber ensemble.
+   ⚠️ L opacite part de 0 et y revient : un grain qui apparait net au depart
+   se verrait surgir. Il doit s allumer en montant. */
+.v2-bb-marque i {
+    position: absolute;
+    bottom: 0.4rem;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #f5d98a;
+    opacity: 0;
+    pointer-events: none;
+    animation: v2BbBraise 3.6s ease-out infinite;
+}
+.v2-bb-marque i:nth-child(2) { left: 14%; animation-delay: 0s; }
+.v2-bb-marque i:nth-child(3) { left: 32%; animation-delay: 0.7s; }
+.v2-bb-marque i:nth-child(4) { left: 52%; animation-delay: 1.5s; }
+.v2-bb-marque i:nth-child(5) { left: 71%; animation-delay: 0.35s; }
+.v2-bb-marque i:nth-child(6) { left: 86%; animation-delay: 2.1s; }
+.v2-bb-marque i:nth-child(7) { left: 46%; animation-delay: 2.7s; }
+@keyframes v2BbBraise {
+    0%   { translate: 0 0;       opacity: 0;    scale: 0.6; }
+    18%  {                       opacity: 0.95; }
+    100% { translate: 0 -3.4rem; opacity: 0;    scale: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    /* ⚠️ L ARC S ARRETE AU LIEU DE DISPARAITRE : fige, il reste un liisere
-       dore en haut du disque, ce qui est exactement ce qu on voulait dessiner.
-       Le halo, lui, se repose a la main — `animation: none` le rendrait a sa
-       valeur de base, qui est AUCUNE ombre. */
+    /* ⚠️ LE BALAYAGE S ARRETE AU LIEU DE DISPARAITRE : fige, il reste une
+       lueur doree sur un cote du disque, ce qui est exactement ce qu on
+       voulait dessiner. Les braises, elles, DOIVENT partir — figees, elles
+       laisseraient six points immobiles autour du logo, qu on prendrait pour
+       des defauts d affichage. Leur opacite de base est 0, donc
+       `display: none` n est meme pas necessaire ; on le pose quand meme,
+       pour que ca ne depende pas d une valeur reglee ailleurs. */
     .v2-bb-marque::before { animation: none; }
-    .v2-bb-marque {
-        animation: none;
-        box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
-                    0 0 1rem rgba(255, 215, 0, 0.18);
-    }
+    .v2-bb-marque i { animation: none; display: none; }
     .v2-bb-lien::after { transition: none; }
 }
 
