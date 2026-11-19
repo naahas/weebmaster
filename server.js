@@ -2849,6 +2849,16 @@ app.get('/prototypes/carte-joueur', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-carte-joueur.html');
 });
 
+// 👤 La FORME du panneau du profil : cinq, sur une reduction de la vraie page
+// d accueil. ⚠️ Le fond n y est pas un decor, c est l unite de mesure : depuis
+// que l avatar s est centre, la bulle d aujourd hui s ouvre au milieu de
+// l ecran et se pose sur CREER et REJOINDRE. On ne juge donc pas le dessin du
+// panneau mais CE QU IL LAISSE VOIR — et une forme jugee sur fond noir parait
+// toujours correcte, ce qui est exactement l erreur a l origine du probleme.
+app.get('/prototypes/profil', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-profil.html');
+});
+
 // 💎 Ou poser le SOLDE a cote de l avatar : huit formes, sur une maquette du
 // vrai coin haut-droit. ⚠️ Le fond n y est pas decoratif — un badge dore se
 // juge sur le degrade d or de l accueil, pas sur du noir, et c est justement

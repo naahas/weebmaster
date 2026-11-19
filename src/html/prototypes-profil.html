@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le panneau du profil</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Orbitron:wght@700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<!--
+   👤 CINQ FORMES POUR LE PANNEAU DU PROFIL.
+
+   ⚠️ LE PROBLEME N EST PAS LE PANNEAU, C EST CE QU IL RECOUVRE. Tant que
+   l avatar vivait dans le coin haut-droit, sa bulle tombait sur une zone
+   vide. Depuis que le nom, les liens et l avatar se centrent ensemble, elle
+   s ouvre AU MILIEU DE L ECRAN et vient se poser sur « nouveau mode »,
+   « CREER » et « REJOINDRE » — c est-a-dire sur les deux seuls boutons que
+   la page existe pour montrer.
+
+   ⚠️ D OU LA REGLE DE CETTE PAGE : chaque forme est montree SUR LA VRAIE
+   PAGE D ACCUEIL, avec le logotype, les trois chiffres, les dernieres
+   parties et les deux cartes. Une forme de panneau jugee sur fond noir
+   paraitrait toujours correcte — c est precisement l erreur qui a produit
+   celle d aujourd hui.
+
+   ⚠️ ET TOUTES PORTENT EXACTEMENT LE MEME CONTENU. Pseudo, rang, titre
+   porte, parties, victoires, taux, rubis, niveau avec sa jauge, et le
+   bouton de deconnexion. Sans ca on comparerait cinq mises en page ET cinq
+   jeux d informations, et l on n aurait jamais su ce qui plait.
+-->
+<style>
+:root { --or: #f0c75e; --orvif: #ffd700; --rang: #9a9aa6; }
+* { box-sizing: border-box; }
+body {
+    margin: 0; padding: 0 0 6rem;
+    background: #08080b; color: #e8e8ee;
+    font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased;
+}
+h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.4rem 0; }
+.sous { font-size: .78rem; line-height: 1.7; opacity: .6; max-width: 62rem; margin: 0 0 1rem; padding: 0 1.4rem; }
+.sous b { opacity: 1; color: #fff; }
+.sous .av { color: var(--orvif); font-weight: 700; }
+
+.barre {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    padding: .7rem .9rem; margin-bottom: 1rem;
+    background: rgba(8,8,11,.96);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.barre label { font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .4; }
+.cmd {
+    font: inherit; font-size: .72rem; font-weight: 600;
+    padding: .42rem .75rem; border-radius: .45rem; cursor: pointer;
+    color: #e8e8ee; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+}
+.cmd:hover { background: rgba(255,255,255,.1); }
+.cmd.on { background: rgba(255,215,0,.14); border-color: rgba(255,215,0,.5); color: var(--orvif); }
+.sep { width: 1px; height: 1.1rem; background: rgba(255,255,255,.12); margin: 0 .35rem; }
+
+.piste { border-top: 1px solid rgba(255,255,255,.07); padding: 1.6rem 1.4rem .6rem; }
+.piste h2 { font-size: .98rem; font-weight: 800; margin: 0 0 .2rem; display: flex; align-items: baseline; gap: .55rem; }
+.piste h2 em { font-style: normal; font-size: .9rem; opacity: .3; font-family: 'Bebas Neue', sans-serif; }
+.piste .n { font-size: .73rem; line-height: 1.65; opacity: .52; max-width: 62rem; margin: 0 0 1.1rem; }
+.piste .n b { opacity: .95; color: #fff; font-weight: 600; }
+.piste.reco h2 { color: var(--orvif); }
+
+/* ══════════ LA PAGE D ACCUEIL, EN REDUCTION ══════════
+   ⚠️ CE N EST PAS UN DECOR. C est l unite de mesure de cette page : on ne
+   juge pas la forme du panneau, on juge CE QU IL LAISSE VOIR. */
+/* ⚠️ 40 rem DE HAUT, ET C EST UNE MESURE. La premiere version faisait 27 rem
+   avec les cartes collees sous la barre : la bulle d aujourd hui n y touchait
+   RIEN, et la page concluait tranquillement qu il n y avait pas de probleme.
+   Sur l accueil, « nouveau mode » tombe a 250 px sous la barre et la colonne
+   des cartes est calee sur les 76 rem du hub, pas sur le bord de l ecran.
+   Les deux sont reproduits ci-dessous ; sans eux ce banc ne mesure rien. */
+.ecran {
+    position: relative; overflow: hidden;
+    height: 40rem; border-radius: .9rem;
+    background: radial-gradient(120% 80% at 50% 0%, #15110a 0%, #0c0c11 48%, #07070a 100%);
+    border: 1px solid rgba(255,255,255,.06);
+}
+.ecran i.aurore {
+    position: absolute; border-radius: 50%; filter: blur(70px); opacity: .5;
+    width: 34rem; height: 30rem; top: -12rem; left: 8%;
+    background: radial-gradient(circle, rgba(255,190,40,.45), transparent 68%);
+}
+.ecran i.grille {
+    position: absolute; inset: 0; top: 40%;
+    background-image:
+        linear-gradient(rgba(255,215,0,.055) .06rem, transparent .06rem),
+        linear-gradient(90deg, rgba(255,215,0,.055) .06rem, transparent .06rem);
+    background-size: 3.2rem 3.2rem;
+    transform: perspective(42rem) rotateX(62deg);
+    mask-image: radial-gradient(70% 70% at 50% 20%, #000 0%, transparent 80%);
+    -webkit-mask-image: radial-gradient(70% 70% at 50% 20%, #000 0%, transparent 80%);
+}
+
+/* La barre du haut, telle qu elle est aujourd hui : groupe centre, deux
+   bornes en losange, l avatar a droite du dernier lien. */
+/* ⚠️ 10, AU-DESSUS DU VOILE (8). Deux raisons, et la seconde vaut aussi pour
+   la vraie page : la bulle est un ENFANT de la barre depuis qu elle suit
+   l avatar, donc elle monte avec elle ; et surtout, l avatar qu on vient de
+   cliquer doit rester allume quand le reste s assombrit. Un voile qui
+   grise sa propre source se lit comme un bug. */
+.tb {
+    position: absolute; top: 0; left: 0; right: 0; height: 3.4rem; z-index: 10;
+    display: flex; align-items: center; justify-content: center; gap: .25rem;
+    background: rgba(17,16,23,.78);
+}
+.tb::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(240,199,94,.09) 22%,
+                rgba(240,199,94,.09) 78%, transparent);
+}
+.tb .mot {
+    font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 800;
+    letter-spacing: .05em; white-space: nowrap;
+    background: linear-gradient(100deg,#fff 8%, var(--orvif) 58%, var(--or) 96%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    color: var(--orvif);
+}
+.tb .liens { display: flex; align-items: center; }
+.tb .liens a {
+    padding: .2rem 1.05rem; font-size: .66rem; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: #b9b3c9; text-decoration: none;
+}
+.tbsep {
+    position: relative; flex: 0 0 auto; width: 1px; height: 1.35rem;
+    background: linear-gradient(180deg, transparent, rgba(240,199,94,.32) 26%,
+                rgba(240,199,94,.32) 74%, transparent);
+}
+.tbsep::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: .26rem; height: .26rem; transform: translate(-50%,-50%) rotate(45deg);
+    background: var(--orvif); opacity: .8; box-shadow: 0 0 .4rem rgba(255,215,0,.55);
+}
+.mot + .tbsep { margin: 0 .72rem 0 1.9rem; }
+.liens + .tbsep { margin: 0 1.9rem 0 .72rem; }
+/* ⚠️ Le groupe de l avatar est en `relative` : c est lui qui porte la bulle,
+   exactement comme dans la vraie page depuis qu elle y est descendue. */
+.tbmoi { position: relative; margin: 0 .44rem; flex: 0 0 auto; top: 1px; display: inline-flex; }
+.tbmoi .av { position: relative; width: 2.2rem; height: 2.2rem; display: block; cursor: pointer; }
+.tbmoi .av img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    background: #23232b; border: .095rem solid rgba(255,255,255,.17);
+}
+
+/* Le contenu de l accueil — ce que le panneau risque de couvrir. */
+.hub { position: absolute; inset: 3.4rem 0 0; z-index: 2; }
+.hub .recentes { position: absolute; left: 2.2rem; top: 15.5rem; width: 10rem; }
+.hub .recentes h4 {
+    margin: 0 0 .5rem; font-size: .52rem; letter-spacing: .14em; text-transform: uppercase;
+    color: #6e6880; font-weight: 700;
+}
+.hub .recentes p {
+    margin: 0; padding: .32rem 0; font-size: .64rem; color: #7fd4a0; font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.hub .recentes p span { float: right; color: #55505f; font-weight: 400; }
+.hub .centre { position: absolute; left: 50%; top: 7.5rem; transform: translateX(-50%); text-align: center; }
+.hub .logo {
+    font-family: 'Bebas Neue', sans-serif; font-size: 4.8rem; line-height: 1;
+    letter-spacing: .01em; white-space: nowrap;
+}
+.hub .logo b { color: var(--or); font-weight: 400; }
+.hub .logo i { color: #fff; font-style: normal; }
+.hub .chiffres { display: flex; gap: 2.6rem; justify-content: center; margin-top: 1.5rem; }
+.hub .chiffres div { text-align: center; }
+.hub .chiffres b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; color: var(--or); }
+.hub .chiffres span { font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: #6e6880; }
+/* ⚠️ CALEE SUR LA COLONNE DU HUB, pas sur le bord de l ecran. C est tout le
+   point : le `max()` la plaque au bord tant que la fenetre est plus etroite
+   que 76 rem, puis la fait rentrer avec le reste du contenu. Collee a droite,
+   elle se retrouvait a 300 px de sa vraie place et la bulle ne la touchait
+   jamais. */
+/* ⚠️ RELEVE SUR LA VRAIE PAGE, pas estime. A 1920 px : le hub va de 352 a
+   1568, et la colonne des deux cartes de 1144 a 1512 — elle s arrete donc
+   56 px avant le bord de la colonne, et commence 239 px sous la barre. Ce
+   sont ces trois nombres qui sont reproduits ici ; sans eux la bulle ne
+   touchait rien et ce banc concluait qu il n y avait pas de probleme. */
+.hub .droite {
+    position: absolute; top: 14.9rem; width: 23rem;
+    right: calc(max(2.2rem, (100% - 76rem) / 2) + 3.5rem);
+}
+.hub .neuf {
+    display: flex; align-items: center; gap: .4rem; margin-bottom: .7rem;
+    font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--or); font-weight: 700;
+}
+.hub .neuf i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--or); font-style: normal; }
+.hub .neuf b { color: #cfc8dc; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: .62rem; }
+.hub .carte {
+    position: relative; height: 5.2rem; border-radius: .7rem; margin-bottom: .8rem;
+    padding: .7rem .9rem; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+    background: linear-gradient(110deg, rgba(60,46,16,.75), rgba(22,20,28,.9));
+}
+.hub .carte.b { background: linear-gradient(110deg, rgba(30,32,60,.75), rgba(20,20,28,.9)); }
+.hub .carte em {
+    font-style: normal; font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: #9a93a8;
+}
+.hub .carte strong {
+    display: block; margin-top: .9rem; font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem; letter-spacing: .02em; color: #fff;
+}
+.hub .carte u {
+    position: absolute; right: .6rem; bottom: -.6rem; font-size: 3rem; text-decoration: none;
+    color: rgba(255,255,255,.07); font-family: serif;
+}
+
+/* ══════════ LE PANNEAU — contenu commun ══════════ */
+.pan {
+    position: absolute; z-index: 9;
+    border-radius: 1rem;
+    background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
+    border: 1px solid rgba(255,255,255,.075);
+    box-shadow: 0 1.4rem 3.2rem rgba(0,0,0,.6);
+    /* ⚠️ L ARRIVEE EST EN `translate`, PAS EN `transform`. Deux variantes se
+       centrent par un `transform: translateX(-50%)` ou par `margin: auto` ;
+       une animation qui ecrirait `transform` les aurait decentrees le temps
+       de son passage — et la barre large aurait saute d une demi-largeur a
+       l ouverture. `translate` est une propriete a part, composee avant
+       `transform` : les deux cohabitent sans arbitrage. */
+    animation: panIn .2s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes panIn {
+    from { opacity: 0; translate: 0 -8px; }
+    to   { opacity: 1; translate: 0 0; }
+}
+.p-av { position: relative; width: 2.9rem; height: 2.9rem; flex: 0 0 auto; }
+.p-av img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    background: #23232b; border: .1rem solid rgba(255,255,255,.17);
+}
+.p-pseudo { font-size: .92rem; font-weight: 800; color: #fff; white-space: nowrap; }
+.p-rang {
+    font-family: 'Orbitron', sans-serif; font-size: .58rem; font-weight: 800;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--rang); white-space: nowrap;
+}
+.p-titre {
+    font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--or); font-weight: 700; white-space: nowrap;
+}
+.p-lignes { display: flex; flex-direction: column; }
+.p-lignes div {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: .46rem 0; font-size: .72rem; color: #9a9aa6;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.p-lignes b { font-weight: 800; color: var(--orvif); font-variant-numeric: tabular-nums; }
+.p-lignes .rub, .p-lignes .rub b { color: var(--or); }
+.p-niv { display: flex; flex-direction: column; gap: .4rem; }
+.p-niv .t { display: flex; justify-content: space-between; font-size: .64rem; color: #9a9aa6; }
+.p-niv .t b { color: #fff; font-variant-numeric: tabular-nums; }
+.p-jauge { height: .3rem; border-radius: 2rem; background: rgba(255,255,255,.09); overflow: hidden; }
+.p-jauge i { display: block; height: 100%; border-radius: 2rem; background: var(--or); }
+.p-sortir {
+    display: inline-flex; align-items: center; gap: .45rem; white-space: nowrap;
+    font: inherit; font-size: .7rem; font-weight: 600; color: #9a9aa6;
+    background: none; border: 0; cursor: pointer; padding: .4rem .2rem;
+}
+.p-sortir:hover { color: #ff6b6b; }
+
+/* ⚠️ LA POINTE VIT SOUS L AVATAR, PAS SUR LE PANNEAU. C est ce qui permet
+   a une barre large de rester RATTACHEE a son bouton : elle s etale ou elle
+   veut, sa pointe continue de dire d ou elle sort. Dessinee sur le panneau,
+   elle se serait centree sur LUI — donc au milieu de la page pour les trois
+   barres, a cote de ce qu on venait de cliquer. */
+.tbmoi .pt {
+    position: absolute; left: 50%; top: calc(100% + .52rem);
+    width: .85rem; height: .85rem; margin-left: -.425rem;
+    transform: rotate(45deg); border-radius: .14rem 0 0 0;
+    border-top: 1px solid rgba(255,215,0,.17); border-left: 1px solid rgba(255,215,0,.17);
+    background: #16151b; z-index: 11;
+}
+
+/* ─────────── A · LA BULLE (ce qu il y a aujourd hui) ─────────── */
+/* ⚠️ ELLE EST DANS `.tbmoi`, comme sur la vraie page depuis qu elle y est
+   descendue : `left: 50%` y designe le centre de l AVATAR, pas celui de
+   l ecran. Posee dans la scene, elle se centrait sur la page et ne touchait
+   plus rien — ce banc aurait alors montre un probleme qui n existe pas. */
+.vA .pan {
+    width: 16rem; padding: 0; overflow: hidden;
+    left: 50%; margin-left: -8rem; top: calc(100% + .95rem);
+}
+.vA .p-tete {
+    display: flex; align-items: center; gap: .7rem; padding: .85rem .9rem;
+    background: linear-gradient(135deg, rgba(255,155,12,.09), transparent 70%);
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.vA .p-corps { padding: .9rem; display: flex; flex-direction: column; gap: .85rem; }
+.vA .p-titre { text-align: center; }
+
+/* ─────────── B · LA BARRE DE LA COLONNE ─────────── */
+/* ⚠️ 76 rem, LA COLONNE DU HUB. Ce n est pas une largeur choisie a l œil :
+   c est celle sur laquelle sont deja cales le logotype, les chiffres et les
+   deux cartes. Une barre plus large que le contenu se lirait comme un
+   bandeau de site, pas comme le panneau de quelqu un. */
+.ligne .pan {
+    display: flex; align-items: center; gap: 1.4rem;
+    height: 5.4rem; padding: 0 1.2rem;
+    top: calc(3.4rem + .7rem);
+}
+.ligne .p-ident { display: flex; align-items: center; gap: .75rem; flex: 0 0 auto; }
+.ligne .p-nom { display: flex; flex-direction: column; gap: .18rem; }
+.ligne .p-titre { margin-left: .6rem; padding-left: .9rem; border-left: 1px solid rgba(255,255,255,.08); }
+/* ⚠️ LES CHIFFRES PASSENT EN RANGEE et perdent leurs traits horizontaux :
+   en colonne, la bordure du bas separait deux lignes ; en rangee, elle
+   soulignerait quatre colonnes sans rien separer. */
+.ligne .p-lignes { flex-direction: row; gap: 1.6rem; margin-left: auto; }
+.ligne .p-lignes div {
+    flex-direction: column; align-items: flex-start; gap: .1rem;
+    padding: 0; border: 0; font-size: .56rem; letter-spacing: .1em; text-transform: uppercase;
+}
+.ligne .p-lignes b { font-size: .95rem; }
+.ligne .p-niv { width: 9rem; flex: 0 0 auto; }
+.ligne .p-sep { width: 1px; height: 2.4rem; background: rgba(255,255,255,.08); flex: 0 0 auto; }
+/* ⚠️ `left` ET `right` POSES, PUIS `margin: auto` — et surtout pas un
+   `translateX(-50%)`. C est la seule facon de centrer une boite absolue dont
+   la largeur est un `max-width` : avec `left: 50%`, il aurait fallu
+   connaitre la largeur reelle pour la decaler de sa moitie, et elle change
+   avec l ecran. */
+.vB .pan { left: 1.2rem; right: 1.2rem; max-width: 76rem; margin-inline: auto; }
+
+/* ─────────── C · LA BARRE COURTE, SOUS LE GROUPE ─────────── */
+.vC .pan { left: 50%; margin-left: -23rem; width: 46rem; }
+
+/* ─────────── D · LE BANDEAU ─────────── */
+/* ⚠️ Il NE FLOTTE PAS : il prolonge la barre du haut, donc pas de rayon en
+   haut, pas de bord lateral, pas de pointe. Un bandeau qui aurait des coins
+   arrondis en haut laisserait deux encoches contre la barre. */
+.vD .pan {
+    left: 0; right: 0; width: auto; top: 3.4rem;
+    border-radius: 0 0 1rem 1rem; border-left: 0; border-right: 0; border-top: 0;
+    padding: 0 2.2rem;
+}
+
+/* ─────────── E · LE TIROIR DE GAUCHE ─────────── */
+/* ⚠️ Il ne touche PAS a la barre du haut : un tiroir accroche au bord gauche
+   et un avatar au centre ne se repondent pas, et c est son seul vrai defaut.
+   En echange il ne couvre rien de ce qui compte — la colonne des cartes est
+   a l oppose. */
+.vE .pan {
+    left: 0; top: 3.4rem; bottom: 0; width: 17rem;
+    border-radius: 0 1rem 1rem 0; border-left: 0;
+    padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 1rem;
+}
+.vE .p-tete { display: flex; align-items: center; gap: .7rem; }
+.vE .p-sortir { margin-top: auto; }
+/* ⚠️ Il entre PAR LE COTE, pas par le haut. Un tiroir qui descendrait depuis
+   le bord gauche ne dirait pas d ou il vient. */
+.vE .pan { animation-name: panInG; }
+@keyframes panInG {
+    from { opacity: 0; translate: -14px 0; }
+    to   { opacity: 1; translate: 0 0; }
+}
+
+/* ⚠️ LE VOILE EST UN INTERRUPTEUR, pas une propriete d une variante : « quelle
+   forme » et « est-ce qu on assombrit derriere » sont deux questions, et les
+   melanger forcerait a choisir l une pour l autre. */
+/* ⚠️ LE FOND EST SUR `.vl` LUI-MEME, pas derriere une classe posee sur la
+   racine : le bouton ne pilote QUE son `display`, et un voile dont l aspect
+   dependait d un second interrupteur s affichait transparent — visible pour
+   le navigateur, invisible pour l œil. Un seul endroit decide. */
+.vl {
+    display: none; position: absolute; inset: 0; z-index: 8;
+    background: rgba(6,5,11,.55);
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pan { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<h1>Le panneau du profil</h1>
+<p class="sous">
+⚠️ <b>Le problème n'est pas le panneau, c'est ce qu'il recouvre.</b> Tant que l'avatar vivait
+dans le coin haut-droit, sa bulle tombait sur une zone vide. Depuis que le nom, les liens et
+l'avatar se centrent ensemble, elle s'ouvre <b>au milieu de l'écran</b> et se pose sur
+« nouveau mode », <b>CRÉER</b> et <b>REJOINDRE</b> —
+<span class="av">les deux seuls boutons que la page existe pour montrer</span>.
+</p>
+<p class="sous">
+⚠️ <b>D'où la règle de cette page :</b> chaque forme est montrée <em>sur la vraie page
+d'accueil</em>, logotype, chiffres, dernières parties et cartes compris. Une forme jugée sur
+fond noir paraît toujours correcte — c'est exactement l'erreur qui a produit celle
+d'aujourd'hui.
+</p>
+<p class="sous">
+Toutes portent <b>exactement le même contenu</b> : pseudo, rang, titre porté, parties,
+victoires, taux, rubis, niveau avec sa jauge, et la déconnexion.
+</p>
+
+<div class="barre">
+    <label>Réglages</label>
+    <!-- ⚠️ Le voile se juge SEPAREMENT de la forme : il repare le
+         chevauchement sans le supprimer, ce qui n est pas la meme reponse.
+         Melange a la liste des formes, il aurait fallu choisir l un pour
+         l autre. -->
+    <button class="cmd" id="voile">🌑 Assombrir derrière</button>
+    <span class="sep"></span>
+    <button class="cmd" id="rejouer">↻ Rejouer l'ouverture</button>
+</div>
+
+<div id="formes"></div>
+
+<script>
+// ⚠️ Dans une IIFE : une `const` au premier niveau d un script de page vit
+// dans l environnement lexical GLOBAL, et une collision y tue le script sans
+// un mot dans la console. C est deja arrive sur ce projet avec CHIFFRES.
+(function () {
+
+var voile = false;
+
+var FORMES = [
+    { cls: 'vA', nom: 'La bulle', forme: 'colonne', pointe: true, ancre: 'avatar',
+      n: "Ce qu'il y a aujourd'hui, montré pour comparaison. <b>Seize rem de large et quatre cents de haut, au milieu de l'écran</b> : elle couvre « nouveau mode », la carte CRÉER et la moitié de REJOINDRE. ⚠️ Elle n'était pas mal dessinée — elle était posée dans un coin, et le coin a bougé." },
+    { cls: 'vB', nom: 'La barre de la colonne', forme: 'ligne', pointe: true, reco: true,
+      n: "Le même contenu <b>étalé sur une seule ligne</b>, large de 76 rem — la colonne sur laquelle sont déjà calés le logotype, les chiffres et les deux cartes. Haute de 5,4 rem au lieu de 25, elle ne recouvre plus qu'une bande vide. ⚠️ Et sa largeur n'est pas choisie à l'œil : une barre plus large que le contenu se lirait comme un bandeau de site, pas comme le panneau de quelqu'un." },
+    { cls: 'vC', nom: 'La barre courte', forme: 'ligne', pointe: true,
+      n: "La même, resserrée à <b>46 rem</b> — à peu près la largeur du groupe de la barre du haut. Elle se lit davantage comme un objet accroché à l'avatar et moins comme un meuble de la page. ⚠️ Mais les quatre chiffres, le niveau et la déconnexion y tiennent juste : un pseudo long ou un titre de plus la fait craquer." },
+    { cls: 'vD', nom: 'Le bandeau', forme: 'ligne',
+      n: "Bord à bord, <b>en prolongement de la barre du haut</b> : pas de rayon en haut, pas de bord latéral, pas de pointe — il n'est pas posé sur la page, il en fait partie le temps qu'il est ouvert. ⚠️ C'est le plus net et le plus assumé ; c'est aussi celui qui ressemble le moins à « mon profil » et le plus à une barre d'outils." },
+    { cls: 'vE', nom: 'Le tiroir de gauche', forme: 'colonne',
+      n: "Il glisse depuis le bord gauche et garde la mise en page verticale d'aujourd'hui. <b>Il ne couvre rien de ce qui compte</b> — les cartes sont à l'opposé. ⚠️ Mais rien ne le relie à l'avatar : on clique au centre-droit et quelque chose s'ouvre tout à gauche, ce qui est précisément le défaut qu'on essaie de corriger." },
+];
+
+function ligne(n, v, cls) {
+    return '<div' + (cls ? ' class="' + cls + '"' : '') + '><span>' + n + '</span><b>' + v + '</b></div>';
+}
+
+// Le contenu, dans les deux mises en page. ⚠️ Les MEMES donnees des deux
+// cotes : c est la seule facon de comparer des formes et non des contenus.
+function contenu(forme) {
+    var lignes = ligne('Parties jouées', '128')
+               + ligne('Victoires', '41')
+               + ligne('Taux de victoire', '32&nbsp;%')
+               + ligne('Rubis', '1&nbsp;240', 'rub');
+    var niveau = '<div class="p-niv">'
+        + '<div class="t"><span>Niveau 11</span><b>9 000 / 10 600</b></div>'
+        + '<div class="p-jauge"><i style="width:61%"></i></div></div>';
+    var sortir = '<button class="p-sortir">⎋ Se déconnecter</button>';
+    var av = '<span class="p-av"><img src="/gojo.webp" alt=""></span>';
+
+    if (forme === 'ligne') {
+        return '<div class="p-ident">' + av
+            + '<span class="p-nom"><span class="p-pseudo">slayer</span>'
+            + '<span class="p-rang">Elite II</span></span>'
+            + '<span class="p-titre">Vagabond de l\'aube</span></div>'
+            + '<div class="p-lignes">' + lignes + '</div>'
+            + '<span class="p-sep"></span>' + niveau
+            + '<span class="p-sep"></span>' + sortir;
+    }
+    return '<div class="p-tete">' + av
+        + '<span class="p-nom"><span class="p-pseudo">slayer</span><br>'
+        + '<span class="p-rang">Elite II</span></span></div>'
+        + '<div class="p-corps"><span class="p-titre">Vagabond de l\'aube</span>'
+        + '<div class="p-lignes">' + lignes + '</div>'
+        + niveau + sortir + '</div>';
+}
+
+function panneau(f) {
+    return '<div class="pan">' + contenu(f.forme) + '</div>';
+}
+
+// La page d accueil en reduction — ce que le panneau risque de couvrir.
+function ecran(f) {
+    return '<div class="ecran ' + f.cls + (f.forme === 'ligne' ? ' ligne' : '') + '">'
+      + '<i class="aurore"></i><i class="grille"></i>'
+      + '<div class="hub">'
+        + '<div class="recentes"><h4>Dernières parties</h4>'
+          + '<p>BombAnime<span>il y a 8 h</span></p>'
+          + '<p>BombAnime<span>il y a 1 j</span></p>'
+          + '<p>Ascension<span>il y a 5 j</span></p></div>'
+        + '<div class="centre"><div class="logo"><b>SHONEN</b><i>MASTER</i></div>'
+          + '<div class="chiffres">'
+            + '<div><b>6</b><span>modes</span></div>'
+            + '<div><b>+2500</b><span>questions</span></div>'
+            + '<div><b>+210</b><span>parties</span></div>'
+          + '</div></div>'
+        + '<div class="droite"><div class="neuf"><i></i>Nouveau mode <b>bientôt disponible</b></div>'
+          + '<div class="carte"><em>Hôte</em><strong>CRÉER</strong><u>創</u></div>'
+          + '<div class="carte b"><em>Invité</em><strong>REJOINDRE</strong><u>参</u></div></div>'
+      + '</div>'
+      + '<div class="vl"></div>'
+      + '<div class="tb">'
+        + '<span class="mot">SHONENMASTER</span><span class="tbsep"></span>'
+        + '<span class="liens"><a href="#">Classement</a><a href="#">Rangs</a>'
+        + '<a href="#">Boutique</a></span>'
+        + '<span class="tbsep"></span>'
+        + '<span class="tbmoi"><span class="av"><img src="/gojo.webp" alt=""></span>'
+          + (f.pointe ? '<i class="pt"></i>' : '')
+          // ⚠️ LE PANNEAU EST DANS LA BARRE OU DANS LA SCENE SELON SA FORME,
+          // et ce n est pas un detail d implementation : une bulle se cale
+          // sur l AVATAR, une barre sur la PAGE. Les mettre au meme endroit
+          // aurait oblige l une des deux a connaitre la position de l autre.
+          + (f.ancre === 'avatar' ? panneau(f) : '')
+        + '</span>'
+      + '</div>'
+      + (f.ancre === 'avatar' ? '' : panneau(f))
+      + '</div>';
+}
+
+function peindre() {
+    document.getElementById('formes').innerHTML = FORMES.map(function (f) {
+        return '<section class="piste' + (f.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + f.cls.slice(1) + '</em>' + f.nom + '</h2>'
+            + '<p class="n">' + f.n + '</p>'
+            + ecran(f) + '</section>';
+    }).join('');
+    poserVoile();
+}
+
+function poserVoile() {
+    document.querySelectorAll('.vl').forEach(function (v) {
+        v.style.display = voile ? 'block' : 'none';
+    });
+}
+
+// ⚠️ L ouverture se REJOUE : sans ce bouton il faudrait recharger la page
+// pour la revoir, et l on ne compare pas cinq arrivees en rechargeant cinq
+// fois. Le `void offsetWidth` force le navigateur a recalculer la mise en
+// page entre le retrait et la repose de la classe — sans lui, les deux se
+// compensent dans le meme lot et l animation ne rejoue jamais.
+function rejouer() {
+    document.querySelectorAll('.pan').forEach(function (p) {
+        p.style.animation = 'none';
+        void p.offsetWidth;
+        p.style.animation = '';
+    });
+}
+
+document.addEventListener('click', function (e) {
+    var b = e.target.closest('.cmd');
+    if (!b) return;
+    if (b.id === 'voile') {
+        voile = !voile;
+        b.classList.toggle('on', voile);
+        poserVoile();
+        return;
+    }
+    if (b.id === 'rejouer') { rejouer(); return; }
+});
+
+peindre();
+})();
+</script>
+</body></html>
