@@ -8904,16 +8904,20 @@ html.rendu-logiciel .v2-dust { display: none; }
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    /* ⚠️ `flex-start` ET NON LA LARGEUR ENTIERE. Etire d un bord a l autre,
-       le bouton devenait l objet le plus large du panneau — pour l action
-       qu on y fait le moins. Il prend la largeur de son mot, et pas une
-       lettre de plus. */
-    align-self: flex-start;
+    /* ⚠️ CENTRE, ET NON CALE A GAUCHE. Pose au bord gauche, il demarrait sur
+       la meme verticale que « Parties », « Victoires » et « Niveau 1 » : il
+       se lisait comme une cinquieme ligne de la liste, alors qu il est la
+       seule COMMANDE du panneau. Centre, il quitte la colonne du texte.
+       ⚠️ ET SANS CADRE NI FOND. Encadre, il devenait l objet le plus dessine
+       d un panneau ou plus rien ne l est — le rang vient justement de perdre
+       sa pastille pour la meme raison. Ce qui le designe comme un bouton,
+       c est son pictogramme ; le cadre ne faisait que peser. */
+    align-self: center;
     flex: 0 0 auto;
-    padding: 0.42rem 0.7rem;
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 0.35rem 0.5rem;
+    border: 0;
     border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: none;
     color: #9a9aa6;
     font-size: 0.72rem;
     font-weight: 600;
@@ -8921,11 +8925,10 @@ html.rendu-logiciel .v2-dust { display: none; }
     transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 .v2-profil-sortir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; display: block; flex: 0 0 auto; }
-.v2-profil-sortir:hover {
-    color: var(--error-color);
-    border-color: color-mix(in srgb, var(--error-color) 45%, transparent);
-    background: color-mix(in srgb, var(--error-color) 12%, transparent);
-}
+/* ⚠️ SEULE LA COULEUR REPOND AU SURVOL, maintenant qu il n y a plus ni
+   cadre ni fond a teinter. C est assez : le mot et l icone rougissent
+   ensemble, et c est le seul endroit rouge du panneau. */
+.v2-profil-sortir:hover { color: var(--error-color); }
 .v2-profil-sortir:focus-visible { outline: 2px solid var(--neon-primary); outline-offset: 2px; }
 
 /* ℹ️ `.v2-profil-liens` et `.v2-profil-lien` ont ete retires avec le bouton
@@ -17937,18 +17940,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     background: var(--rang);
     transform: rotate(45deg);
 }
-/* ⚠️ UNE PHRASE EN CLAIR SOUS LE NOM DU MODE, pour les modes qui ne
-   produisent pas de classement (Codanime). Deux tuiles a tirets auraient
-   garde la mise en page, mais « — » dans un cadre se lit comme un chiffre
-   qui n a pas pu etre charge ; une phrase dit que c est le MODE qui n en a
-   pas, et la nuance est tout ce qui separe « c est normal » de « c est
-   casse ». */
-.v2-carte-mode-nul {
-    margin: 0;
-    font-size: 0.68rem;
-    line-height: 1.4;
-    color: #8d869c;
-}
+/* ⚠️ PLUS DE MARGE SOUS LE NOM QUAND IL EST SEUL. Ses 0,62rem servent a le
+   decoller des deux tuiles ; sur un mode non classe il n y a plus de tuiles,
+   et cette marge s ajoutait a celle du bloc — trente-deux pixels de vide
+   sous un seul mot. `:last-child` le dit sans qu aucune classe n ait a etre
+   posee par le gabarit, donc sans que les deux puissent se contredire. */
+.v2-carte-mode-tete:last-child { margin-bottom: 0; }
+/* ℹ️ `.v2-carte-mode-nul` A ETE RETIRE. Une phrase y expliquait, sous le nom
+   d un mode non classe, qu il ne compte pas au classement — et elle
+   repondait a une question que personne ne se posait : la carte ne promet
+   nulle part un classement par mode. Une carte qui se justifie de ne pas
+   afficher un chiffre attire l attention sur le chiffre absent. Le nom du
+   mode reste seul ; le bloc se termine la. */
 
 .v2-carte-stats {
     display: grid;

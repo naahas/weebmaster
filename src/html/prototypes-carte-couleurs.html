@@ -244,8 +244,10 @@
             + '</article>';
     }
 
-    // Le salon dont le mode ne compte pas au classement : le NOM reste, les
-    // deux chiffres cedent la place a une phrase.
+    // Le salon dont le mode ne compte pas au classement : le NOM reste, et
+    // rien d autre. Une phrase l expliquait sous le nom — retiree : elle
+    // repondait a une question que personne ne se pose, et une carte qui se
+    // justifie de ne pas afficher un chiffre attire l œil sur ce chiffre.
     function carteSansClassement(rang, couleur) {
         var j = JOUEUR;
         return '<article class="v2-carte" style="--rang: ' + couleur + '">'
@@ -254,7 +256,6 @@
             + '<p class="v2-carte-titre">« ' + echapper(j.titre) + ' »</p>'
             + '<div class="v2-carte-mode">'
             + '<div class="v2-carte-mode-tete">Codanime</div>'
-            + '<p class="v2-carte-mode-nul">Ce mode ne compte pas au classement</p>'
             + '</div>'
             + palmares(j)
             + '</article>';

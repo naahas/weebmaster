@@ -1521,33 +1521,43 @@
                                  une ligne qui dit qu il n y en a pas sinon. -->
                             <div class="v2-carte-mode" v-if="carteModeNom">
                                 <div class="v2-carte-mode-tete">{{ carteModeNom }}</div>
-                                <!-- ⚠️ UNE PHRASE, PAS DEUX TUILES VIDES. « — »
-                                     dans un cadre se lit comme un chiffre qui
-                                     n a pas pu etre charge ; cette ligne dit
-                                     que le mode lui-meme n en produit pas. -->
-                                <p class="v2-carte-mode-nul" v-if="!carteModeClasse">
-                                    Ce mode ne compte pas au classement
-                                </p>
-                                <dl class="v2-carte-stats deux" v-else>
+                                <!-- ⚠️ RIEN SOUS LE NOM quand le mode n est pas
+                                     classe : ni tuiles, ni phrase. Il y en a
+                                     eu une — « Ce mode ne compte pas au
+                                     classement » — et elle expliquait quelque
+                                     chose que personne ne se demandait. Une
+                                     carte qui se justifie de ne pas afficher
+                                     un chiffre attire l attention sur le
+                                     chiffre absent. Le nom du mode seul suffit
+                                     a dire de quoi parle la carte, et c est
+                                     tout ce qu on lui demandait. -->
+                                <dl class="v2-carte-stats deux" v-if="carteModeClasse">
                                     <div>
                                         <dt>Classement</dt>
                                         <dd v-if="carteJoueur.placeMode">#{{ carteJoueur.placeMode }}</dd>
                                         <dd v-else class="nul">—</dd>
                                     </div>
-                                    <!-- ⚠️ TROIS CAS, ET ILS NE SE CONFONDENT
-                                         PAS : jamais joue ce mode
-                                         (« Première »), joue avant la colonne
-                                         `place` (« — »), et joue depuis (le
-                                         rang). Un seul test pour les trois
-                                         aurait efface les deux premiers. -->
+                                    <!-- ⚠️ DEUX CAS SEULEMENT, ET C EST UN
+                                         CHOIX. Il y en a TROIS dans la
+                                         donnee : jamais joue ce mode, joue
+                                         avant que la colonne `place` n
+                                         existe, et joue depuis. Les deux
+                                         premiers rendaient « Première » et
+                                         « — » ; ils rendent desormais le
+                                         meme tiret.
+                                         ⚠️ « Première » etait juste et se
+                                         lisait mal : en face de « Dernière
+                                         partie », le mot se prenait pour un
+                                         RESULTAT — une premiere place. Un
+                                         tiret ne dit rien, et c est
+                                         exactement ce qu il y a a dire. -->
                                     <div :class="{ or: cartePremier }">
                                         <dt>Dernière partie</dt>
                                         <dd v-if="carteJoueur.dernier && carteJoueur.dernier.place"
                                             :class="{ or: cartePremier }">
                                             {{ carteJoueur.dernier.place }}<sup>{{ carteJoueur.dernier.place === 1 ? 'er' : 'e' }}</sup><small>/{{ carteJoueur.dernier.joueurs }}</small>
                                         </dd>
-                                        <dd v-else-if="carteJoueur.dernier" class="nul">—</dd>
-                                        <dd v-else class="nul">Première</dd>
+                                        <dd v-else class="nul">—</dd>
                                     </div>
                                 </dl>
                             </div>
