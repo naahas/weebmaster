@@ -592,6 +592,79 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 /* f8 : le halo. Aucune bordure — une lueur. */
 .f8 .av img { border: 0; box-shadow: 0 0 0 1px rgba(240,199,94,.4), 0 0 1.1rem rgba(255,200,60,.4); }
 
+/* ══════════ G · LA FORME DE L AVATAR, DANS LA BARRE D AUJOURD HUI ══════════
+   ⚠️ CE N EST PAS LA SIXIEME VAGUE REFAITE. Celle-la jugeait des TRAITEMENTS
+   — anneau, halo, pastille — et elle les posait dans l ancienne barre : logo
+   carre, mur, liens pousses a droite. La barre a change depuis : le nom, les
+   liens et l avatar forment un seul groupe centre, borne par deux losanges.
+   Une forme ne se juge pas a cote de ses anciens voisins.
+   ⚠️ ET CHAQUE FORME GARDE SA JAUGE. C est la vraie contrainte, celle qui
+   elimine : la progression est aujourd hui un CERCLE, et un cercle autour
+   d un carre ne se lit pas comme un cadre, mais comme une erreur. Chaque
+   variante porte donc une jauge DE SA PROPRE FORME — rectangle arrondi,
+   hexagone, ecusson — dont la longueur se mesure au rendu par
+   `getTotalLength()` plutot que de se calculer a la main forme par forme. */
+.comp.gg .bande { justify-content: center; gap: .25rem; }
+/* ⚠️ PAS DE TRAIT ENTRE LES LIENS. Le gabarit du banc en pose un depuis la
+   premiere vague ; la vraie barre n en a plus depuis que les deux losanges
+   bornent le groupe. Les garder ici aurait ajoute quatre barres verticales
+   a cote des deux qu on juge — exactement le bruit qu on cherche a voir. */
+.comp.gg .liens a + a::before { content: none; }
+.comp.gg .mot-sm + .g-sep { margin: 0 .72rem 0 1.9rem; }
+.comp.gg .liens + .g-sep { margin: 0 1.9rem 0 .72rem; }
+.comp.gg .g-moi { position: relative; display: inline-flex; align-items: center;
+    margin: 0 .44rem; flex: 0 0 auto; top: 1px; }
+/* Les deux bornes, exactement celles de la vraie barre. */
+.g-sep {
+    position: relative; flex: 0 0 auto; width: 1px; height: 1.35rem;
+    background: linear-gradient(180deg, transparent, rgba(240,199,94,.32) 26%,
+                rgba(240,199,94,.32) 74%, transparent);
+}
+.g-sep::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: .26rem; height: .26rem;
+    transform: translate(-50%,-50%) rotate(45deg);
+    background: var(--orvif); opacity: .8;
+    box-shadow: 0 0 .4rem rgba(255,215,0,.55);
+}
+/* Le socle commun : le portrait, et sa jauge posee EN DEHORS de lui. */
+.comp.gg .av { width: 2.2rem; height: 2.2rem; }
+.comp.gg .av img { border: .095rem solid rgba(255,255,255,.17); }
+.comp.gg .av .ring { inset: -.44rem; width: calc(100% + .88rem); height: calc(100% + .88rem);
+    transform: none; }
+.comp.gg .av .ring .piste { stroke-width: 2.1; }
+.comp.gg .av .ring .jauge { stroke-width: 2.1; }
+
+/* g1 : le disque. ⚠️ La jauge part EN HAUT — sans la rotation, un cercle SVG
+   commence a trois heures et paraitrait deja entame a zero. */
+.g1 .av .ring { transform: rotate(-90deg); }
+/* g2 : le squircle. Le rayon vaut 32 % du cote : au-dela on retombe sur un
+   rond, en deca le carre reprend le dessus. */
+.g2 .av img { border-radius: 32%; }
+/* g3 : le carre franc. Juste assez de rayon pour que l angle ne pique pas. */
+.g3 .av img { border-radius: .3rem; }
+/* g4 : l hexagone. ⚠️ Le liisere ne peut PAS etre une `border` — elle suit la
+   boite, pas la decoupe. C est un calque dessous, decoupe de la meme facon et
+   deborde de 1,5 px, qui fait le contour. */
+.g4 .av img, .g6 .av img { border: 0; border-radius: 0; position: relative; z-index: 1; }
+.g4 .av::before, .g6 .av::before {
+    content: ''; position: absolute; inset: -.1rem; z-index: 0;
+    background: rgba(255,255,255,.2);
+}
+.g4 .av img, .g4 .av::before {
+    clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+}
+/* g5 : la plaque. ⚠️ LA SEULE QUI N EST PAS CARREE : 3 pour 4, comme une
+   photo. Elle est donc plus HAUTE que la barre ne le voudrait — c est
+   exactement ce qu il faut voir avant de la choisir. */
+.g5 .av { width: 1.85rem; height: 2.45rem; }
+.g5 .av img { border-radius: .34rem; }
+/* g6 : l ecusson. Le bas vient en pointe — c est la forme d un RANG, pas
+   celle d un portrait, et c est tout son pari. */
+.g6 .av img, .g6 .av::before {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 62%, 50% 100%, 0% 62%);
+}
+
 /* ─────────── 6 · LA CAPSULE AVEC LE LOGO ─────────── */
 .v6 .nav {
     gap: .2rem; padding: .25rem .3rem .25rem .25rem; border-radius: 2rem;
@@ -664,6 +737,29 @@ contenu du dessous.
 </p>
 
 <div id="premium"></div>
+
+<h3 class="vague">Septième vague — la forme de l'avatar, dans la barre d'aujourd'hui</h3>
+<p class="sous">
+⚠️ <b>Ce n'est pas la sixième vague refaite.</b> Celle-là jugeait des <em>traitements</em> —
+anneau, halo, pastille — et elle les posait dans l'ancienne barre : logo carré, mur, liens
+poussés à droite. La barre a changé depuis : le nom, les liens et l'avatar forment
+<b>un seul groupe centré</b>, borné par deux losanges. Une forme ne se juge pas à côté de ses
+anciens voisins.
+</p>
+<p class="sous">
+⚠️ <b>Et chaque forme garde sa jauge.</b> C'est la contrainte qui élimine : la progression est
+aujourd'hui un <em>cercle</em>, et un cercle autour d'un carré ne se lit pas comme un cadre mais
+comme une erreur. Chaque variante porte donc une jauge <b>de sa propre forme</b> — rectangle
+arrondi, hexagone, écusson. <span class="av">Leur longueur se mesure au rendu</span> par
+<b>getTotalLength()</b> au lieu d'être calculée à la main forme par forme : un rayon changé et
+les six restent justes.
+</p>
+<p class="sous">
+Le portrait est un <b>vrai avatar du jeu</b>, et le même sur les six — une forme se compare à
+dessin égal.
+</p>
+
+<div id="formes"></div>
 
 <h3 class="vague">Sixième vague — la zone du compte</h3>
 <p class="sous">
@@ -1030,11 +1126,78 @@ function peindreComptes() {
     }).join('');
 }
 
-// ⚠️ Les quatre rendus partagent le selecteur du haut : changer le nombre
+// ─────────── G · LES FORMES, DANS LA BARRE D AUJOURD HUI ───────────
+// ⚠️ LA JAUGE EST UN TRACE DIFFERENT PAR FORME, et sa longueur se MESURE :
+// `getTotalLength()` la rend pour un cercle comme pour un polygone ou un
+// rectangle arrondi. Calculee a la main, il aurait fallu six formules —
+// dont celle du perimetre d un rectangle a coins arrondis — et les refaire
+// toutes au premier rayon change.
+var FORMES = [
+    { cls: 'g1', nom: 'Le disque', reco: true,
+      trace: '<circle class="piste" cx="28" cy="28" r="24.2"></circle>'
+           + '<circle class="jauge" cx="28" cy="28" r="24.2"></circle>',
+      n: "Ce qu'il y a aujourd'hui. <b>Un visage dessiné pour un rond</b> — les avatars du jeu sont cadrés serré sur la tête, et c'est le cercle qui les sert le mieux. ⚠️ C'est aussi la forme la plus neutre : elle ne dit rien du site, ni en bien ni en mal." },
+    { cls: 'g2', nom: 'Le squircle',
+      trace: '<rect class="piste" x="3.9" y="3.9" width="48.2" height="48.2" rx="15.4"></rect>'
+           + '<rect class="jauge" x="3.9" y="3.9" width="48.2" height="48.2" rx="15.4"></rect>',
+      n: "Le carré très arrondi des icônes d'application. <b>Il s'accorde aux cartes de l'accueil</b>, qui sont des rectangles arrondis — CRÉER, REJOINDRE, les modes. ⚠️ Le registre change : plus « application », moins « forum ». Et le portrait y gagne quatre coins où il n'y a rien à voir." },
+    { cls: 'g3', nom: 'Le carré franc',
+      trace: '<rect class="piste" x="3.9" y="3.9" width="48.2" height="48.2" rx="4.4"></rect>'
+           + '<rect class="jauge" x="3.9" y="3.9" width="48.2" height="48.2" rx="4.4"></rect>',
+      n: "Juste assez de rayon pour que l'angle ne pique pas. <b>Le plus affirmé des trois carrés</b>, et le plus dur à porter : à 35 px, quatre angles nets dans une barre qui n'en a aucun autre se voient de loin. ⚠️ À réserver si le reste du site s'équarrit aussi." },
+    { cls: 'g4', nom: "L'hexagone", reco: true,
+      trace: '<polygon class="piste" points="28,2 51.5,15.5 51.5,40.5 28,54 4.5,40.5 4.5,15.5"></polygon>'
+           + '<polygon class="jauge" points="28,2 51.5,15.5 51.5,40.5 28,54 4.5,40.5 4.5,15.5"></polygon>',
+      n: "<b>La forme que porte déjà la pastille de compte en salon</b>, et l'écusson de la carte de joueur. C'est une cohérence gagnée sans rien dessiner : le même objet se reconnaît en haut de l'accueil et à côté d'un pseudo en partie. ⚠️ C'est aussi la plus marquée — elle décide d'un style pour tout le site, pas pour un coin." },
+    { cls: 'g5', nom: 'La plaque',
+      trace: '<rect class="piste" x="3.9" y="3.9" width="48.2" height="48.2" rx="8"></rect>'
+           + '<rect class="jauge" x="3.9" y="3.9" width="48.2" height="48.2" rx="8"></rect>',
+      n: "Trois pour quatre, comme une photo — <b>la seule qui ne soit pas carrée</b>. Elle cadre le personnage en buste au lieu de le réduire à une tête, et c'est la seule qui donne au coin une masse verticale. ⚠️ Et c'est son défaut : elle est plus haute que la barre ne le voudrait, et c'est elle qui en fixerait désormais la hauteur." },
+    { cls: 'g6', nom: "L'écusson",
+      trace: '<polygon class="piste" points="4,3 52,3 52,36.5 28,53.5 4,36.5"></polygon>'
+           + '<polygon class="jauge" points="4,3 52,3 52,36.5 28,53.5 4,36.5"></polygon>',
+      n: "Le bas vient en pointe. <b>C'est la forme d'un rang, pas celle d'un portrait</b>, et c'est tout son pari : elle dit « joueur classé » avant de dire « voici ta tête ». ⚠️ Elle rogne le menton du personnage, qui est souvent là où le dessin se termine." },
+];
+
+function peindreFormes() {
+    var liens = LIENS.slice(0, n);
+    document.getElementById('formes').innerHTML = FORMES.map(function (p) {
+        var a = liens.map(function (l, i) {
+            return '<a href="#" class="' + (i === 0 ? 'on' : '') + '">' + l + '</a>';
+        }).join('');
+        return '<section class="piste' + (p.reco ? ' reco' : '') + '">'
+            + '<h2><em>' + p.cls.toUpperCase() + '</em>' + p.nom + '</h2>'
+            + '<p class="n">' + p.n + '</p>'
+            + '<div class="comp gg ' + p.cls + '" style="max-width:'
+              + (largeur === 'mobile' ? '390px' : 'none') + '">'
+              + '<div class="scene"><i class="aurore"></i><i class="grille"></i>'
+                + '<div class="bande">'
+                  + '<span class="mot-sm">SHONENMASTER</span>'
+                  + '<span class="g-sep"></span>'
+                  + '<span class="liens">' + a + '</span>'
+                  + '<span class="g-sep"></span>'
+                  + '<span class="g-moi"><span class="av"><img src="/gojo.webp" alt="">'
+                    + '<svg class="ring" viewBox="0 0 56 56">' + p.trace + '</svg>'
+                  + '</span></span>'
+                + '</div>'
+              + '</div>'
+            + '</div></section>';
+    }).join('');
+    // ⚠️ APRES l insertion, jamais avant : un trace qui n est pas dans le
+    // document n a pas de longueur, et `getTotalLength()` y rend zero sans
+    // lever la moindre erreur — la jauge serait restee vide.
+    document.querySelectorAll('#formes .ring .jauge').forEach(function (t) {
+        var L = t.getTotalLength();
+        t.style.strokeDasharray = L;
+        t.style.strokeDashoffset = (L * 0.35).toFixed(1);   // 65 % de progression
+    });
+}
+
+// ⚠️ Les cinq rendus partagent le selecteur du haut : changer le nombre
 // de liens doit TOUS les repeindre, sinon on compare une composition a
 // quatre liens avec un style a six.
 var peindreSeul = peindre;
-peindre = function () { peindreSeul(); peindreCompos(); peindrePremium(); peindreComptes(); };
+peindre = function () { peindreSeul(); peindreCompos(); peindrePremium(); peindreComptes(); peindreFormes(); };
 
 peindre();
 })();
