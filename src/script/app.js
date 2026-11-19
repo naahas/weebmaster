@@ -6659,9 +6659,14 @@ createApp({
         //    enregistree. Une carte vide dirait seulement qu il manque
         //    quelque chose.
         // 3. RIEN POUR UN BOT, pour la meme raison, en plus evident.
-        // 4. UN RETARD DE 180 ms : le curseur traverse une liste de huit
-        //    pseudos en deux secondes. Sans lui, on allume huit cartes et
-        //    huit requetes pour un geste qui n en voulait aucune.
+        // 4. UN RETARD DE 70 ms : le curseur traverse une liste de huit
+        //    pseudos en deux secondes. Sans aucun retard, on allume huit
+        //    cartes et huit requetes pour un geste qui n en voulait aucune.
+        //    ⚠️ IL ETAIT A 180 ms, ET CA SE SENTAIT : ajoute aux 180 ms de
+        //    l animation d entree, la carte mettait plus d un tiers de
+        //    seconde a paraitre sur un pseudo qu on voulait vraiment lire.
+        //    70 ms filtrent encore un balayage — on ne reste pas 70 ms sur un
+        //    nom qu on traverse — sans se faire attendre.
         survolerCarte(p) {
             if (this.isMobile || !p || p.estBot) return;
             if (p.playerId === this.carteId) return;
@@ -6679,10 +6684,10 @@ createApp({
                 this._carteTimer = setTimeout(() => {
                     this.carteId = p.playerId;
                     this.carteJoueur = { invite: true, pseudo: p.username, avatarUrl: p.avatarUrl };
-                }, 180);
+                }, 70);
                 return;
             }
-            this._carteTimer = setTimeout(() => this.chargerCarte(p.playerId), 180);
+            this._carteTimer = setTimeout(() => this.chargerCarte(p.playerId), 70);
         },
 
         quitterCarte() {

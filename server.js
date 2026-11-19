@@ -4205,6 +4205,74 @@ app.get('/api/carte/:playerId', async (req, res) => {
     }
 });
 
+// ════════════════════════════════════════════════════════════════
+// 👥 COMBIEN DE JOUEURS A CHAQUE PALIER — pour /rangs
+// ════════════════════════════════════════════════════════════════
+//
+// ⚠️ DES `count` PAR TRANCHE D XP, ET SURTOUT PAS UNE LECTURE DES COMPTES.
+// Rapatrier les xp pour les trier en Node marcherait aujourd hui — il y a
+// une poignee de comptes. Mais PostgREST NE REND JAMAIS PLUS DE MILLE
+// LIGNES par requete : il ne leve aucune erreur, il en rend mille, et l on
+// croit avoir tout. Ce projet s est deja fait prendre le 13 septembre 2026
+// quand la banque de questions a franchi ce seuil. Un effectif faux ne se
+// verrait jamais : il serait simplement trop bas, en silence.
+//
+// ⚠️ LES BORNES VIENNENT DE `niveaux.js`, jamais d une liste ecrite ici. Un
+// palier est un intervalle d xp cumulee : il commence au cumul de sa
+// division I et s arrete a celui du palier suivant. Recopier ces nombres,
+// c est les voir diverger au premier palier ajoute.
+const RANGS_EFFECTIFS_TTL = 5 * 60 * 1000;
+let rangsEffectifs = { t: 0, data: null };
+
+// Les bornes, calculees UNE FOIS au demarrage depuis `RANGS`.
+const BORNES_PALIERS = (() => {
+    const bornes = [];
+    const vus = new Set();
+    for (const r of niveaux.RANGS) {
+        if (vus.has(r.palier)) continue;
+        vus.add(r.palier);
+        bornes.push({ nom: r.palier, debut: r.cumul });
+    }
+    return bornes.map((b, i) => ({
+        nom: b.nom,
+        debut: b.debut,
+        // ⚠️ `null` pour le dernier, et non un grand nombre : le sommet n a
+        // pas de fin, et un plafond invente serait un jour atteint.
+        fin: i + 1 < bornes.length ? bornes[i + 1].debut : null,
+    }));
+})();
+
+app.get('/api/rangs/effectifs', async (req, res) => {
+    if (!comptes.ACTIF) return res.json({ actif: false, paliers: [] });
+    if (rangsEffectifs.data && Date.now() - rangsEffectifs.t < RANGS_EFFECTIFS_TTL) {
+        return res.json(rangsEffectifs.data);
+    }
+    try {
+        const comptages = await Promise.all(BORNES_PALIERS.map((b) => {
+            let q = supabase.from('comptes')
+                .select('id', { count: 'exact', head: true })
+                .gte('xp', b.debut);
+            if (b.fin !== null) q = q.lt('xp', b.fin);
+            return q;
+        }));
+        const data = {
+            actif: true,
+            paliers: BORNES_PALIERS.map((b, i) => ({
+                nom: b.nom,
+                joueurs: comptages[i].count || 0,
+            })),
+        };
+        rangsEffectifs = { t: Date.now(), data };
+        res.json(data);
+    } catch (e) {
+        // ⚠️ On NE MET PAS EN CACHE une panne : la page se passe de ces
+        // nombres — elle n affiche simplement rien au survol — et retenter
+        // dans cinq minutes vaut mieux que de rester muet jusqu au
+        // redemarrage.
+        res.json({ actif: false, paliers: [] });
+    }
+});
+
 // Les seaux de comparaison réellement joués pour un mode : la page n'offre
 // que des filtres qui rendent quelque chose.
 //

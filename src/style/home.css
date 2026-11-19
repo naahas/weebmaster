@@ -7906,10 +7906,27 @@ html.rendu-logiciel .v2-dust { display: none; }
    cliquer a cote referme le panneau. Assombrir toute la page derriere une
    bulle de 16rem accrochee a l avatar serait hors de proportion — on ne
    coupe pas l ecran pour un objet qui en occupe un douzieme. */
+/* ⚠️ IL N EST PLUS TRANSPARENT SUR GRAND ECRAN. L ancienne note disait
+   qu assombrir toute la page derriere une bulle de 16rem serait hors de
+   proportion — « on ne coupe pas l ecran pour un objet qui en occupe un
+   douzieme ». C etait vrai quand la bulle tombait dans un coin vide. Depuis
+   que l avatar s est centre, elle s ouvre AU MILIEU et se pose sur
+   « nouveau mode » et la carte CREER : releve a 1920 px, 93 % et 27 %.
+   ⚠️ C EST DONC LE VOILE QUI REGLE LE CHEVAUCHEMENT, pas la forme du
+   panneau. La bulle couvre toujours ce qu elle couvrait ; ce qui change,
+   c est que le fond RECULE au lieu de se battre avec elle. Un recouvrement
+   qu on voit comme un plan derriere n en est plus un.
+   ⚠️ ET IL RESTE LEGER — 0,52 et non 0,86 comme sur telephone : on doit
+   continuer de voir ou l on est. Le flou fait le reste, et il ne coute ici
+   que sur ordinateur. */
 .v2-profil-voile {
     position: fixed;
     inset: 0;
     z-index: 900;
+    background: rgba(6, 5, 11, 0.52);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: v2VoileProfil 0.16s ease-out both;
 }
 
 /* ⚠️ SUR TELEPHONE IL S ASSOMBRIT, et le rapport s inverse : le panneau y
@@ -7922,9 +7939,13 @@ html.rendu-logiciel .v2-dust { display: none; }
    Le fondu est court — 0,16 s. Le panneau, lui, arrive en meme temps : un
    voile plus lent le ferait paraitre flotter avant que le fond ne cede. */
 @media (max-width: 768px) {
+    /* ⚠️ Plus opaque ET SANS FLOU : `backdrop-filter` coute cher sur les
+       telephones d entree de gamme, et ce sont precisement ceux-la qui
+       jouent. Un aplat suffit a couper le fond. */
     .v2-profil-voile {
         background: rgba(6, 5, 11, 0.86);
-        animation: v2VoileProfil 0.16s ease-out both;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 }
 @keyframes v2VoileProfil {
@@ -8008,8 +8029,13 @@ html.rendu-logiciel .v2-dust { display: none; }
        groupes sont ses enfants directs. */
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    padding: 1rem;
+    /* ⚠️ L AIR A ETE OUVERT PARTOUT — 1,15rem de padding, 1,05 entre les
+       groupes. A 1rem / 0,85 la bulle paraissait serree sans qu on sache
+       dire ou : c est le defaut d une carte dont chaque bloc touche le
+       suivant d aussi pres qu il touche le bord. Les deux se reglent
+       ensemble, sinon le contenu se tasse au milieu d une marge genereuse. */
+    gap: 1.05rem;
+    padding: 1.15rem 1.15rem 1.25rem;
     border-radius: 1rem;
     /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
        posait l avatar et le pseudo — ce qu on lit en premier — sur la partie
@@ -8049,6 +8075,30 @@ html.rendu-logiciel .v2-dust { display: none; }
    paquet et l avatar paraissait pousser le texte. */
 .v2-profil-ident { display: flex; align-items: center; gap: 0.8rem; flex: 0 0 auto; }
 
+/* ⚠️ LA POINTE DE BULLE. Un carre tourne a 45°, dont seule la moitie haute
+   depasse : c est ce qui permet de lui donner la MEME bordure que la carte
+   sur ses deux aretes exterieures. Un triangle fabrique en `border` n aurait
+   pas pu en porter.
+   ⚠️ ELLE AVAIT DISPARU avec l en-tete teinte, dont elle prolongeait le
+   degrade — son bloc avait ete supprime en meme temps. Elle revient avec le
+   fond PLEIN de la carte : elle ne prolonge plus une bande, elle sort d un
+   aplat, et sa teinte est simplement celle du haut du panneau.
+   ⚠️ Son `right`/`left` est pose plus haut, par regime : elle vise le centre
+   du panneau quand il est centre sous l avatar, et le centre de l AVATAR
+   quand le panneau s aligne par son bord. */
+.v2-profil::before {
+    content: '';
+    position: absolute;
+    top: -0.43rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    transform: rotate(45deg);
+    border-radius: 0.14rem 0 0 0;
+    border-top: 1px solid rgba(255, 215, 0, 0.17);
+    border-left: 1px solid rgba(255, 215, 0, 0.17);
+    background: #16151b;
+}
+
 /* ⚠️ LA POINTE A CHANGE DE PORTEUR : elle est passee du panneau au GROUPE DE
    L AVATAR (`.v2-moi-grp.ouvert::after`, plus bas). Dessinee sur le panneau,
    elle se centrait sur LUI — ce qui allait tant qu il faisait 16 rem sous son
@@ -8066,154 +8116,60 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-topbar.site .v2-profil { right: calc(-1 * var(--moi-marge)); }
 .v2-topbar.site .v2-profil::before { right: calc(var(--moi-av) / 2 - 0.425rem); }
 
-/* ══════════ LE PANNEAU EN LIGNE — l accueil, sur grand ecran ══════════
-   ⚠️ CE N EST PLUS UNE BULLE SOUS L AVATAR, et c est tout le changement. La
-   bulle recouvrait « nouveau mode », CREER et le haut de REJOINDRE : releve
-   a 1920 px, 93 % de l annonce et 27 % des deux cartes. Le meme contenu
-   etale sur une seule ligne de 5,4 rem ne recouvre plus qu une bande vide.
-   ⚠️ ELLE REDEVIENT `fixed`. Elle etait `absolute` dans le groupe de
-   l avatar pour le suivre ; une barre de 76 rem ne suit personne, elle se
-   cale sur la COLONNE DU HUB — celle du logotype, des chiffres et des deux
-   cartes. Rester absolue l aurait obligee a compenser la position de son
-   parent, qui est au milieu de la barre du haut.
-   ⚠️ `left` ET `right` POSES PUIS `margin-inline: auto`, et surtout pas un
-   `translateX(-50%)` : c est la seule facon de centrer une boite fixe dont
-   la largeur est un `max-width`, et le `transform` est deja pris par
-   l animation d ouverture.
-   ⚠️ Le seuil est 900 px : en dessous, une barre de cinq groupes ne tient
-   pas, et le panneau reprend sa forme en colonne — qui n a pas bouge. */
-@media (min-width: 901px) {
-    .v2-topbar.site .v2-profil {
-        position: fixed;
-        top: calc(0.78rem + var(--moi-av) + 1.15rem);
-        left: var(--gouttiere);
-        right: var(--gouttiere);
-        max-width: 76rem;
-        width: auto;
-        margin-inline: auto;
-        flex-direction: row;
-        align-items: center;
-        gap: 1.5rem;
-        height: 5.4rem;
-        padding: 0 1.3rem;
-    }
-    /* La pointe du panneau disparait : c est le groupe de l avatar qui la
-       porte desormais (voir `.v2-moi-grp.ouvert::after`). */
-    .v2-topbar.site .v2-profil::before { content: none; }
-
-    /* ── LES CINQ GROUPES, EN LIGNE ──
-       ⚠️ SEULE LA DIRECTION CHANGE. Les couleurs, les tailles de texte et
-       les etats de survol restent ceux de la colonne : une barre qui
-       redefinirait tout aurait fini par deriver de son propre panneau. */
-
-    /* ⚠️ L AIR AUTOUR DU TITRE PORTE EST A LUI, pas au `gap` : colle au
-       pseudo, il se lisait comme sa deuxieme ligne. Et il est BORNE a
-       11rem sur deux lignes — sans cette borne, « Le plus grand de la
-       plebe » decidait a lui seul de la longueur de la barre de tout le
-       monde. */
-    .v2-topbar.site .v2-profil .v2-profil-exploit {
-        flex: 0 1 11rem;
-        margin: 0 0 0 0.9rem;
-        text-align: left;
-        line-height: 1.3;
-        white-space: normal;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    /* Le trait devient vertical, et il ne separe plus des lignes mais des
-       sujets : qui je suis | ce que j ai fait | ou j en suis. */
-    .v2-topbar.site .v2-profil .v2-profil-sep {
-        width: 1px;
-        height: 2.4rem;
-        margin: 0;
-        flex: 0 0 auto;
-        background: rgba(255, 255, 255, 0.09);
-    }
-    .v2-topbar.site .v2-profil .v2-profil-sep::after { content: none; }
-
-    /* ⚠️ `flex: 1` ET `space-evenly`, SURTOUT PAS `margin-left: auto`. Avec
-       la marge automatique, TOUT le vide de la barre s accumulait d un seul
-       coup entre le titre et le premier chiffre — un trou au milieu, et
-       quatre colonnes serrees contre le bord droit. En laissant le bloc
-       prendre la place restante, le meme vide se repartit entre les quatre.
-       ⚠️ Et les chiffres sont CENTRES sous leur libelle : « Winrate » est
-       long, « 32 % » court ; cales a gauche, les deux ne partagent aucun
-       axe et chaque colonne parait pencher. */
-    .v2-topbar.site .v2-profil .v2-profil-lignes {
-        flex-direction: row;
-        flex: 1 1 auto;
-        justify-content: space-evenly;
-        gap: 1rem;
-    }
-    .v2-topbar.site .v2-profil .v2-profil-lignes > div {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 0.14rem;
-        padding: 0;
-        border: 0;
-    }
-    .v2-topbar.site .v2-profil .v2-profil-lignes > div + div { border-top: 0; }
-    .v2-topbar.site .v2-profil .v2-profil-lignes .n {
-        font-size: 0.6rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-    }
-    .v2-topbar.site .v2-profil .v2-profil-lignes .v { font-size: 0.95rem; }
-
-    /* ⚠️ LE CHAMP DU PSEUDO SE BORNE. Il est en `width: 100%` parce qu en
-       colonne il occupe la carte ; en ligne, il etirait son pointille sur
-       340 px — un trait de saisie quatre fois plus long que le mot qu il
-       contient, au milieu d une barre qu on vient de raccourcir. 8,5rem
-       tiennent les seize caracteres que `maxlength` autorise. */
-    .v2-topbar.site .v2-profil .v2-profil-id { flex: 0 0 auto; }
-    .v2-topbar.site .v2-profil .v2-profil-nom-ligne { width: auto; }
-    .v2-topbar.site .v2-profil .v2-profil-nom { width: 8.5rem; }
-
-    .v2-topbar.site .v2-profil .v2-profil-niveau { width: 9.5rem; flex: 0 0 auto; }
-    .v2-topbar.site .v2-profil .v2-profil-cnx { flex-direction: row; align-items: center; gap: 0.8rem; }
-    .v2-topbar.site .v2-profil .v2-profil-cnx > span::before,
-    .v2-topbar.site .v2-profil .v2-profil-cnx > span::after { content: none; }
+/* ══════════ RETOUR A LA BULLE ══════════
+   ⚠️ LA BARRE EN LIGNE A ETE ESSAYEE PUIS RETIREE. Elle reglait bien le
+   probleme mesure — la bulle recouvrait 93 % de l annonce et 27 % des cartes
+   — mais elle en creait un autre, de nature : cinq groupes sur une ligne, six
+   couleurs differentes, et quatre colonnes de tirets pour un invite. Ca se
+   lisait comme un tableau de bord, pas comme le profil de quelqu un.
+   ⚠️ LE CHEVAUCHEMENT SE REGLE DONC AUTREMENT : par un VOILE, plus bas. La
+   bulle couvre toujours ce qu elle couvrait ; ce qui change, c est que le
+   fond recule au lieu de se battre avec elle.
+   ⚠️ ET ELLE SE CENTRE SOUS L AVATAR. `right: 0` l alignerait par son bord
+   droit, ce qui est juste quand l avatar est dans un coin — le salon, le
+   telephone — mais la ferait pendre de travers sous un bouton qui est, lui,
+   au milieu d un groupe centre. */
+/* ⚠️ ON SE CALE PAR LA GAUCHE, ET C EST LE SOLDE QUI L IMPOSE. Tous les
+   calculs de cette carte partaient du bord DROIT du groupe, « qui est celui
+   de l avatar puisqu il en est le dernier enfant ». Ce n est plus vrai
+   depuis que la pastille des rubis est passee a sa droite : le bord droit du
+   groupe est maintenant celui du SOLDE, dont la largeur depend du nombre
+   affiche. Mesure : 90 px de decalage, et il aurait change avec le chiffre.
+   ⚠️ L avatar, lui, est redevenu le PREMIER enfant visuel : `left: 0` est
+   donc son bord gauche, et c est un point fixe. */
+.v2-topbar.site .v2-profil {
+    left: calc(var(--moi-av) / 2 - var(--profil-l) / 2);
+    right: auto;
+}
+.v2-topbar.site .v2-profil::before {
+    left: calc(var(--profil-l) / 2 - 0.425rem);
+    right: auto;
 }
 
-/* 🔻 LA POINTE, SOUS L AVATAR.
-   ⚠️ ELLE VIT SUR LE GROUPE ET NON SUR LE PANNEAU, et c est ce qui permet a
-   une barre de 76 rem de rester RATTACHEE a son bouton : elle s etale ou
-   elle veut, sa pointe continue de dire d ou elle sort. Dessinee sur le
-   panneau, elle se serait centree sur LUI, donc au milieu de l ecran.
-   ⚠️ `z-index` MARCHE ICI PARCE QUE LE GROUPE NE CREE PAS DE CONTEXTE
-   D EMPILEMENT : il est en `position: relative` SANS `z-index`. Le 902 du
-   pseudo-element se compare donc au 901 du panneau et au 900 du voile dans
-   le contexte de la page. Poser un `z-index` sur le groupe un jour
-   enfermerait la pointe sous le voile. */
-.v2-topbar.site .v2-moi-grp.ouvert::after {
-    content: '';
-    position: absolute;
-    z-index: 902;
-    top: calc(100% + 0.52rem);
-    left: 50%;
-    margin-left: -0.425rem;
-    width: 0.85rem;
-    height: 0.85rem;
-    transform: rotate(45deg);
-    border-radius: 0.14rem 0 0 0;
-    border-top: 1px solid rgba(255, 215, 0, 0.17);
-    border-left: 1px solid rgba(255, 215, 0, 0.17);
-    background: #16151b;
-    animation: v2PointeIn 0.18s ease both;
+/* ⚠️ EN DESSOUS DE 880 px, RETOUR A L ALIGNEMENT PAR LE BORD, et ce seuil
+   N EST PAS celui du tiroir (768) : il ne decrit pas un changement de barre
+   mais le moment ou la bulle CENTREE sort de l ecran. Il se calcule — il
+   faut qu il reste `--profil-l / 2 - --moi-av / 2`, soit 110 px, entre le
+   bord droit de l avatar et celui de la fenetre — et il a ete releve au
+   rendu : a 800 px, il restait TROIS pixels. 880 laisse la marge qu un lien
+   de plus consommerait sans prevenir. */
+@media (max-width: 880px) {
+    /* ⚠️ LE SOLDE DISPARAIT SOUS CE SEUIL, et ce n est pas qu une question de
+       place : il REDONNE a l avatar son role de dernier enfant du groupe, ce
+       dont dependent les deux regles ci-dessous. Garde visible, il aurait
+       fallu compenser sa largeur — qui change avec le nombre — dans chacune
+       d elles. */
+    .v2-topbar.site .v2-moi-rubis { display: none; }
+    .v2-topbar.site .v2-profil { left: auto; right: calc(-1 * var(--moi-marge)); }
+    .v2-topbar.site .v2-profil::before { left: auto; right: calc(var(--moi-av) / 2 - 0.425rem); }
 }
-@keyframes v2PointeIn {
-    from { opacity: 0; scale: 0.4; }
-    to   { opacity: 1; scale: 1; }
-}
-/* Sous 900 px le panneau redevient une colonne accrochee au bord : sa propre
-   pointe reparait, celle du groupe n a plus lieu d etre. */
-@media (max-width: 900px) {
-    .v2-topbar.site .v2-moi-grp.ouvert::after { content: none; }
-}
+
+/* ℹ️ LA POINTE PORTEE PAR LE GROUPE A ETE RETIREE avec la barre en ligne.
+   Elle n existait que parce qu une barre de 76 rem ne pouvait pas porter une
+   pointe centree sur elle-meme. La bulle, qui se centre sous son bouton, a
+   de nouveau la sienne (`.v2-profil::before`). La classe `ouvert` reste
+   posee sur le groupe par le gabarit : elle ne coute rien et redonne une
+   prise si un jour quelque chose doit reagir a l ouverture. */
 
 .v2-profil-av {
     position: relative;
@@ -8705,8 +8661,39 @@ html.rendu-logiciel .v2-dust { display: none; }
        ⚠️ La carte, elle, ne s elargit pas : sa largeur est calculee ailleurs
        et la pointe de bulle en depend. */
     max-width: 100%;
-    line-height: 1.3;
+    line-height: 1.35;
+    /* ⚠️ LES DEUX LOSANGES ENCADRENT LE TITRE, et c est `inline-flex` qui le
+       permet : en bloc, les pseudo-elements se seraient poses au debut et a
+       la fin du TEXTE, donc colles aux mots de la premiere et de la derniere
+       ligne — pas de part et d autre du titre. En flex, ils sont deux
+       enfants a cote d un troisieme, et ils restent a mi-hauteur quel que
+       soit le nombre de lignes.
+       ⚠️ Le losange n est pas un ornement tire au hasard : c est deja le
+       signe du joueur inscrit en salon, celui des bornes de la barre du haut
+       et celui du rang sur la carte. Un motif de plus aurait fait un
+       vocabulaire de plus a retenir. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    align-self: center;
 }
+.v2-profil-exploit::before,
+.v2-profil-exploit::after {
+    content: '';
+    flex: 0 0 auto;
+    width: 0.3rem;
+    height: 0.3rem;
+    transform: rotate(45deg);
+    background: currentColor;
+    opacity: 0.55;
+}
+/* ⚠️ LE TITRE PEUT PRENDRE DEUX LIGNES, et la mise en page le prevoit
+   plutot que de le subir : `min-width: 0` autorise le texte a se replier
+   dans un conteneur flex — sans lui, un mot long pousserait les losanges
+   hors de la carte au lieu de passer a la ligne. */
+.v2-profil-exploit > span,
+.v2-profil-exploit { min-width: 0; }
 
 /* ✦ Le trait entre les statistiques et le niveau. Ce ne sont pas les memes
    choses : au-dessus ce qu on A FAIT, en dessous ou l on EN EST. Mais un
@@ -17519,9 +17506,14 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ Etage 1100, AU-DESSUS des modales (1000). Il annonce precisement ce qui
    vient d empecher une action : passer dessous le rendrait invisible au seul
    moment ou il sert. */
+/* ⚠️ EN BAS, ET PLUS EN HAUT. A 1,1rem du sommet il tombait SUR la barre de
+   navigation — centre, a la hauteur exacte des liens, qu il recouvrait. Un
+   message de refus qui efface le menu pendant qu il s affiche fait douter de
+   ce qu on vient de cliquer. En bas, il n a rien sous lui : la page y est
+   vide sur tous les ecrans du jeu. */
 .v2-bandeau {
     position: fixed;
-    top: 1.1rem;
+    bottom: 1.5rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1100;
@@ -17545,8 +17537,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    d une demi-largeur vers la droite avant de se recaler d un coup. */
 .v2-bandeau-t-enter-active,
 .v2-bandeau-t-leave-active { transition: opacity 0.26s ease, transform 0.26s ease; }
+/* ⚠️ LE SENS A SUIVI LE DEPLACEMENT : il MONTE depuis le bas au lieu de
+   descendre depuis le haut. Un message qui apparait en bas en venant d
+   au-dessus donne l impression d etre tombe de l endroit qu il vient de
+   quitter. */
 .v2-bandeau-t-enter-from,
-.v2-bandeau-t-leave-to { opacity: 0; transform: translateX(-50%) translateY(-0.55rem); }
+.v2-bandeau-t-leave-to { opacity: 0; transform: translateX(-50%) translateY(0.55rem); }
 
 @media (prefers-reduced-motion: reduce) {
     .v2-bandeau-t-enter-active,
@@ -17576,9 +17572,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     transform: translateY(-50%);
     perspective: 62rem;
     pointer-events: none;
-    /* ⚠️ L ENTREE EST COURTE — 0,18 s. Le curseur traverse la liste : une
-       arrivee spectaculaire se joue huit fois en deux secondes. */
-    animation: v2CarteIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    /* ⚠️ L ENTREE EST TRES COURTE — 0,11 s. Le curseur traverse la liste :
+       une arrivee spectaculaire se joue huit fois en deux secondes. Et elle
+       S ADDITIONNE au retard avant la demande : a 0,18 s plus 180 ms
+       d attente, la carte mettait plus d un tiers de seconde a paraitre sur
+       un pseudo qu on voulait vraiment lire. Les deux ont ete raccourcis,
+       pas un seul — c est leur SOMME qu on ressent. */
+    animation: v2CarteIn 0.11s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @keyframes v2CarteIn {
     from { opacity: 0; translate: 1.1rem 0; }
@@ -17594,7 +17594,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        n aurait rien donne : on aurait eu les memes marges autour d un
        contenu plus etale. */
     width: 23rem;
-    padding: 1.85rem 1.95rem 1.6rem;
+    /* ⚠️ LE PADDING DU HAUT EST LE PLUS GROS, et ce n est pas une coquetterie
+       de mise en page : l avatar deborde de son cadre par son cerne
+       (`inset: -0.4rem`, qui ne compte dans AUCUN calcul), donc l air qu on
+       croit lire au-dessus de lui est toujours 6 px plus petit que celui
+       qu on a ecrit. Pour qu il respire, il faut ecrire plus. */
+    padding: 2.25rem 2.1rem 1.75rem;
     border-radius: 1.1rem;
     /* La teinte du rang, posee par le gabarit. Le repli sert si le rang ne
        se resout pas : une carte sans couleur reste lisible. */
@@ -17666,7 +17671,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    autres. Son cerne deborde en plus de 0,4rem sans compter dans la mise en
    page — l air qu on croit voir autour de lui est toujours plus petit que
    celui qu on a ecrit. */
-.v2-carte-tete { display: flex; align-items: center; gap: 1.05rem; margin-bottom: 1.15rem; }
+/* ⚠️ TOUS LES ECARTS ONT GRANDI ENSEMBLE, et la carte s allonge d autant —
+   c est l echange accepte. Ouvrir le seul padding aurait donne une marge
+   genereuse autour d un contenu toujours tasse ; c est la difference entre
+   « la carte a de l air » et « les blocs ont de l air ». */
+.v2-carte-tete { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 1.5rem; }
 .v2-carte-portrait { position: relative; width: 4.6rem; height: 4.6rem; flex: 0 0 auto; }
 .v2-carte-portrait img {
     width: 100%;
@@ -17743,7 +17752,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ ET LE NOM DU MODE RESPIRE DES DEUX COTES. En petites capitales
    espacees il est visuellement leger : a distance egale de deux blocs
    pleins, il paraissait colle aux deux. */
-.v2-carte-mode { margin: 0.35rem 0 1.05rem; }
+.v2-carte-mode { margin: 0.55rem 0 1.4rem; }
 .v2-carte-mode-tete {
     display: flex;
     align-items: center;
@@ -17768,8 +17777,8 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 .v2-carte-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin: 0 0 0.9rem;
+    gap: 0.6rem;
+    margin: 0 0 1.2rem;
 }
 .v2-carte-stats.deux { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
 .v2-carte-stats > div {
@@ -17816,7 +17825,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     justify-content: space-between;
     align-items: center;
     gap: 0.6rem;
-    padding-top: 0.75rem;
+    padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 0.645rem;
     color: #8d869c;
@@ -17891,74 +17900,50 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ ELLE GARDE SON AVATAR. C est ce que le joueur a choisi, c est la seule
    chose qu un invite possede, et c est ce qui empeche la carte d etre un
    message d erreur : il y a bien quelqu un, il n a juste pas d historique. */
-.v2-carte.invite { padding-bottom: 1.85rem; }
+/* ⚠️ LA MEME HAUTEUR QUE LA CARTE D UN INSCRIT, et c est une mesure, pas un
+   nombre choisi. Releve au rendu : 337 px pour un joueur avec rang, titre,
+   bloc de mode, palmares et pied. Sans cette hauteur, la carte d un invite
+   faisait 273 px — et traverser une liste melangee faisait SAUTER le cadre
+   d un pseudo a l autre, ce qu on remarque bien plus que son contenu.
+   ⚠️ Elle est en `min-height` sur la carte et non sur le bloc « no data » :
+   c est la CARTE qui doit faire cette taille, quoi qu on mette dedans. */
+.v2-carte.invite { min-height: 21rem; }
 .v2-carte-nodata {
     position: relative;
     display: grid;
     place-items: center;
+    align-content: center;
+    /* Elle prend tout ce qui reste sous la tete : le mot se trouve ainsi au
+       milieu de la carte, pas au milieu de son propre bloc. */
+    flex: 1 1 auto;
     min-height: 7rem;
     transform: translateZ(2.2rem);
 }
-/* ⚠️ TROIS CALQUES DU MEME MOT, et c est ce qui fait le glitch : le texte
-   reel, plus deux copies decalees en cyan et magenta par `::before` et
-   `::after`, qui lisent le mot dans `content: attr(data-mot)`. Un filtre ou
-   une ombre n auraient pas pu DECOUPER le texte par bandes — et c est le
-   decoupage, pas le decalage, qui fait lire « signal » plutot que « flou ». */
+/* ⚠️ LE GLITCH A TROIS CALQUES A ETE RETIRE. Il etait juste, techniquement —
+   deux copies decoupees en bandes par `clip-path` — et faux a l usage : un
+   effet qui bat en permanence devient un decor, et celui-ci attirait l œil
+   PLUS que la carte d un joueur inscrit juste a cote. Or cette carte dit
+   qu il n y a rien a voir ; elle ne doit pas etre la plus voyante des deux.
+   ⚠️ CE QUI RESTE : une italique claire et une respiration tres lente. Le
+   mot garde son corps et son espacement — c est l ecriture qui porte, pas
+   l animation. */
 .v2-carte-nodata b {
     position: relative;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 2.05rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    color: rgba(255, 255, 255, 0.92);
-    text-shadow: 0 0 1.6rem rgba(255, 255, 255, 0.25);
-    animation: v2NoDataSaut 4.4s steps(1) infinite;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2.35rem;
+    font-style: italic;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgba(230, 230, 240, 0.72);
+    text-shadow: 0 0 1.8rem rgba(200, 205, 225, 0.18);
+    /* 7 s, et l ecart entre les deux etats est MINCE (0,72 a 0,5) : on ne
+       doit pas pouvoir dire si ca bouge, seulement sentir que ce n est pas
+       une image figee. */
+    animation: v2NoDataSouffle 7s ease-in-out infinite;
 }
-.v2-carte-nodata b::before,
-.v2-carte-nodata b::after {
-    content: attr(data-mot);
-    position: absolute;
-    inset: 0;
-    /* ⚠️ Le fond est celui de la carte, pas `transparent` : les copies
-       doivent MASQUER le mot d origine sur leurs bandes, sinon on lit trois
-       textes superposes au lieu d un seul qui se dechire. */
-    background: #15141b;
-    overflow: hidden;
-}
-.v2-carte-nodata b::before {
-    color: #4ff0ff;
-    animation: v2NoDataGauche 2.9s infinite linear alternate-reverse;
-}
-.v2-carte-nodata b::after {
-    color: #ff4fa3;
-    animation: v2NoDataDroite 3.7s infinite linear alternate-reverse;
-}
-/* Les bandes se deplacent par `clip-path` : a chaque etape, une tranche
-   differente du mot est decalee. */
-@keyframes v2NoDataGauche {
-    0%   { clip-path: inset(18% 0 62% 0); translate: -0.14rem 0; }
-    20%  { clip-path: inset(72% 0 12% 0); translate:  0.12rem 0; }
-    40%  { clip-path: inset(38% 0 46% 0); translate: -0.1rem 0; }
-    60%  { clip-path: inset(8% 0 80% 0);  translate:  0.16rem 0; }
-    80%  { clip-path: inset(56% 0 28% 0); translate: -0.12rem 0; }
-    100% { clip-path: inset(26% 0 58% 0); translate:  0.1rem 0; }
-}
-@keyframes v2NoDataDroite {
-    0%   { clip-path: inset(64% 0 16% 0); translate:  0.12rem 0; }
-    25%  { clip-path: inset(14% 0 70% 0); translate: -0.16rem 0; }
-    50%  { clip-path: inset(44% 0 40% 0); translate:  0.1rem 0; }
-    75%  { clip-path: inset(78% 0 8% 0);  translate: -0.12rem 0; }
-    100% { clip-path: inset(32% 0 52% 0); translate:  0.14rem 0; }
-}
-/* ⚠️ `steps(1)` : le mot entier SAUTE, il ne glisse pas. Un deplacement
-   continu se lit comme un flottement ; une saccade se lit comme une panne,
-   et c est ce qu on raconte. Il reste immobile l essentiel du temps — un
-   glitch permanent devient un decor. */
-@keyframes v2NoDataSaut {
-    0%, 92%, 100% { translate: 0 0; }
-    93%           { translate: 0.18rem -0.06rem; }
-    95%           { translate: -0.14rem 0.08rem; }
-    97%           { translate: 0.08rem 0; }
+@keyframes v2NoDataSouffle {
+    0%, 100% { opacity: 0.72; }
+    50%      { opacity: 0.5; }
 }
 .v2-carte-nodata small {
     display: block;
@@ -17981,13 +17966,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     opacity: 0.55;
 }
 @media (prefers-reduced-motion: reduce) {
-    .v2-carte-nodata b,
-    .v2-carte-nodata b::before,
-    .v2-carte-nodata b::after { animation: none; }
-    /* ⚠️ Sans animation, les deux copies resteraient posees A PLAT sur le
-       mot et le rendraient illisible : on les efface. */
-    .v2-carte-nodata b::before,
-    .v2-carte-nodata b::after { display: none; }
+    /* ⚠️ L OPACITE EST REPOSEE A LA MAIN : l animation la portait, et
+       `animation: none` la rendrait a sa valeur de base — qui est bien
+       0,72 ici, mais ne le serait plus si quelqu un reglait la respiration
+       sans y penser. */
+    .v2-carte-nodata b { animation: none; opacity: 0.72; }
 }
 
 /* ⚠️ SOUS 1100 px, PLUS DE CARTE. Elle fait 20,5rem et s ouvre a droite : en

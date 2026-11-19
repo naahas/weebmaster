@@ -58,78 +58,48 @@
 
         .r-resume { max-width: 32rem; }
 
-        /* ── LES SEUILS, EN GRILLE PLUTOT QU EN TABLE ──
-           ⚠️ UNE TABLE POUR SIX COUPLES, C ETAIT DEJA TROP. Un tableau sert a
-           COMPARER des lignes sur plusieurs colonnes ; ici il n y en a qu une,
-           et la table n apportait que ses en-tetes, ses filets et sa largeur
-           minimale de 30 rem — de quoi forcer un defilement horizontal sur
-           telephone pour afficher six nombres. En grille, les six tiennent
-           dans la place laissee libre a gauche.
-           ⚠️ ET LE CHIFFRE PASSE DEVANT LE NOM. On ne vient pas verifier que
-           « Classique » existe, on vient savoir combien il en faut. */
-        .r-seuils { margin-top: clamp(1.6rem, 4vh, 2.4rem); }
-        .r-seuils-titre {
-            /* ⚠️ Les trois annulations sont OBLIGATOIRES : `legal.css` donne
-               aux `h2` un filet superieur, un gros padding et une taille de
-               section. Ici ce n est pas un titre de section mais la legende
-               d une grille. */
-            margin: 0 0 0.9rem;
-            padding: 0;
-            border: 0;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.66rem;
-            font-weight: 600;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--l-doux);
-        }
-        /* ── LES SEUILS, SUR UNE LIGNE ──
-           ⚠️ SIX TUILES ENCADREES POUR SIX NOMBRES, C ETAIT ENCORE TROP. Un
-           cadre dit « ceci est un objet a part » ; six cadres alignes sous un
-           titre font un tableau de bord, pour une information qu on lit une
-           fois dans sa vie. En ligne, les six se lisent d un seul balayage et
-           la colonne de gauche retrouve de l air — ce qui est tout l interet
-           d une page qui tient dans un ecran.
-           ⚠️ ELLE S ENROULE (`flex-wrap`), et c est ce qui la rend sure :
-           la meme regle sert de 1920 px a 390, sans media query ni
-           reorganisation. Elle passe a deux lignes quand il le faut, pas
-           avant. */
-        .r-ligne {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.35rem 0.9rem;
-        }
-        .r-mode {
-            display: inline-flex;
-            align-items: baseline;
-            gap: 0.3rem;
-            animation: rMonte 0.5s cubic-bezier(.2,.8,.2,1) backwards;
-            animation-delay: calc(0.3s + var(--i) * 45ms);
-        }
-        /* ⚠️ LE POINT MEDIAN EST UN `::after` DU MODE, pas un caractere dans
-           le texte : il disparait ainsi tout seul au bout de chaque ligne
-           quand la liste s enroule. Ecrit entre les entrees, il se serait
-           retrouve en tete de la seconde ligne. */
-        .r-mode:not(:last-child)::after {
-            content: '·';
-            margin-left: 0.55rem;
-            color: var(--l-trait);
-        }
-        .r-mode b {
-            font-family: 'Bebas Neue', 'Poppins', sans-serif;
-            font-size: 1.35rem;
-            line-height: 1;
-            color: var(--l-or);
-            font-variant-numeric: tabular-nums;
-        }
-        .r-mode span {
-            font-size: 0.72rem;
-            letter-spacing: 0.02em;
+        /* ℹ️ Les regles `.r-seuils`, `.r-ligne`, `.r-mode` et `.r-attente` ont
+           ete retirees avec la grille des seuils. La regle qu elles
+           illustraient tient maintenant dans la phrase du dessus — et six
+           nombres qu un joueur decouvre en jouant n avaient pas besoin d un
+           bloc a eux. */
+
+        /* ── 👥 COMBIEN DE JOUEURS A CE RANG, AU SURVOL ──
+           ⚠️ POSEE EN ABSOLU, PAS DANS LE FLUX. Une etiquette qui s insere
+           pousserait les divisions a chaque passage de souris, et c est la
+           ligne entiere qui bougerait sous le curseur. Elle se superpose
+           donc, a droite, la ou il y a de la place.
+           ⚠️ ET ELLE NE PARAIT QUE SI LE NOMBRE EST CONNU : la classe `pret`
+           n arrive qu avec la reponse du serveur. Sans elle, survoler une
+           ligne faisait clignoter un « 0 joueur » le temps du chargement —
+           un chiffre faux, et le seul qu on aurait retenu. */
+        .r-effectif {
+            position: absolute;
+            right: clamp(0.9rem, 2vw, 1.3rem);
+            top: 50%;
+            translate: 0.5rem -50%;
+            opacity: 0;
+            pointer-events: none;
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
             color: var(--l-doux);
             white-space: nowrap;
+            /* ⚠️ La sortie est PLUS LENTE que l entree (0,34 contre 0,2) :
+               on veut qu elle s installe vite et s efface doucement. Une
+               disparition aussi nette que l arrivee fait clignoter la ligne
+               quand on balaie la liste. */
+            transition: opacity 0.34s ease, translate 0.34s ease;
         }
-        .r-attente { margin: 0; font-size: 0.8rem; color: var(--l-doux); }
+        .r-effectif b { color: var(--ton); font-weight: 700; }
+        /* ⚠️ Les divisions s ecartent pour lui laisser la place : sans ca
+           l etiquette se posait PAR-DESSUS les trois chiffres romains. */
+        .r-palier:hover .r-divisions,
+        .r-palier:hover .r-unique { opacity: 0; transition: opacity 0.2s ease; }
+        .r-palier:hover .r-effectif.pret {
+            opacity: 1;
+            translate: 0 -50%;
+            transition: opacity 0.2s ease 0.04s, translate 0.2s ease 0.04s;
+        }
 
         /* ⚠️ LE PIED S EFFACE. Ce sont quatre liens legaux sur une page qui
            parle de progression : en or plein, ils etaient l objet le plus
@@ -389,15 +359,14 @@
                      ils decrivaient les divisions, les couleurs et le sommet,
                      c est-a-dire exactement ce que l echelle de droite MONTRE.
                      Un texte qui double une image affaiblit les deux. -->
+                <!-- ℹ️ LA GRILLE DES SEUILS A ETE RETIREE. Six nombres qu un
+                     joueur decouvre de toute facon en jouant — un salon qui
+                     ne rapporte pas le dit lui-meme, au moment ou ca compte.
+                     Ne reste que la REGLE, en une ligne : c est elle qu on ne
+                     peut pas deviner. -->
                 <p class="r-resume" style="--i:2">Chaque partie terminée rapporte de
-                    l'expérience&nbsp;; la <strong>gagner</strong> multiplie ce gain.</p>
-
-                <section class="r-seuils" style="--i:3">
-                    <h2 class="r-seuils-titre">Joueurs requis par mode pour les gains</h2>
-                    <div class="r-ligne" id="bareme">
-                        <p class="r-attente">Lecture…</p>
-                    </div>
-                </section>
+                    l'expérience&nbsp;; la <strong>gagner</strong> multiplie ce gain. Le seuil de
+                    joueurs requis par mode doit être atteint pour bénéficier des bonus d'XP.</p>
             </div>
 
             <ol class="r-echelle" id="echelle"></ol>
@@ -448,42 +417,52 @@
                       ROMAINS.map((c) => '<span class="r-div">' + c + '</span>').join('') +
                       '</span>';
                 return '<li class="r-palier' + (p.unique ? ' r-sommet' : '') +
-                    '" style="--ton:' + p.couleur + ';--i:' + i + '">' +
+                    '" data-palier="' + p.nom + '" style="--ton:' + p.couleur + ';--i:' + i + '">' +
                     '<i class="r-eclat" aria-hidden="true"></i>' +
                     '<span class="r-marque" aria-hidden="true">' + (i + 1) + '</span>' +
-                    '<span class="r-nom">' + p.nom + '</span>' + droite + '</li>';
+                    '<span class="r-nom">' + p.nom + '</span>' + droite +
+                    '<span class="r-effectif"></span></li>';
             }).join('');
         })();
 
-        // 📊 La table des seuils, DEMANDEE AU SERVEUR.
-        // ⚠️ Les valeurs vivent dans `XP_MODES` (server-comptes.js), que le
-        // navigateur ne peut pas charger : une table recopiee ici aurait
-        // diverge au premier reglage change, et la page se serait mise a
-        // annoncer des seuils que le jeu n applique plus.
-        // ⚠️ Et si la requete echoue, la table DISPARAIT au lieu d afficher
-        // « Lecture… » pour toujours : une page qui dit « je charge » sans
-        // jamais finir est pire qu une page qui ne promet rien.
+        // 👥 COMBIEN DE JOUEURS A CHAQUE PALIER.
+        //
+        // ⚠️ LA CLASSE `pret` N ARRIVE QU AVEC LA REPONSE, et c est ce qui
+        // evite le pire defaut possible ici : sans elle, survoler une ligne
+        // pendant le chargement affichait « 0 joueur » — un chiffre FAUX, et
+        // le seul qu on aurait retenu. Tant que le serveur n a pas repondu,
+        // le survol ne montre rien du tout.
+        //
+        // ⚠️ ET SI LA REQUETE ECHOUE, RIEN NE SE PASSE. Pas de message, pas
+        // de tiret : c est un detail au survol, pas une information que la
+        // page promet. Une page qui s excuse de ne pas savoir quelque chose
+        // attire l attention sur ce qui manque.
         (function () {
-            const grille = document.getElementById('bareme');
-            fetch('/api/bareme')
+            fetch('/api/rangs/effectifs')
                 .then((r) => r.json())
                 .then((d) => {
-                    const l = Object.values((d && d.modes) || {});
-                    if (!l.length) throw new Error('vide');
-                    // ⚠️ `--i` donne a chaque tuile son retard : la grille
-                    // arrive en cascade comme l echelle d en face, et les deux
-                    // cotes de l ecran se remplissent du meme geste.
-                    grille.innerHTML = l.map((m, i) =>
-                        '<div class="r-mode" style="--i:' + i + '">' +
-                        '<b>' + m.joueurs + '</b><span>' + m.nom + '</span></div>').join('');
+                    if (!d || !d.actif || !Array.isArray(d.paliers)) return;
+                    const par = {};
+                    d.paliers.forEach((p) => { par[p.nom] = p.joueurs; });
+                    document.querySelectorAll('.r-palier').forEach((li) => {
+                        const n = par[li.dataset.palier];
+                        if (n === undefined) return;
+                        const e = li.querySelector('.r-effectif');
+                        if (!e) return;
+                        // ⚠️ L accord se fait sur le nombre, y compris a zero :
+                        // « 0 joueur » et non « 0 joueurs ».
+                        e.innerHTML = '<b>' + n + '</b> joueur' + (n > 1 ? 's' : '');
+                        e.classList.add('pret');
+                    });
                 })
-                // ⚠️ TOUTE LA SECTION DISPARAIT, pas seulement la grille : son
-                // titre seul (« Joueurs requis pour gagner de l XP ») aurait
-                // pose une question sans y repondre. Et une page qui dit
-                // « Lecture… » sans jamais finir est pire qu une page qui ne
-                // promet rien.
-                .catch(() => { grille.closest('.r-seuils').remove(); });
+                .catch(() => {});
         })();
+
+        // ℹ️ L APPEL A `/api/bareme` A ETE RETIRE avec la grille des seuils.
+        // La route existe toujours et sert ailleurs ; c est seulement cette
+        // page qui n a plus a annoncer six nombres qu un joueur rencontre de
+        // toute facon en jouant — un salon qui ne rapporte pas le dit
+        // lui-meme, au moment ou ca compte.
     </script>
 </body>
 
