@@ -144,7 +144,13 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
    n aurait jamais su ce qui plait. */
 .scene3d { perspective: 62rem; }
 .carte {
-    position: relative; width: 20.5rem; padding: 1.3rem 1.3rem 1.15rem;
+    /* ⚠️ LE PADDING A ETE OUVERT (1,3 -> 1,6rem de cote). A 1,3 les tuiles
+       de chiffres touchaient presque le bord : une carte qui se veut
+       premium se reconnait d abord a sa marge, et c est le premier endroit
+       ou l on regarde quand quelque chose « fait serre » sans qu on sache
+       dire pourquoi. Le BAS reste un peu plus court que les cotes — le
+       trait du pied porte deja sa propre respiration au-dessus de lui. */
+    position: relative; width: 20.5rem; padding: 1.5rem 1.6rem 1.35rem;
     border-radius: 1.1rem; overflow: hidden;
     transform-style: preserve-3d;
     /* La teinte du rang, posee par le script. Le repli sert si jamais le
@@ -162,8 +168,12 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
        ⚠️ ET LE `rotateX` EST PLUS FAIBLE ENCORE (2,6°) : c est ce qui fait
        « isometrique » plutot que « penche ». Une carte tournee sur un seul
        axe se lit comme une porte entrouverte ; tournee sur deux, comme un
-       objet vu d un coin. */
-    transform: rotateY(var(--iso, 9deg)) rotateX(2.6deg);
+       objet vu d un coin.
+       ⚠️ LE SIGNE EST NEGATIF, et c est le reglage qui a ete retenu : la
+       carte avance sa tranche GAUCHE. En positif, elle presentait sa
+       tranche droite — meme angle, lecture inverse, et c est la seule
+       chose que le bouton « ⇄ » change. */
+    transform: rotateY(var(--iso, -9deg)) rotateX(2.6deg);
     /* 🎈 LA LEVITATION. ⚠️ ELLE EST EN `translate`, PAS EN `transform`, et
        c est la seule raison pour laquelle elle cohabite avec le pivot au
        curseur : `translate` est une propriete A PART, composee AVANT
@@ -270,6 +280,50 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 }
 .c-place { color: var(--rang); font-weight: 800; font-variant-numeric: tabular-nums; }
 
+/* ══════════ 👑 LE JETON DU PREMIER ══════════
+   ⚠️ IL NE DIT PAS « BON JOUEUR », IL DIT « A GAGNE SA DERNIERE ». C est la
+   seule distinction de la carte qui parle du PRESENT : le rang se gagne sur
+   des mois, la place au classement bouge a peine d une partie a l autre, et
+   ces deux-la sont deja ecrits. Un jeton qui recompenserait l anciennete
+   repeterait ce que la couleur du rang raconte depuis le debut.
+   ⚠️ ET IL EST DORE QUEL QUE SOIT LE RANG — c est le seul element de la
+   carte qui echappe a `--rang`. Teinte comme le reste, il se serait fondu
+   dans la carte du joueur Elite et aurait disparu sur celle d un Master.
+   Une victoire n a pas la couleur de celui qui l a prise.
+   ⚠️ `position: absolute` DOIT VENIR APRES `.carte > *`, qui pose
+   `relative` sur tous les enfants directs : les deux selecteurs pesent
+   exactement le meme poids, c est l ordre dans le fichier qui tranche. */
+.c-jeton {
+    position: absolute; top: 1.1rem; right: 1.2rem; z-index: 4;
+    width: 2.05rem; height: 2.05rem; display: grid; place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff6cf 0%, #f0c75e 46%, #c08f2c 100%);
+    animation: eclat 2.8s ease-in-out infinite;
+}
+.c-jeton svg { width: 58%; height: 58%; fill: #3a2a06; display: block; }
+/* ⚠️ LA PULSATION EST DANS L OMBRE, PAS DANS L OPACITE. Un jeton qui
+   s eteint et se rallume clignote ; un halo qui respire brille. Les deux
+   premieres ombres sont REPETEES a l identique dans les deux etapes : une
+   `box-shadow` s anime en bloc, en oublier une l aurait fait disparaitre a
+   mi-course. */
+@keyframes eclat {
+    0%, 100% { box-shadow: 0 .2rem .55rem rgba(0,0,0,.45),
+                           inset 0 1px 0 rgba(255,255,255,.65),
+                           0 0 0 rgba(255,215,0,0); }
+    50%      { box-shadow: 0 .2rem .55rem rgba(0,0,0,.45),
+                           inset 0 1px 0 rgba(255,255,255,.65),
+                           0 0 .95rem rgba(255,215,0,.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .c-jeton { animation: none; box-shadow: 0 .2rem .55rem rgba(0,0,0,.45),
+                                            inset 0 1px 0 rgba(255,255,255,.65),
+                                            0 0 .7rem rgba(255,215,0,.45); }
+}
+/* La tuile qui porte le 1ᵉʳ passe a l or, pour que le jeton ne soit pas le
+   seul a le dire — un badge isole dans un coin se lit comme un ornement. */
+.c-stats div.or { border-color: rgba(240,199,94,.34); background: rgba(240,199,94,.07); }
+.c-stats dd.or { color: var(--or); }
+
 /* ─────────── A · LA CARTE HOLO ───────────
    Le reflet suit le curseur. ⚠️ `mix-blend-mode: overlay` et non une
    opacite : le reflet doit ECLAIRER ce qu il traverse, pas le voiler. Pose
@@ -310,12 +364,29 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
    carte tourne, au lieu de tourner ensemble. Le portrait sort du cadre, le
    texte reste au fond. Il faut `transform-style: preserve-3d` sur la carte
    ET un `translateZ` par plan — sans le premier, les `translateZ` sont
-   aplatis et il ne se passe rien. */
-.vC .carte { padding-top: 1.6rem; }
+   aplatis et il ne se passe rien.
+
+   ⚠️⚠️ ET CE N ETAIT PAS SUFFISANT : L EFFET NE MARCHAIT PAS. La carte
+   portait `overflow: hidden`, et un `overflow` autre que `visible` GROUPE
+   les enfants — la valeur UTILISEE de `transform-style` retombe a `flat`,
+   alors que `getComputedStyle` continue de repondre `preserve-3d`. On ne
+   pouvait donc pas s en apercevoir en lisant les styles : il a fallu
+   incliner la carte et mesurer le portrait. Verdict : il RETRECISSAIT
+   (66,9 px -> 65,1) la ou un plan reellement avance aurait grandi. Les
+   quatre `translateZ` ci-dessous ne servaient a rien depuis le depart.
+
+   ⚠️ D OU `overflow: visible` ICI, ET SEULEMENT ICI. C est le prix de
+   l effet : les plans doivent pouvoir sortir de la carte, c est meme toute
+   l idee. En echange la nappe et le liisere ne sont plus decoupes par la
+   boite — ils reprennent donc le rayon a la main. */
+.vC .carte { padding-top: 1.85rem; overflow: visible; }
+.vC .carte .nappe { border-radius: 1.1rem; }
 .vC .c-portrait { transform: translateZ(3.4rem); }
 .vC .c-ident { transform: translateZ(2rem); }
 .vC .c-titre { transform: translateZ(1.2rem); }
+.vC .c-mode { transform: translateZ(1rem); }
 .vC .c-stats { transform: translateZ(.8rem); }
+.vC .c-jeton { transform: translateZ(4.2rem); }
 .vC .carte::before {
     content: ''; position: absolute; inset: .5rem; border-radius: .8rem;
     border: 1px solid color-mix(in srgb, var(--rang) 30%, transparent);
@@ -608,7 +679,11 @@ var JOUEURS = [
       placeMode: 203, dernier: { rang: 4, sur: 6 } },
     { pseudo: 'Senpai664',  av: 'gojo.webp',    xp: 9000,   parties: 240,  vict: 77,
       titre: 'Maître du BombAnime',       depuis: 'oct. 2025',  place: 58,
-      placeMode: 12, dernier: { rang: 2, sur: 6 } },
+      // ⚠️ PREMIER A SA DERNIERE PARTIE, et c est volontaire : c est le
+      // joueur montre par defaut, donc le seul moyen que le jeton se voie
+      // sans aller le chercher. Shinobi470 garde une quatrieme place juste
+      // a cote, pour qu on voie aussi la carte SANS.
+      placeMode: 12, dernier: { rang: 1, sur: 6 } },
     { pseudo: 'Hokage342',  av: 'tanjiro.webp', xp: 30000,  parties: 615,  vict: 203,
       titre: 'Légende du Rush',           depuis: 'juin 2025',  place: 9,
       placeMode: 3, dernier: { rang: 1, sur: 8 } },
@@ -646,7 +721,7 @@ var PEAUX = [
 // positif, la carte presente sa tranche gauche ; negatif, sa tranche droite.
 // La valeur, elle, ne se discute pas d un bouton — voir le commentaire de
 // `.carte`.
-var iJoueur = 2, peau = 'vA', pivot = true, invite = false, iso = 9, levite = true;
+var iJoueur = 2, peau = 'vA', pivot = true, invite = false, iso = -9, levite = true;
 
 function nf(n) { return Number(n).toLocaleString('fr-FR'); }
 
@@ -686,18 +761,29 @@ function carte(j, cls) {
     var classe = (j.placeMode === null)
         ? '<dd class="nul">—</dd>'
         : '<dd>#' + nf(j.placeMode) + '</dd>';
+    var premier = !!(j.dernier && j.dernier.rang === 1);
     var dernier = (!j.dernier)
         ? '<dd class="nul">' + (j.placeMode === null ? 'Première' : '—') + '</dd>'
-        : '<dd>' + ord(j.dernier.rang) + '<small>/' + j.dernier.sur + '</small></dd>';
+        : '<dd' + (premier ? ' class="or"' : '') + '>' + ord(j.dernier.rang)
+          + '<small>/' + j.dernier.sur + '</small></dd>';
+    // 👑 ⚠️ UN TRACE, PAS UN EMOJI. Un emoji change de dessin d un systeme a
+    // l autre — sur Windows la couronne est plate et bleutee, et elle ne
+    // peut pas prendre la couleur de la carte. Celui-ci est en `fill`, donc
+    // il s accorde au jeton qui le porte.
+    var jeton = premier
+        ? '<span class="c-jeton" title="Premier à sa dernière partie">'
+          + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 6.4l4.4 3.3L12 3.1l5 6.6 4.4-3.3-1.7 10.4H4.3L2.6 6.4zM4.6 19.3h14.8v1.6H4.6z"/></svg>'
+          + '</span>'
+        : '';
     return '<div class="scene3d ' + cls + '">'
       + '<article class="carte" style="--rang:' + p.rang.couleur + '">'
-        + '<span class="nappe"></span>' + fond + tete
+        + '<span class="nappe"></span>' + fond + jeton + tete
         + '<p class="c-titre">« ' + j.titre + ' »</p>'
         + '<div class="c-mode">'
           + '<div class="c-mode-tete">' + MODE.nom + '</div>'
           + '<dl class="c-stats deux">'
             + '<div><dt>Classement</dt>' + classe + '</div>'
-            + '<div><dt>Dernière partie</dt>' + dernier + '</div>'
+            + '<div' + (premier ? ' class="or"' : '') + '><dt>Dernière partie</dt>' + dernier + '</div>'
           + '</dl>'
         + '</div>'
         + '<dl class="c-stats">'

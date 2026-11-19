@@ -211,17 +211,45 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
     background: linear-gradient(170deg, #16151b 0%, #0f0f13 55%, #0b0b0e 100%);
     border: 1px solid rgba(255,255,255,.075);
     box-shadow: 0 1.4rem 3.2rem rgba(0,0,0,.6);
-    /* ⚠️ L ARRIVEE EST EN `translate`, PAS EN `transform`. Deux variantes se
-       centrent par un `transform: translateX(-50%)` ou par `margin: auto` ;
-       une animation qui ecrirait `transform` les aurait decentrees le temps
-       de son passage — et la barre large aurait saute d une demi-largeur a
-       l ouverture. `translate` est une propriete a part, composee avant
-       `transform` : les deux cohabitent sans arbitrage. */
-    animation: panIn .2s cubic-bezier(.2,.8,.2,1) both;
+    /* ⚠️ UNE TRANSITION, PAS UNE ANIMATION D ENTREE. Une `@keyframes` ne
+       joue qu a l apparition : la fermeture, elle, serait restee seche. En
+       passant par un etat `.ferme` et une transition, le MEME reglage sert
+       dans les deux sens, et il ne peut pas diverger.
+       ⚠️ ET LE DEPLACEMENT EST EN `translate`, PAS EN `transform`. Deux
+       variantes se centrent par `margin: auto` ou par un `translateX(-50%)` ;
+       ecrire `transform` ici les aurait decentrees le temps du passage — la
+       barre large aurait saute d une demi-largeur a l ouverture. `translate`
+       est une propriete a part, composee avant `transform`. */
+    opacity: 1; translate: 0 0;
+    transition: opacity .15s ease,
+                translate .26s cubic-bezier(.2,.9,.25,1),
+                clip-path .26s cubic-bezier(.2,.9,.25,1);
 }
-@keyframes panIn {
-    from { opacity: 0; translate: 0 -8px; }
-    to   { opacity: 1; translate: 0 0; }
+.pan.ferme { opacity: 0; pointer-events: none; }
+/* ⚠️ LA BARRE SE REFERME VERS SON CENTRE, par `clip-path` et non par un
+   `scaleX`. Les deux donnent le meme geste, mais `scaleX` ECRASE le
+   contenu : le pseudo et les chiffres se seraient comprimes a l horizontale
+   avant de disparaitre. Le decoupage, lui, laisse le texte a sa taille et
+   se contente de le cacher — c est ce qui fait lire « un volet qui s ouvre »
+   plutot que « une image qui se deforme ».
+   ⚠️ `round 1rem` REPETE LE RAYON DE LA BOITE : sans lui, la barre perd ses
+   coins arrondis pendant toute la transition et les retrouve d un coup a la
+   fin. */
+.ligne .pan { clip-path: inset(0 0 0 0 round 1rem); }
+.ligne .pan.ferme { clip-path: inset(0 50% 0 50% round 1rem); translate: 0 -.15rem; }
+/* La bulle, elle, se replie vers le haut — vers le bouton d ou elle sort. */
+.vA .pan { clip-path: inset(0 0 0 0 round 1rem); }
+.vA .pan.ferme { clip-path: inset(0 0 100% 0 round 1rem); translate: 0 -.4rem; }
+/* Et le tiroir rentre par son bord. */
+.vE .pan { clip-path: inset(0 0 0 0 round 0 1rem 1rem 0); }
+.vE .pan.ferme { clip-path: inset(0 100% 0 0 round 0 1rem 1rem 0); translate: -.9rem 0; }
+/* La pointe n est pas dans le panneau : elle a sa propre sortie, plus courte,
+   pour qu elle parte AVANT lui et non en meme temps. */
+.tbmoi .pt { transition: opacity .12s ease, scale .18s cubic-bezier(.2,.9,.25,1); }
+.tbmoi .pt.ferme { opacity: 0; scale: .4; }
+@media (prefers-reduced-motion: reduce) {
+    .pan, .tbmoi .pt { transition: opacity .1s linear; }
+    .pan.ferme { clip-path: none; translate: 0 0; }
 }
 .p-av { position: relative; width: 2.9rem; height: 2.9rem; flex: 0 0 auto; }
 .p-av img {
@@ -299,13 +327,22 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 }
 .ligne .p-ident { display: flex; align-items: center; gap: .75rem; flex: 0 0 auto; }
 .ligne .p-nom { display: flex; flex-direction: column; gap: .18rem; }
-.ligne .p-titre { margin-left: .6rem; padding-left: .9rem; border-left: 1px solid rgba(255,255,255,.08); }
+.ligne .p-titre { margin-left: .55rem; }
 /* ⚠️ LES CHIFFRES PASSENT EN RANGEE et perdent leurs traits horizontaux :
    en colonne, la bordure du bas separait deux lignes ; en rangee, elle
-   soulignerait quatre colonnes sans rien separer. */
-.ligne .p-lignes { flex-direction: row; gap: 1.6rem; margin-left: auto; }
+   soulignerait quatre colonnes sans rien separer.
+   ⚠️ `flex: 1` ET `space-evenly`, SURTOUT PAS `margin-left: auto`. Avec la
+   marge automatique, TOUT le vide de la barre s accumulait d un seul coup
+   entre le titre et le premier chiffre : un trou de deux cents pixels au
+   milieu, et quatre colonnes serrees contre le bord droit. En laissant le
+   bloc prendre la place restante, le meme vide se repartit entre les
+   quatre — il ne se voit plus, il respire. */
+.ligne .p-lignes { flex-direction: row; flex: 1 1 auto; justify-content: space-evenly; gap: 1rem; }
+/* ⚠️ CENTRE, pas aligne a gauche. Le libelle est long (« TAUX DE VICTOIRE »)
+   et le nombre court (« 32 % ») : cales a gauche, les deux ne partageaient
+   aucun axe et chaque colonne paraissait pencher. */
 .ligne .p-lignes div {
-    flex-direction: column; align-items: flex-start; gap: .1rem;
+    flex-direction: column; align-items: center; text-align: center; gap: .12rem;
     padding: 0; border: 0; font-size: .56rem; letter-spacing: .1em; text-transform: uppercase;
 }
 .ligne .p-lignes b { font-size: .95rem; }
@@ -343,13 +380,8 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 }
 .vE .p-tete { display: flex; align-items: center; gap: .7rem; }
 .vE .p-sortir { margin-top: auto; }
-/* ⚠️ Il entre PAR LE COTE, pas par le haut. Un tiroir qui descendrait depuis
-   le bord gauche ne dirait pas d ou il vient. */
-.vE .pan { animation-name: panInG; }
-@keyframes panInG {
-    from { opacity: 0; translate: -14px 0; }
-    to   { opacity: 1; translate: 0 0; }
-}
+/* ℹ️ Son entree par le cote est posee plus haut, avec les autres : les trois
+   sens de fermeture se lisent ensemble ou pas du tout. */
 
 /* ⚠️ LE VOILE EST UN INTERRUPTEUR, pas une propriete d une variante : « quelle
    forme » et « est-ce qu on assombrit derriere » sont deux questions, et les
@@ -398,7 +430,10 @@ victoires, taux, rubis, niveau avec sa jauge, et la déconnexion.
          l autre. -->
     <button class="cmd" id="voile">🌑 Assombrir derrière</button>
     <span class="sep"></span>
-    <button class="cmd" id="rejouer">↻ Rejouer l'ouverture</button>
+    <!-- ⚠️ UN INTERRUPTEUR, PAS UN « REJOUER ». Ce qu il faut juger n est pas
+         l arrivee seule mais l ALLER-RETOUR : une ouverture reussie dont la
+         fermeture est seche se remarque au deuxieme clic, pas au premier. -->
+    <button class="cmd on" id="toggle">⇅ Ouvert</button>
 </div>
 
 <div id="formes"></div>
@@ -409,7 +444,7 @@ victoires, taux, rubis, niveau avec sa jauge, et la déconnexion.
 // un mot dans la console. C est deja arrive sur ce projet avec CHIFFRES.
 (function () {
 
-var voile = false;
+var voile = false, ouvert = true;
 
 var FORMES = [
     { cls: 'vA', nom: 'La bulle', forme: 'colonne', pointe: true, ancre: 'avatar',
@@ -442,10 +477,15 @@ function contenu(forme) {
     var av = '<span class="p-av"><img src="/gojo.webp" alt=""></span>';
 
     if (forme === 'ligne') {
+        // ⚠️ UN TRAIT ENTRE LE TITRE ET LES CHIFFRES, et il manquait. « Qui je
+        // suis » et « ce que j ai fait » sont deux sujets ; poses cote a cote
+        // sans rien entre eux, le titre porte se lisait comme la legende de la
+        // premiere colonne de statistiques.
         return '<div class="p-ident">' + av
             + '<span class="p-nom"><span class="p-pseudo">slayer</span>'
             + '<span class="p-rang">Elite II</span></span>'
             + '<span class="p-titre">Vagabond de l\'aube</span></div>'
+            + '<span class="p-sep"></span>'
             + '<div class="p-lignes">' + lignes + '</div>'
             + '<span class="p-sep"></span>' + niveau
             + '<span class="p-sep"></span>' + sortir;
@@ -508,6 +548,7 @@ function peindre() {
             + ecran(f) + '</section>';
     }).join('');
     poserVoile();
+    poserOuvert();
 }
 
 function poserVoile() {
@@ -516,16 +557,13 @@ function poserVoile() {
     });
 }
 
-// ⚠️ L ouverture se REJOUE : sans ce bouton il faudrait recharger la page
-// pour la revoir, et l on ne compare pas cinq arrivees en rechargeant cinq
-// fois. Le `void offsetWidth` force le navigateur a recalculer la mise en
-// page entre le retrait et la repose de la classe — sans lui, les deux se
-// compensent dans le meme lot et l animation ne rejoue jamais.
-function rejouer() {
-    document.querySelectorAll('.pan').forEach(function (p) {
-        p.style.animation = 'none';
-        void p.offsetWidth;
-        p.style.animation = '';
+// ⚠️ LA POINTE SE FERME AVEC LE PANNEAU, et elle n en fait pas partie : elle
+// vit sous l avatar pour pouvoir viser le bouton quelle que soit la largeur
+// de la barre. Il faut donc la basculer separement — l oublier laissait un
+// petit losange dore flotter tout seul sous un avatar sans panneau.
+function poserOuvert() {
+    document.querySelectorAll('.pan, .tbmoi .pt').forEach(function (p) {
+        p.classList.toggle('ferme', !ouvert);
     });
 }
 
@@ -538,7 +576,13 @@ document.addEventListener('click', function (e) {
         poserVoile();
         return;
     }
-    if (b.id === 'rejouer') { rejouer(); return; }
+    if (b.id === 'toggle') {
+        ouvert = !ouvert;
+        b.classList.toggle('on', ouvert);
+        b.textContent = ouvert ? '⇅ Ouvert' : '⇅ Fermé';
+        poserOuvert();
+        return;
+    }
 });
 
 peindre();
