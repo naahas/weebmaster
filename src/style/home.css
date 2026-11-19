@@ -8071,6 +8071,47 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-moi-av:hover img,
 .v2-moi-av.ouvert img { border-color: var(--neon-primary); }
 
+/* ════════════════════════════════════════════════════════════════
+   🔑 « SE CONNECTER » — UN SEUL OBJET AVEC L AVATAR
+   ════════════════════════════════════════════════════════════════
+   Le mot et le portrait ouvrent le meme panneau : survoler l un doit donc
+   allumer l autre, sinon ils se lisent comme deux boutons voisins et le
+   joueur doit deviner lequel fait quoi.
+   ⚠️ LE SURVOL EST PORTE PAR LE GROUPE, pas par chaque element. Chacun le
+   sien ne marcherait que dans un sens — l avatar s allumerait seul, le mot
+   aussi, et jamais les deux ensemble. */
+.v2-moi-log {
+    padding: 0 0.6rem 0 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    /* Discret par defaut : il annonce une possibilite, il ne reclame rien.
+       C est le survol qui le fait exister. */
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    transition: color 0.25s ease;
+}
+
+/* ⚠️ CONDITIONNE A `.invite`, ET C EST LA RAISON D ETRE DE CETTE CLASSE.
+   Sans elle, la regle du groupe s appliquerait aussi aux comptes — et
+   survoler la pastille de rubis allumerait l avatar, un comportement que
+   personne n a demande et que rien n expliquerait.
+   ⚠️ ET `:not(.ouvert)` : le panneau VIT DANS LE GROUPE. Sans cette garde,
+   promener la souris dans le panneau ouvert rallumerait le duo derriere lui. */
+.v2-moi-grp.invite:not(.ouvert):hover .v2-moi-log,
+.v2-moi-log:focus-visible { color: var(--neon-primary); }
+.v2-moi-grp.invite:not(.ouvert):hover .v2-moi-av img { border-color: var(--neon-primary); }
+
+/* Panneau ouvert : le mot reste allume avec l avatar, qui l est deja par
+   `.ouvert`. Les deux doivent dire la meme chose au meme moment. */
+.v2-moi-grp.invite.ouvert .v2-moi-log { color: var(--neon-primary); }
+
 /* ⚠️ LE DOUBLE ANNEAU DU JOUEUR INSCRIT — il remplace le logo du fournisseur.
    Celui-ci collait une marque Discord ou Google sur le portrait du joueur, qui
    est SON image et non celle d une plateforme ; et il serait venu se disputer

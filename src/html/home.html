@@ -401,7 +401,7 @@
                          `:has(.ouvert)` — le selecteur marcherait, mais il
                          fait dependre un dessin d un support de navigateur
                          alors que Vue connait deja l etat. -->
-                    <div class="v2-moi-grp" :class="{ ouvert: profilOuvert }">
+                    <div class="v2-moi-grp" :class="{ ouvert: profilOuvert, invite: !estConnecte }">
                     <span class="v2-moi-rubis" v-if="estConnecte" title="Rubis">
                         <!-- ⚠️ Un FICHIER et non plus un trace : le gemme porte
                              le S du logo, qui ne se redessine pas au trait.
@@ -415,6 +415,20 @@
                         <img src="smoney.webp" alt="" draggable="false">
                         <b>{{ compteRubis.toLocaleString('fr-FR') }}</b>
                     </span>
+                    <!-- 🔑 « SE CONNECTER », RATTACHE A L AVATAR. Pour un invite,
+                         l avatar seul ne dit pas qu on peut se connecter : c est
+                         un portrait dans un coin, et rien n annonce qu il ouvre
+                         quoi que ce soit. Ce mot le dit.
+                         ⚠️ IL PREND LA PLACE DE LA PASTILLE DE RUBIS, qui n existe
+                         que pour les comptes — les deux ne paraissent donc jamais
+                         ensemble, et le coin garde la meme silhouette dans les deux
+                         cas.
+                         ⚠️ UN BOUTON, PAS UN SPAN : il ouvre le meme panneau que
+                         l avatar, et seul un bouton repond au clavier et s annonce
+                         comme cliquable aux lecteurs d ecran.
+                         ℹ️ « Se connecter » et non « Log in » : le panneau dit deja
+                         « Se deconnecter », et les deux doivent se repondre. -->
+                    <button class="v2-moi-log" v-if="!estConnecte" @click="basculerProfil">Se connecter</button>
                     <!-- ⚠️ `inscrit` existe POUR LE LISERE DU PORTRAIT. Avec le
                          double anneau, l or ne dit plus qu une chose :
                          l avancement. Le portrait reprend donc un cerne neutre
