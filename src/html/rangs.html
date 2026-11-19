@@ -20,45 +20,146 @@
          elle pose `PALIERS` dans la page. -->
     <script src="/niveaux.js"></script>
     <style>
-        /* ── L echelle des paliers ── */
-        .g-echelle {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin: 1.5rem 0 0;
-            counter-reset: palier;
+        /* ══════════ LA PREMIERE VUE — deux colonnes, un seul ecran ══════════
+           ⚠️ LA REGLE EST « LES HUIT PALIERS SANS DEFILER », et elle ne se
+           verifie pas a l œil : elle se construit. L echelle est une GRILLE
+           de huit rangees egales dont la hauteur totale est bornee par la
+           fenetre — chaque palier prend donc le huitieme de ce qui reste,
+           quelle que soit la taille de l ecran. Empiles avec une hauteur
+           fixe, ils tenaient sur un portable et debordaient sur l autre,
+           sans que rien ne le signale. */
+        .l-page.r-large { max-width: 78rem; padding-bottom: 3rem; }
+
+        .r-scene {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+            gap: clamp(2rem, 5vw, 4.5rem);
+            align-items: center;
+            /* 10,5rem = le retour au jeu, le padding haut de la page et l air
+               du bas. Ce qui reste appartient aux deux colonnes. */
+            min-height: calc(100vh - 10.5rem);
         }
 
-        .g-palier {
+        .r-gauche { max-width: 34rem; }
+        .r-gauche .l-titre { font-size: clamp(2.6rem, 6.2vw, 4.4rem); }
+        .r-gauche p { font-size: 0.95rem; }
+
+        /* Trois reperes, pour que la colonne de gauche ait un bas. ⚠️ Les
+           nombres se CALCULENT a partir de `PALIERS` : « 22 rangs » ecrit en
+           dur se serait mis a mentir au premier palier ajoute. */
+        .r-reperes {
+            display: flex;
+            gap: clamp(1.2rem, 3vw, 2.4rem);
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--l-trait);
+        }
+        .r-repere b {
+            display: block;
+            font-family: 'Bebas Neue', 'Poppins', sans-serif;
+            font-size: 2.1rem;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--l-or) 0%, var(--l-ambre) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .r-repere span {
+            font-size: 0.66rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--l-doux);
+        }
+
+        /* ── L echelle des paliers ── */
+        .r-echelle {
+            display: grid;
+            grid-template-rows: repeat(8, minmax(0, 1fr));
+            gap: clamp(0.3rem, 1vh, 0.6rem);
+            height: min(36rem, calc(100vh - 13rem));
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        /* ⚠️ LA BORDURE GAUCHE COLOREE A ETE RETIREE. Huit traits verticaux
+           alignes faisaient un sommaire de documentation, pas une echelle de
+           rangs — et surtout, un filet de trois pixels est ce qu on remarque
+           en DERNIER sur une ligne de cinquante de haut. Trois choses la
+           remplacent, toutes a la teinte du palier : un ECUSSON hexagonal
+           qui porte son numero, un degrade de fond qui part de la gauche et
+           s eteint au tiers, et un liisere complet. La couleur cesse d etre
+           une etiquette collee au bord : elle appartient a la ligne. */
+        .r-palier {
             position: relative;
             display: flex;
             align-items: center;
-            gap: 0.9rem;
-            padding: 0.7rem 1rem 0.7rem 0.85rem;
+            gap: clamp(0.7rem, 1.6vw, 1.1rem);
+            padding: 0 clamp(0.9rem, 2vw, 1.3rem);
+            border-radius: 0.7rem;
+            overflow: hidden;
+            /* Repli pour les navigateurs sans `color-mix` : la ligne garde un
+               fond et un contour, elle perd seulement sa teinte. */
             background: var(--l-carte);
             border: 1px solid var(--l-trait);
-            /* La couleur du palier porte sur le BORD GAUCHE, pas sur le fond :
-               neuf aplats colores empiles feraient un nuancier, pas une
-               echelle. Le trait suffit a dire « celui-ci est a lui ». */
-            border-left: 3px solid var(--ton, #9a9aa6);
-            border-radius: 0.45rem;
+            background:
+                linear-gradient(90deg,
+                    color-mix(in srgb, var(--ton) 13%, transparent) 0%,
+                    color-mix(in srgb, var(--ton) 4%, transparent) 34%,
+                    transparent 72%),
+                var(--l-carte);
+            border: 1px solid color-mix(in srgb, var(--ton) 22%, var(--l-trait));
+            transition: border-color 0.22s ease, transform 0.22s cubic-bezier(.2,.8,.2,1);
+        }
+        .r-palier:hover {
+            border-color: color-mix(in srgb, var(--ton) 55%, transparent);
+            transform: translateX(-0.3rem);
+        }
+        /* La lueur du survol, en calque : posee sur le fond lui-meme elle
+           aurait ecrase le degrade ci-dessus a chaque transition. */
+        .r-palier::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(70% 160% at 0% 50%,
+                        color-mix(in srgb, var(--ton) 26%, transparent), transparent 70%);
+            transition: opacity 0.22s ease;
+        }
+        .r-palier:hover::after { opacity: 1; }
+
+        /* L ecusson — le meme hexagone que la pastille de compte du salon et
+           que la carte de joueur. ⚠️ Un `clip-path` et non une image : il doit
+           prendre la couleur du palier, et huit fichiers auraient diverge du
+           jour ou une teinte change dans `niveaux.js`. */
+        .r-marque {
+            position: relative;
+            flex: 0 0 auto;
+            width: clamp(1.8rem, 4.2vh, 2.35rem);
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.66rem;
+            font-weight: 800;
+            color: #0d0d10;
+            background: linear-gradient(145deg,
+                        color-mix(in srgb, var(--ton) 100%, #fff 35%), var(--ton));
+            clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
         }
 
-        .g-nom {
+        .r-nom {
             font-family: 'Bebas Neue', 'Poppins', sans-serif;
-            font-size: 1.45rem;
+            font-size: clamp(1.4rem, 3.4vh, 1.95rem);
             line-height: 1;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
             color: var(--ton, #9a9aa6);
         }
 
         /* Les trois divisions, en chiffres romains — comme dans le jeu. */
-        .g-divisions {
-            margin-left: auto;
-            display: flex;
-            gap: 0.3rem;
-        }
-        .g-div {
+        .r-divisions { margin-left: auto; display: flex; gap: 0.3rem; }
+        .r-div {
             min-width: 1.75rem;
             padding: 0.2rem 0;
             font-size: 0.72rem;
@@ -70,12 +171,114 @@
             border: 1px solid var(--l-trait);
             border-radius: 0.3rem;
         }
-        .g-unique {
+        .r-unique {
             margin-left: auto;
-            font-size: 0.74rem;
-            letter-spacing: 0.12em;
+            font-size: 0.7rem;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--ton);
+        }
+        /* ⚠️ LE SOMMET SE DISTINGUE PAR SA MATIERE, pas par un mot de plus :
+           son fond va d un bord a l autre au lieu de s eteindre au tiers.
+           C est le seul palier dont la couleur traverse toute la ligne —
+           exactement ce qu il raconte. */
+        .r-palier.r-sommet {
+            background:
+                linear-gradient(90deg,
+                    color-mix(in srgb, var(--ton) 20%, transparent) 0%,
+                    color-mix(in srgb, var(--ton) 7%, transparent) 60%,
+                    color-mix(in srgb, var(--ton) 12%, transparent) 100%),
+                var(--l-carte);
+            border-color: color-mix(in srgb, var(--ton) 40%, transparent);
+        }
+
+        /* ══════════ LES ARRIVEES ══════════
+           ⚠️ UN RETARD CALCULE A PARTIR DE `--i`, et non huit regles ecrites a
+           la main : le jour ou un palier s ajoute, la cascade le prend sans
+           qu on y touche. 55 ms par ligne — au-dela, la derniere arrive si
+           tard qu on a deja commence a lire la premiere. */
+        @keyframes rMonte {
+            from { opacity: 0; transform: translateY(0.9rem); }
+            to   { opacity: 1; transform: none; }
+        }
+        @keyframes rGlisse {
+            from { opacity: 0; transform: translateX(1.6rem); }
+            to   { opacity: 1; transform: none; }
+        }
+        .r-gauche > * {
+            animation: rMonte 0.6s cubic-bezier(.2,.8,.2,1) both;
+            animation-delay: calc(var(--i, 0) * 70ms);
+        }
+        .r-palier {
+            animation: rGlisse 0.55s cubic-bezier(.2,.8,.2,1) both;
+            animation-delay: calc(0.18s + var(--i) * 55ms);
+        }
+        /* ⚠️ L ECLAT PASSE UNE FOIS, APRES l arrivee de sa ligne : `--i` sert
+           aux deux, donc les deux restent d accord sans qu on additionne des
+           durees a la main. Il traverse de gauche a droite, dans le sens de
+           lecture — a contresens, il se lisait comme un retour en arriere. */
+        .r-palier .r-eclat {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(105deg, transparent 38%,
+                        color-mix(in srgb, var(--ton) 42%, transparent) 50%, transparent 62%);
+            opacity: 0;
+            /* ⚠️ `backwards` ET NON `both`. Avec `both`, l eclat GARDAIT son
+               etat final — `translateX(100%)`, donc une boite de 350 px posee
+               hors de sa ligne pour toujours. Invisible (la ligne la decoupe),
+               mais comptee : le document gagnait 5 px de defilement
+               horizontal sur telephone, et c est exactement le genre de
+               defaut qu on attribue a tout sauf a une animation terminee.
+               `backwards` ne tient que l etat de DEPART, avant le retard ;
+               apres, l element revient a son style, qui est deja invisible. */
+            animation: rEclat 0.85s ease-out backwards;
+            animation-delay: calc(0.42s + var(--i) * 55ms);
+        }
+        @keyframes rEclat {
+            0%   { opacity: 0; transform: translateX(-100%); }
+            35%  { opacity: 1; }
+            100% { opacity: 0; transform: translateX(100%); }
+        }
+
+        /* ── Le reste de la page, sous la premiere vue ── */
+        .r-suite { max-width: 44rem; margin: 0 auto; padding-top: 1rem; }
+        /* ⚠️ Un indice de defilement, parce que la premiere vue remplit
+           exactement l ecran : sans lui, rien ne dit qu il y a une suite —
+           une page qui finit pile au bas de la fenetre se lit comme finie. */
+        .r-suite-amorce {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin: 0 auto 2.5rem;
+            max-width: 44rem;
+            font-size: 0.68rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--l-doux);
+        }
+        .r-suite-amorce::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--l-trait), transparent);
+        }
+
+        /* ⚠️ SOUS 900 px, UNE SEULE COLONNE ET ON DEFILE. La promesse « tout
+           sans defiler » ne tient que s il y a de la largeur a donner : a
+           deux colonnes sur un telephone, les noms se couperaient et les
+           divisions passeraient a la ligne. Mieux vaut defiler que serrer. */
+        @media (max-width: 900px) {
+            .r-scene { grid-template-columns: 1fr; min-height: 0; gap: 2.5rem; }
+            .r-echelle { height: auto; grid-template-rows: none; }
+            .r-palier { padding: 0.75rem 1rem; }
+            .r-gauche { max-width: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .r-gauche > *, .r-palier, .r-palier .r-eclat { animation: none; }
+            .r-palier .r-eclat { display: none; }
+            .r-palier:hover { transform: none; }
         }
 
         /* ── Les deux monnaies ── */
@@ -142,7 +345,7 @@
 </head>
 
 <body>
-    <main class="l-page">
+    <main class="l-page r-large">
 
         <a class="l-retour" href="/">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
@@ -152,23 +355,35 @@
             Retour au jeu
         </a>
 
-        <h1 class="l-titre">Les rangs</h1>
-        <p class="l-date">Ce que l'on gagne en jouant, et où ça mène</p>
+        <!-- ⚠️ LES HUIT PALIERS TIENNENT DANS UN ECRAN, et c est la seule
+             raison de cette mise en page. Empiles sous le texte, il fallait
+             defiler pour voir le sommet — c est-a-dire pour voir ce vers quoi
+             la page entiere est censee donner envie d aller. Les mots a
+             gauche, l echelle a droite, et le defilement ne sert plus qu au
+             reste. -->
+        <section class="r-scene">
+            <div class="r-gauche">
+                <h1 class="l-titre" style="--i:0">Les rangs</h1>
+                <p class="l-date" style="--i:1">Ce que l'on gagne en jouant, et où ça mène</p>
+                <p style="--i:2">Le premier rang est <strong>Novice I</strong>. La progression se fait
+                    division par division — Novice I, II, III, puis Oracle I, et ainsi de suite jusqu'au
+                    dernier palier. Chaque palier porte sa couleur : c'est celle du nom affiché sous le
+                    pseudo, et ce qui permet de situer un joueur d'un coup d'œil dans un salon.</p>
+                <p style="--i:3"><strong>Master</strong>, le dernier, n'a pas de divisions. Il n'existe
+                    pas de « Master II » : c'est le sommet, et il porte le nom du site.</p>
+                <div class="r-reperes" style="--i:4" id="reperes"></div>
+            </div>
 
-        <h2>Huit paliers, trois divisions</h2>
-        <p>Le premier rang est <strong>Novice I</strong>. La progression se fait division par division —
-            Novice I, II, III, puis Oracle I, et ainsi de suite jusqu'au dernier palier. Chaque palier
-            porte sa couleur : c'est celle du nom affiché sous le pseudo, et ce qui permet de situer un
-            joueur d'un coup d'œil dans un salon.</p>
-        <p><strong>Master</strong>, le dernier, n'a pas de divisions. Il n'existe pas de « Master II » :
-            c'est le sommet, et il porte le nom du site.</p>
-
-        <div class="g-echelle" id="echelle"></div>
+            <ol class="r-echelle" id="echelle"></ol>
+        </section>
 
         <!-- ℹ️ Un encadre expliquait ici pourquoi les seuils d xp ne sont pas
              ecrits. Retire : se justifier de ne pas dire quelque chose attire
              l attention dessus. L echelle au-dessus se suffit, et la barre du
              jeu dit a chacun ou il en est. -->
+
+        <div class="r-suite">
+        <p class="r-suite-amorce">Et ce qu'il faut pour monter</p>
 
         <h2>Ce qui rapporte</h2>
         <p>Une partie terminée rapporte, victoire ou non. La victoire ajoute un bonus, et c'est le seul
@@ -207,6 +422,8 @@
             </table>
         </div>
 
+        </div><!-- /.r-suite -->
+
         <footer class="l-pied">
             <a href="/regles">Règles</a> ·
             <a href="/conditions">Conditions d'utilisation</a> ·
@@ -230,15 +447,37 @@
         // la meme page, ils partagent donc le meme espace de noms.
         (function () {
             const ROMAINS = ['I', 'II', 'III'];
-            document.getElementById('echelle').innerHTML = PALIERS.map((p) => {
+            // ⚠️ `--i` EST POSE ICI, pas dans la feuille de style : c est lui
+            // qui donne a chaque ligne son retard d arrivee ET celui de son
+            // eclat. Ecrit en CSS, il aurait fallu huit regles, et neuf le
+            // jour ou un palier s ajoute.
+            document.getElementById('echelle').innerHTML = PALIERS.map((p, i) => {
                 const droite = p.unique
-                    ? '<span class="g-unique">sans division</span>'
-                    : '<span class="g-divisions">' +
-                      ROMAINS.map((c) => '<span class="g-div">' + c + '</span>').join('') +
+                    ? '<span class="r-unique">sans division</span>'
+                    : '<span class="r-divisions">' +
+                      ROMAINS.map((c) => '<span class="r-div">' + c + '</span>').join('') +
                       '</span>';
-                return '<div class="g-palier" style="--ton:' + p.couleur + '">' +
-                    '<span class="g-nom">' + p.nom + '</span>' + droite + '</div>';
+                return '<li class="r-palier' + (p.unique ? ' r-sommet' : '') +
+                    '" style="--ton:' + p.couleur + ';--i:' + i + '">' +
+                    '<i class="r-eclat" aria-hidden="true"></i>' +
+                    '<span class="r-marque" aria-hidden="true">' + (i + 1) + '</span>' +
+                    '<span class="r-nom">' + p.nom + '</span>' + droite + '</li>';
             }).join('');
+
+            // ⚠️ LES TROIS REPERES SE CALCULENT. « 22 rangs » ecrit en dur se
+            // serait mis a mentir au premier palier ajoute — et c est
+            // precisement le genre de chiffre que personne ne revient
+            // verifier. Le sommet est compte a part parce qu il n a pas de
+            // divisions : le total n est pas « paliers x 3 ».
+            const sommets = PALIERS.filter((p) => p.unique).length;
+            const rangs = (PALIERS.length - sommets) * ROMAINS.length + sommets;
+            document.getElementById('reperes').innerHTML = [
+                [PALIERS.length, 'paliers'],
+                [rangs, 'rangs en tout'],
+                [sommets, sommets > 1 ? 'sommets' : 'sommet'],
+            ].map(([n, mot]) =>
+                '<span class="r-repere"><b>' + n + '</b><span>' + mot + '</span></span>'
+            ).join('');
         })();
 
         // 📊 La table des seuils, DEMANDEE AU SERVEUR.
