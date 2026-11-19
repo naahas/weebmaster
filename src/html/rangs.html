@@ -28,55 +28,104 @@
            quelle que soit la taille de l ecran. Empiles avec une hauteur
            fixe, ils tenaient sur un portable et debordaient sur l autre,
            sans que rien ne le signale. */
-        .l-page.r-large { max-width: 78rem; padding-bottom: 3rem; }
+        .l-page.r-large { max-width: 78rem; padding-bottom: 1.5rem; }
+        /* ⚠️ LE PIED COMPTE DANS LE BUDGET. Il etait oublie du calcul, et la
+           page defilait encore de 110 px pour lui seul — tout ce travail de
+           mise en page annule par trois liens en bas. Il se resserre donc,
+           et la scene lui laisse sa part (voir `--r-hors`). */
+        .l-page.r-large .l-pied { margin-top: 1.6rem; padding-top: 1rem; }
 
         .r-scene {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
             gap: clamp(2rem, 5vw, 4.5rem);
             align-items: center;
-            /* 10,5rem = le retour au jeu, le padding haut de la page et l air
-               du bas. Ce qui reste appartient aux deux colonnes. */
-            min-height: calc(100vh - 10.5rem);
+            /* ⚠️ `--r-hors` EST LA SOMME DE TOUT CE QUI N EST PAS LA SCENE, et
+               elle est ECRITE UNE FOIS : le padding haut de la page (3,5rem),
+               le retour au jeu et sa marge (environ 4rem), le pied avec sa
+               marge et son filet (environ 5rem), le padding bas (1,5rem).
+               Deux endroits en dependent — la hauteur de la scene et celle de
+               l echelle —, et ils se sont deja contredits : la scene tenait,
+               le pied poussait la page de 110 px, et rien dans le CSS ne
+               permettait de voir lequel des deux chiffres etait faux. */
+            --r-hors: 14rem;
+            min-height: calc(100vh - var(--r-hors));
         }
 
         .r-gauche { max-width: 34rem; }
         .r-gauche .l-titre { font-size: clamp(2.6rem, 6.2vw, 4.4rem); }
         .r-gauche p { font-size: 0.95rem; }
 
-        /* Trois reperes, pour que la colonne de gauche ait un bas. ⚠️ Les
-           nombres se CALCULENT a partir de `PALIERS` : « 22 rangs » ecrit en
-           dur se serait mis a mentir au premier palier ajoute. */
-        .r-reperes {
-            display: flex;
-            gap: clamp(1.2rem, 3vw, 2.4rem);
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--l-trait);
-        }
-        .r-repere b {
-            display: block;
-            font-family: 'Bebas Neue', 'Poppins', sans-serif;
-            font-size: 2.1rem;
-            line-height: 1;
-            background: linear-gradient(135deg, var(--l-or) 0%, var(--l-ambre) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .r-repere span {
+        .r-resume { max-width: 32rem; }
+
+        /* ── LES SEUILS, EN GRILLE PLUTOT QU EN TABLE ──
+           ⚠️ UNE TABLE POUR SIX COUPLES, C ETAIT DEJA TROP. Un tableau sert a
+           COMPARER des lignes sur plusieurs colonnes ; ici il n y en a qu une,
+           et la table n apportait que ses en-tetes, ses filets et sa largeur
+           minimale de 30 rem — de quoi forcer un defilement horizontal sur
+           telephone pour afficher six nombres. En grille, les six tiennent
+           dans la place laissee libre a gauche.
+           ⚠️ ET LE CHIFFRE PASSE DEVANT LE NOM. On ne vient pas verifier que
+           « Classique » existe, on vient savoir combien il en faut. */
+        .r-seuils { margin-top: clamp(1.6rem, 4vh, 2.4rem); }
+        .r-seuils-titre {
+            /* ⚠️ Les trois annulations sont OBLIGATOIRES : `legal.css` donne
+               aux `h2` un filet superieur, un gros padding et une taille de
+               section. Ici ce n est pas un titre de section mais la legende
+               d une grille. */
+            margin: 0 0 0.9rem;
+            padding: 0;
+            border: 0;
+            font-family: 'Poppins', sans-serif;
             font-size: 0.66rem;
+            font-weight: 600;
             letter-spacing: 0.16em;
             text-transform: uppercase;
             color: var(--l-doux);
         }
+        .r-grille {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+        .r-mode {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.55rem;
+            background: var(--l-carte);
+            border: 1px solid var(--l-trait);
+            transition: border-color 0.2s ease;
+            animation: rMonte 0.5s cubic-bezier(.2,.8,.2,1) backwards;
+            animation-delay: calc(0.3s + var(--i) * 45ms);
+        }
+        .r-mode:hover { border-color: rgba(255, 215, 0, 0.35); }
+        .r-mode b {
+            font-family: 'Bebas Neue', 'Poppins', sans-serif;
+            font-size: 1.65rem;
+            line-height: 1;
+            color: var(--l-or);
+            font-variant-numeric: tabular-nums;
+        }
+        .r-mode span {
+            font-size: 0.68rem;
+            letter-spacing: 0.04em;
+            color: var(--l-doux);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .r-attente { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; color: var(--l-doux); }
 
         /* ── L echelle des paliers ── */
         .r-echelle {
             display: grid;
             grid-template-rows: repeat(8, minmax(0, 1fr));
             gap: clamp(0.3rem, 1vh, 0.6rem);
-            height: min(36rem, calc(100vh - 13rem));
+            /* Elle ne depasse jamais la scene : meme budget, moins la marge
+               qui empeche les paliers de toucher les bords. */
+            height: min(34rem, calc(100vh - var(--r-hors) - 1rem));
             margin: 0;
             padding: 0;
             list-style: none;
@@ -241,29 +290,6 @@
             100% { opacity: 0; transform: translateX(100%); }
         }
 
-        /* ── Le reste de la page, sous la premiere vue ── */
-        .r-suite { max-width: 44rem; margin: 0 auto; padding-top: 1rem; }
-        /* ⚠️ Un indice de defilement, parce que la premiere vue remplit
-           exactement l ecran : sans lui, rien ne dit qu il y a une suite —
-           une page qui finit pile au bas de la fenetre se lit comme finie. */
-        .r-suite-amorce {
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            margin: 0 auto 2.5rem;
-            max-width: 44rem;
-            font-size: 0.68rem;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--l-doux);
-        }
-        .r-suite-amorce::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, var(--l-trait), transparent);
-        }
-
         /* ⚠️ SOUS 900 px, UNE SEULE COLONNE ET ON DEFILE. La promesse « tout
            sans defiler » ne tient que s il y a de la largeur a donner : a
            deux colonnes sur un telephone, les noms se couperaient et les
@@ -273,6 +299,11 @@
             .r-echelle { height: auto; grid-template-rows: none; }
             .r-palier { padding: 0.75rem 1rem; }
             .r-gauche { max-width: none; }
+            /* ⚠️ DEUX COLONNES ET NON TROIS. A trois sur 390 px, chaque tuile
+               tombe a 110 px et « BombAnime » se faisait couper par son
+               `text-overflow` — un seuil dont on ne lit plus le mode ne sert
+               a rien. */
+            .r-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -281,66 +312,10 @@
             .r-palier:hover { transform: none; }
         }
 
-        /* ── Les deux monnaies ── */
-        .g-deux { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0 0; }
-        .g-carte {
-            flex: 1 1 15rem;
-            padding: 1.1rem 1.25rem;
-            background: var(--l-carte);
-            border: 1px solid var(--l-trait);
-            border-radius: 0.5rem;
-        }
-        .g-carte h3 {
-            margin: 0 0 0.6rem;
-            font-size: 0.78rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--l-or);
-        }
-        .g-carte p { margin: 0 0 0.6rem; font-size: 0.93rem; }
-        .g-carte p:last-child { margin-bottom: 0; }
-
-        /* ── Ce qui fait monter ── */
-        .g-liste { margin: 1rem 0 0; padding-left: 1.15rem; }
-        .g-liste li { margin: 0 0 0.5rem; }
-        .g-liste b { color: var(--l-or); font-weight: 600; }
-
-        /* ── La table des seuils ──
-           ⚠️ Les deux colonnes de nombres sont a DROITE et en chasse fixe :
-           on les compare entre lignes, et des chiffres de largeurs
-           differentes alignes a gauche ne se comparent pas du regard. */
-        .g-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-        .g-table th,
-        .g-table td {
-            padding: 0.55rem 0.7rem;
-            text-align: left;
-            border-bottom: 1px solid var(--l-trait);
-        }
-        .g-table th {
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--l-doux);
-        }
-        .g-table td:not(:first-child),
-        .g-table th:not(:first-child) {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-        }
-        .g-table td:not(:first-child) { color: var(--l-or); font-weight: 600; }
-        .g-table tbody tr:last-child td { border-bottom: 0; }
-
-        .g-note {
-            margin: 1.5rem 0 0;
-            padding: 0.9rem 1.15rem;
-            font-size: 0.9rem;
-            color: var(--l-doux);
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px dashed var(--l-trait);
-            border-radius: 0.5rem;
-        }
+        /* ℹ️ Les regles `.g-*` — listes, table des seuils, cartes des deux
+             monnaies, encadre de note — ont ete retirees avec les sections
+             qu elles habillaient. Du style sans element est pire que pas de
+             style : au relecture suivante, on cherche ou il s applique. */
     </style>
 </head>
 
@@ -365,13 +340,27 @@
             <div class="r-gauche">
                 <h1 class="l-titre" style="--i:0">Les rangs</h1>
                 <p class="l-date" style="--i:1">Ce que l'on gagne en jouant, et où ça mène</p>
-                <p style="--i:2">Le premier rang est <strong>Novice I</strong>. La progression se fait
-                    division par division — Novice I, II, III, puis Oracle I, et ainsi de suite jusqu'au
-                    dernier palier. Chaque palier porte sa couleur : c'est celle du nom affiché sous le
-                    pseudo, et ce qui permet de situer un joueur d'un coup d'œil dans un salon.</p>
-                <p style="--i:3"><strong>Master</strong>, le dernier, n'a pas de divisions. Il n'existe
-                    pas de « Master II » : c'est le sommet, et il porte le nom du site.</p>
-                <div class="r-reperes" style="--i:4" id="reperes"></div>
+                <!-- ⚠️ DEUX PHRASES, LA OU IL Y AVAIT DEUX SECTIONS. « Ce qui
+                     rapporte » et « Deux garde-fous » disaient en vingt lignes
+                     ce que personne ne vient lire sur une page de rangs : on y
+                     vient pour voir l echelle. La premiere phrase donne la
+                     regle et amene les seuils, la seconde dit ce qui ne compte
+                     pas. Le detail n a pas sa place ici — il se decouvre en
+                     jouant, et la page des regles le porte deja.
+                     ⚠️ Et les deux paragraphes d explication sont partis avec :
+                     ils decrivaient les divisions, les couleurs et le sommet,
+                     c est-a-dire exactement ce que l echelle de droite MONTRE.
+                     Un texte qui double une image affaiblit les deux. -->
+                <p class="r-resume" style="--i:2">Finir une partie rapporte ; la gagner rapporte
+                    <strong>deux à trois fois plus</strong>, à condition d'être assez nombreux.
+                    Une partie écourtée, ou quittée avant l'écran du vainqueur, ne compte pas.</p>
+
+                <section class="r-seuils" style="--i:3">
+                    <h2 class="r-seuils-titre">Joueurs requis pour gagner de l'XP</h2>
+                    <div class="r-grille" id="bareme">
+                        <p class="r-attente">Lecture…</p>
+                    </div>
+                </section>
             </div>
 
             <ol class="r-echelle" id="echelle"></ol>
@@ -382,47 +371,11 @@
              l attention dessus. L echelle au-dessus se suffit, et la barre du
              jeu dit a chacun ou il en est. -->
 
-        <div class="r-suite">
-        <p class="r-suite-amorce">Et ce qu'il faut pour monter</p>
-
-        <h2>Ce qui rapporte</h2>
-        <p>Une partie terminée rapporte, victoire ou non. La victoire ajoute un bonus, et c'est le seul
-            écart qui pèse vraiment.</p>
-
-        <ul class="g-liste">
-            <li><b>Finir la partie</b> — le gain de base. Il dépend du mode : les modes longs rapportent
-                davantage que les manches rapides.</li>
-            <li><b>La victoire</b> — un bonus qui vaut, selon les modes, deux à trois fois le gain de
-                base.</li>
-            <li><b>Le nombre de joueurs</b> — le bonus de victoire ne tombe qu'à partir d'un seuil. Une
-                victoire en solo, ou à deux contre un bot, n'en est pas une.</li>
-        </ul>
-
-        <h2>Deux garde-fous</h2>
-        <p>Deux règles existent pour que les gains veuillent dire quelque chose. Elles ne gênent pas une
-            partie jouée normalement.</p>
-        <ul class="g-liste">
-            <li><b>Une partie trop courte ne compte pas.</b> Lancer et arrêter aussitôt ne rapporte ni
-                expérience, ni rubis, ni « +1 partie ». La durée minimale dépend du mode — une manche de
-                Rush est légitimement plus brève qu'un Classique.</li>
-            <li><b>Un départ en cours de route ne rapporte rien.</b> Une partie terminée est une partie
-                où l'on était encore présent pour l'écran du vainqueur. Fermer son onglet équivaut à
-                partir ; une coupure brève, non.</li>
-        </ul>
-
-        <h2>Les seuils, mode par mode</h2>
-        <p>Chaque mode demande un <strong>nombre minimum de joueurs</strong> pour que la partie rapporte.</p>
-
-        <div class="l-table-cadre">
-            <table class="g-table" id="bareme">
-                <thead>
-                    <tr><th>Mode</th><th>Joueurs requis pour gagner de l'XP</th></tr>
-                </thead>
-                <tbody><tr><td colspan="2">Lecture…</td></tr></tbody>
-            </table>
-        </div>
-
-        </div><!-- /.r-suite -->
+        <!-- ℹ️ « Ce qui rapporte », « Deux garde-fous » et la table des seuils
+             vivaient ici, sous la premiere vue. Les trois sont remontes dans
+             la colonne de gauche : les deux premieres en DEUX PHRASES, la
+             troisieme en grille. La page ne defile plus — et c etait le but
+             de la refonte, pas un effet de bord. -->
 
         <footer class="l-pied">
             <a href="/regles">Règles</a> ·
@@ -463,21 +416,6 @@
                     '<span class="r-marque" aria-hidden="true">' + (i + 1) + '</span>' +
                     '<span class="r-nom">' + p.nom + '</span>' + droite + '</li>';
             }).join('');
-
-            // ⚠️ LES TROIS REPERES SE CALCULENT. « 22 rangs » ecrit en dur se
-            // serait mis a mentir au premier palier ajoute — et c est
-            // precisement le genre de chiffre que personne ne revient
-            // verifier. Le sommet est compte a part parce qu il n a pas de
-            // divisions : le total n est pas « paliers x 3 ».
-            const sommets = PALIERS.filter((p) => p.unique).length;
-            const rangs = (PALIERS.length - sommets) * ROMAINS.length + sommets;
-            document.getElementById('reperes').innerHTML = [
-                [PALIERS.length, 'paliers'],
-                [rangs, 'rangs en tout'],
-                [sommets, sommets > 1 ? 'sommets' : 'sommet'],
-            ].map(([n, mot]) =>
-                '<span class="r-repere"><b>' + n + '</b><span>' + mot + '</span></span>'
-            ).join('');
         })();
 
         // 📊 La table des seuils, DEMANDEE AU SERVEUR.
@@ -489,16 +427,25 @@
         // « Lecture… » pour toujours : une page qui dit « je charge » sans
         // jamais finir est pire qu une page qui ne promet rien.
         (function () {
-            const cadre = document.getElementById('bareme');
+            const grille = document.getElementById('bareme');
             fetch('/api/bareme')
                 .then((r) => r.json())
                 .then((d) => {
                     const l = Object.values((d && d.modes) || {});
                     if (!l.length) throw new Error('vide');
-                    cadre.querySelector('tbody').innerHTML = l.map((m) =>
-                        '<tr><td>' + m.nom + '</td><td>' + m.joueurs + '</td></tr>').join('');
+                    // ⚠️ `--i` donne a chaque tuile son retard : la grille
+                    // arrive en cascade comme l echelle d en face, et les deux
+                    // cotes de l ecran se remplissent du meme geste.
+                    grille.innerHTML = l.map((m, i) =>
+                        '<div class="r-mode" style="--i:' + i + '">' +
+                        '<b>' + m.joueurs + '</b><span>' + m.nom + '</span></div>').join('');
                 })
-                .catch(() => { cadre.closest('.l-table-cadre').remove(); });
+                // ⚠️ TOUTE LA SECTION DISPARAIT, pas seulement la grille : son
+                // titre seul (« Joueurs requis pour gagner de l XP ») aurait
+                // pose une question sans y repondre. Et une page qui dit
+                // « Lecture… » sans jamais finir est pire qu une page qui ne
+                // promet rien.
+                .catch(() => { grille.closest('.r-seuils').remove(); });
         })();
     </script>
 </body>
