@@ -7263,7 +7263,12 @@ html.rendu-logiciel .v2-dust { display: none; }
    bord de la mise en page sur celui de l anneau, pour que le centrage
    porte sur ce qui se VOIT et non sur une boite plus etroite que son
    contenu. Les deux ensemble : l air est egal et le groupe est centre. */
-.v2-topbar.site .v2-moi-grp { margin: 0 0.44rem; }
+/* ⚠️ EN VARIABLE, parce qu un SECOND objet en depend : sur telephone, le
+   panneau du profil doit annuler cette marge pour retrouver la gouttiere de
+   la page (voir `.v2-profil`). Ecrite deux fois, elle aurait fini par
+   diverger, et le panneau aurait debord de 7 px d un seul cote. */
+.v2-topbar.site { --moi-marge: 0.44rem; }
+.v2-topbar.site .v2-moi-grp { margin: 0 var(--moi-marge); }
 
 /* ── LES DEUX BORNES DU GROUPE DE LIENS ──
    Un cheveu dore qui s eteint a ses deux bouts, avec un petit losange a son
@@ -7307,16 +7312,20 @@ html.rendu-logiciel .v2-dust { display: none; }
 /* ⚠️ LES DEUX COTES DE CHAQUE TRAIT GRANDISSENT ENSEMBLE. Le separateur est
    un objet : en n ecartant que le nom, le trait se serait retrouve colle a
    « Classement » et l ecart se serait lu comme un defaut plutot que comme
-   une respiration. On ouvre donc les deux marges de la meme quantite — les
-   16 px de chaque cote deviennent 26, chaque trait reste au milieu de son
-   vide, et le groupe se recentrant, le nom part vers la gauche pendant que
-   l avatar part vers la droite.
+   une respiration. On ouvre donc les deux marges de la meme quantite — 16 px
+   de chaque cote sont passes a 26, puis a 34, chaque trait restant au milieu
+   de son vide ; et le groupe se recentrant, le nom part vers la gauche
+   pendant que l avatar part vers la droite, sans qu on ait a toucher ni a
+   l un ni a l autre.
    ⚠️ LES DEUX REGLES SONT LE MIROIR L UNE DE L AUTRE, et il faut le voir
-   pour les relire : 1,4rem du cote exterieur — le nom, l avatar — et
-   0,22rem du cote des liens, parce que ceux-ci apportent deja 18,4 px de
-   padding. Les chiffres different, l air est le meme. */
-.v2-marque + .v2-sep-barre { margin: 0 0.22rem 0 1.4rem; }
-.v2-nav + .v2-sep-barre { margin: 0 1.4rem 0 0.22rem; }
+   pour les relire : 1,9rem du cote exterieur — le nom, l avatar — et
+   0,72rem du cote des liens, parce que ceux-ci apportent deja 18,4 px de
+   padding. Les chiffres different, l air est le meme.
+   ℹ️ Le `gap` de 0,25rem de la barre s ajoute a CHAQUE ecart : c est pour ca
+   que 1,9rem donne 34 px et non 30,4. En changer la valeur bouge les quatre
+   cotes a la fois. */
+.v2-marque + .v2-sep-barre { margin: 0 0.72rem 0 1.9rem; }
+.v2-nav + .v2-sep-barre { margin: 0 1.9rem 0 0.72rem; }
 
 /* ⚠️ L AVATAR DESCEND D UN PIXEL, par `top` et non par une marge : il est
    deja en `position: relative`, le decalage ne touche donc a aucune mise en
@@ -7938,7 +7947,13 @@ html.rendu-logiciel .v2-dust { display: none; }
 }
 
 .v2-profil {
-    position: fixed;
+    /* ⚠️ 901 FONCTIONNE ENCORE BIEN QUE LE PANNEAU SOIT DESCENDU DANS LA
+       BARRE, et il faut le savoir pour ne pas le casser : ni `.v2-topbar`
+       ni `.v2-moi-grp` ne cree de contexte d empilement — toutes deux sont
+       en `position: relative` SANS `z-index`. Le 901 du panneau et le 900 du
+       voile se comparent donc toujours dans le meme contexte, celui de la
+       page. ⚠️ Poser un `z-index` sur la barre un jour ferait passer le
+       voile PAR-DESSUS le panneau, qui deviendrait inerte au clic. */
     z-index: 901;
     /* ⚠️ Un peu plus bas qu avant : a 4,6rem la pointe venait TOUCHER l avatar,
        et une bulle collee a son emetteur ne se lit plus comme une bulle — elle
@@ -7958,8 +7973,29 @@ html.rendu-logiciel .v2-dust { display: none; }
        bas sous l avatar.
        ℹ️ `--moi-av` vaut 2,2rem sur l accueil, pose sur `.v2-home` : tout
        suit toujours la variable, comme l annonce le haut du fichier. */
-    top: calc(0.78rem + var(--moi-av) + 1.3rem);
-    right: var(--gouttiere);
+    /* ⚠️ `absolute` ET NON PLUS `fixed`, ET LE PANNEAU A CHANGE DE PARENT :
+       il est desormais DANS `.v2-moi-grp` (voir home.html). Accroche au bord
+       droit de l ecran, il tombait sous l avatar tant que l avatar etait dans
+       ce coin ; depuis que le nom, les liens et l avatar se centrent ensemble,
+       il s ouvrait a trois cents pixels du bouton qu on venait de cliquer.
+       ⚠️ Et c est bien un CHANGEMENT DE REFERENTIEL, pas un reglage : plus
+       aucun nombre ici ne decrit la position de l avatar. Le panneau se
+       deduit de lui, donc il le suivra partout ou on le mettra.
+       ⚠️ `50% + --moi-av / 2` ET NON `100%` : le groupe porte aussi la
+       pastille des rubis, qui est PLUS HAUTE que l avatar (2,45rem contre
+       2,2). Mesure depuis le bas du groupe, le panneau descendait de quatre
+       pixels de plus pour un joueur inscrit — et pour lui seul. Le groupe
+       etant centre verticalement, le bas de l AVATAR est a un demi-avatar
+       sous le milieu, quelle que soit la hauteur du reste.
+       ℹ️ Les 1,3rem sous l avatar sont inchanges : ils laissent passer le
+       crayon, qui deborde sous le cercle, et les 7 px de la pointe. */
+    position: absolute;
+    top: calc(50% + var(--moi-av) / 2 + 1.3rem);
+    /* Le bord droit du groupe EST celui de l avatar — il en est le dernier
+       enfant. Un panneau pose a `right: 0` s aligne donc sur lui, ce qui
+       reste la bonne regle partout ou l avatar est dans un coin : la barre du
+       salon, et le telephone. L accueil, lui, le CENTRE — juste en dessous. */
+    right: 0;
     /* ℹ️ La largeur n entre plus dans le calcul de la pointe : celle-ci se
        cale sur le CENTRE DE L AVATAR, qui est a un demi-avatar du bord droit
        quelle que soit la largeur de la carte. On peut donc la resserrer sans
@@ -7968,7 +8004,12 @@ html.rendu-logiciel .v2-dust { display: none; }
        et deux lignes de chiffres. A 17rem la carte etait plus large que son
        contenu ne le demandait. ⚠️ Le bouton suit tout seul — il est en
        `flex: 1`, donc sa largeur EST celle du corps. */
-    width: 16rem;
+    /* ⚠️ UNE VARIABLE ET NON PLUS UN NOMBRE : le centrage du panneau sous
+       l avatar et la position de sa pointe se calculent TOUS DEUX sur sa
+       demi-largeur. Ecrite trois fois, elle aurait fini par diverger — et
+       la pointe se serait mise a viser a cote sans que rien ne le dise. */
+    --profil-l: 16rem;
+    width: var(--profil-l);
     max-width: calc(100vw - 2.5rem);
     border-radius: 1rem;
     /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
@@ -7989,8 +8030,12 @@ html.rendu-logiciel .v2-dust { display: none; }
     animation: v2ProfilIn 0.18s ease both;
 }
 
+/* ⚠️ IL TOMBE, IL NE GLISSE PLUS DE COTE. Le `translateX` venait du temps ou
+   le panneau arrivait depuis le bord droit de l ecran ; sous un avatar
+   centre, un deplacement lateral ne part de rien et n arrive nulle part.
+   Une bulle sort de son bouton : elle descend. */
 @keyframes v2ProfilIn {
-    from { opacity: 0; transform: translateX(10px); }
+    from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: none; }
 }
 
@@ -8054,6 +8099,41 @@ html.rendu-logiciel .v2-dust { display: none; }
        Prendre la couleur de depart aurait donne une pointe nettement plus
        claire que la bande qu elle prolonge, et la soudure se serait vue. */
     background: #2b211a;
+}
+
+/* ── OU LE PANNEAU TOMBE, SELON LA BARRE ──
+   ⚠️ DEUX REGIMES, ET C EST LA POSITION DE L AVATAR QUI TRANCHE, pas une
+   envie. Quand il est dans un coin — la barre du SALON, et le telephone —,
+   un panneau centre sous lui sortirait de l ecran : il s aligne donc par son
+   bord. Quand il est au MILIEU d un groupe centre — l accueil sur
+   ordinateur —, l aligner par le bord le ferait pendre de travers sous son
+   bouton ; il se centre.
+   ⚠️ Les deux regles ne touchent QUE `right`. Le `top`, la largeur, le fond,
+   l animation ne se redisent nulle part : c est ce qui garantit qu un
+   changement de taille ou de teinte vaudra pour les deux. */
+.v2-topbar.site .v2-profil { right: calc(var(--moi-av) / 2 - var(--profil-l) / 2); }
+/* Et la pointe suit : au centre du panneau, donc au centre de l avatar. */
+.v2-topbar.site .v2-profil::before { right: calc(var(--profil-l) / 2 - 0.425rem); }
+
+/* ⚠️ EN DESSOUS DE 880 px, RETOUR AU PREMIER REGIME.
+   ⚠️ ET CE SEUIL N EST PAS CELUI DU TIROIR (768). Il ne decrit pas un
+   changement de barre mais le moment ou le panneau CENTRE sort de l ecran,
+   et il se calcule : il faut qu il reste `--profil-l / 2 - --moi-av / 2`,
+   soit 110 px, entre le bord droit de l avatar et celui de la fenetre.
+   Le groupe centre mesure 588 px, donc son avatar finit a 287 px du milieu :
+   la condition s ecrit `L / 2 + 287 + 110 <= L`, et donne L >= 794. Releve au
+   rendu a 800 px : il restait TROIS pixels. 880 laisse la marge qu un
+   changement de police ou un lien de plus consommerait sans prevenir.
+   ⚠️ Entre 769 et 880 l avatar est donc encore au milieu, et le panneau
+   pend sous lui par son bord droit au lieu d etre centre. C est voulu : de
+   travers vaut mieux que coupe.
+   ⚠️ `-(--moi-marge)` ANNULE LA MARGE DU GROUPE. Sans elle, le panneau —
+   large de « l ecran moins deux gouttieres » sous 480 px — se serait pose
+   7 px trop a gauche, et l air sous lui aurait ete inegal des deux cotes.
+   Releve a 390 px : 22 px de chaque cote. */
+@media (max-width: 880px) {
+    .v2-topbar.site .v2-profil { right: calc(-1 * var(--moi-marge)); }
+    .v2-topbar.site .v2-profil::before { right: calc(var(--moi-av) / 2 - 0.425rem); }
 }
 
 .v2-profil-corps {

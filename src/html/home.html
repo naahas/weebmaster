@@ -401,39 +401,38 @@
                                     :stroke-dashoffset="anneauReste"></circle>
                         </svg>
                     </button>
-                    </div>
 
-                </header>
+                    <!-- 👤 LE PANNEAU DU PROFIL — il remplace la modale du pseudo.
+                         Avatar, pseudo et connexion repondent a la meme question,
+                         ils ne font donc plus qu un seul ecran.
 
-                <!-- 🖼️ Panneau des avatars : colonne collée au bord droit, centrée
-                     en hauteur. Sa place est FIXE, donc plus rien à mesurer au clic.
-                     Pas de nom sous les vignettes — le visage suffit à reconnaître
-                     le personnage, et l'étiquette rapetissait l'image d'autant.
-                     À la RACINE, pas dans l'en-tête : un parent portant un transform
-                     créerait un bloc conteneur et casserait son position:fixed.
-                     C'est l'erreur qui revient le plus souvent sur ce projet. -->
-                <div class="v2-avatars-voile" v-if="avatarsOuverts" @click="avatarsOuverts = false"></div>
-                <div class="v2-avatars" v-if="avatarsOuverts">
-                    <div class="v2-avatars-grille">
-                        <button v-for="a in avatarsListe" :key="a.f"
-                                class="v2-avatars-item" :class="{ on: a.f === avatar }"
-                                @click="choisirAvatar(a.f)">
-                            <img :src="srcAvatar(a.f)" alt="" draggable="false"
-                                 @error="$event.target.src='novice.png'">
-                        </button>
-                    </div>
-                </div>
+                         ⚠️ IL EST MAINTENANT DANS LE GROUPE DE L AVATAR, et c est
+                         un renversement, pas un rangement. Il vivait a la racine en
+                         `position: fixed`, accroche au bord DROIT DE L ECRAN — ce
+                         qui le mettait pile sous son bouton tant que l avatar etait
+                         dans ce coin. Depuis que le nom, les liens et l avatar se
+                         centrent ensemble, le bord droit de l ecran n est plus nulle
+                         part pres de l avatar : le panneau s ouvrait a trois cents
+                         pixels de ce qu on venait de cliquer.
 
-                <!-- 👤 LE PANNEAU DU PROFIL — il remplace la modale du pseudo.
-                     Avatar, pseudo et connexion repondent a la meme question, ils
-                     ne font donc plus qu un seul ecran.
-                     ⚠️ A LA RACINE, jamais dans l en-tete : un ancetre portant un
-                     transform creerait un bloc conteneur et casserait son
-                     position: fixed. C est l erreur qui revient le plus souvent
-                     sur ce projet, et le panneau des avatars est la pour la meme
-                     raison, dix lignes plus haut. -->
-                <div class="v2-profil-voile" v-if="profilOuvert" @click="fermerProfil"></div>
-                <div class="v2-profil" v-if="profilOuvert">
+                         ⚠️ IL N EST DONC PLUS `fixed` MAIS `absolute`, et la regle
+                         « a la racine, jamais dans l en-tete » ne le concerne plus.
+                         Cette regle protege un `position: fixed`, qu un ancetre
+                         transforme casse. Un `absolute`, lui, VEUT un ancetre
+                         positionne — `.v2-moi-grp` l est deja — et un transform
+                         pose plus haut ne le derangerait pas. C est le contraire
+                         d un relachement : sa position se DEDUIT desormais de
+                         l avatar au lieu d etre recalculee a cote de lui.
+
+                         ⚠️ LE VOILE, LUI, RESTE A LA RACINE, plus bas, avec le
+                         tiroir des avatars : il est toujours `fixed` et doit
+                         couvrir l ecran entier, pas le groupe.
+
+                         ⚠️ ET SON INDENTATION EST RESTEE CELLE DE LA RACINE : le
+                         bloc fait deux cent trente lignes, et les redecaler de
+                         quatre espaces aurait noye le vrai changement — deux
+                         balises deplacees — dans un diff illisible. -->
+                    <div class="v2-profil" v-if="profilOuvert">
                     <div class="v2-profil-tete">
                         <button class="v2-profil-av" @click="avatarsDepuisProfil" title="Changer d'avatar">
                             <img :src="srcAvatar(avatar)" alt="" draggable="false"
@@ -663,6 +662,37 @@
                         </div>
                     </div>
                 </div>
+                    <!-- ⚠️ Ce `</div>` ferme `.v2-moi-grp`, pas le panneau : le
+                         panneau est son enfant depuis qu il suit l avatar. -->
+                    </div>
+
+                </header>
+
+                <!-- 🖼️ Panneau des avatars : colonne collée au bord droit, centrée
+                     en hauteur. Sa place est FIXE, donc plus rien à mesurer au clic.
+                     Pas de nom sous les vignettes — le visage suffit à reconnaître
+                     le personnage, et l'étiquette rapetissait l'image d'autant.
+                     À la RACINE, pas dans l'en-tête : un parent portant un transform
+                     créerait un bloc conteneur et casserait son position:fixed. -->
+                <div class="v2-avatars-voile" v-if="avatarsOuverts" @click="avatarsOuverts = false"></div>
+                <div class="v2-avatars" v-if="avatarsOuverts">
+                    <div class="v2-avatars-grille">
+                        <button v-for="a in avatarsListe" :key="a.f"
+                                class="v2-avatars-item" :class="{ on: a.f === avatar }"
+                                @click="choisirAvatar(a.f)">
+                            <img :src="srcAvatar(a.f)" alt="" draggable="false"
+                                 @error="$event.target.src='novice.png'">
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 🫥 LE VOILE DU PROFIL — un attrape-clic, pour que cliquer a
+                     cote referme le panneau. ⚠️ IL RESTE ICI alors que le panneau
+                     est monte dans le groupe de l avatar : il est `fixed` et doit
+                     couvrir l ecran entier. Dans le groupe, il aurait marche tant
+                     qu aucun ancetre ne porte de transform — exactement le pari
+                     qu on refuse de prendre sur ce projet. -->
+                <div class="v2-profil-voile" v-if="profilOuvert" @click="fermerProfil"></div>
 
                 <!-- ── Accueil : titre + créer/rejoindre + stats ── -->
                 <section class="v2-hub" v-if="homeScreen === 'hub'">
