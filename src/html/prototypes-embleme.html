@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'emblème de la barre du bas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800&display=swap"
+      rel="stylesheet">
+
+<!--
+   🜲 NEUF EFFETS POUR L EMBLEME DE LA BARRE DU BAS.
+
+   ⚠️ CHACUN EST MONTRE DANS LA VRAIE BARRE, pas sur un fond noir. C est la
+   lecon du banc du panneau de profil : une forme jugee sur du vide parait
+   toujours correcte. Ici l embleme se pose sur un filet dore, entre deux
+   liens en capitales, au-dessus d une grille en perspective — et c est la
+   que les effets se separent. Un halo qui respire est magnifique sur du
+   noir et invisible sur le degre d aurore.
+
+   ⚠️ CETTE PAGE NE REDESSINE RIEN. Elle charge `home.css` : la barre, le
+   disque, le filet et les liens sont ceux du jeu. Chaque variante n ajoute
+   qu UNE classe sur `.v2-bb-marque`. Ce qu on compare est donc l effet, pas
+   une maquette de l effet.
+
+   ⚠️ LES NEUF SONT EN MOUVEMENT EN MEME TEMPS, et ce n est pas l usage
+   reel — il n y en aura qu un a l ecran. A lire en regardant UNE case a la
+   fois ; neuf animations cote a cote se font du bruit entre elles.
+
+   ℹ️ L effet n°1 est celui qui est en ligne aujourd hui. Il est la pour
+   servir d etalon : sans lui on compare huit nouveautes entre elles, et
+   l on choisit toujours la plus voyante.
+-->
+
+<link rel="stylesheet" href="/home.css">
+
+<style>
+    /* ⚠️ `home.css` FIGE LE `body` : le jeu est une application plein ecran
+       (`position: fixed`, `height: 100svh`, `overflow: hidden`) pour qu on
+       ne puisse pas faire glisser le decor sous le doigt pendant une partie.
+       Charger cette feuille pour obtenir la vraie barre, c est heriter de ca
+       aussi — et neuf cases dans un ecran fige, cela veut dire deux visibles
+       et sept inatteignables. Les quatre proprietes doivent etre reposees :
+       un `body` en `position: fixed` ne defile pas davantage parce qu on
+       l autorise a deborder. */
+    body {
+        position: static;
+        overflow: auto;
+        height: auto;
+        min-height: 100vh;
+        -webkit-user-select: text;
+        user-select: text;
+        margin: 0;
+        padding: 0 0 4rem;
+        background: #08080b;
+        color: #e8e8ee;
+        font-family: 'Poppins', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1 { margin: 0; padding: 2rem 1.6rem 0.4rem; font-size: 1.35rem; font-weight: 800; }
+    .sous {
+        margin: 0 0 2rem; padding: 0 1.6rem; max-width: 46rem;
+        font-size: 0.8rem; line-height: 1.75; color: #9a94a8;
+    }
+    .sous b { color: #fff; font-weight: 600; }
+
+    .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+        gap: 2rem 1.4rem;
+        padding: 0 1.6rem;
+    }
+
+    /* La case : un bout d ecran de jeu, avec sa grille en perspective et son
+       halo dore — c est le fond sur lequel l embleme doit tenir. */
+    .cas { display: flex; flex-direction: column; gap: 0.7rem; }
+    .cas-tete { display: flex; align-items: baseline; gap: 0.6rem; }
+    .cas-num {
+        font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 800;
+        color: #f0c75e;
+    }
+    .cas-nom { font-size: 0.86rem; font-weight: 700; color: #fff; }
+    .cas-dit { font-size: 0.72rem; line-height: 1.55; color: #8a8499; min-height: 2.3em; }
+
+    .ecran {
+        position: relative;
+        height: 11rem;
+        border-radius: 0.9rem;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        background:
+            radial-gradient(130% 95% at 50% 118%, rgba(240, 199, 94, 0.22), transparent 62%),
+            linear-gradient(180deg, #100e16 0%, #0a0910 100%);
+    }
+    /* La grille derriere l embleme.
+       ⚠️ ELLE EST A PLAT, ALORS QUE CELLE DU JEU EST EN PERSPECTIVE, et ce
+       n est pas un raccourci de paresse : la version inclinee a ete
+       essayee, et elle ne servait a RIEN. `transform-origin: bottom center`
+       la fait se replier vers le haut depuis le bas de la case — ses
+       premieres rangees, les seules espacees, tombent donc DERRIERE la
+       barre, qui est opaque ; au-dessus il ne reste que le lointain, ou les
+       lignes sont si serrees qu elles se fondent en un aplat. Mesure au
+       rendu : une case uniformement noire, deux fois de suite.
+       ⚠️ CE QU ON VEUT N EST PAS DE REPRODUIRE LA GRILLE, c est d avoir des
+       LIGNES CLAIRES juste au-dessus de la barre — la ou passe la moitie
+       haute de l embleme, et la ou un halo trop pale disparait. Une grille
+       droite le fait ; une grille juste ne le faisait pas. */
+    .ecran::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 2.6rem),
+            repeating-linear-gradient(0deg,  rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 2.1rem);
+        -webkit-mask: linear-gradient(180deg, transparent, #000 35%);
+        mask: linear-gradient(180deg, transparent, #000 35%);
+    }
+
+    /* ⚠️ LA BARRE REPASSE DANS LE FLUX. Elle est `position: fixed` dans le
+       jeu : neuf barres fixes se seraient empilees au meme endroit, en bas
+       de la fenetre. Rien d autre n est touche — ni la hauteur, ni le
+       padding, ni le filet. */
+    .ecran .v2-barre-bas {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        padding-bottom: 0.85rem;
+    }
+
+    /* ── LE SOCLE COMMUN DES NEUF ──
+       ⚠️ ON ETEINT D ABORD L EFFET LIVRE, sinon chaque variante se jouerait
+       PAR-DESSUS lui : le halo qui respire et l arc qui tourne sont poses
+       sur `.v2-bb-marque` et son `::before` dans `home.css`. Chaque variante
+       rallume ce dont elle a besoin. */
+    .ecran .v2-bb-marque {
+        animation: none;
+        box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6);
+    }
+    .ecran .v2-bb-marque::before { content: none; }
+
+    /* L anneau decoupe dans un carre : `closest-side` fait que 100 % vaut la
+       DEMI-LARGEUR, donc le trou est un vrai cercle inscrit. Avec la taille
+       par defaut (`farthest-corner`), 100 % vaut la demi-diagonale et
+       l anneau sort du cadre. */
+    .ecran .v2-bb-marque {
+        --anneau: radial-gradient(circle closest-side,
+            transparent 0 calc(100% - 2px), #000 calc(100% - 2px));
+    }
+
+    /* ════════ 1. ORBITE — ce qui est en ligne aujourd hui ════════
+       Un arc dore qui fait un tour en 7 s, plus un halo qui respire. La
+       duree est l essentiel : le meme anneau a 1 s se lirait comme un
+       indicateur de chargement. */
+    .e1 { animation: bHalo 4.6s ease-in-out infinite !important; }
+    .e1::before {
+        content: '' !important;
+        position: absolute; inset: -0.3rem;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        border-top-color: rgba(240, 199, 94, 0.55);
+        border-right-color: rgba(240, 199, 94, 0.16);
+        animation: bTour 7s linear infinite;
+    }
+    @keyframes bHalo {
+        0%, 100% { box-shadow: 0 0.5rem 1.4rem rgba(0,0,0,.6), 0 0 0 rgba(255,215,0,0); }
+        50%      { box-shadow: 0 0.5rem 1.4rem rgba(0,0,0,.6), 0 0 1.25rem rgba(255,215,0,.26); }
+    }
+    /* ⚠️ `rotate`, PROPRIETE A PART, et jamais `transform` dans des
+       keyframes : c est l erreur qui revient le plus souvent sur ce projet —
+       elle efface le `transform` qui pose ou centre l element. Ici plusieurs
+       variantes posent un `translate` ET tournent ; separes, les deux se
+       composent au lieu de s ecraser. */
+    @keyframes bTour { from { rotate: 0deg; } to { rotate: 360deg; } }
+
+    /* ════════ 2. BALAYAGE ════════
+       Un degrade conique fait le tour : au lieu d un arc net, c est une
+       LUEUR qui passe. Plus doux, plus cher d aspect, et il ne ressemble
+       a aucun indicateur. */
+    .e2::before {
+        content: '' !important;
+        position: absolute; inset: -0.32rem;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg,
+            rgba(240,199,94,0) 0deg, rgba(240,199,94,.65) 90deg,
+            rgba(255,235,170,.9) 150deg, rgba(240,199,94,.2) 230deg,
+            rgba(240,199,94,0) 330deg);
+        -webkit-mask: var(--anneau); mask: var(--anneau);
+        animation: bTour 6s linear infinite;
+    }
+
+    /* ════════ 3. DOUBLE SCEAU ════════
+       Deux anneaux qui tournent EN SENS INVERSE, a des vitesses
+       differentes. Ce n est plus un reflet qui passe, c est un MECANISME —
+       la lecture change completement pour deux lignes de CSS. */
+    .e3::before {
+        content: '' !important;
+        position: absolute; inset: -0.3rem;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        border-top-color: rgba(240,199,94,.6);
+        border-left-color: rgba(240,199,94,.2);
+        animation: bTour 9s linear infinite;
+    }
+    .e3::after {
+        content: '';
+        position: absolute; inset: -0.62rem;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        border-bottom-color: rgba(240,199,94,.3);
+        border-right-color: rgba(240,199,94,.1);
+        animation: bTourInv 13s linear infinite;
+    }
+    @keyframes bTourInv { from { rotate: 360deg; } to { rotate: 0deg; } }
+
+    /* ════════ 4. ONDE ════════
+       Un anneau part du disque, s ecarte et s efface. Toutes les 3,4 s —
+       ⚠️ et c est le reglage qui decide de tout : plus rapproche, ca
+       devient un signal d alerte ; plus espace, on ne le voit jamais. */
+    .e4 { border-color: rgba(240,199,94,.3); }
+    .e4::after {
+        content: '';
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        border: 1px solid rgba(240,199,94,.65);
+        animation: bOnde 3.4s cubic-bezier(.2,.7,.3,1) infinite;
+    }
+    @keyframes bOnde {
+        0%        { scale: 1;    opacity: .75; }
+        70%, 100% { scale: 1.85; opacity: 0; }
+    }
+
+    /* ════════ 5. COMETE ════════
+       Un point lumineux court sur l anneau en laissant une trainee courte.
+       Le plus « premium » des cinq anneaux, et le plus voyant : a surveiller
+       sur une barre qu on regarde toute la soiree. */
+    .e5::before {
+        content: '' !important;
+        position: absolute; inset: -0.32rem;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg,
+            rgba(240,199,94,0) 0deg, rgba(240,199,94,0) 265deg,
+            rgba(240,199,94,.25) 315deg, rgba(255,240,190,1) 357deg,
+            rgba(240,199,94,0) 360deg);
+        -webkit-mask: var(--anneau); mask: var(--anneau);
+        animation: bTour 4.5s linear infinite;
+    }
+    /* La tete brille au-dela de l anneau : c est elle qui fait la comete,
+       l arc n est que sa trainee. */
+    .e5::after {
+        content: '';
+        position: absolute; inset: -0.32rem;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 0%,
+            rgba(255,240,190,.75), rgba(255,215,0,0) 22%);
+        animation: bTour 4.5s linear infinite;
+    }
+
+    /* ════════ 6. SOCLE ════════
+       ⚠️ AUCUN ANNEAU. Une lumiere montee du bas, posee sous l embleme,
+       comme un projecteur de vitrine. C est le seul des neuf qui ne tourne
+       pas autour : il ECLAIRE. Et il a un avantage pratique — il ne mange
+       pas de place en largeur, donc rien ne vient toucher les deux liens. */
+    .e6 { border-color: rgba(240,199,94,.16); }
+    .e6::before {
+        content: '' !important;
+        position: absolute;
+        left: 50%; bottom: -0.9rem;
+        translate: -50% 0;
+        width: 8rem; height: 3.4rem;
+        background: radial-gradient(ellipse at 50% 100%,
+            rgba(240,199,94,.45), rgba(240,199,94,.12) 45%, transparent 72%);
+        filter: blur(7px);
+        pointer-events: none;
+        animation: bSouffle 5.2s ease-in-out infinite;
+    }
+    @keyframes bSouffle { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
+
+    /* ════════ 7. REFLET ════════
+       ⚠️ SUR LE LOGO, pas autour. Un eclat traverse le disque en diagonale
+       toutes les 4,5 s, comme une lumiere qui passe sur du metal poli.
+       ⚠️ Il impose `overflow: hidden` sur le disque — donc PAS d anneau
+       exterieur possible avec celui-la, il serait coupe. C est le seul
+       arbitrage technique du banc. */
+    .e7 { overflow: hidden; border-color: rgba(240,199,94,.3); }
+    .e7::after {
+        content: '';
+        position: absolute;
+        top: -60%; left: -140%;
+        width: 55%; height: 220%;
+        background: linear-gradient(90deg,
+            transparent, rgba(255,255,255,.1) 30%, rgba(255,245,210,.5) 50%,
+            rgba(255,255,255,.1) 70%, transparent);
+        rotate: 18deg;
+        animation: bReflet 4.5s ease-in-out infinite;
+    }
+    @keyframes bReflet {
+        0%, 62% { translate: 0 0; }
+        100%    { translate: 420% 0; }
+    }
+
+    /* ════════ 8. BRAISES ════════
+       De fines particules dorees montent autour du disque et s eteignent.
+       ⚠️ Elles ne sont pas en CSS pur par hasard : six `<i>` avec six
+       retards, et rien a animer en JavaScript. Le plus « vivant » des neuf,
+       et donc le plus risque sur un ecran qu on regarde longtemps. */
+    .e8 { border-color: rgba(240,199,94,.28); }
+    .e8 i {
+        position: absolute;
+        bottom: 0.4rem;
+        width: 3px; height: 3px;
+        border-radius: 50%;
+        background: #f5d98a;
+        opacity: 0;
+        pointer-events: none;
+        animation: bBraise 3.6s ease-out infinite;
+    }
+    .e8 i:nth-child(1) { left: 14%; animation-delay: 0s; }
+    .e8 i:nth-child(2) { left: 32%; animation-delay: .7s; }
+    .e8 i:nth-child(3) { left: 52%; animation-delay: 1.5s; }
+    .e8 i:nth-child(4) { left: 71%; animation-delay: .35s; }
+    .e8 i:nth-child(5) { left: 86%; animation-delay: 2.1s; }
+    .e8 i:nth-child(6) { left: 46%; animation-delay: 2.7s; }
+    @keyframes bBraise {
+        0%   { translate: 0 0;        opacity: 0;   scale: .6; }
+        18%  { opacity: .95; }
+        100% { translate: 0 -3.4rem;  opacity: 0;   scale: 1; }
+    }
+
+    /* ════════ 9. GRAVURE ════════
+       ⚠️ AUCUN MOUVEMENT. Un liisere en degrade, un biseau interieur, une
+       ombre portee — de la MATIERE, pas de l animation. C est la variante
+       qu il faut regarder en dernier et le plus longtemps : les huit autres
+       gagnent au premier coup d œil, celle-ci gagne au bout d une heure.
+       Le liisere degrade se fait par deux fonds superposes — un en
+       `padding-box`, un en `border-box` — parce qu une bordure ne prend pas
+       de degrade. */
+    .e9 {
+        border: 1.5px solid transparent !important;
+        background:
+            radial-gradient(circle at 50% 30%, #1b1724 0%, #0a0910 72%) padding-box,
+            linear-gradient(155deg,
+                rgba(255,235,170,.85) 0%, rgba(240,199,94,.25) 38%,
+                rgba(255,255,255,.08) 62%, rgba(240,199,94,.5) 100%) border-box !important;
+        box-shadow:
+            inset 0 1.5px 0 rgba(255,255,255,.12),
+            inset 0 -10px 16px rgba(0,0,0,.65),
+            0 0.55rem 1.5rem rgba(0,0,0,.65) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        /* ⚠️ Sur un BANC on ne coupe pas tout : la page existe pour montrer
+           des mouvements. On les ralentit seulement, pour que la page reste
+           utilisable par quelqu un que le mouvement gene. */
+        .ecran * { animation-duration: 18s !important; }
+    }
+</style>
+</head>
+
+<body>
+    <h1>L'emblème de la barre du bas</h1>
+    <p class="sous">
+        Neuf effets, chacun dans <b>la vraie barre</b> — même disque, même filet doré, mêmes
+        liens, sur un fond qui a des lignes claires derrière l'emblème. Une forme jugée sur du
+        noir paraît toujours correcte&nbsp;; c'est sur ce fond-là que les effets se séparent.<br>
+        Le <b>n°1 est celui qui est en ligne</b>, il sert d'étalon. Dis-moi le numéro.
+    </p>
+
+    <div class="grille" id="grille"></div>
+
+<script>
+// ⚠️ TOUT DANS UNE FONCTION. `home.css` ne pose rien dans la portee globale,
+// mais ce banc peut un jour charger `niveaux.js` comme son voisin — et une
+// variable de meme nom au premier niveau entrerait en collision avec les
+// siennes. C est l incident `CHIFFRES`, deja paye une fois sur ce projet.
+(function () {
+    'use strict';
+
+    var EFFETS = [
+        ['Orbite', 'Un arc doré fait le tour en 7 s, le halo respire. En ligne aujourd’hui.'],
+        ['Balayage', 'Une lueur conique tourne au lieu d’un arc net. Plus doux, ne ressemble à aucun chargement.'],
+        ['Double sceau', 'Deux anneaux contrarotatifs. Ça ne se lit plus comme un reflet mais comme un mécanisme.'],
+        ['Onde', 'Un anneau s’écarte et s’efface toutes les 3,4 s. Le rythme décide de tout.'],
+        ['Comète', 'Un point lumineux court sur l’anneau avec une traînée. Le plus premium, et le plus voyant.'],
+        ['Socle', 'Pas d’anneau : une lumière montée du bas, comme un projecteur de vitrine.'],
+        ['Reflet', 'Un éclat traverse le logo lui-même. Seul effet posé SUR le disque.'],
+        ['Braises', 'De fines particules dorées montent et s’éteignent. Le plus vivant, donc le plus risqué.'],
+        ['Gravure', 'Aucun mouvement : biseau, liseré dégradé, ombre. Gagne au bout d’une heure, pas au premier coup d’œil.']
+    ];
+
+    function echapper(s) {
+        return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
+
+    var html = EFFETS.map(function (e, i) {
+        var n = i + 1;
+        // ⚠️ Les six `<i>` ne servent QU A la variante « Braises ». Ils sont
+        // poses partout plutot que conditionnes : invisibles ailleurs (aucune
+        // regle ne les cible), et le gabarit reste le meme pour les neuf —
+        // ce qu on compare ne doit differer que par la classe.
+        var grains = '<i></i><i></i><i></i><i></i><i></i><i></i>';
+        return '<div class="cas">'
+            + '<div class="cas-tete"><span class="cas-num">' + n + '</span>'
+            + '<span class="cas-nom">' + echapper(e[0]) + '</span></div>'
+            + '<div class="ecran">'
+            + '<nav class="v2-barre-bas">'
+            + '<a class="v2-bb-lien" href="#">Classement</a>'
+            + '<span class="v2-bb-marque e' + n + '">'
+            + '<img src="/logo-sm.png" alt="" draggable="false">' + grains
+            + '</span>'
+            + '<a class="v2-bb-lien" href="#">Rangs</a>'
+            + '</nav></div>'
+            + '<div class="cas-dit">' + echapper(e[1]) + '</div>'
+            + '</div>';
+    }).join('');
+
+    document.getElementById('grille').innerHTML = html;
+})();
+</script>
+</body>
+</html>

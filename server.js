@@ -2908,6 +2908,14 @@ app.get('/prototypes/carte-couleurs', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-carte-couleurs.html');
 });
 
+// 🜲 Neuf effets pour l embleme de la barre du bas (telephone).
+// ⚠️ Chacun est montre DANS la vraie barre, sur un fond qui a des lignes
+// claires derriere lui : un halo se juge sur ce qu il doit couvrir, pas sur
+// du noir ou tout fonctionne. Meme lecon que le banc du panneau de profil.
+app.get('/prototypes/embleme', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-embleme.html');
+});
+
 // 👤 La FORME du panneau du profil : cinq, sur une reduction de la vraie page
 // d accueil. ⚠️ Le fond n y est pas un decor, c est l unite de mesure : depuis
 // que l avatar s est centre, la bulle d aujourd hui s ouvre au milieu de
