@@ -7735,34 +7735,118 @@ html.rendu-logiciel .v2-dust { display: none; }
     pointer-events: none;
     background: radial-gradient(78% 62% at 0% 0%, rgba(240, 199, 94, 0.15), transparent 72%);
 }
-/* 🏷️ LE NOM, EN BAS DU TIROIR.
-   ⚠️ IL REMPLIT UN VIDE QUI SE VOYAIT. Trois liens en haut d un panneau haut
-   de tout l ecran, c est quatre cinquiemes de noir sans rien dedans — le
-   tiroir avait l air inacheve plutot que sobre. Le nom pose en bas lui donne
-   une assise, et c est la seule chose qui avait le droit d etre la : un
-   quatrieme lien invente pour remplir aurait coute un vrai clic.
-   ⚠️ Tres pale (0,22) et tres espace : il doit se lire APRES les liens, pas
-   avant. C est une signature, pas un titre. */
-.v2-nav.tiroir::after {
-    content: 'SHONENMASTER';
-    position: absolute;
-    left: 1.4rem;
-    bottom: 1.4rem;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.55rem;
-    font-weight: 800;
-    letter-spacing: 0.3em;
-    color: rgba(240, 199, 94, 0.22);
-    pointer-events: none;
-}
+/* ℹ️ LE NOM EN `::after` A ETE RETIRE. Il remplissait le vide du bas du
+   tiroir avec une signature en CSS ; ce vide est maintenant occupe par un
+   vrai bloc — liens du site, reseaux et copyright — qui porte la meme
+   signature, mais avec l annee calculee et des liens qu on peut suivre.
+   Deux signatures l une sur l autre auraient simplement fait un doublon. */
 .v2-nav.tiroir.ouvert { transform: translateX(0); }
 
+/* ════════════ LE SECOND GROUPE DU TIROIR ════════════
+   ⚠️ IL VIENT DU PIED DE PAGE, qui ne s affiche plus sur telephone. Regles,
+   signalement, mentions legales et reseaux seraient devenus injoignables
+   depuis l accueil — et pour la politique de confidentialite, ce n est pas
+   une question de confort : un lien public vers elle est ce que Google exige
+   pour la connexion.
+   ⚠️ `margin-top: auto` LE COLLE AU BAS, et c est ce qui le separe vraiment
+   des trois liens du haut. Pose a leur suite, il aurait fait six liens
+   d affilee dont on aurait cherche la logique ; au bas d un panneau vide, il
+   se lit pour ce qu il est — un pied. */
+.v2-nav-plus {
+    margin-top: auto;
+    padding: 1.25rem 1.4rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.72rem;
+    /* Le meme filet dore que celui qui separe les liens du haut. */
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg,
+        transparent, rgba(240, 199, 94, 0.2) 14%,
+        rgba(240, 199, 94, 0.2) 86%, transparent) 1;
+}
+/* ⚠️ UN INTITULE, ET IL FAIT LE TRAVAIL DU FILET. Sans lui, quatre liens
+   gris sous un trait pouvaient passer pour la suite de la navigation ; « LE
+   SITE » dit en deux mots qu on a change de categorie. */
+.v2-nav-plus-titre {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: rgba(240, 199, 94, 0.42);
+    margin-bottom: 0.1rem;
+}
+/* ⚠️ EN BAS DE CASSE ET PLUS PETITS que les liens du haut, les deux
+   differences allant dans le meme sens : ce ne sont pas des destinations ou
+   l on retourne, ce sont des pages qu on ouvre une fois. La casse le dit
+   avant meme qu on ait lu les mots. */
+.v2-nav-plus-lien {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: #8c8699;
+    text-decoration: none;
+    transition: color 0.16s ease;
+}
+.v2-nav-plus-lien:hover,
+.v2-nav-plus-lien:active,
+.v2-nav-plus-lien:focus-visible { color: var(--neon-primary, #f0c75e); }
+
+.v2-nav-reseaux { display: flex; gap: 0.5rem; margin-top: 0.3rem; }
+/* Plus petites que dans leur coin : dans une colonne de texte elles doivent
+   s y fondre, pas se faire voir. */
+.v2-nav-plus .v2-reseau {
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 0.58rem;
+}
+.v2-nav-plus .v2-reseau svg { width: 0.95rem; height: 0.95rem; }
+
+/* © ⚠️ PLUS SOURD QUE TOUT LE RESTE, ET SANS SURVOL : ce n est pas un lien,
+   et rien ne doit laisser croire le contraire. Un element qui ne repond pas
+   au doigt est pire qu absent. */
+.v2-nav-copy {
+    margin-top: 0.35rem;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    color: #3f3b4b;
+    white-space: nowrap;
+}
+
 .v2-nav.tiroir .v2-nav-lien {
-    padding: 1rem 1.4rem;
+    /* ⚠️ EN FLEX, pour que le losange de `::before` devienne un enfant
+       aligne sur le mot plutot qu un objet pose en absolu. */
+    display: flex;
+    align-items: center;
+    gap: 0.78rem;
+    padding: 1.05rem 1.4rem;
     font-size: 0.74rem;
     letter-spacing: 0.14em;
     transition: color 0.18s ease, background 0.18s ease;
 }
+/* ◆ LE LOSANGE DE CHAQUE LIEN.
+   ⚠️ IL REPREND `::before`, QUI SERVAIT DE SEPARATEUR, et le separateur est
+   passe en `border-image` juste en dessous. Les deux ne pouvaient pas
+   cohabiter : il n y a qu un `::before` par element, et c est le genre de
+   collision qui ne se voit qu au rendu — l un des deux disparait sans
+   erreur.
+   ⚠️ A 0,32 d opacite au repos : il marque la ligne, il ne la decore pas.
+   C est au doigt qu il s allume, avec le rail et le fond. */
+.v2-nav.tiroir .v2-nav-lien::before {
+    content: '';
+    position: static;
+    width: 0.32rem;
+    height: 0.32rem;
+    flex: 0 0 auto;
+    border-radius: 0;
+    background: var(--neon-primary, #f0c75e);
+    transform: rotate(45deg);
+    opacity: 0.32;
+    transition: opacity 0.18s ease;
+}
+.v2-nav.tiroir .v2-nav-lien:hover::before,
+.v2-nav.tiroir .v2-nav-lien:active::before,
+.v2-nav.tiroir .v2-nav-lien:focus-visible::before { opacity: 1; }
 /* ⚠️ LES LIENS ARRIVENT EN CASCADE, ET CE N EST PAS UN ORNEMENT. Un tiroir
    qui glisse avec son contenu deja en place se lit comme une IMAGE qu on
    pousse ; les liens qui se posent l un apres l autre disent qu il y a une
@@ -7810,15 +7894,21 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-nav.tiroir .v2-nav-lien:hover::after,
 .v2-nav.tiroir .v2-nav-lien:active::after,
 .v2-nav.tiroir .v2-nav-lien:focus-visible::after { transform: scaleY(1); }
-/* ⚠️ Le separateur vertical devient HORIZONTAL : empiles, les liens sont
-   separes par une ligne entre eux, pas par un trait debout. */
-.v2-nav.tiroir .v2-nav-lien + .v2-nav-lien::before {
-    left: 1.4rem;
-    right: 1.4rem;
-    top: 0;
-    transform: none;
-    width: auto;
-    height: 1px;
+/* ⚠️ LE SEPARATEUR PASSE EN `border-image`, il n est plus un pseudo-element.
+   Deux raisons, et la premiere est mecanique : `::before` porte desormais le
+   losange du lien, et il n y en a qu un par element. La seconde est qu il
+   gagne au change — un filet DORE qui s eteint a ses deux bouts, comme tous
+   les filets de ce jeu, la ou c etait un trait blanc net d un bord a
+   l autre. Un trait net entre deux liens fait un tableau ; celui-ci fait une
+   liste.
+   ⚠️ `border-image` s applique aux QUATRE cotes : seul celui du haut a une
+   largeur, donc seul lui se dessine. C est le meme geste que les lignes du
+   panneau du profil. */
+.v2-nav.tiroir .v2-nav-lien + .v2-nav-lien {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg,
+        transparent, rgba(240, 199, 94, 0.24) 14%,
+        rgba(240, 199, 94, 0.24) 86%, transparent) 1;
 }
 /* Le filet qui suit n a plus de sens empile : il se poserait a l horizontale
    sous un lien pendant qu on en survole un autre, a la verticale. */
@@ -13785,11 +13875,19 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        chiffres ne paraissent plus sur telephone, et la reserve laissait donc
        47 px de vide sous le pied de page — une bande morte que rien
        n expliquait a l ecran. */
-    /* ⚠️ 1,1rem. A 0,45 le pied frolait le bord — pire que l inverse : une
-       ligne collee au bas de l ecran se lit comme un debordement, pas comme
-       un pied de page. A 4rem (la valeur d origine, qui reservait la place
-       des chiffres) il flottait. Entre les deux. */
-    .v2-home { padding-bottom: 1.1rem; }
+    /* ⚠️ LA RESERVE EST REVENUE, et pour la raison inverse de celle qui
+       l avait fait tomber a 1,1rem. A l epoque le pied de page etait DANS LE
+       FLUX : il occupait sa propre hauteur, le contenu s arretait au-dessus
+       de lui tout seul, et toute reserve en plus faisait une bande morte.
+       Depuis, il a cede la place a `.v2-barre-bas`, qui est `fixed` — elle
+       ne pousse donc RIEN, et sans reserve elle recouvrirait la derniere
+       chose de la page.
+       ⚠️ 4,6rem = la hauteur mesuree de la barre (environ 3,5rem) plus l air
+       qui separait deja le contenu du bord. Et `env(safe-area-inset-bottom)`
+       s y ajoute pour les telephones a barre gestuelle, exactement comme
+       dans la barre elle-meme : les deux doivent compter la meme encoche,
+       sinon la reserve est juste a plat et fausse sur un iPhone. */
+    .v2-home { padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px)); }
 
     .v2-choices {
         flex-direction: row;
@@ -15760,105 +15858,182 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    les deux coins bas se liberent au meme moment, ils doivent changer
    ensemble. */
 @media (max-width: 768px) {
-    .v2-pied {
-        position: static;
-        left: auto;
-        right: auto;
-        bottom: auto;
-        margin-top: auto;
-        /* ⚠️ RIEN EN BAS. La barre est la derniere chose de l ecran : tout
-           ce qu on lui laisse dessous se lit comme un oubli de mise en page.
-           L air qui reste vient de `.v2-home`, et il est volontairement
-           maigre — assez pour que le texte ne touche pas le bord, pas assez
-           pour qu on y voie une marge. */
-        /* ⚠️ ELLE RESSORT DE LA GOUTTIERE pour toucher les deux bords. Dans
-           le flux, elle heritait du `padding` horizontal de `.v2-home` : son
-           fond noir s arretait a 22 px de chaque bord et laissait voir la
-           grille de part et d autre — une bande posee au milieu, pas un pied
-           de page. Les marges negatives l elargissent, le padding rend l air
-           au texte. */
-        margin-left: calc(var(--gouttiere) * -1);
-        margin-right: calc(var(--gouttiere) * -1);
-        padding: 0.95rem var(--gouttiere) 0;
-        /* ℹ️ PAS DE MARGE NEGATIVE ICI. Une premiere version en posait une
-           pour rattraper la bande vide sous le pied — c etait soigner le
-           symptome : le vide venait d une reserve de 4rem laissee pour une
-           barre de chiffres qui ne s affiche plus. La reserve a ete reduite
-           a sa source (`.v2-home`, plus bas), et il n y a plus rien a
-           rattraper. */
-        /* ⚠️ Repasse dans le flux, la barre ne peut plus avaler de clic :
-           elle ne couvre que sa propre hauteur. On rend donc les
-           evenements, sans quoi le filet separerait une rangee de liens
-           MORTS — le defaut le plus silencieux qui soit. */
-        pointer-events: auto;
-    }
-    /* ⚠️ DEUX RANGEES, ET CHACUNE D UNE SEULE NATURE. C est le vrai defaut
-       qu on corrige ici, et ce n etait pas le nombre de lignes : a plat,
-       « SIGNALER UN BUG », deux icones et un copyright se suivaient avec le
-       MEME ecart, comme s ils etaient de meme rang. Trois natures alignees
-       sans hierarchie font une bouillie — meme bien espacees.
-       En haut les liens, qui se replient entre eux ; en bas la signature.
-       L ecart entre les deux rangees (1,15rem) est plus grand que celui qui
-       separe deux liens (0,8rem) : c est lui qui dit qu on change d objet. */
-    .v2-pied-dedans {
-        row-gap: 1.15rem;
-        column-gap: 0;
-        font-size: 0.64rem;
-        letter-spacing: 0.12em;
-    }
+    /* ⚠️ LE PIED DE PAGE NE S AFFICHE PLUS DU TOUT SUR TELEPHONE. Il a ete
+       remplace par `.v2-barre-bas` — deux liens et l embleme —, et son
+       contenu n est pas perdu : regles, signalement, mentions legales et
+       reseaux sont descendus dans le tiroir du menu, ou ils ont meme gagne
+       au change (Conditions et Confidentialite y sont ecrites en toutes
+       lettres, alors qu elles etaient MASQUEES ici faute de place).
+       ⚠️ DEUX BARRES AU MEME BORD AURAIENT FAIT DEUX PIEDS L UN SUR L AUTRE,
+       et c est tout l interet de masquer celui-ci plutot que de l alleger :
+       cinq liens gris du meme corps ne font pas une navigation, ils font une
+       note de bas de page. On ne voulait pas d une note sous une barre.
+       ℹ️ Toutes les regles qui l habillaient en telephone — deux rangees,
+       separateurs en traits verticaux, icones reduites, signature deplacee —
+       sont parties avec lui : du style sans element est pire que pas de
+       style, on le cherche a la relecture suivante. */
+    .v2-pied { display: none; }
+}
 
-    /* ℹ️ LE BLOC DE LIENS NE PREND PLUS TOUTE LA LARGEUR. Il la prenait pour
-       pousser les icones a la ligne suivante, du temps ou quatre liens et un
-       copyright s y bousculaient. Depuis que Conditions, Confidentialite et
-       la signature se cachent sur telephone, les trois liens restants et les
-       deux icones tiennent sur UNE ligne — et une rangee unique vaut mieux
-       que deux bien rangees. */
-    .v2-pied-liens {
-        display: flex;
-        gap: 0.45rem 0.8rem;
-        line-height: 1.1;
-    }
-    /* ⚠️ LES POINTS MEDIANS DEVIENNENT DE PETITS TRAITS VERTICAUX. Le point
-       seul, a 0,64rem, se perdait entre deux mots en capitales espacees ; et
-       il avait ete retire du temps ou la liste se repliait, parce qu un « · »
-       en fin de ligne ne separe plus rien. La liste tient maintenant sur une
-       ligne, le separateur peut revenir — en trait, qui se voit.
-       ⚠️ Le texte du point est MASQUE plutot que l element remplace : le
-       gabarit reste le meme pour les deux largeurs, et c est le CSS seul qui
-       decide de la forme du separateur.
-       ⚠️ Et il s eteint a ses deux bouts, comme tous les filets de ce jeu —
-       un trait net ferait une colonne de tableau. */
-    .v2-pied-liens > span[aria-hidden] {
-        width: 1px;
-        height: 0.72rem;
-        font-size: 0;
-        background: linear-gradient(180deg,
-            transparent, rgba(255, 255, 255, 0.22) 30%,
-            rgba(255, 255, 255, 0.22) 70%, transparent);
-    }
+/* ════════════════════════════════════════════════════════════
+   📱 LA BARRE DU BAS — TELEPHONE SEUL
+   ════════════════════════════════════════════════════════════
+   ⚠️ ELLE N A PAS DE `@media` : c est le GABARIT qui decide, par
+   `v-if="isMobile && homeScreen === 'hub'"`. Une regle de largeur en plus
+   aurait fait deux verites sur la meme question, et c est toujours la
+   seconde qu on oublie de changer.
 
-    /* ⚠️ CONDITIONS ET CONFIDENTIALITE DISPARAISSENT SUR TELEPHONE, pour que
-       les liens tiennent sur une ligne. Ce sont les deux dont on n a pas
-       besoin depuis l accueil — et elles restent joignables : le pied de
-       chacune des autres pages les porte. Un clic de plus, pas une impasse.
-       ⚠️ Et la signature part avec : a elle seule elle ajoutait une
-       troisieme rangee a un pied qui n en veut que deux. */
-    .v2-pied-legal,
-    .v2-pied-marque { display: none; }
+   ⚠️ TROIS COLONNES `1fr auto 1fr`, ET PAS UN `space-between`. Les deux
+   liens n ont pas la meme longueur — « Classement » contre « Rangs » — et
+   l embleme du milieu aurait suivi leur difference : decale d une quinzaine
+   de pixels, c est-a-dire visiblement de travers sans qu on sache dire
+   pourquoi. Les deux `1fr` sont egaux par construction, l embleme est donc
+   au centre de l ECRAN, pas au centre de ce qui reste. */
+.v2-barre-bas {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* 20, comme le pied qu elle remplace — et sous le tiroir (151) et le
+       panneau du profil (901), qui doivent tous deux passer devant. */
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.6rem;
+    /* ⚠️ `env(safe-area-inset-bottom)` : sur un telephone a barre gestuelle,
+       le bas de l ecran n est pas le bas de la zone sure. Sans ca les deux
+       liens se posent sous la barre du systeme, qui mange le doigt. */
+    padding: 0.85rem 1.1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    background: #07060b;
+}
+/* Le filet dore qui la separe du jeu — le meme que celui du pied, et il
+   s eteint a ses deux bouts comme tous les filets de ce jeu. */
+.v2-barre-bas::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, rgba(240, 199, 94, 0.22) 20%,
+        rgba(240, 199, 94, 0.22) 80%, transparent);
+}
 
-    /* La signature : les deux icones ET le copyright, sur la meme ligne
-       parce qu ils disent la meme chose — qui a fait ca. Le copyright y est
-       plus petit et plus sourd que les liens du dessus : il se lit en
-       dernier, et c est sa place. */
-    .v2-pied-sign { gap: 0.45rem; margin-left: 0.85rem; }
-    .v2-pied .v2-reseau { width: 1.55rem; height: 1.55rem; }
-    .v2-pied .v2-reseau + .v2-reseau { margin-left: -0.1rem; }
-    .v2-pied-marque {
-        order: 1;
-        margin: 0 0 0 0.6rem;
-        font-size: 0.58rem;
-        letter-spacing: 0.1em;
+.v2-bb-lien {
+    position: relative;
+    padding: 0.5rem 0.2rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    color: #8f89a0;
+    transition: color 0.16s ease;
+}
+/* ⚠️ UN FILET QUI S OUVRE SOUS LE MOT au doigt, et non un changement de
+   couleur seul : sur telephone il n y a pas de survol, le seul moment ou ce
+   lien peut repondre est l instant du `:active`. Un lien qui ne bouge pas
+   quand on appuie laisse croire qu on a rate la cible. */
+.v2-bb-lien::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0.18rem;
+    width: 1.6rem;
+    height: 1px;
+    background: var(--neon-primary, #f0c75e);
+    translate: -50% 0;
+    scale: 0 1;
+    transition: scale 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.v2-bb-lien:active,
+.v2-bb-lien:focus-visible { color: #fff; }
+.v2-bb-lien:active::after,
+.v2-bb-lien:focus-visible::after { scale: 1 1; }
+
+/* 🜲 L EMBLEME.
+   ⚠️ IL MONTE AU-DESSUS DE LA BARRE PAR UNE MARGE NEGATIVE, pas par un
+   `transform` : la barre porte deja des pseudo-elements animes, et un
+   `transform` ici serait le premier candidat a se faire effacer par des
+   keyframes le jour ou l on voudra l animer. La marge, elle, ne se dispute
+   avec rien.
+   ⚠️ ET IL A SON PROPRE DISQUE SOMBRE. La moitie haute deborde de la barre
+   et se pose donc sur le jeu : sans fond a lui, le logo flotterait sur la
+   grille en perspective. */
+.v2-bb-marque {
+    position: relative;
+    display: grid;
+    place-items: center;
+    /* ⚠️ 3,9rem ET -2,6rem DE MARGE, TROUVES EN MESURANT. A 3,5rem et -1,9,
+       l embleme ne sortait de la barre que de 11 px — soit un disque POSE
+       dans la barre, pas un disque qui en emerge, et tout l effet tenait a
+       cette difference. A ces valeurs-ci il en depasse 19, c est-a-dire
+       pres d un tiers de lui-meme : assez pour qu on voie qu il monte, pas
+       assez pour qu il flotte au-dessus. (Mesure a 390 px.) */
+    width: 3.9rem;
+    height: 3.9rem;
+    margin-top: -2.6rem;
+    margin-bottom: -0.4rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 32%, #191521 0%, #0a0910 72%);
+    border: 1px solid rgba(240, 199, 94, 0.26);
+    /* ⚠️ LES DEUX OMBRES SONT REPETEES A L IDENTIQUE DANS LES DEUX ETAPES :
+       une `box-shadow` s anime en bloc, en oublier une la ferait disparaitre
+       a mi-course. C est la lecon du jeton de la carte du joueur. */
+    animation: v2BbHalo 4.6s ease-in-out infinite;
+}
+@keyframes v2BbHalo {
+    0%, 100% { box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
+                           0 0 0 rgba(255, 215, 0, 0); }
+    50%      { box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
+                           0 0 1.25rem rgba(255, 215, 0, 0.26); }
+}
+.v2-bb-marque img {
+    width: 58%;
+    height: auto;
+    display: block;
+}
+/* ⚠️ UN ARC QUI TOURNE EN 7 s, ET LA DUREE EST L ESSENTIEL. Le meme anneau
+   a 1 s serait lu comme un INDICATEUR DE CHARGEMENT, et personne n attendrait
+   plus rien de la page. A 7 s il ne se lit pas comme un progres, seulement
+   comme un reflet qui passe.
+   ⚠️ `rotate`, PROPRIETE A PART, et non `transform` : le disque n en porte
+   pas aujourd hui, mais c est l erreur qui revient le plus souvent sur ce
+   projet — des keyframes qui ecrivent `transform` effacent celui qui pose ou
+   centre l element. On prend l habitude partout, pas seulement la ou ca
+   casse deja.
+   ⚠️ Et c est une BORDURE, pas un `conic-gradient` masque : le masque aurait
+   demande `-webkit-mask`, et la ou il n est pas compris on aurait un disque
+   dore plein derriere le logo au lieu d un anneau. */
+.v2-bb-marque::before {
+    content: '';
+    position: absolute;
+    inset: -0.3rem;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    border-top-color: rgba(240, 199, 94, 0.55);
+    border-right-color: rgba(240, 199, 94, 0.16);
+    animation: v2BbArc 7s linear infinite;
+}
+@keyframes v2BbArc {
+    from { rotate: 0deg; }
+    to   { rotate: 360deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+    /* ⚠️ L ARC S ARRETE AU LIEU DE DISPARAITRE : fige, il reste un liisere
+       dore en haut du disque, ce qui est exactement ce qu on voulait dessiner.
+       Le halo, lui, se repose a la main — `animation: none` le rendrait a sa
+       valeur de base, qui est AUCUNE ombre. */
+    .v2-bb-marque::before { animation: none; }
+    .v2-bb-marque {
+        animation: none;
+        box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.6),
+                    0 0 1rem rgba(255, 215, 0, 0.18);
     }
+    .v2-bb-lien::after { transition: none; }
 }
 
 .v2-reseau {

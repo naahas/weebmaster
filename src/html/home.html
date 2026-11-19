@@ -309,6 +309,55 @@
                              cherche la panne ailleurs. -->
                         <a class="v2-nav-lien" href="/boutique"
                            @mouseenter="poserFilet($event)">Boutique</a>
+
+                        <!-- 📜 LE SECOND GROUPE DU TIROIR — TELEPHONE SEUL.
+                             ⚠️ IL VIENT DU PIED DE PAGE, qui n existe plus sur
+                             telephone : la barre du bas a pris sa place, et
+                             elle ne porte que deux liens. Regles, signaler un
+                             bug, les deux pages legales et les reseaux
+                             seraient donc devenus INJOIGNABLES depuis
+                             l accueil — et pour la politique de
+                             confidentialite, ce n est pas une question de
+                             confort : un lien public vers elle est ce que
+                             Google exige pour la connexion.
+                             ⚠️ ILS Y GAGNENT. Dans le pied, Conditions et
+                             Confidentialite etaient MASQUEES sur telephone
+                             faute de place, et il fallait passer par une
+                             autre page pour les atteindre. Ici elles sont
+                             ecrites en toutes lettres.
+                             ⚠️ `v-if="isMobile"` : ce bloc est DANS `.v2-nav`,
+                             qui sert aussi la barre d ordinateur. Sans lui,
+                             quatre liens legaux se poseraient au milieu de la
+                             navigation du haut. -->
+                        <div class="v2-nav-plus" v-if="isMobile">
+                            <span class="v2-nav-plus-titre" aria-hidden="true">Le site</span>
+                            <a class="v2-nav-plus-lien" href="/regles">Règles</a>
+                            <a class="v2-nav-plus-lien" href="/signaler">Signaler un bug</a>
+                            <a class="v2-nav-plus-lien" href="/conditions">Conditions</a>
+                            <a class="v2-nav-plus-lien" href="/confidentialite">Confidentialité</a>
+                            <!-- ⚠️ `rel="noopener noreferrer"` sur les deux :
+                                 `target="_blank"` donne a la page ouverte une
+                                 poignee sur celle-ci (`window.opener`), dont
+                                 elle peut se servir pour la rediriger. -->
+                            <div class="v2-nav-reseaux">
+                                <a class="v2-reseau tiktok" href="https://www.tiktok.com/@adeem7i"
+                                   target="_blank" rel="noopener noreferrer" title="TikTok — @adeem7i" aria-label="TikTok">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M16.6 5.82A4.28 4.28 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-1.85-2.48V9.77a5.68 5.68 0 1 0 4.94 5.63V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3a4.29 4.29 0 0 1-3.24-1.48z"/>
+                                    </svg>
+                                </a>
+                                <a class="v2-reseau x" href="https://x.com/smaster07i"
+                                   target="_blank" rel="noopener noreferrer" title="X — @smaster07i" aria-label="X">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                    </svg>
+                                </a>
+                            </div>
+                            <!-- © L annee est CALCULEE, jamais ecrite en dur :
+                                 un « © 2026 » fige trahit un site abandonne
+                                 des le 1er janvier suivant. -->
+                            <span class="v2-nav-copy">ShonenMaster © {{ annee }}</span>
+                        </div>
                     </nav>
                     <span class="v2-sep-barre" v-if="!isMobile" aria-hidden="true"></span>
                     <!-- 👤 DEUX ELEMENTS, PAS TROIS : le pseudo, puis l avatar qui
@@ -1090,6 +1139,38 @@
                         </span>
                     </nav>
                 </footer>
+
+                <!-- 📱 LA BARRE DU BAS — TELEPHONE SEUL.
+                     ⚠️ ELLE REMPLACE LE PIED DE PAGE, elle ne s y ajoute pas :
+                     `.v2-pied` est masque sous 768 px. Deux rangees de liens
+                     au meme bord auraient fait deux pieds l un sur l autre.
+                     ⚠️ DEUX LIENS, ET PAS CINQ. Le pied en portait cinq plus
+                     deux icones et un copyright, tous du meme corps et tous
+                     gris : une liste ou rien ne ressort n est pas une
+                     navigation, c est une note de bas de page. Ici il n y a
+                     que les deux endroits ou l on RETOURNE ; tout le reste —
+                     regles, signalement, mentions legales, reseaux — est
+                     descendu dans le tiroir, qu on ouvre quand on le cherche.
+                     ⚠️ LE LOGO N EST PAS UN BOUTON, et c est deliberé. La
+                     barre ne parait QUE sur l accueil : un bouton « retour a
+                     l accueil » y serait sans effet, et un element qui ne
+                     repond pas au doigt est pire qu absent. C est un
+                     EMBLEME — d ou l absence de plaque pleine sous lui, qui
+                     l aurait fait prendre pour le bouton central d une barre
+                     d application. Le jour ou la barre sortira du hub, il
+                     pourra le devenir.
+                     ⚠️ `aria-hidden` : le nom du jeu est deja dans le titre
+                     de la page et dans la barre du haut. Un lecteur d ecran
+                     n a pas a l entendre une troisieme fois pour une image
+                     qui ne mene nulle part. -->
+                <nav class="v2-barre-bas" v-if="isMobile && homeScreen === 'hub'"
+                     aria-label="Navigation du site">
+                    <a class="v2-bb-lien" href="/classement">Classement</a>
+                    <span class="v2-bb-marque" aria-hidden="true">
+                        <img src="logo-sm.png" alt="" draggable="false">
+                    </span>
+                    <a class="v2-bb-lien" href="/rangs">Rangs</a>
+                </nav>
             </div>
 
 
