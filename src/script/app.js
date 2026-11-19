@@ -948,7 +948,13 @@ createApp({
             // 🔐 Les invites sont-ils admis dans ce salon ? Le serveur le dit
             // a l ouverture (`appliquerReglagesSalon`) ; on n affiche jamais
             // ce qu on croit savoir.
-            invitesAutorises: false,
+            // ⚠️ LA VALEUR DE DEPART SUIT CELLE DU SERVEUR (`etatNeuf`), et ce
+            // n est pas de la decoration : entre l ouverture de l ecran et
+            // l arrivee des reglages, l interrupteur montre CETTE valeur-la.
+            // A `false` pendant que le serveur dit `true`, il s allumait tout
+            // seul sous les yeux de l hote — qui pouvait legitimement croire
+            // avoir touche quelque chose.
+            invitesAutorises: true,
             invitesBusy: false,
             // 📜 Le vidage de l historique des questions : la fenetre de
             // confirmation, et l attente pendant l ecriture en base.
@@ -1796,15 +1802,25 @@ createApp({
             const d = this.carteJoueur && this.carteJoueur.dernier;
             return !!(d && d.place === 1);
         },
-        // ⚠️ VIDE QUAND LE MODE DU SALON N EST PAS CLASSE — Codanime n a ni
-        // classement ni place de fin. Le bloc entier disparait alors, plutot
-        // que d afficher deux tirets qu on prendrait pour une panne.
+        // ⚠️ LE NOM DU MODE S AFFICHE MEME QUAND LE MODE N EST PAS CLASSE, et
+        // c est un retour en arriere assume. Le bloc entier disparaissait pour
+        // Codanime, au motif que deux tirets se prendraient pour une panne —
+        // sauf que ce qui partait avec les tirets, c etait le NOM DU MODE.
+        // Resultat : la carte ouverte dans un salon Codanime ne disait nulle
+        // part de quel mode elle parlait, et ses chiffres du bas (parties,
+        // victoires, taux) sont TOUS MODES CONFONDUS — on les lisait donc
+        // comme ceux de Codanime. Le silence mentait plus que les tirets.
+        // ⚠️ `carteModeClasse` decide de ce qu on met SOUS le nom : les deux
+        // chiffres, ou une ligne qui dit qu il n y en a pas.
         // ⚠️ `rivalry` EST UN REGLAGE DU CLASSIQUE, pas un mode : le serveur
         // ne le connait pas, et `CLASSEMENT_MODES` non plus. Il est traduit
         // ici comme il l est dans `modeLabel`, et dans `chargerCarte`.
         carteModeNom() {
             if (!this.carteJoueur) return '';
-            return MODES_CLASSES.includes(this.modeClasseDuSalon) ? this.modeLabel : '';
+            return this.modeLabel;
+        },
+        carteModeClasse() {
+            return MODES_CLASSES.includes(this.modeClasseDuSalon);
         },
         modeClasseDuSalon() {
             return this.lobbyMode === 'rivalry' ? 'classic' : this.lobbyMode;

@@ -301,10 +301,34 @@
            deux colonnes sur un telephone, les noms se couperaient et les
            divisions passeraient a la ligne. Mieux vaut defiler que serrer. */
         @media (max-width: 900px) {
-            .r-scene { grid-template-columns: 1fr; min-height: 0; gap: 2.5rem; }
+            .r-scene { grid-template-columns: 1fr; min-height: 0; gap: 1rem; }
             .r-echelle { height: auto; grid-template-rows: none; }
             .r-palier { padding: 0.75rem 1rem; }
-            .r-gauche { max-width: none; }
+
+            /* ── 📱 L ECHELLE PASSE AVANT LE TEXTE ──
+               ⚠️ SUR TELEPHONE, LE PARAGRAPHE REPOUSSAIT L ECHELLE HORS DE
+               L ECRAN. Le titre, la ligne de sous-titre et trois lignes de
+               regle occupaient toute la premiere vue : on arrivait sur une
+               page intitulee « Les rangs » ou aucun rang n etait visible,
+               et il fallait deviner qu il y en avait plus bas. Or c est
+               l echelle que l on vient voir — la regle, on la lit APRES
+               avoir compris de quoi on parle.
+               ⚠️ LE TITRE ET SON SOUS-TITRE RESTENT EN TETE : ils disent ou
+               l on est, et une page qui s ouvre sur une liste sans nom se
+               lit comme un bout de page charge de travers.
+               ⚠️ `display: contents` DISSOUT LA COLONNE DE GAUCHE pour que
+               ses trois enfants deviennent des items de la grille — sans
+               quoi `order` ne pourrait rien : il ne classe que des freres,
+               et l echelle est la sœur du BLOC, pas des paragraphes qu il
+               contient. La boite disparait, ses enfants restent. */
+            .r-gauche { display: contents; }
+            .r-gauche .l-titre { order: 0; }
+            .r-gauche .l-date { order: 1; }
+            /* L echelle respire des deux cotes : le `gap` de la grille vaut
+               pour toutes les rangees, et celle-ci merite plus que l ecart
+               entre un titre et son sous-titre. */
+            .r-echelle { order: 2; margin: 0.9rem 0 0.4rem; }
+            .r-resume { order: 3; max-width: none; }
             /* ⚠️ DEUX COLONNES ET NON TROIS. A trois sur 390 px, chaque tuile
                tombe a 110 px et « BombAnime » se faisait couper par son
                `text-overflow` — un seuil dont on ne lit plus le mode ne sert

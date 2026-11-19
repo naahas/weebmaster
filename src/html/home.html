@@ -120,7 +120,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Archivo:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Archivo:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap"
         rel="stylesheet">
 
     <!-- ── L icone du site ──
@@ -608,8 +608,19 @@
                     <!-- Chaque ligne est une VRAIE colonne de `comptes` : rien
                          n est deduit ici, et rien n est invente — un chiffre faux
                          coute plus cher qu un chiffre absent.
-                         Verrouillees pour un invite : un zero dirait « tu n as rien
-                         joue », un tiret grise dit « ca ne compte pas encore ». -->
+                         ⚠️ ET LE BLOC ENTIER DISPARAIT POUR UN INVITE. Il etait
+                         jusqu ici VERROUILLE : quatre libelles suivis de quatre
+                         tirets grises, censes dire « ca ne compte pas encore ».
+                         A l usage ils disaient autre chose — que le panneau est
+                         en panne, ou que ce joueur n a rien fait. Et ils
+                         occupaient la moitie de la hauteur d un panneau dont le
+                         seul objet, pour un invite, est le bouton de connexion
+                         juste au-dessus. Quatre lignes vides ne valent pas mieux
+                         que pas de lignes : elles coutent la place ET le sens. -->
+                    <!-- ℹ️ Consequence a connaitre : plus rien ne dit a un invite
+                         QUELLES statistiques il gagnerait a se connecter. Le pari
+                         est que l etiquette « Se connecter » au-dessus suffit, et
+                         que personne ne se cree un compte pour voir un winrate. -->
                         <!-- ⚠️ LES LIBELLES SONT COURTS, ET C EST UNE MESURE, PAS
                              UN GOUT. « Parties jouées » et « Taux de victoire »
                              etaient ecrits pour une carte en colonne, ou la
@@ -617,9 +628,9 @@
                              allonge la barre pour tout le monde — et « jouées »
                              comme « de victoire » ne disent rien que le nombre
                              d a cote ne dise deja. -->
-                        <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
-                            <div><span class="n">Parties</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
-                            <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
+                        <div class="v2-profil-lignes" v-if="estConnecte">
+                            <div><span class="n">Parties</span><span class="v">{{ compteParties }}</span></div>
+                            <div><span class="n">Victoires</span><span class="v">{{ compteVictoires }}</span></div>
                             <!-- 📊 Le taux de victoire, SOUS les deux nombres
                                  dont il sort : on lit 9, puis 5, puis ce que
                                  ça fait. Place au-dessus, il aurait fallu
@@ -633,7 +644,7 @@
                                  un bloc la ou « Taux de victoire » en prend
                                  trois. Les noms de rangs sont deja en anglais
                                  pour une raison voisine. -->
-                            <div><span class="n">Winrate</span><span class="v">{{ estConnecte ? tauxVictoire : '—' }}</span></div>
+                            <div><span class="n">Winrate</span><span class="v">{{ tauxVictoire }}</span></div>
                             <!-- 💎 LA MONNAIE, ici AUSSI. Elle vit d abord dans
                                  la barre, ou elle se voit sans rien ouvrir ;
                                  cette ligne-ci est son chiffre exact, a cote
@@ -647,7 +658,7 @@
                                  celle-ci porte son dessin, c est assez. -->
                             <div class="rubis">
                                 <span class="n"><img src="smoney.webp" alt="Rubis" draggable="false"></span>
-                                <span class="v">{{ estConnecte ? compteRubis.toLocaleString('fr-FR') : '—' }}</span>
+                                <span class="v">{{ compteRubis.toLocaleString('fr-FR') }}</span>
                             </div>
                         </div>
                         <!-- ℹ️ Pas de ligne « Expérience » : la barre juste en
@@ -679,21 +690,29 @@
                              Un lien qui refait ce qu un clic sur l image fait deja
                              n ajoute rien et allonge la carte. Le bloc entier
                              disparait donc pour un invite, qui n a rien a y faire. -->
-                        <!-- ⚠️ UNE ICONE SEULE, PLUS UN BOUTON NOMME. « Se
-                             déconnecter » prenait neuf rem au bout d une barre
-                             qu on cherche a raccourcir, pour un geste qu on fait
-                             une fois par mois. La porte de sortie est un
-                             pictogramme connu ; le mot reste dans `title` et
-                             dans `aria-label`, donc pour le survol et pour les
-                             lecteurs d ecran.
-                             ⚠️ ET ELLE NE ROUGIT QU AU SURVOL. Rouge au repos,
-                             elle devenait l objet le plus voyant d un panneau
-                             qui parle de progression — une alerte permanente
-                             pour une action qui n a rien d urgent. -->
+                        <!-- ⚠️ LE MOT EST REVENU A COTE DU PICTOGRAMME. Il avait
+                             ete retire du temps de la BARRE HORIZONTALE, ou
+                             « Se déconnecter » coutait neuf rem sur une longueur
+                             qu on cherchait justement a raccourcir. Cet argument
+                             est mort avec la barre : le panneau est redevenu une
+                             bulle EN COLONNE, ou une ligne de plus ne coute que
+                             sa propre hauteur — et le bouton y etait le seul
+                             objet muet, un carre gris au bas d un panneau qui
+                             nomme tout le reste.
+                             ⚠️ L icone RESTE. Elle n est pas decorative : c est
+                             elle qu on reconnait de loin, le mot ne fait que
+                             lever le doute. `aria-label` part en revanche — le
+                             texte EST maintenant le nom accessible, et en
+                             garder un second l aurait remplace sans qu on le
+                             voie.
+                             ⚠️ ET IL NE ROUGIT QU AU SURVOL. Rouge au repos, il
+                             devenait l objet le plus voyant d un panneau qui
+                             parle de progression — une alerte permanente pour
+                             une action qui n a rien d urgent. -->
                         <button class="v2-profil-sortir" v-if="estConnecte"
-                                @click="deconnecterCompte"
-                                title="Se déconnecter" aria-label="Se déconnecter">
+                                @click="deconnecterCompte">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>
+                            Se déconnecter
                         </button>
 
                         <!-- ⚠️ L ERREUR DE PSEUDO EST SORTIE DU FLUX. Dans une
@@ -1488,13 +1507,28 @@
                             </div>
                             <p class="v2-carte-titre" v-if="carteTitre">« {{ carteTitre }} »</p>
 
-                            <!-- ⚠️ LE BLOC DU MODE DISPARAIT quand le mode du
-                                 salon n a pas de classement (Codanime) :
-                                 afficher deux tirets se prendrait pour une
-                                 panne. -->
+                            <!-- ⚠️ LE NOM DU MODE RESTE MEME SANS CLASSEMENT.
+                                 Le bloc entier disparaissait pour Codanime,
+                                 pour ne pas afficher deux tirets — et il
+                                 emportait le NOM avec lui. La carte ouverte
+                                 dans un salon Codanime ne disait alors nulle
+                                 part de quel mode elle parlait, alors que ses
+                                 chiffres du bas sont TOUS MODES CONFONDUS : on
+                                 les lisait comme ceux de Codanime. Le silence
+                                 mentait plus que les tirets.
+                                 ⚠️ CE QUI CHANGE, c est ce qu il y a SOUS le
+                                 nom : les deux chiffres pour un mode classe,
+                                 une ligne qui dit qu il n y en a pas sinon. -->
                             <div class="v2-carte-mode" v-if="carteModeNom">
                                 <div class="v2-carte-mode-tete">{{ carteModeNom }}</div>
-                                <dl class="v2-carte-stats deux">
+                                <!-- ⚠️ UNE PHRASE, PAS DEUX TUILES VIDES. « — »
+                                     dans un cadre se lit comme un chiffre qui
+                                     n a pas pu etre charge ; cette ligne dit
+                                     que le mode lui-meme n en produit pas. -->
+                                <p class="v2-carte-mode-nul" v-if="!carteModeClasse">
+                                    Ce mode ne compte pas au classement
+                                </p>
+                                <dl class="v2-carte-stats deux" v-else>
                                     <div>
                                         <dt>Classement</dt>
                                         <dd v-if="carteJoueur.placeMode">#{{ carteJoueur.placeMode }}</dd>

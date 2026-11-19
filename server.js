@@ -1993,9 +1993,17 @@ function etatNeuf() {
 
     // 🔐 LES INVITÉS SONT-ILS ADMIS DANS CE SALON ?
     //
-    // Posé à FAUX : par défaut, il faut un compte pour rejoindre. C'est un
-    // choix de produit, et il se change ICI, d'un mot — aucune autre ligne du
-    // projet ne dépend de sa valeur.
+    // Posé à VRAI : par défaut, on entre sans compte. C'est un choix de
+    // produit, et il se change ICI, d'un mot — aucune autre ligne du projet
+    // ne dépend de sa valeur.
+    //
+    // ⚠️ IL ÉTAIT À FAUX, ET C'ÉTAIT LE MAUVAIS DÉFAUT POUR CE JEU. Le public
+    // visé est celui d'un streamer qui jette un code en direct : la moitié
+    // des arrivants n'a pas de compte, et une porte fermée les renvoyait sur
+    // un refus au moment précis où l'émission attend qu'ils entrent. L'hôte
+    // qui veut une partie « entre inscrits » peut toujours fermer d'un clic ;
+    // celui qui veut simplement remplir son salon n'a plus rien à faire —
+    // et c'est lui, le cas courant.
     //
     // ⚠️ Son intérêt arrive avec le CLASSEMENT : un hôte voudra une partie où
     // tout le monde compte. Aujourd'hui un invité ne gagne rien, donc il ne
@@ -2005,7 +2013,7 @@ function etatNeuf() {
     // ⚠️ ET CE RÉGLAGE NE CHASSE PERSONNE. Les invités déjà entrés restent,
     // quoi qu'on en fasse ensuite — sinon un hôte viderait son salon d'un
     // clic, sans rien pour annuler. Voir le contrôle dans `join-lobby`.
-    invitesAutorises: false,
+    invitesAutorises: true,
 
     liveAnswers: new Map(),
 
@@ -2887,6 +2895,17 @@ app.get('/prototypes/connexion', (req, res) => {
 // de son cote finirait par annoncer un autre rang que le profil.
 app.get('/prototypes/carte-joueur', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-carte-joueur.html');
+});
+
+// 🎨 La MEME carte dans ses huit couleurs de palier, plus les deux etats qui
+// n en ont pas (l invite, et le salon dont le mode n est pas classe).
+// ⚠️ Ce banc-ci ne redessine RIEN : il charge `home.css` et `niveaux.js` et
+// pose le vrai gabarit dix fois. Un banc qui recopie le dessin repond a « de
+// quoi ca a l air » par ce que la copie veut bien montrer — c est
+// exactement l erreur qui avait produit un banc de profil ou rien ne se
+// chevauchait, donc ou il n y avait aucun probleme a voir.
+app.get('/prototypes/carte-couleurs', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-carte-couleurs.html');
 });
 
 // 👤 La FORME du panneau du profil : cinq, sur une reduction de la vraie page

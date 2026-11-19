@@ -2,8 +2,15 @@
 // 🔐 LA PORTE DES INVITÉS — qui peut rejoindre un salon
 // ════════════════════════════════════════════════════════════════
 // Un salon peut exiger un compte de ses arrivants. Le réglage est posé à
-// FAUX par défaut (`invitesAutorises`, etatNeuf) : il faut donc un compte
-// pour entrer, sauf si l'hôte ouvre la porte.
+// VRAI par défaut (`invitesAutorises`, etatNeuf) : on entre donc sans
+// compte, sauf si l'hôte referme la porte.
+//
+// ⚠️ LE DÉFAUT A ÉTÉ INVERSÉ, et cette suite a dû suivre. Elle éprouvait la
+// porte telle qu'un salon neuf la posait ; un salon neuf la pose maintenant
+// OUVERTE, donc tous les contrôles qui vérifient qu'elle mord doivent
+// d'abord la FERMER explicitement (étape 2 bis). Sans ça ils seraient
+// passés au vert sans rien tenir — une porte ouverte ne refuse personne, et
+// le test n'aurait plus signalé sa disparition.
 //
 // ⚠️ ELLE NE VAUT QUE SI L'HÔTE EST LUI-MÊME INSCRIT. On n'exige pas des
 // autres ce qu'on n'a pas fait soi-même — et sans cette condition, un hôte
@@ -125,9 +132,19 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     if (!jeton || !code) { console.log('  ❌ ouverture impossible'); await menage(); process.exit(1); }
     console.log('  Salon ' + code + ' ouvert par le cobaye.\n');
 
-    check('2. un salon neuf REFUSE les invités (le défaut)',
-        ouv.corps.reglages && ouv.corps.reglages.invitesAutorises === false,
+    check('2. un salon neuf ACCEPTE les invités (le défaut)',
+        ouv.corps.reglages && ouv.corps.reglages.invitesAutorises === true,
         JSON.stringify(ouv.corps.reglages && ouv.corps.reglages.invitesAutorises));
+
+    // ── 2 pre. ON FERME LA PORTE POUR LA SUITE ───────────────────
+    // ⚠️ TOUT CE QUI SUIT JUSQU'A L'ETAPE 5 EPROUVE UNE PORTE FERMEE, et
+    // elle ne l'est plus a la naissance du salon. Cette fermeture n'est donc
+    // pas une etape de plus : c'est la CONDITION des six controles suivants.
+    // Sans elle ils passeraient au vert sans rien tenir — une porte ouverte
+    // ne refuse personne, pas meme un faussaire.
+    const ferme = await poster('/admin/set-invites', { autorises: false }, jeton);
+    check('2 pre. l’hôte inscrit peut refermer sa porte',
+        ferme.corps.invitesAutorises === false, JSON.stringify(ferme.corps));
 
     // ── 2 bis. ⚠️ L IDENTIFIANT D UN INSCRIT N EST PAS UNE CLEF ──
     // Les `playerId` circulent : `lobby-update` les envoie a tout le salon.
@@ -233,6 +250,11 @@ const etatDu = (code) => fetch(BASE + '/game/state?code=' + code).then(r => r.js
     // n'importe qui — et refermer ce qu'il montrait déjà fermé était refusé.
     // Un interrupteur à sens unique, bloqué sur un état qu'il n'avait jamais
     // eu. Le serveur affiche désormais l'état RÉEL de la porte.
+    //
+    // ⚠️ DEPUIS QUE LE DÉFAUT EST « OUVERT », CE PREMIER CONTRÔLE NE PROUVE
+    // PLUS GRAND-CHOSE : il serait vrai même sans la règle de l'hôte sans
+    // compte. Ce qui tient encore, et qui est tout l'objet de l'étape, ce
+    // sont les 403 juste en dessous — lui seul ne peut pas refermer.
     check('8. ⚠️ le salon d’un hôte SANS compte s’affiche PORTE OUVERTE',
         ouv2.corps.reglages && ouv2.corps.reglages.invitesAutorises === true,
         JSON.stringify(ouv2.corps.reglages && ouv2.corps.reglages.invitesAutorises));

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La carte du joueur, les huit couleurs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap"
+      rel="stylesheet">
+
+<!--
+   🎨 LA CARTE DU JOUEUR, DANS SES HUIT COULEURS.
+
+   ⚠️ OUI, LA COULEUR VIENT DU PALIER, ET D UNE SEULE SOURCE. Le gabarit pose
+   `--rang` en ligne sur la carte, depuis `titrePourNiveau(niveauPourXp(xp))` —
+   c est-a-dire depuis `niveaux.js`. Sept choses en descendent : le halo du
+   haut, le liisere interieur, le second cerne de l avatar, le losange et le
+   mot du rang, le losange et le mot du mode, et le « #n au general » du pied.
+   Une seule echappe a la regle — le JETON DU PREMIER, dore quel que soit le
+   rang : une victoire n a pas la couleur de celui qui l a prise.
+
+   ⚠️ CETTE PAGE NE REDESSINE RIEN. Elle charge `home.css` et `niveaux.js`,
+   les deux fichiers du vrai jeu, et se contente de poser le meme gabarit huit
+   fois. Une copie du dessin aurait repondu a la question « de quoi ca a
+   l air » par ce que la copie, elle, veut bien montrer : c est exactement
+   l erreur qui avait produit un banc de profil ou rien ne se chevauchait.
+
+   ⚠️ ET LES HUIT PORTENT LE MEME CONTENU. Meme pseudo, meme titre, memes
+   chiffres, meme avatar. Sans ca on comparerait huit teintes ET huit jeux de
+   donnees, et l on ne saurait jamais ce qui vient de la couleur.
+
+   ℹ️ La derniere rangee montre les deux AUTRES etats de la carte, parce
+   qu ils n ont pas de couleur de palier a eux : l invite (gris fixe, « NO
+   DATA ») et le salon dont le mode ne compte pas au classement (Codanime).
+-->
+
+<link rel="stylesheet" href="/home.css">
+<script src="/niveaux.js"></script>
+
+<style>
+    /* ⚠️ LA PAGE NE DEFILAIT PAS, ET C EST `home.css` QUI L EN EMPECHAIT.
+       Le jeu est une application PLEIN ECRAN : son `body` porte
+       `position: fixed`, `height: 100svh` et `overflow: hidden`, pour qu on
+       ne puisse pas faire glisser le decor sous le doigt pendant une partie.
+       Charger cette feuille pour obtenir la vraie carte, c est heriter de ca
+       aussi — et dix cartes empilees dans un ecran fige, cela veut dire trois
+       visibles et sept inatteignables. Mesure : `scrollHeight` du document
+       bloque a 900 px pour un contenu de 2 223.
+       ⚠️ LES QUATRE PROPRIETES DOIVENT ETRE REPOSEES, pas seulement
+       `overflow`. Un `body` en `position: fixed` ne defile pas davantage
+       parce qu on l autorise a deborder.
+       ℹ️ `user-select` revient aussi : le jeu l interdit pour qu un
+       double-clic ne surligne pas la moitie d une question. Sur un banc, on
+       veut pouvoir copier un code couleur. */
+    body {
+        position: static;
+        overflow: auto;
+        height: auto;
+        min-height: 100vh;
+        -webkit-user-select: text;
+        user-select: text;
+        margin: 0;
+        padding: 0 0 5rem;
+        /* Le fond du salon, pas du noir : une teinte se juge sur ce qui est
+           DERRIERE elle, et la carte ne s ouvre jamais sur du vide. */
+        background:
+            radial-gradient(120% 90% at 50% -10%, rgba(240, 199, 94, 0.07), transparent 60%),
+            #08080b;
+        color: #e8e8ee;
+        font-family: 'Poppins', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1 {
+        margin: 0;
+        padding: 2rem 2rem 0.4rem;
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+    .sous {
+        margin: 0 0 2.4rem;
+        padding: 0 2rem;
+        max-width: 54rem;
+        font-size: 0.82rem;
+        line-height: 1.75;
+        color: #9a94a8;
+    }
+    .sous b { color: #fff; font-weight: 600; }
+    .sous code {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 0.78em;
+        color: #f0c75e;
+    }
+
+    /* ⚠️ LA PERSPECTIVE EST SUR LA GRILLE, PAS SUR CHAQUE CASE. Posee par
+       case, chaque carte aurait son propre point de fuite au centre d
+       elle-meme, et les huit auraient paru identiques — alors que sur le vrai
+       ecran il n y en a qu une, a droite, vue de biais. Une seule perspective
+       pour la grille entiere donne a chaque carte l angle de sa POSITION,
+       ce qui est le propre d une scene. */
+    .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(25rem, 1fr));
+        gap: 3.2rem 2rem;
+        padding: 0 2rem;
+        perspective: 90rem;
+    }
+    .case { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+    .etiquette {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--t, #9a9aa6);
+    }
+    .etiquette span { color: #5d5768; margin-left: 0.5rem; letter-spacing: 0.1em; }
+
+    /* ⚠️ LES HUIT NE RESPIRENT PAS ENSEMBLE. La levitation dure 5,4 s et elle
+       est infinie : alignees, les huit cartes montaient et descendaient a
+       l unisson, ce qui ne se lit plus comme huit objets poses mais comme une
+       VAGUE — un effet que la vraie page n a jamais, puisqu il n y a qu une
+       carte. Un decalage NEGATIF les desynchronise sans rien retarder :
+       l animation demarre deja entamee. */
+    .case:nth-child(8n+1) .v2-carte { animation-delay: -0.0s; }
+    .case:nth-child(8n+2) .v2-carte { animation-delay: -0.7s; }
+    .case:nth-child(8n+3) .v2-carte { animation-delay: -1.4s; }
+    .case:nth-child(8n+4) .v2-carte { animation-delay: -2.1s; }
+    .case:nth-child(8n+5) .v2-carte { animation-delay: -2.8s; }
+    .case:nth-child(8n+6) .v2-carte { animation-delay: -3.5s; }
+    .case:nth-child(8n+7) .v2-carte { animation-delay: -4.2s; }
+    .case:nth-child(8n+8) .v2-carte { animation-delay: -4.9s; }
+
+    /* ⚠️ `.v2-carte-scene` N EST PAS UTILISEE ICI, et il faut le savoir avant
+       de copier ce banc : elle est en `position: fixed`, collee a droite de
+       l ecran. Huit cartes dedans se seraient empilees au meme endroit. Seule
+       la CARTE est reprise ; la scene est remplacee par la grille ci-dessus,
+       qui porte la perspective a sa place. */
+</style>
+</head>
+
+<body>
+    <h1>La carte du joueur, les huit couleurs</h1>
+    <p class="sous">
+        Oui&nbsp;: <b>la couleur vient du palier</b>. Le gabarit pose une seule variable,
+        <code>--rang</code>, depuis <code>niveaux.js</code> — et sept choses en descendent&nbsp;:
+        le halo du haut, le liseré intérieur, le second cerne de l'avatar, le losange et le mot
+        du rang, ceux du mode, et le «&nbsp;#n au général&nbsp;» du pied. <b>Une seule y échappe</b>&nbsp;:
+        le jeton du premier, doré quel que soit le rang.<br>
+        Cette page charge <code>home.css</code> et <code>niveaux.js</code>&nbsp;: rien n'y est
+        redessiné, et les huit cartes portent exactement les mêmes données.
+    </p>
+
+    <div class="grille" id="grille"></div>
+
+<script>
+// ⚠️ TOUT DANS UNE FONCTION. `niveaux.js` pose `PALIERS` et `RANGS` dans la
+// portee globale ; une variable de meme nom declaree ici au premier niveau
+// entrerait en collision avec elles — c est l incident `CHIFFRES`, deja paye
+// une fois sur ce projet.
+(function () {
+    'use strict';
+
+    // Le contenu est le MEME pour les huit : seule la teinte change.
+    var JOUEUR = {
+        pseudo: 'slayer',
+        avatar: 'girl.png',
+        titre: "Vagabond de l'aube",
+        mode: 'Classique',
+        placeMode: 12,
+        place: 2,
+        joueurs: 8,
+        parties: 47,
+        victoires: 11,
+        taux: 23,
+        depuis: 'nov. 2026',
+        general: 58
+    };
+
+    function echapper(s) {
+        return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
+
+    // Le JETON ne parait que si la derniere partie a ete gagnee : on le montre
+    // donc sur UNE carte, pas sur les huit. Sinon le banc repondrait « il est
+    // dore partout » sans qu on puisse le comparer a une carte sans jeton.
+    var JETON = '<span class="v2-carte-jeton">'
+        + '<svg viewBox="0 0 24 24"><path d="M2.6 6.4l4.4 3.3L12 3.1l5 6.6 4.4-3.3-1.7 10.4H4.3L2.6 6.4zM4.6 19.3h14.8v1.6H4.6z"/></svg>'
+        + '</span>';
+
+    function tete(pseudo, avatar, rang) {
+        return '<div class="v2-carte-tete">'
+            + '<span class="v2-carte-portrait">'
+            + '<img src="/' + echapper(avatar) + '" alt="" draggable="false">'
+            + '</span>'
+            + '<div class="v2-carte-ident">'
+            + '<h3 class="v2-carte-pseudo">' + echapper(pseudo) + '</h3>'
+            + '<span class="v2-carte-rang">' + echapper(rang) + '</span>'
+            + '</div></div>';
+    }
+
+    function palmares(j) {
+        return '<dl class="v2-carte-stats">'
+            + '<div><dt>Parties</dt><dd>' + j.parties + '</dd></div>'
+            + '<div><dt>Victoires</dt><dd>' + j.victoires + '</dd></div>'
+            + '<div><dt>Taux</dt><dd>' + j.taux + ' %</dd></div>'
+            + '</dl>'
+            + '<div class="v2-carte-pied">'
+            + '<span>Membre depuis ' + echapper(j.depuis) + '</span>'
+            + '<span class="v2-carte-place">#' + j.general + ' au général</span>'
+            + '</div>';
+    }
+
+    // La carte d un inscrit, dans un salon dont le mode EST classe.
+    function carteInscrite(rang, couleur, premier) {
+        var j = JOUEUR;
+        var or = premier ? ' or' : '';
+        return '<article class="v2-carte" style="--rang: ' + couleur + '">'
+            + '<span class="v2-carte-nappe"></span>'
+            + (premier ? JETON : '')
+            + tete(j.pseudo, j.avatar, rang)
+            + '<p class="v2-carte-titre">« ' + echapper(j.titre) + ' »</p>'
+            + '<div class="v2-carte-mode">'
+            + '<div class="v2-carte-mode-tete">' + echapper(j.mode) + '</div>'
+            + '<dl class="v2-carte-stats deux">'
+            + '<div><dt>Classement</dt><dd>#' + j.placeMode + '</dd></div>'
+            + '<div class="' + (premier ? 'or' : '') + '"><dt>Dernière partie</dt>'
+            + '<dd class="' + or.trim() + '">' + (premier ? 1 : j.place)
+            + '<sup>' + (premier ? 'er' : 'e') + '</sup><small>/' + j.joueurs + '</small></dd></div>'
+            + '</dl></div>'
+            + palmares(j)
+            + '</article>';
+    }
+
+    // ⚠️ LA CARTE D UN INVITE N A PAS DE COULEUR DE PALIER : elle porte un gris
+    // fixe, pose par le gabarit (`#6e6880`). C est voulu — un invite n a pas
+    // de rang, et lui en preter une teinte reviendrait a lui en inventer un.
+    function carteInvitee() {
+        return '<article class="v2-carte invite" style="--rang: #6e6880">'
+            + '<span class="v2-carte-nappe"></span>'
+            + tete('Hokage475', 'knight.png', 'Invité')
+            + '<div class="v2-carte-nodata"><b>NO DATA</b><small>Joueur non connecté</small></div>'
+            + '</article>';
+    }
+
+    // Le salon dont le mode ne compte pas au classement : le NOM reste, les
+    // deux chiffres cedent la place a une phrase.
+    function carteSansClassement(rang, couleur) {
+        var j = JOUEUR;
+        return '<article class="v2-carte" style="--rang: ' + couleur + '">'
+            + '<span class="v2-carte-nappe"></span>'
+            + tete(j.pseudo, j.avatar, rang)
+            + '<p class="v2-carte-titre">« ' + echapper(j.titre) + ' »</p>'
+            + '<div class="v2-carte-mode">'
+            + '<div class="v2-carte-mode-tete">Codanime</div>'
+            + '<p class="v2-carte-mode-nul">Ce mode ne compte pas au classement</p>'
+            + '</div>'
+            + palmares(j)
+            + '</article>';
+    }
+
+    function bloc(titre, note, couleur, html) {
+        return '<div class="case">'
+            + '<div class="etiquette" style="--t: ' + couleur + '">' + echapper(titre)
+            + '<span>' + echapper(note) + '</span></div>'
+            + html + '</div>';
+    }
+
+    var morceaux = [];
+
+    // ⚠️ LES PALIERS SONT LUS, PAS RECOPIES. Huit noms et huit teintes ecrits
+    // ici auraient diverge au premier palier ajoute — et un banc de couleurs
+    // qui ment sur les couleurs ne sert a rien du tout.
+    PALIERS.forEach(function (p, i) {
+        // Le nom COMPLET, division comprise, comme partout ailleurs : c est
+        // `RANGS` qui le porte, et la premiere division de chaque palier suffit.
+        var r = RANGS.filter(function (x) { return x.palier === p.nom; })[0];
+        morceaux.push(bloc(
+            p.nom,
+            p.couleur,
+            p.couleur,
+            carteInscrite(r.nom, p.couleur, i === 0)
+        ));
+    });
+
+    var elite = RANGS.filter(function (x) { return x.palier === 'Elite'; })[0];
+    morceaux.push(bloc('Invité', 'gris fixe, sans palier', '#6e6880', carteInvitee()));
+    morceaux.push(bloc('Mode non classé', 'Codanime', elite.couleur,
+        carteSansClassement(elite.nom, elite.couleur)));
+
+    document.getElementById('grille').innerHTML = morceaux.join('');
+})();
+</script>
+</body>
+</html>

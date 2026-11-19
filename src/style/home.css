@@ -7619,9 +7619,19 @@ html.rendu-logiciel .v2-dust { display: none; }
    liens, le meme gabarit, deux presentations. Deux listes auraient diverge
    au premier lien ajoute — et c est exactement ce qui vient d arriver avec
    « Rangs ». */
+/* ⚠️ 152, ET LES TROIS VALEURS DU TIROIR ONT ETE RELEVEES ENSEMBLE (150, 151,
+   152). Elles valaient 2, 3 et 4 — des nombres qui n avaient de sens que les
+   uns par rapport aux autres, en pariant que rien d autre ne passerait par
+   la. Le PIED DE PAGE y passait : il est `fixed` avec `z-index: 20`, et
+   comme `.v2-topbar` ne cree aucun contexte d empilement (position relative
+   SANS z-index), les deux se comparaient dans le meme plan. Resultat sur
+   telephone : « RÈGLES | RANGS | SIGNALER UN BUG » s affichait PAR-DESSUS le
+   tiroir ouvert, et « Rangs » s y lisait deux fois.
+   ⚠️ Elles restent SOUS le panneau du profil (900/901), qui doit continuer
+   de passer devant tout — y compris devant un tiroir ouvert. */
 .v2-burger {
     position: relative;
-    z-index: 4;
+    z-index: 152;
     display: grid;
     align-content: center;
     gap: 0.28rem;
@@ -7644,8 +7654,15 @@ html.rendu-logiciel .v2-dust { display: none; }
     height: 1.8px;
     border-radius: 2px;
     background: #cfc8dc;
-    transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+    transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease,
+                background 0.2s ease;
 }
+/* ⚠️ LA CROIX PASSE A L OR, et c est le seul endroit de la barre ou le
+   bouton dit DANS QUEL ETAT il est. Le tiroir est ouvert a cote de lui,
+   mais sur un telephone etroit il couvre presque tout l ecran : on ne voit
+   plus beaucoup de barre pour en juger. Deux barres dorees en croix
+   suffisent a dire « c est moi qui ai ouvert ca, et c est moi qui referme ». */
+.v2-burger.ouvert span { background: var(--neon-primary, #f0c75e); }
 /* Les trois barres deviennent une croix : celle du milieu s efface, les
    deux autres se croisent. ⚠️ Le `translateY` vaut la hauteur d une barre
    plus le `gap`, sinon elles ne se rejoignent pas au centre. */
@@ -7653,11 +7670,27 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-burger.ouvert span:nth-child(2) { opacity: 0; }
 .v2-burger.ouvert span:nth-child(3) { transform: translateY(-0.47rem) rotate(-45deg); }
 
+/* ⚠️ LE VOILE SE FOND, IL N APPARAIT PLUS D UN COUP. Le tiroir glisse en
+   0,28 s pendant que le fond s assombrissait instantanement : on voyait donc
+   la piece s eteindre AVANT que le panneau n arrive, ce qui donnait au
+   mouvement l air d etre en retard sur lui-meme. Les deux durees sont
+   desormais les memes.
+   ⚠️ ET IL EST PLUS SOMBRE A GAUCHE QU A DROITE. Un aplat uniforme laissait
+   le tiroir se detacher par sa seule bordure ; le degrade lui pose une
+   ombre portee, c est-a-dire l impression qu il est AU-DESSUS de la page et
+   non decoupe dedans. */
 .v2-nav-voile {
     position: fixed;
     inset: 0;
-    z-index: 2;
-    background: rgba(4, 4, 7, 0.6);
+    /* ⚠️ 150 : voir la note du bouton ☰. Le pied de page est `fixed` a 20 et
+       passait devant. */
+    z-index: 150;
+    background: linear-gradient(90deg, rgba(4, 4, 7, 0.82) 0%, rgba(4, 4, 7, 0.62) 38%, rgba(4, 4, 7, 0.55) 100%);
+    animation: v2VoileNav 0.28s ease-out both;
+}
+@keyframes v2VoileNav {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 /* ⚠️ `translateX(-100%)` ET NON `display: none` : un tiroir qui apparait
@@ -7669,7 +7702,8 @@ html.rendu-logiciel .v2-dust { display: none; }
     bottom: 0;
     left: 0;
     transform: translateX(-100%);
-    z-index: 3;
+    /* ⚠️ 151 : voir la note du bouton ☰. */
+    z-index: 151;
     width: min(15rem, 76vw);
     height: auto;
     flex-direction: column;
@@ -7677,19 +7711,105 @@ html.rendu-logiciel .v2-dust { display: none; }
     justify-content: flex-start;
     gap: 0;
     padding: 4.6rem 0 1rem;
-    background: #0f0e14;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    /* ⚠️ UN DEGRADE ET UNE BORDURE DOREE, PLUS UN APLAT GRIS. Le tiroir
+       etait exactement de la couleur du fond du jeu : ouvert, il ne se
+       lisait que par son filet blanc et par le decalage du contenu. Le jeu
+       entier est bati sur un or sombre ; son seul panneau de navigation
+       n avait aucune raison d etre le seul endroit neutre. */
+    background: linear-gradient(168deg, #18151f 0%, #100f16 46%, #0b0a10 100%);
+    border-right: 1px solid rgba(255, 215, 0, 0.11);
     box-shadow: 0 0 2.5rem rgba(0, 0, 0, 0.6);
     transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
     pointer-events: auto;
 }
+/* 🌅 La lueur du coin haut-gauche — d ou vient le tiroir, et ou se trouve le
+   bouton qui l appelle. ⚠️ `pointer-events: none` : elle couvre le tiers
+   haut du panneau, donc le premier lien. */
+.v2-nav.tiroir::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 15rem;
+    pointer-events: none;
+    background: radial-gradient(78% 62% at 0% 0%, rgba(240, 199, 94, 0.15), transparent 72%);
+}
+/* 🏷️ LE NOM, EN BAS DU TIROIR.
+   ⚠️ IL REMPLIT UN VIDE QUI SE VOYAIT. Trois liens en haut d un panneau haut
+   de tout l ecran, c est quatre cinquiemes de noir sans rien dedans — le
+   tiroir avait l air inacheve plutot que sobre. Le nom pose en bas lui donne
+   une assise, et c est la seule chose qui avait le droit d etre la : un
+   quatrieme lien invente pour remplir aurait coute un vrai clic.
+   ⚠️ Tres pale (0,22) et tres espace : il doit se lire APRES les liens, pas
+   avant. C est une signature, pas un titre. */
+.v2-nav.tiroir::after {
+    content: 'SHONENMASTER';
+    position: absolute;
+    left: 1.4rem;
+    bottom: 1.4rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    color: rgba(240, 199, 94, 0.22);
+    pointer-events: none;
+}
 .v2-nav.tiroir.ouvert { transform: translateX(0); }
 
 .v2-nav.tiroir .v2-nav-lien {
-    padding: 0.95rem 1.4rem;
+    padding: 1rem 1.4rem;
     font-size: 0.74rem;
     letter-spacing: 0.14em;
+    transition: color 0.18s ease, background 0.18s ease;
 }
+/* ⚠️ LES LIENS ARRIVENT EN CASCADE, ET CE N EST PAS UN ORNEMENT. Un tiroir
+   qui glisse avec son contenu deja en place se lit comme une IMAGE qu on
+   pousse ; les liens qui se posent l un apres l autre disent qu il y a une
+   liste dedans, et l œil descend dans l ordre ou l on veut qu il lise.
+   ⚠️ LA CASCADE EST EN `translate`, PAS EN `transform` — propriete a part,
+   composee AVANT lui. C est l erreur qui revient le plus souvent sur ce
+   projet : des keyframes qui ecrivent `transform` effacent celui qui pose
+   ou centre l element. Ici le tiroir lui-meme en porte un.
+   ⚠️ ET ELLES NE SE DECLENCHENT QUE SUR `.ouvert` : le tiroir reste dans le
+   document en permanence (hors cadre), donc une animation posee sur
+   `.tiroir` seul se jouerait au chargement de la page, pour personne. */
+@keyframes v2TiroirLien {
+    from { opacity: 0; translate: -0.85rem 0; }
+    to   { opacity: 1; translate: 0 0; }
+}
+.v2-nav.tiroir.ouvert .v2-nav-lien {
+    animation: v2TiroirLien 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.v2-nav.tiroir.ouvert a.v2-nav-lien:nth-of-type(1) { animation-delay: 0.1s; }
+.v2-nav.tiroir.ouvert a.v2-nav-lien:nth-of-type(2) { animation-delay: 0.16s; }
+.v2-nav.tiroir.ouvert a.v2-nav-lien:nth-of-type(3) { animation-delay: 0.22s; }
+.v2-nav.tiroir.ouvert a.v2-nav-lien:nth-of-type(n+4) { animation-delay: 0.28s; }
+/* ⚠️ UN RAIL DORE QUI SE DEPLIE, pour remplacer le filet qui suit — celui-ci
+   est masque dans le tiroir (voir plus bas), et les liens empiles n avaient
+   donc plus AUCUNE reponse au doigt : sur telephone, on appuie et il ne se
+   passe rien jusqu au changement de page. Le rail et le fond repondent tout
+   de suite.
+   ⚠️ `scaleY` EN TRANSITION, pas en keyframes : il se joue dans les deux
+   sens, a l arrivee du doigt comme a son depart. */
+.v2-nav.tiroir .v2-nav-lien::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: var(--neon-primary, #f0c75e);
+    transform: scaleY(0);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.v2-nav.tiroir .v2-nav-lien:hover,
+.v2-nav.tiroir .v2-nav-lien:active,
+.v2-nav.tiroir .v2-nav-lien:focus-visible { background: rgba(255, 215, 0, 0.055); }
+.v2-nav.tiroir .v2-nav-lien:hover::after,
+.v2-nav.tiroir .v2-nav-lien:active::after,
+.v2-nav.tiroir .v2-nav-lien:focus-visible::after { transform: scaleY(1); }
 /* ⚠️ Le separateur vertical devient HORIZONTAL : empiles, les liens sont
    separes par une ligne entre eux, pas par un trait debout. */
 .v2-nav.tiroir .v2-nav-lien + .v2-nav-lien::before {
@@ -7706,6 +7826,14 @@ html.rendu-logiciel .v2-dust { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
     .v2-nav.tiroir, .v2-burger span { transition: none; }
+    /* ⚠️ `animation: none` SUFFIT ICI, et il faut savoir pourquoi : les liens
+       n ont pas `opacity: 0` dans leur style de base — c est la cascade qui
+       la pose, depuis les keyframes. Couper l animation les rend donc
+       visibles. Partout ou le style de base est transparent, il faudrait au
+       contraire reposer l opacite a la main. */
+    .v2-nav-voile,
+    .v2-nav.tiroir.ouvert .v2-nav-lien { animation: none; }
+    .v2-nav.tiroir .v2-nav-lien::after { transition: none; }
 }
 
 .v2-logo {
@@ -7923,7 +8051,12 @@ html.rendu-logiciel .v2-dust { display: none; }
     position: fixed;
     inset: 0;
     z-index: 900;
-    background: rgba(6, 5, 11, 0.52);
+    /* ⚠️ 0,68 ET NON 0,52. Le voile avait ete regle sur fond de HUB — un
+       ecran deja sombre, ou la moitie du noir suffisait. Il s ouvre aussi
+       au-dessus du halo dore de l accueil et du damier du salon, et c est
+       la qu il cedait : le fond restait assez vif pour se disputer l œil
+       avec la bulle, qui est pourtant la seule chose a lire. */
+    background: rgba(6, 5, 11, 0.68);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     animation: v2VoileProfil 0.16s ease-out both;
@@ -8441,11 +8574,11 @@ html.rendu-logiciel .v2-dust { display: none; }
 }
 .v2-profil-lignes .n { color: #9a9aa6; }
 .v2-profil-lignes .v { font-weight: 800; color: var(--neon-primary); }
-/* ⚠️ Verrouillees pour un invite, pas a zero : un « 0 » dit « tu n as rien
-   joue », un tiret grise dit « ca ne compte pas encore ». C est le seul
-   argument du compte, et il ne coute pas une ligne de texte. */
-.v2-profil-lignes.verrou { opacity: 0.5; }
-.v2-profil-lignes.verrou .v { color: #6e6e7b; }
+/* ℹ️ `.v2-profil-lignes.verrou` A ETE RETIRE avec l etat qu il habillait : le
+   bloc entier ne s affiche plus pour un invite, il n y a donc plus rien a
+   griser. Les regles sont parties plutot que d etre laissees en place « au
+   cas ou » — du style sans element est pire que pas de style, on le cherche
+   a la relecture suivante. */
 
 /* 💎 La ligne de la monnaie. Seule des trois a etre doree, parce que c est la
    seule qui S ACHETE : les deux autres comptent ce qu on a fait, celle-ci dit
@@ -8457,8 +8590,6 @@ html.rendu-logiciel .v2-dust { display: none; }
    une image sans dimension prend celle de son fichier et fait exploser la
    ligne qui la porte. */
 .v2-profil-lignes .rubis img { height: 0.9rem; width: auto; flex: 0 0 auto; display: block; }
-.v2-profil-lignes.verrou .rubis .n,
-.v2-profil-lignes.verrou .rubis .v { color: #6e6e7b; }
 
 /* 💎 LE SOLDE DANS LA BARRE, a gauche de l avatar.
    Il vit la et pas dans la carte du profil : une monnaie qu il faut aller
@@ -8568,31 +8699,38 @@ html.rendu-logiciel .v2-dust { display: none; }
    confondait avec « Profil local » — une mention de statut parmi d autres.
    Un titre se gagne, il doit se lire comme une distinction. */
 /* 🏅 LE RANG : petites capitales espacees, couleur de son palier. */
-/* ⚠️ LE RANG EST UNE PASTILLE, PLUS UN MOT COLORE. En texte nu, sa teinte
-   le distinguait du pseudo mais pas de « Profil local », qui occupe la meme
-   place : deux mentions de statut l une sous l autre, dont une seule compte.
-   Le fond et le liisere en font un OBJET, et c est ce qui le fait lire comme
-   une distinction plutot que comme une legende.
-   ⚠️ LES TROIS COULEURS SORTENT DE LA MEME : `--rang` est posee en ligne par
-   le gabarit, depuis la donnee du palier. Ecrire trois teintes a la main
-   aurait demande de les tenir d accord palier par palier — et il y en a
-   huit. `color-mix` les derive, elles ne peuvent plus diverger.
-   ℹ️ Le repli sans `color-mix` garde le texte colore et perd la pastille :
-   le rang reste lisible, il redevient simplement un mot. */
+/* ⚠️ LE CADRE EST PARTI, LA COULEUR RESTE. La pastille avait ete posee pour
+   distinguer le rang de « Profil local », qui occupe la meme ligne chez un
+   invite — sauf que les deux ne paraissent JAMAIS ensemble : l un est
+   affiche si `estConnecte`, l autre sinon. Elle reglait un conflit qui
+   n existe pas, et en creait un vrai : un petit cadre colore a cote du
+   pseudo se lit comme un bouton, et la carte du salon, elle, ecrit deja le
+   rang en mot nu precede d un losange. Les deux devaient dire la meme
+   chose de la meme facon.
+   ⚠️ Le LOSANGE remplace le cadre comme marqueur. Il ne cerne pas le mot, il
+   le designe — et c est exactement le geste de `.v2-carte-rang`.
+   ℹ️ `--rang` reste posee en ligne par le gabarit, depuis la donnee du
+   palier : une teinte ecrite a la main aurait demande de la tenir d accord
+   palier par palier, et il y en a huit. */
 .v2-profil-titre {
     display: inline-flex;
     align-items: center;
+    gap: 0.35rem;
     align-self: flex-start;
-    margin-top: 0.12rem;
-    padding: 0.14rem 0.46rem;
-    border-radius: 0.3rem;
+    margin-top: 0.2rem;
     font-size: 0.64rem;
     font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--rang, #9a9aa6);
-    background: color-mix(in srgb, var(--rang, #9a9aa6) 15%, transparent);
-    border: 1px solid color-mix(in srgb, var(--rang, #9a9aa6) 32%, transparent);
+}
+.v2-profil-titre::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    flex: 0 0 auto;
+    background: var(--rang, #9a9aa6);
+    transform: rotate(45deg);
 }
 
 /* 🎖️ LE TITRE PORTE, en tete du corps.
@@ -8763,20 +8901,26 @@ html.rendu-logiciel .v2-dust { display: none; }
    le plus voyant d un panneau qui parle de progression — une alerte
    permanente pour une action qui n a rien d urgent. */
 .v2-profil-sortir {
-    display: grid;
-    place-items: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* ⚠️ `flex-start` ET NON LA LARGEUR ENTIERE. Etire d un bord a l autre,
+       le bouton devenait l objet le plus large du panneau — pour l action
+       qu on y fait le moins. Il prend la largeur de son mot, et pas une
+       lettre de plus. */
+    align-self: flex-start;
     flex: 0 0 auto;
-    width: 2.1rem;
-    height: 2.1rem;
-    padding: 0;
+    padding: 0.42rem 0.7rem;
     border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 0.5rem;
     background: rgba(255, 255, 255, 0.04);
     color: #9a9aa6;
+    font-size: 0.72rem;
+    font-weight: 600;
     cursor: pointer;
     transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.v2-profil-sortir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; display: block; }
+.v2-profil-sortir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; display: block; flex: 0 0 auto; }
 .v2-profil-sortir:hover {
     color: var(--error-color);
     border-color: color-mix(in srgb, var(--error-color) 45%, transparent);
@@ -17599,7 +17743,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        (`inset: -0.4rem`, qui ne compte dans AUCUN calcul), donc l air qu on
        croit lire au-dessus de lui est toujours 6 px plus petit que celui
        qu on a ecrit. Pour qu il respire, il faut ecrire plus. */
-    padding: 2.25rem 2.1rem 1.75rem;
+    /* ⚠️ ENCORE OUVERT D UN CRAN — 2,6 / 2,35 / 1,95. L avatar paraissait
+       TOUJOURS a l etroit apres le premier elargissement, et la raison est
+       juste au-dessus : son cerne mange 6 px de l air qu on croit ecrire,
+       dans les deux directions a la fois. Pour qu il respire a 2,1rem il
+       fallait en ecrire 2,35. C est un cas ou le nombre lu dans la regle ne
+       dit PAS ce qu on voit a l ecran, et c est pour ca qu il est commente. */
+    padding: 2.6rem 2.35rem 1.95rem;
     border-radius: 1.1rem;
     /* La teinte du rang, posee par le gabarit. Le repli sert si le rang ne
        se resout pas : une carte sans couleur reste lisible. */
@@ -17731,8 +17881,22 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 /* ⚠️ Le titre porte a droit a DEUX LIGNES : « Le plus grand de la plèbe »
    fait vingt-cinq caracteres, et un titre se gagne — il doit se lire. */
+/* ⚠️ L ECART SOUS LE TITRE NE SE LIT PAS DANS CETTE SEULE VALEUR, et c est
+   un piege qu il faut connaitre avant d y toucher. Le bloc du mode porte
+   `margin-top: 0.55rem`. Tant que la carte etait un BLOC, les deux marges
+   se FUSIONNAIENT : l ecart reel valait la plus grande des deux, donc 1rem
+   — et augmenter la marge du mode n aurait rien change du tout. Depuis que
+   la carte est une colonne flex (voir le plancher, plus bas), les marges ne
+   fusionnent plus : elles S ADDITIONNENT. 1,1 + 0,55 = 1,65rem, soit 26 px
+   la ou il y en avait 16.
+   ⚠️ C est pour ca que 1,45 a ete ramene a 1,1 : ecrit avant le passage en
+   flex, il donnait 32 px — le double de l ecart d origine, la ou on en
+   voulait « un peu plus ».
+   ℹ️ Le titre est la DERNIERE ligne de l identite ; ce qui suit est une
+   autre categorie d information. A 16 px il se collait au bloc du dessous
+   et se lisait comme son intitule. */
 .v2-carte-titre {
-    margin: 0 0 1rem;
+    margin: 0 0 1.1rem;
     font-size: 0.775rem;
     font-style: italic;
     line-height: 1.45;
@@ -17772,6 +17936,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     flex: 0 0 auto;
     background: var(--rang);
     transform: rotate(45deg);
+}
+/* ⚠️ UNE PHRASE EN CLAIR SOUS LE NOM DU MODE, pour les modes qui ne
+   produisent pas de classement (Codanime). Deux tuiles a tirets auraient
+   garde la mise en page, mais « — » dans un cadre se lit comme un chiffre
+   qui n a pas pu etre charge ; une phrase dit que c est le MODE qui n en a
+   pas, et la nuance est tout ce qui separe « c est normal » de « c est
+   casse ». */
+.v2-carte-mode-nul {
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    color: #8d869c;
 }
 
 .v2-carte-stats {
@@ -17900,14 +18076,46 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ ELLE GARDE SON AVATAR. C est ce que le joueur a choisi, c est la seule
    chose qu un invite possede, et c est ce qui empeche la carte d etre un
    message d erreur : il y a bien quelqu un, il n a juste pas d historique. */
-/* ⚠️ LA MEME HAUTEUR QUE LA CARTE D UN INSCRIT, et c est une mesure, pas un
-   nombre choisi. Releve au rendu : 337 px pour un joueur avec rang, titre,
-   bloc de mode, palmares et pied. Sans cette hauteur, la carte d un invite
-   faisait 273 px — et traverser une liste melangee faisait SAUTER le cadre
-   d un pseudo a l autre, ce qu on remarque bien plus que son contenu.
-   ⚠️ Elle est en `min-height` sur la carte et non sur le bloc « no data » :
-   c est la CARTE qui doit faire cette taille, quoi qu on mette dedans. */
-.v2-carte.invite { min-height: 21rem; }
+/* ⚠️ LA HAUTEUR PLANCHER EST SUR `.v2-carte`, PLUS SUR `.invite`. Elle
+   n etait posee que sur la carte d un invite, calee a la main sur la hauteur
+   d une carte pleine — et ce reglage s est demode au premier changement de
+   padding : la carte d un inscrit a grandi, celle d un invite est restee a
+   21rem, et l ecart est revenu.
+   ⚠️ LA VRAIE REGLE EST « TOUTES LES CARTES ONT LE MEME PLANCHER », pas
+   « l invite copie l inscrit ». Les cartes d inscrits ne sont pas egales
+   entre elles non plus : un joueur sans titre porte, ou un salon Codanime
+   qui n affiche pas les deux chiffres du mode, donnent une carte plus
+   courte. Un plancher commun les rattrape TOUTES — et traverser une liste
+   melangee ne fait plus sauter le cadre d un pseudo a l autre, ce qu on
+   remarque bien plus que son contenu.
+   ⚠️ C est un PLANCHER, pas une hauteur : une carte plus remplie (titre sur
+   deux lignes) depasse, et c est voulu — on ne coupe pas un titre qui se
+   gagne pour tenir un chiffre. */
+/* ⚠️ COLONNE FLEX POUR TOUTES LES CARTES, et pas seulement pour l invite.
+   Deux choses en dependent, et aucune des deux ne marche sur un bloc :
+   le `flex: 1 1 auto` du bloc « no data », qui centre le mot dans ce qui
+   reste de la carte au lieu de le coller sous l avatar ; et le
+   `margin-top: auto` du pied, qui le pose AU BAS de la carte.
+   ⚠️ Ce second point est la contrepartie du plancher, et L ENDROIT OU L ON
+   MET LE VIDE EST LE VRAI CHOIX. Une carte plus courte que le plancher — un
+   salon Codanime, un joueur sans titre — a forcement du mou quelque part.
+   Laisse SOUS le pied, il donnait une carte coupee en pleine page. Mis
+   entre le palmares et le pied, il faisait flotter trois tuiles au milieu
+   de rien. Il est donc pose AU-DESSUS DU PALMARES : l identite tient le
+   haut, les chiffres et leur pied tiennent le bas, et l ecart entre les
+   deux se lit comme une separation voulue plutot que comme un trou.
+   ⚠️ UN SEUL `margin-top: auto` dans la colonne. Deux se partageraient le
+   mou a parts egales et rendraient deux demi-trous au lieu d un ecart. */
+/* ⚠️ 28rem = 448 px, ET LE NOMBRE EST MESURE. La carte la plus remplie —
+   rang, titre, bloc de mode avec ses deux chiffres, palmares et pied — fait
+   441 px au rendu. Un plancher cale dessous laisserait cette carte-la
+   DEPASSER les autres, ce qui est exactement le defaut qu on corrige : le
+   plancher doit etre au-dessus du cas le plus haut, pas a sa hauteur. Les
+   7 px d avance se posent au-dessus du pied, ou ils ne se voient pas.
+   ℹ️ A verifier si l on ajoute une ligne a la carte : le plancher ne
+   s adapte pas tout seul, il se re-mesure. */
+.v2-carte { display: flex; flex-direction: column; min-height: 28rem; }
+.v2-carte > .v2-carte-stats { margin-top: auto; }
 .v2-carte-nodata {
     position: relative;
     display: grid;
@@ -17927,13 +18135,31 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ CE QUI RESTE : une italique claire et une respiration tres lente. Le
    mot garde son corps et son espacement — c est l ecriture qui porte, pas
    l animation. */
+/* ⚠️ L ITALIQUE ETAIT FAUSSE, ET C EST CA QUI ECARTAIT LES LETTRES. La page
+   ne chargeait que les graisses DROITES de Cormorant Garamond
+   (`wght@300;400;...`) : `font-style: italic` n avait aucune fonte a prendre,
+   le navigateur PENCHAIT donc la romaine lui-meme. Une oblique synthetique
+   garde les chasses de la droite tout en inclinant les formes — d ou des
+   lettres qui ne se rejoignent plus, un gris irregulier, et ce qui se lit
+   comme un interlettrage trop large alors que personne ne l avait ecrit.
+   ⚠️ LA CORRECTION EST DANS LE `<link>` DE `home.html`, pas ici : l axe
+   `ital` y a ete ajoute. La vraie italique de Cormorant a ses propres
+   dessins, plus etroits et lies — ce que la regle ci-dessous ne pouvait pas
+   obtenir a coups de `letter-spacing` negatif.
+   ℹ️ Effet de bord voulu : `.fs-master-tag`, la ligne d honneur de l ecran
+   de fin, est elle aussi en Cormorant italique. Elle passe de l oblique
+   synthetique a la vraie italique sans qu on y touche.
+   ⚠️ Et la taille baisse avec — 2,1rem. La fausse italique etait large,
+   donc le mot paraissait DEJA grand a 2,35 ; la vraie l est moins, mais le
+   mot reste le plus gros objet d une carte qui dit justement qu il n y a
+   rien a voir. Il ne doit pas crier plus fort que le pseudo au-dessus. */
 .v2-carte-nodata b {
     position: relative;
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 2.35rem;
+    font-size: 2.1rem;
     font-style: italic;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.015em;
     color: rgba(230, 230, 240, 0.72);
     text-shadow: 0 0 1.8rem rgba(200, 205, 225, 0.18);
     /* 7 s, et l ecart entre les deux etats est MINCE (0,72 a 0,5) : on ne
