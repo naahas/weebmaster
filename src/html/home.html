@@ -346,7 +346,13 @@
                          nombres a tenir d accord au lieu d un. Reunies, le
                          `gap` ne s applique plus entre elles et la marge dit
                          seule de combien la pastille s enfonce. -->
-                    <div class="v2-moi-grp">
+                    <!-- ⚠️ `ouvert` SERT A LA POINTE, et a rien d autre : c est
+                         le groupe qui la dessine depuis que la barre est trop
+                         large pour la porter elle-meme. Une classe plutot qu un
+                         `:has(.ouvert)` — le selecteur marcherait, mais il
+                         fait dependre un dessin d un support de navigateur
+                         alors que Vue connait deja l etat. -->
+                    <div class="v2-moi-grp" :class="{ ouvert: profilOuvert }">
                     <span class="v2-moi-rubis" v-if="estConnecte" title="Rubis">
                         <!-- ⚠️ Un FICHIER et non plus un trace : le gemme porte
                              le S du logo, qui ne se redessine pas au trait.
@@ -433,7 +439,9 @@
                          quatre espaces aurait noye le vrai changement — deux
                          balises deplacees — dans un diff illisible. -->
                     <div class="v2-profil" v-if="profilOuvert">
-                    <div class="v2-profil-tete">
+                    <!-- 🪪 L IDENTITE — avatar, pseudo, rang. Le premier des
+                         cinq groupes de la barre. -->
+                    <div class="v2-profil-ident">
                         <button class="v2-profil-av" @click="avatarsDepuisProfil" title="Changer d'avatar">
                             <img :src="srcAvatar(avatar)" alt="" draggable="false"
                                  @error="$event.target.src='novice.png'">
@@ -501,8 +509,15 @@
                                      il se deduit du niveau, personne ne le
                                      donne, et c est la premiere chose qu on
                                      lit d un joueur. -->
+                                <!-- ⚠️ LA COULEUR PASSE PAR UNE VARIABLE, plus
+                                     par `color`. Le rang est desormais une
+                                     PASTILLE : son fond et son liisere se
+                                     derivent de la meme teinte par
+                                     `color-mix`, et trois proprietes liees a
+                                     la meme donnee ne peuvent pas diverger si
+                                     la donnee n est ecrite qu une fois. -->
                                 <span v-if="estConnecte" class="v2-profil-titre"
-                                      :style="{ color: rangJoueur.couleur }">{{ rangJoueur.nom }}</span>
+                                      :style="{ '--rang': rangJoueur.couleur }">{{ rangJoueur.nom }}</span>
                                 <!-- ℹ️ LE TITRE N EST PLUS ICI. Il a sa propre
                                      ligne en tete du corps : a cote du rang,
                                      il n avait que la moitie d une carte de
@@ -522,33 +537,24 @@
                         <!-- Croix retiree : voir ci-dessus. -->
                     </div>
 
-                    <!-- ⚠️ LE CORPS EST UNE SURFACE A PART, et c est tout le parti
-                         pris : l en-tete est teinte, le corps ne l est pas. La
-                         frontiere se voit SANS un seul trait de separation — et
-                         c est l accumulation de traits qui faisait paraitre les
-                         versions precedentes brouillonnes. -->
-                    <div class="v2-profil-corps">
-                    <!-- 🎖️ LE TITRE PORTE, sur toute la largeur.
-                         ⚠️ Il etait a cote du rang, dans l en-tete : il n y
-                         avait que la moitie d une carte de 16rem — l avatar
-                         prend le reste — et « Shinigami des ombres », qui est
-                         de longueur tout a fait ordinaire, en sortait tronque.
-                         Ici il a la carte entiere et ne se coupe plus.
+                    <!-- 🎖️ LE TITRE PORTE — deuxieme groupe.
+                         ⚠️ SUR DEUX LIGNES, ET C EST CE QUI TIENT LA LONGUEUR DE
+                         LA BARRE. « Le plus grand de la plebe » sur une seule
+                         ligne faisait a lui seul dix-huit rem : le titre le plus
+                         long d un joueur decidait de la largeur du panneau de
+                         tout le monde. Plie en deux, il occupe une colonne
+                         bornee, et la barre garde la meme longueur quel que soit
+                         le titre porte.
                          ⚠️ Et seulement s il en porte un : la plupart des
-                         joueurs n en ont aucun, et une ligne vide laissee a sa
+                         joueurs n en ont aucun, et une colonne vide laissee a sa
                          place ferait croire a un defaut d affichage. -->
                     <div class="v2-profil-exploit" v-if="estConnecte && titrePorte">{{ titrePorte }}</div>
-                    <!-- ✦ Qui l on EST au-dessus, ce qu on a FAIT en dessous.
-                         ⚠️ LE MEME FILET QUE PLUS BAS, et pas un second trait
-                         invente pour l occasion : cette carte a deja perdu
-                         toutes ses separations nettes une fois, parce que leur
-                         accumulation la faisait paraitre brouillonne. Celui-ci
-                         s eteint aux deux bouts et porte le meme losange.
-                         ⚠️ Il ne parait QU AVEC le titre. Seul, il couperait la
-                         carte sans rien separer — les comptes d avant le titre
-                         de depart n en portent aucun. -->
-                    <div class="v2-profil-sep haut" v-if="estConnecte && titrePorte"></div>
-                    <div class="v2-profil-err" v-if="pseudoError">{{ pseudoError }}</div>
+
+                    <!-- ✦ Qui l on EST a gauche, ce qu on a FAIT a droite.
+                         ⚠️ LE TRAIT EST DEVENU VERTICAL avec la barre, et il ne
+                         parait QU AVEC les chiffres : seul, il couperait la
+                         barre sans rien separer. -->
+                    <span class="v2-profil-sep" v-if="estConnecte"></span>
 
                     <!-- ⚠️ Rien ne s affiche si la connexion n est pas configuree
                          (pas de clef publique) : un bouton qui echoue vaut moins
@@ -596,8 +602,15 @@
                          coute plus cher qu un chiffre absent.
                          Verrouillees pour un invite : un zero dirait « tu n as rien
                          joue », un tiret grise dit « ca ne compte pas encore ». -->
+                        <!-- ⚠️ LES LIBELLES SONT COURTS, ET C EST UNE MESURE, PAS
+                             UN GOUT. « Parties jouées » et « Taux de victoire »
+                             etaient ecrits pour une carte en colonne, ou la
+                             largeur ne coute rien. En rangee, chaque mot de plus
+                             allonge la barre pour tout le monde — et « jouées »
+                             comme « de victoire » ne disent rien que le nombre
+                             d a cote ne dise deja. -->
                         <div class="v2-profil-lignes" :class="{ verrou: !estConnecte }">
-                            <div><span class="n">Parties jouées</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
+                            <div><span class="n">Parties</span><span class="v">{{ estConnecte ? compteParties : '—' }}</span></div>
                             <div><span class="n">Victoires</span><span class="v">{{ estConnecte ? compteVictoires : '—' }}</span></div>
                             <!-- 📊 Le taux de victoire, SOUS les deux nombres
                                  dont il sort : on lit 9, puis 5, puis ce que
@@ -606,7 +619,13 @@
                                  ⚠️ Il se calcule dans `tauxVictoire`, il ne
                                  vient pas de la base — les deux nombres y
                                  sont déjà. -->
-                            <div><span class="n">Taux de victoire</span><span class="v">{{ estConnecte ? tauxVictoire : '—' }}</span></div>
+                            <!-- ⚠️ « Winrate » EST LE SEUL ANGLICISME DE
+                                 L INTERFACE, et c est assume : c est le mot que
+                                 les joueurs emploient entre eux, et il tient en
+                                 un bloc la ou « Taux de victoire » en prend
+                                 trois. Les noms de rangs sont deja en anglais
+                                 pour une raison voisine. -->
+                            <div><span class="n">Winrate</span><span class="v">{{ estConnecte ? tauxVictoire : '—' }}</span></div>
                             <!-- 💎 LA MONNAIE, ici AUSSI. Elle vit d abord dans
                                  la barre, ou elle se voit sans rien ouvrir ;
                                  cette ligne-ci est son chiffre exact, a cote
@@ -631,11 +650,9 @@
                              renseigne sur rien. -->
 
 
-                        <!-- ✦ Ce qu on A FAIT au-dessus, ou l on EN EST en dessous :
-                             deux choses differentes, donc un trait. Mais un filet
-                             net redonnerait les separations qu on a retirees de
-                             cette carte — celui-ci s eteint aux deux bouts. -->
-                        <div class="v2-profil-sep" v-if="estConnecte"></div>
+                        <!-- ✦ Ce qu on A FAIT a gauche, ou l on EN EST a droite :
+                             deux choses differentes, donc un trait. -->
+                        <span class="v2-profil-sep" v-if="estConnecte"></span>
 
                         <!-- ⚠️ La barre ne s affiche QUE pour un inscrit. Montree
                              vide a un invite, elle promettrait une progression
@@ -654,13 +671,29 @@
                              Un lien qui refait ce qu un clic sur l image fait deja
                              n ajoute rien et allonge la carte. Le bloc entier
                              disparait donc pour un invite, qui n a rien a y faire. -->
-                        <div class="v2-profil-liens" v-if="estConnecte">
-                            <button class="v2-profil-lien danger" @click="deconnecterCompte">
-                                <svg viewBox="0 0 24 24"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>
-                                Se déconnecter
-                            </button>
-                        </div>
-                    </div>
+                        <!-- ⚠️ UNE ICONE SEULE, PLUS UN BOUTON NOMME. « Se
+                             déconnecter » prenait neuf rem au bout d une barre
+                             qu on cherche a raccourcir, pour un geste qu on fait
+                             une fois par mois. La porte de sortie est un
+                             pictogramme connu ; le mot reste dans `title` et
+                             dans `aria-label`, donc pour le survol et pour les
+                             lecteurs d ecran.
+                             ⚠️ ET ELLE NE ROUGIT QU AU SURVOL. Rouge au repos,
+                             elle devenait l objet le plus voyant d un panneau
+                             qui parle de progression — une alerte permanente
+                             pour une action qui n a rien d urgent. -->
+                        <button class="v2-profil-sortir" v-if="estConnecte"
+                                @click="deconnecterCompte"
+                                title="Se déconnecter" aria-label="Se déconnecter">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l1.4-1.4L8.8 13H17v-2H8.8l2.6-2.6L10 7l-5 5 5 5zM4 5h7V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H4V5z"/></svg>
+                        </button>
+
+                        <!-- ⚠️ L ERREUR DE PSEUDO EST SORTIE DU FLUX. Dans une
+                             barre, une ligne de texte qui parait fait grandir
+                             toute la hauteur d un coup — et c est au moment
+                             precis ou l on tape son nom. En absolu sous la
+                             barre, elle s affiche sans rien pousser. -->
+                        <div class="v2-profil-err" v-if="pseudoError">{{ pseudoError }}</div>
                 </div>
                     <!-- ⚠️ Ce `</div>` ferme `.v2-moi-grp`, pas le panneau : le
                          panneau est son enfant depuis qu il suit l avatar. -->

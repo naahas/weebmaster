@@ -8011,6 +8011,19 @@ html.rendu-logiciel .v2-dust { display: none; }
     --profil-l: 16rem;
     width: var(--profil-l);
     max-width: calc(100vw - 2.5rem);
+    /* ⚠️ LA COLONNE EST LE REGIME DE BASE, ET ELLE SERT ENCORE A DEUX
+       ENDROITS : le telephone, et la barre du SALON — qui porte le meme
+       groupe d avatar mais pas de place pour une barre de 76 rem. Le
+       regime en LIGNE est une surcharge, plus bas, reservee a l accueil sur
+       grand ecran. Prendre la ligne comme base aurait oblige a tout
+       re-annuler deux fois.
+       ⚠️ Le padding et les espacements vivent ICI depuis que `-tete` et
+       `-corps` ont disparu : le panneau n a plus de sous-surfaces, ses cinq
+       groupes sont ses enfants directs. */
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
     border-radius: 1rem;
     /* ⚠️ Le fond est PLEIN. Le fondu a gauche a ete essaye et retire : il
        posait l avatar et le pseudo — ce qu on lit en premier — sur la partie
@@ -8039,112 +8052,181 @@ html.rendu-logiciel .v2-dust { display: none; }
     to   { opacity: 1; transform: none; }
 }
 
-/* ⚠️ L EN-TETE EST TEINTE, LE CORPS NE L EST PAS : c est tout le parti pris.
-   La frontiere entre « qui je suis » et « ce que je peux faire » se voit
-   SANS un seul trait de separation — et c est l accumulation de traits qui
-   faisait paraitre les versions precedentes brouillonnes. */
-.v2-profil-tete {
-    display: flex;
-    align-items: center;
-    /* Le pseudo et le titre respirent a cote du portrait : colles, les trois
-       formaient un seul paquet et l avatar paraissait pousser le texte. */
-    gap: 0.85rem;
-    padding: 0.92rem 1rem;
-    background: linear-gradient(135deg, rgba(255, 190, 40, 0.16), rgba(255, 140, 0, 0.06));
-    border-bottom: 1px solid rgba(255, 215, 0, 0.14);
-    /* ⚠️ Les coins sont arrondis ICI, et non par un `overflow: hidden` sur la
-       carte. Celui-ci coupait la POINTE DE BULLE, qui doit justement sortir du
-       cadre. Un pixel de moins que la carte, pour laisser voir sa bordure.
-       ⚠️ Et `position: relative` + `z-index` ne sont pas gratuits : la pointe
-       est un pseudo-element POSITIONNE, donc elle peint par-dessus un en-tete
-       qui ne l est pas — sa moitie basse resterait visible en travers de la
-       bande. L en-tete doit passer devant pour la masquer. */
-    border-radius: calc(1rem - 1px) calc(1rem - 1px) 0 0;
-    position: relative;
-    z-index: 1;
+/* ℹ️ `.v2-profil-tete` et `.v2-profil-corps` ont ete RETIRES. Ils decoupaient
+   le panneau en deux surfaces — l en-tete teinte, le corps nu — ce qui etait
+   tout le parti pris de la version en colonne. Mis en ligne, les cinq groupes
+   se suivent sur un seul plan : deux surfaces y auraient fabrique une
+   frontiere verticale au milieu de la barre, qui ne separe plus rien. */
+
+/* 🪪 L IDENTITE — avatar, pseudo, rang.
+   Le pseudo respire a cote du portrait : colles, les deux formaient un seul
+   paquet et l avatar paraissait pousser le texte. */
+.v2-profil-ident { display: flex; align-items: center; gap: 0.8rem; flex: 0 0 auto; }
+
+/* ⚠️ LA POINTE A CHANGE DE PORTEUR : elle est passee du panneau au GROUPE DE
+   L AVATAR (`.v2-moi-grp.ouvert::after`, plus bas). Dessinee sur le panneau,
+   elle se centrait sur LUI — ce qui allait tant qu il faisait 16 rem sous son
+   bouton, et devient absurde pour une barre de 76 rem centree sur la page :
+   elle aurait vise le milieu de l ecran. Sous l avatar, elle continue de dire
+   d ou la barre sort, quelle que soit sa largeur.
+   ⚠️ C est AUSSI pour ca que le panneau n a plus besoin d etre teinte en
+   haut : la pointe ne le prolonge plus, elle precede. */
+
+/* ⚠️ PAR SON BORD DROIT, quelle que soit la barre. Le bord droit du groupe
+   EST celui de l avatar — il en est le dernier enfant —, donc `right: 0`
+   suffit, et c est juste partout ou l avatar est dans un coin : la barre du
+   SALON, et le telephone. L accueil sur grand ecran, lui, ne pose plus de
+   panneau sous l avatar du tout : il pose une BARRE, regime ci-dessous. */
+.v2-topbar.site .v2-profil { right: calc(-1 * var(--moi-marge)); }
+.v2-topbar.site .v2-profil::before { right: calc(var(--moi-av) / 2 - 0.425rem); }
+
+/* ══════════ LE PANNEAU EN LIGNE — l accueil, sur grand ecran ══════════
+   ⚠️ CE N EST PLUS UNE BULLE SOUS L AVATAR, et c est tout le changement. La
+   bulle recouvrait « nouveau mode », CREER et le haut de REJOINDRE : releve
+   a 1920 px, 93 % de l annonce et 27 % des deux cartes. Le meme contenu
+   etale sur une seule ligne de 5,4 rem ne recouvre plus qu une bande vide.
+   ⚠️ ELLE REDEVIENT `fixed`. Elle etait `absolute` dans le groupe de
+   l avatar pour le suivre ; une barre de 76 rem ne suit personne, elle se
+   cale sur la COLONNE DU HUB — celle du logotype, des chiffres et des deux
+   cartes. Rester absolue l aurait obligee a compenser la position de son
+   parent, qui est au milieu de la barre du haut.
+   ⚠️ `left` ET `right` POSES PUIS `margin-inline: auto`, et surtout pas un
+   `translateX(-50%)` : c est la seule facon de centrer une boite fixe dont
+   la largeur est un `max-width`, et le `transform` est deja pris par
+   l animation d ouverture.
+   ⚠️ Le seuil est 900 px : en dessous, une barre de cinq groupes ne tient
+   pas, et le panneau reprend sa forme en colonne — qui n a pas bouge. */
+@media (min-width: 901px) {
+    .v2-topbar.site .v2-profil {
+        position: fixed;
+        top: calc(0.78rem + var(--moi-av) + 1.15rem);
+        left: var(--gouttiere);
+        right: var(--gouttiere);
+        max-width: 76rem;
+        width: auto;
+        margin-inline: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 1.5rem;
+        height: 5.4rem;
+        padding: 0 1.3rem;
+    }
+    /* La pointe du panneau disparait : c est le groupe de l avatar qui la
+       porte desormais (voir `.v2-moi-grp.ouvert::after`). */
+    .v2-topbar.site .v2-profil::before { content: none; }
+
+    /* ── LES CINQ GROUPES, EN LIGNE ──
+       ⚠️ SEULE LA DIRECTION CHANGE. Les couleurs, les tailles de texte et
+       les etats de survol restent ceux de la colonne : une barre qui
+       redefinirait tout aurait fini par deriver de son propre panneau. */
+
+    /* ⚠️ L AIR AUTOUR DU TITRE PORTE EST A LUI, pas au `gap` : colle au
+       pseudo, il se lisait comme sa deuxieme ligne. Et il est BORNE a
+       11rem sur deux lignes — sans cette borne, « Le plus grand de la
+       plebe » decidait a lui seul de la longueur de la barre de tout le
+       monde. */
+    .v2-topbar.site .v2-profil .v2-profil-exploit {
+        flex: 0 1 11rem;
+        margin: 0 0 0 0.9rem;
+        text-align: left;
+        line-height: 1.3;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Le trait devient vertical, et il ne separe plus des lignes mais des
+       sujets : qui je suis | ce que j ai fait | ou j en suis. */
+    .v2-topbar.site .v2-profil .v2-profil-sep {
+        width: 1px;
+        height: 2.4rem;
+        margin: 0;
+        flex: 0 0 auto;
+        background: rgba(255, 255, 255, 0.09);
+    }
+    .v2-topbar.site .v2-profil .v2-profil-sep::after { content: none; }
+
+    /* ⚠️ `flex: 1` ET `space-evenly`, SURTOUT PAS `margin-left: auto`. Avec
+       la marge automatique, TOUT le vide de la barre s accumulait d un seul
+       coup entre le titre et le premier chiffre — un trou au milieu, et
+       quatre colonnes serrees contre le bord droit. En laissant le bloc
+       prendre la place restante, le meme vide se repartit entre les quatre.
+       ⚠️ Et les chiffres sont CENTRES sous leur libelle : « Winrate » est
+       long, « 32 % » court ; cales a gauche, les deux ne partagent aucun
+       axe et chaque colonne parait pencher. */
+    .v2-topbar.site .v2-profil .v2-profil-lignes {
+        flex-direction: row;
+        flex: 1 1 auto;
+        justify-content: space-evenly;
+        gap: 1rem;
+    }
+    .v2-topbar.site .v2-profil .v2-profil-lignes > div {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.14rem;
+        padding: 0;
+        border: 0;
+    }
+    .v2-topbar.site .v2-profil .v2-profil-lignes > div + div { border-top: 0; }
+    .v2-topbar.site .v2-profil .v2-profil-lignes .n {
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .v2-topbar.site .v2-profil .v2-profil-lignes .v { font-size: 0.95rem; }
+
+    /* ⚠️ LE CHAMP DU PSEUDO SE BORNE. Il est en `width: 100%` parce qu en
+       colonne il occupe la carte ; en ligne, il etirait son pointille sur
+       340 px — un trait de saisie quatre fois plus long que le mot qu il
+       contient, au milieu d une barre qu on vient de raccourcir. 8,5rem
+       tiennent les seize caracteres que `maxlength` autorise. */
+    .v2-topbar.site .v2-profil .v2-profil-id { flex: 0 0 auto; }
+    .v2-topbar.site .v2-profil .v2-profil-nom-ligne { width: auto; }
+    .v2-topbar.site .v2-profil .v2-profil-nom { width: 8.5rem; }
+
+    .v2-topbar.site .v2-profil .v2-profil-niveau { width: 9.5rem; flex: 0 0 auto; }
+    .v2-topbar.site .v2-profil .v2-profil-cnx { flex-direction: row; align-items: center; gap: 0.8rem; }
+    .v2-topbar.site .v2-profil .v2-profil-cnx > span::before,
+    .v2-topbar.site .v2-profil .v2-profil-cnx > span::after { content: none; }
 }
 
-/* ⚠️ LA POINTE DE BULLE. Un carre tourne a 45°, dont seule la moitie haute
-   depasse : c est ce qui permet de lui donner la MEME bordure que la carte sur
-   ses deux aretes exterieures. Un triangle fabrique en `border` n aurait pas pu
-   en porter.
-   ⚠️ Elle est calee sur le CENTRE DE L AVATAR, et ce chiffre est MESURE, pas
-   calcule. Le calcul evident — la carte est a `right: 1.25rem`, l avatar fait
-   2,6rem au meme bord, donc son centre serait a 1,3rem — tombe a 21 px a
-   cote : la barre du haut vit dans un conteneur qui a sa propre marge
-   laterale, la carte non (elle est en `fixed`). Les deux bords droits ne sont
-   donc pas alignes. Releve au rendu : le centre de l avatar tombe a 42 px du
-   bord droit de la carte. ⚠️ A REPRENDRE a chaque fois que la largeur de
-   l avatar OU celle de la carte bouge : les deux deplacent la cible, et rien
-   ne le signalera — la pointe se contentera de viser a cote. */
-.v2-profil::before {
+/* 🔻 LA POINTE, SOUS L AVATAR.
+   ⚠️ ELLE VIT SUR LE GROUPE ET NON SUR LE PANNEAU, et c est ce qui permet a
+   une barre de 76 rem de rester RATTACHEE a son bouton : elle s etale ou
+   elle veut, sa pointe continue de dire d ou elle sort. Dessinee sur le
+   panneau, elle se serait centree sur LUI, donc au milieu de l ecran.
+   ⚠️ `z-index` MARCHE ICI PARCE QUE LE GROUPE NE CREE PAS DE CONTEXTE
+   D EMPILEMENT : il est en `position: relative` SANS `z-index`. Le 902 du
+   pseudo-element se compare donc au 901 du panneau et au 900 du voile dans
+   le contexte de la page. Poser un `z-index` sur le groupe un jour
+   enfermerait la pointe sous le voile. */
+.v2-topbar.site .v2-moi-grp.ouvert::after {
     content: '';
     position: absolute;
-    top: -0.43rem;
-    /* Le bord droit du panneau est celui de l avatar : le centre de l avatar
-       tombe donc a un demi-avatar du bord, et la pointe s y centre. */
-    right: calc(var(--moi-av) / 2 - 0.425rem);
+    z-index: 902;
+    top: calc(100% + 0.52rem);
+    left: 50%;
+    margin-left: -0.425rem;
     width: 0.85rem;
     height: 0.85rem;
     transform: rotate(45deg);
     border-radius: 0.14rem 0 0 0;
     border-top: 1px solid rgba(255, 215, 0, 0.17);
     border-left: 1px solid rgba(255, 215, 0, 0.17);
-    /* ⚠️ La teinte est celle de l en-tete A CET ENDROIT PRECIS, calculee et non
-       choisie a l oeil : la bande est un degrade a 135°, sa couleur sous la
-       pointe n est donc ni celle du depart ni celle de l arrivee.
-       Sur une bande de 318 × 85, l axe du degrade mesure 285 px et la pointe
-       tombe a 70 % de sa course : l or y vaut rgb(255,155,12) a 9 % d opacite,
-       pose sur le #16151b du haut de la carte — soit #2b211a.
-       Prendre la couleur de depart aurait donne une pointe nettement plus
-       claire que la bande qu elle prolonge, et la soudure se serait vue. */
-    background: #2b211a;
+    background: #16151b;
+    animation: v2PointeIn 0.18s ease both;
 }
-
-/* ── OU LE PANNEAU TOMBE, SELON LA BARRE ──
-   ⚠️ DEUX REGIMES, ET C EST LA POSITION DE L AVATAR QUI TRANCHE, pas une
-   envie. Quand il est dans un coin — la barre du SALON, et le telephone —,
-   un panneau centre sous lui sortirait de l ecran : il s aligne donc par son
-   bord. Quand il est au MILIEU d un groupe centre — l accueil sur
-   ordinateur —, l aligner par le bord le ferait pendre de travers sous son
-   bouton ; il se centre.
-   ⚠️ Les deux regles ne touchent QUE `right`. Le `top`, la largeur, le fond,
-   l animation ne se redisent nulle part : c est ce qui garantit qu un
-   changement de taille ou de teinte vaudra pour les deux. */
-.v2-topbar.site .v2-profil { right: calc(var(--moi-av) / 2 - var(--profil-l) / 2); }
-/* Et la pointe suit : au centre du panneau, donc au centre de l avatar. */
-.v2-topbar.site .v2-profil::before { right: calc(var(--profil-l) / 2 - 0.425rem); }
-
-/* ⚠️ EN DESSOUS DE 880 px, RETOUR AU PREMIER REGIME.
-   ⚠️ ET CE SEUIL N EST PAS CELUI DU TIROIR (768). Il ne decrit pas un
-   changement de barre mais le moment ou le panneau CENTRE sort de l ecran,
-   et il se calcule : il faut qu il reste `--profil-l / 2 - --moi-av / 2`,
-   soit 110 px, entre le bord droit de l avatar et celui de la fenetre.
-   Le groupe centre mesure 588 px, donc son avatar finit a 287 px du milieu :
-   la condition s ecrit `L / 2 + 287 + 110 <= L`, et donne L >= 794. Releve au
-   rendu a 800 px : il restait TROIS pixels. 880 laisse la marge qu un
-   changement de police ou un lien de plus consommerait sans prevenir.
-   ⚠️ Entre 769 et 880 l avatar est donc encore au milieu, et le panneau
-   pend sous lui par son bord droit au lieu d etre centre. C est voulu : de
-   travers vaut mieux que coupe.
-   ⚠️ `-(--moi-marge)` ANNULE LA MARGE DU GROUPE. Sans elle, le panneau —
-   large de « l ecran moins deux gouttieres » sous 480 px — se serait pose
-   7 px trop a gauche, et l air sous lui aurait ete inegal des deux cotes.
-   Releve a 390 px : 22 px de chaque cote. */
-@media (max-width: 880px) {
-    .v2-topbar.site .v2-profil { right: calc(-1 * var(--moi-marge)); }
-    .v2-topbar.site .v2-profil::before { right: calc(var(--moi-av) / 2 - 0.425rem); }
+@keyframes v2PointeIn {
+    from { opacity: 0; scale: 0.4; }
+    to   { opacity: 1; scale: 1; }
 }
-
-.v2-profil-corps {
-    /* ⚠️ Le haut est plus genereux que le bas (1,15 contre 0,95) : c est lui
-       qui separe l etiquette « Se connecter » de la bande teintee de
-       l en-tete. Trop pres, les petites majuscules dorees se lisaient comme
-       la derniere ligne de l en-tete plutot que comme le titre du bloc. */
-    padding: 1.15rem 1rem 0.95rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
+/* Sous 900 px le panneau redevient une colonne accrochee au bord : sa propre
+   pointe reparait, celle du groupe n a plus lieu d etre. */
+@media (max-width: 900px) {
+    .v2-topbar.site .v2-moi-grp.ouvert::after { content: none; }
 }
 
 .v2-profil-av {
@@ -8273,10 +8355,20 @@ html.rendu-logiciel .v2-dust { display: none; }
 }
 .v2-profil-fermer:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
+/* ⚠️ HORS DU FLUX. Dans une barre, une ligne de texte qui parait fait grandir
+   toute la hauteur d un coup — et c est au moment precis ou l on tape son
+   nom, donc ou l on regarde ailleurs. Posee sous la barre, elle s affiche
+   sans rien pousser.
+   ⚠️ Elle est calee a gauche parce que c est la que vit le champ du pseudo,
+   seule chose qui puisse la declencher. */
 .v2-profil-err {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0.4rem;
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--error-color);
+    pointer-events: none;
 }
 
 /* ℹ️ `.v2-profil-trait`, `.v2-profil-etiq` et `.v2-profil-bloc` ont ete
@@ -8514,11 +8606,31 @@ html.rendu-logiciel .v2-dust { display: none; }
    confondait avec « Profil local » — une mention de statut parmi d autres.
    Un titre se gagne, il doit se lire comme une distinction. */
 /* 🏅 LE RANG : petites capitales espacees, couleur de son palier. */
+/* ⚠️ LE RANG EST UNE PASTILLE, PLUS UN MOT COLORE. En texte nu, sa teinte
+   le distinguait du pseudo mais pas de « Profil local », qui occupe la meme
+   place : deux mentions de statut l une sous l autre, dont une seule compte.
+   Le fond et le liisere en font un OBJET, et c est ce qui le fait lire comme
+   une distinction plutot que comme une legende.
+   ⚠️ LES TROIS COULEURS SORTENT DE LA MEME : `--rang` est posee en ligne par
+   le gabarit, depuis la donnee du palier. Ecrire trois teintes a la main
+   aurait demande de les tenir d accord palier par palier — et il y en a
+   huit. `color-mix` les derive, elles ne peuvent plus diverger.
+   ℹ️ Le repli sans `color-mix` garde le texte colore et perd la pastille :
+   le rang reste lisible, il redevient simplement un mot. */
 .v2-profil-titre {
-    font-size: 0.67rem;
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    margin-top: 0.12rem;
+    padding: 0.14rem 0.46rem;
+    border-radius: 0.3rem;
+    font-size: 0.64rem;
     font-weight: 800;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
+    color: var(--rang, #9a9aa6);
+    background: color-mix(in srgb, var(--rang, #9a9aa6) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rang, #9a9aa6) 32%, transparent);
 }
 
 /* 🎖️ LE TITRE PORTE, en tete du corps.
@@ -8648,26 +8760,40 @@ html.rendu-logiciel .v2-dust { display: none; }
     transition: width 0.5s ease;
 }
 
-.v2-profil-liens { display: flex; flex-direction: column; gap: 0.05rem; }
-.v2-profil-lien {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    width: 100%;
-    padding: 0.42rem 0.4rem;
-    border: 0;
-    border-radius: 0.38rem;
-    background: none;
-    font-family: inherit;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: #b9b9c6;
+/* 🚪 LA SORTIE — une icone, plus un bouton nomme.
+   ⚠️ « Se déconnecter » prenait neuf rem au bout d une barre qu on cherche a
+   raccourcir, pour un geste qu on fait une fois par mois. Le mot n a pas
+   disparu : il vit dans `title` et dans `aria-label`, donc au survol et pour
+   les lecteurs d ecran. Ce qui part, c est la place qu il occupait en
+   permanence.
+   ⚠️ ET ELLE NE ROUGIT QU AU SURVOL. Rouge au repos, elle devenait l objet
+   le plus voyant d un panneau qui parle de progression — une alerte
+   permanente pour une action qui n a rien d urgent. */
+.v2-profil-sortir {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    color: #9a9aa6;
     cursor: pointer;
-    text-align: left;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.v2-profil-lien:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
-.v2-profil-lien svg { width: 0.9rem; height: 0.9rem; fill: currentColor; opacity: 0.65; flex: 0 0 auto; }
-.v2-profil-lien.danger:hover { color: var(--error-color); }
+.v2-profil-sortir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; display: block; }
+.v2-profil-sortir:hover {
+    color: var(--error-color);
+    border-color: color-mix(in srgb, var(--error-color) 45%, transparent);
+    background: color-mix(in srgb, var(--error-color) 12%, transparent);
+}
+.v2-profil-sortir:focus-visible { outline: 2px solid var(--neon-primary); outline-offset: 2px; }
+
+/* ℹ️ `.v2-profil-liens` et `.v2-profil-lien` ont ete retires avec le bouton
+   nomme qu ils habillaient : une liste de liens pour un seul lien, dans une
+   barre qui n en a plus. */
 
 /* Sur telephone le panneau prend la largeur utile, moins les gouttieres. */
 @media (max-width: 480px) {
