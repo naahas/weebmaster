@@ -514,10 +514,12 @@
                         </button>
                         <div class="v2-profil-id">
                             <!-- Le nom EST le champ : pas de boite, pas de bouton
-                                 « Valider ». Entree valide, et sortir du champ aussi
-                                 — @change ne se declenche QUE si la valeur a bouge,
-                                 la ou @blur rejouerait la validation a chaque
-                                 fermeture du panneau. -->
+                                 « Valider ». Entree vaut confirmation — elle valide
+                                 ET referme le panneau (`validerPseudo`, qui ne
+                                 referme qu en cas de succes) ; sortir du champ
+                                 valide sans refermer. @change ne se declenche QUE
+                                 si la valeur a bouge, la ou @blur rejouerait la
+                                 validation a chaque fermeture du panneau. -->
                             <!-- ✎ LE CRAYON DU PSEUDO. Le nom EST le champ, sans
                                  boite ni bouton — c est la bonne decision pour qui
                                  l a compris, et invisible pour les autres : rien ne
@@ -528,7 +530,7 @@
                                  et c est ce qu on attend de lui. -->
                             <label class="v2-profil-nom-ligne">
                                 <input class="v2-profil-nom" ref="profilPseudo" v-model="pseudoInput"
-                                       @keyup.enter="setPseudo" @change="setPseudo"
+                                       @keyup.enter="validerPseudo" @change="setPseudo"
                                        maxlength="16" autocomplete="off" spellcheck="false">
                                 <svg class="v2-profil-nom-crayon" viewBox="0 0 24 24" fill="none"
                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"

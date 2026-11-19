@@ -8538,6 +8538,28 @@ createApp({
             }
         },
 
+        // ⏎ ENTREE VAUT CONFIRMATION : on valide, puis on referme le panneau.
+        //
+        // ⚠️ ON NE REFERME QUE SI LA VALIDATION A REUSSI, et c est tout
+        // l interet de ce detour. `setPseudo` refuse en ecrivant sous le champ
+        // (deux caracteres minimum, caracteres interdits, pseudo refuse par le
+        // serveur) ; refermer sans regarder emporterait ce message avec le
+        // panneau, et le joueur repartirait en croyant son pseudo accepte alors
+        // qu il a garde l ancien.
+        //
+        // `pseudoError` est le seul etat a lire apres coup : `setPseudo` le vide
+        // des qu elle passe les controles, et le remplit sur chaque refus.
+        //
+        // ℹ️ Entree declenche aussi `@change` quand la valeur a bouge, et le
+        // navigateur l envoie AVANT `keyup` : `setPseudo` tourne donc deux fois.
+        // C est sans consequence — `/api/pseudo` est une fonction pure, sans
+        // limite de debit, et la fermeture attend la seconde, donc l etat lu est
+        // bien le dernier.
+        async validerPseudo() {
+            await this.setPseudo();
+            if (!this.pseudoError) this.fermerProfil();
+        },
+
 
         showShieldProtectionEffect() {
             // Créer uniquement la vague (pas d'overlay)
