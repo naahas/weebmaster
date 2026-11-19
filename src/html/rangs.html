@@ -83,40 +83,64 @@
             text-transform: uppercase;
             color: var(--l-doux);
         }
-        .r-grille {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.55rem;
+        /* ── LES SEUILS, SUR UNE LIGNE ──
+           ⚠️ SIX TUILES ENCADREES POUR SIX NOMBRES, C ETAIT ENCORE TROP. Un
+           cadre dit « ceci est un objet a part » ; six cadres alignes sous un
+           titre font un tableau de bord, pour une information qu on lit une
+           fois dans sa vie. En ligne, les six se lisent d un seul balayage et
+           la colonne de gauche retrouve de l air — ce qui est tout l interet
+           d une page qui tient dans un ecran.
+           ⚠️ ELLE S ENROULE (`flex-wrap`), et c est ce qui la rend sure :
+           la meme regle sert de 1920 px a 390, sans media query ni
+           reorganisation. Elle passe a deux lignes quand il le faut, pas
+           avant. */
+        .r-ligne {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.35rem 0.9rem;
         }
         .r-mode {
-            display: flex;
+            display: inline-flex;
             align-items: baseline;
-            gap: 0.5rem;
-            padding: 0.6rem 0.75rem;
-            border-radius: 0.55rem;
-            background: var(--l-carte);
-            border: 1px solid var(--l-trait);
-            transition: border-color 0.2s ease;
+            gap: 0.3rem;
             animation: rMonte 0.5s cubic-bezier(.2,.8,.2,1) backwards;
             animation-delay: calc(0.3s + var(--i) * 45ms);
         }
-        .r-mode:hover { border-color: rgba(255, 215, 0, 0.35); }
+        /* ⚠️ LE POINT MEDIAN EST UN `::after` DU MODE, pas un caractere dans
+           le texte : il disparait ainsi tout seul au bout de chaque ligne
+           quand la liste s enroule. Ecrit entre les entrees, il se serait
+           retrouve en tete de la seconde ligne. */
+        .r-mode:not(:last-child)::after {
+            content: '·';
+            margin-left: 0.55rem;
+            color: var(--l-trait);
+        }
         .r-mode b {
             font-family: 'Bebas Neue', 'Poppins', sans-serif;
-            font-size: 1.65rem;
+            font-size: 1.35rem;
             line-height: 1;
             color: var(--l-or);
             font-variant-numeric: tabular-nums;
         }
         .r-mode span {
-            font-size: 0.68rem;
-            letter-spacing: 0.04em;
+            font-size: 0.72rem;
+            letter-spacing: 0.02em;
             color: var(--l-doux);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-        .r-attente { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; color: var(--l-doux); }
+        .r-attente { margin: 0; font-size: 0.8rem; color: var(--l-doux); }
+
+        /* ⚠️ LE PIED S EFFACE. Ce sont quatre liens legaux sur une page qui
+           parle de progression : en or plein, ils etaient l objet le plus
+           colore du bas de l ecran, juste sous l echelle qu on vient de
+           regarder. Ils restent lisibles et le survol les rallume — ce qui
+           s efface ici, c est leur insistance, pas leur existence. */
+        .l-pied { opacity: 0.45; transition: opacity 0.2s ease; }
+        .l-pied:hover { opacity: 0.9; }
+        .l-pied a { color: var(--l-doux); text-decoration-color: transparent; }
+        .l-pied a:hover,
+        .l-pied a:focus-visible { color: var(--l-or); text-decoration-color: currentColor; }
 
         /* ── L echelle des paliers ── */
         .r-echelle {
@@ -124,8 +148,14 @@
             grid-template-rows: repeat(8, minmax(0, 1fr));
             gap: clamp(0.3rem, 1vh, 0.6rem);
             /* Elle ne depasse jamais la scene : meme budget, moins la marge
-               qui empeche les paliers de toucher les bords. */
-            height: min(34rem, calc(100vh - var(--r-hors) - 1rem));
+               qui empeche les paliers de toucher les bords.
+               ⚠️ 38rem ET NON 34, ET C EST CE QUI DONNE L AIR AUTOUR DES NOMS.
+               Reduire le corps du nom n y avait rien fait : les huit rangees
+               se partagent une hauteur FIXE, donc un texte plus petit laisse
+               une ligne plus petite, et le rapport ne bouge pas. C est la
+               hauteur totale qu il faut ouvrir. Releve : 13 px au-dessus et
+               en dessous du nom a 34rem, 19 a 38. */
+            height: min(38rem, calc(100vh - var(--r-hors) - 1rem));
             margin: 0;
             padding: 0;
             list-style: none;
@@ -198,9 +228,15 @@
             clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
         }
 
+        /* ⚠️ L AIR AUTOUR DU NOM NE SE REGLE PAS PAR UN PADDING. La hauteur
+           de chaque ligne est imposee par la grille — huit rangees egales
+           dans la hauteur disponible —, donc un padding vertical n ajoute
+           rien : il repousse le texte contre une boite qui ne grandit pas.
+           C est le CORPS DU NOM qui decide, et lui seul. Descendu de 1,95 a
+           1,75rem, il laisse 16 px au-dessus et en dessous au lieu de 13. */
         .r-nom {
             font-family: 'Bebas Neue', 'Poppins', sans-serif;
-            font-size: clamp(1.4rem, 3.4vh, 1.95rem);
+            font-size: clamp(1.25rem, 3vh, 1.75rem);
             line-height: 1;
             letter-spacing: 0.04em;
             color: var(--ton, #9a9aa6);
@@ -303,7 +339,9 @@
                tombe a 110 px et « BombAnime » se faisait couper par son
                `text-overflow` — un seuil dont on ne lit plus le mode ne sert
                a rien. */
-            .r-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            /* ℹ️ Rien a faire pour les seuils : la ligne s enroule d
+               elle-meme. C etait tout l interet de la passer en `flex-wrap`
+               plutot qu en grille a trois colonnes. */
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -351,13 +389,12 @@
                      ils decrivaient les divisions, les couleurs et le sommet,
                      c est-a-dire exactement ce que l echelle de droite MONTRE.
                      Un texte qui double une image affaiblit les deux. -->
-                <p class="r-resume" style="--i:2">Finir une partie rapporte ; la gagner rapporte
-                    <strong>deux à trois fois plus</strong>, à condition d'être assez nombreux.
-                    Une partie écourtée, ou quittée avant l'écran du vainqueur, ne compte pas.</p>
+                <p class="r-resume" style="--i:2">Chaque partie terminée rapporte de
+                    l'expérience&nbsp;; la <strong>gagner</strong> multiplie ce gain.</p>
 
                 <section class="r-seuils" style="--i:3">
-                    <h2 class="r-seuils-titre">Joueurs requis pour gagner de l'XP</h2>
-                    <div class="r-grille" id="bareme">
+                    <h2 class="r-seuils-titre">Joueurs requis par mode pour les gains</h2>
+                    <div class="r-ligne" id="bareme">
                         <p class="r-attente">Lecture…</p>
                     </div>
                 </section>
