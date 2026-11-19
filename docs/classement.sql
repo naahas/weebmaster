@@ -136,3 +136,35 @@ alter table public.parties_jouees enable row level security;
 --   from public.parties_jouees p join public.comptes c on c.id = p.compte_id
 --   where p.cree_le >= now() - interval '30 days'
 --   group by c.id, c.pseudo order by xp desc limit 50;
+
+-- ════════════════════════════════════════════════════════════════
+-- 🥇 AJOUT : LA PLACE DANS LA PARTIE
+-- ════════════════════════════════════════════════════════════════
+-- A passer une fois, apres coup. Sans elle, la carte de joueur qui s ouvre
+-- au survol d un pseudo en salon affiche un tiret a « Derniere partie ».
+--
+-- ⚠️ POURQUOI `gagnant` NE SUFFISAIT PAS. C est un booleen : il dit
+-- « premier ou pas premier ». Il ne distingue pas celui qui a fini deuxieme
+-- de celui qui a fini dernier — et c est exactement ce qu on veut lire au
+-- survol d un pseudo : la forme du jour, pas le palmares.
+--
+-- ⚠️ LES PARTIES DEJA JOUEES RESTERONT A `null`, pour toujours. L information
+-- n existait pas au moment ou elles ont ete ecrites, et elle ne se
+-- reconstitue pas : ni `gagnant`, ni `joueurs`, ni `xp_gagne` ne permettent
+-- de retrouver qui etait troisieme. La carte affiche donc un tiret pour ces
+-- parties-la, et c est honnete.
+--
+-- ⚠️ LE SERVEUR TIENT LES DEUX CAS, et il faut le savoir avant de reporter
+-- ce passage : tant que la colonne manque, `enregistrerParties` la RETIRE et
+-- reinsere la ligne sans elle, plutot que de laisser PostgREST refuser toute
+-- l insertion. Rien n est perdu que cette colonne — mais rien ne la remplira
+-- non plus tant que ce SQL n a pas ete passe.
+--
+-- ⚠️ `smallint` et non `integer` : une partie ne depasse pas huit joueurs, et
+-- la colonne est ecrite une fois par joueur et par manche.
+alter table public.parties_jouees
+    add column if not exists place smallint;
+
+-- Pour verifier apres coup, sur les parties ecrites depuis le passage :
+-- select mode, place, count(*) from public.parties_jouees
+--   where place is not null group by mode, place order by mode, place;

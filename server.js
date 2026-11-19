@@ -1187,6 +1187,42 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     // regle de CLASSEMENT, donc de lecture — la ligne dit ce qui s est passe,
     // la requete dit ce qui compte.
     const avecBots = [...gameState.players.values()].some((p) => p.estBot);
+
+    // 🥇 LA PLACE DE CHACUN DANS CETTE PARTIE.
+    //
+    // ⚠️ `gagnant` NE SUFFISAIT PAS, et c est tout l interet de cette colonne :
+    // un booleen dit « premier ou pas premier ». Il ne distingue pas celui qui
+    // a fini deuxieme de celui qui a fini dernier, alors que c est exactement
+    // ce qu on veut lire au survol d un pseudo en salon — la forme du jour,
+    // pas le palmares.
+    //
+    // ⚠️ ELLE SE DEDUIT DU SCORE DEJA RECOLTE pour le classement, mode par
+    // mode. Aucun mode n a eu a changer : `recoltePourLeClassement` sait deja
+    // ordonner ses joueurs, c est sa raison d etre.
+    //
+    // ⚠️ LES EX AEQUO PARTAGENT LEUR PLACE — 1, 2, 2, 4 et non 1, 2, 3, 4. Deux
+    // joueurs au meme score ont fait la meme partie ; les departager par leur
+    // ordre dans un tableau aurait invente une difference que le jeu n a pas
+    // tranchee.
+    //
+    // ⚠️ ET ELLE VAUT `null` QUAND LE MODE N A PAS DE SCORE. Mieux vaut une
+    // case vide qu un classement fabrique : un mode sans ordre de fin n en a
+    // pas, et lui en inventer un se lirait comme une donnee sure.
+    const placeDe = (() => {
+        if (!recueil || typeof recueil.score !== 'function') return () => null;
+        const classes = lignes
+            .map((l) => ({ id: l.id, s: Number(recueil.score(l.id)) || 0 }))
+            .sort((a, b) => b.s - a.s);
+        const rangs = new Map();
+        let dernierScore = null;
+        let rang = 0;
+        classes.forEach((c, i) => {
+            if (c.s !== dernierScore) { rang = i + 1; dernierScore = c.s; }
+            rangs.set(c.id, rang);
+        });
+        return (id) => rangs.get(id) || null;
+    })();
+
     comptes.enregistrerParties(lignes.map((l) => ({
         compte_id: l.id,
         partie_id: partieId,
@@ -1206,6 +1242,10 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         // filtre d elle-meme. Ecrire la regle dans la donnee l aurait rendue
         // irreversible — meme raison que pour `avec_bots`.
         gagnant: gagne.has(l.id),
+        // 🥇 Voir `placeDe` ci-dessus. ⚠️ Si la colonne n existe pas encore en
+        // base, `enregistrerParties` la retire et reessaie : la ligne passe
+        // sans elle plutot que de ne pas passer du tout.
+        place: placeDe(l.id),
         joueurs: nbJoueurs,
         duree: Math.round(Number(duree) || 0),
         xp_gagne: l.xp || 0,

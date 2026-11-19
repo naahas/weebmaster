@@ -834,6 +834,46 @@ function partiesAbsente(error) {
     return manquante;
 }
 
+// 🧱 LES COLONNES AJOUTEES APRES COUP.
+//
+// ⚠️ UNE COLONNE ABSENTE NE DOIT PAS FAIRE PERDRE LA PARTIE. `reglages`,
+// puis `place`, ont ete ajoutees a la table bien apres sa creation. Tant que
+// le SQL n est pas passe sur une base, PostgREST refuse TOUTE l insertion
+// avec `PGRST204` — ce ne sont donc pas les colonnes qui manquent, ce sont
+// les huit lignes de la manche qui disparaissent, en silence, pendant que le
+// jeu continue de tourner normalement.
+//
+// ⚠️ ET C EST UNE BASE DE PRODUCTION. Le deploiement du code et le passage
+// du SQL ne sont pas simultanes : entre les deux, il y a toujours une
+// fenetre ou le serveur ecrit une colonne que la base ne connait pas encore.
+// Ce repli est ce qui fait tenir cette fenetre.
+//
+// ⚠️ Il n essaie PAS de deviner : il lit le nom de la colonne dans le message
+// de PostgREST, la retire, et recommence une fois. Une liste ecrite a la main
+// aurait vieilli a la colonne suivante.
+const colonnesAbsentes = new Set();
+
+function colonneAbsente(error) {
+    if (!error || error.code !== 'PGRST204') return false;
+    const m = /'([^']+)' column/.exec(error.message || '');
+    if (!m) return false;
+    if (!colonnesAbsentes.has(m[1])) {
+        colonnesAbsentes.add(m[1]);
+        console.error(`🚨 Colonne « ${m[1]} » absente de « parties_jouees » — passe docs/classement.sql.`);
+        console.error('   Les parties continuent de s enregistrer SANS elle : rien n est perdu que cette colonne.');
+    }
+    return true;
+}
+
+function sansColonnesAbsentes(lignes) {
+    if (!colonnesAbsentes.size) return lignes;
+    return lignes.map((l) => {
+        const copie = { ...l };
+        for (const k of colonnesAbsentes) delete copie[k];
+        return copie;
+    });
+}
+
 // ⚠️ UNE SEULE REQUETE POUR TOUTE LA TABLE. Une insertion par joueur, c est
 // huit allers-retours a la fin de chaque manche, au moment precis ou le
 // serveur diffuse le podium a tout le salon.
@@ -841,7 +881,14 @@ async function enregistrerParties(lignes) {
     if (!ACTIF || tablePartiesOk === false) return false;
     if (!Array.isArray(lignes) || !lignes.length) return false;
     try {
-        const { error } = await supabase.from('parties_jouees').insert(lignes);
+        let { error } = await supabase.from('parties_jouees').insert(sansColonnesAbsentes(lignes));
+        // ⚠️ UN SEUL SECOND ESSAI, et pas une boucle : si deux colonnes
+        // manquent, la premiere est apprise ici et la seconde a la manche
+        // suivante. Boucler sur une erreur qu on ne maitrise pas, c est
+        // rejouer l insertion indefiniment a la fin de chaque partie.
+        if (colonneAbsente(error)) {
+            ({ error } = await supabase.from('parties_jouees').insert(sansColonnesAbsentes(lignes)));
+        }
         if (error) { partiesAbsente(error); return false; }
         tablePartiesOk = true;
         return true;
