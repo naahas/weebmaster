@@ -1521,17 +1521,24 @@
                                  une ligne qui dit qu il n y en a pas sinon. -->
                             <div class="v2-carte-mode" v-if="carteModeNom">
                                 <div class="v2-carte-mode-tete">{{ carteModeNom }}</div>
-                                <!-- ⚠️ RIEN SOUS LE NOM quand le mode n est pas
-                                     classe : ni tuiles, ni phrase. Il y en a
-                                     eu une — « Ce mode ne compte pas au
-                                     classement » — et elle expliquait quelque
-                                     chose que personne ne se demandait. Une
-                                     carte qui se justifie de ne pas afficher
-                                     un chiffre attire l attention sur le
-                                     chiffre absent. Le nom du mode seul suffit
-                                     a dire de quoi parle la carte, et c est
-                                     tout ce qu on lui demandait. -->
-                                <dl class="v2-carte-stats deux" v-if="carteModeClasse">
+                                <!-- ⚠️ LES DEUX TUILES SONT TOUJOURS LA, MEME
+                                     POUR UN MODE NON CLASSE — elles portent
+                                     alors deux tirets. Elles ont d abord ete
+                                     masquees, puis remplacees par une phrase
+                                     d explication, et les deux essais avaient
+                                     le meme defaut : la carte changeait de
+                                     FORME d un salon a l autre. Un cadre qui
+                                     se reorganise selon le mode se remarque
+                                     plus qu un chiffre manquant, et il faisait
+                                     un trou au milieu de la carte.
+                                     ⚠️ ET LES TIRETS SONT SURS, pas un hasard
+                                     heureux : la route refuse un mode absent
+                                     de `CLASSEMENT_MODES` et rend `placeMode`
+                                     et `dernier` a `null` — elle ne retombe
+                                     PAS sur les chiffres tous modes confondus,
+                                     qui s afficheraient ici sous un titre
+                                     « Codanime » en disant autre chose. -->
+                                <dl class="v2-carte-stats deux">
                                     <div>
                                         <dt>Classement</dt>
                                         <dd v-if="carteJoueur.placeMode">#{{ carteJoueur.placeMode }}</dd>

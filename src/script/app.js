@@ -4,18 +4,13 @@
 
 const { createApp } = Vue;
 
-// 🏆 LES MODES QUI ONT UN CLASSEMENT.
-//
-// ⚠️ C EST UNE COPIE DE `CLASSEMENT_MODES` (server.js), et elle ne peut pas
-// etre autre chose : le navigateur ne lit pas le serveur. Le risque est donc
-// qu elles divergent — d ou ce qu elle sert UNIQUEMENT a decider si le bloc
-// du mode parait sur la carte d un joueur. Si elle vieillit, le pire qui
-// arrive est un bloc affiche pour un mode qui n a pas de classement : le
-// serveur, lui, rend `null` et la carte montre des tirets. Jamais un chiffre
-// faux.
-// ⚠️ `rivalry` N Y EST PAS : c est un reglage du Classique, pas un mode.
-const MODES_CLASSES = ['classic', 'bombanime', 'rush', 'ascension', 'collect'];
-
+// ℹ️ `MODES_CLASSES` A ETE RETIRE D ICI. C etait une copie de
+// `CLASSEMENT_MODES` (server.js) — le navigateur ne lit pas le serveur, elle
+// ne pouvait pas etre autre chose — et elle ne servait qu a decider si le
+// bloc du mode paraissait sur la carte d un joueur. Ce bloc parait
+// desormais TOUJOURS : le client n a plus a savoir quels modes sont classes,
+// la route s en charge et rend `null` pour les autres. Une liste recopiee de
+// moins, donc une divergence de moins a surveiller.
 // 🎯 Le plancher du mode Classique. Il a remplacé le mot de passe qui fermait
 // le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'au
 // plancher.
@@ -1810,17 +1805,20 @@ createApp({
         // part de quel mode elle parlait, et ses chiffres du bas (parties,
         // victoires, taux) sont TOUS MODES CONFONDUS — on les lisait donc
         // comme ceux de Codanime. Le silence mentait plus que les tirets.
-        // ⚠️ `carteModeClasse` decide de ce qu on met SOUS le nom : les deux
-        // chiffres, ou une ligne qui dit qu il n y en a pas.
+        // ⚠️ ET LE BLOC GARDE SES DEUX TUILES, remplies de tirets. Un
+        // `carteModeClasse` a existe ici pour les masquer sur un mode non
+        // classe : retire, parce que la carte changeait alors de FORME d un
+        // salon a l autre, ce qui se remarque plus qu un chiffre manquant.
+        // Les tirets viennent de la route, qui rend `placeMode` et `dernier`
+        // a `null` pour un mode absent de `CLASSEMENT_MODES`.
+        // ⚠️ `MODES_CLASSES` a disparu du haut du fichier avec lui : plus
+        // rien cote navigateur n avait besoin de connaitre cette liste.
         // ⚠️ `rivalry` EST UN REGLAGE DU CLASSIQUE, pas un mode : le serveur
         // ne le connait pas, et `CLASSEMENT_MODES` non plus. Il est traduit
         // ici comme il l est dans `modeLabel`, et dans `chargerCarte`.
         carteModeNom() {
             if (!this.carteJoueur) return '';
             return this.modeLabel;
-        },
-        carteModeClasse() {
-            return MODES_CLASSES.includes(this.modeClasseDuSalon);
         },
         modeClasseDuSalon() {
             return this.lobbyMode === 'rivalry' ? 'classic' : this.lobbyMode;

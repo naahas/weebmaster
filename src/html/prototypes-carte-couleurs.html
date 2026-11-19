@@ -244,10 +244,15 @@
             + '</article>';
     }
 
-    // Le salon dont le mode ne compte pas au classement : le NOM reste, et
-    // rien d autre. Une phrase l expliquait sous le nom — retiree : elle
-    // repondait a une question que personne ne se pose, et une carte qui se
-    // justifie de ne pas afficher un chiffre attire l œil sur ce chiffre.
+    // ⚠️ LE SALON DONT LE MODE N EST PAS CLASSE GARDE LA MEME CARTE, aux deux
+    // tirets pres. Deux autres formes ont ete essayees — masquer le bloc, puis
+    // le remplacer par une phrase d explication — et toutes deux faisaient
+    // CHANGER LA CARTE DE FORME d un salon a l autre, ce qui se remarque plus
+    // qu un chiffre absent.
+    // ⚠️ Et les tirets sont surs : la route refuse un mode absent de
+    // `CLASSEMENT_MODES` et rend `placeMode` et `dernier` a `null`. Elle ne
+    // retombe PAS sur les chiffres tous modes confondus, qui s afficheraient
+    // ici sous un titre « Codanime » en disant autre chose.
     function carteSansClassement(rang, couleur) {
         var j = JOUEUR;
         return '<article class="v2-carte" style="--rang: ' + couleur + '">'
@@ -256,7 +261,10 @@
             + '<p class="v2-carte-titre">« ' + echapper(j.titre) + ' »</p>'
             + '<div class="v2-carte-mode">'
             + '<div class="v2-carte-mode-tete">Codanime</div>'
-            + '</div>'
+            + '<dl class="v2-carte-stats deux">'
+            + '<div><dt>Classement</dt><dd class="nul">—</dd></div>'
+            + '<div><dt>Dernière partie</dt><dd class="nul">—</dd></div>'
+            + '</dl></div>'
             + palmares(j)
             + '</article>';
     }

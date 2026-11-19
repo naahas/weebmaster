@@ -8051,12 +8051,18 @@ html.rendu-logiciel .v2-dust { display: none; }
     position: fixed;
     inset: 0;
     z-index: 900;
-    /* ⚠️ 0,68 ET NON 0,52. Le voile avait ete regle sur fond de HUB — un
-       ecran deja sombre, ou la moitie du noir suffisait. Il s ouvre aussi
-       au-dessus du halo dore de l accueil et du damier du salon, et c est
-       la qu il cedait : le fond restait assez vif pour se disputer l œil
-       avec la bulle, qui est pourtant la seule chose a lire. */
-    background: rgba(6, 5, 11, 0.68);
+    /* ⚠️ 0,76, APRES 0,68 ET 0,52. Le voile avait ete regle sur fond de HUB
+       — un ecran deja sombre, ou la moitie du noir suffisait. Il s ouvre
+       aussi au-dessus du LOGOTYPE GEANT de l accueil et du damier du salon,
+       et c est la qu il cedait : a 0,68, « ShonenMaster » en lettres de
+       quatre centimetres se lisait encore entierement derriere la bulle,
+       qui est pourtant la seule chose a lire.
+       ℹ️ Le palier d apres est l opacite du telephone (0,86), ou le panneau
+       prend la moitie de l ecran. On s en approche sans l atteindre : sur
+       ordinateur la bulle est petite, et couper le fond pour de bon
+       reviendrait a ouvrir une fenetre modale — ce qui a deja ete essaye et
+       ecarte. */
+    background: rgba(6, 5, 11, 0.76);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     animation: v2VoileProfil 0.16s ease-out both;
@@ -17940,18 +17946,14 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     background: var(--rang);
     transform: rotate(45deg);
 }
-/* ⚠️ PLUS DE MARGE SOUS LE NOM QUAND IL EST SEUL. Ses 0,62rem servent a le
-   decoller des deux tuiles ; sur un mode non classe il n y a plus de tuiles,
-   et cette marge s ajoutait a celle du bloc — trente-deux pixels de vide
-   sous un seul mot. `:last-child` le dit sans qu aucune classe n ait a etre
-   posee par le gabarit, donc sans que les deux puissent se contredire. */
-.v2-carte-mode-tete:last-child { margin-bottom: 0; }
-/* ℹ️ `.v2-carte-mode-nul` A ETE RETIRE. Une phrase y expliquait, sous le nom
-   d un mode non classe, qu il ne compte pas au classement — et elle
-   repondait a une question que personne ne se posait : la carte ne promet
-   nulle part un classement par mode. Une carte qui se justifie de ne pas
-   afficher un chiffre attire l attention sur le chiffre absent. Le nom du
-   mode reste seul ; le bloc se termine la. */
+/* ℹ️ DEUX REGLES ONT VECU ICI, et toutes deux reglaient le meme faux
+   probleme : quoi mettre sous le nom d un mode NON CLASSE.
+   `.v2-carte-mode-nul` etait une phrase d explication — retiree, elle
+   repondait a une question que personne ne se pose. `:last-child` rabattait
+   ensuite la marge du nom reste seul. Les deux sont parties avec leur cause :
+   le bloc garde desormais ses DEUX TUILES dans tous les cas, remplies de
+   tirets quand il n y a rien a dire. Une carte qui change de forme d un
+   salon a l autre se remarque plus qu un chiffre absent. */
 
 .v2-carte-stats {
     display: grid;
