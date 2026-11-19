@@ -153,6 +153,31 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
     background: linear-gradient(165deg, rgba(26,24,33,.97), rgba(13,12,18,.98));
     border: 1px solid rgba(255,255,255,.1);
     box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,.6);
+    /* 🪁 L INCLINAISON AU REPOS. Une carte strictement de face est un
+       RECTANGLE DE TEXTE ; tournee de quelques degres, elle devient un objet
+       pose dans l espace, et c est tout ce qui separe une fiche d une carte.
+       ⚠️ L ANGLE EST FAIBLE — 9°. Au-dela, le bord qui s eloigne retrecit
+       assez pour que le texte y paraisse plus petit que de l autre cote, et
+       l oeil corrige en permanence au lieu de lire.
+       ⚠️ ET LE `rotateX` EST PLUS FAIBLE ENCORE (2,6°) : c est ce qui fait
+       « isometrique » plutot que « penche ». Une carte tournee sur un seul
+       axe se lit comme une porte entrouverte ; tournee sur deux, comme un
+       objet vu d un coin. */
+    transform: rotateY(var(--iso, 9deg)) rotateX(2.6deg);
+    /* 🎈 LA LEVITATION. ⚠️ ELLE EST EN `translate`, PAS EN `transform`, et
+       c est la seule raison pour laquelle elle cohabite avec le pivot au
+       curseur : `translate` est une propriete A PART, composee AVANT
+       `transform`. Ecrite dans un `@keyframes` sur `transform`, elle aurait
+       ete ecrasee a chaque `mousemove` — ou, pire, elle aurait ecrase le
+       pivot, selon l ordre des declarations. Deux proprietes, aucun arbitrage.
+       ⚠️ ET L OMBRE RESPIRE AVEC ELLE. Une carte qui monte sans que son ombre
+       ne s ecarte ne levite pas : elle glisse. C est l ombre qui dit la
+       hauteur, le deplacement ne fait que la rendre visible. */
+    animation: levite 5.4s ease-in-out infinite;
+}
+@keyframes levite {
+    0%, 100% { translate: 0 0;        box-shadow: 0 1.6rem 3.4rem rgba(0,0,0,.6); }
+    50%      { translate: 0 -.42rem;  box-shadow: 0 2.2rem 4.2rem rgba(0,0,0,.68); }
 }
 /* ⚠️ LE HALO DE RANG EST DANS LA CARTE, PAS DERRIERE. Pose dessous, il ne
    depasserait que par les bords d une carte opaque — l erreur deja faite
@@ -171,9 +196,15 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
     width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
     background: #23232b; border: .1rem solid rgba(255,255,255,.14);
 }
-.c-portrait svg { position: absolute; inset: -.42rem; transform: rotate(-90deg); overflow: visible; }
-.c-portrait .piste2 { fill: none; stroke: rgba(255,255,255,.13); stroke-width: 2.3; }
-.c-portrait .jauge2 { fill: none; stroke: var(--rang); stroke-width: 2.3; stroke-linecap: round; }
+/* ⚠️ L ANNEAU DE PROGRESSION A ETE RETIRE AVEC L XP — c en etait une, en
+   rond. Le garder aurait laisse une jauge dont plus rien n expliquait la
+   graduation. A sa place, un SECOND CERNE a la teinte du rang : le meme
+   geste de « double anneau » que la barre du haut, mais qui ne mesure rien
+   et n a donc rien a legender. */
+.c-portrait::after {
+    content: ''; position: absolute; inset: -.4rem; border-radius: 50%;
+    border: .1rem solid var(--rang); opacity: .55; pointer-events: none;
+}
 .c-ident { min-width: 0; }
 .c-pseudo {
     margin: 0 0 .22rem; font-size: 1.12rem; font-weight: 800; letter-spacing: -.01em;
@@ -193,16 +224,35 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
     margin: 0 0 1rem; font-size: .775rem; font-style: italic; line-height: 1.45;
     color: #d9d2e6; opacity: .85;
 }
-.c-xp { margin-bottom: 1rem; }
-.c-xp-tete {
-    display: flex; justify-content: space-between; align-items: baseline;
-    font-size: .64rem; letter-spacing: .1em; text-transform: uppercase;
-    color: #9a93a8; margin-bottom: .4rem;
+/* ══════════ LE BLOC DU MODE — il remplace l xp et sa jauge ══════════
+   ⚠️ L XP ET SA BARRE SONT PARTIES, et ce n est pas un allegement : c est un
+   changement de question. Une jauge d xp dit ce qu un joueur a ACCUMULE
+   depuis son inscription — un nombre qui ne bougera pas d un survol a
+   l autre, et que le rang resume deja d un mot. Au moment ou l on survole
+   un pseudo dans un salon, on ne se demande pas combien il a joue : on se
+   demande A QUI ON A AFFAIRE DANS CE MODE-LA, maintenant.
+   ⚠️ D OU DEUX CHIFFRES ET PAS UN. La place au classement du mode dit le
+   niveau durable ; le placement a la derniere partie dit la forme du jour.
+   Seuls, chacun ment a sa facon — un ancien premier qui vient de finir
+   cinquieme, un debutant qui vient de gagner. */
+.c-mode { margin-bottom: .9rem; }
+.c-mode-tete {
+    display: flex; align-items: center; gap: .4rem;
+    font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--rang);
+    margin-bottom: .45rem;
 }
-.c-xp-tete b { font-size: .8rem; letter-spacing: 0; text-transform: none; color: #fff; font-variant-numeric: tabular-nums; }
-.c-jauge { height: .3rem; border-radius: 2rem; background: rgba(255,255,255,.09); overflow: hidden; }
-.c-jauge i { display: block; height: 100%; border-radius: 2rem; background: var(--rang); }
-.c-reste { display: block; margin-top: .36rem; font-size: .64rem; color: #8d869c; }
+.c-mode-tete::before {
+    content: ''; width: .34rem; height: .34rem; flex: 0 0 auto;
+    background: var(--rang); transform: rotate(45deg);
+}
+/* ⚠️ LE SUFFIXE EST PLUS PETIT ET PLUS PALE, pas de la meme taille que le
+   nombre. « 2ᵉ / 6 » ecrit d un seul corps se lit comme une fraction, donc
+   comme un rapport — alors que seul le 2 est le resultat. */
+.c-stats dd small { font-size: .62rem; font-weight: 700; color: #8d869c; margin-left: .12rem; }
+.c-stats dd.nul { color: #6e6880; font-weight: 700; }
+/* Deux colonnes pour le bloc du mode, trois pour le palmares. */
+.c-stats.deux { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
 .c-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 0 0 .9rem; }
 .c-stats div {
     padding: .55rem .4rem; border-radius: .6rem; text-align: center;
@@ -336,6 +386,11 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .vE .c-pseudo { font-size: .96rem; font-weight: 700; color: #cfc8dc; }
 .vE .c-portrait { display: none; }
 .vE .c-stats { text-align: center; }
+/* ⚠️ Le nom du mode SE CENTRE AUSSI. Il est en `flex` pour porter son
+   losange, et un `text-align: center` herite de la carte ne deplace pas une
+   boite flex : il restait seul colle a gauche au milieu d une carte dont
+   tout le reste etait centre. */
+.vE .c-mode-tete { justify-content: center; }
 .vE .c-pied { justify-content: center; gap: 1rem; }
 
 /* ─────────── F · LA BANDE COMPACTE ───────────
@@ -349,8 +404,12 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 .vF .c-stats div { padding: .4rem .3rem; }
 .vF .c-stats dd { font-size: .82rem; }
 .vF .c-pied { display: none; }
-.vF .c-xp { margin-bottom: .75rem; }
-.vF .c-reste { display: none; }
+/* ⚠️ LA COMPACTE GARDE LE BLOC DU MODE ET PERD LE PALMARES, pas l inverse.
+   Son pari est qu au survol on jette un œil : ce qu on regarde alors, c est
+   le joueur DE CETTE PARTIE, pas son total de parties jouees. */
+.vF .c-mode { margin-bottom: 0; }
+.vF .c-mode-tete { margin-bottom: .35rem; }
+.vF dl.c-stats:not(.deux) { display: none; }
 
 /* ══════════ EN SITUATION : la carte posee a droite du salon ══════════ */
 .perchoir {
@@ -368,8 +427,43 @@ h1 { font-size: 1.35rem; font-weight: 800; margin: 0 0 .3rem; padding: 1.3rem 1.
 }
 @media (prefers-reduced-motion: reduce) {
     .perchoir .scene3d { animation: none; }
-    .carte { transition: none !important; }
+    /* ⚠️ L INCLINAISON RESTE, LA LEVITATION PART. Elles ne sont pas de meme
+       nature : l une est une POSE, l autre un MOUVEMENT. Couper la pose
+       rendrait la carte plate pour des gens qui n ont jamais demande ca ;
+       c est le battement continu, et lui seul, qui gene. */
+    .carte { transition: none !important; animation: none; }
 }
+/* ⚠️ LES CARTES DU GRAND BANC NE BATTENT PAS EN CHŒUR. Six objets qui
+   montent et descendent a la milliseconde pres ne levitent pas : ils
+   defilent. Un retard par carte suffit a casser le rang — et comme le
+   retard est NEGATIF, aucune ne commence immobile en bas de sa course. */
+#cartes .piste:nth-child(2) .carte { animation-delay: -.9s; }
+#cartes .piste:nth-child(3) .carte { animation-delay: -1.8s; }
+#cartes .piste:nth-child(4) .carte { animation-delay: -2.7s; }
+#cartes .piste:nth-child(5) .carte { animation-delay: -3.6s; }
+#cartes .piste:nth-child(6) .carte { animation-delay: -4.5s; }
+/* 🖼️ Les vignettes d avatar de la barre de reglage. ⚠️ RONDES ET PETITES,
+   comme dans le tiroir du jeu : une vignette carree donnerait a juger un
+   cadrage que le joueur ne verra jamais. */
+.avv {
+    width: 2.1rem; height: 2.1rem; padding: 0; border-radius: 50%;
+    border: .12rem solid rgba(255,255,255,.14); background: #23232b;
+    overflow: hidden; cursor: pointer; flex: 0 0 auto;
+    transition: border-color .15s ease, transform .15s ease;
+}
+.avv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Le saut de ligne dans la barre : zero hauteur, largeur pleine. */
+.ligne { flex: 1 0 100%; height: 0; }
+.avv:hover { transform: translateY(-2px); }
+.avv.on { border-color: #f0c75e; }
+#avatars { display: inline-flex; gap: .4rem; flex-wrap: wrap; }
+
+/* ⚠️ COUPER LA LEVITATION SE FAIT PAR UNE CLASSE SUR LA RACINE, pas en
+   effacant l animation carte par carte : les cartes se repeignent a chaque
+   changement de joueur, et un style pose sur l element aurait disparu au
+   premier clic sans que rien ne le signale. */
+.sansLevite .carte { animation: none; }
+
 .vide {
     position: absolute; top: 50%; right: 2rem; transform: translateY(-50%);
     width: 20.5rem; text-align: center; font-size: .72rem; line-height: 1.7;
@@ -387,11 +481,29 @@ jeux de données, et on n'aurait jamais su ce qui plaît.
 </p>
 <p class="sous">
 ⚠️ <b>Ce qui est affiché vient de la base, pas d'une idée.</b> La table <b>comptes</b> porte
-pseudo, avatar, xp, parties, victoires, titre et date d'inscription ; le <b>niveau</b> et le
-<b>rang</b> s'en déduisent par <b>niveaux.js</b>, chargé ici comme sur l'accueil. Les
-<span class="av">rubis sont exclus</span> — le solde d'un autre joueur ne le regarde pas.
-⚠️ La <b>place au classement</b>, elle, vient de la vue <b>v_classement</b> : une requête de plus
-à chaque survol si on ne la met pas en cache.
+pseudo, avatar, parties, victoires, titre et date d'inscription ; le <b>rang</b> s'en déduit par
+<b>niveaux.js</b>, chargé ici comme sur l'accueil. Les <span class="av">rubis sont exclus</span>
+— le solde d'un autre joueur ne le regarde pas. La <b>place au général</b> vient de
+<b>v_classement</b>, celle <b>du mode</b> de <b>v_classement_mode</b> : deux requêtes de plus à
+chaque survol si on ne les met pas en cache.
+</p>
+<p class="sous">
+⚠️ <b>L'XP et sa jauge ont été retirées.</b> Elles disaient ce qu'un joueur a <em>accumulé</em>
+depuis son inscription — un nombre que le rang résume déjà d'un mot, et qui ne bougera pas d'un
+survol à l'autre. Au moment où l'on survole un pseudo, la question est
+<span class="av">« à qui j'ai affaire dans CE mode, maintenant »</span>.
+</p>
+<p class="sous">
+🗄️ <b>Et une seule des deux cases existe aujourd'hui en base.</b> Le classement du mode se lit
+dans <b>v_classement_mode</b>, qui est déjà là. Le <b>placement à la dernière partie</b>, lui,
+n'est nulle part : <b>parties_jouees</b> ne porte que <b>gagnant</b> (un booléen) et
+<b>joueurs</b> — on sait s'il a gagné et combien ils étaient, jamais s'il a fini deuxième ou
+cinquième. ⚠️ Il faut donc <b>une colonne</b> :
+<code>alter table public.parties_jouees add column if not exists place smallint;</code>
+Elle s'écrit au même moment que <b>gagnant</b>, donc <span class="av">sans une requête de
+plus</span>. ⚠️ Et les parties déjà jouées resteront à <b>null</b> pour toujours :
+l'information n'existait pas, elle ne se reconstitue pas. C'est le premier joueur de la liste
+ci-dessus — <b>Kitsune73</b> — qui montre ce cas.
 </p>
 <p class="sous">
 ⚠️ <b>La couleur n'est pas un choix de décorateur.</b> Chaque rang porte déjà sa teinte dans
@@ -409,7 +521,28 @@ reprend, donc deux joueurs se distinguent sans qu'on lise un mot.
          l une pour l autre. -->
     <button class="cmd on" id="pivot">⟲ Inclinaison au curseur</button>
     <span class="sep"></span>
+    <!-- ⚠️ DEUX BOUTONS ET PAS UN REGLAGE FIN. « Vers la gauche » et « vers
+         la droite » sont les deux seules reponses possibles, et un curseur de
+         degres aurait transforme une question qui se tranche a l œil en un
+         nombre a chercher. -->
+    <button class="cmd" id="sens">⇄ Pencher de l'autre côté</button>
+    <span class="sep"></span>
+    <button class="cmd on" id="levite">🎈 Lévitation</button>
+    <span class="sep"></span>
     <button class="cmd" id="invite">👤 Survoler un invité</button>
+    <!-- ⚠️ UNE SEULE BARRE, ET PAS DEUX. Elles sont en `position: sticky` a
+         `top: 0` : une seconde barre se serait collee AU MEME ENDROIT que la
+         premiere et l aurait recouverte des le premier defilement. Le saut de
+         ligne se fait donc dans la meme barre, par un element de largeur
+         pleine dans un conteneur qui passe deja a la ligne. -->
+    <span class="ligne"></span>
+    <!-- 🖼️ LES VRAIS AVATARS DU JEU. ⚠️ Ils ne sont pas la pour decorer la
+         page : le plein cadre (D) se juge SUR CE QUE LE JOUEUR PEUT
+         REELLEMENT CHOISIR. Un portrait cadre serre et un personnage en pied
+         ne donnent pas la meme carte, et c est precisement ce qu il faut voir
+         avant de trancher. -->
+    <label>Avatar</label>
+    <span id="avatars"></span>
 </div>
 
 <h3 class="vague">En situation — la carte dans le salon</h3>
@@ -449,18 +582,50 @@ Le choix de la peau se fait avec les boutons ci-dessous.
 // la teinte de rang ne se voit qu a condition de changer de rang — et le
 // dernier titre est le plus LONG qu on ait rencontre, pour que le gabarit
 // soit mis a l epreuve et non flatte.
+// 🎮 LE MODE DU SALON. ⚠️ IL N EST PAS UN REGLAGE DE CETTE PAGE : en vrai
+// il vient du salon ou l on survole le pseudo, et c est tout l interet du
+// bloc. Survoler quelqu un dans un salon de BombAnime et lire sa place au
+// Rush ne renseignerait sur rien.
+var MODE = { cle: 'bombanime', nom: 'BombAnime' };
+
+// ⚠️ DES PROFILS QUI COUVRENT LA COURBE, pas cinq fois le meme. L interet de
+// la teinte de rang ne se voit qu a condition de changer de rang — et le
+// dernier titre est le plus LONG qu on ait rencontre, pour que le gabarit
+// soit mis a l epreuve et non flatte.
+// ⚠️ `placeMode` ET `dernier` PEUVENT ETRE NULS, et le premier joueur est la
+// POUR CA. Un joueur qui n a jamais touche au mode du salon existe — il
+// vient d arriver —, et une carte qui afficherait « #— » sans rien dire
+// laisserait croire a une donnee manquante plutot qu a une premiere partie.
+// ⚠️ `dernier` sera nul AUSSI pour toutes les parties jouees AVANT la
+// colonne `place` en base : l information n existait pas, elle ne se
+// reconstitue pas.
 var JOUEURS = [
-    { pseudo: 'Kitsune73',  av: 'ninja.png',    xp: 420,    parties: 14,   vict: 3,
-      titre: 'Novice courageux',          depuis: 'mars 2026',  place: null },
-    { pseudo: 'Shinobi470', av: 'assassin.png', xp: 2500,   parties: 86,   vict: 21,
-      titre: 'Chasseur de séries',        depuis: 'janv. 2026', place: 412 },
-    { pseudo: 'Senpai664',  av: 'knight.png',   xp: 9000,   parties: 240,  vict: 77,
-      titre: 'Maître du BombAnime',       depuis: 'oct. 2025',  place: 58 },
-    { pseudo: 'Hokage342',  av: 'sorcier.png',  xp: 30000,  parties: 615,  vict: 203,
-      titre: 'Légende du Rush',           depuis: 'juin 2025',  place: 9 },
-    { pseudo: 'slayer',     av: 'melody.png',   xp: 120000, parties: 1480, vict: 622,
-      titre: 'Le plus grand de la plèbe', depuis: 'mai 2025',   place: 1 },
+    { pseudo: 'Kitsune73',  av: 'naruto.webp',  xp: 420,    parties: 14,   vict: 3,
+      titre: 'Novice courageux',          depuis: 'mars 2026',  place: null,
+      placeMode: null, dernier: null },
+    { pseudo: 'Shinobi470', av: 'levi.webp',    xp: 2500,   parties: 86,   vict: 21,
+      titre: 'Chasseur de séries',        depuis: 'janv. 2026', place: 412,
+      placeMode: 203, dernier: { rang: 4, sur: 6 } },
+    { pseudo: 'Senpai664',  av: 'gojo.webp',    xp: 9000,   parties: 240,  vict: 77,
+      titre: 'Maître du BombAnime',       depuis: 'oct. 2025',  place: 58,
+      placeMode: 12, dernier: { rang: 2, sur: 6 } },
+    { pseudo: 'Hokage342',  av: 'tanjiro.webp', xp: 30000,  parties: 615,  vict: 203,
+      titre: 'Légende du Rush',           depuis: 'juin 2025',  place: 9,
+      placeMode: 3, dernier: { rang: 1, sur: 8 } },
+    { pseudo: 'slayer',     av: 'mikasa.webp',  xp: 120000, parties: 1480, vict: 622,
+      titre: 'Le plus grand de la plèbe', depuis: 'mai 2025',   place: 1,
+      placeMode: 1, dernier: { rang: 5, sur: 6 } },
 ];
+
+// 🖼️ Les avatars pour l essai. ⚠️ CE SONT LES VRAIS FICHIERS DU JEU, pris
+// dans `AVATARS_AUTORISES` (server.js) et servis a la racine par
+// `express.static('src/img/avatarpic')`. Les premieres versions de cette
+// page montraient ninja.png et knight.png, qui ne sont PAS des avatars de
+// joueur : on jugeait le plein cadre sur un dessin que personne ne peut
+// choisir.
+var AVATARS = ['naruto.webp', 'luffy.webp', 'goku.webp', 'ichigo.webp', 'deku.webp',
+               'eren.webp', 'mikasa.webp', 'levi.webp', 'tanjiro.webp', 'gojo.webp',
+               'killua.webp', 'lelouch.webp', 'nami.webp', 'mitsuri.webp'];
 
 var PEAUX = [
     { cls: 'vA', nom: 'La carte holo', reco: true,
@@ -477,7 +642,11 @@ var PEAUX = [
       n: "Deux fois moins haute, et c'est tout l'argument : <b>au survol on ne lit pas une fiche, on jette un œil</b>. Pas de titre, pas de pied. ⚠️ Elle est là pour poser la vraie question — est-ce qu'une grande carte se lit vraiment, quand le curseur ne s'arrête pas ?" },
 ];
 
-var iJoueur = 2, peau = 'vA', pivot = true, invite = false;
+// ⚠️ `iso` EST EN DEGRES SIGNES, et le signe est la seule chose qui compte :
+// positif, la carte presente sa tranche gauche ; negatif, sa tranche droite.
+// La valeur, elle, ne se discute pas d un bouton — voir le commentaire de
+// `.carte`.
+var iJoueur = 2, peau = 'vA', pivot = true, invite = false, iso = 9, levite = true;
 
 function nf(n) { return Number(n).toLocaleString('fr-FR'); }
 
@@ -486,22 +655,19 @@ function nf(n) { return Number(n).toLocaleString('fr-FR'); }
 // l accueil et que le panneau — c est tout l interet du fichier partage.
 function profil(j) {
     var niveau = niveauPourXp(j.xp);
-    var rang = titrePourNiveau(niveau);
-    var suivant = (niveau < RANGS.length) ? RANGS[niveau] : null;
-    var bas = rang.cumul;
-    var haut = suivant ? suivant.cumul : rang.cumul;
-    var part = suivant ? Math.min(1, (j.xp - bas) / (haut - bas)) : 1;
     return {
-        niveau: niveau, rang: rang, part: part,
-        reste: suivant ? (haut - j.xp) : null,
-        suivant: suivant,
+        niveau: niveau,
+        rang: titrePourNiveau(niveau),
         taux: j.parties ? Math.round((j.vict / j.parties) * 100) : 0,
     };
 }
 
+// ⚠️ « 1ᵉʳ » ET NON « 1ᵉ ». C est la seule irregularite du francais sur ce
+// point, et elle saute aux yeux sur la ligne la plus flatteuse de la carte.
+function ord(n) { return n + (n === 1 ? 'ᵉʳ' : 'ᵉ'); }
+
 function carte(j, cls) {
     var p = profil(j);
-    var per = 2 * Math.PI * 24.2;
     var fond = (cls === 'vD')
         ? '<div class="c-fond"><img src="/' + j.av + '" alt=""></div>' : '';
     var tete = (cls === 'vE')
@@ -509,22 +675,30 @@ function carte(j, cls) {
           + '<div class="c-ident"><span class="c-rang">' + p.rang.nom + '</span>'
           + '<h3 class="c-pseudo">' + j.pseudo + '</h3></div></div>'
         : '<div class="c-tete">'
-          + '<span class="c-portrait"><img src="/' + j.av + '" alt="">'
-          + '<svg viewBox="0 0 56 56"><circle class="piste2" cx="28" cy="28" r="24.2"></circle>'
-          + '<circle class="jauge2" cx="28" cy="28" r="24.2" stroke-dasharray="' + per.toFixed(1)
-          + '" stroke-dashoffset="' + (per * (1 - p.part)).toFixed(1) + '"></circle></svg></span>'
+          + '<span class="c-portrait"><img src="/' + j.av + '" alt=""></span>'
           + '<div class="c-ident"><h3 class="c-pseudo">' + j.pseudo + '</h3>'
           + '<span class="c-rang">' + p.rang.nom + '</span></div></div>';
+    // ⚠️ LES DEUX CASES SE REMPLISSENT SEPAREMENT. Un joueur peut etre classe
+    // au mode sans qu on sache ou il a fini sa derniere partie (elle est
+    // anterieure a la colonne `place`), et l inverse est vrai a sa toute
+    // premiere partie. Un seul test pour les deux aurait efface l une a
+    // cause de l autre.
+    var classe = (j.placeMode === null)
+        ? '<dd class="nul">—</dd>'
+        : '<dd>#' + nf(j.placeMode) + '</dd>';
+    var dernier = (!j.dernier)
+        ? '<dd class="nul">' + (j.placeMode === null ? 'Première' : '—') + '</dd>'
+        : '<dd>' + ord(j.dernier.rang) + '<small>/' + j.dernier.sur + '</small></dd>';
     return '<div class="scene3d ' + cls + '">'
       + '<article class="carte" style="--rang:' + p.rang.couleur + '">'
         + '<span class="nappe"></span>' + fond + tete
         + '<p class="c-titre">« ' + j.titre + ' »</p>'
-        + '<div class="c-xp">'
-          + '<div class="c-xp-tete"><span>Niveau ' + p.niveau + '</span><b>' + nf(j.xp) + ' XP</b></div>'
-          + '<div class="c-jauge"><i style="width:' + (p.part * 100).toFixed(1) + '%"></i></div>'
-          + '<small class="c-reste">' + (p.reste === null
-              ? 'Rang maximal atteint'
-              : nf(p.reste) + ' XP avant ' + p.suivant.nom) + '</small>'
+        + '<div class="c-mode">'
+          + '<div class="c-mode-tete">' + MODE.nom + '</div>'
+          + '<dl class="c-stats deux">'
+            + '<div><dt>Classement</dt>' + classe + '</div>'
+            + '<div><dt>Dernière partie</dt>' + dernier + '</div>'
+          + '</dl>'
         + '</div>'
         + '<dl class="c-stats">'
           + '<div><dt>Parties</dt><dd>' + nf(j.parties) + '</dd></div>'
@@ -532,7 +706,12 @@ function carte(j, cls) {
           + '<div><dt>Taux</dt><dd>' + p.taux + '&nbsp;%</dd></div>'
         + '</dl>'
         + '<div class="c-pied"><span>Membre depuis ' + j.depuis + '</span>'
-          + (j.place ? '<span class="c-place">#' + nf(j.place) + ' au classement</span>' : '')
+          // ⚠️ « AU GENERAL », ET LE MOT EST OBLIGATOIRE. La carte porte
+          // desormais DEUX classements — celui du mode dans le bloc du
+          // dessus, celui de tous les modes ici. Ecrits tous deux
+          // « classement », ils se lisaient comme une contradiction : #12
+          // en haut, #58 en bas, et rien pour dire lequel repond a quoi.
+          + (j.place ? '<span class="c-place">#' + nf(j.place) + ' au général</span>' : '')
         + '</div>'
       + '</article></div>';
 }
@@ -551,8 +730,12 @@ function brancherPivot(scene) {
         c.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
         c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
         c.style.setProperty('--brille', '1');
-        c.style.transform = 'rotateY(' + ((x - .5) * 16).toFixed(2) + 'deg)'
-                          + ' rotateX(' + ((.5 - y) * 13).toFixed(2) + 'deg)';
+        // ⚠️ LE PIVOT PART DE LA POSE, il ne la remplace pas. Ecrit en absolu,
+        // il faisait SAUTER la carte de son inclinaison de repos a zero des
+        // que le curseur entrait par le milieu — un a-coup au moment precis
+        // ou l on commence a regarder.
+        c.style.transform = 'rotateY(' + (iso + (x - .5) * 16).toFixed(2) + 'deg)'
+                          + ' rotateX(' + (2.6 + (.5 - y) * 13).toFixed(2) + 'deg)';
     });
     scene.addEventListener('mouseleave', function () {
         c.style.setProperty('--brille', '0');
@@ -606,14 +789,40 @@ function peindreBarre() {
         return '<button class="cmd' + (p.cls === peau ? ' on' : '') + '" data-p="' + p.cls + '">'
              + p.nom + '</button>';
     }).join('');
+    // ⚠️ L AVATAR SE CHANGE SUR LE JOUEUR COURANT, pas globalement : c est
+    // ainsi qu il se comporte en vrai, et ca permet de laisser aux autres
+    // leur portrait pendant qu on en essaie un.
+    document.getElementById('avatars').innerHTML = AVATARS.map(function (a) {
+        return '<button class="avv' + (a === JOUEURS[iJoueur].av ? ' on' : '')
+             + '" data-av="' + a + '" title="' + a + '"><img src="/' + a + '" alt=""></button>';
+    }).join('');
+}
+
+// ⚠️ POSEE SUR LA RACINE, pas sur chaque carte : les cartes se repeignent a
+// chaque clic, un style pose sur l element serait perdu au premier changement
+// de joueur. La variable est heritee, elle survit a toutes les repeintes.
+function poserIso() {
+    document.documentElement.style.setProperty('--iso', iso + 'deg');
+    document.getElementById('sens').textContent =
+        iso > 0 ? '⇄ Penche vers la gauche' : '⇄ Penche vers la droite';
 }
 
 function tout() { peindreBarre(); peindreCartes(); peindreSitu(); }
 
 document.addEventListener('click', function (e) {
+    // Les vignettes d avatar ne sont pas des `.cmd` : elles se traitent avant.
+    var v = e.target.closest('.avv');
+    if (v) { JOUEURS[iJoueur].av = v.dataset.av; tout(); return; }
     var b = e.target.closest('.cmd');
     if (!b) return;
     if (b.id === 'pivot') { pivot = !pivot; b.classList.toggle('on', pivot); return; }
+    if (b.id === 'sens') { iso = -iso; poserIso(); return; }
+    if (b.id === 'levite') {
+        levite = !levite;
+        b.classList.toggle('on', levite);
+        document.documentElement.classList.toggle('sansLevite', !levite);
+        return;
+    }
     if (b.id === 'invite') { invite = !invite; b.classList.toggle('on', invite); peindreSitu(); return; }
     if (b.dataset.j) { iJoueur = parseInt(b.dataset.j, 10); tout(); return; }
     if (b.dataset.p) { peau = b.dataset.p; peindreBarre(); peindreSitu(); return; }
@@ -634,6 +843,7 @@ document.getElementById('liste').addEventListener('mouseover', function (e) {
 });
 
 peindreListe();
+poserIso();
 tout();
 })();
 </script>
