@@ -15918,7 +15918,13 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        ⚠️ `env(safe-area-inset-bottom)` : sur un telephone a barre gestuelle,
        le bas de l ecran n est pas le bas de la zone sure. Sans ca les deux
        liens se posent sous la barre du systeme, qui mange le doigt. */
-    padding: 0.85rem 1.1rem calc(1.55rem + env(safe-area-inset-bottom, 0px));
+    /* ⚠️ LES DEUX PADDINGS SONT EGAUX, ET C EST CE QUI CENTRE LES LIENS.
+       Ils valaient 0,85 en haut et 1,55 en bas : les liens se posaient donc
+       6 px au-dessus du milieu de la barre, assez pour se voir sans qu on
+       sache le nommer. A 1,2 de chaque cote la barre garde EXACTEMENT la
+       meme hauteur (70 px) — le filet ne bouge pas — et les liens tombent
+       au milieu. */
+    padding: 1.2rem 1.1rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
     background: #07060b;
 }
 /* Le filet dore qui la separe du jeu — le meme que celui du pied, et il
@@ -15987,9 +15993,23 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        cette difference. A ces valeurs-ci il en depasse 19, c est-a-dire
        pres d un tiers de lui-meme : assez pour qu on voie qu il monte, pas
        assez pour qu il flotte au-dessus. (Mesure a 390 px.) */
+    /* ⚠️ -3,33rem ET NON -2,6 : LA MARGE COMPENSE LE CENTRAGE DES LIENS.
+       Les deux paddings de la barre ont ete egalises pour que les liens
+       tombent en son milieu ; la rangee de contenu descend donc, et
+       l embleme — centre dans cette rangee — serait descendu avec elle. Or
+       sa hauteur venait d etre reglee et validee.
+       ⚠️ ET LA MARGE N AGIT QU A MOITIE, ce qui s est vu en mesurant : avec
+       `align-items: center`, c est la BOITE DE MARGE qui est centree. Lui
+       retirer 1 px la raccourcit d autant, son sommet redescend donc d un
+       demi-pixel, et la boite de bordure ne monte que de la moitie du
+       compte. Une premiere compensation calculee au nominal laissait
+       l embleme 3 px trop bas ; il en faut le double. Releve au rendu :
+       55 px du bord avec -2,95, 58 avec -3,33 — la valeur validee.
+       ⚠️ LES DEUX VALEURS SONT DONC LIEES : toucher aux paddings de la barre
+       sans retoucher celle-ci fait glisser l embleme en silence. */
     width: 3.9rem;
     height: 3.9rem;
-    margin-top: -2.6rem;
+    margin-top: -3.33rem;
     margin-bottom: -0.4rem;
     border-radius: 50%;
     background: radial-gradient(circle at 50% 32%, #191521 0%, #0a0910 72%);
