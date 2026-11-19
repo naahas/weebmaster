@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un plateau, deux techniques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800&display=swap"
+      rel="stylesheet">
+
+<!--
+   🎲 LE MEME PLATEAU, DEUX FOIS : en CSS 3D, puis en Three.js.
+
+   ⚠️ CE BANC EXISTE POUR TRANCHER UNE QUESTION DE COUT, pas pour faire joli.
+   La question posee etait « est-ce qu on peut etendre nos possibilites avec
+   un moteur ». La reponse ne se lit pas dans une comparaison de fiches
+   techniques : elle se lit en mettant LE MEME plateau, LE MEME chemin, LES
+   MEMES pions dans les deux, et en regardant ce que la seconde apporte que
+   la premiere n a pas.
+
+   ⚠️ CE QUI N EST PAS ICI, ET POURQUOI :
+   — UNREAL. Son export HTML5 a ete retire du moteur en 4.24 (2019). Il ne
+     reste que le pixel streaming : le jeu tourne sur un serveur GPU et
+     diffuse de la video, donc une instance GPU PAR SESSION. Incompatible
+     avec un dyno Heroku et avec un jeu gratuit qu on rejoint par un code.
+   — UNITY. Son export WebGL existe, lui, mais c est 10 a 30 Mo a telecharger
+     avant de jouer. Le joueur qui clique un lien en attendant son bus ne les
+     telechargera pas.
+   — BLENDER. Ce n est pas un moteur mais un outil d AUTEUR : on y modelise,
+     on exporte en glTF, et Blender ne tourne jamais dans le jeu. Il
+     alimenterait la colonne Three.js, il ne la remplace pas.
+
+   ⚠️ ET LA REGLE QUI PRIME SUR LE CHOIX : dans les deux cas, ce n est que la
+   VUE. L etat de la partie, l ordre des tours et la reconnexion restent sur
+   le serveur Node + Socket.io. Ici le de est tire dans la page parce que
+   c est une maquette ; en vrai il serait tire par le serveur, qui seul
+   decide. Un moteur qui porterait la logique ferait perdre la reconnexion et
+   l autorite contre les tricheurs.
+-->
+
+<style>
+    :root {
+        --or: #f0c75e;
+        --orvif: #ffd700;
+        --fond: #08080b;
+        /* La taille d une case, et tout le plateau en depend : les positions
+           des pions sont des multiples de celle-ci. */
+        --t: 4.6rem;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 0 0 5rem;
+        background:
+            radial-gradient(120% 90% at 50% 0%, #15110a 0%, #0c0c0e 45%, var(--fond) 100%);
+        color: #e8e8ee;
+        font-family: 'Poppins', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1 { margin: 0; padding: 2rem 1.6rem 0.4rem; font-size: 1.45rem; font-weight: 800; }
+    h2 {
+        margin: 0 0 0.3rem;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.78rem; font-weight: 800; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--or);
+    }
+    .sous { margin: 0 0 2rem; padding: 0 1.6rem; max-width: 50rem;
+            font-size: 0.82rem; line-height: 1.75; color: #9a94a8; }
+    .sous b { color: #fff; font-weight: 600; }
+    .sous code { font-family: ui-monospace, Consolas, monospace; font-size: .85em; color: var(--or); }
+
+    section { padding: 0 1.6rem; margin-bottom: 3.2rem; }
+    .dit { max-width: 46rem; font-size: 0.78rem; line-height: 1.7; color: #8a8499; margin: 0 0 1rem; }
+    .dit b { color: #cfc8dc; font-weight: 600; }
+
+    .commandes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+    button {
+        font-family: inherit; font-size: 0.72rem; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 0.6rem 1rem; border-radius: 0.55rem; cursor: pointer;
+        color: #0d0b07; background: linear-gradient(145deg, #fff0c2, var(--or));
+        border: 0;
+    }
+    button.sobre {
+        color: #cfc8dc; background: rgba(255,255,255,.05);
+        border: 1px solid rgba(255,255,255,.1);
+    }
+    button.sobre.on { color: var(--orvif); border-color: rgba(240,199,94,.5); background: rgba(240,199,94,.1); }
+    button:disabled { opacity: .45; cursor: default; }
+    .de {
+        font-family: 'Orbitron', sans-serif; font-size: 0.78rem; font-weight: 800;
+        color: var(--orvif); min-width: 7.5rem;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       🧊 LE PLATEAU EN CSS 3D
+       ════════════════════════════════════════════════════════════
+       ⚠️ `perspective` SUR LA SCENE, `preserve-3d` SUR CE QUI TOURNE. C est
+       la seule combinaison qui marche, et le piege de ce projet est juste a
+       cote : un `overflow` autre que `visible` GROUPE les enfants, la valeur
+       UTILISEE de `transform-style` retombe a `flat`, et `getComputedStyle`
+       continue de repondre `preserve-3d`. On ne s en apercoit pas en lisant
+       les styles — il faut incliner et mesurer. C est ce qui avait mis la
+       carte du joueur a plat pendant deux versions. */
+    .scene {
+        position: relative;
+        height: 30rem;
+        perspective: 90rem;
+        overflow: visible;
+    }
+    .plateau {
+        position: absolute;
+        left: 50%; top: 52%;
+        width: 0; height: 0;
+        transform-style: preserve-3d;
+        /* L inclinaison isometrique : on bascule vers l arriere, puis on
+           tourne autour de l axe vertical. 56 degres donne un plateau qu on
+           voit « de trois quarts » — a 70 il s aplatit, a 40 on le voit de
+           face et les cases se superposent.
+           ⚠️ ET LE RECENTRAGE EST EN DERNIER, DANS LE MEME `transform`. Le
+           repere du plateau a son origine sur la case (0,0), pas au milieu :
+           pose tel quel, l anneau de seize cases partait vers le bas-droite
+           et laissait la moitie haute de la scene vide. On le decale donc de
+           la demi-largeur (2,5 cases) et de la demi-hauteur (1,5 case).
+           ⚠️ Il doit venir APRES les rotations pour se faire DANS LE PLAN DU
+           PLATEAU. Ecrit avec la propriete `translate`, il s appliquerait
+           avant elles, donc a l ecran — et le plateau partirait de biais. */
+        transform: rotateX(56deg) rotateZ(-45deg)
+                   translate3d(calc(var(--t) * -2.5), calc(var(--t) * -1.5), 0);
+        transition: transform 0.5s ease;
+    }
+    .plateau.face {
+        transform: rotateX(28deg) rotateZ(-45deg)
+                   translate3d(calc(var(--t) * -2.5), calc(var(--t) * -1.5), 0);
+    }
+
+    .case {
+        position: absolute;
+        width: var(--t); height: var(--t);
+        margin: calc(var(--t) / -2);
+        translate: calc(var(--c) * var(--t)) calc(var(--r) * var(--t)) 0;
+        border-radius: 0.7rem;
+        transform-style: preserve-3d;
+        background: linear-gradient(150deg, #2a2735, #1b1924);
+        border: 1px solid rgba(255,255,255,.09);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    /* L EPAISSEUR de la case, en un seul pseudo-element : un second plan
+       pose 12 px plus bas. ⚠️ Il n est visible QUE grace au `preserve-3d`
+       du parent — sans lui il se peindrait exactement derriere, a plat. */
+    .case::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 0.7rem;
+        background: #0d0c12;
+        translate: 0 0 -0.75rem;
+    }
+    .case.bonus  { background: linear-gradient(150deg, #5a4718, #2e2410); border-color: rgba(240,199,94,.45); }
+    .case.malus  { background: linear-gradient(150deg, #58202a, #2b1016); border-color: rgba(224,86,78,.45); }
+    .case.mini   { background: linear-gradient(150deg, #1d3b55, #0f1e2c); border-color: rgba(95,201,232,.4); }
+    .case .sigle {
+        position: absolute; inset: 0;
+        display: grid; place-items: center;
+        font-family: 'Orbitron', sans-serif; font-size: 1.15rem; font-weight: 800;
+        color: rgba(255,255,255,.22);
+        /* ⚠️ CONTRE-ROTATION : sans elle le chiffre est couche sur la case et
+           illisible. C est le meme geste que pour les pions, en plus simple —
+           on annule les deux rotations du plateau, dans l ordre inverse. */
+        transform: rotateZ(45deg) rotateX(-56deg);
+    }
+    .case.bonus .sigle { color: rgba(240,199,94,.65); }
+    .case.malus .sigle { color: rgba(224,86,78,.6); }
+    .case.mini  .sigle { color: rgba(95,201,232,.6); }
+
+    /* ── LE PION ──
+       ⚠️ TROIS ELEMENTS EMBOITES, ET CHACUN PORTE UNE SEULE CHOSE. C est la
+       lecon la plus chere de ce projet : des keyframes qui ecrivent
+       `transform` EFFACENT le `transform` qui pose ou centre l element. Ici
+       il y en aurait trois a la fois — la position sur le plateau, le saut,
+       et la contre-rotation qui fait face a la camera. Empiles sur un seul
+       element, le dernier ecrit gagne et les deux autres disparaissent.
+       Donc : la POSITION est un `translate` (propriete a part, composee
+       AVANT `transform`), le SAUT est un `translate` sur l enfant, et la
+       CONTRE-ROTATION est le seul `transform` de la chaine. Aucun des trois
+       ne peut effacer les autres. */
+    .pion {
+        position: absolute;
+        width: var(--t); height: var(--t);
+        margin: calc(var(--t) / -2);
+        transform-style: preserve-3d;
+        translate: calc(var(--c) * var(--t)) calc(var(--r) * var(--t)) 0;
+        transition: translate 0.3s cubic-bezier(.3,.7,.4,1);
+        pointer-events: none;
+    }
+    .saut {
+        position: absolute; inset: 0;
+        transform-style: preserve-3d;
+        translate: 0 0 1.6rem;
+    }
+    /* 🚶 MARCHE : un bond par case, et la squash a l atterrissage. */
+    .pion.marche .saut { animation: pasSaut 0.3s ease-out; }
+    @keyframes pasSaut {
+        0%   { translate: 0 0 1.6rem; }
+        45%  { translate: 0 0 3.6rem; }
+        100% { translate: 0 0 1.6rem; }
+    }
+    /* 🛸 LEVITATION : il ne touche jamais le sol, il ondule en continu. */
+    .pion.levite .saut { animation: flotte 2.6s ease-in-out infinite; }
+    @keyframes flotte {
+        0%, 100% { translate: 0 0 2.2rem; }
+        50%      { translate: 0 0 3.2rem; }
+    }
+    .figure {
+        position: absolute; inset: 0;
+        display: grid; place-items: center;
+        /* ⚠️ LA CONTRE-ROTATION, dans l ordre INVERSE de celle du plateau :
+           le plateau fait `rotateX(56) rotateZ(-45)`, le pion defait
+           `rotateZ(45) rotateX(-56)`. Sans elle l avatar est couche sur la
+           case comme un autocollant. C est ce qu on appelle un billboard. */
+        transform: rotateZ(45deg) rotateX(-56deg);
+    }
+    .figure img {
+        width: 2.9rem; height: 2.9rem;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        background: #23232b;
+        border: 2px solid var(--pc, #fff);
+        box-shadow: 0 0.4rem 0.9rem rgba(0,0,0,.6);
+    }
+    /* L OMBRE AU SOL, posee a plat sur la case : c est elle qui dit la
+       hauteur. Un pion qui monte sans que son ombre ne retrecisse ne
+       decolle pas, il grandit. */
+    .ombre {
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 2.2rem; height: 2.2rem;
+        margin: -1.1rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0,0,0,.55), transparent 70%);
+        translate: 0 0 0.02rem;
+    }
+    .pion.marche .ombre { animation: ombrePas 0.3s ease-out; }
+    @keyframes ombrePas {
+        0%, 100% { scale: 1;   opacity: .55; }
+        45%      { scale: .62; opacity: .3; }
+    }
+    .pion.levite .ombre { animation: ombreFlotte 2.6s ease-in-out infinite; }
+    @keyframes ombreFlotte {
+        0%, 100% { scale: .8; opacity: .4; }
+        50%      { scale: .6; opacity: .25; }
+    }
+
+    /* ════════ LA SCENE THREE.JS ════════ */
+    #troisd { width: 100%; height: 30rem; border-radius: 0.9rem; overflow: hidden;
+              border: 1px solid rgba(255,255,255,.07); background: #0a0910; }
+    #troisd canvas { display: block; width: 100%; height: 100%; }
+    .panne {
+        display: grid; place-items: center; height: 100%;
+        padding: 2rem; text-align: center;
+        font-size: 0.8rem; line-height: 1.7; color: #8a8499;
+    }
+
+    /* ════════ LE TABLEAU DE FIN ════════ */
+    table { border-collapse: collapse; width: 100%; max-width: 54rem; font-size: 0.78rem; }
+    th, td { text-align: left; padding: 0.7rem 0.9rem; border-bottom: 1px solid rgba(255,255,255,.07); vertical-align: top; }
+    th { color: var(--or); font-weight: 700; font-size: 0.68rem; letter-spacing: .12em; text-transform: uppercase; }
+    td:first-child { color: #cfc8dc; font-weight: 600; white-space: nowrap; }
+
+    @media (max-width: 760px) {
+        :root { --t: 3.4rem; }
+        .scene, #troisd { height: 24rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .pion.levite .saut, .pion.levite .ombre { animation: none; }
+    }
+</style>
+</head>
+
+<body>
+    <h1>Un plateau, deux techniques</h1>
+    <p class="sous">
+        Le <b>même plateau</b>, le même chemin, les mêmes pions — une fois en <b>CSS 3D</b>
+        (zéro dépendance, ce que tu sais déjà faire), une fois en <b>Three.js</b>
+        (vraie 3D WebGL, chargée par une balise comme ton Vue).
+        Lance le dé dans les deux et compare ce que la seconde achète.<br>
+        ⚠️ Dans les deux cas ce n'est que <b>la vue</b> : en vrai, le dé serait tiré par le
+        serveur, qui seul décide de l'ordre des tours et sait reprendre une partie coupée.
+    </p>
+
+    <section>
+        <h2>1 · CSS 3D — zéro dépendance</h2>
+        <p class="dit">
+            Tout est en <code>transform</code> et <code>translate</code>, rien n'est chargé.
+            Les pions <b>marchent</b> (un bond par case, l'ombre se resserre à la montée) ou
+            <b>lévitent</b> (ils ne touchent jamais le sol). C'est exactement ce que tu as
+            décrit — et c'est la technique de ta carte de joueur, qui est déjà en
+            <code>preserve-3d</code>.
+        </p>
+        <div class="commandes">
+            <button id="de-css">Lancer le dé</button>
+            <span class="de" id="val-css">—</span>
+            <button class="sobre on" id="mode-marche">Marche</button>
+            <button class="sobre" id="mode-levite">Lévitation</button>
+            <button class="sobre" id="angle-css">Baisser la caméra</button>
+        </div>
+        <div class="scene"><div class="plateau" id="plateau"></div></div>
+    </section>
+
+    <section>
+        <h2>2 · Three.js — vraie 3D</h2>
+        <p class="dit">
+            Même plateau, mais avec ce que le CSS ne sait pas faire : des <b>volumes</b> réels,
+            une <b>lumière</b> qui porte des ombres sur les cases voisines, et une <b>caméra</b>
+            qui tourne. C'est aussi ici qu'arriverait un décor modélisé sous Blender et exporté
+            en glTF. Poids : environ 150 Ko, chargés <b>seulement par ce mode</b>.
+        </p>
+        <div class="commandes">
+            <button id="de-3d">Lancer le dé</button>
+            <span class="de" id="val-3d">—</span>
+            <button class="sobre on" id="tourne">Caméra qui tourne</button>
+        </div>
+        <div id="troisd"></div>
+    </section>
+
+    <section>
+        <h2>3 · Ce que chacune coûte, ce qu'elle apporte</h2>
+        <table>
+            <tr><th>&nbsp;</th><th>CSS 3D</th><th>Three.js</th></tr>
+            <tr><td>Poids ajouté</td><td>0 Ko</td><td>~150 Ko (gzip), chargé par le mode</td></tr>
+            <tr><td>Étape de build</td><td>aucune</td><td>aucune — balise <code>script</code>, comme Vue</td></tr>
+            <tr><td>Ombres portées</td><td>simulées (une ellipse sous le pion)</td><td>réelles, sur les cases voisines</td></tr>
+            <tr><td>Caméra</td><td>deux angles figés</td><td>libre, animable, zoomable</td></tr>
+            <tr><td>Décor modélisé</td><td>impossible</td><td>glTF depuis Blender</td></tr>
+            <tr><td>Téléphone d'entrée de gamme</td><td>très sûr</td><td>à mesurer — c'est du GPU</td></tr>
+            <tr><td>Ce que tu sais déjà</td><td>tout</td><td>rien encore</td></tr>
+        </table>
+    </section>
+
+<script>
+// ⚠️ TOUT DANS UNE FONCTION, et aucun nom au premier niveau. C est l incident
+// `CHIFFRES` de ce projet : un `const` global dans une page qui charge aussi
+// un script du jeu entre en collision avec lui, et le navigateur ne dit rien.
+(function () {
+    'use strict';
+
+    // Le chemin : un anneau de seize cases. Les coordonnees sont en CASES,
+    // jamais en pixels — c est `--t` qui les convertit, et changer la taille
+    // du plateau ne demande alors de toucher a rien d autre.
+    var CHEMIN = [
+        [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],
+        [5,1],[5,2],[5,3],
+        [4,3],[3,3],[2,3],[1,3],[0,3],
+        [0,2],[0,1]
+    ];
+    // Les natures de case, posees a la main pour qu elles ne tombent pas
+    // toutes au meme endroit — une repartition par modulo fait un motif
+    // qu on lit tout de suite comme une suite et non comme un plateau.
+    var NATURES = ['depart','bonus','','mini','','malus','bonus','','mini','','malus','','bonus','mini','','malus'];
+    var SIGNES  = { depart: '★', bonus: '+', malus: '!', mini: '▶', '': '·' };
+
+    var PIONS = [
+        { nom: 'slayer',    img: '/girl.png',   couleur: '#f0c75e' },
+        { nom: 'Hokage475', img: '/knight.png', couleur: '#5fc9e8' },
+        { nom: 'Shinobi30', img: '/ninja.png',  couleur: '#a97bf5' }
+    ];
+
+    // ────────────────────────────────────────────────────────────
+    // 1. LE PLATEAU EN CSS 3D
+    // ────────────────────────────────────────────────────────────
+    var plateau = document.getElementById('plateau');
+    var cases = CHEMIN.map(function (p, i) {
+        var d = document.createElement('div');
+        var nat = NATURES[i];
+        d.className = 'case' + (nat && nat !== 'depart' ? ' ' + nat : '');
+        d.style.setProperty('--c', p[0]);
+        d.style.setProperty('--r', p[1]);
+        d.innerHTML = '<span class="sigle">' + (SIGNES[nat] || '·') + '</span>';
+        plateau.appendChild(d);
+        return d;
+    });
+
+    var pionsCss = PIONS.map(function (p, i) {
+        var d = document.createElement('div');
+        d.className = 'pion marche';
+        d.style.setProperty('--c', CHEMIN[0][0]);
+        d.style.setProperty('--r', CHEMIN[0][1]);
+        d.style.setProperty('--pc', p.couleur);
+        // ⚠️ LES TROIS PIONS PARTENT DE LA MEME CASE, et il faut les ecarter
+        // ou le dernier dessine cache les deux autres. ⚠️ 14 px ne suffisait
+        // pas : releve au rendu, on n en voyait qu un. L ecart est sur le
+        // PLAN DU PLATEAU, donc raccourci par la perspective — ce qu on
+        // ecrit n est pas ce qu on voit, et il en faut nettement plus que
+        // la moitie d un avatar. En vrai jeu la question est la meme, et
+        // elle se regle pareil.
+        d.innerHTML =
+            '<span class="ombre"></span>' +
+            '<div class="saut"><div class="figure" style="translate:' +
+            ((i - 1) * 30) + 'px ' + ((i - 1) * 18) + 'px 0">' +
+            '<img src="' + p.img + '" alt="" draggable="false"></div></div>';
+        plateau.appendChild(d);
+        return { el: d, pos: 0 };
+    });
+
+    var tourCss = 0, bougeCss = false;
+    var modeLevite = false;
+
+    // Un pas, puis le suivant : c est ce qui donne le « tac-tac-tac » d un
+    // pion de Mario Party. Deplacer en une seule transition de six cases
+    // donnerait un glissement, et on ne compterait plus les cases.
+    function avancerCss(p, n, fini) {
+        var reste = n;
+        function pas() {
+            if (reste <= 0) { fini(); return; }
+            p.pos = (p.pos + 1) % CHEMIN.length;
+            p.el.style.setProperty('--c', CHEMIN[p.pos][0]);
+            p.el.style.setProperty('--r', CHEMIN[p.pos][1]);
+            if (!modeLevite) {
+                // ⚠️ On RELANCE l animation en la retirant puis en la
+                // reposant apres un reflow force : sans ca, reposer la meme
+                // classe ne redeclenche rien et seul le premier bond joue.
+                p.el.classList.remove('marche');
+                void p.el.offsetWidth;
+                p.el.classList.add('marche');
+            }
+            reste--;
+            setTimeout(pas, 310);
+        }
+        pas();
+    }
+
+    document.getElementById('de-css').addEventListener('click', function () {
+        if (bougeCss) return;
+        bougeCss = true;
+        var n = 1 + Math.floor(Math.random() * 6);
+        var p = pionsCss[tourCss];
+        document.getElementById('val-css').textContent =
+            PIONS[tourCss].nom + ' · ' + n;
+        avancerCss(p, n, function () {
+            tourCss = (tourCss + 1) % pionsCss.length;
+            bougeCss = false;
+        });
+    });
+
+    function poserMode(levite) {
+        modeLevite = levite;
+        pionsCss.forEach(function (p) {
+            p.el.classList.toggle('levite', levite);
+            p.el.classList.toggle('marche', !levite);
+        });
+        document.getElementById('mode-marche').classList.toggle('on', !levite);
+        document.getElementById('mode-levite').classList.toggle('on', levite);
+    }
+    document.getElementById('mode-marche').addEventListener('click', function () { poserMode(false); });
+    document.getElementById('mode-levite').addEventListener('click', function () { poserMode(true); });
+    document.getElementById('angle-css').addEventListener('click', function () {
+        var bas = plateau.classList.toggle('face');
+        this.textContent = bas ? 'Remonter la caméra' : 'Baisser la caméra';
+    });
+
+    // ────────────────────────────────────────────────────────────
+    // 2. LE MEME PLATEAU EN THREE.JS
+    // ────────────────────────────────────────────────────────────
+    // ⚠️ CHARGE EN MODULE, ET EN ECHEC IL LE DIT. Une scene 3D qui ne part
+    // pas laisse un rectangle noir, qu on prend pour un bug de la page et
+    // non pour un reseau coupe. Le message remplace la scene.
+    var hote = document.getElementById('troisd');
+
+    import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js')
+        .then(function (THREE) { monter3d(THREE); })
+        .catch(function (e) {
+            hote.innerHTML = '<div class="panne">Three.js n\'a pas pu être chargé depuis le CDN.' +
+                '<br>La colonne CSS 3D au-dessus, elle, ne dépend de rien et fonctionne hors ligne.' +
+                '<br><small style="opacity:.6">' + String(e).slice(0, 120) + '</small></div>';
+        });
+
+    function monter3d(THREE) {
+        var L = hote.clientWidth, H = hote.clientHeight;
+        var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0910);
+        // Une brume : elle eloigne le fond et donne de la profondeur sans
+        // aucun objet en plus.
+        scene.fog = new THREE.Fog(0x0a0910, 14, 34);
+
+        var cam = new THREE.PerspectiveCamera(42, L / H, 0.1, 100);
+        var rendu = new THREE.WebGLRenderer({ antialias: true });
+        rendu.setSize(L, H);
+        // ⚠️ PLAFONNE A 2 : sur un telephone a `devicePixelRatio` 3, rendre
+        // en 3x fait neuf fois les pixels d un rendu 1x pour une difference
+        // qu on ne voit pas. C est le reglage qui decide de la fluidite.
+        rendu.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        rendu.shadowMap.enabled = true;
+        rendu.shadowMap.type = THREE.PCFSoftShadowMap;
+        hote.appendChild(rendu.domElement);
+
+        // Lumieres : une ambiante tres basse pour que les faces sombres ne
+        // soient pas NOIRES, et une directionnelle qui porte les ombres.
+        scene.add(new THREE.AmbientLight(0xbfb3ff, 0.55));
+        var cle = new THREE.DirectionalLight(0xfff0cf, 2.1);
+        cle.position.set(5, 9, 4);
+        cle.castShadow = true;
+        cle.shadow.mapSize.set(1024, 1024);
+        cle.shadow.camera.left = -9; cle.shadow.camera.right = 9;
+        cle.shadow.camera.top = 9;   cle.shadow.camera.bottom = -9;
+        scene.add(cle);
+        var appoint = new THREE.PointLight(0xf0c75e, 18, 18);
+        appoint.position.set(-4, 3, -3);
+        scene.add(appoint);
+
+        // Le sol, qui RECOIT les ombres — c est tout son role.
+        var sol = new THREE.Mesh(
+            new THREE.PlaneGeometry(40, 40),
+            new THREE.MeshStandardMaterial({ color: 0x14121c, roughness: 1 })
+        );
+        sol.rotation.x = -Math.PI / 2;
+        sol.position.y = -0.26;
+        sol.receiveShadow = true;
+        scene.add(sol);
+
+        var TEINTES = { depart: 0x6e6880, bonus: 0xc79a2c, malus: 0xa33b3b, mini: 0x2f7fa8, '': 0x2a2735 };
+        var PAS = 1.5;
+        // On centre le plateau sur l origine : sans ca la camera vise un
+        // coin et tout le monde est de travers.
+        var cx = 2.5 * PAS, cz = 1.5 * PAS;
+        var geoCase = new THREE.BoxGeometry(PAS * 0.88, 0.32, PAS * 0.88);
+
+        CHEMIN.forEach(function (p, i) {
+            var nat = NATURES[i];
+            var m = new THREE.Mesh(geoCase, new THREE.MeshStandardMaterial({
+                color: TEINTES[nat] !== undefined ? TEINTES[nat] : TEINTES[''],
+                roughness: 0.65, metalness: 0.15
+            }));
+            m.position.set(p[0] * PAS - cx, 0, p[1] * PAS - cz);
+            m.castShadow = true; m.receiveShadow = true;
+            scene.add(m);
+        });
+
+        // Les pions : des SPRITES avec l avatar en texture.
+        // ⚠️ Un sprite fait face a la camera TOUT SEUL — c est le billboard
+        // du CSS, mais gratuit : pas de contre-rotation a tenir d accord
+        // avec l angle du plateau. En revanche un sprite ne projette pas
+        // d ombre, d ou le petit disque pose dessous.
+        var chargeur = new THREE.TextureLoader();
+        var pions3d = PIONS.map(function (p, i) {
+            var g = new THREE.Group();
+            var tex = chargeur.load(p.img);
+            if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
+            var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+            sp.scale.set(0.95, 0.95, 1);
+            sp.position.y = 0.85;
+            g.add(sp);
+            var anneau = new THREE.Mesh(
+                new THREE.CircleGeometry(0.42, 24),
+                new THREE.MeshBasicMaterial({ color: p.couleur, transparent: true, opacity: 0.5 })
+            );
+            anneau.rotation.x = -Math.PI / 2;
+            anneau.position.y = 0.18;
+            g.add(anneau);
+            // ⚠️ MEME PROBLEME QU EN CSS, MEME CAUSE : trois pions sur la
+            // case de depart, et un sprite fait 0,95 de large. A 0,3
+            // d ecart ils se recouvraient aux deux tiers et l on n en voyait
+            // qu un. Releve au rendu, pas calcule.
+            g.position.set(
+                CHEMIN[0][0] * PAS - cx + (i - 1) * 0.52,
+                0,
+                CHEMIN[0][1] * PAS - cz + (i - 1) * 0.38
+            );
+            scene.add(g);
+            return { g: g, pos: 0, dec: (i - 1) * 0.52, dec2: (i - 1) * 0.38, sp: sp };
+        });
+
+        var tour3d = 0, bouge3d = false, anim = null;
+
+        // ⚠️ LE SAUT EST UNE PARABOLE, pas une interpolation droite. C est
+        // tout ce qui separe « un pion qui saute » de « un pion qui glisse » —
+        // et ca tient en un `Math.sin(t * PI)`.
+        function avancer3d(p, n, fini) {
+            var reste = n;
+            function pas() {
+                if (reste <= 0) { anim = null; fini(); return; }
+                var de = { x: p.g.position.x, z: p.g.position.z };
+                p.pos = (p.pos + 1) % CHEMIN.length;
+                var vers = {
+                    x: CHEMIN[p.pos][0] * PAS - cx + p.dec,
+                    z: CHEMIN[p.pos][1] * PAS - cz + p.dec2
+                };
+                var t0 = performance.now(), duree = 300;
+                anim = function (now) {
+                    var t = Math.min(1, (now - t0) / duree);
+                    p.g.position.x = de.x + (vers.x - de.x) * t;
+                    p.g.position.z = de.z + (vers.z - de.z) * t;
+                    p.g.position.y = Math.sin(t * Math.PI) * 0.75;
+                    if (t >= 1) { p.g.position.y = 0; reste--; anim = null; setTimeout(pas, 60); }
+                };
+            }
+            pas();
+        }
+
+        document.getElementById('de-3d').addEventListener('click', function () {
+            if (bouge3d) return;
+            bouge3d = true;
+            var n = 1 + Math.floor(Math.random() * 6);
+            document.getElementById('val-3d').textContent = PIONS[tour3d].nom + ' · ' + n;
+            avancer3d(pions3d[tour3d], n, function () {
+                tour3d = (tour3d + 1) % pions3d.length;
+                bouge3d = false;
+            });
+        });
+
+        var tourne = true;
+        document.getElementById('tourne').addEventListener('click', function () {
+            tourne = !tourne;
+            this.classList.toggle('on', tourne);
+        });
+
+        var angle = 0.6;
+        function boucle(now) {
+            requestAnimationFrame(boucle);
+            if (anim) anim(now);
+            if (tourne) angle += 0.0022;
+            cam.position.set(Math.cos(angle) * 9.5, 7.2, Math.sin(angle) * 9.5);
+            cam.lookAt(0, 0, 0);
+            rendu.render(scene, cam);
+        }
+        requestAnimationFrame(boucle);
+
+        // ⚠️ LE REDIMENSIONNEMENT N EST PAS UN LUXE : sans lui, tourner le
+        // telephone laisse une scene etiree, et c est le defaut le plus
+        // visible d une page 3D mal finie.
+        window.addEventListener('resize', function () {
+            var l = hote.clientWidth, h = hote.clientHeight;
+            cam.aspect = l / h; cam.updateProjectionMatrix();
+            rendu.setSize(l, h);
+        });
+    }
+})();
+</script>
+</body>
+</html>

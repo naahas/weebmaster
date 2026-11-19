@@ -2916,6 +2916,15 @@ app.get('/prototypes/embleme', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-embleme.html');
 });
 
+// 🎲 Le MEME plateau de jeu en CSS 3D puis en Three.js, pour chiffrer ce que
+// la seconde technique achete. ⚠️ Ce banc ne decide pas d un mode : il
+// repond a « peut-on etendre nos possibilites avec un moteur », et la
+// reponse ne se lit pas dans des fiches techniques — il faut le meme chemin,
+// les memes pions et le meme de dans les deux.
+app.get('/prototypes/plateau', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-plateau.html');
+});
+
 // 👤 La FORME du panneau du profil : cinq, sur une reduction de la vraie page
 // d accueil. ⚠️ Le fond n y est pas un decor, c est l unite de mesure : depuis
 // que l avatar s est centre, la bulle d aujourd hui s ouvre au milieu de

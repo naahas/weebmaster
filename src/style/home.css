@@ -7369,7 +7369,17 @@ html.rendu-logiciel .v2-dust { display: none; }
    l ordre du fichier, et lui seul, qui decide lequel gagne. */
 @media (max-width: 768px) {
     .v2-topbar.site { justify-content: flex-end; gap: 1rem; }
-    .v2-topbar.site .v2-marque { margin-right: auto; }
+    /* ⚠️ LE NOM ECRIT DISPARAIT SUR TELEPHONE. Il y disait trois fois la
+       meme chose : le logotype geant occupe le milieu de l accueil, et
+       l embleme tient le bas de la barre depuis la refonte mobile. Un nom
+       repete trois fois sur un ecran de 390 px ne renforce rien, il prend
+       la place du solde.
+       ⚠️ ET IL EMPORTE `margin-right: auto` AVEC LUI — c est elle qui
+       poussait tout le reste a droite et tenait le burger au bord gauche.
+       Elle passe donc au burger, sinon il se recolle au groupe de droite et
+       quitte le seul endroit ou on va le chercher. */
+    .v2-topbar.site .v2-marque { display: none; }
+    .v2-topbar.site .v2-burger { margin-right: auto; }
 }
 
 .v2-topbar .v2-logo { margin-right: auto; }
@@ -8383,14 +8393,42 @@ html.rendu-logiciel .v2-dust { display: none; }
    rendu : a 800 px, il restait TROIS pixels. 880 laisse la marge qu un lien
    de plus consommerait sans prevenir. */
 @media (max-width: 880px) {
-    /* ⚠️ LE SOLDE DISPARAIT SOUS CE SEUIL, et ce n est pas qu une question de
-       place : il REDONNE a l avatar son role de dernier enfant du groupe, ce
-       dont dependent les deux regles ci-dessous. Garde visible, il aurait
-       fallu compenser sa largeur — qui change avec le nombre — dans chacune
-       d elles. */
-    .v2-topbar.site .v2-moi-rubis { display: none; }
+    /* 💎 LE SOLDE REVIENT SUR TELEPHONE, MAIS A GAUCHE DE L AVATAR.
+       ⚠️ IL AVAIT ETE MASQUE, et la raison n etait pas la place : elle etait
+       que l avatar devait rester le DERNIER enfant du groupe, ce dont
+       dependent les deux regles ci-dessous — la bulle du profil et sa pointe
+       se calent sur le bord droit. Le passer a GAUCHE repond a la meme
+       exigence par l autre bout : l avatar redevient le dernier, et les deux
+       regles restent justes sans avoir a compenser une largeur qui change
+       avec le nombre affiche.
+       ⚠️ L ORDRE DE LECTURE NE BOUGE PAS. `order` ne deplace que le rendu :
+       dans le gabarit, le solde suit toujours l avatar, et c est ce que
+       lisent la tabulation et un lecteur d ecran. On ne reordonne QUE ce
+       qui se voit.
+       ⚠️ ET LE MIROIR EST COMPLET : le gros padding repasse a droite — c est
+       lui qui glisse sous le portrait — et la marge negative avec. En
+       n inversant que l un des deux, le nombre se serait enfonce sous
+       l avatar, ou la pastille s en serait decollee. */
+    .v2-topbar.site .v2-moi-grp .v2-moi-rubis { order: 0; }
+    .v2-topbar.site .v2-moi-grp .v2-moi-av { order: 1; }
+    .v2-topbar.site .v2-moi-rubis {
+        padding: 0 2.05rem 0 0.9rem;
+        margin-left: 0;
+        margin-right: -1.1rem;
+    }
     .v2-topbar.site .v2-profil { left: auto; right: calc(-1 * var(--moi-marge)); }
-    .v2-topbar.site .v2-profil::before { left: auto; right: calc(var(--moi-av) / 2 - 0.425rem); }
+    /* ⚠️ `var(--moi-marge)` EST DANS LE COMPTE, ET IL Y MANQUAIT. La pointe
+       se place depuis le bord droit DU PANNEAU ; or le panneau deborde du
+       groupe de `--moi-marge` (la ligne du dessus). Sans ce terme, la pointe
+       visait 7 px a droite du centre de l avatar — sur une fleche de 13,6 px
+       de large, c est la moitie de sa largeur, et elle designait le vide.
+       ⚠️ LE DEFAUT ETAIT ANTERIEUR AU SOLDE SUR TELEPHONE : il ne s est vu
+       qu en mesurant, parce qu une pointe legerement de travers se lit comme
+       un choix de dessin tant qu on ne la compare a rien. */
+    .v2-topbar.site .v2-profil::before {
+        left: auto;
+        right: calc(var(--moi-marge) + var(--moi-av) / 2 - 0.425rem);
+    }
 }
 
 /* ℹ️ LA POINTE PORTEE PAR LE GROUPE A ETE RETIREE avec la barre en ligne.
@@ -8766,9 +8804,14 @@ html.rendu-logiciel .v2-dust { display: none; }
     margin-right: 0;
     margin-left: -1.15rem;
 }
-@media (max-width: 480px) {
-    .v2-moi-rubis { padding: 0 0.88rem 0 1.95rem; margin-right: 0; margin-left: -1.05rem; }
-}
+/* ℹ️ UNE REGLE ≤480 A ETE RETIREE ICI. Elle resserrait la pastille en
+   reecrivant ses quatre valeurs — et une SECONDE regle ≤480, plus bas,
+   faisait la meme chose en miroir. Les deux se superposaient : la derniere
+   gagnait sur le padding et sur `margin-right`, mais `margin-left` de la
+   premiere survivait, si bien que la pastille portait une marge negative
+   DES DEUX COTES. Le defaut ne se voyait pas parce que le solde etait
+   masque sous 880 px ; il allait paraitre le jour ou on le rallumerait.
+   C est aujourd hui. Il ne reste qu une regle, plus bas. */
 
 /* ⚠️ L avatar PASSE DEVANT, et il faut le dire : les deux sont positionnes,
    et sans cet ordre explicite c est la pile du document qui tranche — elle
@@ -8782,12 +8825,23 @@ html.rendu-logiciel .v2-dust { display: none; }
 .v2-moi-rubis b { font-weight: 700; }
 
 @media (max-width: 480px) {
-    /* Sur telephone la barre n a que l avatar a droite : le solde peut rester,
-       mais il se resserre pour ne pas pousser le portrait vers le centre.
-       ⚠️ Le padding DROIT et la marge negative ne bougent PAS d un seul cote :
-       ils se repondent, et resserrer l un sans l autre ferait sortir la
-       pastille de sous le portrait ou y enfoncerait le nombre. */
-    .v2-moi-rubis { font-size: 0.78rem; gap: 0.35rem; height: 2.2rem; padding: 0 1.95rem 0 0.88rem; margin-right: -1.05rem; }
+    /* Sur telephone le solde est a GAUCHE de l avatar (voir le bloc 880 px),
+       et il se resserre pour ne pas pousser le portrait vers le centre.
+       ⚠️ LE PADDING DROIT ET LA MARGE NEGATIVE SE REPONDENT : c est le
+       padding droit qui reserve la place du portrait par-dessus, et la marge
+       negative qui l y fait glisser. Resserrer l un sans l autre fait sortir
+       la pastille de sous le portrait, ou y enfonce le nombre.
+       ⚠️ ET `margin-left` EST REMIS A ZERO ICI AUSSI. Il vaut -1,15rem sur
+       ordinateur, ou la pastille est a droite ; laisse en place, il tirait
+       la pastille vers l avatar PAR LES DEUX COTES. */
+    .v2-topbar.site .v2-moi-rubis {
+        font-size: 0.78rem;
+        gap: 0.35rem;
+        height: 2.2rem;
+        padding: 0 1.9rem 0 0.8rem;
+        margin-left: 0;
+        margin-right: -1.05rem;
+    }
     .v2-moi-rubis img { height: 1rem; }
 }
 
