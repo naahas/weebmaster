@@ -13882,12 +13882,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        Depuis, il a cede la place a `.v2-barre-bas`, qui est `fixed` — elle
        ne pousse donc RIEN, et sans reserve elle recouvrirait la derniere
        chose de la page.
-       ⚠️ 4,6rem = la hauteur mesuree de la barre (environ 3,5rem) plus l air
-       qui separait deja le contenu du bord. Et `env(safe-area-inset-bottom)`
-       s y ajoute pour les telephones a barre gestuelle, exactement comme
-       dans la barre elle-meme : les deux doivent compter la meme encoche,
-       sinon la reserve est juste a plat et fausse sur un iPhone. */
-    .v2-home { padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px)); }
+       ⚠️ 5,3rem = la hauteur mesuree de la barre plus l air qui separait
+       deja le contenu du bord. ⚠️ ELLE SUIT LA BARRE : quand celle-ci a ete
+       epaissie par le bas pour remonter son contenu, elle est passee de 59 a
+       70 px — et une reserve laissee a 4,6rem (73,6 px) ne gardait plus que
+       trois pixels d air. Les deux nombres sont lies ; changer l un sans
+       l autre ne casse rien de visible tout de suite, ce qui est le pire
+       des cas.
+       Et `env(safe-area-inset-bottom)` s y ajoute pour les telephones a
+       barre gestuelle, exactement comme dans la barre elle-meme : les deux
+       doivent compter la meme encoche, sinon la reserve est juste a plat et
+       fausse sur un iPhone. */
+    .v2-home { padding-bottom: calc(5.3rem + env(safe-area-inset-bottom, 0px)); }
 
     .v2-choices {
         flex-direction: row;
@@ -15901,10 +15907,18 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 0.6rem;
-    /* ⚠️ `env(safe-area-inset-bottom)` : sur un telephone a barre gestuelle,
+    /* ⚠️ LA BARRE RESTE COLLEE AU BAS, C EST SON PADDING QUI LA FAIT MONTER.
+       On voulait que TOUT remonte — le logo, les liens ET le filet. Deux
+       chemins : decoller la barre du bord (`bottom: 1rem`), ou l epaissir
+       par le bas. Le premier la fait FLOTTER : son aplat noir devient une
+       bande posee au milieu, avec le jeu qui reparait dessous et deux coins
+       carres qui touchent les bords. Le second la garde ancree et fait
+       monter son contenu ET son filet du haut, qui est exactement ce qu on
+       demande.
+       ⚠️ `env(safe-area-inset-bottom)` : sur un telephone a barre gestuelle,
        le bas de l ecran n est pas le bas de la zone sure. Sans ca les deux
        liens se posent sous la barre du systeme, qui mange le doigt. */
-    padding: 0.85rem 1.1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.85rem 1.1rem calc(1.55rem + env(safe-area-inset-bottom, 0px));
     background: #07060b;
 }
 /* Le filet dore qui la separe du jeu — le meme que celui du pied, et il
