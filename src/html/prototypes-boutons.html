@@ -1,267 +1,392 @@
-<!DOCTYPE html>
-<html lang="fr">
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Créer et Rejoindre, sept refontes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShonenMaster — Prototypes de boutons</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="icon.png">
-    <style>
-        :root { --neon: #FFD700; --accent: #FF8C00; --blue: #7c9cff; --txt: #fff; --txt2: #a0a0a0; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<!--
+   🔘 SEPT REFONTES DU COUPLE CREER / REJOINDRE.
 
-        body {
-            background: radial-gradient(120% 90% at 50% 0%, #14100a 0%, #0c0c0e 45%, #08080a 100%);
-            background-attachment: fixed;
-            color: var(--txt);
-            font-family: 'Poppins', sans-serif;
-            padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
-        }
+   ⚠️ ON JUGE LE COUPLE, JAMAIS UN BOUTON SEUL. Ces deux-la ne sont pas deux
+   boutons mais UN CHOIX : ce qui se joue est de voir d un coup d œil qu il y
+   a deux chemins et lequel est le sien. Un bouton montre isole paraitrait
+   toujours bon.
 
-        .nav { max-width: 66rem; margin: 0 auto 2rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
-        .nav a {
-            padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 600; text-decoration: none;
-            color: var(--txt2); background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 2rem; transition: 0.2s;
-        }
-        .nav a:hover, .nav a.on { color: var(--neon); border-color: rgba(255,215,0,0.4); }
+   ⚠️ ET SUR LE VRAI FOND. L accueil est un degrade d aurore dore avec une
+   grille en perspective qui monte vers le haut. Une plaque sombre posee
+   dessus ne se detache pas de la meme facon qu elle le ferait sur du noir —
+   c est l erreur qui avait produit le banc de profil ou rien ne se
+   chevauchait.
 
-        .head { max-width: 66rem; margin: 0 auto 2.5rem; }
-        .head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 0.03em; }
-        .head p { color: var(--txt2); font-size: 0.9rem; max-width: 46rem; line-height: 1.6; }
-        .head b { color: var(--neon); font-weight: 600; }
+   ⚠️ IL FAUT LES SURVOLER. Quatre des sept ne se jugent qu en mouvement :
+   la bordure vivante tourne, le verre s eclaircit, le segmente allume une
+   moitie, la touche retro-eclairee se souleve. Au repos elles se
+   ressemblent toutes plus qu elles ne le devraient.
+-->
 
-        .protos { max-width: 66rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
+<style>
+    :root {
+        --or: #f0c75e;
+        --orvif: #ffd700;
+        --bleu: #8ca0ff;
+        --violet: #a97bf5;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 0 0 5rem;
+        background: #08080b;
+        color: #e8e8ee;
+        font-family: 'Poppins', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1 { margin: 0; padding: 2rem 1.6rem 0.4rem; font-size: 1.4rem; font-weight: 800; }
+    .sous { margin: 0 0 2.2rem; padding: 0 1.6rem; max-width: 48rem;
+            font-size: 0.82rem; line-height: 1.75; color: #9a94a8; }
+    .sous b { color: #fff; font-weight: 600; }
 
-        .proto-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.9rem; }
-        .proto-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--neon); }
-        .proto-name { font-size: 0.98rem; font-weight: 700; }
-        .proto-note { font-size: 0.76rem; color: var(--txt2); margin-left: auto; text-align: right; max-width: 30rem; }
+    .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(23rem, 1fr));
+        gap: 2.4rem 1.6rem;
+        padding: 0 1.6rem;
+    }
+    .cas { display: flex; flex-direction: column; gap: 0.7rem; }
+    .cas-tete { display: flex; align-items: baseline; gap: 0.6rem; }
+    .cas-num { font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 800; color: var(--or); }
+    .cas-nom { font-size: 0.88rem; font-weight: 700; color: #fff; }
+    .cas-dit { font-size: 0.73rem; line-height: 1.6; color: #8a8499; min-height: 3.2em; }
 
-        .stage {
-            display: flex; flex-direction: column; gap: 1.1rem;
-            width: min(26rem, 100%);
-            padding: 1.6rem;
-            background: rgba(255,255,255,0.015);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 1rem;
-        }
+    /* ⚠️ LE FOND DE L ACCUEIL, pas du noir : degrade d aurore dore ET grille
+       en perspective. La grille est a PLAT et non projetee — projetee depuis
+       le bas, ses rangees espacees tombent hors cadre et il ne reste que le
+       lointain, qui se fond en un aplat. Ce qu on veut n est pas de
+       reproduire la grille, c est d avoir des lignes claires DERRIERE les
+       plaques, parce que c est la qu une bordure trop pale disparait. */
+    .ecran {
+        position: relative;
+        padding: 2.2rem 1.6rem;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.07);
+        background:
+            radial-gradient(130% 100% at 50% -10%, rgba(240,199,94,.16), transparent 62%),
+            linear-gradient(180deg, #12100c 0%, #0a0910 100%);
+    }
+    .ecran::before {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+            repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 1px, transparent 1px 2.6rem),
+            repeating-linear-gradient(0deg,  rgba(255,255,255,.09) 0 1px, transparent 1px 2.1rem);
+        -webkit-mask: linear-gradient(180deg, #000, transparent 85%);
+        mask: linear-gradient(180deg, #000, transparent 85%);
+    }
+    .duo { position: relative; display: flex; flex-direction: column; gap: 0.9rem; }
 
-        /* Emplacement réservé au personnage PNG */
-        .slot {
-            position: absolute; right: 0; bottom: 0; width: 42%; height: 128%;
-            display: grid; place-items: center;
-            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; color: rgba(255,255,255,0.16);
-            border-left: 1px dashed rgba(255,255,255,0.08);
-            pointer-events: none;
-        }
+    /* Le socle commun : ce que TOUTES partagent, pour que la comparaison
+       porte sur le dessin et non sur la taille ou la typographie. */
+    .btn {
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 5.6;
+        padding: 1rem 1.3rem;
+        text-align: left;
+        font-family: inherit;
+        color: #fff;
+        cursor: pointer;
+        border: 0;
+        background: none;
+        overflow: hidden;
+    }
+    .kicker {
+        display: block;
+        font-size: 0.6rem; font-weight: 700; letter-spacing: 0.22em;
+        text-transform: uppercase; color: var(--or);
+    }
+    .rejoindre .kicker { color: var(--bleu); }
+    .titre {
+        display: block;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(1.8rem, 5vw, 2.4rem);
+        line-height: 1.05;
+        letter-spacing: 0.01em;
+    }
+    .kanji {
+        position: absolute;
+        right: 0.7rem; bottom: -0.9rem;
+        font-size: 4.2rem; line-height: 1;
+        color: rgba(255,255,255,.055);
+        pointer-events: none;
+        user-select: none;
+    }
 
-        .btn { position: relative; overflow: hidden; cursor: pointer; border: none; background: none; font-family: inherit; text-align: left; }
-        .kicker { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--neon); }
-        .word { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 1; color: var(--txt); }
-        .btn.join .kicker { color: var(--blue); }
+    /* ═══════════ 1 · ACTUEL — l etalon ═══════════
+       Plaque sombre, liisere blanc tres pale, halo colore dans un coin et un
+       reflet qui balaie au survol. Il est ici pour qu on ne compare pas six
+       nouveautes entre elles : sans etalon, on choisit toujours la plus
+       voyante. */
+    .b1 .btn {
+        background: linear-gradient(135deg, #17150f, #101012);
+        border: 0.09rem solid rgba(255,255,255,.09);
+        border-radius: 0.55rem;
+        transition: border-color .3s, box-shadow .35s, transform .35s;
+    }
+    .b1 .creer::before, .b1 .rejoindre::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        opacity: .55; transition: opacity .4s;
+    }
+    .b1 .creer::before { background: radial-gradient(70% 90% at 22% 8%, rgba(255,190,40,.34), transparent 70%); }
+    .b1 .rejoindre::before { background: radial-gradient(70% 90% at 78% 8%, rgba(120,150,255,.28), transparent 70%); }
+    .b1 .btn:hover::before { opacity: 1; }
+    .b1 .creer:hover { border-color: rgba(240,199,94,.5); box-shadow: 0 1.2rem 3rem rgba(255,170,0,.14); }
+    .b1 .rejoindre:hover { border-color: rgba(140,160,255,.5); box-shadow: 0 1.2rem 3rem rgba(120,140,255,.16); }
 
-        /* ── A : plaque biseautée ── */
-        .a .btn {
-            aspect-ratio: 16/6; padding: 1.1rem 1.3rem;
-            display: flex; flex-direction: column; justify-content: space-between;
-            background: linear-gradient(135deg, #17150f, #101012);
-            border: 1px solid rgba(255,255,255,0.09);
-            clip-path: polygon(0 0, 100% 0, 100% 72%, 93% 100%, 0 100%);
-            transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s, box-shadow .35s;
-        }
-        .a .btn::after {
-            content: ''; position: absolute; top: 0; left: -60%; width: 45%; height: 100%;
-            background: linear-gradient(105deg, transparent, rgba(255,255,255,0.14), transparent);
-            transition: left .6s cubic-bezier(.2,.8,.2,1);
-        }
-        .a .btn:hover { transform: translateY(-.3rem); border-color: rgba(255,215,0,.5); box-shadow: 0 1rem 2.4rem rgba(255,170,0,.16); }
-        .a .btn:hover::after { left: 115%; }
-        .a .btn.join:hover { border-color: rgba(124,156,255,.5); box-shadow: 0 1rem 2.4rem rgba(124,156,255,.14); }
+    /* ═══════════ 2 · VERRE ═══════════
+       Une plaque DEPOLIE : le fond du jeu se voit a travers, flou. Le
+       liisere est un degrade clair en haut qui s eteint en bas — c est ce
+       qui simule une tranche de verre eclairee par le dessus.
+       ⚠️ `backdrop-filter` COUTE CHER sur les telephones d entree de gamme,
+       et ce sont precisement ceux-la qui jouent. A mesurer avant de le
+       choisir — c est le seul des sept qui ait un cout a l execution. */
+    .b2 .btn {
+        border-radius: 1rem;
+        background: rgba(255,255,255,.055);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        backdrop-filter: blur(16px) saturate(140%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.18),
+                    inset 0 -14px 24px rgba(0,0,0,.28),
+                    0 1rem 2.4rem rgba(0,0,0,.35);
+        transition: background .3s, box-shadow .35s, translate .3s;
+    }
+    .b2 .btn::before {
+        content: ''; position: absolute; inset: 0; border-radius: inherit;
+        padding: 1px; pointer-events: none;
+        background: linear-gradient(160deg, rgba(255,255,255,.45), rgba(255,255,255,.04) 45%, transparent);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+    }
+    .b2 .creer:hover { background: rgba(240,199,94,.14); translate: 0 -2px; }
+    .b2 .rejoindre:hover { background: rgba(140,160,255,.14); translate: 0 -2px; }
 
-        /* ── B : bandeau latéral ── */
-        .b .btn {
-            aspect-ratio: 16/6; padding: 1.1rem 1.3rem 1.1rem 3.4rem;
-            display: flex; flex-direction: column; justify-content: center; gap: .2rem;
-            background: #101012; border: 1px solid rgba(255,255,255,0.08); border-radius: .8rem;
-            transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s;
-        }
-        .b .btn::before {
-            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2.1rem;
-            background: linear-gradient(180deg, var(--neon), var(--accent));
-            transition: width .35s cubic-bezier(.2,.8,.2,1);
-        }
-        .b .btn.join::before { background: linear-gradient(180deg, #9db4ff, #5b6ee0); }
-        .b .btn .side {
-            position: absolute; left: .55rem; top: 50%; transform: translateY(-50%) rotate(-90deg);
-            font-size: .58rem; font-weight: 800; letter-spacing: .2em; color: #0a0a0a;
-        }
-        .b .btn:hover { transform: translateX(.3rem); border-color: rgba(255,215,0,.45); }
-        .b .btn:hover::before { width: 2.6rem; }
+    /* ═══════════ 3 · BORDURE VIVANTE ═══════════
+       Un trait lumineux fait le tour de la plaque en continu. C est le
+       dessin le plus « 2026 » des sept, et le plus risque : il bouge en
+       PERMANENCE sur l ecran d accueil, qu on regarde avant chaque partie.
+       ⚠️ `isolation: isolate` est obligatoire : les deux calques sont en
+       z-index negatif, et sans elle ils passeraient DERRIERE le fond de la
+       page au lieu de rester dans le bouton.
+       ⚠️ `rotate` et non `transform` dans les keyframes : propriete a part,
+       composee avant lui — l erreur qui revient le plus souvent ici. */
+    .b3 .btn {
+        border-radius: 0.9rem;
+        isolation: isolate;
+        background: transparent;
+        transition: translate .3s;
+    }
+    .b3 .btn::before {
+        content: ''; position: absolute; inset: -1.5px; border-radius: inherit;
+        z-index: -2;
+        animation: bTourne 4.5s linear infinite;
+    }
+    .b3 .creer::before {
+        background: conic-gradient(from 0deg, transparent 0 58%, rgba(240,199,94,.9) 76%, #fff3cd 84%, transparent 94%);
+    }
+    .b3 .rejoindre::before {
+        background: conic-gradient(from 0deg, transparent 0 58%, rgba(140,160,255,.9) 76%, #dfe6ff 84%, transparent 94%);
+        animation-duration: 5.6s;
+    }
+    .b3 .btn::after {
+        content: ''; position: absolute; inset: 0; border-radius: inherit;
+        z-index: -1;
+        background: linear-gradient(150deg, #16131d, #0d0c12);
+    }
+    .b3 .btn:hover { translate: 0 -2px; }
+    @keyframes bTourne { from { rotate: 0deg; } to { rotate: 360deg; } }
 
-        /* ── C : contour lumineux animé ── */
-        .c .btn {
-            aspect-ratio: 16/6; padding: 1.2rem 1.4rem;
-            display: flex; flex-direction: column; justify-content: space-between;
-            background: rgba(10,10,12,.86); border-radius: .9rem;
-            isolation: isolate;
-        }
-        .c .btn::before {
-            content: ''; position: absolute; inset: -1px; border-radius: inherit; z-index: -1;
-            background: conic-gradient(from 0deg, transparent 0 62%, var(--neon) 78%, transparent 92%);
-            animation: spin 4.5s linear infinite; opacity: .5; transition: opacity .3s;
-        }
-        .c .btn.join::before { background: conic-gradient(from 180deg, transparent 0 62%, var(--blue) 78%, transparent 92%); }
-        .c .btn::after { content: ''; position: absolute; inset: 1px; border-radius: inherit; background: #0c0c0e; z-index: -1; }
-        .c .btn:hover::before { opacity: 1; }
-        @keyframes spin { to { transform: rotate(1turn); } }
+    /* ═══════════ 4 · SEGMENTE ═══════════
+       ⚠️ PLUS DEUX PLAQUES MAIS UNE SEULE, COUPEE EN DEUX. Le gain n est pas
+       graphique : deux boutons separes posent deux questions (« je clique
+       celui-ci ? et celui-la ? »), un segment unique en pose UNE SEULE avec
+       deux reponses. C est la forme la plus proche de ce que l ecran veut
+       dire — un choix, pas deux offres.
+       ⚠️ Et c est la seule des sept qui tienne sur UNE ligne sur telephone :
+       elle divise par deux la hauteur prise par le bloc. */
+    .b4 .duo {
+        flex-direction: row; gap: 0;
+        border-radius: 1rem; overflow: hidden;
+        border: 1px solid rgba(255,255,255,.1);
+        background: linear-gradient(150deg, #16131d, #0c0b11);
+    }
+    .b4 .btn {
+        aspect-ratio: auto; height: 6.2rem;
+        border-radius: 0;
+        background: transparent;
+        transition: background .25s;
+    }
+    .b4 .rejoindre { border-left: 1px solid rgba(255,255,255,.1); }
+    .b4 .creer:hover { background: linear-gradient(180deg, rgba(240,199,94,.18), transparent); }
+    .b4 .rejoindre:hover { background: linear-gradient(180deg, rgba(140,160,255,.18), transparent); }
+    /* Le filet du bas s allume sous la moitie survolee : c est lui qui dit
+       « c est celle-ci », plus surement qu un fond legerement plus clair. */
+    .b4 .btn::after {
+        content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+        scale: 0 1; transform-origin: center;
+        transition: scale .28s cubic-bezier(.2,.8,.2,1);
+    }
+    .b4 .creer::after { background: var(--or); }
+    .b4 .rejoindre::after { background: var(--bleu); }
+    .b4 .btn:hover::after { scale: 1 1; }
 
-        /* ── D : diagonale ── */
-        .d .btn {
-            aspect-ratio: 16/6; padding: 1.2rem 1.4rem;
-            display: flex; flex-direction: column; justify-content: space-between;
-            background: #0e0e10; border: 1px solid rgba(255,255,255,.08); border-radius: .9rem;
-            transition: transform .35s cubic-bezier(.2,.8,.2,1);
-        }
-        .d .btn::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(115deg, rgba(255,190,40,.22) 0 42%, transparent 42.4%);
-            transition: transform .5s cubic-bezier(.2,.8,.2,1);
-        }
-        .d .btn.join::before { background: linear-gradient(115deg, rgba(124,156,255,.2) 0 42%, transparent 42.4%); }
-        .d .btn:hover::before { transform: translateX(12%); }
-        .d .btn:hover { transform: translateY(-.25rem); }
-        .d .word { position: relative; }
-        .d .kicker { position: relative; }
+    /* ═══════════ 5 · NEO-BRUT ═══════════
+       Trait epais, ombre portee NETTE et decalee, aucun flou. A contre-
+       courant de tout le reste du jeu, qui est fait de halos — et c est tout
+       l interet de le montrer : le voir a cote des six autres dit en une
+       seconde si ShonenMaster veut ce langage-la ou non.
+       ⚠️ L ombre est sur `box-shadow` SANS flou (0 de rayon) : c est ce
+       detail-la, et lui seul, qui fait le style. */
+    .b5 .btn {
+        border-radius: 0.5rem;
+        background: #16131d;
+        border: 2px solid #efe6d2;
+        box-shadow: 5px 5px 0 var(--ombre, #efe6d2);
+        transition: translate .14s ease, box-shadow .14s ease;
+    }
+    .b5 .creer { --ombre: var(--or); }
+    .b5 .rejoindre { --ombre: var(--bleu); border-color: #dfe6ff; }
+    .b5 .btn:hover { translate: 3px 3px; box-shadow: 2px 2px 0 var(--ombre); }
+    .b5 .btn:active { translate: 5px 5px; box-shadow: 0 0 0 var(--ombre); }
+    .b5 .titre { color: #fff; }
 
-        /* ── E : arcade (relief + ombre portée dure) ── */
-        .e .btn {
-            aspect-ratio: 16/6; padding: 1.2rem 1.4rem;
-            display: flex; flex-direction: column; justify-content: space-between;
-            background: linear-gradient(180deg, #1b1810, #0f0f11);
-            border: 1px solid rgba(255,215,0,.28); border-radius: .5rem;
-            box-shadow: .28rem .28rem 0 rgba(255,190,40,.18);
-            transition: transform .18s ease, box-shadow .18s ease;
-        }
-        .e .btn.join { border-color: rgba(124,156,255,.28); box-shadow: .28rem .28rem 0 rgba(124,156,255,.18); }
-        .e .btn:hover { transform: translate(.14rem,.14rem); box-shadow: .14rem .14rem 0 rgba(255,190,40,.22); }
-        .e .btn:active { transform: translate(.28rem,.28rem); box-shadow: none; }
+    /* ═══════════ 6 · TOUCHE RETRO-ECLAIREE ═══════════
+       Une plaque mate posee sur une LUMIERE : le halo est sous elle et
+       deborde, comme une touche de clavier retro-eclairee. Au survol la
+       touche se souleve et la lumiere grandit.
+       ⚠️ C est le seul des sept ou la couleur ne touche pas la plaque : elle
+       est entierement dans l ombre portee. Sur fond clair il ne resterait
+       rien — mais l accueil est sombre et le restera. */
+    .b6 .btn {
+        border-radius: 0.85rem;
+        background: linear-gradient(180deg, #211d2c, #121019);
+        border: 1px solid rgba(255,255,255,.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.1),
+                    0 0.5rem 1.6rem -0.4rem var(--lueur, rgba(240,199,94,.45));
+        transition: translate .22s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+    }
+    .b6 .creer { --lueur: rgba(240,199,94,.5); }
+    .b6 .rejoindre { --lueur: rgba(140,160,255,.5); }
+    .b6 .btn:hover {
+        translate: 0 -3px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.14),
+                    0 1.1rem 2.6rem -0.3rem var(--lueur);
+    }
 
-        /* ── F : bande de titre ── */
-        .f .btn {
-            aspect-ratio: 16/6; padding: 0;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            background: #0e0e10; border: 1px solid rgba(255,255,255,.08); border-radius: .9rem;
-        }
-        .f .strip {
-            position: absolute; top: 0; left: 0; right: 0; padding: .38rem 1.3rem;
-            background: linear-gradient(90deg, rgba(255,190,40,.9), rgba(255,140,0,.35) 70%, transparent);
-            color: #0a0a0a; font-size: .62rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase;
-        }
-        .f .btn.join .strip { background: linear-gradient(90deg, rgba(140,165,255,.9), rgba(90,110,224,.3) 70%, transparent); }
-        .f .word { padding: 0 1.3rem 1.1rem; }
-        .f .btn { transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s; }
-        .f .btn:hover { transform: translateY(-.3rem); border-color: rgba(255,215,0,.45); }
+    /* ═══════════ 7 · EDITORIAL ═══════════
+       ⚠️ AUCUNE PLAQUE. Le kanji devient enorme et sert de fond, le mot est
+       pose dessus, et un filet se deplie sous lui au survol. C est le plus
+       moderne au sens des sites de 2026, et le plus dangereux ici : sans
+       cadre, rien ne dit que c est CLIQUABLE — or c est le seul geste que
+       l accueil existe pour provoquer. A ne retenir que si l on accepte de
+       perdre l affordance au profit du style. */
+    /* ⚠️ `aspect-ratio: auto` EST OBLIGATOIRE ICI, et c est le piege de ce
+       cas : le socle commun impose 16/5,6 pour que les six plaques aient la
+       meme taille. Sans plaque, ce ratio ne reserve plus un cadre mais un
+       VIDE — deux grands blancs entre les mots, qui faisaient passer la
+       variante pour une mise en page ratee alors que c est sa raison
+       d etre. Elle doit prendre la hauteur de son texte, pas celle d une
+       plaque absente. */
+    .b7 .btn {
+        aspect-ratio: auto;
+        background: none; border: 0; border-radius: 0;
+        padding: 1.1rem 0.2rem;
+        border-bottom: 1px solid rgba(255,255,255,.09);
+    }
+    .b7 .kanji {
+        right: auto; left: -0.4rem; bottom: -1.6rem;
+        font-size: 6.5rem;
+        color: rgba(255,255,255,.045);
+    }
+    .b7 .titre { font-size: clamp(2.1rem, 6vw, 2.8rem); }
+    .b7 .btn::after {
+        content: ''; position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%;
+        background: var(--trait, var(--or));
+        scale: 0 1; transform-origin: left center;
+        transition: scale .32s cubic-bezier(.2,.8,.2,1);
+    }
+    .b7 .rejoindre { --trait: var(--bleu); }
+    .b7 .btn:hover::after { scale: 1 1; }
+    .b7 .btn:hover .titre { color: #fff; }
 
-        .footer { max-width: 66rem; margin: 3rem auto 0; font-size: .8rem; color: var(--txt2); }
-        .footer a { color: var(--neon); }
-    </style>
+    @media (prefers-reduced-motion: reduce) {
+        .b3 .btn::before { animation: none; }
+    }
+</style>
 </head>
 
 <body>
-    <div class="nav">
-        <a href="/prototypes">Mise en page</a>
-        <a href="/prototypes/boutons" class="on">Boutons</a>
-        <a href="/prototypes/boutons-mobile">Boutons mobiles</a>
-        <a href="/prototypes/lobby-mobile">Salon mobile</a>
-        <a href="/prototypes/modes-2">Modes — originales</a>
-        <a href="/prototypes/modes">Liste des modes</a>
-        <a href="/prototypes/parametres">Paramètres</a>
-        <a href="/prototypes/lancer">Lancer la partie</a>
-        <a href="/prototypes/jeu">Écran de jeu</a>
-        <a href="/prototypes/effets">Effets de clic</a>
-        <a href="/prototypes/timer">Timer</a>
-        <a href="/prototypes/vies">Vies</a>
-        <a href="/prototypes/hud">HUD</a>
-        <a href="/prototypes/coeurs">Cœurs &amp; numéro</a>
-        <a href="/prototypes/bombanime">BombAnime</a>
-        <a href="/prototypes/points">Icône de points</a>
-        <a href="/prototypes/stats">Classement</a>
-        <a href="/prototypes/podium">Fin de partie</a>
-        <a href="/prototypes/reveal">Révélation</a>
-        <a href="/">← Le site</a>
-    </div>
+    <h1>Créer et Rejoindre, sept refontes</h1>
+    <p class="sous">
+        Chaque cas montre <b>le couple</b>, sur le fond réel de l'accueil — aurore dorée et
+        grille. Ces deux-là ne sont pas deux boutons mais <b>un choix</b> : ce qui se juge est
+        de voir d'un coup d'œil qu'il y a deux chemins et lequel est le sien.<br>
+        ⚠️ <b>Survole-les.</b> Quatre des sept ne se jugent qu'en mouvement — au repos elles se
+        ressemblent plus qu'elles ne le devraient. Le <b>n°1 est l'actuel</b>, il sert d'étalon.
+    </p>
 
-    <div class="head">
-        <h1>Prototypes de boutons</h1>
-        <p>
-            Six traitements pour le duo Créer / Rejoindre. Le rectangle en pointillés marque
-            <b>l'emplacement réservé au personnage PNG</b> — chaque variante laisse la droite libre pour qu'un perso
-            puisse déborder du cadre. Survole pour voir l'animation propre à chacune.
-        </p>
-    </div>
+    <div class="grille" id="grille"></div>
 
-    <div class="protos">
+<script>
+// ⚠️ TOUT DANS UNE FONCTION : aucun nom au premier niveau. C est l incident
+// `CHIFFRES` de ce projet — un `const` global entre en collision avec ceux
+// d un script du jeu charge a cote, et le navigateur ne dit rien.
+(function () {
+    'use strict';
 
-        <section class="a">
-            <div class="proto-head"><span class="proto-num">A</span><span class="proto-name">Plaque biseautée</span>
-                <span class="proto-note">✅ Retenu — appliqué au site. Coin inférieur droit coupé + reflet qui balaie la plaque au survol.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="kicker">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="kicker">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
+    var CAS = [
+        ['Actuel', 'Plaque sombre, halo dans un coin, reflet qui balaie au survol. L’étalon.'],
+        ['Verre', 'Le fond du jeu se voit à travers, flou. ⚠️ Seul des sept à coûter à l’exécution (backdrop-filter).'],
+        ['Bordure vivante', 'Un trait lumineux fait le tour en continu. Le plus « 2026 », et le plus risqué : ça bouge en permanence.'],
+        ['Segmenté', 'Une seule plaque coupée en deux. Pose UNE question à deux réponses au lieu de deux questions.'],
+        ['Néo-brut', 'Trait épais, ombre nette décalée, aucun flou. À contre-courant de tout le reste du jeu.'],
+        ['Touche rétro-éclairée', 'La couleur est entièrement dans la lumière SOUS la plaque. Elle se soulève au survol.'],
+        ['Éditorial', 'Aucune plaque. ⚠️ Rien ne dit que c’est cliquable — le seul geste que l’accueil existe pour provoquer.']
+    ];
 
-        <section class="b">
-            <div class="proto-head"><span class="proto-num">B</span><span class="proto-name">Bandeau latéral</span>
-                <span class="proto-note">Bande de couleur pleine à gauche avec le rôle écrit à la verticale. Le bandeau s'élargit au survol.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="side">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="side">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
+    function echapper(s) {
+        return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
 
-        <section class="c">
-            <div class="proto-head"><span class="proto-num">C</span><span class="proto-name">Contour lumineux</span>
-                <span class="proto-note">Un filet de lumière tourne en continu autour du bouton et s'intensifie au survol. Le plus « premium », attire l'œil même à l'arrêt.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="kicker">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="kicker">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
+    // ⚠️ LE MEME GABARIT POUR LES SEPT, au prefixe de classe pres. Sans ca
+    // on comparerait sept dessins ET sept contenus, et l on ne saurait
+    // jamais ce qui a plu.
+    function duo(n) {
+        return '<div class="duo b' + n + '">'
+            + '<button class="btn creer">'
+            + '<span class="kicker">Hôte</span><span class="titre">Créer</span>'
+            + '<span class="kanji" aria-hidden="true">創</span></button>'
+            + '<button class="btn rejoindre">'
+            + '<span class="kicker">Invité</span><span class="titre">Rejoindre</span>'
+            + '<span class="kanji" aria-hidden="true">参</span></button>'
+            + '</div>';
+    }
 
-        <section class="d">
-            <div class="proto-head"><span class="proto-num">D</span><span class="proto-name">Diagonale</span>
-                <span class="proto-note">Aplat de couleur coupé en biais qui glisse au survol. Laisse une grande zone sombre à droite : idéal pour un perso détouré.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="kicker">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="kicker">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
-
-        <section class="e">
-            <div class="proto-head"><span class="proto-num">E</span><span class="proto-name">Arcade</span>
-                <span class="proto-note">Ombre portée dure : le bouton s'enfonce physiquement au clic. Très ludique, référence borne d'arcade.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="kicker">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="kicker">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
-
-        <section class="f">
-            <div class="proto-head"><span class="proto-num">F</span><span class="proto-name">Bandeau de titre</span>
-                <span class="proto-note">Le rôle occupe une bande pleine largeur en haut, façon jaquette de manga. Le mot reste seul en bas.</span></div>
-            <div class="stage">
-                <button class="btn"><span class="strip">Hôte</span><span class="word">Créer</span><span class="slot">PERSO</span></button>
-                <button class="btn join"><span class="strip">Invité</span><span class="word">Rejoindre</span><span class="slot">PERSO</span></button>
-            </div>
-        </section>
-    </div>
-
-    <p class="footer">Page de travail. Dis-moi la lettre que tu préfères — on peut aussi croiser deux variantes.</p>
+    document.getElementById('grille').innerHTML = CAS.map(function (c, i) {
+        var n = i + 1;
+        return '<div class="cas">'
+            + '<div class="cas-tete"><span class="cas-num">' + n + '</span>'
+            + '<span class="cas-nom">' + echapper(c[0]) + '</span></div>'
+            + '<div class="ecran b' + n + '">' + duo(n) + '</div>'
+            + '<div class="cas-dit">' + echapper(c[1]) + '</div>'
+            + '</div>';
+    }).join('');
+})();
+</script>
 </body>
-
 </html>

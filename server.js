@@ -2925,6 +2925,13 @@ app.get('/prototypes/plateau', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-plateau.html');
 });
 
+// 🔘 Sept refontes du couple CREER / REJOINDRE. ⚠️ On y juge le COUPLE et
+// jamais un bouton seul : ces deux-la ne sont pas deux boutons mais un
+// CHOIX, et un bouton montre isole parait toujours bon.
+app.get('/prototypes/boutons', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-boutons.html');
+});
+
 // 👤 La FORME du panneau du profil : cinq, sur une reduction de la vraie page
 // d accueil. ⚠️ Le fond n y est pas un decor, c est l unite de mesure : depuis
 // que l avatar s est centre, la bulle d aujourd hui s ouvre au milieu de
