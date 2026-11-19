@@ -17548,3 +17548,328 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     .v2-bandeau-t-enter-from,
     .v2-bandeau-t-leave-to { transform: translateX(-50%); }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   🃏 LA CARTE DU JOUEUR — au survol d un pseudo en salon
+   ════════════════════════════════════════════════════════════════
+   Retenue au banc /prototypes/carte-joueur : la peau « strates ».
+
+   ⚠️ ORDINATEUR SEULEMENT, ET LA REGLE EST DANS LE SCRIPT, pas ici : une
+   media query cacherait la carte APRES l avoir construite et demandee au
+   serveur. `survolerCarte` ne pose simplement rien sur telephone.
+
+   ⚠️ `pointer-events: none` SUR LA SCENE ENTIERE. La carte s ouvre a cote
+   d une liste de boutons ; sans ca elle volerait le survol a ce qui passe
+   dessous et clignoterait des que le curseur l effleure. Elle ne se clique
+   pas, elle se regarde. */
+.v2-carte-scene {
+    position: fixed;
+    top: 50%;
+    right: 2.2rem;
+    z-index: 120;
+    transform: translateY(-50%);
+    perspective: 62rem;
+    pointer-events: none;
+    /* ⚠️ L ENTREE EST COURTE — 0,18 s. Le curseur traverse la liste : une
+       arrivee spectaculaire se joue huit fois en deux secondes. */
+    animation: v2CarteIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes v2CarteIn {
+    from { opacity: 0; translate: 1.1rem 0; }
+    to   { opacity: 1; translate: 0 0; }
+}
+
+.v2-carte {
+    position: relative;
+    width: 20.5rem;
+    padding: 1.5rem 1.6rem 1.35rem;
+    border-radius: 1.1rem;
+    /* La teinte du rang, posee par le gabarit. Le repli sert si le rang ne
+       se resout pas : une carte sans couleur reste lisible. */
+    --rang: #9a9aa6;
+    background: linear-gradient(165deg, rgba(26, 24, 33, 0.97), rgba(13, 12, 18, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* ⚠️ `overflow: visible` ET `preserve-3d` VONT ENSEMBLE, et c est le
+       piege de cette peau. Un `overflow` autre que `visible` GROUPE les
+       enfants : la valeur UTILISEE de `transform-style` retombe a `flat`
+       pendant que `getComputedStyle` continue de repondre `preserve-3d`. On
+       ne peut donc pas s en apercevoir en lisant les styles — il a fallu
+       incliner la carte et mesurer un plan, qui RETRECISSAIT au lieu de
+       grandir. Les `translateZ` ci-dessous ne servaient alors a rien. */
+    overflow: visible;
+    transform-style: preserve-3d;
+    /* 🪁 L inclinaison au repos. Une carte strictement de face est un
+       rectangle de texte ; tournee de quelques degres, elle devient un objet
+       pose dans l espace. Le `rotateX` plus faible fait « isometrique »
+       plutot que « penche » : un seul axe se lit comme une porte
+       entrouverte, deux comme un objet vu d un coin. */
+    transform: rotateY(-9deg) rotateX(2.6deg);
+    /* 🎈 LA LEVITATION EST EN `translate`, PAS EN `transform` : `translate`
+       est une propriete A PART, composee AVANT `transform`. Ecrite dans des
+       keyframes sur `transform`, elle aurait efface l inclinaison.
+       ⚠️ ET L OMBRE RESPIRE AVEC ELLE. Une carte qui monte sans que son
+       ombre ne s ecarte ne levite pas : elle glisse. C est l ombre qui dit
+       la hauteur, le deplacement ne fait que la rendre visible. */
+    animation: v2CarteLevite 5.4s ease-in-out infinite;
+}
+@keyframes v2CarteLevite {
+    0%, 100% { translate: 0 0;        box-shadow: 0 1.6rem 3.4rem rgba(0, 0, 0, 0.6); }
+    50%      { translate: 0 -0.42rem; box-shadow: 0 2.2rem 4.2rem rgba(0, 0, 0, 0.68); }
+}
+
+/* ⚠️ LE HALO DE RANG EST DANS LA CARTE, PAS DERRIERE. Pose dessous, il ne
+   depasserait que par les bords d une carte opaque — l erreur deja faite sur
+   le podium du classement. Et il reprend le rayon a la main : la carte n a
+   plus d `overflow` pour le decouper. */
+.v2-carte-nappe {
+    position: absolute;
+    inset: 0;
+    border-radius: 1.1rem;
+    pointer-events: none;
+    background: radial-gradient(120% 70% at 50% -10%, var(--rang), transparent 62%);
+    opacity: 0.22;
+}
+
+/* Les plans. ⚠️ C est leur SEPARATION qui fait la peau : le portrait sort du
+   cadre quand la carte tourne, le texte reste au fond. */
+.v2-carte > * { position: relative; }
+.v2-carte-tete { transform: translateZ(3.4rem); }
+.v2-carte-titre { transform: translateZ(1.2rem); }
+.v2-carte-mode { transform: translateZ(1rem); }
+.v2-carte > .v2-carte-stats { transform: translateZ(0.8rem); }
+.v2-carte-jeton { transform: translateZ(4.2rem); }
+/* Le liisere interieur, un plan a lui seul. */
+.v2-carte::before {
+    content: '';
+    position: absolute;
+    inset: 0.5rem;
+    border-radius: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--rang) 30%, transparent);
+    transform: translateZ(0.3rem);
+    pointer-events: none;
+}
+
+.v2-carte-tete { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.95rem; }
+.v2-carte-portrait { position: relative; width: 4.1rem; height: 4.1rem; flex: 0 0 auto; }
+.v2-carte-portrait img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: #23232b;
+    border: 0.1rem solid rgba(255, 255, 255, 0.14);
+}
+/* ⚠️ PAS D ANNEAU DE PROGRESSION ICI. C en etait une, en rond — une jauge
+   d xp — et l xp a ete retiree de la carte : le garder aurait laisse une
+   mesure dont plus rien n expliquait la graduation. A sa place un SECOND
+   CERNE a la teinte du rang : le meme geste de double anneau que la barre du
+   haut, mais qui ne mesure rien et n a donc rien a legender. */
+.v2-carte-portrait::after {
+    content: '';
+    position: absolute;
+    inset: -0.4rem;
+    border-radius: 50%;
+    border: 0.1rem solid var(--rang);
+    opacity: 0.55;
+    pointer-events: none;
+}
+.v2-carte-ident { min-width: 0; }
+.v2-carte-pseudo {
+    margin: 0 0 0.22rem;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.v2-carte-rang {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rang);
+}
+.v2-carte-rang::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    background: var(--rang);
+    transform: rotate(45deg);
+}
+/* ⚠️ Le titre porte a droit a DEUX LIGNES : « Le plus grand de la plèbe »
+   fait vingt-cinq caracteres, et un titre se gagne — il doit se lire. */
+.v2-carte-titre {
+    margin: 0 0 1rem;
+    font-size: 0.775rem;
+    font-style: italic;
+    line-height: 1.45;
+    color: #d9d2e6;
+    opacity: 0.85;
+}
+
+/* 🎯 LE BLOC DU MODE — il remplace l xp et sa jauge.
+   ⚠️ L XP ET SA BARRE N Y SONT PAS, et ce n est pas un allegement : c est un
+   changement de question. Une jauge d xp dit ce qu un joueur a ACCUMULE
+   depuis son inscription — un nombre qui ne bougera pas d un survol a
+   l autre, et que le rang resume deja d un mot. Au moment ou l on survole un
+   pseudo dans un salon, on se demande A QUI ON A AFFAIRE DANS CE MODE-LA.
+   ⚠️ D OU DEUX CHIFFRES ET PAS UN : la place au classement du mode dit le
+   niveau durable, le placement a la derniere partie dit la forme du jour.
+   Seuls, chacun ment a sa facon.
+   ⚠️ ET LE NOM DU MODE RESPIRE DES DEUX COTES. En petites capitales
+   espacees il est visuellement leger : a distance egale de deux blocs
+   pleins, il paraissait colle aux deux. */
+.v2-carte-mode { margin: 0.35rem 0 1.05rem; }
+.v2-carte-mode-tete {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rang);
+    margin-bottom: 0.62rem;
+}
+.v2-carte-mode-tete::before {
+    content: '';
+    width: 0.34rem;
+    height: 0.34rem;
+    flex: 0 0 auto;
+    background: var(--rang);
+    transform: rotate(45deg);
+}
+
+.v2-carte-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 0 0 0.9rem;
+}
+.v2-carte-stats.deux { grid-template-columns: repeat(2, 1fr); margin-bottom: 0; }
+.v2-carte-stats > div {
+    padding: 0.55rem 0.4rem;
+    border-radius: 0.6rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.v2-carte-stats dt {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8d869c;
+}
+.v2-carte-stats dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+/* ⚠️ Le suffixe est plus petit et plus pale : « 2ᵉ / 6 » ecrit d un seul
+   corps se lit comme une fraction, donc comme un rapport — alors que seul
+   le 2 est le resultat. */
+.v2-carte-stats dd small {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #8d869c;
+    margin-left: 0.12rem;
+}
+.v2-carte-stats dd sup { font-size: 0.62rem; }
+.v2-carte-stats dd.nul { color: #6e6880; font-weight: 700; font-size: 0.8rem; }
+/* La tuile qui porte le 1ᵉʳ passe a l or, pour que le jeton ne soit pas le
+   seul a le dire — un badge isole dans un coin se lit comme un ornement. */
+.v2-carte-stats > div.or {
+    border-color: rgba(240, 199, 94, 0.34);
+    background: rgba(240, 199, 94, 0.07);
+}
+.v2-carte-stats dd.or { color: var(--neon-primary); }
+
+.v2-carte-pied {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.645rem;
+    color: #8d869c;
+}
+/* ⚠️ « AU GENERAL », ET LE MOT EST OBLIGATOIRE. La carte porte DEUX
+   classements — celui du mode plus haut, celui de tous les modes ici.
+   Ecrits tous deux « classement », ils se lisaient comme une contradiction :
+   #12 en haut, #58 en bas, et rien pour dire lequel repond a quoi. */
+.v2-carte-place {
+    color: var(--rang);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 👑 LE JETON DU PREMIER.
+   ⚠️ IL NE DIT PAS « BON JOUEUR », IL DIT « A GAGNE SA DERNIERE ». C est la
+   seule distinction de la carte qui parle du PRESENT : le rang se gagne sur
+   des mois, la place au classement bouge a peine d une partie a l autre, et
+   ces deux-la sont deja ecrits ailleurs sur la carte.
+   ⚠️ ET IL EST DORE QUEL QUE SOIT LE RANG — le seul element de la carte qui
+   echappe a `--rang`. Teinte comme le reste, il se fondait dans la carte
+   d un Elite et disparaissait sur celle d un Master. Une victoire n a pas la
+   couleur de celui qui l a prise. */
+.v2-carte-jeton {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.2rem;
+    width: 2.05rem;
+    height: 2.05rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fff6cf 0%, #f0c75e 46%, #c08f2c 100%);
+    animation: v2CarteEclat 2.8s ease-in-out infinite;
+}
+.v2-carte-jeton svg { width: 58%; height: 58%; fill: #3a2a06; display: block; }
+/* ⚠️ LA PULSATION EST DANS L OMBRE, PAS DANS L OPACITE : un jeton qui
+   s eteint et se rallume clignote, un halo qui respire brille. Les deux
+   premieres ombres sont REPETEES a l identique dans les deux etapes — une
+   `box-shadow` s anime en bloc, en oublier une la ferait disparaitre a
+   mi-course. */
+@keyframes v2CarteEclat {
+    0%, 100% { box-shadow: 0 0.2rem 0.55rem rgba(0, 0, 0, 0.45),
+                           inset 0 1px 0 rgba(255, 255, 255, 0.65),
+                           0 0 0 rgba(255, 215, 0, 0); }
+    50%      { box-shadow: 0 0.2rem 0.55rem rgba(0, 0, 0, 0.45),
+                           inset 0 1px 0 rgba(255, 255, 255, 0.65),
+                           0 0 0.95rem rgba(255, 215, 0, 0.6); }
+}
+
+/* ⚠️ L INCLINAISON RESTE, LA LEVITATION PART. Elles ne sont pas de meme
+   nature : l une est une POSE, l autre un MOUVEMENT. Couper la pose rendrait
+   la carte plate pour des gens qui n ont jamais demande ca ; c est le
+   battement continu, et lui seul, qui gene. */
+@media (prefers-reduced-motion: reduce) {
+    .v2-carte-scene { animation: none; }
+    .v2-carte { animation: none; box-shadow: 0 1.6rem 3.4rem rgba(0, 0, 0, 0.6); }
+    .v2-carte-jeton {
+        animation: none;
+        box-shadow: 0 0.2rem 0.55rem rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+                    0 0 0.7rem rgba(255, 215, 0, 0.45);
+    }
+}
+
+/* ⚠️ SOUS 1100 px, PLUS DE CARTE. Elle fait 20,5rem et s ouvre a droite : en
+   dessous, elle se poserait sur la liste des joueurs ou sur le tiroir des
+   reglages — c est-a-dire sur ce qu on etait justement en train de regarder.
+   Le script ne la demande deja pas sur telephone ; cette regle couvre la
+   fenetre etroite d un ORDINATEUR, que `isMobile` ne voit pas. */
+@media (max-width: 1100px) {
+    .v2-carte-scene { display: none; }
+}

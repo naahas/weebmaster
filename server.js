@@ -4077,6 +4077,134 @@ app.get('/api/classement/joueur', async (req, res) => {
     }
 });
 
+// ════════════════════════════════════════════════════════════════
+// 🃏 LA CARTE D UN JOUEUR — au survol d un pseudo en salon
+// ════════════════════════════════════════════════════════════════
+//
+// ⚠️ LE `playerId` D UN INSCRIT EST SON `compte_id`. Ce n est pas une
+// commodite, c est la regle du projet : `socket.data.compteId === playerId`
+// est ce que verifie `socketInscrite`, et le salon diffuse deja ce playerId
+// a tout le monde. Il n y a donc RIEN de nouveau a exposer — et surtout pas
+// d UUID de compte ajoute au gabarit du salon.
+//
+// ⚠️ CE QUI SORT EST DEJA PUBLIC : pseudo, avatar, xp, parties, victoires,
+// taux, titre, place au classement. Tout cela se lit sur /classement. LES
+// RUBIS SONT EXCLUS — le solde d un autre joueur ne le regarde pas, et c est
+// la seule ligne du profil qui ne soit pas publique.
+//
+// ⚠️ ET LE NIVEAU N EST PAS ENVOYE : il se deduit de l xp par `niveaux.js`,
+// que la page charge deja. Un niveau calcule ici et un autre calcule la
+// auraient fini par se contredire — c est tout l interet du fichier partage.
+const cartesJoueur = new Map();        // `playerId|mode` -> { t, carte }
+const CARTE_TTL = 45 * 1000;
+const CARTE_MAX = 400;
+
+// ⚠️ UN CACHE, PARCE QUE C EST UN SURVOL. Le curseur traverse une liste de
+// huit pseudos en deux secondes : sans lui, c est quarante requetes a
+// Supabase pour un geste qui n en demande aucune. 45 s suffisent — les
+// chiffres d un joueur ne bougent qu a la fin d une partie.
+function cartePurger() {
+    if (cartesJoueur.size <= CARTE_MAX) return;
+    const vieux = Date.now() - CARTE_TTL;
+    for (const [k, v] of cartesJoueur) if (v.t < vieux) cartesJoueur.delete(k);
+    // Toujours trop ? On vide : un cache de survol qui gonfle est un cache
+    // qui fuit, et le reconstruire coute une requete par joueur, pas plus.
+    if (cartesJoueur.size > CARTE_MAX) cartesJoueur.clear();
+}
+
+app.get('/api/carte/:playerId', async (req, res) => {
+    if (!comptes.ACTIF) return res.json({ trouve: false });
+    const id = String(req.params.playerId || '');
+    // ⚠️ UN UUID OU RIEN. Sans ce filtre, n importe quelle chaine part dans
+    // une requete — et un identifiant mal forme fait repondre PostgREST par
+    // une erreur 400 qu on compterait comme une panne.
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.json({ trouve: false });
+    const mode = CLASSEMENT_MODES.includes(String(req.query.mode))
+        ? String(req.query.mode) : null;
+
+    const clef = id + '|' + (mode || '');
+    const vu = cartesJoueur.get(clef);
+    if (vu && Date.now() - vu.t < CARTE_TTL) return res.json(vu.carte);
+
+    try {
+        // 1. Tout ce qui concerne le joueur, en une ligne de vue.
+        const { data, error } = await supabase.from('v_classement')
+            .select('pseudo, avatar, xp, titre_prefixe, titre_suffixe, inscrit_le, parties, victoires, taux')
+            .eq('compte_id', id).limit(1);
+        if (error) throw error;
+        const moi = data && data[0];
+        if (!moi) {
+            // ⚠️ On MET EN CACHE l absence, elle aussi : un salon plein
+            // d invites, sans ca, rejouerait la requete a chaque survol pour
+            // s entendre repondre la meme chose.
+            const vide = { trouve: false };
+            cartesJoueur.set(clef, { t: Date.now(), carte: vide });
+            return res.json(vide);
+        }
+
+        // 2. Sa place au general : on compte ceux qui ont plus d xp. ⚠️ Pas
+        //    de plancher de parties, comme le classement « rang » du site —
+        //    c est le seul tableau ou tout le monde figure.
+        const pGeneral = supabase.from('v_classement')
+            .select('compte_id', { count: 'exact', head: true })
+            .gt('xp', moi.xp || 0);
+
+        // 3. Sa ligne dans le mode du salon, et 4. sa place dedans.
+        const pMode = mode
+            ? supabase.from('v_classement_mode')
+                .select('xp_gagne').eq('compte_id', id).eq('mode', mode).limit(1)
+            : Promise.resolve({ data: null });
+
+        // 5. Sa DERNIERE partie de ce mode. ⚠️ `place` peut valoir null : la
+        //    colonne est posterieure a la table, et les parties d avant ne
+        //    la portent pas. Le client affiche alors un tiret.
+        const pDerniere = mode
+            ? supabase.from('parties_jouees')
+                .select('place, joueurs').eq('compte_id', id).eq('mode', mode)
+                .order('cree_le', { ascending: false }).limit(1)
+            : Promise.resolve({ data: null });
+
+        const [general, ligneMode, derniere] = await Promise.all([pGeneral, pMode, pDerniere]);
+
+        let placeMode = null;
+        const mm = ligneMode.data && ligneMode.data[0];
+        if (mode && mm) {
+            const { count } = await supabase.from('v_classement_mode')
+                .select('compte_id', { count: 'exact', head: true })
+                .eq('mode', mode).gt('xp_gagne', mm.xp_gagne || 0);
+            placeMode = (count || 0) + 1;
+        }
+
+        const d = derniere.data && derniere.data[0];
+        const carte = {
+            trouve: true,
+            pseudo: moi.pseudo,
+            avatar: moi.avatar,
+            xp: moi.xp || 0,
+            titrePrefixe: moi.titre_prefixe || null,
+            titreSuffixe: moi.titre_suffixe || null,
+            depuis: moi.inscrit_le || null,
+            parties: Number(moi.parties) || 0,
+            victoires: Number(moi.victoires) || 0,
+            taux: moi.taux === null || moi.taux === undefined ? null : Number(moi.taux),
+            placeGenerale: (general.count || 0) + 1,
+            placeMode,
+            // ⚠️ `null` s il n a jamais joue ce mode, ET `{place: null}` s il
+            // l a joue avant la colonne : les deux cas sont differents a
+            // l ecran — « Première » contre « — ».
+            dernier: d ? { place: d.place === null ? null : Number(d.place),
+                           joueurs: Number(d.joueurs) || 0 } : null,
+        };
+        cartePurger();
+        cartesJoueur.set(clef, { t: Date.now(), carte });
+        res.json(carte);
+    } catch (e) {
+        // ⚠️ On NE MET PAS EN CACHE une panne : une table momentanement
+        // injoignable condamnerait le joueur pour 45 s.
+        res.json({ trouve: false });
+    }
+});
+
 // Les seaux de comparaison réellement joués pour un mode : la page n'offre
 // que des filtres qui rendent quelque chose.
 //

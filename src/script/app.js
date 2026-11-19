@@ -4,6 +4,18 @@
 
 const { createApp } = Vue;
 
+// 🏆 LES MODES QUI ONT UN CLASSEMENT.
+//
+// ⚠️ C EST UNE COPIE DE `CLASSEMENT_MODES` (server.js), et elle ne peut pas
+// etre autre chose : le navigateur ne lit pas le serveur. Le risque est donc
+// qu elles divergent — d ou ce qu elle sert UNIQUEMENT a decider si le bloc
+// du mode parait sur la carte d un joueur. Si elle vieillit, le pire qui
+// arrive est un bloc affiche pour un mode qui n a pas de classement : le
+// serveur, lui, rend `null` et la carte montre des tirets. Jamais un chiffre
+// faux.
+// ⚠️ `rivalry` N Y EST PAS : c est un reglage du Classique, pas un mode.
+const MODES_CLASSES = ['classic', 'bombanime', 'rush', 'ascension', 'collect'];
+
 // 🎯 Le plancher du mode Classique. Il a remplacé le mot de passe qui fermait
 // le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'au
 // plancher.
@@ -230,6 +242,20 @@ createApp({
             // jamais dans le tiroir : on ne garde que leur jeton de version.
             avatarsBots: [],
             pseudoError: '',
+            // 🃏 LA CARTE DU JOUEUR, au survol d un pseudo en salon.
+            // ⚠️ `carteJoueur` est ce qui s affiche, `carteId` ce qu on
+            // attend : les deux ne sont pas le meme etat. Sans le second, une
+            // reponse lente arrivant apres que le curseur est reparti
+            // rouvrait une carte sur un pseudo qu on ne survole plus.
+            carteJoueur: null,
+            carteId: null,
+            // ⚠️ DECLARES ICI bien qu ils ne servent a rien a l ecran : une
+            // propriete posee a la volee sur `this` existe, mais elle
+            // n apparait dans aucune lecture du composant — et c est
+            // exactement le genre d etat qu on cherche une heure plus tard.
+            // Le projet le fait deja ailleurs (`col._tic`).
+            _carteTimer: null,
+            _carteCache: {},
             joinPending: false,
             lobbyShakeError: false,
 
@@ -1746,6 +1772,49 @@ createApp({
             if (this.lobbyMode === 'rivalry') return 'Classique';
             const m = this.modes.find(x => x.id === this.lobbyMode);
             return m ? m.name : 'Classique';
+        },
+
+        // 🃏 CE QUE LA CARTE AFFICHE — tout se DEDUIT de la reponse, rien ne
+        // s y stocke en double.
+        //
+        // ⚠️ LE RANG VIENT DE `niveaux.js`, comme partout ailleurs. Le serveur
+        // n envoie que l xp : un rang calcule la-bas et un autre calcule ici
+        // auraient fini par se contredire sur la carte d un joueur et sur son
+        // propre profil, pour le meme compte.
+        carteRang() {
+            if (!this.carteJoueur) return { nom: '', couleur: '#9a9aa6' };
+            return titrePourNiveau(niveauPourXp(this.carteJoueur.xp || 0));
+        },
+        carteTitre() {
+            if (!this.carteJoueur) return '';
+            return composerTitre(this.carteJoueur.titrePrefixe, this.carteJoueur.titreSuffixe);
+        },
+        // 👑 Le jeton : il ne dit pas « bon joueur », il dit « a gagne sa
+        // derniere ». C est la seule distinction de la carte qui parle du
+        // PRESENT — le rang se gagne sur des mois, la place bouge a peine.
+        cartePremier() {
+            const d = this.carteJoueur && this.carteJoueur.dernier;
+            return !!(d && d.place === 1);
+        },
+        // ⚠️ VIDE QUAND LE MODE DU SALON N EST PAS CLASSE — Codanime n a ni
+        // classement ni place de fin. Le bloc entier disparait alors, plutot
+        // que d afficher deux tirets qu on prendrait pour une panne.
+        // ⚠️ `rivalry` EST UN REGLAGE DU CLASSIQUE, pas un mode : le serveur
+        // ne le connait pas, et `CLASSEMENT_MODES` non plus. Il est traduit
+        // ici comme il l est dans `modeLabel`, et dans `chargerCarte`.
+        carteModeNom() {
+            if (!this.carteJoueur) return '';
+            return MODES_CLASSES.includes(this.modeClasseDuSalon) ? this.modeLabel : '';
+        },
+        modeClasseDuSalon() {
+            return this.lobbyMode === 'rivalry' ? 'classic' : this.lobbyMode;
+        },
+        carteDepuis() {
+            const d = this.carteJoueur && this.carteJoueur.depuis;
+            if (!d) return '';
+            try {
+                return new Date(d).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            } catch (e) { return ''; }
         },
 
         currentMode() {
@@ -6578,6 +6647,70 @@ createApp({
         // ⚠️ Et elle se DÉSARME seule au bout de trois secondes. Une vignette
         // qui resterait rouge indéfiniment deviendrait un piège de plus : on
         // la croirait simplement en surbrillance et le clic suivant tuerait.
+        // ════════════════════════════════════════════════════
+        // 🃏 LA CARTE DU JOUEUR, au survol d un pseudo en salon
+        // ════════════════════════════════════════════════════
+        //
+        // ⚠️ QUATRE CONDITIONS, ET CHACUNE EST UNE DECISION.
+        // 1. ORDINATEUR SEULEMENT : sur telephone il n y a ni survol ni place
+        //    a droite, et un appui entrerait en conflit avec le clic qui
+        //    exclut un joueur.
+        // 2. RIEN POUR UN INVITE : il n a ni xp, ni rang, ni partie
+        //    enregistree. Une carte vide dirait seulement qu il manque
+        //    quelque chose.
+        // 3. RIEN POUR UN BOT, pour la meme raison, en plus evident.
+        // 4. UN RETARD DE 180 ms : le curseur traverse une liste de huit
+        //    pseudos en deux secondes. Sans lui, on allume huit cartes et
+        //    huit requetes pour un geste qui n en voulait aucune.
+        survolerCarte(p) {
+            if (this.isMobile || !p || !p.compte || p.estBot) return;
+            if (p.playerId === this.carteId) return;
+            clearTimeout(this._carteTimer);
+            this._carteTimer = setTimeout(() => this.chargerCarte(p.playerId), 180);
+        },
+
+        quitterCarte() {
+            clearTimeout(this._carteTimer);
+            this.carteJoueur = null;
+            this.carteId = null;
+        },
+
+        // ⚠️ UN CACHE COTE NAVIGATEUR EN PLUS DE CELUI DU SERVEUR. Le second
+        // epargne la base, le premier epargne le RESEAU : revenir sur un
+        // pseudo deja survole doit rouvrir la carte instantanement, sinon le
+        // va-et-vient dans une liste clignote.
+        async chargerCarte(id) {
+            this.carteId = id;
+            if (!this._carteCache) this._carteCache = {};
+            const mode = this.modeClasseDuSalon || '';
+            const clef = id + '|' + mode;
+            const vu = this._carteCache[clef];
+            if (vu) {
+                // ⚠️ On revalide `carteId` : la reponse en cache est
+                // immediate, mais un `await` plus bas ne l est pas, et les
+                // deux chemins doivent se comporter pareil.
+                if (this.carteId === id) this.carteJoueur = vu.trouve ? vu : null;
+                return;
+            }
+            try {
+                const r = await fetch('/api/carte/' + encodeURIComponent(id)
+                    + (mode ? '?mode=' + encodeURIComponent(mode) : ''));
+                const d = await r.json();
+                this._carteCache[clef] = d;
+                // ⚠️ LA REPONSE PEUT ARRIVER APRES QUE LE CURSEUR EST PARTI.
+                // Sans ce test, une carte s ouvrait sur un pseudo qu on ne
+                // survolait plus — et c est d autant plus visible que la
+                // requete lente est justement celle qu on a eu le temps de
+                // quitter.
+                if (this.carteId !== id) return;
+                this.carteJoueur = d && d.trouve ? d : null;
+            } catch (e) {
+                // Silence : une carte qui ne s ouvre pas ne doit rien
+                // signaler. Le salon, lui, continue.
+                if (this.carteId === id) this.carteJoueur = null;
+            }
+        },
+
         armerKick(playerId) {
             clearTimeout(this._kickTimer);
             if (this.kickArme === playerId) {

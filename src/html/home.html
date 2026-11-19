@@ -1300,6 +1300,8 @@
                                      :title="isHost && p.playerId !== playerId
                                              ? (kickArme === p.playerId ? 'Clique encore pour exclure ' + p.username : 'Exclure ' + p.username)
                                              : null"
+                                     @mouseenter="survolerCarte(p)"
+                                     @mouseleave="quitterCarte"
                                      @click.stop="isHost && p.playerId !== playerId ? armerKick(p.playerId) : null">
                                     <!-- ⚠️ La mèche est un « ::after » DU NOM, pas un élément
                                          de la vignette : elle fait ainsi exactement la largeur
@@ -1410,6 +1412,80 @@
 
                         <div class="v2-action-error" v-if="hostError">{{ hostError }}</div>
                     </section>
+
+                    <!-- 🃏 LA CARTE DU JOUEUR, au survol d un pseudo.
+                         ⚠️ ORDINATEUR SEULEMENT, et INSCRITS SEULEMENT : les
+                         deux conditions sont dans `survolerCarte`, qui ne pose
+                         simplement rien dans les autres cas. Mieux vaut qu il
+                         ne se passe rien qu une carte vide, qui dirait
+                         seulement qu il manque quelque chose.
+                         ⚠️ Elle est en `position: fixed` : sa place dans le
+                         gabarit ne decide de rien, SAUF si un ancetre porte un
+                         transform — l erreur qui revient le plus souvent sur
+                         ce projet. Verifie au rendu. -->
+                    <div class="v2-carte-scene" v-if="carteJoueur" aria-hidden="true">
+                        <article class="v2-carte" :style="{ '--rang': carteRang.couleur }">
+                            <span class="v2-carte-nappe"></span>
+                            <!-- 👑 ⚠️ UN TRACE, PAS UN EMOJI : un emoji change
+                                 de dessin d un systeme a l autre et ne peut pas
+                                 prendre la couleur du jeton qui le porte. -->
+                            <span class="v2-carte-jeton" v-if="cartePremier">
+                                <svg viewBox="0 0 24 24"><path d="M2.6 6.4l4.4 3.3L12 3.1l5 6.6 4.4-3.3-1.7 10.4H4.3L2.6 6.4zM4.6 19.3h14.8v1.6H4.6z"/></svg>
+                            </span>
+                            <div class="v2-carte-tete">
+                                <span class="v2-carte-portrait">
+                                    <img :src="srcAvatar(carteJoueur.avatar)" alt="" draggable="false"
+                                         @error="$event.target.src='novice.png'">
+                                </span>
+                                <div class="v2-carte-ident">
+                                    <h3 class="v2-carte-pseudo">{{ carteJoueur.pseudo }}</h3>
+                                    <span class="v2-carte-rang">{{ carteRang.nom }}</span>
+                                </div>
+                            </div>
+                            <p class="v2-carte-titre" v-if="carteTitre">« {{ carteTitre }} »</p>
+
+                            <!-- ⚠️ LE BLOC DU MODE DISPARAIT quand le mode du
+                                 salon n a pas de classement (Codanime) :
+                                 afficher deux tirets se prendrait pour une
+                                 panne. -->
+                            <div class="v2-carte-mode" v-if="carteModeNom">
+                                <div class="v2-carte-mode-tete">{{ carteModeNom }}</div>
+                                <dl class="v2-carte-stats deux">
+                                    <div>
+                                        <dt>Classement</dt>
+                                        <dd v-if="carteJoueur.placeMode">#{{ carteJoueur.placeMode }}</dd>
+                                        <dd v-else class="nul">—</dd>
+                                    </div>
+                                    <!-- ⚠️ TROIS CAS, ET ILS NE SE CONFONDENT
+                                         PAS : jamais joue ce mode
+                                         (« Première »), joue avant la colonne
+                                         `place` (« — »), et joue depuis (le
+                                         rang). Un seul test pour les trois
+                                         aurait efface les deux premiers. -->
+                                    <div :class="{ or: cartePremier }">
+                                        <dt>Dernière partie</dt>
+                                        <dd v-if="carteJoueur.dernier && carteJoueur.dernier.place"
+                                            :class="{ or: cartePremier }">
+                                            {{ carteJoueur.dernier.place }}<sup>{{ carteJoueur.dernier.place === 1 ? 'er' : 'e' }}</sup><small>/{{ carteJoueur.dernier.joueurs }}</small>
+                                        </dd>
+                                        <dd v-else-if="carteJoueur.dernier" class="nul">—</dd>
+                                        <dd v-else class="nul">Première</dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            <dl class="v2-carte-stats">
+                                <div><dt>Parties</dt><dd>{{ carteJoueur.parties }}</dd></div>
+                                <div><dt>Victoires</dt><dd>{{ carteJoueur.victoires }}</dd></div>
+                                <div><dt>Taux</dt><dd>{{ carteJoueur.taux === null ? '—' : carteJoueur.taux + ' %' }}</dd></div>
+                            </dl>
+
+                            <div class="v2-carte-pied">
+                                <span v-if="carteDepuis">Membre depuis {{ carteDepuis }}</span>
+                                <span class="v2-carte-place">#{{ carteJoueur.placeGenerale }} au général</span>
+                            </div>
+                        </article>
+                    </div>
 
                     <!-- ── Réglages (hôte uniquement) ── -->
                     <aside class="v2-settings" v-if="isHost" :class="{ open: showSettings }">
