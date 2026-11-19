@@ -668,9 +668,19 @@ body::before {
 
    ⚠️ `backwards` : sans lui, un element en attente de son delai s affiche a
    son etat FINAL puis saute a l etat initial au demarrage — il clignote. */
+/* ⚠️ EN `translate`, PAS EN `transform` — ET C ETAIT UN BUG VISIBLE.
+   `.c-moi:not(.trouve)` se centre par `left: 50%` + `transform:
+   translateX(-50%)`. Cette animation ecrivait `transform`, donc elle
+   EFFACAIT le centrage pendant toute sa duree : au changement de filtre, la
+   barre apparaissait le bord gauche au milieu de l ecran — c est-a-dire
+   toute a droite — puis se recentrait d un coup quand l animation finissait
+   et que le `transform` du CSS reprenait la main.
+   `translate` est une propriete A PART, composee AVANT `transform` : les
+   deux cohabitent sans s ecraser. Les trois autres usages de ces keyframes
+   n ont pas de `transform` a eux, le changement ne leur coute rien. */
 @keyframes c-monte {
-    from { opacity: 0; transform: translateY(0.7rem); }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; translate: 0 0.7rem; }
+    to   { opacity: 1; translate: 0 0; }
 }
 @keyframes c-pose {
     from { opacity: 0; transform: translateY(-0.5rem) scale(0.97); }

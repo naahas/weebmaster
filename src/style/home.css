@@ -7191,7 +7191,6 @@ html.rendu-logiciel .v2-dust { display: none; }
    et tout ce qui en depend suit : l anneau, le `top` du panneau en colonne,
    la pointe sous l avatar. */
 .v2-home { --moi-av: calc(2.2rem - 1px); }
-.v2-topbar .v2-moi-stylo { width: 0.95rem; height: 0.95rem; }
 
 /* 💎 LE SOLDE EST DE RETOUR DANS LA BARRE.
    ⚠️ IL AVAIT ETE MASQUE EXPRES, et la raison tient toujours : « un chiffre
@@ -7895,31 +7894,12 @@ html.rendu-logiciel .v2-dust { display: none; }
     transition: stroke-dashoffset 0.5s ease;
 }
 
-/* ⚠️ LE CRAYON. L avatar est seul dans le coin depuis que la pastille du pseudo
-   en est partie : sans lui, plus rien ne dirait qu il y a quelque chose a
-   changer derriere. Il n a pas son propre clic — a 38 % d un avatar de 2,8rem
-   il ferait une cible de dix-sept pixels, et sur telephone on viserait a cote
-   une fois sur deux. C est tout le bouton qui ouvre le panneau.
-   ⚠️ Ses dimensions sont en POURCENTAGE de l avatar, pas en pixels : la barre
-   retrecit sur telephone, et une pastille figee y deviendrait disproportionnee.
-   Le cerne reprend le fond de la page : c est lui qui detache le disque du
-   portrait, et c est aussi lui qui interrompt proprement le double anneau de
-   l inscrit la ou les deux se croisent. */
-.v2-moi-stylo {
-    position: absolute;
-    right: -4%;
-    bottom: -4%;
-    width: 41%;
-    height: 41%;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(135deg, var(--neon-primary), var(--neon-secondary));
-    border: 0.1rem solid var(--bg-primary);
-    color: #120f02;
-    pointer-events: none;
-}
-.v2-moi-stylo svg { width: 58%; height: 58%; fill: currentColor; display: block; }
+/* ℹ️ LE CRAYON DE L AVATAR DE LA BARRE A ETE RETIRE, lui et ses regles. Il
+   disait « on peut changer d avatar » — mais ce bouton n ouvre PAS le tiroir
+   des avatars : il ouvre le profil. L affordance pointait a cote, et elle
+   encombrait un portrait de 34 px deja cerne par l anneau de progression.
+   ⚠️ Elle n a pas disparu du jeu : l avatar DU PANNEAU porte son propre
+   crayon (`.v2-profil-crayon`), et c est lui qui ouvre vraiment le tiroir. */
 
 /* ───── Le panneau ───── */
 /* ⚠️ TRANSPARENT SUR GRAND ECRAN : ce n est la qu un attrape-clic, pour que

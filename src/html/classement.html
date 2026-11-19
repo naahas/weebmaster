@@ -515,10 +515,19 @@ async function maPlace(lignes, def) {
         if (!d.trouve) { boite.hidden = true; return; }
 
         if (d.souslePlancher) {
-            boite.innerHTML = '<span class="c-moi-rang">—</span>'
-                + '<span class="c-moi-txt"><b>' + echappe(monPseudo) + '</b>'
-                + ' n’est pas encore classé — encore <b>' + d.manque + ' partie'
-                + (d.manque > 1 ? 's' : '') + '</b></span>';
+            // ⚠️ PLUS DE TIRET A LA PLACE DU RANG. Un « — » dans la colonne
+            // des positions se lit comme une position NULLE, donc comme un
+            // echec ; or il n y a rien d anormal a ne pas encore figurer.
+            // La ligne n est plus qu une phrase.
+            // ⚠️ ET LE SEUIL SE RECALCULE — `parties + manque` — plutot que
+            // de s ecrire « dix ». Il vit dans `CLASSEMENT_MIN_PARTIES`
+            // (server.js) et se regle par une variable d environnement : un
+            // nombre fige ici se serait mis a mentir au premier changement,
+            // sans que rien ne le signale.
+            var seuil = (d.parties || 0) + (d.manque || 0);
+            boite.innerHTML = '<span class="c-moi-txt">Tu n’apparais pas encore au '
+                + 'classement : il faut <b>' + seuil + ' parties</b> pour y entrer'
+                + (d.manque ? ', il t’en reste <b>' + d.manque + '</b>' : '') + '.</span>';
             boite.hidden = false;
             return;
         }
@@ -567,9 +576,13 @@ async function chercher(pseudo) {
             return;
         }
         if (d.souslePlancher) {
+            // ⚠️ Le seuil se recalcule ici AUSSI. Il etait ecrit « dix » en
+            // toutes lettres : la recherche d un autre joueur et la ligne du
+            // visiteur auraient fini par annoncer deux nombres differents.
             boite.innerHTML = '<span class="c-moi-txt"><b>' + echappe(pseudo) + '</b> a joué '
                 + d.parties + ' partie' + (d.parties > 1 ? 's' : '')
-                + ' — il en faut dix pour figurer au classement.</span>';
+                + ' — il en faut <b>' + ((d.parties || 0) + (d.manque || 0))
+                + '</b> pour figurer au classement.</span>';
             boite.hidden = false;
             return;
         }

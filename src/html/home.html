@@ -377,9 +377,17 @@
                             :class="{ ouvert: profilOuvert, inscrit: estConnecte }" title="Mon profil">
                         <img :src="srcAvatar(avatar)" alt="" draggable="false"
                              @error="$event.target.src='novice.png'">
-                        <span class="v2-moi-stylo">
-                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </span>
+                        <!-- ℹ️ LE CRAYON A ETE RETIRE DE CET AVATAR. Il disait
+                             « on peut changer d avatar » — mais ce bouton
+                             n ouvre PAS le tiroir des avatars : il ouvre le
+                             profil. L affordance pointait a cote, et elle
+                             encombrait un portrait de 34 px deja cerne par
+                             l anneau de progression.
+                             ⚠️ Elle n a pas disparu pour autant : l avatar DU
+                             PANNEAU porte son propre crayon
+                             (`.v2-profil-crayon`), et c est lui qui ouvre
+                             vraiment le tiroir. -->
+                        <!-- Crayon retire : voir ci-dessus. -->
                         <!-- ⚠️ PLUS DE LOGO DU FOURNISSEUR SUR L AVATAR : un
                              second anneau le remplace. Le logo collait une marque
                              Discord ou Google sur le portrait du joueur — c est
