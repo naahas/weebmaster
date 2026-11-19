@@ -426,9 +426,13 @@
                          ⚠️ UN BOUTON, PAS UN SPAN : il ouvre le meme panneau que
                          l avatar, et seul un bouton repond au clavier et s annonce
                          comme cliquable aux lecteurs d ecran.
-                         ℹ️ « Se connecter » et non « Log in » : le panneau dit deja
-                         « Se deconnecter », et les deux doivent se repondre. -->
-                    <button class="v2-moi-log" v-if="!estConnecte" @click="basculerProfil">Se connecter</button>
+                         ⚠️ « Log in » EN ANGLAIS, ET C EST VOULU. C est la seule
+                         chaine anglaise de l interface, et le panneau dit bien
+                         « Se deconnecter » deux centimetres plus bas — donc non,
+                         ce n est pas un oubli de traduction : Adem a tranche pour
+                         ce mot-la le 20 novembre 2026, apres l avoir vu rendu en
+                         francais. Ne pas le « corriger ». -->
+                    <button class="v2-moi-log" v-if="!estConnecte" @click="basculerProfil">Log in</button>
                     <!-- ⚠️ `inscrit` existe POUR LE LISERE DU PORTRAIT. Avec le
                          double anneau, l or ne dit plus qu une chose :
                          l avancement. Le portrait reprend donc un cerne neutre
