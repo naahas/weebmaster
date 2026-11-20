@@ -14161,39 +14161,76 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     transition: color 0.2s ease;
 }
 
+/* 🌊 L ONDE — un point, et deux cercles qui s en echappent sans fin.
+   Choisie sur banc le 20 novembre 2026 parmi six formes. Ce qu elle a de
+   particulier : elle attire l oeil SANS GROSSIR. Les quatre autres gagnaient
+   leur presence par la surface — celle-ci la gagne par le mouvement, et c est
+   ce qui permet de descendre a 1,9 rem la ou l ancienne en faisait 4,6. */
 .v2-aura-disque {
     position: relative;
-    /* La valeur vient du gabarit : elle decroit quand le salon se remplit,
-       sans quoi quarante auras se chevauchent (voir `auraTaille`). */
-    width: var(--aura-taille, 4.4rem);
-    height: var(--aura-taille, 4.4rem);
+    /* ⚠️ 2,6 rem ET NON 1,9. L onde seule tenait a 1,9 rem — un point n a pas
+       besoin d etre lisible. Un PORTRAIT si : en dessous de quarante pixels on
+       ne reconnait plus un personnage, et toute l idee tombe. C est le
+       compromis assume, et on reste a un tiers de l ancienne aura (4,6 rem). */
+    width: 2.6rem;
+    height: 2.6rem;
     flex: 0 0 auto;
-    transition: width 0.3s ease, height 0.3s ease;
 }
 
-.v2-aura-rond {
+/* Le portrait. Il ne bat pas : ce sont les ondes qui vivent, et un visage qui
+   pulserait en plus ferait deux rythmes concurrents sur quarante pixels. */
+.v2-aura-portrait {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+    border: 1px solid rgba(255, 214, 110, 0.45);
+    /* Le halo rattache le portrait a ses ondes : sans lui, l image flotte au
+       milieu de cercles qui n ont plus l air d en venir. */
+    box-shadow: 0 0 1rem rgba(255, 180, 50, 0.3);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.v2-aura:hover .v2-aura-portrait {
+    border-color: rgba(255, 232, 160, 0.9);
+    box-shadow: 0 0 1.4rem rgba(255, 190, 60, 0.5);
+}
+
+/* Les deux ondes. Le retard et la duree viennent du gabarit, tires du meme
+   hachage que la position : toutes au meme pas, quarante auras battraient
+   comme un seul coeur — joli deux secondes, lassant ensuite. */
+.v2-aura-disque::before,
+.v2-aura-disque::after {
+    content: '';
     position: absolute;
     inset: 0;
     border-radius: 50%;
-    background:
-        radial-gradient(circle at 50% 40%, rgba(255, 216, 120, 0.4), rgba(255, 170, 40, 0.13) 56%, transparent 72%);
-    border: 1px solid rgba(255, 214, 110, 0.26);
-    box-shadow: 0 0 2rem rgba(255, 190, 60, 0.2), inset 0 0 1.1rem rgba(255, 214, 110, 0.16);
-    /* Le battement de chacune part a son heure et a son rythme : les variables
-       viennent du gabarit, tirees du meme hachage que la position. Toutes au
-       meme pas, quarante auras battraient comme un seul coeur — joli deux
-       secondes, lassant ensuite. */
-    animation: v2AuraPulse var(--aura-duree, 3.6s) ease-in-out infinite;
+    border: 1px solid rgba(255, 200, 90, 0.5);
+    /* ⚠️ DERRIERE LE PORTRAIT, ET IL FAUT LE DIRE. Sans `z-index`, c est
+       l ordre de peinture qui tranche : `::before` passe avant les enfants et
+       `::after` apres — une onde serait donc derriere le visage et l autre
+       devant, alors qu elles font le meme geste. Elles partent a 0,45 d
+       echelle, cachees par le portrait, et en emergent. */
+    z-index: 0;
+    animation: v2AuraOnde var(--aura-duree, 3.6s) ease-out infinite;
     animation-delay: var(--aura-retard, 0s);
 }
-
-@keyframes v2AuraPulse {
-    0%, 100% { scale: 1;    opacity: 0.74; }
-    50%      { scale: 1.13; opacity: 1; }
+/* ⚠️ LA SECONDE ONDE PART A MI-CHEMIN, et le decalage se calcule DEPUIS le
+   retard propre a l aura — pas en valeur absolue. Sinon les deux cercles
+   d une meme aura se desynchroniseraient de travers au lieu de se suivre. */
+.v2-aura-disque::after {
+    animation-delay: calc(var(--aura-retard, 0s) - 1.8s);
 }
 
-.v2-aura:hover .v2-aura-rond { border-color: rgba(255, 226, 150, 0.6); }
-.v2-aura:hover .v2-aura-nom  { color: rgba(255, 255, 255, 0.9); }
+@keyframes v2AuraOnde {
+    0%   { scale: 0.45; opacity: 0.85; }
+    100% { scale: 1.5;  opacity: 0; }
+}
+
+.v2-aura:hover .v2-aura-nom { color: rgba(255, 255, 255, 0.9); }
 
 /* 💥 L eclat : un anneau qui s ouvre et s efface. Pas de `fill-mode`, il
    repart donc invisible tout seul — rien a nettoyer en JavaScript. */
@@ -14203,6 +14240,9 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     border-radius: 50%;
     border: 2px solid rgba(255, 230, 160, 0.95);
     pointer-events: none;
+    /* Au-dessus du portrait et des ondes : c est une reponse a un geste, elle
+       doit primer sur le decor qui tourne en continu. */
+    z-index: 2;
     animation: v2AuraEclat 0.6s cubic-bezier(0.16, 0.84, 0.44, 1);
 }
 
@@ -14224,7 +14264,10 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .v2-aura-rond { animation: none; }
+    /* Les ondes s arretent, le portrait reste : c est lui qui porte
+       l information, le mouvement n etait que le decor. */
+    .v2-aura-disque::before,
+    .v2-aura-disque::after { animation: none; opacity: 0.35; }
     .v2-aura-enter-active,
     .v2-aura-leave-active { animation-duration: 0.01s; }
 }

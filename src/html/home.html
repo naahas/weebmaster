@@ -1285,8 +1285,7 @@
                          gestion du salon. Son aura, elle, est bien la chez les
                          autres — sinon le tableau montrerait une aura de moins
                          que le « N joueurs dans le salon » ecrit juste dessous. -->
-                    <div class="v2-auras" v-if="!isHost" aria-hidden="true"
-                         :style="{ '--aura-taille': auraTaille + 'rem' }">
+                    <div class="v2-auras" v-if="!isHost" aria-hidden="true">
                         <transition-group name="v2-aura">
                             <button type="button" tabindex="-1"
                                     class="v2-aura" v-for="a in auras" :key="a.playerId"
@@ -1304,7 +1303,23 @@
                                      de ce battement. Pose a cote dans un
                                      conteneur immobile, il garde sa taille. -->
                                 <span class="v2-aura-disque">
-                                    <span class="v2-aura-rond"></span>
+                                    <!-- 🖼️ LE PORTRAIT AU CENTRE, LES ONDES
+                                         AUTOUR. L aura n est plus un point
+                                         anonyme : on reconnait qui est la avant
+                                         meme de lire le pseudo.
+                                         ⚠️ `:src` DIRECT et non `srcAvatar()` :
+                                         `avatarUrl` vient du salon, deja pret,
+                                         la ou `srcAvatar()` attend un nom de
+                                         fichier. Meme raison que la carte de
+                                         joueur, plus bas.
+                                         ⚠️ Le repli sur `novice.png` n est pas
+                                         decoratif : un avatar retire de la liste
+                                         blanche depuis que ce joueur l a choisi
+                                         laisserait une image cassee au milieu
+                                         des ondes. -->
+                                    <img class="v2-aura-portrait" :src="a.avatarUrl || 'novice.png'"
+                                         alt="" draggable="false"
+                                         @error="$event.target.src='novice.png'">
                                     <!-- ⚠️ LA `key` EST LE COMPTEUR, et c est
                                          tout le mecanisme : une `key` qui change
                                          fait remplacer l element, donc rejouer

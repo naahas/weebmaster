@@ -1321,18 +1321,11 @@ createApp({
         // ℹ️ Les bots comptent comme les autres : `playerCount` les inclut, et
         // un tableau qui montrerait moins d auras que le chiffre annonce juste
         // a cote passerait pour une erreur.
-        // ⚠️ LA TAILLE DES AURAS DEPEND DU NOMBRE, et ce n est pas cosmetique :
-        // a quarante joueurs la grille ne laisse plus que ~63 px entre deux
-        // centres, et des ronds de 70 px se chevauchent. Les faire maigrir est
-        // la seule variable qui reste une fois la grille posee — et ca se lit
-        // bien, comme une salle qui se peuple.
-        auraTaille() {
-            const n = (this.lobbyPlayers || []).length;
-            if (n <= 8) return 4.6;
-            if (n <= 20) return 4.1;
-            return 3.3;
-        },
-
+        // ℹ️ `auraTaille` A ETE RETIREE. Elle faisait maigrir les auras quand
+        // le salon se remplissait, parce que des ronds de 70 px se
+        // chevauchaient aux ~63 px d ecart de la grille a quarante joueurs.
+        // L Onde fait 2,6 rem — 42 px — et le probleme n existe plus : une
+        // taille unique suffit, et c est une piece mobile en moins.
         auras() {
             const liste = this.lobbyPlayers || [];
             const n = liste.length;
@@ -1370,6 +1363,11 @@ createApp({
                 return {
                     playerId: p.playerId,
                     username: p.username,
+                    // ⚠️ `avatarUrl` VIENT DU SALON et il est deja utilisable
+                    // tel quel : on le pose en `:src` direct, surtout pas dans
+                    // `srcAvatar()`, qui attend un NOM DE FICHIER et renverrait
+                    // l URL telle quelle sans son jeton de version.
+                    avatarUrl: p.avatarUrl || null,
                     estBot: !!p.estBot,
                     // ⚠️ UNE MARGE AUX BORDS. Le mobilier de la page vit la —
                     // le bouton de sortie a gauche, la bande d astuces en bas.
