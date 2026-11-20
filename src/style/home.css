@@ -18764,3 +18764,67 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (max-width: 1100px) {
     .v2-carte-scene { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   🪪 LE BANDEAU DE L INVITE — EN FIN DE PARTIE
+   ════════════════════════════════════════════════════════════════
+   Un seul bloc pour les six ecrans de fin (voir `ecranDeFin`, app.js). Il
+   paraît une seconde et demie apres le podium, le temps que le joueur lise son
+   resultat — on ne marche pas sur son moment. */
+.v2-fin-invite {
+    position: fixed;
+    left: 50%;
+    translate: -50% 0;
+    bottom: calc(1.6rem + env(safe-area-inset-bottom, 0px));
+    /* ⚠️ Au-dessus des ecrans de fin, qui montent haut. En dessous du
+       panneau du profil (150+), qu il sert justement a ouvrir. */
+    z-index: 120;
+    max-width: min(34rem, calc(100vw - 2rem));
+    padding: 0.7rem 1.15rem;
+    border-radius: 0.8rem;
+    background: rgba(12, 10, 18, 0.92);
+    border: 1px solid rgba(240, 199, 94, 0.22);
+    box-shadow: 0 0.7rem 2rem rgba(0, 0, 0, 0.55);
+    /* ⚠️ L ATTENTE EST ICI, et `both` est indispensable : sans lui l element
+       serait VISIBLE pendant la seconde d attente, puis rejouerait son
+       apparition. `both` applique la premiere image des le depart. */
+    animation: v2FinInvite 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) 1.5s both;
+}
+
+@keyframes v2FinInvite {
+    from { opacity: 0; translate: -50% 1.2rem; }
+    to   { opacity: 1; translate: -50% 0; }
+}
+
+.v2-fin-invite-txt {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.62);
+}
+.v2-fin-invite-txt b { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
+
+/* Un BOUTON et non un lien : il ne change pas d adresse, il ouvre un
+   panneau. Mais il doit se lire comme un lien — c est la seule chose a
+   cliquer de la phrase. */
+.v2-fin-invite-lien {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 700;
+    color: var(--neon-primary, #f0c75e);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+    cursor: pointer;
+}
+.v2-fin-invite-lien:hover,
+.v2-fin-invite-lien:focus-visible { color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+    /* L attente reste — elle sert le joueur, pas le decor — mais le
+       glissement disparait. */
+    .v2-fin-invite { animation: v2FinInviteSobre 0.01s 1.5s both; }
+    @keyframes v2FinInviteSobre { from { opacity: 0; } to { opacity: 1; } }
+}

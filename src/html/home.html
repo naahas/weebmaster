@@ -5473,6 +5473,33 @@
         <!-- ============================================
              ⚡ RUSH — classement de fin de manche
              ============================================ -->
+        <!-- 🪪 LE BANDEAU DE L INVITE, EN FIN DE PARTIE.
+             Il paraît sous le podium, une seconde après lui, et seulement pour
+             qui n'a pas de compte.
+
+             ⚠️ UN SEUL BLOC POUR LES SIX ÉCRANS DE FIN, posé à la racine. Le
+             recopier dans chacun aurait donné six textes à tenir d'accord —
+             et un oublié le jour où l'on ajoute un mode. La condition vit
+             dans `ecranDeFin` (app.js), qui reprend les cinq conditions des
+             écrans.
+
+             ⚠️ LA SECONDE D'ATTENTE EST UN `animation-delay`, PAS UN
+             `setTimeout`. Un minuteur survit à son écran : il faudrait
+             l'annuler quand la partie se referme, et l'oublier une fois
+             suffit pour voir le bandeau surgir sur l'accueil. Une animation
+             CSS disparaît avec l'élément, sans rien à nettoyer.
+
+             ⚠️ Le texte dit une PERTE, pas un état. « Tu es en mode invité »
+             décrit ; « cette partie n'a été comptée nulle part » fait bouger,
+             surtout dans la seconde qui suit une victoire. -->
+        <div class="v2-fin-invite" v-if="ecranDeFin && !estConnecte">
+            <p class="v2-fin-invite-txt">
+                Tu es en mode invité —
+                <button type="button" class="v2-fin-invite-lien" @click="connexionDepuisFin">connecte-toi</button>
+                pour enregistrer le résultat de tes parties.
+            </p>
+        </div>
+
         <div class="rush-fin" v-if="gameEnded && gameEndData && gameEndData.gameMode === 'rush'">
             <div class="rush-fin-boite">
                 <span class="rush-fin-titre">Meilleures séries</span>

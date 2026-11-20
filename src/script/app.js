@@ -1303,6 +1303,36 @@ createApp({
     computed: {
 
         // ════════════════════════════════════════════════
+        // 🪪 UN ECRAN DE FIN EST-IL AFFICHE ?
+        // ════════════════════════════════════════════════
+        // Sert au bandeau qui invite les invites a se connecter. Il est rendu
+        // UNE FOIS, a la racine, pour les six ecrans de fin — plutot que
+        // recopie dans chacun.
+        //
+        // ⚠️ SIX ECRANS, CINQ CONDITIONS, et elles sont reprises telles
+        // quelles ici. `gameEnded` seul ne suffit pas : Collect ne s en sert
+        // pas (il lit son propre vainqueur), et `gameEnded` peut etre vrai
+        // sans qu aucun ecran ne corresponde — le bandeau flotterait alors
+        // au-dessus de rien.
+        //
+        // ⚠️ LE COUPLAGE EST ASSUME : si un ecran change sa condition, celle-ci
+        // doit suivre. C est le prix d un bandeau unique, et il est faible —
+        // un bandeau qui manque est invisible, la ou six copies divergent sans
+        // qu on le voie. Les conditions sont a cote de leur `v-if` dans
+        // home.html, cherchez « -fin » ou « winner-screen ».
+        ecranDeFin() {
+            // Collect : le seul qui ne passe pas par `gameEnded`.
+            if (this.col && this.col.etat && this.col.etat.vainqueur) return true;
+            if (!this.gameEnded) return false;
+            // Quiz et Codanime partagent `.v2-end`.
+            if ((this.podiumPlayers || []).length > 0) return true;
+            const m = (this.gameEndData || {}).gameMode;
+            if (m === 'rush' || m === 'ascension' || m === 'bombanime') return true;
+            if (this.lobbyMode === 'choice' && this.ch && this.ch.classement) return true;
+            return false;
+        },
+
+        // ════════════════════════════════════════════════
         // ✨ LES AURAS DU SALON D ATTENTE
         // ════════════════════════════════════════════════
         // Chaque joueur du salon devient une aura posee a l ecran, pseudo
@@ -5191,6 +5221,36 @@ createApp({
         fermerProfil() {
             this.profilOuvert = false;
             this.pseudoError = '';
+        },
+
+        // 🪪 « CONNECTE-TOI », DEPUIS L ECRAN DE FIN. On sort de la partie
+        // exactement comme le bouton « Retour » du mode, puis on ouvre le
+        // panneau du profil — le joueur n a pas a chercher ou s inscrire.
+        //
+        // ⚠️ ON REUTILISE LE `quitter…` DU MODE, on ne refait pas le trajet.
+        // Chacun fait un menage qui lui est propre avant `backToHome()` :
+        // `revenirAuSalonRush`, `colOublier`… Appeler `backToHome()` seul
+        // laisserait l etat du mode derriere, et l ecran de fin pourrait
+        // reparaitre.
+        //
+        // ⚠️ ET SURTOUT `basculerProfil()`, PAS `profilOuvert = true`. La
+        // bascule fait trois choses de plus, dont la seule qui compte ici :
+        // `chargerAuth()`, qui va chercher la bibliotheque Supabase. Sans
+        // elle le panneau s ouvre et les boutons de connexion ne repondent
+        // pas — un bandeau qui invite a se connecter et mene a un bouton mort
+        // serait pire que pas de bandeau.
+        connexionDepuisFin() {
+            if (this.col && this.col.etat && this.col.etat.vainqueur) this.quitterCollect();
+            else {
+                const m = (this.gameEndData || {}).gameMode;
+                if (m === 'rush') this.quitterRush();
+                else if (m === 'ascension') this.quitterAsc();
+                else if (this.lobbyMode === 'choice') this.quitterChoice();
+                else this.returnToLobby();
+            }
+            // Apres le retour : le gabarit a change d ecran, on ouvre le
+            // panneau sur celui d accueil.
+            this.$nextTick(() => { if (!this.profilOuvert) this.basculerProfil(); });
         },
 
         // ℹ️ `ouvrirProfilPseudo` a ete retiree avec la pastille du pseudo :
