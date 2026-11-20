@@ -679,6 +679,11 @@ const CHARACTER_VARIANTS = {
     // PROTAGONIST
     // ============================================
     "Protagonist": [
+        // ⚠️ UN GROUPE EST INDISPENSABLE ICI, et c est le cas d ecole : la
+        // regle du mot complet relie deux noms qui PARTAGENT un mot, et
+        // « ZERO TWO » et « 002 » n en partagent aucun. Sans ce groupe, les
+        // deux se repondraient dans la meme manche.
+        ["ZERO TWO", "002"],
         ["GOKU", "SON GOKU" , "KAKAROT" , "SONGOKU"],
         ["SAILOR MOON", "USAGI"],
         ["SHOYO"  , "HINATA"],
