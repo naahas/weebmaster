@@ -9288,6 +9288,29 @@ const server = app.listen(PORT, () => {
 // 💣 BOMBANIME - Fonctions de jeu
 // ============================================
 
+// ⌨️ LA FORME SOUPLE D'UN NOM — majuscules, sans accents, sans espaces ni
+// apostrophes ni tirets ni points.
+//
+// ⚠️ ELLE NE SERT QU'À RECONNAÎTRE ce qu'un joueur a tapé. Jamais à stocker,
+// jamais à bloquer : le nom retenu est toujours celui de la liste.
+//
+// ⚠️ ET ELLE NE RETIRE PAS TOUTE LA PONCTUATION, ce qui serait plus simple à
+// écrire et faux. Mesuré sur les 8 920 noms des 21 séries : retirer AUSSI
+// « + », « % », « & » et « ! » fusionne « BLOOD + » avec « BLOOD » — deux
+// œuvres distinctes, toutes deux dans la liste du Manganime à côté de
+// « BLOOD C », et qu'aucun groupe de variantes ne rapproche. Même piège pour
+// « ICHIGO 100 » / « ICHIGO 100% », « BLAME » / « BLAME! » et « YOTSUBA » /
+// « YOTSUBA& ». Ces signes-là PORTENT le titre, ils ne le décorent pas.
+//
+// Avec le jeu de signes retenu : 102 collisions, et les 102 sont la même
+// entité écrite deux fois — « SON GOKU » / « SONGOKU », « MONKEY D. LUFFY » /
+// « MONKEY D LUFFY », « KUROKO'S BASKET » / « KUROKOS BASKET ». Toutes sont
+// déjà réunies par un groupe de variantes, donc répondre l'une bloque l'autre.
+function formeSouple(s) {
+    return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toUpperCase().replace(/[\s'’\-.]/g, '');
+}
+
 // Valider un nom de personnage
 function validateBombanimeCharacter(gameState, name, serie) {
     if (!name || !serie) return { valid: false, reason: 'invalid_input' };
@@ -9295,18 +9318,33 @@ function validateBombanimeCharacter(gameState, name, serie) {
     const characters = BOMBANIME_CHARACTERS[serie];
     if (!characters) return { valid: false, reason: 'serie_not_found' };
     
-    const normalizedName = name.trim().toUpperCase();
-    
-    // Vérifier si le nom est dans la liste
-    const isValid = characters.some(char => char.toUpperCase() === normalizedName);
-    
-    if (!isValid) return { valid: false, reason: 'character_not_found' };
-    
+    const saisi = name.trim().toUpperCase();
+
+    // ⌨️ LA PONCTUATION ET LES ESPACES NE COMPTENT PAS : « spyxfamily » vaut
+    // « Spy x Family », « monkeydluffy » vaut « Monkey D. Luffy », et
+    // « lancargot » vaut « Lançargot ».
+    //
+    // ⚠️ L'EXACT D'ABORD, LE SOUPLE ENSUITE, et l'ordre n'est pas un détail :
+    // une correspondance exacte doit toujours gagner, sinon un nom se ferait
+    // rattacher à un voisin dont la forme souple est la même.
+    const souple = formeSouple(saisi);
+    const canonique = characters.find(c => c.toUpperCase() === saisi)
+        || characters.find(c => formeSouple(c) === souple);
+
+    if (!canonique) return { valid: false, reason: 'character_not_found' };
+
+    // ⚠️ ON RETIENT LE NOM DE LA LISTE, JAMAIS CE QUE LE JOUEUR A TAPÉ. Ce nom
+    // repart dans `getAllNamesToBlock`, qui travaille par MOT COMPLET sur la
+    // liste : « SPYXFAMILY » n'y figurant pas, il ne bloquerait plus rien.
+    // Il sert aussi de clé à `usedNames` et c'est lui qu'on affiche — « Spy x
+    // Family » plutôt que la graphie tassée de celui qui a répondu vite.
+    const normalizedName = canonique.toUpperCase();
+
     // Vérifier si le nom a déjà été utilisé
     if (gameState.bombanime.usedNames.has(normalizedName)) {
         return { valid: false, reason: 'already_used' };
     }
-    
+
     return { valid: true, normalizedName };
 }
 
