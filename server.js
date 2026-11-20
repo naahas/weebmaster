@@ -3834,7 +3834,24 @@ app.get('/classement', (req, res) => {
 // joueur à une partie et une victoire afficherait 100 % et dominerait le
 // tableau : c'est le défaut le plus courant des classements, et il le vide
 // de son sens dès la première semaine.
-const CLASSEMENT_MIN_PARTIES = parseInt(process.env.CLASSEMENT_MIN_PARTIES, 10) || 10;
+// 🚪 COMBIEN DE PARTIES POUR FIGURER AUX TABLEAUX CUMULES (victoires, série,
+// parties, 30 jours). Le Rang et les Records y échappent : voir leurs routes.
+//
+// ⚠️ PASSÉ DE DIX À UN LE 20 NOVEMBRE 2026, et c'est un arbitrage daté, pas un
+// réglage définitif. Avec trois comptes inscrits, un plancher de dix laissait
+// le classement VIDE — et un classement vide est pire qu'un classement
+// imparfait : il donne l'impression que personne ne joue.
+//
+// ⚠️ CE QU'ON ACCEPTE EN ÉCHANGE : à une partie, le taux de victoire devient
+// une loterie. Qui gagne sa seule partie affiche 100 % et trône en tête d'un
+// tableau que personne ne peut plus lui prendre. C'est tenable aujourd'hui,
+// ça ne le sera plus avec du trafic.
+//
+// ℹ️ Et ça se corrige SANS DÉPLOIEMENT : `CLASSEMENT_MIN_PARTIES` est une
+// variable d'environnement, relevable depuis Heroku. Le jour où le tableau se
+// peuple, remonter à cinq ou dix est l'affaire d'un clic — et la page suit
+// toute seule, elle tient désormais ce nombre du serveur.
+const CLASSEMENT_MIN_PARTIES = parseInt(process.env.CLASSEMENT_MIN_PARTIES, 10) || 1;
 const CLASSEMENT_LIGNES = 50;
 
 // ⚠️ Les modes classables ne sont pas tous les modes. `choice` n'est pas
@@ -4034,7 +4051,12 @@ app.get('/api/classement', async (req, res) => {
                     { le: r.cree_le, reglages: r.reglages || {} }));
                 if (lignes.length >= CLASSEMENT_LIGNES) break;
             }
-            return res.json({ lignes, record: def });
+            // ⚠️ `minParties: 0` ET CE N EST PAS UN OUBLI : les records n ont
+            // AUCUN plancher. Ils lisent une partie precise, pas une moyenne —
+            // un seul match suffit a poser un record, c est meme la definition.
+            // La page affichait pourtant « a partir de dix parties jouees » sur
+            // cet onglet, ou c etait faux. Elle le tient desormais d ici.
+            return res.json({ lignes, record: def, minParties: 0 });
         }
 
         // ── Les tableaux cumulés, lus sur les vues ──
@@ -4075,7 +4097,15 @@ app.get('/api/classement', async (req, res) => {
             progression: (r) => r.xp_30j || 0,
         };
         const valeur = valeurs[type] || valeurs.rang;
-        res.json({ lignes: (data || []).map((r) => ligneDeClassement(r, valeur(r))) });
+        // ⚠️ LE SEUIL QUI S APPLIQUE A CET ONGLET-LA, pas la constante. Le
+        // classement par rang y echappe (voir plus haut), les records aussi :
+        // un nombre fige dans la page se serait mis a mentir sur deux onglets
+        // sur six, et a mentir partout au premier changement de la variable
+        // d environnement.
+        res.json({
+            lignes: (data || []).map((r) => ligneDeClassement(r, valeur(r))),
+            minParties: type === 'rang' ? 0 : CLASSEMENT_MIN_PARTIES,
+        });
     } catch (e) {
         // ⚠️ Les vues manquantes se disent, et une seule fois : sans ça on
         // cherche longtemps pourquoi la page est vide.

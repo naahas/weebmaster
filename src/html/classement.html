@@ -69,9 +69,14 @@
              « pourquoi je n y suis pas » se pose en REGARDANT le tableau, pas
              apres l avoir parcouru jusqu au bout. Une seule phrase, celle qui
              repond a cette question-la — le reste est descendu. -->
-        <p class="c-regle">
-            Les comptes figurent ici à partir de <b>dix parties jouées</b>, tous modes confondus.
-        </p>
+        <!-- ⚠️ CETTE PHRASE SE REECRIT, ET ELLE DISPARAIT QUAND ELLE NE
+             S APPLIQUE PAS. Elle disait « dix parties jouées » en dur, sur
+             TOUS les onglets — y compris Rang et Records, qui n ont aucun
+             plancher. Elle y mentait, et c est ce qui a fait croire que les
+             records attendaient dix parties alors qu ils s affichaient des la
+             premiere. Le serveur dit maintenant le seuil de l onglet demandé
+             (`minParties`), et zero veut dire « pas de mention ». -->
+        <p class="c-regle" id="c-regle" hidden></p>
 
         <!-- 🔎 ⚠️ UNE RECHERCHE SERVEUR, pas un filtre de la liste affichée.
              La page n'en reçoit que cinquante lignes : y chercher le 312e ne
@@ -159,7 +164,7 @@ var TABLEAUX = {
         modes: true, periodes: false,
         format: function (v) { return v + ' <small>%</small>'; },
         appoint: function (l) { return l.victoires + ' / ' + l.parties; },
-        vide: 'Personne n’a encore atteint dix parties.',
+        vide: 'Personne ne remplit encore la condition.',
     },
     serie: {
         titre: 'Plus longue série de victoires',
@@ -173,7 +178,7 @@ var TABLEAUX = {
         modes: true, periodes: false,
         format: function (v) { return fmt(v) + ' <small>parties</small>'; },
         appoint: function (l) { return l.victoires + ' gagnée' + (l.victoires > 1 ? 's' : ''); },
-        vide: 'Personne n’a encore atteint dix parties.',
+        vide: 'Personne ne remplit encore la condition.',
     },
     progression: {
         titre: 'Expérience des 30 derniers jours',
@@ -460,6 +465,19 @@ async function charger() {
         var lignes = data.lignes || [];
         $('compte').textContent = lignes.length
             ? lignes.length + (lignes.length > 1 ? ' joueurs' : ' joueur') : '';
+
+        // ⚠️ LE PLANCHER DE L ONGLET, DIT PAR LE SERVEUR. Zéro veut dire
+        // « aucun » — c'est le cas du Rang et des Records, et la mention
+        // disparaît alors au lieu d'annoncer une règle qui ne s'applique pas.
+        var seuilOnglet = Number(data.minParties) || 0;
+        var regle = $('c-regle');
+        if (regle) {
+            // On n'écrit la phrase que si on la montre : « à partir de 0
+            // parties jouées » n'a pas à traîner dans le document, même caché.
+            regle.hidden = seuilOnglet < 2;
+            regle.innerHTML = regle.hidden ? '' : 'Les comptes figurent ici à partir de <b>'
+                + seuilOnglet + ' parties jouées</b>, tous modes confondus.';
+        }
 
         // Les records portent leur propre libellé et leur sens : c'est le
         // serveur qui les donne, parce que c'est lui qui les décide.
