@@ -451,7 +451,7 @@
                          arrivee. Le `&& username` ne couvre que l instant d amorcage,
                          avant que checkAuth ait repondu — sans lui, un bouton vide
                          clignoterait au chargement. -->
-                    <button class="v2-moi-log" v-if="!estConnecte && username"
+                    <button class="v2-moi-log" v-if="username"
                             @click="basculerProfil" title="Mon profil">{{ username }}</button>
                     <!-- ⚠️ `inscrit` existe POUR LE LISERE DU PORTRAIT. Avec le
                          double anneau, l or ne dit plus qu une chose :
@@ -460,6 +460,21 @@
                          c est-a-dire quand on est connecte. Sans cette classe,
                          un invite se retrouvait avec un disque entierement gris
                          dans un coin ou plus rien n accrochait l oeil. -->
+                    <!-- ⚠️ L ANCRE DU PORTRAIT — elle ne contient QUE l avatar et
+                         le panneau, et c est toute sa raison d etre.
+                         Le panneau et sa pointe se calaient sur un BORD du
+                         groupe : a droite tant que l avatar y etait dernier, a
+                         gauche tant qu il y etait premier. Depuis que le pseudo
+                         est a sa gauche et le solde a sa droite, l avatar n est
+                         plus a aucun bord — et les DEUX bords dependent d une
+                         largeur qui change (un pseudo de seize caracteres, un
+                         solde a cinq chiffres). Mesure : la pointe ratait le
+                         portrait de 71 a 80 px selon la largeur d ecran.
+                         ⚠️ Avec cette ancre, les formules redeviennent justes
+                         sans rien calculer : son bord gauche EST celui de
+                         l avatar, son bord droit aussi, et sa moitie est son
+                         centre. Elle ne mesure rien, elle epouse. -->
+                    <span class="v2-moi-ancre">
                     <button class="v2-moi-av" @click="basculerProfil"
                             :class="{ ouvert: profilOuvert, inscrit: estConnecte }" title="Mon profil">
                         <img :src="srcAvatar(avatar)" alt="" draggable="false"
@@ -811,8 +826,10 @@
                              barre, elle s affiche sans rien pousser. -->
                         <div class="v2-profil-err" v-if="pseudoError">{{ pseudoError }}</div>
                 </div>
+                    <!-- Ferme l ancre du portrait (avatar + panneau). -->
+                    </span>
                     <!-- ⚠️ Ce `</div>` ferme `.v2-moi-grp`, pas le panneau : le
-                         panneau est son enfant depuis qu il suit l avatar. -->
+                         panneau est dans l ancre, qui est dans le groupe. -->
                     </div>
 
                 </header>

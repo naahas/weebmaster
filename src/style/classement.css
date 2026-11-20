@@ -601,7 +601,26 @@ body::before {
 /* ⚠️ `gap` ET `line-height: 1.35` : le pseudo et sa ligne de rang étaient
    collés — 0,05 rem d écart sur deux textes de tailles différentes se lit
    comme un seul bloc mal composé. */
-.c-ident { min-width: 0; display: flex; flex-direction: column; gap: 0.18rem; }
+/* ⚠️ UNE GRILLE ET NON UNE COLONNE FLEX, depuis que le rang doit se centrer
+   sur toute la rangee : colonne 1 le pseudo et son decompte, colonne 2 le
+   rang, qui couvre les deux lignes. `.c-tete-ligne` s efface en
+   `display: contents` pour que ses enfants y entrent.
+   ⚠️ `align-items: start` sur la grille, et `center` sur le seul rang : sans
+   ca le pseudo et son decompte s etireraient sur la hauteur de la cellule au
+   lieu de rester colles l un a l autre. */
+.c-ident {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, auto) auto;
+    /* L ecart vertical d avant (0,18rem) et l ecart au rang (1,15rem) : sans
+       cadre, c est le vide SEUL qui dit ou s arrete le pseudo. */
+    gap: 0.18rem 1.15rem;
+    align-items: start;
+    justify-content: start;
+}
+.c-ident .c-nom      { grid-column: 1; grid-row: 1; }
+.c-ident .c-sous     { grid-column: 1; grid-row: 2; }
+.c-ident .c-puce-rang { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 .c-ident .c-nom { font-size: 0.9rem; text-align: left; line-height: 1.2; }
 .c-sous {
     font-size: 0.68rem;
@@ -713,30 +732,42 @@ body::before {
 /* ════════════════════════════════════════════════════════════
    LE RANG SUR LA LIGNE DU PSEUDO, ET LA RECHERCHE
    ════════════════════════════════════════════════════════════ */
+/* ⚠️ `display: contents` : LE RANG DOIT SE CENTRER SUR LA LIGNE ENTIERE, PAS
+   SUR LE PSEUDO. Il vivait dans cette enveloppe, donc sur la premiere des deux
+   lignes du bloc — mesure : 9 px au-dessus du centre de la rangee, ce qui ne
+   se voit pas sur une ligne et se voit sur six.
+   L enveloppe s efface donc, ses deux enfants deviennent enfants de `.c-ident`
+   (voir sa grille), et le rang peut couvrir les deux rangees. Aucun gabarit a
+   toucher — et il y en aurait eu trois a reprendre. */
 .c-tete-ligne {
-    display: flex;
-    align-items: center;
-    /* ⚠️ 0,75rem : le rang collait au pseudo au point qu'on lisait
-       « Shinobi357ETERNAL I » d'un seul tenant avant de distinguer les deux. */
-    gap: 0.75rem;
-    min-width: 0;
+    display: contents;
 }
 /* ⚠️ `flex: 0 1 auto` ET `min-width: 0` sur le nom : sans eux, un pseudo
    long pousse la puce du rang hors de la ligne au lieu de se tronquer
    lui-même. C'est le nom qui doit céder, pas le rang. */
 .c-tete-ligne .c-nom { flex: 0 1 auto; min-width: 0; }
+/* ⚠️ PLUS DE PASTILLE AUTOUR DU RANG. Le fond et la bordure teintes en
+   faisaient une etiquette collee au pseudo ; or le rang n est pas une
+   mention administrative, c est un titre que le joueur porte. Ce qui le
+   distingue maintenant, c est sa COULEUR — celle de son palier, qui etait
+   deja la et que le cadre rendait plus pale qu elle n est.
+   ⚠️ Et la couleur passe en plein : sur le cadre elle etait diluee a 32 %,
+   il n y a plus rien pour la soutenir. */
 .c-puce-rang {
     flex: 0 0 auto;
-    padding: 0.1rem 0.42rem;
-    font-size: 0.6rem;
+    padding: 0;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     white-space: nowrap;
     color: var(--teinte, var(--c-doux));
-    background: color-mix(in srgb, var(--teinte, #8f8f99) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--teinte, #8f8f99) 32%, transparent);
-    border-radius: 0.3rem;
+    /* ⚠️ `line-height: 1` ET `align-self: center` : sans eux, la puce garde
+       l interligne du pseudo, plus haut qu elle, et se retrouve posee un
+       pixel trop bas dans une ligne ou tout le reste est centre. Ca ne se
+       voit pas isolement, ca se voit sur six lignes d affilee. */
+    line-height: 1;
+    align-self: center;
 }
 
 .c-chercher {

@@ -8087,7 +8087,7 @@ html.rendu-logiciel .v2-dust { display: none; }
        l avatar est le dernier element ; le pseudo passe apres lui decale ce
        bord de sa propre largeur. Au 1280 ca tombait juste par hasard, le
        defaut ne se voyait que sur telephone. */
-    padding: 0 0.6rem 0 0;
+    padding: 0 0.725rem 0 0;   /* +2 px d ecart au portrait, demande le 21 nov. 2026. ⚠️ C est le padding DROIT : le gauche porterait sur le losange de la barre, dont l equidistance a ete mesuree a 34,4 px de chaque cote. */
     /* ⚠️ LE LOSANGE DOIT ETRE EQUIDISTANT DE SES DEUX VOISINS, comme celui de
        gauche entre le logotype et « Classement » (mesure : 34,9 / 34,4). A
        droite il tombait a 34,4 / 41,9 — le pseudo etait 7,5 px trop loin.
@@ -8122,19 +8122,36 @@ html.rendu-logiciel .v2-dust { display: none; }
     transition: color 0.25s ease;
 }
 
-/* ⚠️ CONDITIONNE A `.invite`, ET C EST LA RAISON D ETRE DE CETTE CLASSE.
-   Sans elle, la regle du groupe s appliquerait aussi aux comptes — et
-   survoler la pastille de rubis allumerait l avatar, un comportement que
-   personne n a demande et que rien n expliquerait.
-   ⚠️ ET `:not(.ouvert)` : le panneau VIT DANS LE GROUPE. Sans cette garde,
-   promener la souris dans le panneau ouvert rallumerait le duo derriere lui. */
-.v2-moi-grp.invite:not(.ouvert):hover .v2-moi-log,
+/* ℹ️ LA CONDITION `.invite` A SAUTE le 21 novembre 2026, avec la raison qui
+   la justifiait. Elle existait pour que survoler la PASTILLE de rubis
+   n allume pas l avatar — la pastille n existe plus, et le pseudo s affiche
+   desormais pour tout le monde, compte ou non. Survoler le solde allume donc
+   le duo lui aussi : c est un seul objet, il repond d un bloc.
+   ⚠️ `:not(.ouvert)` RESTE, lui : le panneau VIT DANS LE GROUPE, et sans
+   cette garde promener la souris dedans rallumerait le duo derriere lui. */
+/* ⚠️ L OPACITE RÉPOND SUR LES DEUX, en plus de la couleur. Avant, seul le
+   pseudo changeait de teinte et seul le portrait changeait de cerne : deux
+   reponses differentes a un meme survol, et l on ne voyait pas qu il s agit
+   d UN bouton. L opacite est le seul signal qu ils peuvent partager — elle
+   s applique a un mot comme a une image. Au repos ils sont a 0,82 : l ecart
+   suffit a dire qu ils repondent, sans les ternir. */
+.v2-moi-log,
+.v2-moi-av img { opacity: 0.82; transition: opacity 0.22s ease, color 0.25s ease, border-color 0.25s ease; }
+
+.v2-moi-grp:not(.ouvert):hover .v2-moi-log,
 .v2-moi-log:focus-visible { color: var(--neon-primary); }
-.v2-moi-grp.invite:not(.ouvert):hover .v2-moi-av img { border-color: var(--neon-primary); }
+.v2-moi-grp:not(.ouvert):hover .v2-moi-av img { border-color: var(--neon-primary); }
+.v2-moi-grp:not(.ouvert):hover .v2-moi-log,
+.v2-moi-grp:not(.ouvert):hover .v2-moi-av img,
+.v2-moi-log:focus-visible,
+.v2-moi-av:focus-visible img { opacity: 1; }
+/* Panneau ouvert : les deux restent pleins, comme au survol. */
+.v2-moi-grp.ouvert .v2-moi-log,
+.v2-moi-grp.ouvert .v2-moi-av img { opacity: 1; }
 
 /* Panneau ouvert : le mot reste allume avec l avatar, qui l est deja par
    `.ouvert`. Les deux doivent dire la meme chose au meme moment. */
-.v2-moi-grp.invite.ouvert .v2-moi-log { color: var(--neon-primary); }
+.v2-moi-grp.ouvert .v2-moi-log { color: var(--neon-primary); }
 
 /* ⚠️ LE DOUBLE ANNEAU DU JOUEUR INSCRIT — il remplace le logo du fournisseur.
    Celui-ci collait une marque Discord ou Google sur le portrait du joueur, qui
@@ -8474,13 +8491,16 @@ html.rendu-logiciel .v2-dust { display: none; }
        lui qui glisse sous le portrait — et la marge negative avec. En
        n inversant que l un des deux, le nombre se serait enfonce sous
        l avatar, ou la pastille s en serait decollee. */
-    .v2-topbar.site .v2-moi-grp .v2-moi-rubis { order: 0; }
-    .v2-topbar.site .v2-moi-grp .v2-moi-av { order: 1; }
-    /* Le solde repasse a GAUCHE du portrait (ordre 0 contre 1) : la marge
-       repasse donc a droite. Plus de padding ni d enfoncement a reprendre. */
+    /* ℹ️ L INVERSION A ETE RETIREE ICI le 21 novembre 2026. Le solde passait
+       a GAUCHE du portrait sur telephone, du temps ou il s y enfoncait en
+       pastille. Depuis que le PSEUDO occupe cette place pour tout le monde,
+       l ordre est le meme partout : pseudo, portrait, solde. Deux
+       dispositions a tenir d accord, c est une de trop. */
+    /* Le solde reste a DROITE du portrait, comme sur ordinateur : un seul
+       ordre partout. Il s en ecarte un peu moins, l ecran etant plus etroit. */
     .v2-topbar.site .v2-moi-rubis {
-        margin-left: 0;
-        margin-right: 0.85rem;
+        margin-right: 0;
+        margin-left: 0.9rem;
     }
     .v2-topbar.site .v2-profil { left: auto; right: calc(-1 * var(--moi-marge)); }
     /* ⚠️ `var(--moi-marge)` EST DANS LE COMPTE, ET IL Y MANQUAIT. La pointe
@@ -8849,14 +8869,17 @@ html.rendu-logiciel .v2-dust { display: none; }
    aussi. En n inversant que l un des deux, le nombre se serait glisse sous
    l avatar ou la pastille s en serait decollee. */
 .v2-moi-grp .v2-moi-rubis { order: 1; }
-.v2-moi-grp .v2-moi-av { order: 0; }
+/* ⚠️ L ancre porte l ordre du portrait depuis qu elle l enveloppe : `order`
+   ne vaut que pour un enfant DIRECT du flex, et l avatar ne l est plus. */
+.v2-moi-grp .v2-moi-ancre { order: 0; }
+
 /* ⚠️ L ORDRE S INVERSE, DONC LA MARGE AUSSI — et c est tout ce qu il reste a
    inverser depuis que la pastille a disparu. Le solde passe a DROITE du
    portrait ici : c est la marge gauche qui les ecarte, la droite n a plus
    rien a ecarter. */
 .v2-moi-rubis {
     margin-right: 0;
-    margin-left: 0.95rem;
+    margin-left: 1.1rem;
 }
 /* ℹ️ UNE REGLE ≤480 A ETE RETIREE ICI. Elle resserrait la pastille en
    reecrivant ses quatre valeurs — et une SECONDE regle ≤480, plus bas,
@@ -8871,7 +8894,13 @@ html.rendu-logiciel .v2-dust { display: none; }
    et sans cet ordre explicite c est la pile du document qui tranche — elle
    marche ici par hasard (l avatar vient apres), elle ne marcherait plus si
    l on deplacait l un des deux dans le gabarit. */
-.v2-moi-grp { position: relative; display: inline-flex; align-items: center; flex: 0 0 auto; }
+.v2-moi-grp { display: inline-flex; align-items: center; flex: 0 0 auto; }
+/* ⚠️ C EST L ANCRE QUI EST POSITIONNEE, PLUS LE GROUPE. Le panneau s y
+   accroche, et elle epouse exactement l avatar : son bord gauche est celui du
+   portrait, son bord droit aussi, sa moitie est son centre. Les formules du
+   panneau et de sa pointe redeviennent donc justes quoi qu il y ait autour —
+   un pseudo de seize caracteres a gauche, un solde a cinq chiffres a droite. */
+.v2-moi-ancre { position: relative; display: inline-flex; flex: 0 0 auto; }
 .v2-moi-grp .v2-moi-av { z-index: 1; }
 /* ⚠️ La HAUTEUR decide, la largeur suit. Le gemme n est pas carre (149 × 160
    apres recadrage) : lui imposer un carre l aurait ecrase. */
@@ -8891,8 +8920,8 @@ html.rendu-logiciel .v2-dust { display: none; }
     .v2-topbar.site .v2-moi-rubis {
         font-size: 0.78rem;
         gap: 0.35rem;
-        margin-left: 0;
-        margin-right: 0.7rem;
+        margin-right: 0;
+        margin-left: 0.8rem;
     }
     .v2-moi-rubis img { height: 1rem; }
 }
@@ -18773,50 +18802,74 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    resultat — on ne marche pas sur son moment. */
 .v2-fin-invite {
     position: fixed;
-    left: 50%;
-    translate: -50% 0;
-    bottom: calc(1.6rem + env(safe-area-inset-bottom, 0px));
+    /* ⚠️ `left: 0; right: 0` ET NON `left: 50%` AVEC UN RECENTRAGE. Avec le
+       seul `left: 50%`, un element fixe se dimensionne sur ce qui RESTE a sa
+       droite : sur un telephone de 390 px il ne disposait que de 195 px, et le
+       `max-width: 358px` ne servait a rien. La phrase se cassait en quatre
+       lignes dans une boite deux fois trop etroite. Le recentrage ne corrige
+       rien — il deplace APRES que la largeur a ete decidee. */
+    left: 0;
+    right: 0;
+    /* En HAUT, et largement decolle du bord : l ecran de fin se lit par le
+       milieu, cette phrase ne doit ni le couvrir ni se coller au cadre. */
+    top: calc(3.2rem + env(safe-area-inset-top, 0px));
     /* ⚠️ Au-dessus des ecrans de fin, qui montent haut. En dessous du
        panneau du profil (150+), qu il sert justement a ouvrir. */
     z-index: 120;
-    max-width: min(34rem, calc(100vw - 2rem));
-    padding: 0.7rem 1.15rem;
-    border-radius: 0.8rem;
-    background: rgba(12, 10, 18, 0.92);
-    border: 1px solid rgba(240, 199, 94, 0.22);
-    box-shadow: 0 0.7rem 2rem rgba(0, 0, 0, 0.55);
+    padding: 0 1.4rem;
+    text-align: center;
+    /* ⚠️ SANS CADRE, LA BANDE DEVIENT INVISIBLE MAIS RESTE LARGE. Elle
+       traverse l ecran sur toute sa largeur : laissee cliquable, elle
+       avalerait les clics du haut de l ecran de fin. Seul le lien les
+       reprend, plus bas. */
+    pointer-events: none;
     /* ⚠️ L ATTENTE EST ICI, et `both` est indispensable : sans lui l element
-       serait VISIBLE pendant la seconde d attente, puis rejouerait son
-       apparition. `both` applique la premiere image des le depart. */
+       serait VISIBLE pendant l attente, puis rejouerait son apparition.
+       `both` applique la premiere image des le depart. */
     animation: v2FinInvite 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) 1.5s both;
 }
 
 @keyframes v2FinInvite {
-    from { opacity: 0; translate: -50% 1.2rem; }
-    to   { opacity: 1; translate: -50% 0; }
+    from { opacity: 0; translate: 0 -0.9rem; }
+    to   { opacity: 1; translate: 0 0; }
 }
 
+/* ⚠️ LE TRAITEMENT DU « VICTOIRE » DE L ECRAN DE FIN, repris a la lettre :
+   Poppins, capitales, interlettrage large, demi-gras, blanc sourd. Mesure sur
+   `.winner-title` : 12 px, 1,8 px d ecart, poids 500, rgba(255,255,255,.5).
+   Ce bandeau parle au meme endroit que lui, il doit parler la meme langue —
+   une font de plus sur cet ecran se serait vue comme une piece rapportee.
+   ⚠️ Et SANS CADRE : c est une mention, pas une boite de dialogue. Ce qui la
+   fait exister, c est l espacement des lettres et le vide autour. */
 .v2-fin-invite-txt {
-    margin: 0;
-    font-size: 0.78rem;
-    line-height: 1.5;
-    text-align: center;
-    color: rgba(255, 255, 255, 0.62);
+    margin: 0 auto;
+    /* La phrase s etale : c est la lecture sur une ou deux lignes qu on
+       cherche, pas un pave de quatre. */
+    max-width: 46rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    line-height: 1.85;
+    color: rgba(255, 255, 255, 0.46);
 }
-.v2-fin-invite-txt b { color: rgba(255, 255, 255, 0.92); font-weight: 600; }
 
 /* Un BOUTON et non un lien : il ne change pas d adresse, il ouvre un
    panneau. Mais il doit se lire comme un lien — c est la seule chose a
    cliquer de la phrase. */
 .v2-fin-invite-lien {
+    /* ⚠️ Il reprend les clics que la bande entiere refuse. */
+    pointer-events: auto;
     padding: 0;
     border: 0;
     background: none;
     font: inherit;
     font-weight: 700;
+    letter-spacing: inherit;
+    text-transform: inherit;
     color: var(--neon-primary, #f0c75e);
     text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-underline-offset: 0.22em;
     cursor: pointer;
 }
 .v2-fin-invite-lien:hover,
