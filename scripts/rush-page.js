@@ -1,5 +1,12 @@
 // Bâtit la page qui liste les personnages du Rush, par anime.
 // Usage : node rush-page.js <racine du projet> <sortie.html>
+//
+// ⚠️ ELLE S OUVRE PAR LE SERVEUR, PLUS EN `file://` :
+//     http://localhost:7000/prototypes/rush-personnages
+// Les portraits sont demandés en chemin ABSOLU (`/rushpic/…`), parce que
+// c est là qu `express.static('src/img')` les sert. En relatif, servie depuis
+// /prototypes/, la page les cherchait sous /prototypes/src/img/ — et les 481
+// vignettes restaient vides sans que rien ne le dise.
 const fs = require('fs');
 const path = require('path');
 const [, , racine, sortie] = process.argv;
@@ -50,7 +57,7 @@ const bloc = ([nom, liste]) => `
     </h2>
     <div class="grille">
       ${liste.map(p => `<figure data-nom="${p.nom.toLowerCase().replace(/"/g, '&quot;')}" data-id="${p.id}">
-        <img src="src/img/rushpic/${p.img}" alt="${p.nom}" loading="lazy">
+        <img src="/rushpic/${p.img}" alt="${p.nom}" loading="lazy">
         <figcaption>${p.nom}${p.alias && p.alias.length ? '<span class="al">' + p.alias.join(' · ') + '</span>' : ''}</figcaption>
       </figure>`).join('')}
     </div>
