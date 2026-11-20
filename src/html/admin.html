@@ -248,29 +248,6 @@ button { font-family: inherit; color: inherit; }
 .salon-qui:hover { color: var(--texte); border-color: var(--bord-fort); background: rgba(255,255,255,.09); }
 
 /* La liste des joueurs, dans sa modale. */
-/* 👁️ Regarder une partie. Les lignes reprennent `.gens`, dont elles
-   heritent le fond et le rythme : c est la meme liste de joueurs, vue sous
-   un autre angle. */
-.modale-large { max-width: 34rem; width: min(34rem, calc(100vw - 2rem)); }
-.match-meche { margin: .2rem 0 .9rem; font-size: .85rem; color: #9b93ad; }
-.match-meche b { color: #ffd166; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
-.match-question {
-    margin: 0 0 .9rem; padding: .6rem .8rem; border-radius: 9px;
-    background: rgba(255,255,255,.04); font-size: .9rem; line-height: 1.4;
-}
-.match-joueur .match-nom { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.match-joueur .match-vies { flex: 0 0 auto; color: #ff6b6b; letter-spacing: .08em; }
-/* ⚠️ La derniere reponse est TRONQUEE, pas repliee : une ligne par joueur,
-   sinon la liste danse a chaque frappe et l on ne suit plus personne. */
-.match-joueur .match-dit {
-    flex: 0 1 9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    text-align: right; font-size: .78rem; color: #8c8699;
-}
-/* Celui qui tient la bombe, et ceux qui sont sortis. */
-.match-joueur.a-lui { outline: 1px solid rgba(255,209,102,.5); }
-.match-joueur.a-lui .match-nom { color: #ffd166; font-weight: 700; }
-.match-joueur.mort { opacity: .42; }
-
 .gens { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.2rem; }
 .gens > div {
     display: flex; align-items: center; gap: .55rem;
@@ -1827,26 +1804,6 @@ body:not(.entre) { overflow: hidden; }
     </div>
 </div>
 
-<!-- 👁️ REGARDER UNE PARTIE — en LECTURE SEULE.
-     ⚠️ Aucune socket ne rejoint le salon, et c'est délibéré : plusieurs
-     endroits du serveur parcourent `io.sockets.adapter.rooms.get(code)`,
-     dont la fermeture de salon, qui fait sortir toutes les sockets une par
-     une. Une socket espionne s'y ferait prendre. Ici on interroge
-     `/game/state`, qui ne touche à rien.
-     ⚠️ Cette route est PUBLIQUE et retire déjà la bonne réponse
-     (`questionSansReponse`) : on voit donc la partie comme un joueur, pas
-     comme un tricheur. -->
-<div class="voile" id="voile-match">
-    <div class="modale modale-large">
-        <h3 id="match-titre">Partie</h3>
-        <p id="match-sous"></p>
-        <div id="match-corps"></div>
-        <div class="modale-actions">
-            <button class="bouton" id="match-fermer">Fermer</button>
-        </div>
-    </div>
-</div>
-
 <!-- ── Le second mot de passe, pour les deux gestes irréversibles d'un
      compte. ⚠️ Une modale A PART de celle des questions : celle-ci est
      câblée sur `BANQUES[CIBLE_TYPE]`, et l'élargir aurait mélangé deux
@@ -2283,127 +2240,16 @@ async function lireDirect() {
         (s.hote ? icone('couronne', 11) + ech(s.hote) : '<span></span>') +
         '<button class="salon-qui" data-code="' + ech(s.code) + '" title="Voir les joueurs">' +
         icone('gens', 12) + s.joueurs + '</button>' +
-        // 👁️ ⚠️ LE BOUTON N APPARAIT QUE SI LA PARTIE TOURNE. Sur un salon en
-        // attente il n y aurait rien a regarder, et un bouton qui ouvre une
-        // modale vide se lit comme un defaut.
-        (s.enPartie ? '<button class="salon-qui salon-voir" data-code="' + ech(s.code) +
-            '" title="Regarder la partie">👁</button>' : '') +
         '</div></div>').join('');
 
     // ⚠️ On garde la derniere reponse : la modale doit pouvoir se remplir au
     // clic sans relancer une requete, et se rafraichir toute seule si elle
     // est ouverte quand le direct revient.
     DIRECT = d;
-    // ⚠️ `:not(.salon-voir)` : les deux boutons partagent la classe
-    // `salon-qui` pour leur dessin, pas pour leur geste. Sans ce filtre,
-    // l œil ouvrait la liste des joueurs — son propre gestionnaire posé
-    // juste après étant écrasé par celui-ci.
-    $('salons').querySelectorAll('.salon-qui:not(.salon-voir)').forEach(b => {
+    $('salons').querySelectorAll('.salon-qui').forEach(b => {
         b.onclick = () => montrerJoueurs(b.dataset.code);
     });
-    $('salons').querySelectorAll('.salon-voir').forEach(b => {
-        b.onclick = () => regarderPartie(b.dataset.code);
-    });
     if (GENS_CODE) remplirGens(GENS_CODE);
-}
-
-// ── 👁️ Regarder une partie ──────────────────────────────────────────
-// ⚠️ EN LECTURE SEULE, PAR INTERROGATION. Rien ne rejoint le salon : on lit
-// `/game/state`, qui ne touche à rien et retire déjà la bonne réponse.
-// Deux secondes de retard ne se voient pas quand on regarde par-dessus
-// l'épaule.
-let MATCH_CODE = null, MATCH_MINUTEUR = null;
-
-function regarderPartie(code) {
-    MATCH_CODE = code;
-    $('match-titre').textContent = 'Salon ' + code;
-    $('match-sous').textContent = 'chargement…';
-    $('match-corps').innerHTML = '';
-    $('voile-match').classList.add('ouvert');
-    lireMatch();
-    // ⚠️ On repart d'un minuteur propre : rouvrir la modale sans arrêter le
-    // précédent en empilerait un par ouverture, et la page finirait par
-    // interroger le serveur dix fois par seconde.
-    clearInterval(MATCH_MINUTEUR);
-    MATCH_MINUTEUR = setInterval(lireMatch, 2000);
-}
-
-function fermerMatch() {
-    $('voile-match').classList.remove('ouvert');
-    clearInterval(MATCH_MINUTEUR);
-    MATCH_MINUTEUR = null;
-    MATCH_CODE = null;
-}
-$('match-fermer').onclick = fermerMatch;
-$('voile-match').onclick = e => { if (e.target === $('voile-match')) fermerMatch(); };
-
-async function lireMatch() {
-    if (!MATCH_CODE) return;
-    let d;
-    try {
-        const r = await fetch('/game/state?code=' + encodeURIComponent(MATCH_CODE));
-        d = await r.json();
-    } catch (e) { $('match-sous').textContent = 'serveur injoignable'; return; }
-
-    if (!d.isActive) {
-        $('match-sous').textContent = 'Ce salon vient de fermer.';
-        $('match-corps').innerHTML = '';
-        clearInterval(MATCH_MINUTEUR); MATCH_MINUTEUR = null;
-        return;
-    }
-    if (!d.inProgress) {
-        $('match-sous').textContent = 'La partie est terminée — plus rien à regarder.';
-        $('match-corps').innerHTML = '';
-        return;
-    }
-
-    const b = d.bombanime;
-    if (b && b.active) return peindreBomb(d, b);
-    peindreGenerique(d);
-}
-
-function peindreBomb(d, b) {
-    $('match-sous').textContent = 'BombAnime · ' + b.serie + ' · ' +
-        b.usedNamesCount + ' personnage' + (b.usedNamesCount > 1 ? 's' : '') + ' trouvé' +
-        (b.usedNamesCount > 1 ? 's' : '');
-
-    const gens = b.playersData || [];
-    // ⚠️ L'ORDRE DU TOUR, PAS CELUI DE LA LISTE. `playersOrder` dit qui joue
-    // après qui ; afficher les joueurs dans l'ordre d'arrivée rendrait la
-    // position de la bombe illisible.
-    const ordre = (b.playersOrder || []).length ? b.playersOrder : gens.map(g => g.playerId);
-    const parId = new Map(gens.map(g => [g.playerId, g]));
-
-    $('match-corps').innerHTML =
-        '<div class="match-meche"><b>' + Math.max(0, Math.round(b.timeRemaining || 0)) + 's</b>' +
-        ' avant que la mèche ne parte</div>' +
-        '<div class="gens">' + ordre.map(id => {
-            const g = parId.get(id);
-            if (!g) return '';
-            const aLui = id === b.currentPlayerId;
-            const mort = (g.lives || 0) <= 0;
-            return '<div class="match-joueur' + (aLui ? ' a-lui' : '') + (mort ? ' mort' : '') + '">' +
-                '<span class="match-nom">' + (aLui ? '💣 ' : '') + ech(g.username || '?') + '</span>' +
-                '<span class="match-vies">' + '♥'.repeat(Math.max(0, g.lives || 0)) + '</span>' +
-                '<span class="match-dit">' + ech(g.lastAnswer || '') + '</span>' +
-                '</div>';
-        }).join('') + '</div>';
-}
-
-function peindreGenerique(d) {
-    $('match-sous').textContent = (d.lobbyMode || 'partie') + ' · ' +
-        d.playerCount + ' joueur' + (d.playerCount > 1 ? 's' : '') +
-        (d.currentQuestion ? ' · question ' + ((d.currentQuestionIndex || 0) + 1) + '/' + d.questionsCount : '');
-    const gens = d.players || [];
-    $('match-corps').innerHTML =
-        (d.currentQuestion && d.currentQuestion.question
-            ? '<div class="match-question">' + ech(d.currentQuestion.question) + '</div>' : '') +
-        '<div class="gens">' + gens.map(g =>
-            '<div class="match-joueur">' +
-            '<span class="match-nom">' + ech(g.username || '?') + '</span>' +
-            '<span class="match-vies">' + (g.lives != null ? '♥'.repeat(Math.max(0, g.lives)) : '') + '</span>' +
-            '<span class="match-dit">' + (g.score != null ? g.score + ' pt' : '') + '</span>' +
-            '</div>').join('') + '</div>';
 }
 
 // ── Qui est dans le salon ───────────────────────────────────────────
