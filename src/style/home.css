@@ -16099,10 +16099,16 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    elle pesait deux fois la hauteur des liens et tirait l oeil a elle.
    ⚠️ `margin-left` plus grand que le `gap` : elle n est pas un quatrieme
    lien, c est une signature. L ecart dit ou s arrete la liste.
-   ⚠️ Et pas de `color` ici — elle garde celle de `.v2-reseau`, plus claire
-   que le texte : un dessin a besoin de plus de contraste qu une lettre pour
-   se lire a la meme distance. */
+   ⚠️ LA COULEUR EST REPETEE ICI, ET IL LE FAUT. Ce commentaire disait
+   l inverse — « pas de color, elle garde celle de .v2-reseau » — et c etait
+   faux depuis toujours : `.v2-pied a` (une classe + un element) l emporte sur
+   `.v2-reseau` (une classe), si bien que les pictogrammes prenaient le gris
+   du TEXTE, plus sourd qu eux. L intention etait ecrite, la cascade la
+   defaisait en silence. Deux classes suffisent a reprendre la main.
+   ⚠️ Le survol, lui, reste l or de `.v2-pied a:hover`, plus specifique
+   encore — et c est tant mieux, il va avec le reste du pied. */
 .v2-pied .v2-reseau {
+    color: rgba(255, 255, 255, 0.52);
     width: 1.75rem;
     height: 1.75rem;
     border-radius: 0.5rem;
@@ -16421,7 +16427,11 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     place-items: center;
     width: 2.7rem;
     height: 2.7rem;
-    color: rgba(255, 255, 255, 0.34);
+    /* ⚠️ Remontee de .34 a .52 le 20 novembre 2026 : a un tiers d opacite sur
+       un pied de page deja sombre, les pictogrammes se devinaient plus qu ils
+       ne se voyaient — et un lien qu on ne voit pas ne se clique pas. Le
+       survol reste le blanc plein, l ecart suffit a dire qu ils repondent. */
+    color: rgba(255, 255, 255, 0.52);
     background: rgba(255, 255, 255, 0.035);
     border: 0.06rem solid rgba(255, 255, 255, 0.08);
     border-radius: 0.7rem;
