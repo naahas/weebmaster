@@ -358,6 +358,11 @@ function marche(l, place, def) {
 
 function ligne(l, place, def) {
     var r = rangDe(l.xp);
+    // 🎖️ LE TITRE PORTE, a la suite du rang — comme sur les cartes du podium.
+    // ⚠️ Il peut etre vide : un compte neuf n en a aucun tant qu il n a pas
+    // recu le titre de depart, et le point median ne doit pas s afficher tout
+    // seul derriere le rang.
+    var t = titreDe(l);
     var appoint = def.appoint ? def.appoint(l) : '';
     // Le visiteur se reconnaît dans la liste. ⚠️ Comparé en minuscules :
     // le pseudo rangé par le navigateur peut différer de celui de la base
@@ -374,7 +379,8 @@ function ligne(l, place, def) {
         + '<span class="c-ident">'
           + '<span class="c-tete-ligne">'
             + '<span class="c-nom">' + echappe(l.pseudo) + '</span>'
-            + '<span class="c-puce-rang">' + echappe(r.nom) + '</span>'
+            + '<span class="c-puce-rang">' + echappe(r.nom)
+              + (t ? ' <span class="c-titre-ligne">· ' + echappe(t) + '</span>' : '') + '</span>'
           + '</span>'
           + (appoint ? '<span class="c-sous">' + echappe(appoint) + '</span>' : '')
         + '</span>'

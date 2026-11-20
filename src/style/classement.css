@@ -601,26 +601,71 @@ body::before {
 /* ⚠️ `gap` ET `line-height: 1.35` : le pseudo et sa ligne de rang étaient
    collés — 0,05 rem d écart sur deux textes de tailles différentes se lit
    comme un seul bloc mal composé. */
-/* ⚠️ UNE GRILLE ET NON UNE COLONNE FLEX, depuis que le rang doit se centrer
-   sur toute la rangee : colonne 1 le pseudo et son decompte, colonne 2 le
-   rang, qui couvre les deux lignes. `.c-tete-ligne` s efface en
-   `display: contents` pour que ses enfants y entrent.
-   ⚠️ `align-items: start` sur la grille, et `center` sur le seul rang : sans
-   ca le pseudo et son decompte s etireraient sur la hauteur de la cellule au
+.c-ident { min-width: 0; display: flex; flex-direction: column; gap: 0.18rem; }
+
+/* ⚠️ UNE GRILLE POUR LES SEULES LIGNES, ET PAS POUR LES CARTES DU PODIUM.
+   Les deux partagent `.c-ident`, mais pas sa composition : la carte y met le
+   pseudo PUIS le rang en dessous (`.c-nom` + `.c-rang`), la ligne y met le
+   pseudo ET le rang cote a cote, avec un decompte dessous. Posee sans
+   portee, la grille mettait les deux textes de la CARTE en colonnes — pseudo
+   tronque a gauche, rang a droite.
+   Ici : colonne 1 le pseudo et son decompte, colonne 2 le rang, qui couvre
+   les deux rangees et s y centre. `.c-tete-ligne` s efface en
+   `display: contents` pour que ses enfants entrent dans la grille.
+   ⚠️ `align-items: start` sur la grille, `center` sur le seul rang : sans ca
+   le pseudo et son decompte s etireraient sur la hauteur de la cellule au
    lieu de rester colles l un a l autre. */
-.c-ident {
-    min-width: 0;
+.c-ligne .c-ident {
     display: grid;
-    grid-template-columns: minmax(0, auto) auto;
+    /* ⚠️ UNE LARGEUR FIXE POUR LA PREMIERE COLONNE, ET C EST CE QUI ALIGNE
+       LES RANGS D UNE LIGNE A L AUTRE. En `auto`, elle se dimensionnait sur
+       le plus large de ses deux contenus — le pseudo OU le decompte. Or
+       « 1 parties » et « aucune partie » n ont pas la meme largeur : deux
+       lignes au meme pseudo posaient leur rang a 20 px d ecart, et la colonne
+       dansait a chaque rafraichissement.
+       Figee, le rang tombe toujours au meme endroit, quel que soit le pseudo.
+       ⚠️ `vw` ET SURTOUT PAS UN POURCENTAGE. Un `%` se calcule sur la largeur
+       de `.c-ident`, qui est la colonne `1fr` de la rangee — elle varie donc
+       avec ce qu il y a a sa droite : « 25 XP » et une icone de valeur vide ne
+       font pas la meme largeur, et deux lignes posaient leur rang a 6 px
+       d ecart. Mesure a 390 px : 208 contre 214. Le `vw`, lui, vaut la meme
+       chose pour toutes les lignes, et s adapte quand meme a l ecran. */
+    grid-template-columns: clamp(5.5rem, 26vw, 11rem) auto;
     /* L ecart vertical d avant (0,18rem) et l ecart au rang (1,15rem) : sans
        cadre, c est le vide SEUL qui dit ou s arrete le pseudo. */
     gap: 0.18rem 1.15rem;
     align-items: start;
     justify-content: start;
 }
-.c-ident .c-nom      { grid-column: 1; grid-row: 1; }
-.c-ident .c-sous     { grid-column: 1; grid-row: 2; }
-.c-ident .c-puce-rang { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.c-ligne .c-ident .c-nom       { grid-column: 1; grid-row: 1; }
+.c-ligne .c-ident .c-sous      { grid-column: 1; grid-row: 2; }
+.c-ligne .c-ident .c-puce-rang {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    /* ⚠️ Le titre peut etre long (« Purificateur des abysses ») : sur un
+       ecran etroit il doit CEDER, pas pousser la valeur hors du cadre. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* 🎖️ Le titre suit le rang mais ne lui dispute pas l attention : c est le
+   rang qui situe, le titre qui orne. Il garde la teinte du palier, en plus
+   sourd, et ne reprend PAS son gras. */
+.c-titre-ligne {
+    font-weight: 500;
+    opacity: 0.62;
+}
+/* ⚠️ LA COLONNE EST FIGEE, DONC LE TEXTE DOIT CEDER. Sans cette troncature,
+   un pseudo de seize caracteres deborderait de sa colonne et passerait SOUS
+   le rang — c est exactement ce que la largeur fixe devait empecher. */
+.c-ligne .c-ident .c-nom,
+.c-ligne .c-ident .c-sous {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .c-ident .c-nom { font-size: 0.9rem; text-align: left; line-height: 1.2; }
 .c-sous {
     font-size: 0.68rem;
