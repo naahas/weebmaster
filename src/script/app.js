@@ -726,6 +726,7 @@ createApp({
             noSpoil: false,
             serieStats: null,     // combien de séries derrière Overall et Mainstream
             serieChoisie: false,  // ferme le tiroir après un choix, jusqu'à ce qu'on ressorte
+            filtreRushChoisi: false,  // le même, pour le filtre de Rush
             // Vrai hors production, d'après `/api/home-stats`. Il n'ouvre que
             // le réglage « Test » du salon ; le serveur refuse de toute façon
             // `dev-add-bots` en production, donc le cacher ici est un confort,
@@ -5555,6 +5556,15 @@ createApp({
 
         // Le tiroir s'ouvre au survol : sans ça il resterait ouvert sous le
         // curseur après le choix, comme si rien n'avait été pris en compte.
+        // ⚡ Le filtre de Rush, sur le modèle de `choisirSerie` juste en
+        // dessous : le tiroir se referme au clic, et le réglage ne part au
+        // serveur que s'il a vraiment changé.
+        choisirFiltreRush(id) {
+            this.filtreRushChoisi = true;
+            if (id === this.rush.filtre) return;
+            this.applySetting('/admin/rush/set-filtre', { filtre: id }, () => { this.rush.filtre = id; });
+        },
+
         choisirSerie(id) {
             this.serieChoisie = true;
             if (id === this.serieFilter) return;

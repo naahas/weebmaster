@@ -2062,7 +2062,16 @@
                                     <span class="v2-set-value num">{{ rush.limite ? rush.limite + 's' : '∞' }}</span>
                                 </div>
 
-                                <div class="v2-set">
+                                <!-- ⚠️ `opts-fermes` : LE TIROIR SE RETIRE DES
+                                     QU ON A CHOISI, meme si le curseur reste
+                                     dessus. Sans ca il faut sortir du reglage
+                                     pour le voir disparaitre, et l on doute
+                                     d avoir clique. Le drapeau se leve au clic
+                                     et retombe quand la souris ressort — c est
+                                     le meme couple que pour le choix des
+                                     series, juste au-dessus. -->
+                                <div class="v2-set" :class="{ 'opts-fermes': filtreRushChoisi }"
+                                     @mouseleave="filtreRushChoisi = false">
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Filtre</span>
                                     <span class="v2-set-value">{{ nomFiltreRush(rush.filtre) }}</span>
@@ -2087,7 +2096,7 @@
                                              absence. -->
                                         <button v-for="f in rush.filtres" :key="f.id"
                                                 class="v2-set-opt" :class="{ on: rush.filtre === f.id }"
-                                                @click="applySetting('/admin/rush/set-filtre', { filtre: f.id }, () => rush.filtre = f.id)">{{ f.label }}</button>
+                                                @click="choisirFiltreRush(f.id)">{{ f.label }}</button>
                                     </span>
                                 </div>
 
