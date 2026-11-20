@@ -3601,6 +3601,16 @@ app.get('/prototypes/coeurs-eclats', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-coeurs-eclats.html');
 });
 
+// 🧪 La planche des personnages de Rush, pour composer des listes.
+// ⚠️ Elle vit a la RACINE du depot et non dans src/html : c est une page
+// GENEREE (`npm run rush:page`), pas une page du site, et la ranger avec les
+// autres ferait croire qu on peut l editer a la main. Elle a besoin d une
+// route parce qu elle charge les portraits depuis src/img/rushpic : ouverte
+// en `file://`, le navigateur refuse ces requetes.
+app.get('/prototypes/rush-personnages', (req, res) => {
+    res.sendFile(__dirname + '/rush-personnages.html');
+});
+
 // 🧪 Les auras du salon d attente : sept tailles et sept matieres, chacune
 // avec son pulse et son eclat. On clique une aura, ou le ciel pour toutes.
 app.get('/prototypes/auras', (req, res) => {

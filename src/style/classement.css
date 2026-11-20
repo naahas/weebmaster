@@ -968,13 +968,13 @@ body::before {
     /* ⚠️ Les textes CEDENT au lieu de pousser : a 116 px de large, un pseudo
        qui ne se tronque pas deborde sur sa voisine. */
     .c-marche .c-nom {
-        font-size: 0.72rem;
+        font-size: 0.66rem;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .p1 .c-nom { font-size: 0.78rem; }
+    .p1 .c-nom { font-size: 0.72rem; }
     /* ⚠️ `min-width: 0` EN CASCADE. Retirer le plancher de la GRILLE ne suffit
        pas : chaque boite intermediaire garde le sien, et le texte ressort par
        le cote sans que la colonne bouge. Mesure a 320 px : le pseudo et le
@@ -985,7 +985,10 @@ body::before {
        rien ne les comprime, et un plancher a zero n y change donc rien —
        mesure a 320 px, `.c-ident` faisait 102 px dans une carte de 93. Il
        faut lui DONNER la largeur, pas seulement l autoriser a maigrir. */
-    .c-marche .c-ident { min-width: 0; width: 100%; }
+    /* ⚠️ `margin-top` et non le `gap` de la carte : le `gap` ecarterait AUSSI
+       le bloc de texte de la valeur, en dessous, alors que c est seulement du
+       portrait qu il doit se detacher. */
+    .c-marche .c-ident { min-width: 0; width: 100%; margin-top: 0.85rem; }
     .c-marche .c-rang {
         font-size: 0.5rem;
         letter-spacing: 0.04em;
@@ -1004,5 +1007,11 @@ body::before {
     .c-liste { gap: 0.45rem; }
     .c-ligne { grid-template-columns: 1.7rem 2rem 1fr auto; gap: 0.6rem; padding: 0.6rem 0.75rem; }
     .c-ligne .c-ava { width: 2rem; height: 2rem; }
-    .c-ident .c-nom { font-size: 0.84rem; }
+    /* ⚠️ PORTEE A `.c-ligne`, ET CE N EST PAS COSMETIQUE. Cette regle visait
+       les LIGNES, mais `.c-ident .c-nom` attrape aussi les cartes du podium —
+       a specificite egale avec `.c-marche .c-nom` et posee plus bas dans le
+       fichier, elle gagnait. Le pseudo des cartes restait donc a 0,84rem
+       quelles que soient les valeurs ecrites plus haut : mesure, 13,44 px la
+       ou l on demandait 10,56. Un reglage qui ne prend pas et ne dit rien. */
+    .c-ligne .c-ident .c-nom { font-size: 0.84rem; }
 }
