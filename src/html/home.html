@@ -2066,12 +2066,25 @@
                                     <svg class="v2-set-ic" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M16 5l2-2M14 6l1.5-3"/></svg>
                                     <span class="v2-set-label">Filtre</span>
                                     <span class="v2-set-value">{{ nomFiltreRush(rush.filtre) }}</span>
-                                    <span class="v2-set-opts">
+                                    <span class="v2-set-opts grille filtres-rush">
                                         <!-- ⚠️ Pas de `title` ici. La bulle native du navigateur
                                              s ouvrait au survol sous le curseur, par-dessus les
                                              deux autres filtres, et l on ne pouvait plus viser
                                              celui qu on voulait sans attendre qu elle parte.
                                              Le nombre de personnages ne valait pas ce prix. -->
+                                        <!-- ⚠️ `grille` DES QUATRE FILTRES, et
+                                             c est devenu necessaire : les
+                                             genres Romance et Sport en ont
+                                             porte le nombre a cinq, et une
+                                             rangee unique les ecrasait au point
+                                             que « Mainstream » debordait sur ses
+                                             voisins. Les boutons sont en
+                                             `flex: 1 1 auto` sans `min-width: 0`
+                                             — ils retrecissent, le texte non.
+                                             ℹ️ Le premier occupe la rangee
+                                             entiere : « Tout » n est pas un
+                                             filtre comme les autres, c est leur
+                                             absence. -->
                                         <button v-for="f in rush.filtres" :key="f.id"
                                                 class="v2-set-opt" :class="{ on: rush.filtre === f.id }"
                                                 @click="applySetting('/admin/rush/set-filtre', { filtre: f.id }, () => rush.filtre = f.id)">{{ f.label }}</button>

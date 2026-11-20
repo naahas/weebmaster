@@ -11134,6 +11134,23 @@ input, textarea,
     line-height: 1.2;
 }
 
+/* ⚡ LES FILTRES DE RUSH — « Tout » sur toute la largeur, les genres par deux.
+   ⚠️ Ils tenaient en UNE rangee tant qu ils etaient trois. Romance et Sport
+   les ont portes a cinq, et la rangee les a ecrases : les boutons sont en
+   `flex: 1 1 auto` SANS `min-width: 0`, donc ils retrecissent mais leur texte
+   non — « Mainstream » debordait par-dessus ses voisins. La grille a deux
+   colonnes leur donne a tous la meme largeur, et cinq choix y tombent juste :
+   une rangee pleine, puis deux de deux.
+   ℹ️ « Tout » occupe la premiere : ce n est pas un filtre parmi les autres,
+   c est leur absence. */
+.v2-set-opts.filtres-rush .v2-set-opt:first-child { grid-column: 1 / -1; }
+.v2-set-opts.filtres-rush .v2-set-opt {
+    /* Les libelles des genres sont courts ; inutile d emprunter la hauteur
+       des cartes de serie, qui portent un decompte sous leur nom. */
+    min-height: 2.1rem;
+    font-size: 0.74rem;
+}
+
 /* Le décompte des séries, sous le libellé */
 .v2-set-opt em {
     font-style: normal;
