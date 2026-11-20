@@ -1285,7 +1285,7 @@
                          gestion du salon. Son aura, elle, est bien la chez les
                          autres — sinon le tableau montrerait une aura de moins
                          que le « N joueurs dans le salon » ecrit juste dessous. -->
-                    <div class="v2-auras" v-if="!isHost" aria-hidden="true">
+                    <div class="v2-auras" v-if="!isHost && aurasActives" aria-hidden="true">
                         <transition-group name="v2-aura">
                             <button type="button" tabindex="-1"
                                     class="v2-aura" v-for="a in auras" :key="a.playerId"

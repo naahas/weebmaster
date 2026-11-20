@@ -694,6 +694,18 @@ createApp({
             // Repères des réponses : une forme et une couleur, pas de lettre
             answerMarks: ['◆', '●', '▲', '■', '★', '⬢'],
             lobbyPlayers: [],
+            // ✨🔌 L INTERRUPTEUR DES AURAS — METTRE `true` POUR LES RALLUMER.
+            //
+            // C est la SEULE chose a changer : le gabarit, la feuille de style
+            // et le relais serveur restent entiers et testes. Eteintes, les
+            // auras ne coutent rien — le bloc n est pas rendu, et `lobby-eclat`
+            // n est jamais emis, donc le serveur ne relaie rien non plus.
+            //
+            // ⚠️ Un drapeau ici plutot qu un code commente ou un `v-if="false"`
+            // dans le gabarit : on le trouve en cherchant « aura », il se
+            // bascule en un mot, et il se teste depuis la console sans
+            // redeploiement.
+            aurasActives: false,
             // ✨ LES AURAS DU SALON D ATTENTE.
             // `auraEclats` compte les gerbes recues par joueur — un COMPTEUR
             // et non un drapeau : c est lui qui sert de `key` a l element de
