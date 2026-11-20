@@ -1428,14 +1428,16 @@
       "img": "shoyo.webp",
       "alias": [
         "shoyo"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "kageyama",
       "nom": "Kageyama",
       "anime": "Haikyuu",
       "img": "kageyama.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "nishinoya",
@@ -1444,7 +1446,8 @@
       "img": "nishinoya.webp",
       "alias": [
         "noya"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "saber",
@@ -1467,28 +1470,32 @@
       "img": "sakuragi.webp",
       "alias": [
         "hanamichi"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "isagi",
       "nom": "Isagi",
       "anime": "Blue Lock",
       "img": "isagi.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "bachira",
       "nom": "Bachira",
       "anime": "Blue Lock",
       "img": "bachira.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "nagi",
       "nom": "Nagi",
       "anime": "Blue Lock",
       "img": "nagi.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "rinitoshi",
@@ -1497,14 +1504,16 @@
       "img": "rinitoshi.webp",
       "alias": [
         "itoshi"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "chigiri",
       "nom": "chigiri",
       "anime": "Blue Lock",
       "img": "chigiri.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "baro",
@@ -1513,7 +1522,8 @@
       "img": "baro.webp",
       "alias": [
         "barou"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "nana",
@@ -1766,7 +1776,8 @@
       "nom": "Akashi",
       "anime": "Kuroko no Basket",
       "img": "akashi.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "aokiji",
@@ -1780,7 +1791,8 @@
       "nom": "Aomine",
       "anime": "Kuroko no Basket",
       "img": "aomine.webp",
-      "alias": ["Daiki"]
+      "alias": ["Daiki"],
+      "filtres": ["sport"]
     },
     {
       "id": "araragi",
@@ -1990,7 +2002,8 @@
       "nom": "Kenma",
       "anime": "Haikyuu",
       "img": "kenma.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "kimimaro",
@@ -2029,7 +2042,8 @@
       "img": "kuroo.webp",
       "alias": [
         "kuro"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "marco",
@@ -2050,7 +2064,8 @@
       "nom": "Midorima",
       "anime": "Kuroko no Basket",
       "img": "midorima.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "miyamura",
@@ -2319,7 +2334,8 @@
       "nom": "Tsukishima",
       "anime": "Haikyuu",
       "img": "tsukishima.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "vanitas",
@@ -2621,7 +2637,8 @@
       "img": "kuroko.webp",
       "alias": [
         "Tetsuya"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "kise",
@@ -2630,7 +2647,8 @@
       "img": "kise.webp",
       "alias": [
         "Ryota"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "kagami",
@@ -2639,7 +2657,8 @@
       "img": "kagami.webp",
       "alias": [
         "Taiga"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "murasakibara",
@@ -2648,7 +2667,8 @@
       "img": "murasakibara.webp",
       "alias": [
         "Atsushi"
-      ]
+      ],
+      "filtres": ["sport"]
     },
     {
       "id": "megumif",
@@ -3117,14 +3137,16 @@
       "nom": "Asahi",
       "anime": "Haikyuu",
       "img": "asahi.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "oikawa",
       "nom": "Oikawa",
       "anime": "Haikyuu",
       "img": "oikawa.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "pitou",
@@ -3408,7 +3430,8 @@
       "nom": "Reo",
       "anime": "Blue Lock",
       "img": "reo.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "near",
@@ -3464,7 +3487,8 @@
       "nom": "Gagamaru",
       "anime": "Blue Lock",
       "img": "gagamaru.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "esdeath",
@@ -3485,7 +3509,8 @@
       "nom": "Ego",
       "anime": "Blue Lock",
       "img": "ego.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "chrome",
@@ -3506,7 +3531,8 @@
       "nom": "Baki",
       "anime": "Baki",
       "img": "baki.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["sport"]
     },
     {
       "id": "casca",
@@ -3749,6 +3775,11 @@
     },
     "romance": {
       "label": "Romance",
+      "animes": [],
+      "parPersonnage": true
+    },
+    "sport": {
+      "label": "Sport",
       "animes": [],
       "parPersonnage": true
     }
