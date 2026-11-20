@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auras du salon — banc d essai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ⚠️ CETTE PAGE NE CHARGE PAS home.css, ET C EST DELIBERE. La feuille de
+   l accueil fige le corps (`position: fixed`, `overflow: hidden`,
+   `height: 100svh`) parce que le site est une application plein ecran : un
+   banc qui la charge doit remettre QUATRE proprietes pour defiler, et on
+   l oublie une fois sur deux. Les quelques valeurs dont ce banc a besoin sont
+   recopiees ici, et elles sont les memes que dans le salon. */
+:root {
+    --or: #ffd700;
+    --fond: #07060b;
+    --texte: #e9e6f2;
+    --doux: #9a93ad;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 2.5rem 1.5rem 6rem;
+    background: var(--fond);
+    color: var(--texte);
+    font-family: 'Poppins', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+h1 {
+    margin: 0 0 .4rem;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+}
+.intro {
+    max-width: 52rem;
+    margin: 0 0 .9rem;
+    font-size: .86rem;
+    line-height: 1.6;
+    color: var(--doux);
+}
+.intro b { color: var(--texte); font-weight: 600; }
+.rappel {
+    display: inline-block;
+    margin-bottom: 2.4rem;
+    padding: .5rem .85rem;
+    border-left: 2px solid var(--or);
+    background: rgba(255, 215, 0, .05);
+    font-size: .8rem;
+    color: var(--doux);
+}
+.rappel b { color: var(--or); }
+
+.grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+    gap: 1.6rem;
+    max-width: 92rem;
+}
+.carte {
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: .9rem;
+    background: linear-gradient(168deg, #100f16, #0a0910);
+    overflow: hidden;
+}
+.entete {
+    display: flex;
+    align-items: baseline;
+    gap: .6rem;
+    padding: .9rem 1.1rem .55rem;
+}
+.num {
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    color: var(--or);
+}
+.nom { font-size: .95rem; font-weight: 700; }
+.taille {
+    margin-left: auto;
+    font-size: .64rem;
+    letter-spacing: .08em;
+    color: var(--doux);
+}
+.note {
+    padding: 0 1.1rem .9rem;
+    font-size: .76rem;
+    line-height: 1.55;
+    color: var(--doux);
+}
+
+/* Le ciel : le vrai fond du salon, en plus petit. */
+.ciel {
+    position: relative;
+    height: 15rem;
+    border-top: 1px solid rgba(255, 255, 255, .05);
+    background:
+        radial-gradient(ellipse 60% 50% at 30% 20%, rgba(120, 90, 20, .22), transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(60, 40, 110, .2), transparent 70%),
+        #07060b;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LE SOCLE COMMUN — identique pour les six, seul le rond change
+   ════════════════════════════════════════════════════════════════ */
+.a {
+    position: absolute;
+    /* ⚠️ `translate` et non `transform` : les pulses ecrivent `scale`, et une
+       translation posee en `transform` serait effacee a la premiere image. */
+    translate: -50% -50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+.a-nom {
+    font-size: .54rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .5);
+    white-space: nowrap;
+    transition: color .2s ease;
+}
+.a:hover .a-nom { color: rgba(255, 255, 255, .9); }
+.a-disque { position: relative; }
+.a-rond { position: absolute; inset: 0; border-radius: 50%; }
+
+/* L eclat, commun lui aussi : il doit se comparer a taille egale. */
+.a-eclat {
+    position: absolute;
+    inset: -18%;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 232, 170, .95);
+    opacity: 0;
+    pointer-events: none;
+}
+.a.boum .a-eclat { animation: eclat .6s cubic-bezier(.16, .84, .44, 1); }
+@keyframes eclat {
+    0%   { scale: .5;  opacity: 0; }
+    14%  { opacity: 1; }
+    100% { scale: 2.8; opacity: 0; }
+}
+
+/* ════ 1. BRAISE — un coeur vif, un halo qui respire ════ */
+.v1 .a-disque { width: 2.4rem; height: 2.4rem; }
+.v1 .a-rond {
+    background: radial-gradient(circle at 50% 50%, #ffe9a8 0%, #ffb52e 22%, rgba(255, 140, 20, .32) 46%, transparent 70%);
+    animation: braise var(--d, 3.4s) ease-in-out infinite var(--r, 0s);
+}
+@keyframes braise {
+    0%, 100% { scale: 1;    opacity: .72; }
+    50%      { scale: 1.16; opacity: 1; }
+}
+
+/* ════ 2. ANNEAU — rien au centre, tout sur le contour ════ */
+.v2 .a-disque { width: 2.6rem; height: 2.6rem; }
+.v2 .a-rond {
+    border: 1.5px solid rgba(255, 216, 120, .75);
+    box-shadow: 0 0 .9rem rgba(255, 190, 60, .3), inset 0 0 .6rem rgba(255, 200, 90, .16);
+    animation: anneau var(--d, 3.8s) ease-in-out infinite var(--r, 0s);
+}
+@keyframes anneau {
+    0%, 100% { scale: .92; opacity: .6; }
+    50%      { scale: 1.08; opacity: 1; }
+}
+
+/* ════ 3. GOUTTE — une bille de verre, avec son reflet ════ */
+.v3 .a-disque { width: 2.2rem; height: 2.2rem; }
+.v3 .a-rond {
+    background:
+        radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .85) 0%, rgba(255, 228, 150, .5) 18%, transparent 42%),
+        radial-gradient(circle at 50% 60%, rgba(255, 176, 48, .9), rgba(150, 80, 10, .55) 70%, rgba(90, 45, 5, .25));
+    box-shadow: 0 .18rem .7rem rgba(0, 0, 0, .5), 0 0 1.2rem rgba(255, 170, 50, .28);
+    animation: goutte var(--d, 4.2s) ease-in-out infinite var(--r, 0s);
+}
+@keyframes goutte {
+    0%, 100% { scale: 1;    translate: 0 0; }
+    50%      { scale: 1.07; translate: 0 -8%; }
+}
+
+/* ════ 4. ONDE — un point, et des cercles qui s en echappent ════ */
+.v4 .a-disque { width: 2.2rem; height: 2.2rem; }
+.v4 .a-rond {
+    background: radial-gradient(circle, #ffd98a 0%, #ff9f1c 38%, transparent 62%);
+    scale: .46;
+}
+.v4 .a-disque::before,
+.v4 .a-disque::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 200, 90, .5);
+    animation: onde var(--d, 3.6s) ease-out infinite var(--r, 0s);
+}
+.v4 .a-disque::after { animation-delay: calc(var(--r, 0s) - 1.8s); }
+@keyframes onde {
+    0%   { scale: .45; opacity: .85; }
+    100% { scale: 1.5; opacity: 0; }
+}
+
+/* ════ 5. LUCIOLE — a peine la, et c est le propos ════ */
+.v5 .a-disque { width: 1.8rem; height: 1.8rem; }
+.v5 .a-rond {
+    background: radial-gradient(circle, rgba(255, 240, 190, .95) 0%, rgba(255, 190, 70, .55) 30%, transparent 68%);
+    filter: blur(1px);
+    animation: luciole var(--d, 5s) ease-in-out infinite var(--r, 0s);
+}
+@keyframes luciole {
+    0%, 100% { opacity: .3;  scale: .9; }
+    40%      { opacity: 1;   scale: 1.12; }
+    60%      { opacity: .75; scale: 1.04; }
+}
+
+/* ════ 6. NOYAU — un centre dense, un anneau fin autour ════ */
+.v6 .a-disque { width: 2.5rem; height: 2.5rem; }
+.v6 .a-rond {
+    background: radial-gradient(circle, #ffe6a6 0%, #ffae2b 26%, transparent 52%);
+    scale: .62;
+    animation: noyau var(--d, 3.2s) ease-in-out infinite var(--r, 0s);
+}
+.v6 .a-disque::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 214, 110, .4);
+    animation: noyauAnneau var(--d, 3.2s) ease-in-out infinite var(--r, 0s);
+}
+@keyframes noyau {
+    0%, 100% { scale: .58; opacity: .85; }
+    50%      { scale: .68; opacity: 1; }
+}
+@keyframes noyauAnneau {
+    0%, 100% { scale: .94; opacity: .45; }
+    50%      { scale: 1.04; opacity: .85; }
+}
+
+/* ════ 0. L ACTUEL, pour la comparaison ════ */
+.v0 .a-disque { width: 4.6rem; height: 4.6rem; }
+.v0 .a-rond {
+    background: radial-gradient(circle at 50% 40%, rgba(255, 216, 120, .4), rgba(255, 170, 40, .13) 56%, transparent 72%);
+    border: 1px solid rgba(255, 214, 110, .26);
+    box-shadow: 0 0 2rem rgba(255, 190, 60, .2), inset 0 0 1.1rem rgba(255, 214, 110, .16);
+    animation: braise var(--d, 3.6s) ease-in-out infinite var(--r, 0s);
+}
+.v0 .a-nom { font-size: .6rem; }
+
+@media (prefers-reduced-motion: reduce) {
+    .a-rond, .a-disque::before, .a-disque::after { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<h1>Les auras du salon d attente</h1>
+<p class="intro">
+    Six propositions plus petites que l actuelle, plus une reprise de
+    l actuelle pour comparer. <b>Clique une aura</b> pour voir son eclat —
+    c est en mouvement que ca se juge, pas sur une image.
+</p>
+<p class="rappel">
+    ⚠️ L actuelle fait <b>4,6 rem</b>, soit 74 px. Les propositions vont de
+    <b>1,8 à 2,6 rem</b> — de 29 à 42 px. Le ciel de chaque carte reprend le
+    fond du vrai salon.
+</p>
+
+<div class="grille" id="grille"></div>
+
+<script>
+// ⚠️ LES AURAS SONT PLACEES PAR LE MEME PRINCIPE QUE DANS LE SALON : un
+// hachage de l identifiant, pas un tirage par navigateur. Ici ca ne change
+// rien a l oeil, mais le banc doit montrer ce que fera le vrai code, sinon il
+// ment sur ce qu on choisit.
+const VARIANTES = [
+    { c: 'v1', n: 'Braise',  t: '2,4 rem · 38 px', d: 'Un coeur vif qui se perd dans un halo. C est la plus proche de l actuelle, en quatre fois moins de surface.' },
+    { c: 'v2', n: 'Anneau',  t: '2,6 rem · 42 px', d: 'Rien au centre : tout tient sur le contour. La plus lisible sur un fond charge, et la plus discrete malgre sa taille.' },
+    { c: 'v3', n: 'Goutte',  t: '2,2 rem · 35 px', d: 'Une bille de verre avec son reflet. Elle a du poids et une matiere — et elle flotte au lieu de battre.' },
+    { c: 'v4', n: 'Onde',    t: '2,2 rem · 35 px', d: 'Un point, et deux cercles qui s en echappent en continu. C est la seule qui attire l oeil sans grossir.' },
+    { c: 'v5', n: 'Luciole', t: '1,8 rem · 29 px', d: 'A peine la, et c est le propos : une presence qui respire plutot qu un objet. La plus petite des six.' },
+    { c: 'v6', n: 'Noyau',   t: '2,5 rem · 40 px', d: 'Un centre dense et un anneau fin qui respirent en decale. Deux couches, donc plus de relief a taille egale.' },
+    { c: 'v0', n: 'L actuelle', t: '4,6 rem · 74 px', d: 'Celle qui est en place aujourd hui, pour comparer a surface reelle. C est elle qu Adem trouve trop grosse.' },
+];
+
+const PSEUDOS = ['Guest-0042', 'Kurosaki', 'Nami', 'Zoro', 'Sakura'];
+
+function hacher(s) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+}
+
+const grille = document.getElementById('grille');
+VARIANTES.forEach((v) => {
+    const carte = document.createElement('div');
+    carte.className = 'carte';
+    carte.innerHTML =
+        '<div class="entete"><span class="num">' + (v.c === 'v0' ? '—' : v.c.slice(1)) + '</span>' +
+        '<span class="nom">' + v.n + '</span><span class="taille">' + v.t + '</span></div>' +
+        '<p class="note">' + v.d + '</p>' +
+        '<div class="ciel ' + v.c + '"></div>';
+    const ciel = carte.querySelector('.ciel');
+
+    // Cinq auras, placees comme le fait le salon : une grille, un decalage
+    // dans la cellule, les deux tires du hachage du pseudo.
+    PSEUDOS.forEach((p, i) => {
+        const h = hacher(p + v.c);
+        const COLS = 3, LIGNES = 2;
+        const c = i % COLS, r = Math.floor(i / COLS) % LIGNES;
+        const jx = ((h >>> 7) % 1000) / 1000;
+        const jy = ((h >>> 17) % 1000) / 1000;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'a';
+        b.style.left = (12 + ((c + 0.15 + jx * 0.7) / COLS) * 76) + '%';
+        b.style.top = (20 + ((r + 0.15 + jy * 0.7) / LIGNES) * 60) + '%';
+        b.style.setProperty('--r', (-(h % 400) / 100) + 's');
+        b.style.setProperty('--d', (3 + ((h >>> 23) % 220) / 100) + 's');
+        b.innerHTML = '<span class="a-nom">' + p + '</span>' +
+                      '<span class="a-disque"><span class="a-rond"></span><span class="a-eclat"></span></span>';
+        // ⚠️ On RETIRE la classe avant de la remettre, et il faut forcer un
+        // reflow entre les deux : sans ca, le navigateur regroupe les deux
+        // changements et l animation ne rejoue pas au second clic.
+        b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            b.classList.remove('boum');
+            void b.offsetWidth;
+            b.classList.add('boum');
+        });
+        ciel.appendChild(b);
+    });
+
+    // Cliquer le ciel fait eclater tout le monde : de quoi juger l effet en
+    // nombre, ce qui est le vrai cas d un salon anime.
+    ciel.addEventListener('click', () => {
+        ciel.querySelectorAll('.a').forEach((b, i) => {
+            setTimeout(() => {
+                b.classList.remove('boum');
+                void b.offsetWidth;
+                b.classList.add('boum');
+            }, i * 70);
+        });
+    });
+
+    grille.appendChild(carte);
+});
+</script>
+</body>
+</html>

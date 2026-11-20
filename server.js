@@ -3559,6 +3559,12 @@ app.get('/prototypes/coeurs-eclats', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-coeurs-eclats.html');
 });
 
+// 🧪 Les auras du salon d attente : sept tailles et sept matieres, chacune
+// avec son pulse et son eclat. On clique une aura, ou le ciel pour toutes.
+app.get('/prototypes/auras', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-auras.html');
+});
+
 // 🧪 Les avatars a l essai, dans le vrai cercle de BombAnime.
 app.get('/prototypes/avatars', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-avatars.html');
