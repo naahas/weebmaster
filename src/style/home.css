@@ -7674,11 +7674,16 @@ html.rendu-logiciel .v2-dust { display: none; }
    suffisent a dire « c est moi qui ai ouvert ca, et c est moi qui referme ». */
 .v2-burger.ouvert span { background: var(--neon-primary, #f0c75e); }
 /* Les trois barres deviennent une croix : celle du milieu s efface, les
-   deux autres se croisent. ⚠️ Le `translateY` vaut la hauteur d une barre
-   plus le `gap`, sinon elles ne se rejoignent pas au centre. */
-.v2-burger.ouvert span:nth-child(1) { transform: translateY(0.47rem) rotate(45deg); }
+   deux autres se croisent.
+   ⚠️ LE `translateY` VAUT LA HAUTEUR D UNE BARRE PLUS LE `gap`, et il ne le
+   valait pas. La regle etait ecrite juste ici, la valeur ne la suivait pas :
+   1,8 px de barre + 0,28 rem de gap = 0,3925 rem, et le code mettait 0,47.
+   Les deux barres depassaient donc le centre de 1,2 px chacune et se
+   croisaient a cote — d ou une croix qui paraissait de travers sans qu on
+   sache dire pourquoi. */
+.v2-burger.ouvert span:nth-child(1) { transform: translateY(0.3925rem) rotate(45deg); }
 .v2-burger.ouvert span:nth-child(2) { opacity: 0; }
-.v2-burger.ouvert span:nth-child(3) { transform: translateY(-0.47rem) rotate(-45deg); }
+.v2-burger.ouvert span:nth-child(3) { transform: translateY(-0.3925rem) rotate(-45deg); }
 
 /* ⚠️ LE VOILE SE FOND, IL N APPARAIT PLUS D UN COUP. Le tiroir glisse en
    0,28 s pendant que le fond s assombrissait instantanement : on voyait donc
@@ -7768,7 +7773,11 @@ html.rendu-logiciel .v2-dust { display: none; }
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.72rem;
+    /* ⚠️ 0,92rem et non 0,72 : ces liens sont de PETIT texte sans cadre ni
+       filet entre eux — c est le vide seul qui les separe, et il en faut plus
+       que pour des elements qui portent leur propre limite. Quatre lignes
+       serrees se lisaient comme un paragraphe plutot que comme une liste. */
+    gap: 0.92rem;
     /* Le meme filet dore que celui qui separe les liens du haut. */
     border-top: 1px solid transparent;
     border-image: linear-gradient(90deg,

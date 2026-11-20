@@ -523,7 +523,10 @@ body::before {
    collé sous l'avatar, tout en haut d'une carte de douze centimètres, et
    les trois noms ne tombaient même pas à la même hauteur puisque les
    marches n'en ont pas. */
-.c-marche .c-ident { margin: auto 0; position: relative; z-index: 1; }
+.c-marche .c-ident { margin: auto 0; position: relative; z-index: 1;
+    /* +2 px entre le pseudo et son rang, demande le 21 nov. 2026 : sur une
+       carte, les deux lignes sont centrees et se touchaient presque. */
+    gap: 0.3rem; }
 .c-marche .c-val { position: relative; z-index: 1; }
 
 .c-rang {
@@ -928,36 +931,71 @@ body::before {
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 620px) {
     .c-page { padding: 1.8rem 0.9rem 5rem; }
-    .c-podium { grid-template-columns: 1fr; align-items: stretch; gap: 0.55rem; margin: 1.1rem 0 1.4rem; }
-    /* ⚠️ Les trois marches reprennent la MEME hauteur empilees : l escalier
-       ne veut rien dire sur une colonne, et trois cartes de hauteurs
-       differentes les unes sous les autres se lisent comme un defaut. */
-    .c-marche,
-    .c-marche.p1, .c-marche.p2, .c-marche.p3 {
-        flex-direction: row; text-align: left; gap: 0.8rem;
-        padding: 0.7rem 0.9rem 0.7rem 0.8rem; min-height: 0;
+    /* ⚠️ LE PODIUM RESTE UN PODIUM SUR TELEPHONE — trois colonnes, un
+       escalier, l avatar a cheval sur le bord haut. Il etait EMPILE en trois
+       rangees, et le commentaire ci-dessus disait pourquoi : a trois de
+       front, le pseudo se coupait a la troisieme lettre. C etait vrai aux
+       tailles d ordinateur ; ca ne l est plus une fois tout mis a l echelle.
+       ⚠️ CE QU ON ACCEPTE EN ECHANGE, et il faut le savoir : a 390 px chaque
+       marche fait ~116 px. Un pseudo long s y tronque, et le titre tient sur
+       deux ou trois lignes. C est le prix d un podium qui ressemble a un
+       podium — Adem l a tranche le 21 novembre 2026, apres l avoir vu empile. */
+    .c-podium {
+        /* ⚠️ `minmax(0, 1fr)` ET SURTOUT PAS `1fr`. Un `1fr` vaut
+           `minmax(auto, 1fr)`, et ce `auto` a pour plancher le MIN-CONTENT de
+           la colonne : un mot insecable comme « VAGABOND » refuse de se
+           reduire, la colonne gonfle, et les trois marches cessent d etre
+           egales. Mesure a 360 px : 116 / 105 / 98, et a 320 px : 116 / 105 /
+           64. Le `0` retire ce plancher — les textes cedent, la grille tient. */
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: end;
+        gap: 0.4rem;
+        /* L avatar deborde du haut de la moitie de sa hauteur : il faut la
+           place au-dessus, comme sur ordinateur mais a l echelle d ici. */
+        margin: 2.6rem 0 1.2rem;
     }
-    .c-marche.p1 { order: 0; }
-    .c-marche.p2 { order: 1; }
-    .c-marche.p3 { order: 2; }
-    .c-marche::before { top: 0; left: 0; right: 0; height: 2px; }
-    /* ⚠️ L avatar RENTRE DANS LA CARTE sur telephone. A cheval sur le bord
-       haut, il empietait sur la carte precedente de la pile — les trois se
-       touchent, il n y a plus de place libre au-dessus. */
-    /* ⚠️ `relative` ET NON `static`. En `static` l enveloppe cesse d etre un
-       repere, et la pastille du numero — qui est en `absolute` — remonte se
-       caler sur la CARTE : les trois chiffres allaient flotter dans le coin
-       bas droit, loin de l avatar qu ils designent. Elle doit sortir du
-       placement absolu sans cesser d etre un repere. */
-    .c-couronne { position: relative; top: auto; left: auto; transform: none; flex: 0 0 auto; }
-    .c-ava, .p1 .c-ava { width: 2.6rem; height: 2.6rem; box-shadow: none; }
-    .c-place, .p1 .c-place { width: 1.25rem; height: 1.25rem; font-size: 0.86rem;
-                             right: -0.3rem; bottom: -0.3rem; }
-    .c-marche .c-ident { flex: 1 1 auto; min-width: 0; }
-    .c-marche .c-nom, .c-marche .c-rang { text-align: left; }
-    .p1 .c-nom { font-size: 0.95rem; }
+    /* L escalier, resserre. Les hauteurs gardent leur ecart relatif : c est
+       lui qui dit qui est premier avant meme qu on lise un chiffre. */
+    .c-marche { padding: 0.6rem 0.4rem 0.7rem; }
+    .c-marche.p1 { order: 2; min-height: 9.4rem; padding-bottom: 0.9rem; }
+    .c-marche.p2 { order: 1; min-height: 8.4rem; }
+    .c-marche.p3 { order: 3; min-height: 7.6rem; }
+
+    .c-ava, .p1 .c-ava { width: 2.5rem; height: 2.5rem; }
+    .p1 .c-ava { width: 2.9rem; height: 2.9rem; }
+    .c-place, .p1 .c-place { width: 1.1rem; height: 1.1rem; font-size: 0.72rem;
+                             right: -0.26rem; bottom: -0.26rem; }
+    /* ⚠️ Les textes CEDENT au lieu de pousser : a 116 px de large, un pseudo
+       qui ne se tronque pas deborde sur sa voisine. */
+    .c-marche .c-nom {
+        font-size: 0.72rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .p1 .c-nom { font-size: 0.78rem; }
+    /* ⚠️ `min-width: 0` EN CASCADE. Retirer le plancher de la GRILLE ne suffit
+       pas : chaque boite intermediaire garde le sien, et le texte ressort par
+       le cote sans que la colonne bouge. Mesure a 320 px : le pseudo et le
+       rang de la premiere marche debordaient encore. */
+    .c-marche { min-width: 0; }
+    /* ⚠️ `width: 100%` ET PAS SEULEMENT `min-width: 0`. La carte est une
+       colonne flex centree : ses enfants se dimensionnent sur LEUR contenu,
+       rien ne les comprime, et un plancher a zero n y change donc rien —
+       mesure a 320 px, `.c-ident` faisait 102 px dans une carte de 93. Il
+       faut lui DONNER la largeur, pas seulement l autoriser a maigrir. */
+    .c-marche .c-ident { min-width: 0; width: 100%; }
+    .c-marche .c-rang {
+        font-size: 0.5rem;
+        letter-spacing: 0.04em;
+        line-height: 1.45;
+        /* Le titre contient des mots longs et insecables — ils cassent
+           plutot que de sortir de la carte. */
+        overflow-wrap: anywhere;
+    }
+    .c-marche .c-val { font-size: 0.95rem; }
     .p1 .c-val { font-size: 1.1rem; }
-    .c-marche .c-val { margin-left: auto; margin-top: 0; }
     /* Pas de lueur tournante sur telephone : trois cartes collees, elle
        baverait sur ses voisines — et c est l effet qui coute le plus cher
        la ou la machine est la plus faible. */
