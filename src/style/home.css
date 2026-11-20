@@ -10608,6 +10608,12 @@ html.rendu-logiciel .v2-dust { display: none; }
        Avec `0`, la colonne rend la place : le panneau se réduit et c est LUI
        qui défile, ce pour quoi il a sa propre barre. */
     min-height: 0;
+    /* ⚠️ POUR LE NUAGE D AURAS, qui s y ancre en `absolute`. Le `transform`
+       d identite laisse par `v2Rise … both` en faisait deja un bloc conteneur,
+       mais s appuyer dessus serait s appuyer sur un effet de bord : le jour ou
+       l animation change, la couche s echapperait jusqu au cadre de l ecran et
+       couvrirait la barre du haut. */
+    position: relative;
     display: grid;
     grid-template-columns: clamp(16rem, 22vw, 20rem) minmax(0, 1fr);
     align-items: start;
@@ -14092,6 +14098,135 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     align-items: center;
     text-align: center;
     padding: 1rem 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ✨ LES AURAS DU SALON D ATTENTE
+   ════════════════════════════════════════════════════════════════
+   Chaque joueur du salon est une aura posee a l ecran, pseudo au-dessus.
+   On peut cliquer celle des autres : une gerbe y eclate, que tout le salon
+   voit. Le placement et le reseau sont expliques dans `auras` (app.js) et
+   dans le gestionnaire `lobby-eclat` (server.js). */
+.v2-auras {
+    /* ⚠️ ANCREE SUR `.v2-room-layout`, QUI PORTE UN `position: relative`
+       EXPLICITE POUR ELLE. Mesure du 20 novembre 2026 : en `fixed`, la couche
+       ne couvrait pas l ecran (1239 × 759 pour 1280 × 900) — `.v2-room-layout`
+       garde un `transform` d identite, laisse par `animation: v2Rise … both`,
+       et un ancetre transforme capture le `fixed`. Elle tombait donc deja au
+       bon endroit, mais par accident.
+       ℹ️ Et cette zone est la bonne : c est la page moins la barre du haut. */
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    /* ⚠️ LA COUCHE NE PREND AUCUN CLIC — seules les auras en prennent, plus
+       bas. Sans ca elle couvrirait l ecran entier et avalerait la barre du
+       haut, le bouton de sortie et tout ce qui passe dessous. */
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.v2-aura {
+    position: absolute;
+    /* ⚠️ `translate` ET NON `transform: translate(…)`. Le pop d entree et de
+       sortie anime l echelle ; ecrite en `transform`, elle effacerait le
+       recentrage et chaque aura sauterait d une demi-largeur a son arrivee.
+       Les proprietes independantes se composent au lieu de s ecraser — c est
+       la regle de toute cette feuille. */
+    translate: -50% -50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.v2-aura-nom {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    /* Un pseudo de seize caracteres ne doit pas elargir l aura au point de
+       mordre sur sa voisine : la grille garantit l ecart des RONDS, pas celui
+       des etiquettes. */
+    max-width: 7.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.v2-aura-disque {
+    position: relative;
+    /* La valeur vient du gabarit : elle decroit quand le salon se remplit,
+       sans quoi quarante auras se chevauchent (voir `auraTaille`). */
+    width: var(--aura-taille, 4.4rem);
+    height: var(--aura-taille, 4.4rem);
+    flex: 0 0 auto;
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.v2-aura-rond {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255, 216, 120, 0.4), rgba(255, 170, 40, 0.13) 56%, transparent 72%);
+    border: 1px solid rgba(255, 214, 110, 0.26);
+    box-shadow: 0 0 2rem rgba(255, 190, 60, 0.2), inset 0 0 1.1rem rgba(255, 214, 110, 0.16);
+    /* Le battement de chacune part a son heure et a son rythme : les variables
+       viennent du gabarit, tirees du meme hachage que la position. Toutes au
+       meme pas, quarante auras battraient comme un seul coeur — joli deux
+       secondes, lassant ensuite. */
+    animation: v2AuraPulse var(--aura-duree, 3.6s) ease-in-out infinite;
+    animation-delay: var(--aura-retard, 0s);
+}
+
+@keyframes v2AuraPulse {
+    0%, 100% { scale: 1;    opacity: 0.74; }
+    50%      { scale: 1.13; opacity: 1; }
+}
+
+.v2-aura:hover .v2-aura-rond { border-color: rgba(255, 226, 150, 0.6); }
+.v2-aura:hover .v2-aura-nom  { color: rgba(255, 255, 255, 0.9); }
+
+/* 💥 L eclat : un anneau qui s ouvre et s efface. Pas de `fill-mode`, il
+   repart donc invisible tout seul — rien a nettoyer en JavaScript. */
+.v2-aura-eclat {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 230, 160, 0.95);
+    pointer-events: none;
+    animation: v2AuraEclat 0.6s cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+@keyframes v2AuraEclat {
+    0%   { scale: 0.55; opacity: 0; }
+    14%  { opacity: 1; }
+    100% { scale: 2.5;  opacity: 0; }
+}
+
+/* 🫧 L arrivee et le depart d un joueur. Le meme mouvement, joue a l envers
+   pour la sortie : deux animations distinctes auraient diverge au premier
+   reglage. */
+.v2-aura-enter-active { animation: v2AuraPop 0.5s cubic-bezier(0.2, 1.3, 0.4, 1); }
+.v2-aura-leave-active { animation: v2AuraPop 0.34s ease-in reverse; }
+
+@keyframes v2AuraPop {
+    from { scale: 0.2; opacity: 0; }
+    to   { scale: 1;   opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .v2-aura-rond { animation: none; }
+    .v2-aura-enter-active,
+    .v2-aura-leave-active { animation-duration: 0.01s; }
 }
 
 .v2-room-guest-halo {

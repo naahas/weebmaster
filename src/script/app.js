@@ -694,6 +694,19 @@ createApp({
             // Repères des réponses : une forme et une couleur, pas de lettre
             answerMarks: ['◆', '●', '▲', '■', '★', '⬢'],
             lobbyPlayers: [],
+            // ✨ LES AURAS DU SALON D ATTENTE.
+            // `auraEclats` compte les gerbes recues par joueur — un COMPTEUR
+            // et non un drapeau : c est lui qui sert de `key` a l element de
+            // l eclat, et seule une valeur qui change relance l animation.
+            // Un booleen remis a vrai ne rejouerait rien.
+            auraEclats: {},
+            // Date du dernier eclat emis, pour le garde-fou des 400 ms.
+            // ⚠️ UN SEUL COMPTEUR, PAS UN PAR CIBLE, et c est volontaire : le
+            // serveur, lui, bride la socket entiere a 300 ms. Un garde-fou par
+            // cible laisserait passer deux clics sur deux auras differentes, et
+            // le serveur en avalerait un — le joueur verrait un clic rater sans
+            // comprendre pourquoi. Les deux bouts appliquent la meme regle.
+            auraClic: 0,
             answersCount: 4,
             questionsCount: 20,
             difficultyMode: 'croissante',
@@ -1276,6 +1289,106 @@ createApp({
     },
 
     computed: {
+
+        // ════════════════════════════════════════════════
+        // ✨ LES AURAS DU SALON D ATTENTE
+        // ════════════════════════════════════════════════
+        // Chaque joueur du salon devient une aura posee a l ecran, pseudo
+        // au-dessus. Leur place est TIREE AU SORT, mais pas par le hasard :
+        // elle est calculee depuis l identifiant du joueur.
+        //
+        // ⚠️ C EST LA DECISION CENTRALE, ET ELLE TIENT EN DEUX PROPRIETES.
+        // 1. TOUT LE MONDE VOIT LE MEME TABLEAU. Un `Math.random()` par
+        //    navigateur donnerait a chacun une disposition differente —
+        //    « l aura de Paul » ne serait au meme endroit pour personne, et
+        //    designer quelqu un a voix haute deviendrait impossible.
+        // 2. UNE AURA NE BOUGE JAMAIS tant que son joueur reste. Si la place
+        //    dependait du rang dans la liste, le depart d un seul joueur
+        //    ferait sauter toutes les autres d un coup — ce qui se lit comme
+        //    un bug, pas comme une animation.
+        //
+        // ⚠️ UNE GRILLE PLUTOT QU UN TIRAGE LIBRE : deux positions tirees au
+        // hasard se chevauchent vite, et a quarante joueurs c est une bouillie.
+        // Chaque aura prend une cellule a elle, puis se decale librement DANS
+        // sa cellule — l ecart est garanti, l alignement ne se voit pas.
+        //
+        // ⚠️ LE MILIEU EST RESERVE au bloc « Tu es dans la partie ». Une aura
+        // posee dessus le rendrait illisible. Les cellules du centre sont donc
+        // retirees du tirage — et rendues si le salon est trop plein pour s en
+        // passer, parce qu une aura sur le texte vaut mieux que deux auras
+        // l une sur l autre.
+        //
+        // ℹ️ Les bots comptent comme les autres : `playerCount` les inclut, et
+        // un tableau qui montrerait moins d auras que le chiffre annonce juste
+        // a cote passerait pour une erreur.
+        // ⚠️ LA TAILLE DES AURAS DEPEND DU NOMBRE, et ce n est pas cosmetique :
+        // a quarante joueurs la grille ne laisse plus que ~63 px entre deux
+        // centres, et des ronds de 70 px se chevauchent. Les faire maigrir est
+        // la seule variable qui reste une fois la grille posee — et ca se lit
+        // bien, comme une salle qui se peuple.
+        auraTaille() {
+            const n = (this.lobbyPlayers || []).length;
+            if (n <= 8) return 4.6;
+            if (n <= 20) return 4.1;
+            return 3.3;
+        },
+
+        auras() {
+            const liste = this.lobbyPlayers || [];
+            const n = liste.length;
+            if (!n) return [];
+
+            const COLS = 8;
+            const LIGNES = Math.max(5, Math.ceil(n / COLS));
+            const milieu = Math.floor(LIGNES / 2);
+
+            const libres = [];
+            const reservees = [];
+            for (let r = 0; r < LIGNES; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const auCentre = c >= 2 && c <= COLS - 3 && r >= milieu - 1 && r <= milieu + 1;
+                    (auCentre ? reservees : libres).push([c, r]);
+                }
+            }
+            const cellules = libres.length >= n ? libres : libres.concat(reservees);
+
+            const prises = new Set();
+            return liste.map((p) => {
+                const h = this.hacherTexte(String(p.playerId || p.username || ''));
+                // Sondage lineaire : si la cellule tiree est deja prise, on
+                // avance. Deterministe parce que la liste arrive dans le meme
+                // ordre chez tout le monde — c est le serveur qui l ordonne.
+                let i = h % cellules.length;
+                while (prises.has(i)) i = (i + 1) % cellules.length;
+                prises.add(i);
+                const [c, r] = cellules[i];
+
+                // Le decalage dans la cellule sort du MEME hachage : une seule
+                // source, donc une seule chose a ne pas faire varier.
+                const jx = ((h >>> 7) % 1000) / 1000;
+                const jy = ((h >>> 17) % 1000) / 1000;
+                return {
+                    playerId: p.playerId,
+                    username: p.username,
+                    estBot: !!p.estBot,
+                    // ⚠️ UNE MARGE AUX BORDS. Le mobilier de la page vit la —
+                    // le bouton de sortie a gauche, la bande d astuces en bas.
+                    // Mesure faite : aucune aura ne masque un element cliquable
+                    // (elles passent dessous), mais une aura posee SUR le
+                    // bouton de sortie reste moche. On rentre donc le nuage.
+                    // ℹ️ C est pris sur l ecart entre auras : a quarante
+                    // joueurs elles se frolent. En dessous de vingt, elles sont
+                    // a plus de cent pixels l une de l autre.
+                    x: (6 + ((c + 0.2 + jx * 0.6) / COLS) * 88),
+                    y: (5 + ((r + 0.2 + jy * 0.6) / LIGNES) * 90),
+                    // Le pulse de chacune part a son heure et a son rythme :
+                    // synchronisees, quarante auras battraient comme un seul
+                    // coeur, ce qui est joli deux secondes et lassant ensuite.
+                    retard: -((h >>> 3) % 400) / 100,
+                    duree: 3.2 + ((h >>> 23) % 200) / 100,
+                };
+            });
+        },
 
         // ════════════════════════════════════════════════
         // 🏅 Niveau et titre — DEDUITS de l xp, jamais stockes
@@ -3010,6 +3123,45 @@ createApp({
         // l est — et le serveur n a jamais compte sur l unicite d un pseudo.
         randomPseudo() {
             return 'Guest-' + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        },
+
+        // ✨ ══════════ LES ECLATS DU SALON D ATTENTE ══════════
+
+        // FNV-1a sur 32 bits. Un HACHAGE et non `Math.random()` : il faut que
+        // la meme chaine donne le meme nombre sur tous les navigateurs du
+        // salon, sinon chacun voit une disposition differente (voir `auras`).
+        //
+        // ⚠️ `Math.imul` et non `*` : au-dela de 2^53 la multiplication
+        // flottante perd des bits de poids faible, et deux navigateurs peuvent
+        // alors diverger sur un meme identifiant. `imul` fait la multiplication
+        // sur 32 bits, exactement, partout.
+        hacherTexte(s) {
+            let h = 0x811c9dc5;
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 0x01000193);
+            }
+            return h >>> 0;
+        },
+
+        auraCliquer(j) {
+            if (!j || !j.playerId) return;
+            // ⚠️ LE GARDE-FOU EST D ABORD ICI, chez celui qui clique. Le seau a
+            // jetons de la socket ferme la connexion au bout de 300 refus : un
+            // joueur qui martele une aura se ferait ejecter du salon pour avoir
+            // trop joue. A 400 ms il plafonne a 2,5 evenements par seconde,
+            // soit un dixieme de son budget — la coupure devient inatteignable.
+            const t = Date.now();
+            if (t - this.auraClic < 400) return;
+            this.auraClic = t;
+            if (this.socket && this.socket.connected) {
+                this.socket.emit('lobby-eclat', { cible: j.playerId });
+            }
+            // ℹ️ RIEN N EST JOUE LOCALEMENT, on attend le retour du serveur.
+            // Un eclat joue tout de suite PUIS rejoue a la reception le
+            // doublerait ; et comme le serveur n avale jamais un clic espace de
+            // 400 ms, l aller-retour ne fait jamais rater un geste. Celui qui
+            // clique voit donc exactement ce que les autres voient.
         },
 
 
@@ -9411,6 +9563,16 @@ createApp({
                 // ⚠️ Un champ ABSENT veut dire « ce n est pas une
                 // recompense » — c est la connexion ou le panneau.
                 if (p.gain) this.preparerCeremonie(p.gain);
+            });
+
+            // ✨ Un eclat sur une aura du salon d attente. Le serveur a deja
+            // verifie que la cible est bien dans le salon : il ne reste qu a
+            // incrementer son compteur, et le gabarit rejoue l animation parce
+            // que la `key` de l element change.
+            this.socket.on('lobby-eclat', (data) => {
+                const cible = data && data.cible;
+                if (!cible) return;
+                this.auraEclats[cible] = (this.auraEclats[cible] || 0) + 1;
             });
 
             this.socket.on('lobby-update', (data) => {

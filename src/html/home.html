@@ -1248,6 +1248,76 @@
 
                 <div class="v2-room-layout" :class="['mode-' + lobbyMode, { guest: !isHost }]">
 
+                    <!-- ✨ LE NUAGE D AURAS — de quoi occuper l attente. Chaque
+                         joueur du salon est une aura posee a l ecran, son pseudo
+                         au-dessus ; cliquer sur celle d un autre y fait eclater
+                         une gerbe que TOUT le salon voit.
+
+                         ⚠️ IL EST ICI, ET PAS DANS `.v2-room-guest`, ET CE N EST
+                         PAS UN RANGEMENT. Le bloc d attente est un petit element
+                         centre : une couche posee dedans s y retrouvait enfermee.
+                         Mesure a l appui, `position: fixed` ne reglait rien non
+                         plus — `.v2-room-layout` porte un `transform` (identite,
+                         laisse par `animation: v2Rise … both`), et un ancetre
+                         transforme capture le `fixed`. La couche s accrochait
+                         donc deja ici, mais par accident : le jour ou l animation
+                         disparait, elle couvrirait l ecran entier, barre du haut
+                         comprise. Elle s y ancre maintenant exprès, en
+                         `absolute`, sur un parent `position: relative` explicite.
+
+                         ⚠️ `position: absolute` LA SORT AUSSI DU FLUX DE LA
+                         GRILLE. `.v2-room-layout` est un `grid` a deux colonnes :
+                         un enfant dans le flux y prendrait une cellule et
+                         deplacerait tout le salon.
+
+                         ⚠️ LA COUCHE NE RECOIT AUCUN CLIC (`pointer-events:
+                         none`), seules les auras en prennent. Sans ca elle
+                         avalerait le bouton de sortie et tout ce qui passe
+                         dessous.
+
+                         ⚠️ `aria-hidden` ET `tabindex=-1` VONT ENSEMBLE. C est un
+                         jouet, il n a rien a dire a un lecteur d ecran — mais
+                         masquer un bouton qui reste atteignable au clavier est
+                         pire que de ne rien masquer : on tabule alors sur quelque
+                         chose d invisible et de muet. Les deux, ou aucun.
+
+                         ℹ️ L hote ne le voit pas : son ecran est celui de la
+                         gestion du salon. Son aura, elle, est bien la chez les
+                         autres — sinon le tableau montrerait une aura de moins
+                         que le « N joueurs dans le salon » ecrit juste dessous. -->
+                    <div class="v2-auras" v-if="!isHost" aria-hidden="true"
+                         :style="{ '--aura-taille': auraTaille + 'rem' }">
+                        <transition-group name="v2-aura">
+                            <button type="button" tabindex="-1"
+                                    class="v2-aura" v-for="a in auras" :key="a.playerId"
+                                    :style="{ left: a.x + '%', top: a.y + '%',
+                                              '--aura-retard': a.retard + 's',
+                                              '--aura-duree': a.duree + 's' }"
+                                    @click="auraCliquer(a)">
+                                <!-- Le pseudo est EN PREMIER dans le gabarit,
+                                     donc au-dessus du rond sans qu on ait a
+                                     inverser la colonne. -->
+                                <span class="v2-aura-nom">{{ a.username }}</span>
+                                <!-- ⚠️ UN DISQUE QUI ENVELOPPE LES DEUX, et il
+                                     sert a quelque chose : le rond PULSE
+                                     (`scale`), et l eclat pose dedans heriterait
+                                     de ce battement. Pose a cote dans un
+                                     conteneur immobile, il garde sa taille. -->
+                                <span class="v2-aura-disque">
+                                    <span class="v2-aura-rond"></span>
+                                    <!-- ⚠️ LA `key` EST LE COMPTEUR, et c est
+                                         tout le mecanisme : une `key` qui change
+                                         fait remplacer l element, donc rejouer
+                                         son animation. Un booleen remis a vrai ne
+                                         rejouerait rien, et le deuxieme eclat sur
+                                         la meme aura ne se verrait pas. -->
+                                    <span class="v2-aura-eclat" v-if="auraEclats[a.playerId]"
+                                          :key="auraEclats[a.playerId]"></span>
+                                </span>
+                            </button>
+                        </transition-group>
+                    </div>
+
                     <!-- ── Colonne principale ── -->
                     <section class="v2-room-main">
 

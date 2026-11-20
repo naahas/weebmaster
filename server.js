@@ -11829,6 +11829,69 @@ io.on('connection', (socket) => {
     // sinon gonfler son salon de joueurs fantômes.
     // 🤖 Ajouter ou retirer LE partenaire de BombAnime. Un seul, jamais
     // plus : le réglage est une bascule, pas un compteur.
+    // ✨ ══════════════════════════════════════════════════════
+    // LES ECLATS DU SALON D ATTENTE
+    // ══════════════════════════════════════════════════════════
+    // Pendant qu on attend l hote, chaque joueur est une aura posee a l ecran.
+    // Cliquer sur celle d un autre y fait eclater une gerbe, que TOUT le salon
+    // voit.
+    //
+    // ⚠️ C EST LE SEUL EVENEMENT NEUF DE LA FONCTIONNALITE. Les auras
+    // elles-memes — qui est la, sous quel pseudo, qui vient d arriver, qui
+    // vient de partir — sortent entierement de `lobby-update`, qui diffuse
+    // deja la liste des joueurs a chaque changement. Rien a ajouter pour
+    // elles, et donc rien a maintenir d accord.
+    //
+    // ⚠️ RIEN N EST EN JEU, et c est ce qui garde ce code court : pas de
+    // score, pas d autorite, pas de reconciliation. Le serveur relaie, il
+    // n arbitre pas. Si deux navigateurs ne sont pas d accord a trois pixels
+    // pres sur l endroit d une aura, personne ne le saura jamais.
+    let dernierEclat = 0;
+    socket.on('lobby-eclat', (data) => {
+        const gameState = roomDeSocket(socket);
+        if (!gameState) return;
+        // Une fois la partie lancee, l ecran d attente n existe plus chez
+        // personne : un eclat qui arriverait la n aurait aucune cible.
+        //
+        // ⚠️ `inProgress` ET SURTOUT PAS `isActive`. Les deux noms se
+        // ressemblent et disent le contraire ici : `isActive` signifie « un
+        // salon est OUVERT » — c est l etat du salon d attente, pas celui de la
+        // partie. La ligne qui tranche est le calcul de `phase` :
+        //   inProgress ? 'playing' : (isActive ? 'lobby' : 'idle')
+        // Teste sur `isActive`, ce garde refusait tous les eclats exactement
+        // quand ils ont lieu. Le relais ne marchait pas du tout.
+        if (gameState.inProgress) return;
+
+        const joueur = gameState.players.get(socket.id);
+        if (!joueur) return;
+
+        // ⚠️ ON JETTE LE SURPLUS NOUS-MEMES, EN SILENCE. Le seau a jetons pose
+        // en haut de cette connexion ferme la socket au bout de
+        // REFUS_AVANT_COUPURE refus : laisser un marteleur se faire compter
+        // par lui, c est ejecter du salon quelqu un qui jouait trop fort.
+        // Ici on ignore sans rien compter, et sans rien repondre.
+        //
+        // ℹ️ 300 ms contre les 400 ms du client : la marge absorbe la gigue du
+        // reseau. Sans elle, un clic legitime arriverait parfois trop tot et
+        // serait avale, ce qui se lit comme un bouton qui rate.
+        const maintenant = Date.now();
+        if (maintenant - dernierEclat < 300) return;
+        dernierEclat = maintenant;
+
+        // ⚠️ LA CIBLE EST VERIFIEE, PAS SEULEMENT RELAYEE. Sans ce controle, un
+        // client bricole ferait eclater un identifiant absent du salon : les
+        // autres chercheraient une aura qui n existe pas.
+        const cible = String((data && data.cible) || '');
+        if (!cible) return;
+        let presente = false;
+        for (const p of gameState.players.values()) {
+            if (p.playerId === cible) { presente = true; break; }
+        }
+        if (!presente) return;
+
+        diffuser(gameState, 'lobby-eclat', { cible, par: joueur.playerId });
+    });
+
     socket.on('bombanime-toggle-bot', (data) => {
         const gameState = roomDeSocket(socket);
         if (!gameState || gameState.inProgress) return;
