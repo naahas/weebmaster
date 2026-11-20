@@ -18810,9 +18810,12 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
        rien — il deplace APRES que la largeur a ete decidee. */
     left: 0;
     right: 0;
-    /* En HAUT, et largement decolle du bord : l ecran de fin se lit par le
-       milieu, cette phrase ne doit ni le couvrir ni se coller au cadre. */
-    top: calc(3.2rem + env(safe-area-inset-top, 0px));
+    /* En HAUT, decolle du bord sans s en eloigner : l ecran de fin se lit par
+       le milieu, cette phrase ne doit ni le couvrir ni flotter au milieu du
+       vide. 35 px au rendu.
+       ⚠️ `env(safe-area-inset-top)` : sur un telephone a encoche, 2,2 rem
+       secs passeraient DERRIERE elle. */
+    top: calc(2.2rem + env(safe-area-inset-top, 0px));
     /* ⚠️ Au-dessus des ecrans de fin, qui montent haut. En dessous du
        panneau du profil (150+), qu il sert justement a ouvrir. */
     z-index: 120;
@@ -18826,7 +18829,7 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     /* ⚠️ L ATTENTE EST ICI, et `both` est indispensable : sans lui l element
        serait VISIBLE pendant l attente, puis rejouerait son apparition.
        `both` applique la premiere image des le depart. */
-    animation: v2FinInvite 0.45s cubic-bezier(0.2, 0.9, 0.25, 1) 1.5s both;
+    animation: v2FinInvite 0.7s cubic-bezier(0.22, 0.85, 0.3, 1) 1.8s both;
 }
 
 @keyframes v2FinInvite {
@@ -18842,10 +18845,23 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
    ⚠️ Et SANS CADRE : c est une mention, pas une boite de dialogue. Ce qui la
    fait exister, c est l espacement des lettres et le vide autour. */
 .v2-fin-invite-txt {
-    margin: 0 auto;
+    /* ⚠️ `inline-block` ET C EST LE CADRE QUI L EXIGE. La bande traverse
+       l ecran — c est elle qui permet au texte de s etaler au lieu de se
+       casser en quatre lignes. Un cadre pose dessus serait une barre d un
+       bord a l autre. Le cadre appartient donc au TEXTE, qui se retrecit a
+       son contenu et se centre par le `text-align` de la bande. */
+    display: inline-block;
+    margin: 0;
+    /* Un cadre DISCRET : il pose la phrase sans l encadrer au sens propre.
+       Le fond reste translucide pour que le decor de l ecran de fin passe
+       dessous. */
+    padding: 0.55rem 1.3rem;
+    border: 1px solid rgba(240, 199, 94, 0.15);
+    border-radius: 0.7rem;
+    background: rgba(10, 9, 15, 0.55);
     /* La phrase s etale : c est la lecture sur une ou deux lignes qu on
        cherche, pas un pave de quatre. */
-    max-width: 46rem;
+    max-width: min(46rem, 100%);
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: 0.17em;
@@ -18878,6 +18894,6 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
 @media (prefers-reduced-motion: reduce) {
     /* L attente reste — elle sert le joueur, pas le decor — mais le
        glissement disparait. */
-    .v2-fin-invite { animation: v2FinInviteSobre 0.01s 1.5s both; }
+    .v2-fin-invite { animation: v2FinInviteSobre 0.01s 1.8s both; }
     @keyframes v2FinInviteSobre { from { opacity: 0; } to { opacity: 1; } }
 }
