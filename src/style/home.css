@@ -8088,7 +8088,15 @@ html.rendu-logiciel .v2-dust { display: none; }
        bord de sa propre largeur. Au 1280 ca tombait juste par hasard, le
        defaut ne se voyait que sur telephone. */
     padding: 0 0.6rem 0 0;
-    margin: 0;
+    /* ⚠️ LE LOSANGE DOIT ETRE EQUIDISTANT DE SES DEUX VOISINS, comme celui de
+       gauche entre le logotype et « Classement » (mesure : 34,9 / 34,4). A
+       droite il tombait a 34,4 / 41,9 — le pseudo etait 7,5 px trop loin.
+       ℹ️ La raison de l ecart : a gauche, le lien ajoute son propre
+       `padding-left` de 1,15rem a l espacement de la barre ; a droite, le
+       pseudo n en a pas, et c est l ecart de la barre qui s expose seul.
+       ⚠️ Un ecart entre deux voisins ne depend que de cette marge, jamais de
+       la position du groupe : le centrage de la barre ne la perturbe pas. */
+    margin: 0 0 0 -0.47rem;
     border: 0;
     background: none;
     cursor: pointer;
@@ -8098,12 +8106,13 @@ html.rendu-logiciel .v2-dust { display: none; }
     font-size: 0.67rem;
     font-weight: 600;
     color: #b9b3c9;
-    /* ⚠️ NI MAJUSCULES NI L INTERLETTRAGE DES LIENS, et c est la seule chose
-       qu on ne leur emprunte pas. Les liens sont des etiquettes : « RANGS »
-       s ecrit en capitales sans rien perdre. Un pseudo est un choix du
-       joueur — « NaHaSs » rendu « NAHASS » lui prend sa casse, et le
-       0.13em des liens ecarte des lettres qui ne sont pas faites pour. */
-    letter-spacing: 0.02em;
+    /* Capitales et interlettrage des liens : le pseudo est un element de la
+       barre avant d etre un nom, et il doit s aligner sur ses voisins.
+       ℹ️ La casse choisie par le joueur ne se perd pas pour autant — le
+       panneau et le salon l affichent telle qu il l a ecrite ; seule la
+       barre la met en capitales, comme elle le fait de « Rangs ». */
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
     white-space: nowrap;
     /* Un pseudo fait 16 caracteres au plus, mais rien ne garantit la place :
        on coupe plutot que de pousser l avatar hors de l ecran. */
