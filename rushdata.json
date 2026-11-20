@@ -1386,7 +1386,8 @@
         "milize",
         "léna",
         "vladiléna"
-      ]
+      ],
+      "filtres": ["romance"]
     },
     {
       "id": "medaka",
@@ -1519,7 +1520,8 @@
       "nom": "nana",
       "anime": "Nana",
       "img": "nana.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "lucy2",
@@ -1612,21 +1614,24 @@
       "nom": "Rem",
       "anime": "Re:Zero",
       "img": "rem.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "ram",
       "nom": "Ram",
       "anime": "Re:Zero",
       "img": "ram.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "emilia",
       "nom": "Emilia",
       "anime": "Re:Zero",
       "img": "emilia.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "subaru",
@@ -1640,7 +1645,8 @@
       "nom": "Violet",
       "anime": "Violet Evergarden",
       "img": "violet.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "elizabeth",
@@ -1668,7 +1674,8 @@
       "nom": "Asuna",
       "anime": "Sword Art Online",
       "img": "asuna.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "yumeko",
@@ -1742,7 +1749,8 @@
       "img": "002.webp",
       "alias": [
         "zero two"
-      ]
+      ],
+      "filtres": ["romance"]
     },
     {
       "id": "aizawa",
@@ -1925,14 +1933,16 @@
         "hachiman",
         "hikki",
         "hikigaya"
-      ]
+      ],
+      "filtres": ["romance"]
     },
     {
       "id": "hori",
       "nom": "Hori",
       "anime": "Horimiya",
       "img": "hori.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "iida",
@@ -1949,7 +1959,8 @@
       "nom": "Kaguya",
       "anime": "Kaguya-sama",
       "img": "kaguya.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "karma",
@@ -2046,7 +2057,8 @@
       "nom": "Miyamura",
       "anime": "Horimiya",
       "img": "miyamura.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "morgiana",
@@ -2204,7 +2216,8 @@
       "nom": "Shirogane",
       "anime": "Kaguya-sama",
       "img": "shirogane.webp",
-      "alias": ["Miyuki", "Miyuki Shirogane", "Shirogane Miyuki"]
+      "alias": ["Miyuki", "Miyuki Shirogane", "Shirogane Miyuki"],
+      "filtres": ["romance"]
     },
     {
       "id": "sinbad",
@@ -2348,7 +2361,8 @@
       "nom": "Yukino",
       "anime": "Oregairu",
       "img": "yukino.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "zeke",
@@ -2597,7 +2611,8 @@
       "img": "chika.webp",
       "alias": [
         "Fujiwara"
-      ]
+      ],
+      "filtres": ["romance"]
     },
     {
       "id": "kuroko",
@@ -3205,7 +3220,7 @@
     {
       "id": "arthur",
       "nom": "Arthur",
-      "anime": "Nanatsu no Taizai",
+      "anime": "Seven Deadly Sins",
       "img": "arthur.webp",
       "alias": []
     },
@@ -3321,7 +3336,8 @@
       "nom": "Akeno",
       "anime": "High School DxD",
       "img": "akeno.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "takemichi",
@@ -3370,7 +3386,8 @@
       "nom": "Rias",
       "anime": "High School DxD",
       "img": "rias.webp",
-      "alias": []
+      "alias": [],
+      "filtres": ["romance"]
     },
     {
       "id": "ruby",
@@ -3729,6 +3746,11 @@
         "Black Clover",
         "Jujutsu Kaisen"
       ]
+    },
+    "romance": {
+      "label": "Romance",
+      "animes": [],
+      "parPersonnage": true
     }
   }
 }

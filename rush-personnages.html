@@ -45,7 +45,7 @@
 </style></head><body>
 <div class="page">
   <h1>Rush — les personnages</h1>
-  <p class="sous">481 portraits · 79 animes · généré depuis <code>rushdata.json</code></p>
+  <p class="sous">481 portraits · 78 animes · généré depuis <code>rushdata.json</code></p>
 
   
   <div class="alerte"><b>28 image(s) sans entrée dans rushdata.json :</b><br>anasui.webp · c16.webp · chichi.webp · conny.webp · diego.webp · enmu.webp · gabi.webp · gokublack.webp · grisha.webp · hannes.webp · jelena.webp · kaigaku.webp · kakyoyin.webp · kenny.webp · lisalisa.webp · makomo.webp · mike.webp · morel.webp · narrancia.webp · onyankopon.webp · petra.webp · porco.webp · pufu.webp · wamuu.webp · weather.webp · yamamoto_bleach.webp · youpi.webp · yushiro.webp</div>
@@ -54,8 +54,11 @@
     <input type="search" id="q" placeholder="chercher un personnage ou un anime…">
     <button class="f actif" data-f="tout">tout (481)</button>
     <button class="f" data-f="big3">Big 3 (105)</button>
-    <button class="f" data-f="main">Mainstream (331)</button>
-    <button class="f" data-f="hors">hors Mainstream (150)</button>
+    <button class="f" data-f="main">Mainstream (332)</button>
+    <button class="f" data-f="hors">hors Mainstream (149)</button>
+    <!-- 🎭 Les filtres PAR PERSONNAGE, ecrits depuis les donnees : le jour ou
+         « sport » arrive dans rushdata.json, son bouton parait tout seul. -->
+    <button class="f genre" data-f="g:romance">Romance (17)</button>
     <span class="compteur" id="compteur"></span>
   </div>
 
@@ -71,127 +74,127 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="asuma" data-id="asuma">
+      <figure data-nom="asuma" data-id="asuma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/asuma.webp" alt="Asuma" loading="lazy">
         <figcaption>Asuma</figcaption>
-      </figure><figure data-nom="boruto" data-id="boruto">
+      </figure><figure data-nom="boruto" data-id="boruto" data-filtres="" data-exclusif="false">
         <img src="/rushpic/boruto.webp" alt="Boruto" loading="lazy">
         <figcaption>Boruto</figcaption>
-      </figure><figure data-nom="danzo" data-id="danzo">
+      </figure><figure data-nom="danzo" data-id="danzo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/danzo.webp" alt="Danzo" loading="lazy">
         <figcaption>Danzo<span class="al">Shimura</span></figcaption>
-      </figure><figure data-nom="darui" data-id="darui">
+      </figure><figure data-nom="darui" data-id="darui" data-filtres="" data-exclusif="false">
         <img src="/rushpic/darui.webp" alt="Darui" loading="lazy">
         <figcaption>Darui</figcaption>
-      </figure><figure data-nom="deidara" data-id="deidara">
+      </figure><figure data-nom="deidara" data-id="deidara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/deidara.webp" alt="Deidara" loading="lazy">
         <figcaption>Deidara</figcaption>
-      </figure><figure data-nom="gaara" data-id="gaara">
+      </figure><figure data-nom="gaara" data-id="gaara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gaara.webp" alt="Gaara" loading="lazy">
         <figcaption>Gaara</figcaption>
-      </figure><figure data-nom="gai" data-id="gai">
+      </figure><figure data-nom="gai" data-id="gai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gai.webp" alt="Gai" loading="lazy">
         <figcaption>Gai<span class="al">guy</span></figcaption>
-      </figure><figure data-nom="hashirama" data-id="hashirama">
+      </figure><figure data-nom="hashirama" data-id="hashirama" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hashirama.webp" alt="Hashirama" loading="lazy">
         <figcaption>Hashirama</figcaption>
-      </figure><figure data-nom="hidan" data-id="hidan">
+      </figure><figure data-nom="hidan" data-id="hidan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hidan.webp" alt="Hidan" loading="lazy">
         <figcaption>Hidan</figcaption>
-      </figure><figure data-nom="hinata" data-id="hinata">
+      </figure><figure data-nom="hinata" data-id="hinata" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hinata.webp" alt="Hinata" loading="lazy">
         <figcaption>Hinata</figcaption>
-      </figure><figure data-nom="iruka" data-id="iruka">
+      </figure><figure data-nom="iruka" data-id="iruka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/iruka.webp" alt="Iruka" loading="lazy">
         <figcaption>Iruka<span class="al">Umino</span></figcaption>
-      </figure><figure data-nom="itachi" data-id="itachi">
+      </figure><figure data-nom="itachi" data-id="itachi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/itachi.webp" alt="Itachi" loading="lazy">
         <figcaption>Itachi</figcaption>
-      </figure><figure data-nom="jiraiya" data-id="jiraiya">
+      </figure><figure data-nom="jiraiya" data-id="jiraiya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jiraiya.webp" alt="Jiraiya" loading="lazy">
         <figcaption>Jiraiya<span class="al">Jiraya</span></figcaption>
-      </figure><figure data-nom="kakashi" data-id="kakashi">
+      </figure><figure data-nom="kakashi" data-id="kakashi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kakashi.webp" alt="Kakashi" loading="lazy">
         <figcaption>Kakashi</figcaption>
-      </figure><figure data-nom="kakuzu" data-id="kakuzu">
+      </figure><figure data-nom="kakuzu" data-id="kakuzu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kakuzu.webp" alt="Kakuzu" loading="lazy">
         <figcaption>Kakuzu</figcaption>
-      </figure><figure data-nom="kankuro" data-id="kankuro">
+      </figure><figure data-nom="kankuro" data-id="kankuro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kankuro.webp" alt="Kankuro" loading="lazy">
         <figcaption>Kankuro</figcaption>
-      </figure><figure data-nom="kawaki" data-id="kawaki">
+      </figure><figure data-nom="kawaki" data-id="kawaki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kawaki.webp" alt="Kawaki" loading="lazy">
         <figcaption>Kawaki</figcaption>
-      </figure><figure data-nom="kimimaro" data-id="kimimaro">
+      </figure><figure data-nom="kimimaro" data-id="kimimaro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kimimaro.webp" alt="Kimimaro" loading="lazy">
         <figcaption>Kimimaro</figcaption>
-      </figure><figure data-nom="kisame" data-id="kisame">
+      </figure><figure data-nom="kisame" data-id="kisame" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kisame.webp" alt="Kisame" loading="lazy">
         <figcaption>Kisame</figcaption>
-      </figure><figure data-nom="konan" data-id="konan">
+      </figure><figure data-nom="konan" data-id="konan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/konan.webp" alt="Konan" loading="lazy">
         <figcaption>Konan</figcaption>
-      </figure><figure data-nom="kurenai" data-id="kurenai">
+      </figure><figure data-nom="kurenai" data-id="kurenai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kurenai.webp" alt="Kurenai" loading="lazy">
         <figcaption>Kurenai</figcaption>
-      </figure><figure data-nom="kushina" data-id="kushina">
+      </figure><figure data-nom="kushina" data-id="kushina" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kushina.webp" alt="Kushina" loading="lazy">
         <figcaption>Kushina</figcaption>
-      </figure><figure data-nom="madara" data-id="madara">
+      </figure><figure data-nom="madara" data-id="madara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/madara.webp" alt="Madara" loading="lazy">
         <figcaption>Madara</figcaption>
-      </figure><figure data-nom="minato" data-id="minato">
+      </figure><figure data-nom="minato" data-id="minato" data-filtres="" data-exclusif="false">
         <img src="/rushpic/minato.webp" alt="Minato" loading="lazy">
         <figcaption>Minato</figcaption>
-      </figure><figure data-nom="mitsuki" data-id="mitsuki">
+      </figure><figure data-nom="mitsuki" data-id="mitsuki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mitsuki.webp" alt="Mitsuki" loading="lazy">
         <figcaption>Mitsuki</figcaption>
-      </figure><figure data-nom="nagato" data-id="nagato">
+      </figure><figure data-nom="nagato" data-id="nagato" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nagato.webp" alt="Nagato" loading="lazy">
         <figcaption>Nagato<span class="al">Pain · Pein</span></figcaption>
-      </figure><figure data-nom="naruto" data-id="naruto">
+      </figure><figure data-nom="naruto" data-id="naruto" data-filtres="" data-exclusif="false">
         <img src="/rushpic/naruto.webp" alt="Naruto" loading="lazy">
         <figcaption>Naruto</figcaption>
-      </figure><figure data-nom="neji" data-id="neji">
+      </figure><figure data-nom="neji" data-id="neji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/neji.webp" alt="Neji" loading="lazy">
         <figcaption>Neji</figcaption>
-      </figure><figure data-nom="obito" data-id="obito">
+      </figure><figure data-nom="obito" data-id="obito" data-filtres="" data-exclusif="false">
         <img src="/rushpic/obito.webp" alt="Obito" loading="lazy">
         <figcaption>Obito<span class="al">Tobi</span></figcaption>
-      </figure><figure data-nom="orochimaru" data-id="orochimaru">
+      </figure><figure data-nom="orochimaru" data-id="orochimaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/orochimaru.webp" alt="Orochimaru" loading="lazy">
         <figcaption>Orochimaru</figcaption>
-      </figure><figure data-nom="rock lee" data-id="rock_lee">
+      </figure><figure data-nom="rock lee" data-id="rock_lee" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rock_lee.webp" alt="Rock Lee" loading="lazy">
         <figcaption>Rock Lee<span class="al">Lee</span></figcaption>
-      </figure><figure data-nom="sai" data-id="sai">
+      </figure><figure data-nom="sai" data-id="sai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sai.webp" alt="Sai" loading="lazy">
         <figcaption>Sai</figcaption>
-      </figure><figure data-nom="sakura" data-id="sakura">
+      </figure><figure data-nom="sakura" data-id="sakura" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sakura.webp" alt="Sakura" loading="lazy">
         <figcaption>Sakura</figcaption>
-      </figure><figure data-nom="sarada" data-id="sarada">
+      </figure><figure data-nom="sarada" data-id="sarada" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sarada.webp" alt="Sarada" loading="lazy">
         <figcaption>Sarada</figcaption>
-      </figure><figure data-nom="sasori" data-id="sasori">
+      </figure><figure data-nom="sasori" data-id="sasori" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sasori.webp" alt="Sasori" loading="lazy">
         <figcaption>Sasori</figcaption>
-      </figure><figure data-nom="sasuke" data-id="sasuke">
+      </figure><figure data-nom="sasuke" data-id="sasuke" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sasuke.webp" alt="Sasuke" loading="lazy">
         <figcaption>Sasuke</figcaption>
-      </figure><figure data-nom="shikamaru" data-id="shikamaru">
+      </figure><figure data-nom="shikamaru" data-id="shikamaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shikamaru.webp" alt="Shikamaru" loading="lazy">
         <figcaption>Shikamaru</figcaption>
-      </figure><figure data-nom="tayuya" data-id="tayuya">
+      </figure><figure data-nom="tayuya" data-id="tayuya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tayuya.webp" alt="Tayuya" loading="lazy">
         <figcaption>Tayuya</figcaption>
-      </figure><figure data-nom="temari" data-id="temari">
+      </figure><figure data-nom="temari" data-id="temari" data-filtres="" data-exclusif="false">
         <img src="/rushpic/temari.webp" alt="Temari" loading="lazy">
         <figcaption>Temari</figcaption>
-      </figure><figure data-nom="tsunade" data-id="tsunade">
+      </figure><figure data-nom="tsunade" data-id="tsunade" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tsunade.webp" alt="Tsunade" loading="lazy">
         <figcaption>Tsunade</figcaption>
-      </figure><figure data-nom="yagura" data-id="yagura">
+      </figure><figure data-nom="yagura" data-id="yagura" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yagura.webp" alt="Yagura" loading="lazy">
         <figcaption>Yagura</figcaption>
       </figure>
@@ -210,118 +213,118 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="ace" data-id="ace">
+      <figure data-nom="ace" data-id="ace" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ace.webp" alt="Ace" loading="lazy">
         <figcaption>Ace</figcaption>
-      </figure><figure data-nom="akainu" data-id="akainu">
+      </figure><figure data-nom="akainu" data-id="akainu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/akainu.webp" alt="Akainu" loading="lazy">
         <figcaption>Akainu</figcaption>
-      </figure><figure data-nom="aokiji" data-id="aokiji">
+      </figure><figure data-nom="aokiji" data-id="aokiji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/aokiji.webp" alt="Aokiji" loading="lazy">
         <figcaption>Aokiji</figcaption>
-      </figure><figure data-nom="baggy" data-id="baggy">
+      </figure><figure data-nom="baggy" data-id="baggy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/baggy.webp" alt="Baggy" loading="lazy">
         <figcaption>Baggy</figcaption>
-      </figure><figure data-nom="boa hancock" data-id="boa_hancock">
+      </figure><figure data-nom="boa hancock" data-id="boa_hancock" data-filtres="" data-exclusif="false">
         <img src="/rushpic/boa_hancock.webp" alt="Boa Hancock" loading="lazy">
         <figcaption>Boa Hancock<span class="al">Hancock</span></figcaption>
-      </figure><figure data-nom="brogy" data-id="brogy">
+      </figure><figure data-nom="brogy" data-id="brogy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/brogy.webp" alt="Brogy" loading="lazy">
         <figcaption>Brogy</figcaption>
-      </figure><figure data-nom="brook" data-id="brook">
+      </figure><figure data-nom="brook" data-id="brook" data-filtres="" data-exclusif="false">
         <img src="/rushpic/brook.webp" alt="Brook" loading="lazy">
         <figcaption>Brook</figcaption>
-      </figure><figure data-nom="chopper" data-id="chopper">
+      </figure><figure data-nom="chopper" data-id="chopper" data-filtres="" data-exclusif="false">
         <img src="/rushpic/chopper.webp" alt="Chopper" loading="lazy">
         <figcaption>Chopper</figcaption>
-      </figure><figure data-nom="crocodile" data-id="crocodile">
+      </figure><figure data-nom="crocodile" data-id="crocodile" data-filtres="" data-exclusif="false">
         <img src="/rushpic/crocodile.webp" alt="Crocodile" loading="lazy">
         <figcaption>Crocodile</figcaption>
-      </figure><figure data-nom="doflamingo" data-id="doflamingo">
+      </figure><figure data-nom="doflamingo" data-id="doflamingo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/doflamingo.webp" alt="Doflamingo" loading="lazy">
         <figcaption>Doflamingo<span class="al">Joker · Doffy</span></figcaption>
-      </figure><figure data-nom="dorry" data-id="dorry">
+      </figure><figure data-nom="dorry" data-id="dorry" data-filtres="" data-exclusif="false">
         <img src="/rushpic/dorry.webp" alt="Dorry" loading="lazy">
         <figcaption>Dorry<span class="al">dory</span></figcaption>
-      </figure><figure data-nom="ener" data-id="ener">
+      </figure><figure data-nom="ener" data-id="ener" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ener.webp" alt="Ener" loading="lazy">
         <figcaption>Ener<span class="al">enel</span></figcaption>
-      </figure><figure data-nom="franky" data-id="franky">
+      </figure><figure data-nom="franky" data-id="franky" data-filtres="" data-exclusif="false">
         <img src="/rushpic/franky.webp" alt="Franky" loading="lazy">
         <figcaption>Franky</figcaption>
-      </figure><figure data-nom="jinbe" data-id="jinbe">
+      </figure><figure data-nom="jinbe" data-id="jinbe" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jinbe.webp" alt="Jinbe" loading="lazy">
         <figcaption>Jinbe</figcaption>
-      </figure><figure data-nom="kaido" data-id="kaido">
+      </figure><figure data-nom="kaido" data-id="kaido" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kaido.webp" alt="Kaido" loading="lazy">
         <figcaption>Kaido<span class="al">kaidou</span></figcaption>
-      </figure><figure data-nom="katakuri" data-id="katakuri">
+      </figure><figure data-nom="katakuri" data-id="katakuri" data-filtres="" data-exclusif="false">
         <img src="/rushpic/katakuri.webp" alt="Katakuri" loading="lazy">
         <figcaption>Katakuri</figcaption>
-      </figure><figure data-nom="kizaru" data-id="kizaru">
+      </figure><figure data-nom="kizaru" data-id="kizaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kizaru.webp" alt="Kizaru" loading="lazy">
         <figcaption>Kizaru<span class="al">borsalino</span></figcaption>
-      </figure><figure data-nom="kuma" data-id="kuma">
+      </figure><figure data-nom="kuma" data-id="kuma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kuma.webp" alt="Kuma" loading="lazy">
         <figcaption>Kuma</figcaption>
-      </figure><figure data-nom="law" data-id="law">
+      </figure><figure data-nom="law" data-id="law" data-filtres="" data-exclusif="false">
         <img src="/rushpic/law.webp" alt="Law" loading="lazy">
         <figcaption>Law</figcaption>
-      </figure><figure data-nom="lucci" data-id="lucci">
+      </figure><figure data-nom="lucci" data-id="lucci" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lucci.webp" alt="Lucci" loading="lazy">
         <figcaption>Lucci<span class="al">Rob Lucci</span></figcaption>
-      </figure><figure data-nom="luffy" data-id="luffy">
+      </figure><figure data-nom="luffy" data-id="luffy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/luffy.webp" alt="Luffy" loading="lazy">
         <figcaption>Luffy</figcaption>
-      </figure><figure data-nom="marco" data-id="marco">
+      </figure><figure data-nom="marco" data-id="marco" data-filtres="" data-exclusif="false">
         <img src="/rushpic/marco.webp" alt="Marco" loading="lazy">
         <figcaption>Marco</figcaption>
-      </figure><figure data-nom="mihawk" data-id="mihawk">
+      </figure><figure data-nom="mihawk" data-id="mihawk" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mihawk.webp" alt="Mihawk" loading="lazy">
         <figcaption>Mihawk</figcaption>
-      </figure><figure data-nom="nami" data-id="nami">
+      </figure><figure data-nom="nami" data-id="nami" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nami.webp" alt="Nami" loading="lazy">
         <figcaption>Nami</figcaption>
-      </figure><figure data-nom="newgate" data-id="newgate">
+      </figure><figure data-nom="newgate" data-id="newgate" data-filtres="" data-exclusif="false">
         <img src="/rushpic/newgate.webp" alt="Newgate" loading="lazy">
         <figcaption>Newgate<span class="al">Barbe blanche · Edward newgate · Whitebeard · Newgates</span></figcaption>
-      </figure><figure data-nom="perona" data-id="perona">
+      </figure><figure data-nom="perona" data-id="perona" data-filtres="" data-exclusif="false">
         <img src="/rushpic/perona.webp" alt="Perona" loading="lazy">
         <figcaption>Perona</figcaption>
-      </figure><figure data-nom="rayleigh" data-id="rayleigh">
+      </figure><figure data-nom="rayleigh" data-id="rayleigh" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rayleigh.webp" alt="Rayleigh" loading="lazy">
         <figcaption>Rayleigh</figcaption>
-      </figure><figure data-nom="robin" data-id="robin">
+      </figure><figure data-nom="robin" data-id="robin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/robin.webp" alt="Robin" loading="lazy">
         <figcaption>Robin<span class="al">nico robin</span></figcaption>
-      </figure><figure data-nom="roger" data-id="roger">
+      </figure><figure data-nom="roger" data-id="roger" data-filtres="" data-exclusif="false">
         <img src="/rushpic/roger.webp" alt="Roger" loading="lazy">
         <figcaption>Roger</figcaption>
-      </figure><figure data-nom="sabo" data-id="sabo">
+      </figure><figure data-nom="sabo" data-id="sabo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sabo.webp" alt="Sabo" loading="lazy">
         <figcaption>Sabo</figcaption>
-      </figure><figure data-nom="sanji" data-id="sanji">
+      </figure><figure data-nom="sanji" data-id="sanji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sanji.webp" alt="Sanji" loading="lazy">
         <figcaption>Sanji</figcaption>
-      </figure><figure data-nom="shanks" data-id="shanks">
+      </figure><figure data-nom="shanks" data-id="shanks" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shanks.webp" alt="Shanks" loading="lazy">
         <figcaption>Shanks</figcaption>
-      </figure><figure data-nom="tashigi" data-id="tashigi">
+      </figure><figure data-nom="tashigi" data-id="tashigi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tashigi.webp" alt="Tashigi" loading="lazy">
         <figcaption>Tashigi</figcaption>
-      </figure><figure data-nom="teach" data-id="teach">
+      </figure><figure data-nom="teach" data-id="teach" data-filtres="" data-exclusif="false">
         <img src="/rushpic/teach.webp" alt="Teach" loading="lazy">
         <figcaption>Teach<span class="al">Barbe noire · Blackbeard · Marshall D Teach</span></figcaption>
-      </figure><figure data-nom="usopp" data-id="usopp">
+      </figure><figure data-nom="usopp" data-id="usopp" data-filtres="" data-exclusif="false">
         <img src="/rushpic/usopp.webp" alt="Usopp" loading="lazy">
         <figcaption>Usopp<span class="al">Ussop</span></figcaption>
-      </figure><figure data-nom="vivi" data-id="vivi">
+      </figure><figure data-nom="vivi" data-id="vivi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/vivi.webp" alt="Vivi" loading="lazy">
         <figcaption>Vivi</figcaption>
-      </figure><figure data-nom="yamato" data-id="yamato">
+      </figure><figure data-nom="yamato" data-id="yamato" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yamato.webp" alt="Yamato" loading="lazy">
         <figcaption>Yamato</figcaption>
-      </figure><figure data-nom="zoro" data-id="zoro">
+      </figure><figure data-nom="zoro" data-id="zoro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zoro.webp" alt="Zoro" loading="lazy">
         <figcaption>Zoro</figcaption>
       </figure>
@@ -340,88 +343,88 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="bardock" data-id="bardock">
+      <figure data-nom="bardock" data-id="bardock" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bardock.webp" alt="Bardock" loading="lazy">
         <figcaption>Bardock<span class="al">Baddack</span></figcaption>
-      </figure><figure data-nom="beerus" data-id="beerus">
+      </figure><figure data-nom="beerus" data-id="beerus" data-filtres="" data-exclusif="false">
         <img src="/rushpic/beerus.webp" alt="Beerus" loading="lazy">
         <figcaption>Beerus</figcaption>
-      </figure><figure data-nom="broly" data-id="broly">
+      </figure><figure data-nom="broly" data-id="broly" data-filtres="" data-exclusif="false">
         <img src="/rushpic/broly.webp" alt="Broly" loading="lazy">
         <figcaption>Broly</figcaption>
-      </figure><figure data-nom="bulma" data-id="bulma">
+      </figure><figure data-nom="bulma" data-id="bulma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bulma.webp" alt="Bulma" loading="lazy">
         <figcaption>Bulma</figcaption>
-      </figure><figure data-nom="buu" data-id="buu">
+      </figure><figure data-nom="buu" data-id="buu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/buu.webp" alt="Buu" loading="lazy">
         <figcaption>Buu<span class="al">Boo</span></figcaption>
-      </figure><figure data-nom="c-17" data-id="c17">
+      </figure><figure data-nom="c-17" data-id="c17" data-filtres="" data-exclusif="false">
         <img src="/rushpic/c17.webp" alt="C-17" loading="lazy">
         <figcaption>C-17</figcaption>
-      </figure><figure data-nom="c-18" data-id="C-18">
+      </figure><figure data-nom="c-18" data-id="C-18" data-filtres="" data-exclusif="false">
         <img src="/rushpic/C-18.webp" alt="C-18" loading="lazy">
         <figcaption>C-18<span class="al">C18 · C 18 · 18</span></figcaption>
-      </figure><figure data-nom="cell" data-id="cell">
+      </figure><figure data-nom="cell" data-id="cell" data-filtres="" data-exclusif="false">
         <img src="/rushpic/cell.webp" alt="Cell" loading="lazy">
         <figcaption>Cell</figcaption>
-      </figure><figure data-nom="freezer" data-id="frieza">
+      </figure><figure data-nom="freezer" data-id="frieza" data-filtres="" data-exclusif="false">
         <img src="/rushpic/frieza.webp" alt="Freezer" loading="lazy">
         <figcaption>Freezer<span class="al">Frieza</span></figcaption>
-      </figure><figure data-nom="ginyu" data-id="ginyu">
+      </figure><figure data-nom="ginyu" data-id="ginyu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ginyu.webp" alt="Ginyu" loading="lazy">
         <figcaption>Ginyu</figcaption>
-      </figure><figure data-nom="gohan" data-id="gohan">
+      </figure><figure data-nom="gohan" data-id="gohan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gohan.webp" alt="Gohan" loading="lazy">
         <figcaption>Gohan</figcaption>
-      </figure><figure data-nom="goku" data-id="goku">
+      </figure><figure data-nom="goku" data-id="goku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/goku.webp" alt="Goku" loading="lazy">
         <figcaption>Goku</figcaption>
-      </figure><figure data-nom="goten" data-id="Goten">
+      </figure><figure data-nom="goten" data-id="Goten" data-filtres="" data-exclusif="false">
         <img src="/rushpic/Goten.webp" alt="Goten" loading="lazy">
         <figcaption>Goten</figcaption>
-      </figure><figure data-nom="gotenks" data-id="gotenks">
+      </figure><figure data-nom="gotenks" data-id="gotenks" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gotenks.webp" alt="Gotenks" loading="lazy">
         <figcaption>Gotenks</figcaption>
-      </figure><figure data-nom="hit" data-id="hit">
+      </figure><figure data-nom="hit" data-id="hit" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hit.webp" alt="Hit" loading="lazy">
         <figcaption>Hit</figcaption>
-      </figure><figure data-nom="krilin" data-id="krillin">
+      </figure><figure data-nom="krilin" data-id="krillin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/krillin.webp" alt="Krilin" loading="lazy">
         <figcaption>Krilin<span class="al">Krilin · Krillin · Kuririn</span></figcaption>
-      </figure><figure data-nom="nappa" data-id="nappa">
+      </figure><figure data-nom="nappa" data-id="nappa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nappa.webp" alt="Nappa" loading="lazy">
         <figcaption>Nappa</figcaption>
-      </figure><figure data-nom="pan" data-id="pan">
+      </figure><figure data-nom="pan" data-id="pan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pan.webp" alt="Pan" loading="lazy">
         <figcaption>Pan</figcaption>
-      </figure><figure data-nom="piccolo" data-id="piccolo">
+      </figure><figure data-nom="piccolo" data-id="piccolo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/piccolo.webp" alt="Piccolo" loading="lazy">
         <figcaption>Piccolo<span class="al">petit coeur · picolo</span></figcaption>
-      </figure><figure data-nom="raditz" data-id="raditz">
+      </figure><figure data-nom="raditz" data-id="raditz" data-filtres="" data-exclusif="false">
         <img src="/rushpic/raditz.webp" alt="Raditz" loading="lazy">
         <figcaption>Raditz<span class="al">Radditz · Radits · Raddits</span></figcaption>
-      </figure><figure data-nom="roshi" data-id="roshi">
+      </figure><figure data-nom="roshi" data-id="roshi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/roshi.webp" alt="Roshi" loading="lazy">
         <figcaption>Roshi<span class="al">Muten Roshi · Tortue genial · Kame senin · Kame sennin</span></figcaption>
-      </figure><figure data-nom="satan" data-id="satan">
+      </figure><figure data-nom="satan" data-id="satan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/satan.webp" alt="Satan" loading="lazy">
         <figcaption>Satan<span class="al">Mr Satan · Mister Satan · Hercule</span></figcaption>
-      </figure><figure data-nom="tenshinhan" data-id="tenshinhan">
+      </figure><figure data-nom="tenshinhan" data-id="tenshinhan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tenshinhan.webp" alt="Tenshinhan" loading="lazy">
         <figcaption>Tenshinhan<span class="al">Tien · Tenshinan</span></figcaption>
-      </figure><figure data-nom="trunks" data-id="trunks">
+      </figure><figure data-nom="trunks" data-id="trunks" data-filtres="" data-exclusif="false">
         <img src="/rushpic/trunks.webp" alt="Trunks" loading="lazy">
         <figcaption>Trunks</figcaption>
-      </figure><figure data-nom="vegeta" data-id="vegeta">
+      </figure><figure data-nom="vegeta" data-id="vegeta" data-filtres="" data-exclusif="false">
         <img src="/rushpic/vegeta.webp" alt="Vegeta" loading="lazy">
         <figcaption>Vegeta</figcaption>
-      </figure><figure data-nom="videl" data-id="videl">
+      </figure><figure data-nom="videl" data-id="videl" data-filtres="" data-exclusif="false">
         <img src="/rushpic/videl.webp" alt="Videl" loading="lazy">
         <figcaption>Videl</figcaption>
-      </figure><figure data-nom="whis" data-id="whis">
+      </figure><figure data-nom="whis" data-id="whis" data-filtres="" data-exclusif="false">
         <img src="/rushpic/whis.webp" alt="Whis" loading="lazy">
         <figcaption>Whis</figcaption>
-      </figure><figure data-nom="yamcha" data-id="yamcha">
+      </figure><figure data-nom="yamcha" data-id="yamcha" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yamcha.webp" alt="Yamcha" loading="lazy">
         <figcaption>Yamcha</figcaption>
       </figure>
@@ -440,82 +443,82 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="aizen" data-id="aizen">
+      <figure data-nom="aizen" data-id="aizen" data-filtres="" data-exclusif="false">
         <img src="/rushpic/aizen.webp" alt="Aizen" loading="lazy">
         <figcaption>Aizen</figcaption>
-      </figure><figure data-nom="byakuya" data-id="byakuya">
+      </figure><figure data-nom="byakuya" data-id="byakuya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/byakuya.webp" alt="Byakuya" loading="lazy">
         <figcaption>Byakuya</figcaption>
-      </figure><figure data-nom="chad" data-id="chad">
+      </figure><figure data-nom="chad" data-id="chad" data-filtres="" data-exclusif="false">
         <img src="/rushpic/chad.webp" alt="Chad" loading="lazy">
         <figcaption>Chad<span class="al">Sado</span></figcaption>
-      </figure><figure data-nom="gin" data-id="Gin">
+      </figure><figure data-nom="gin" data-id="Gin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/Gin.webp" alt="Gin" loading="lazy">
         <figcaption>Gin<span class="al">ichimaru</span></figcaption>
-      </figure><figure data-nom="ginjo" data-id="ginjo">
+      </figure><figure data-nom="ginjo" data-id="ginjo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ginjo.webp" alt="Ginjo" loading="lazy">
         <figcaption>Ginjo</figcaption>
-      </figure><figure data-nom="grimmjow" data-id="grimmjow">
+      </figure><figure data-nom="grimmjow" data-id="grimmjow" data-filtres="" data-exclusif="false">
         <img src="/rushpic/grimmjow.webp" alt="Grimmjow" loading="lazy">
         <figcaption>Grimmjow<span class="al">Grimjow</span></figcaption>
-      </figure><figure data-nom="halibel" data-id="halibel">
+      </figure><figure data-nom="halibel" data-id="halibel" data-filtres="" data-exclusif="false">
         <img src="/rushpic/halibel.webp" alt="Halibel" loading="lazy">
         <figcaption>Halibel<span class="al">Hallibel · Harribel · Haribel</span></figcaption>
-      </figure><figure data-nom="hirako" data-id="hirako">
+      </figure><figure data-nom="hirako" data-id="hirako" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hirako.webp" alt="Hirako" loading="lazy">
         <figcaption>Hirako<span class="al">Shinji</span></figcaption>
-      </figure><figure data-nom="ichigo" data-id="ichigo">
+      </figure><figure data-nom="ichigo" data-id="ichigo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ichigo.webp" alt="Ichigo" loading="lazy">
         <figcaption>Ichigo</figcaption>
-      </figure><figure data-nom="ishida" data-id="ishida">
+      </figure><figure data-nom="ishida" data-id="ishida" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ishida.webp" alt="Ishida" loading="lazy">
         <figcaption>Ishida</figcaption>
-      </figure><figure data-nom="kyoraku" data-id="kyoraku">
+      </figure><figure data-nom="kyoraku" data-id="kyoraku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kyoraku2.webp" alt="Kyoraku" loading="lazy">
         <figcaption>Kyoraku<span class="al">Shunsui</span></figcaption>
-      </figure><figure data-nom="mayuri" data-id="mayuri">
+      </figure><figure data-nom="mayuri" data-id="mayuri" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mayuri.webp" alt="Mayuri" loading="lazy">
         <figcaption>Mayuri</figcaption>
-      </figure><figure data-nom="nelliel" data-id="nel">
+      </figure><figure data-nom="nelliel" data-id="nel" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nel.webp" alt="Nelliel" loading="lazy">
         <figcaption>Nelliel<span class="al">Nel · Neliel · Nelliel Tu Odelschwanck · Nel Tu · Nelliel Tu</span></figcaption>
-      </figure><figure data-nom="orihime" data-id="orihime">
+      </figure><figure data-nom="orihime" data-id="orihime" data-filtres="" data-exclusif="false">
         <img src="/rushpic/orihime.webp" alt="Orihime" loading="lazy">
         <figcaption>Orihime<span class="al">inoue</span></figcaption>
-      </figure><figure data-nom="rangiku" data-id="rangiku">
+      </figure><figure data-nom="rangiku" data-id="rangiku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rangiku.webp" alt="Rangiku" loading="lazy">
         <figcaption>Rangiku<span class="al">Matsumoto</span></figcaption>
-      </figure><figure data-nom="renji" data-id="renji">
+      </figure><figure data-nom="renji" data-id="renji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/renji.webp" alt="Renji" loading="lazy">
         <figcaption>Renji<span class="al">abarai</span></figcaption>
-      </figure><figure data-nom="rukia" data-id="rukia">
+      </figure><figure data-nom="rukia" data-id="rukia" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rukia.webp" alt="Rukia" loading="lazy">
         <figcaption>Rukia</figcaption>
-      </figure><figure data-nom="soi fon" data-id="soifon">
+      </figure><figure data-nom="soi fon" data-id="soifon" data-filtres="" data-exclusif="false">
         <img src="/rushpic/soifon.webp" alt="Soi Fon" loading="lazy">
         <figcaption>Soi Fon</figcaption>
-      </figure><figure data-nom="stark" data-id="stark">
+      </figure><figure data-nom="stark" data-id="stark" data-filtres="" data-exclusif="false">
         <img src="/rushpic/stark.webp" alt="Stark" loading="lazy">
         <figcaption>Stark</figcaption>
-      </figure><figure data-nom="toshiro" data-id="toshiro">
+      </figure><figure data-nom="toshiro" data-id="toshiro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/toshiro.webp" alt="Toshiro" loading="lazy">
         <figcaption>Toshiro<span class="al">Hitsugaya</span></figcaption>
-      </figure><figure data-nom="ulquiorra" data-id="ulquiorra">
+      </figure><figure data-nom="ulquiorra" data-id="ulquiorra" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ulquiorra.webp" alt="Ulquiorra" loading="lazy">
         <figcaption>Ulquiorra</figcaption>
-      </figure><figure data-nom="unohana" data-id="unohana">
+      </figure><figure data-nom="unohana" data-id="unohana" data-filtres="" data-exclusif="false">
         <img src="/rushpic/unohana.webp" alt="Unohana" loading="lazy">
         <figcaption>Unohana</figcaption>
-      </figure><figure data-nom="urahara" data-id="urahara">
+      </figure><figure data-nom="urahara" data-id="urahara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/urahara.webp" alt="Urahara" loading="lazy">
         <figcaption>Urahara<span class="al">kisuke</span></figcaption>
-      </figure><figure data-nom="yhwach" data-id="yhwach">
+      </figure><figure data-nom="yhwach" data-id="yhwach" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yhwach.webp" alt="Yhwach" loading="lazy">
         <figcaption>Yhwach<span class="al">Ywach · Yhabach</span></figcaption>
-      </figure><figure data-nom="yoruichi" data-id="yoruichi">
+      </figure><figure data-nom="yoruichi" data-id="yoruichi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yoruichi.webp" alt="Yoruichi" loading="lazy">
         <figcaption>Yoruichi</figcaption>
-      </figure><figure data-nom="zaraki" data-id="zaraki">
+      </figure><figure data-nom="zaraki" data-id="zaraki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zaraki.webp" alt="Zaraki" loading="lazy">
         <figcaption>Zaraki<span class="al">kenpachi</span></figcaption>
       </figure>
@@ -534,76 +537,76 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="akaza" data-id="akaza">
+      <figure data-nom="akaza" data-id="akaza" data-filtres="" data-exclusif="false">
         <img src="/rushpic/akaza.webp" alt="Akaza" loading="lazy">
         <figcaption>Akaza</figcaption>
-      </figure><figure data-nom="daki" data-id="daki">
+      </figure><figure data-nom="daki" data-id="daki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/daki.webp" alt="Daki" loading="lazy">
         <figcaption>Daki<span class="al">Ume</span></figcaption>
-      </figure><figure data-nom="doma" data-id="doma">
+      </figure><figure data-nom="doma" data-id="doma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/doma.webp" alt="Doma" loading="lazy">
         <figcaption>Doma<span class="al">Douma</span></figcaption>
-      </figure><figure data-nom="genya" data-id="genya">
+      </figure><figure data-nom="genya" data-id="genya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/genya.webp" alt="Genya" loading="lazy">
         <figcaption>Genya</figcaption>
-      </figure><figure data-nom="giyu" data-id="giyu">
+      </figure><figure data-nom="giyu" data-id="giyu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/giyu.webp" alt="Giyu" loading="lazy">
         <figcaption>Giyu<span class="al">tomioka</span></figcaption>
-      </figure><figure data-nom="gyokko" data-id="gyokko">
+      </figure><figure data-nom="gyokko" data-id="gyokko" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gyokko.webp" alt="Gyokko" loading="lazy">
         <figcaption>Gyokko<span class="al">Gyoko</span></figcaption>
-      </figure><figure data-nom="gyomei" data-id="gyomei">
+      </figure><figure data-nom="gyomei" data-id="gyomei" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gyomei.webp" alt="Gyomei" loading="lazy">
         <figcaption>Gyomei</figcaption>
-      </figure><figure data-nom="gyutaro" data-id="gyutaro">
+      </figure><figure data-nom="gyutaro" data-id="gyutaro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gyutaro.webp" alt="Gyutaro" loading="lazy">
         <figcaption>Gyutaro</figcaption>
-      </figure><figure data-nom="hantengu" data-id="hantengu">
+      </figure><figure data-nom="hantengu" data-id="hantengu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hantengu.webp" alt="Hantengu" loading="lazy">
         <figcaption>Hantengu</figcaption>
-      </figure><figure data-nom="inosuke" data-id="inosuke">
+      </figure><figure data-nom="inosuke" data-id="inosuke" data-filtres="" data-exclusif="false">
         <img src="/rushpic/inosuke.webp" alt="Inosuke" loading="lazy">
         <figcaption>Inosuke</figcaption>
-      </figure><figure data-nom="kanao" data-id="kanao">
+      </figure><figure data-nom="kanao" data-id="kanao" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kanao.webp" alt="Kanao" loading="lazy">
         <figcaption>Kanao</figcaption>
-      </figure><figure data-nom="kokushibo" data-id="kokushibo">
+      </figure><figure data-nom="kokushibo" data-id="kokushibo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kokushibo.webp" alt="Kokushibo" loading="lazy">
         <figcaption>Kokushibo</figcaption>
-      </figure><figure data-nom="mitsuri" data-id="mitsuri">
+      </figure><figure data-nom="mitsuri" data-id="mitsuri" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mitsuri.webp" alt="Mitsuri" loading="lazy">
         <figcaption>Mitsuri<span class="al">kanroji</span></figcaption>
-      </figure><figure data-nom="muzan" data-id="muzan">
+      </figure><figure data-nom="muzan" data-id="muzan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/muzan.webp" alt="Muzan" loading="lazy">
         <figcaption>Muzan</figcaption>
-      </figure><figure data-nom="nezuko" data-id="nezuko">
+      </figure><figure data-nom="nezuko" data-id="nezuko" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nezuko.webp" alt="Nezuko" loading="lazy">
         <figcaption>Nezuko</figcaption>
-      </figure><figure data-nom="obanai" data-id="obanai">
+      </figure><figure data-nom="obanai" data-id="obanai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/obanai.webp" alt="Obanai" loading="lazy">
         <figcaption>Obanai</figcaption>
-      </figure><figure data-nom="rengoku" data-id="rengoku">
+      </figure><figure data-nom="rengoku" data-id="rengoku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rengoku.webp" alt="Rengoku" loading="lazy">
         <figcaption>Rengoku</figcaption>
-      </figure><figure data-nom="sabito" data-id="sabito">
+      </figure><figure data-nom="sabito" data-id="sabito" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sabito.webp" alt="Sabito" loading="lazy">
         <figcaption>Sabito</figcaption>
-      </figure><figure data-nom="sanemi" data-id="sanemi">
+      </figure><figure data-nom="sanemi" data-id="sanemi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sanemi.webp" alt="Sanemi" loading="lazy">
         <figcaption>Sanemi</figcaption>
-      </figure><figure data-nom="shinobu" data-id="shinobu">
+      </figure><figure data-nom="shinobu" data-id="shinobu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shinobu.webp" alt="Shinobu" loading="lazy">
         <figcaption>Shinobu</figcaption>
-      </figure><figure data-nom="tanjiro" data-id="tanjiro">
+      </figure><figure data-nom="tanjiro" data-id="tanjiro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tanjiro.webp" alt="Tanjiro" loading="lazy">
         <figcaption>Tanjiro</figcaption>
-      </figure><figure data-nom="tengen" data-id="tengen">
+      </figure><figure data-nom="tengen" data-id="tengen" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tengen.webp" alt="Tengen" loading="lazy">
         <figcaption>Tengen<span class="al">Uzui</span></figcaption>
-      </figure><figure data-nom="tokito" data-id="tokito">
+      </figure><figure data-nom="tokito" data-id="tokito" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tokito.webp" alt="Tokito" loading="lazy">
         <figcaption>Tokito<span class="al">muichiro</span></figcaption>
-      </figure><figure data-nom="zenitsu" data-id="zenitsu">
+      </figure><figure data-nom="zenitsu" data-id="zenitsu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zenitsu.webp" alt="Zenitsu" loading="lazy">
         <figcaption>Zenitsu</figcaption>
       </figure>
@@ -622,76 +625,76 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="biscuit" data-id="biscuit">
+      <figure data-nom="biscuit" data-id="biscuit" data-filtres="" data-exclusif="false">
         <img src="/rushpic/biscuit.webp" alt="Biscuit" loading="lazy">
         <figcaption>Biscuit<span class="al">Bisket · Bisky</span></figcaption>
-      </figure><figure data-nom="chrollo" data-id="chrollo">
+      </figure><figure data-nom="chrollo" data-id="chrollo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/chrollo.webp" alt="Chrollo" loading="lazy">
         <figcaption>Chrollo<span class="al">kuroro</span></figcaption>
-      </figure><figure data-nom="feitan" data-id="feitan">
+      </figure><figure data-nom="feitan" data-id="feitan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/feitan.webp" alt="Feitan" loading="lazy">
         <figcaption>Feitan</figcaption>
-      </figure><figure data-nom="ging" data-id="ging">
+      </figure><figure data-nom="ging" data-id="ging" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ging.webp" alt="Ging" loading="lazy">
         <figcaption>Ging<span class="al">Jin</span></figcaption>
-      </figure><figure data-nom="gon" data-id="gon">
+      </figure><figure data-nom="gon" data-id="gon" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gon.webp" alt="Gon" loading="lazy">
         <figcaption>Gon</figcaption>
-      </figure><figure data-nom="hisoka" data-id="hisoka">
+      </figure><figure data-nom="hisoka" data-id="hisoka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hisoka.webp" alt="Hisoka" loading="lazy">
         <figcaption>Hisoka</figcaption>
-      </figure><figure data-nom="illumi" data-id="illumi">
+      </figure><figure data-nom="illumi" data-id="illumi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/illumi.webp" alt="Illumi" loading="lazy">
         <figcaption>Illumi</figcaption>
-      </figure><figure data-nom="killua" data-id="killua">
+      </figure><figure data-nom="killua" data-id="killua" data-filtres="" data-exclusif="false">
         <img src="/rushpic/killua.webp" alt="Killua" loading="lazy">
         <figcaption>Killua<span class="al">kirua</span></figcaption>
-      </figure><figure data-nom="kite" data-id="kite">
+      </figure><figure data-nom="kite" data-id="kite" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kite.webp" alt="Kite" loading="lazy">
         <figcaption>Kite<span class="al">Kaito</span></figcaption>
-      </figure><figure data-nom="komugi" data-id="komugi">
+      </figure><figure data-nom="komugi" data-id="komugi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/komugi.webp" alt="Komugi" loading="lazy">
         <figcaption>Komugi</figcaption>
-      </figure><figure data-nom="kurapika" data-id="kurapika">
+      </figure><figure data-nom="kurapika" data-id="kurapika" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kurapika.webp" alt="Kurapika" loading="lazy">
         <figcaption>Kurapika</figcaption>
-      </figure><figure data-nom="leorio" data-id="leorio">
+      </figure><figure data-nom="leorio" data-id="leorio" data-filtres="" data-exclusif="false">
         <img src="/rushpic/leorio.webp" alt="Leorio" loading="lazy">
         <figcaption>Leorio<span class="al">Leolio · Leolio Paladiknight · Leorio Paladiknight · Leorio Paradinight</span></figcaption>
-      </figure><figure data-nom="machi" data-id="machi">
+      </figure><figure data-nom="machi" data-id="machi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/machi.webp" alt="Machi" loading="lazy">
         <figcaption>Machi</figcaption>
-      </figure><figure data-nom="meruem" data-id="meruem">
+      </figure><figure data-nom="meruem" data-id="meruem" data-filtres="" data-exclusif="false">
         <img src="/rushpic/meruem.webp" alt="Meruem" loading="lazy">
         <figcaption>Meruem</figcaption>
-      </figure><figure data-nom="netero" data-id="netero">
+      </figure><figure data-nom="netero" data-id="netero" data-filtres="" data-exclusif="false">
         <img src="/rushpic/netero.webp" alt="Netero" loading="lazy">
         <figcaption>Netero</figcaption>
-      </figure><figure data-nom="nobunaga" data-id="nobunaga">
+      </figure><figure data-nom="nobunaga" data-id="nobunaga" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nobunaga.webp" alt="Nobunaga" loading="lazy">
         <figcaption>Nobunaga</figcaption>
-      </figure><figure data-nom="palm" data-id="pamu">
+      </figure><figure data-nom="palm" data-id="pamu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pamu.webp" alt="Palm" loading="lazy">
         <figcaption>Palm<span class="al">Pamu · Pam</span></figcaption>
-      </figure><figure data-nom="pitou" data-id="pitou">
+      </figure><figure data-nom="pitou" data-id="pitou" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pitou.webp" alt="Pitou" loading="lazy">
         <figcaption>Pitou<span class="al">Neferupito · Pito</span></figcaption>
-      </figure><figure data-nom="razor" data-id="razor">
+      </figure><figure data-nom="razor" data-id="razor" data-filtres="" data-exclusif="false">
         <img src="/rushpic/razor.webp" alt="Razor" loading="lazy">
         <figcaption>Razor<span class="al">Rayzor · Raizor</span></figcaption>
-      </figure><figure data-nom="shizuku" data-id="shizuku">
+      </figure><figure data-nom="shizuku" data-id="shizuku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shizuku.webp" alt="Shizuku" loading="lazy">
         <figcaption>Shizuku</figcaption>
-      </figure><figure data-nom="shoot" data-id="shoot">
+      </figure><figure data-nom="shoot" data-id="shoot" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shoot.webp" alt="Shoot" loading="lazy">
         <figcaption>Shoot<span class="al">Shot</span></figcaption>
-      </figure><figure data-nom="silva" data-id="silva">
+      </figure><figure data-nom="silva" data-id="silva" data-filtres="" data-exclusif="false">
         <img src="/rushpic/silva.webp" alt="Silva" loading="lazy">
         <figcaption>Silva</figcaption>
-      </figure><figure data-nom="uvogin" data-id="uvogin">
+      </figure><figure data-nom="uvogin" data-id="uvogin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/uvogin.webp" alt="Uvogin" loading="lazy">
         <figcaption>Uvogin</figcaption>
-      </figure><figure data-nom="zushi" data-id="zushi">
+      </figure><figure data-nom="zushi" data-id="zushi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zushi.webp" alt="Zushi" loading="lazy">
         <figcaption>Zushi</figcaption>
       </figure>
@@ -710,73 +713,73 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="avdol" data-id="avdol">
+      <figure data-nom="avdol" data-id="avdol" data-filtres="" data-exclusif="false">
         <img src="/rushpic/avdol.webp" alt="Avdol" loading="lazy">
         <figcaption>Avdol</figcaption>
-      </figure><figure data-nom="bruno" data-id="bruno">
+      </figure><figure data-nom="bruno" data-id="bruno" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bruno.webp" alt="Bruno" loading="lazy">
         <figcaption>Bruno</figcaption>
-      </figure><figure data-nom="diavolo" data-id="diavolo">
+      </figure><figure data-nom="diavolo" data-id="diavolo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/diavolo.webp" alt="Diavolo" loading="lazy">
         <figcaption>Diavolo</figcaption>
-      </figure><figure data-nom="dio" data-id="dio">
+      </figure><figure data-nom="dio" data-id="dio" data-filtres="" data-exclusif="false">
         <img src="/rushpic/dio.webp" alt="Dio" loading="lazy">
         <figcaption>Dio</figcaption>
-      </figure><figure data-nom="ff" data-id="ff">
+      </figure><figure data-nom="ff" data-id="ff" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ff.webp" alt="FF" loading="lazy">
         <figcaption>FF<span class="al">f f</span></figcaption>
-      </figure><figure data-nom="giorno" data-id="giorno">
+      </figure><figure data-nom="giorno" data-id="giorno" data-filtres="" data-exclusif="false">
         <img src="/rushpic/giorno.webp" alt="Giorno" loading="lazy">
         <figcaption>Giorno</figcaption>
-      </figure><figure data-nom="gyro" data-id="gyro">
+      </figure><figure data-nom="gyro" data-id="gyro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gyro.webp" alt="Gyro" loading="lazy">
         <figcaption>Gyro</figcaption>
-      </figure><figure data-nom="iggy" data-id="iggy">
+      </figure><figure data-nom="iggy" data-id="iggy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/iggy.webp" alt="Iggy" loading="lazy">
         <figcaption>Iggy</figcaption>
-      </figure><figure data-nom="johnny" data-id="johnny">
+      </figure><figure data-nom="johnny" data-id="johnny" data-filtres="" data-exclusif="false">
         <img src="/rushpic/johnny.webp" alt="Johnny" loading="lazy">
         <figcaption>Johnny</figcaption>
-      </figure><figure data-nom="jolyne" data-id="jolyne">
+      </figure><figure data-nom="jolyne" data-id="jolyne" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jolyne.webp" alt="Jolyne" loading="lazy">
         <figcaption>Jolyne</figcaption>
-      </figure><figure data-nom="joseph" data-id="joseph">
+      </figure><figure data-nom="joseph" data-id="joseph" data-filtres="" data-exclusif="false">
         <img src="/rushpic/joseph.webp" alt="Joseph" loading="lazy">
         <figcaption>Joseph</figcaption>
-      </figure><figure data-nom="josuke" data-id="josuke">
+      </figure><figure data-nom="josuke" data-id="josuke" data-filtres="" data-exclusif="false">
         <img src="/rushpic/josuke.webp" alt="Josuke" loading="lazy">
         <figcaption>Josuke</figcaption>
-      </figure><figure data-nom="jotaro" data-id="jotaro">
+      </figure><figure data-nom="jotaro" data-id="jotaro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jotaro.webp" alt="Jotaro" loading="lazy">
         <figcaption>Jotaro</figcaption>
-      </figure><figure data-nom="kakyoin" data-id="kakyoin">
+      </figure><figure data-nom="kakyoin" data-id="kakyoin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kakyoin.webp" alt="Kakyoin" loading="lazy">
         <figcaption>Kakyoin<span class="al">Noriaki</span></figcaption>
-      </figure><figure data-nom="kars" data-id="kars">
+      </figure><figure data-nom="kars" data-id="kars" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kars.webp" alt="Kars" loading="lazy">
         <figcaption>Kars</figcaption>
-      </figure><figure data-nom="kira" data-id="kira">
+      </figure><figure data-nom="kira" data-id="kira" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kira.webp" alt="Kira" loading="lazy">
         <figcaption>Kira</figcaption>
-      </figure><figure data-nom="koichi" data-id="koichi">
+      </figure><figure data-nom="koichi" data-id="koichi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/koichi.webp" alt="Koichi" loading="lazy">
         <figcaption>Koichi</figcaption>
-      </figure><figure data-nom="mista" data-id="mista">
+      </figure><figure data-nom="mista" data-id="mista" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mista.webp" alt="Mista" loading="lazy">
         <figcaption>Mista</figcaption>
-      </figure><figure data-nom="okuyasu" data-id="okuyasu">
+      </figure><figure data-nom="okuyasu" data-id="okuyasu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/okuyasu.webp" alt="Okuyasu" loading="lazy">
         <figcaption>Okuyasu</figcaption>
-      </figure><figure data-nom="polnareff" data-id="polnareff">
+      </figure><figure data-nom="polnareff" data-id="polnareff" data-filtres="" data-exclusif="false">
         <img src="/rushpic/polnareff.webp" alt="Polnareff" loading="lazy">
         <figcaption>Polnareff<span class="al">jean pierre · jean-pierre</span></figcaption>
-      </figure><figure data-nom="pucci" data-id="pucci">
+      </figure><figure data-nom="pucci" data-id="pucci" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pucci.webp" alt="Pucci" loading="lazy">
         <figcaption>Pucci</figcaption>
-      </figure><figure data-nom="rohan" data-id="rohan">
+      </figure><figure data-nom="rohan" data-id="rohan" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rohan.webp" alt="Rohan" loading="lazy">
         <figcaption>Rohan<span class="al">Kishibe</span></figcaption>
-      </figure><figure data-nom="trish" data-id="trish">
+      </figure><figure data-nom="trish" data-id="trish" data-filtres="" data-exclusif="false">
         <img src="/rushpic/trish.webp" alt="Trish" loading="lazy">
         <figcaption>Trish</figcaption>
       </figure>
@@ -795,61 +798,61 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="asta" data-id="asta">
+      <figure data-nom="asta" data-id="asta" data-filtres="" data-exclusif="false">
         <img src="/rushpic/asta.webp" alt="Asta" loading="lazy">
         <figcaption>Asta</figcaption>
-      </figure><figure data-nom="charlotte" data-id="charlotte">
+      </figure><figure data-nom="charlotte" data-id="charlotte" data-filtres="" data-exclusif="false">
         <img src="/rushpic/charlotte.webp" alt="Charlotte" loading="lazy">
         <figcaption>Charlotte</figcaption>
-      </figure><figure data-nom="charmy" data-id="charmy">
+      </figure><figure data-nom="charmy" data-id="charmy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/charmy.webp" alt="Charmy" loading="lazy">
         <figcaption>Charmy</figcaption>
-      </figure><figure data-nom="finral" data-id="finral">
+      </figure><figure data-nom="finral" data-id="finral" data-filtres="" data-exclusif="false">
         <img src="/rushpic/finral.webp" alt="Finral" loading="lazy">
         <figcaption>Finral</figcaption>
-      </figure><figure data-nom="fuegoleon" data-id="fuegoleon">
+      </figure><figure data-nom="fuegoleon" data-id="fuegoleon" data-filtres="" data-exclusif="false">
         <img src="/rushpic/fuegoleon.webp" alt="Fuegoleon" loading="lazy">
         <figcaption>Fuegoleon</figcaption>
-      </figure><figure data-nom="julius" data-id="julius">
+      </figure><figure data-nom="julius" data-id="julius" data-filtres="" data-exclusif="false">
         <img src="/rushpic/julius.webp" alt="Julius" loading="lazy">
         <figcaption>Julius</figcaption>
-      </figure><figure data-nom="luck" data-id="luck">
+      </figure><figure data-nom="luck" data-id="luck" data-filtres="" data-exclusif="false">
         <img src="/rushpic/luck.webp" alt="Luck" loading="lazy">
         <figcaption>Luck</figcaption>
-      </figure><figure data-nom="magna" data-id="magna">
+      </figure><figure data-nom="magna" data-id="magna" data-filtres="" data-exclusif="false">
         <img src="/rushpic/magna.webp" alt="Magna" loading="lazy">
         <figcaption>Magna</figcaption>
-      </figure><figure data-nom="mars" data-id="mars">
+      </figure><figure data-nom="mars" data-id="mars" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mars.webp" alt="Mars" loading="lazy">
         <figcaption>Mars</figcaption>
-      </figure><figure data-nom="mereoleona" data-id="mereoleona">
+      </figure><figure data-nom="mereoleona" data-id="mereoleona" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mereoleona.webp" alt="Mereoleona" loading="lazy">
         <figcaption>Mereoleona</figcaption>
-      </figure><figure data-nom="mimosa" data-id="mimosa">
+      </figure><figure data-nom="mimosa" data-id="mimosa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mimosa.webp" alt="Mimosa" loading="lazy">
         <figcaption>Mimosa</figcaption>
-      </figure><figure data-nom="nacht" data-id="nacht">
+      </figure><figure data-nom="nacht" data-id="nacht" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nacht.webp" alt="Nacht" loading="lazy">
         <figcaption>Nacht</figcaption>
-      </figure><figure data-nom="nero" data-id="nero">
+      </figure><figure data-nom="nero" data-id="nero" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nero.webp" alt="Nero" loading="lazy">
         <figcaption>Nero<span class="al">Secre</span></figcaption>
-      </figure><figure data-nom="noelle" data-id="noelle">
+      </figure><figure data-nom="noelle" data-id="noelle" data-filtres="" data-exclusif="false">
         <img src="/rushpic/noelle.webp" alt="Noelle" loading="lazy">
         <figcaption>Noelle</figcaption>
-      </figure><figure data-nom="nozel" data-id="nozel">
+      </figure><figure data-nom="nozel" data-id="nozel" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nozel.webp" alt="Nozel" loading="lazy">
         <figcaption>Nozel</figcaption>
-      </figure><figure data-nom="vanessa" data-id="vanessa">
+      </figure><figure data-nom="vanessa" data-id="vanessa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/vanessa.webp" alt="Vanessa" loading="lazy">
         <figcaption>Vanessa</figcaption>
-      </figure><figure data-nom="yami" data-id="yami">
+      </figure><figure data-nom="yami" data-id="yami" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yami.webp" alt="Yami" loading="lazy">
         <figcaption>Yami</figcaption>
-      </figure><figure data-nom="yuno" data-id="yuno">
+      </figure><figure data-nom="yuno" data-id="yuno" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yuno.webp" alt="Yuno" loading="lazy">
         <figcaption>Yuno</figcaption>
-      </figure><figure data-nom="zora" data-id="zora">
+      </figure><figure data-nom="zora" data-id="zora" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zora.webp" alt="Zora" loading="lazy">
         <figcaption>Zora</figcaption>
       </figure>
@@ -868,61 +871,61 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="aizawa" data-id="aizawa">
+      <figure data-nom="aizawa" data-id="aizawa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/aizawa.webp" alt="Aizawa" loading="lazy">
         <figcaption>Aizawa<span class="al">shota</span></figcaption>
-      </figure><figure data-nom="all might" data-id="allmight">
+      </figure><figure data-nom="all might" data-id="allmight" data-filtres="" data-exclusif="false">
         <img src="/rushpic/allmight.webp" alt="All Might" loading="lazy">
         <figcaption>All Might<span class="al">Toshinori</span></figcaption>
-      </figure><figure data-nom="bakugo" data-id="bakugo">
+      </figure><figure data-nom="bakugo" data-id="bakugo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bakugo.webp" alt="Bakugo" loading="lazy">
         <figcaption>Bakugo<span class="al">Katsuki</span></figcaption>
-      </figure><figure data-nom="deku" data-id="deku">
+      </figure><figure data-nom="deku" data-id="deku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/deku.webp" alt="Deku" loading="lazy">
         <figcaption>Deku<span class="al">Izuku · Midoriya</span></figcaption>
-      </figure><figure data-nom="denki" data-id="denki">
+      </figure><figure data-nom="denki" data-id="denki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/denki.webp" alt="Denki" loading="lazy">
         <figcaption>Denki</figcaption>
-      </figure><figure data-nom="endeavor" data-id="endeavor">
+      </figure><figure data-nom="endeavor" data-id="endeavor" data-filtres="" data-exclusif="false">
         <img src="/rushpic/endeavor.webp" alt="Endeavor" loading="lazy">
         <figcaption>Endeavor</figcaption>
-      </figure><figure data-nom="fumikage" data-id="fumikage">
+      </figure><figure data-nom="fumikage" data-id="fumikage" data-filtres="" data-exclusif="false">
         <img src="/rushpic/fumikage.webp" alt="Fumikage" loading="lazy">
         <figcaption>Fumikage<span class="al">Tokoyami</span></figcaption>
-      </figure><figure data-nom="hawks" data-id="hawks">
+      </figure><figure data-nom="hawks" data-id="hawks" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hawks.webp" alt="Hawks" loading="lazy">
         <figcaption>Hawks</figcaption>
-      </figure><figure data-nom="iida" data-id="iida">
+      </figure><figure data-nom="iida" data-id="iida" data-filtres="" data-exclusif="false">
         <img src="/rushpic/iida.webp" alt="Iida" loading="lazy">
         <figcaption>Iida<span class="al">tenya · ida</span></figcaption>
-      </figure><figure data-nom="kirishima" data-id="kirishima">
+      </figure><figure data-nom="kirishima" data-id="kirishima" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kirishima.webp" alt="Kirishima" loading="lazy">
         <figcaption>Kirishima</figcaption>
-      </figure><figure data-nom="mina" data-id="mina">
+      </figure><figure data-nom="mina" data-id="mina" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mina.webp" alt="Mina" loading="lazy">
         <figcaption>Mina</figcaption>
-      </figure><figure data-nom="mirio" data-id="mirio">
+      </figure><figure data-nom="mirio" data-id="mirio" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mirio.webp" alt="Mirio" loading="lazy">
         <figcaption>Mirio<span class="al">lemillion · lemilion</span></figcaption>
-      </figure><figure data-nom="overhaul" data-id="overhaul">
+      </figure><figure data-nom="overhaul" data-id="overhaul" data-filtres="" data-exclusif="false">
         <img src="/rushpic/overhaul.webp" alt="Overhaul" loading="lazy">
         <figcaption>Overhaul</figcaption>
-      </figure><figure data-nom="shigaraki" data-id="shigaraki">
+      </figure><figure data-nom="shigaraki" data-id="shigaraki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shigaraki.webp" alt="Shigaraki" loading="lazy">
         <figcaption>Shigaraki<span class="al">Tomura</span></figcaption>
-      </figure><figure data-nom="stain" data-id="stain">
+      </figure><figure data-nom="stain" data-id="stain" data-filtres="" data-exclusif="false">
         <img src="/rushpic/stain.webp" alt="Stain" loading="lazy">
         <figcaption>Stain</figcaption>
-      </figure><figure data-nom="todoroki" data-id="todoroki">
+      </figure><figure data-nom="todoroki" data-id="todoroki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/todoroki.webp" alt="Todoroki" loading="lazy">
         <figcaption>Todoroki<span class="al">Shoto</span></figcaption>
-      </figure><figure data-nom="toga" data-id="toga">
+      </figure><figure data-nom="toga" data-id="toga" data-filtres="" data-exclusif="false">
         <img src="/rushpic/toga.webp" alt="Toga" loading="lazy">
         <figcaption>Toga<span class="al">himiko</span></figcaption>
-      </figure><figure data-nom="tsuyu" data-id="tsuyu">
+      </figure><figure data-nom="tsuyu" data-id="tsuyu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tsuyu.webp" alt="Tsuyu" loading="lazy">
         <figcaption>Tsuyu</figcaption>
-      </figure><figure data-nom="uraraka" data-id="uraraka">
+      </figure><figure data-nom="uraraka" data-id="uraraka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/uraraka.webp" alt="Uraraka" loading="lazy">
         <figcaption>Uraraka<span class="al">Ochaco</span></figcaption>
       </figure>
@@ -941,58 +944,58 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="annie" data-id="annie">
+      <figure data-nom="annie" data-id="annie" data-filtres="" data-exclusif="false">
         <img src="/rushpic/annie.webp" alt="Annie" loading="lazy">
         <figcaption>Annie</figcaption>
-      </figure><figure data-nom="armin" data-id="armin">
+      </figure><figure data-nom="armin" data-id="armin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/armin.webp" alt="Armin" loading="lazy">
         <figcaption>Armin</figcaption>
-      </figure><figure data-nom="bertolt" data-id="bertolt">
+      </figure><figure data-nom="bertolt" data-id="bertolt" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bertolt.webp" alt="Bertolt" loading="lazy">
         <figcaption>Bertolt<span class="al">Bertholdt · Bertholt</span></figcaption>
-      </figure><figure data-nom="connie" data-id="connie">
+      </figure><figure data-nom="connie" data-id="connie" data-filtres="" data-exclusif="false">
         <img src="/rushpic/connie.webp" alt="Connie" loading="lazy">
         <figcaption>Connie<span class="al">Conny</span></figcaption>
-      </figure><figure data-nom="eren" data-id="eren">
+      </figure><figure data-nom="eren" data-id="eren" data-filtres="" data-exclusif="false">
         <img src="/rushpic/eren.webp" alt="Eren" loading="lazy">
         <figcaption>Eren</figcaption>
-      </figure><figure data-nom="erwin" data-id="erwin">
+      </figure><figure data-nom="erwin" data-id="erwin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/erwin.webp" alt="Erwin" loading="lazy">
         <figcaption>Erwin</figcaption>
-      </figure><figure data-nom="falco" data-id="falco">
+      </figure><figure data-nom="falco" data-id="falco" data-filtres="" data-exclusif="false">
         <img src="/rushpic/falco.webp" alt="Falco" loading="lazy">
         <figcaption>Falco</figcaption>
-      </figure><figure data-nom="hange" data-id="hange">
+      </figure><figure data-nom="hange" data-id="hange" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hange.webp" alt="Hange" loading="lazy">
         <figcaption>Hange<span class="al">hanje</span></figcaption>
-      </figure><figure data-nom="jean" data-id="jean">
+      </figure><figure data-nom="jean" data-id="jean" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jean.webp" alt="Jean" loading="lazy">
         <figcaption>Jean</figcaption>
-      </figure><figure data-nom="krista" data-id="krista">
+      </figure><figure data-nom="krista" data-id="krista" data-filtres="" data-exclusif="false">
         <img src="/rushpic/krista.webp" alt="Krista" loading="lazy">
         <figcaption>Krista<span class="al">historia</span></figcaption>
-      </figure><figure data-nom="levi" data-id="levi">
+      </figure><figure data-nom="levi" data-id="levi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/levi.webp" alt="Levi" loading="lazy">
         <figcaption>Levi<span class="al">livaille · rivaille · livai</span></figcaption>
-      </figure><figure data-nom="mikasa" data-id="mikasa">
+      </figure><figure data-nom="mikasa" data-id="mikasa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mikasa.webp" alt="Mikasa" loading="lazy">
         <figcaption>Mikasa</figcaption>
-      </figure><figure data-nom="pieck" data-id="pieck">
+      </figure><figure data-nom="pieck" data-id="pieck" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pieck.webp" alt="Pieck" loading="lazy">
         <figcaption>Pieck<span class="al">Peak</span></figcaption>
-      </figure><figure data-nom="pixis" data-id="pixis">
+      </figure><figure data-nom="pixis" data-id="pixis" data-filtres="" data-exclusif="false">
         <img src="/rushpic/pixis.webp" alt="Pixis" loading="lazy">
         <figcaption>Pixis</figcaption>
-      </figure><figure data-nom="reiner" data-id="reiner">
+      </figure><figure data-nom="reiner" data-id="reiner" data-filtres="" data-exclusif="false">
         <img src="/rushpic/reiner.webp" alt="Reiner" loading="lazy">
         <figcaption>Reiner</figcaption>
-      </figure><figure data-nom="sasha" data-id="sasha">
+      </figure><figure data-nom="sasha" data-id="sasha" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sasha.webp" alt="Sasha" loading="lazy">
         <figcaption>Sasha<span class="al">sacha · sascha</span></figcaption>
-      </figure><figure data-nom="ymir" data-id="ymir">
+      </figure><figure data-nom="ymir" data-id="ymir" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ymir.webp" alt="Ymir" loading="lazy">
         <figcaption>Ymir</figcaption>
-      </figure><figure data-nom="zeke" data-id="zeke">
+      </figure><figure data-nom="zeke" data-id="zeke" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zeke.webp" alt="Zeke" loading="lazy">
         <figcaption>Zeke<span class="al">sieg</span></figcaption>
       </figure>
@@ -1011,52 +1014,52 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="choso" data-id="choso">
+      <figure data-nom="choso" data-id="choso" data-filtres="" data-exclusif="false">
         <img src="/rushpic/choso.webp" alt="Choso" loading="lazy">
         <figcaption>Choso</figcaption>
-      </figure><figure data-nom="geto" data-id="geto">
+      </figure><figure data-nom="geto" data-id="geto" data-filtres="" data-exclusif="false">
         <img src="/rushpic/geto.webp" alt="Geto" loading="lazy">
         <figcaption>Geto</figcaption>
-      </figure><figure data-nom="gojo" data-id="gojo">
+      </figure><figure data-nom="gojo" data-id="gojo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gojo.webp" alt="Gojo" loading="lazy">
         <figcaption>Gojo</figcaption>
-      </figure><figure data-nom="itadori" data-id="itadori">
+      </figure><figure data-nom="itadori" data-id="itadori" data-filtres="" data-exclusif="false">
         <img src="/rushpic/itadori.webp" alt="Itadori" loading="lazy">
         <figcaption>Itadori<span class="al">Yuji</span></figcaption>
-      </figure><figure data-nom="jogo" data-id="jogo">
+      </figure><figure data-nom="jogo" data-id="jogo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jogo.webp" alt="Jogo" loading="lazy">
         <figcaption>Jogo</figcaption>
-      </figure><figure data-nom="mahito" data-id="mahito">
+      </figure><figure data-nom="mahito" data-id="mahito" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mahito.webp" alt="Mahito" loading="lazy">
         <figcaption>Mahito</figcaption>
-      </figure><figure data-nom="maki" data-id="maki">
+      </figure><figure data-nom="maki" data-id="maki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/maki.webp" alt="Maki" loading="lazy">
         <figcaption>Maki</figcaption>
-      </figure><figure data-nom="megumi" data-id="megumi">
+      </figure><figure data-nom="megumi" data-id="megumi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/megumi.webp" alt="Megumi" loading="lazy">
         <figcaption>Megumi</figcaption>
-      </figure><figure data-nom="nanami" data-id="nanami">
+      </figure><figure data-nom="nanami" data-id="nanami" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nanami.webp" alt="Nanami" loading="lazy">
         <figcaption>Nanami</figcaption>
-      </figure><figure data-nom="nobara" data-id="nobara">
+      </figure><figure data-nom="nobara" data-id="nobara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nobara.webp" alt="Nobara" loading="lazy">
         <figcaption>Nobara</figcaption>
-      </figure><figure data-nom="sukuna" data-id="sukuna">
+      </figure><figure data-nom="sukuna" data-id="sukuna" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sukuna.webp" alt="Sukuna" loading="lazy">
         <figcaption>Sukuna</figcaption>
-      </figure><figure data-nom="todo" data-id="todo">
+      </figure><figure data-nom="todo" data-id="todo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/todo.webp" alt="Todo" loading="lazy">
         <figcaption>Todo<span class="al">aoi</span></figcaption>
-      </figure><figure data-nom="toge" data-id="toge">
+      </figure><figure data-nom="toge" data-id="toge" data-filtres="" data-exclusif="false">
         <img src="/rushpic/toge.webp" alt="Toge" loading="lazy">
         <figcaption>Toge<span class="al">inumaki</span></figcaption>
-      </figure><figure data-nom="toji" data-id="toji">
+      </figure><figure data-nom="toji" data-id="toji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/toji.webp" alt="Toji" loading="lazy">
         <figcaption>Toji</figcaption>
-      </figure><figure data-nom="yuki" data-id="yuki">
+      </figure><figure data-nom="yuki" data-id="yuki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yuki.webp" alt="Yuki" loading="lazy">
         <figcaption>Yuki</figcaption>
-      </figure><figure data-nom="yuta" data-id="yuta">
+      </figure><figure data-nom="yuta" data-id="yuta" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yuta.webp" alt="Yuta" loading="lazy">
         <figcaption>Yuta</figcaption>
       </figure>
@@ -1075,49 +1078,49 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="acnologia" data-id="acnologia">
+      <figure data-nom="acnologia" data-id="acnologia" data-filtres="" data-exclusif="false">
         <img src="/rushpic/acnologia.webp" alt="Acnologia" loading="lazy">
         <figcaption>Acnologia</figcaption>
-      </figure><figure data-nom="erza" data-id="erza">
+      </figure><figure data-nom="erza" data-id="erza" data-filtres="" data-exclusif="false">
         <img src="/rushpic/erza.webp" alt="Erza" loading="lazy">
         <figcaption>Erza</figcaption>
-      </figure><figure data-nom="gajeel" data-id="gajeel">
+      </figure><figure data-nom="gajeel" data-id="gajeel" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gajeel.webp" alt="Gajeel" loading="lazy">
         <figcaption>Gajeel</figcaption>
-      </figure><figure data-nom="gray" data-id="gray">
+      </figure><figure data-nom="gray" data-id="gray" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gray.webp" alt="Gray" loading="lazy">
         <figcaption>Gray</figcaption>
-      </figure><figure data-nom="grey" data-id="grey">
+      </figure><figure data-nom="grey" data-id="grey" data-filtres="" data-exclusif="false">
         <img src="/rushpic/grey.webp" alt="Grey" loading="lazy">
         <figcaption>Grey</figcaption>
-      </figure><figure data-nom="juvia" data-id="juvia">
+      </figure><figure data-nom="juvia" data-id="juvia" data-filtres="" data-exclusif="false">
         <img src="/rushpic/juvia.webp" alt="Juvia" loading="lazy">
         <figcaption>Juvia<span class="al">jubia</span></figcaption>
-      </figure><figure data-nom="laxus" data-id="laxus">
+      </figure><figure data-nom="laxus" data-id="laxus" data-filtres="" data-exclusif="false">
         <img src="/rushpic/laxus.webp" alt="Laxus" loading="lazy">
         <figcaption>Laxus<span class="al">luxus</span></figcaption>
-      </figure><figure data-nom="lucy" data-id="lucy">
+      </figure><figure data-nom="lucy" data-id="lucy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lucy.webp" alt="Lucy" loading="lazy">
         <figcaption>Lucy</figcaption>
-      </figure><figure data-nom="makarov" data-id="makarov">
+      </figure><figure data-nom="makarov" data-id="makarov" data-filtres="" data-exclusif="false">
         <img src="/rushpic/makarov.webp" alt="Makarov" loading="lazy">
         <figcaption>Makarov<span class="al">Makarof</span></figcaption>
-      </figure><figure data-nom="mirajane" data-id="mirajane">
+      </figure><figure data-nom="mirajane" data-id="mirajane" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mirajane.webp" alt="Mirajane" loading="lazy">
         <figcaption>Mirajane</figcaption>
-      </figure><figure data-nom="natsu" data-id="natsu">
+      </figure><figure data-nom="natsu" data-id="natsu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/natsu.webp" alt="Natsu" loading="lazy">
         <figcaption>Natsu</figcaption>
-      </figure><figure data-nom="sting" data-id="sting">
+      </figure><figure data-nom="sting" data-id="sting" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sting.webp" alt="Sting" loading="lazy">
         <figcaption>Sting</figcaption>
-      </figure><figure data-nom="ultear" data-id="ultear">
+      </figure><figure data-nom="ultear" data-id="ultear" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ultear.webp" alt="Ultear" loading="lazy">
         <figcaption>Ultear</figcaption>
-      </figure><figure data-nom="wendy" data-id="wendy">
+      </figure><figure data-nom="wendy" data-id="wendy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/wendy.webp" alt="Wendy" loading="lazy">
         <figcaption>Wendy</figcaption>
-      </figure><figure data-nom="zeref" data-id="zeref">
+      </figure><figure data-nom="zeref" data-id="zeref" data-filtres="" data-exclusif="false">
         <img src="/rushpic/zeref.webp" alt="Zeref" loading="lazy">
         <figcaption>Zeref<span class="al">zeleph · Zelef</span></figcaption>
       </figure>
@@ -1136,37 +1139,37 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="archer" data-id="archer">
+      <figure data-nom="archer" data-id="archer" data-filtres="" data-exclusif="false">
         <img src="/rushpic/archer.webp" alt="Archer" loading="lazy">
         <figcaption>Archer</figcaption>
-      </figure><figure data-nom="gilgamesh" data-id="gilgamesh">
+      </figure><figure data-nom="gilgamesh" data-id="gilgamesh" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gilgamesh.webp" alt="Gilgamesh" loading="lazy">
         <figcaption>Gilgamesh</figcaption>
-      </figure><figure data-nom="ishtar" data-id="ishtar">
+      </figure><figure data-nom="ishtar" data-id="ishtar" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ishtar.webp" alt="Ishtar" loading="lazy">
         <figcaption>Ishtar</figcaption>
-      </figure><figure data-nom="kirei" data-id="kirei">
+      </figure><figure data-nom="kirei" data-id="kirei" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kirei.webp" alt="Kirei" loading="lazy">
         <figcaption>Kirei<span class="al">Kirei Kotomine</span></figcaption>
-      </figure><figure data-nom="kiritsugu" data-id="kiritsugu">
+      </figure><figure data-nom="kiritsugu" data-id="kiritsugu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kiritsugu.webp" alt="Kiritsugu" loading="lazy">
         <figcaption>Kiritsugu</figcaption>
-      </figure><figure data-nom="lancer" data-id="lancer">
+      </figure><figure data-nom="lancer" data-id="lancer" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lancer.webp" alt="Lancer" loading="lazy">
         <figcaption>Lancer</figcaption>
-      </figure><figure data-nom="mordred" data-id="mordred">
+      </figure><figure data-nom="mordred" data-id="mordred" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mordred.webp" alt="Mordred" loading="lazy">
         <figcaption>Mordred</figcaption>
-      </figure><figure data-nom="rin" data-id="rin">
+      </figure><figure data-nom="rin" data-id="rin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rin.webp" alt="Rin" loading="lazy">
         <figcaption>Rin</figcaption>
-      </figure><figure data-nom="saber" data-id="saber">
+      </figure><figure data-nom="saber" data-id="saber" data-filtres="" data-exclusif="false">
         <img src="/rushpic/saber.webp" alt="Saber" loading="lazy">
         <figcaption>Saber</figcaption>
-      </figure><figure data-nom="sakura" data-id="sakuramatou">
+      </figure><figure data-nom="sakura" data-id="sakuramatou" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sakuramatou.webp" alt="Sakura" loading="lazy">
         <figcaption>Sakura</figcaption>
-      </figure><figure data-nom="shirou" data-id="shirou">
+      </figure><figure data-nom="shirou" data-id="shirou" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shirou.webp" alt="Shirou" loading="lazy">
         <figcaption>Shirou<span class="al">Shiro</span></figcaption>
       </figure>
@@ -1185,31 +1188,31 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="bachira" data-id="bachira">
+      <figure data-nom="bachira" data-id="bachira" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bachira.webp" alt="Bachira" loading="lazy">
         <figcaption>Bachira</figcaption>
-      </figure><figure data-nom="baro" data-id="baro">
+      </figure><figure data-nom="baro" data-id="baro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/baro.webp" alt="baro" loading="lazy">
         <figcaption>baro<span class="al">barou</span></figcaption>
-      </figure><figure data-nom="chigiri" data-id="chigiri">
+      </figure><figure data-nom="chigiri" data-id="chigiri" data-filtres="" data-exclusif="false">
         <img src="/rushpic/chigiri.webp" alt="chigiri" loading="lazy">
         <figcaption>chigiri</figcaption>
-      </figure><figure data-nom="ego" data-id="ego">
+      </figure><figure data-nom="ego" data-id="ego" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ego.webp" alt="Ego" loading="lazy">
         <figcaption>Ego</figcaption>
-      </figure><figure data-nom="gagamaru" data-id="gagamaru">
+      </figure><figure data-nom="gagamaru" data-id="gagamaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gagamaru.webp" alt="Gagamaru" loading="lazy">
         <figcaption>Gagamaru</figcaption>
-      </figure><figure data-nom="isagi" data-id="isagi">
+      </figure><figure data-nom="isagi" data-id="isagi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/isagi.webp" alt="Isagi" loading="lazy">
         <figcaption>Isagi</figcaption>
-      </figure><figure data-nom="nagi" data-id="nagi">
+      </figure><figure data-nom="nagi" data-id="nagi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nagi.webp" alt="Nagi" loading="lazy">
         <figcaption>Nagi</figcaption>
-      </figure><figure data-nom="reo" data-id="reo">
+      </figure><figure data-nom="reo" data-id="reo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/reo.webp" alt="Reo" loading="lazy">
         <figcaption>Reo</figcaption>
-      </figure><figure data-nom="rin" data-id="rinitoshi">
+      </figure><figure data-nom="rin" data-id="rinitoshi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rinitoshi.webp" alt="Rin" loading="lazy">
         <figcaption>Rin<span class="al">itoshi</span></figcaption>
       </figure>
@@ -1228,31 +1231,31 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="aki" data-id="aki">
+      <figure data-nom="aki" data-id="aki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/aki.webp" alt="Aki" loading="lazy">
         <figcaption>Aki</figcaption>
-      </figure><figure data-nom="beam" data-id="beam">
+      </figure><figure data-nom="beam" data-id="beam" data-filtres="" data-exclusif="false">
         <img src="/rushpic/beam.webp" alt="Beam" loading="lazy">
         <figcaption>Beam</figcaption>
-      </figure><figure data-nom="denji" data-id="denji">
+      </figure><figure data-nom="denji" data-id="denji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/denji.webp" alt="Denji" loading="lazy">
         <figcaption>Denji<span class="al">Chainsaw Man</span></figcaption>
-      </figure><figure data-nom="himeno" data-id="himeno">
+      </figure><figure data-nom="himeno" data-id="himeno" data-filtres="" data-exclusif="false">
         <img src="/rushpic/himeno.webp" alt="Himeno" loading="lazy">
         <figcaption>Himeno</figcaption>
-      </figure><figure data-nom="kishibe" data-id="kishibe">
+      </figure><figure data-nom="kishibe" data-id="kishibe" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kishibe.webp" alt="Kishibe" loading="lazy">
         <figcaption>Kishibe</figcaption>
-      </figure><figure data-nom="kobeni" data-id="kobeni">
+      </figure><figure data-nom="kobeni" data-id="kobeni" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kobeni.webp" alt="Kobeni" loading="lazy">
         <figcaption>Kobeni</figcaption>
-      </figure><figure data-nom="makima" data-id="makima">
+      </figure><figure data-nom="makima" data-id="makima" data-filtres="" data-exclusif="false">
         <img src="/rushpic/makima.webp" alt="Makima" loading="lazy">
         <figcaption>Makima</figcaption>
-      </figure><figure data-nom="power" data-id="power">
+      </figure><figure data-nom="power" data-id="power" data-filtres="" data-exclusif="false">
         <img src="/rushpic/power.webp" alt="Power" loading="lazy">
         <figcaption>Power</figcaption>
-      </figure><figure data-nom="reze" data-id="reze">
+      </figure><figure data-nom="reze" data-id="reze" data-filtres="" data-exclusif="false">
         <img src="/rushpic/reze.webp" alt="Reze" loading="lazy">
         <figcaption>Reze</figcaption>
       </figure>
@@ -1271,31 +1274,31 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="alphonse" data-id="alphonse">
+      <figure data-nom="alphonse" data-id="alphonse" data-filtres="" data-exclusif="false">
         <img src="/rushpic/alphonse.webp" alt="Alphonse" loading="lazy">
         <figcaption>Alphonse</figcaption>
-      </figure><figure data-nom="edward" data-id="edward">
+      </figure><figure data-nom="edward" data-id="edward" data-filtres="" data-exclusif="false">
         <img src="/rushpic/edward.webp" alt="Edward" loading="lazy">
         <figcaption>Edward</figcaption>
-      </figure><figure data-nom="envy" data-id="envy">
+      </figure><figure data-nom="envy" data-id="envy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/envy.webp" alt="Envy" loading="lazy">
         <figcaption>Envy</figcaption>
-      </figure><figure data-nom="greed" data-id="greed">
+      </figure><figure data-nom="greed" data-id="greed" data-filtres="" data-exclusif="false">
         <img src="/rushpic/greed.webp" alt="Greed" loading="lazy">
         <figcaption>Greed</figcaption>
-      </figure><figure data-nom="hawkeye" data-id="hawkeye">
+      </figure><figure data-nom="hawkeye" data-id="hawkeye" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hawkeye.webp" alt="Hawkeye" loading="lazy">
         <figcaption>Hawkeye<span class="al">Riza</span></figcaption>
-      </figure><figure data-nom="lust" data-id="lust">
+      </figure><figure data-nom="lust" data-id="lust" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lust.webp" alt="Lust" loading="lazy">
         <figcaption>Lust</figcaption>
-      </figure><figure data-nom="roy mustang" data-id="roy_mustang">
+      </figure><figure data-nom="roy mustang" data-id="roy_mustang" data-filtres="" data-exclusif="false">
         <img src="/rushpic/roy_mustang.webp" alt="Roy Mustang" loading="lazy">
         <figcaption>Roy Mustang<span class="al">Mustang · Roy</span></figcaption>
-      </figure><figure data-nom="scar" data-id="scar">
+      </figure><figure data-nom="scar" data-id="scar" data-filtres="" data-exclusif="false">
         <img src="/rushpic/scar.webp" alt="Scar" loading="lazy">
         <figcaption>Scar</figcaption>
-      </figure><figure data-nom="winry" data-id="winry">
+      </figure><figure data-nom="winry" data-id="winry" data-filtres="" data-exclusif="false">
         <img src="/rushpic/winry.webp" alt="Winry" loading="lazy">
         <figcaption>Winry</figcaption>
       </figure>
@@ -1314,33 +1317,76 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="gokudera" data-id="gokudera">
+      <figure data-nom="gokudera" data-id="gokudera" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gokudera.webp" alt="Gokudera" loading="lazy">
         <figcaption>Gokudera</figcaption>
-      </figure><figure data-nom="hibari" data-id="hibari">
+      </figure><figure data-nom="hibari" data-id="hibari" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hibari.webp" alt="Hibari" loading="lazy">
         <figcaption>Hibari<span class="al">kyouya · kyoya</span></figcaption>
-      </figure><figure data-nom="lambo" data-id="lambo">
+      </figure><figure data-nom="lambo" data-id="lambo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lambo.webp" alt="Lambo" loading="lazy">
         <figcaption>Lambo</figcaption>
-      </figure><figure data-nom="mukuro" data-id="mukuro">
+      </figure><figure data-nom="mukuro" data-id="mukuro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mukuro.webp" alt="Mukuro" loading="lazy">
         <figcaption>Mukuro<span class="al">rokudo</span></figcaption>
-      </figure><figure data-nom="reborn" data-id="reborn">
+      </figure><figure data-nom="reborn" data-id="reborn" data-filtres="" data-exclusif="false">
         <img src="/rushpic/reborn.webp" alt="Reborn" loading="lazy">
         <figcaption>Reborn</figcaption>
-      </figure><figure data-nom="ryohei" data-id="ryohei">
+      </figure><figure data-nom="ryohei" data-id="ryohei" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ryohei.webp" alt="Ryohei" loading="lazy">
         <figcaption>Ryohei<span class="al">sasagawa · ryouhei</span></figcaption>
-      </figure><figure data-nom="tsuna" data-id="tsuna">
+      </figure><figure data-nom="tsuna" data-id="tsuna" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tsuna.webp" alt="Tsuna" loading="lazy">
         <figcaption>Tsuna<span class="al">sawada · tsunayoshi</span></figcaption>
-      </figure><figure data-nom="xanxus" data-id="xanxus">
+      </figure><figure data-nom="xanxus" data-id="xanxus" data-filtres="" data-exclusif="false">
         <img src="/rushpic/xanxus.webp" alt="Xanxus" loading="lazy">
         <figcaption>Xanxus</figcaption>
-      </figure><figure data-nom="yamamoto" data-id="yamamoto">
+      </figure><figure data-nom="yamamoto" data-id="yamamoto" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yamamoto.webp" alt="Yamamoto" loading="lazy">
         <figcaption>Yamamoto</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="anime" data-anime="Seven Deadly Sins"
+           data-big3="false" data-main="true">
+    <h2>Seven Deadly Sins
+      <span class="n">9</span>
+      
+      <span class="tag main">Mainstream</span>
+      <!-- ⚠️ TOUT L ANIME D UN COUP. Les genres se decident presque toujours
+           par oeuvre — Haikyuu est du sport en entier. Sans ce bouton il
+           faudrait quarante-et-un clics rien que pour Naruto. -->
+      <button class="tout-anime" type="button">tout</button>
+    </h2>
+    <div class="grille">
+      <figure data-nom="arthur" data-id="arthur" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/arthur.webp" alt="Arthur" loading="lazy">
+        <figcaption>Arthur</figcaption>
+      </figure><figure data-nom="ban" data-id="ban" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/ban.webp" alt="Ban" loading="lazy">
+        <figcaption>Ban</figcaption>
+      </figure><figure data-nom="diane" data-id="diane" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/diane.webp" alt="Diane" loading="lazy">
+        <figcaption>Diane</figcaption>
+      </figure><figure data-nom="elizabeth" data-id="elizabeth" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/elizabeth.webp" alt="Elizabeth" loading="lazy">
+        <figcaption>Elizabeth</figcaption>
+      </figure><figure data-nom="escanor" data-id="escanor" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/escanor.webp" alt="Escanor" loading="lazy">
+        <figcaption>Escanor</figcaption>
+      </figure><figure data-nom="gowther" data-id="gowther" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/gowther.webp" alt="Gowther" loading="lazy">
+        <figcaption>Gowther</figcaption>
+      </figure><figure data-nom="king" data-id="king" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/king.webp" alt="King" loading="lazy">
+        <figcaption>King</figcaption>
+      </figure><figure data-nom="meliodas" data-id="meliodas" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/meliodas.webp" alt="Meliodas" loading="lazy">
+        <figcaption>Meliodas</figcaption>
+      </figure><figure data-nom="merlin" data-id="merlin" data-filtres="" data-exclusif="false">
+        <img src="/rushpic/merlin.webp" alt="Merlin" loading="lazy">
+        <figcaption>Merlin</figcaption>
       </figure>
     </div>
   </section>
@@ -1357,70 +1403,30 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="asahi" data-id="asahi">
+      <figure data-nom="asahi" data-id="asahi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/asahi.webp" alt="Asahi" loading="lazy">
         <figcaption>Asahi</figcaption>
-      </figure><figure data-nom="hinata" data-id="shoyo">
+      </figure><figure data-nom="hinata" data-id="shoyo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shoyo.webp" alt="Hinata" loading="lazy">
         <figcaption>Hinata<span class="al">shoyo</span></figcaption>
-      </figure><figure data-nom="kageyama" data-id="kageyama">
+      </figure><figure data-nom="kageyama" data-id="kageyama" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kageyama.webp" alt="Kageyama" loading="lazy">
         <figcaption>Kageyama</figcaption>
-      </figure><figure data-nom="kenma" data-id="kenma">
+      </figure><figure data-nom="kenma" data-id="kenma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kenma.webp" alt="Kenma" loading="lazy">
         <figcaption>Kenma</figcaption>
-      </figure><figure data-nom="kuroo" data-id="kuroo">
+      </figure><figure data-nom="kuroo" data-id="kuroo" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kuroo.webp" alt="Kuroo" loading="lazy">
         <figcaption>Kuroo<span class="al">kuro</span></figcaption>
-      </figure><figure data-nom="nishinoya" data-id="nishinoya">
+      </figure><figure data-nom="nishinoya" data-id="nishinoya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/nishinoya.webp" alt="Nishinoya" loading="lazy">
         <figcaption>Nishinoya<span class="al">noya</span></figcaption>
-      </figure><figure data-nom="oikawa" data-id="oikawa">
+      </figure><figure data-nom="oikawa" data-id="oikawa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/oikawa.webp" alt="Oikawa" loading="lazy">
         <figcaption>Oikawa</figcaption>
-      </figure><figure data-nom="tsukishima" data-id="tsukishima">
+      </figure><figure data-nom="tsukishima" data-id="tsukishima" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tsukishima.webp" alt="Tsukishima" loading="lazy">
         <figcaption>Tsukishima</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="anime" data-anime="Seven Deadly Sins"
-           data-big3="false" data-main="true">
-    <h2>Seven Deadly Sins
-      <span class="n">8</span>
-      
-      <span class="tag main">Mainstream</span>
-      <!-- ⚠️ TOUT L ANIME D UN COUP. Les genres se decident presque toujours
-           par oeuvre — Haikyuu est du sport en entier. Sans ce bouton il
-           faudrait quarante-et-un clics rien que pour Naruto. -->
-      <button class="tout-anime" type="button">tout</button>
-    </h2>
-    <div class="grille">
-      <figure data-nom="ban" data-id="ban">
-        <img src="/rushpic/ban.webp" alt="Ban" loading="lazy">
-        <figcaption>Ban</figcaption>
-      </figure><figure data-nom="diane" data-id="diane">
-        <img src="/rushpic/diane.webp" alt="Diane" loading="lazy">
-        <figcaption>Diane</figcaption>
-      </figure><figure data-nom="elizabeth" data-id="elizabeth">
-        <img src="/rushpic/elizabeth.webp" alt="Elizabeth" loading="lazy">
-        <figcaption>Elizabeth</figcaption>
-      </figure><figure data-nom="escanor" data-id="escanor">
-        <img src="/rushpic/escanor.webp" alt="Escanor" loading="lazy">
-        <figcaption>Escanor</figcaption>
-      </figure><figure data-nom="gowther" data-id="gowther">
-        <img src="/rushpic/gowther.webp" alt="Gowther" loading="lazy">
-        <figcaption>Gowther</figcaption>
-      </figure><figure data-nom="king" data-id="king">
-        <img src="/rushpic/king.webp" alt="King" loading="lazy">
-        <figcaption>King</figcaption>
-      </figure><figure data-nom="meliodas" data-id="meliodas">
-        <img src="/rushpic/meliodas.webp" alt="Meliodas" loading="lazy">
-        <figcaption>Meliodas</figcaption>
-      </figure><figure data-nom="merlin" data-id="merlin">
-        <img src="/rushpic/merlin.webp" alt="Merlin" loading="lazy">
-        <figcaption>Merlin</figcaption>
       </figure>
     </div>
   </section>
@@ -1437,25 +1443,25 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="akira" data-id="akira">
+      <figure data-nom="akira" data-id="akira" data-filtres="" data-exclusif="false">
         <img src="/rushpic/akira.webp" alt="Akira" loading="lazy">
         <figcaption>Akira<span class="al">Hayama</span></figcaption>
-      </figure><figure data-nom="alice" data-id="alice">
+      </figure><figure data-nom="alice" data-id="alice" data-filtres="" data-exclusif="false">
         <img src="/rushpic/alice.webp" alt="Alice" loading="lazy">
         <figcaption>Alice</figcaption>
-      </figure><figure data-nom="erina" data-id="erina">
+      </figure><figure data-nom="erina" data-id="erina" data-filtres="" data-exclusif="false">
         <img src="/rushpic/erina.webp" alt="Erina" loading="lazy">
         <figcaption>Erina</figcaption>
-      </figure><figure data-nom="megumi" data-id="megumif">
+      </figure><figure data-nom="megumi" data-id="megumif" data-filtres="" data-exclusif="false">
         <img src="/rushpic/megumif.webp" alt="Megumi" loading="lazy">
         <figcaption>Megumi<span class="al">Tadokoro</span></figcaption>
-      </figure><figure data-nom="rindo" data-id="rindou">
+      </figure><figure data-nom="rindo" data-id="rindou" data-filtres="" data-exclusif="false">
         <img src="/rushpic/rindou.webp" alt="Rindo" loading="lazy">
         <figcaption>Rindo<span class="al">Rindou · Rindo Kobayashi · Rindou Kobayashi</span></figcaption>
-      </figure><figure data-nom="satoshi" data-id="satoshi">
+      </figure><figure data-nom="satoshi" data-id="satoshi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/satoshi.webp" alt="Satoshi" loading="lazy">
         <figcaption>Satoshi<span class="al">Isshiki</span></figcaption>
-      </figure><figure data-nom="soma" data-id="soma">
+      </figure><figure data-nom="soma" data-id="soma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/soma.webp" alt="Soma" loading="lazy">
         <figcaption>Soma<span class="al">souma</span></figcaption>
       </figure>
@@ -1474,25 +1480,25 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="akashi" data-id="akashi">
+      <figure data-nom="akashi" data-id="akashi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/akashi.webp" alt="Akashi" loading="lazy">
         <figcaption>Akashi</figcaption>
-      </figure><figure data-nom="aomine" data-id="aomine">
+      </figure><figure data-nom="aomine" data-id="aomine" data-filtres="" data-exclusif="false">
         <img src="/rushpic/aomine.webp" alt="Aomine" loading="lazy">
         <figcaption>Aomine<span class="al">Daiki</span></figcaption>
-      </figure><figure data-nom="kagami" data-id="kagami">
+      </figure><figure data-nom="kagami" data-id="kagami" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kagami.webp" alt="Kagami" loading="lazy">
         <figcaption>Kagami<span class="al">Taiga</span></figcaption>
-      </figure><figure data-nom="kise" data-id="kise">
+      </figure><figure data-nom="kise" data-id="kise" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kise.webp" alt="Kise" loading="lazy">
         <figcaption>Kise<span class="al">Ryota</span></figcaption>
-      </figure><figure data-nom="kuroko" data-id="kuroko">
+      </figure><figure data-nom="kuroko" data-id="kuroko" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kuroko.webp" alt="Kuroko" loading="lazy">
         <figcaption>Kuroko<span class="al">Tetsuya</span></figcaption>
-      </figure><figure data-nom="midorima" data-id="midorima">
+      </figure><figure data-nom="midorima" data-id="midorima" data-filtres="" data-exclusif="false">
         <img src="/rushpic/midorima.webp" alt="Midorima" loading="lazy">
         <figcaption>Midorima</figcaption>
-      </figure><figure data-nom="murasakibara" data-id="murasakibara">
+      </figure><figure data-nom="murasakibara" data-id="murasakibara" data-filtres="" data-exclusif="false">
         <img src="/rushpic/murasakibara.webp" alt="Murasakibara" loading="lazy">
         <figcaption>Murasakibara<span class="al">Atsushi</span></figcaption>
       </figure>
@@ -1511,22 +1517,22 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="bang" data-id="bang">
+      <figure data-nom="bang" data-id="bang" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bang.webp" alt="Bang" loading="lazy">
         <figcaption>Bang</figcaption>
-      </figure><figure data-nom="boros" data-id="boros">
+      </figure><figure data-nom="boros" data-id="boros" data-filtres="" data-exclusif="false">
         <img src="/rushpic/boros.webp" alt="Boros" loading="lazy">
         <figcaption>Boros</figcaption>
-      </figure><figure data-nom="genos" data-id="genos">
+      </figure><figure data-nom="genos" data-id="genos" data-filtres="" data-exclusif="false">
         <img src="/rushpic/genos.webp" alt="Genos" loading="lazy">
         <figcaption>Genos</figcaption>
-      </figure><figure data-nom="saitama" data-id="saitama">
+      </figure><figure data-nom="saitama" data-id="saitama" data-filtres="" data-exclusif="false">
         <img src="/rushpic/saitama.webp" alt="Saitama" loading="lazy">
         <figcaption>Saitama</figcaption>
-      </figure><figure data-nom="sonic" data-id="sonic">
+      </figure><figure data-nom="sonic" data-id="sonic" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sonic.webp" alt="Sonic" loading="lazy">
         <figcaption>Sonic</figcaption>
-      </figure><figure data-nom="tatsumaki" data-id="tatsumaki">
+      </figure><figure data-nom="tatsumaki" data-id="tatsumaki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tatsumaki.webp" alt="Tatsumaki" loading="lazy">
         <figcaption>Tatsumaki</figcaption>
       </figure>
@@ -1545,22 +1551,22 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="hyoga" data-id="hyoga">
+      <figure data-nom="hyoga" data-id="hyoga" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hyoga.webp" alt="Hyoga" loading="lazy">
         <figcaption>Hyoga<span class="al">hyouga</span></figcaption>
-      </figure><figure data-nom="ikki" data-id="ikki">
+      </figure><figure data-nom="ikki" data-id="ikki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ikki.webp" alt="ikki" loading="lazy">
         <figcaption>ikki</figcaption>
-      </figure><figure data-nom="saga" data-id="saga">
+      </figure><figure data-nom="saga" data-id="saga" data-filtres="" data-exclusif="false">
         <img src="/rushpic/saga.webp" alt="Saga" loading="lazy">
         <figcaption>Saga</figcaption>
-      </figure><figure data-nom="seiya" data-id="seiya">
+      </figure><figure data-nom="seiya" data-id="seiya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/seiya.webp" alt="Seiya" loading="lazy">
         <figcaption>Seiya</figcaption>
-      </figure><figure data-nom="shiryu" data-id="shiryu">
+      </figure><figure data-nom="shiryu" data-id="shiryu" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shiryu.webp" alt="Shiryu" loading="lazy">
         <figcaption>Shiryu</figcaption>
-      </figure><figure data-nom="shun" data-id="shun">
+      </figure><figure data-nom="shun" data-id="shun" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shun.webp" alt="Shun" loading="lazy">
         <figcaption>Shun</figcaption>
       </figure>
@@ -1579,19 +1585,19 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="l" data-id="l">
+      <figure data-nom="l" data-id="l" data-filtres="" data-exclusif="false">
         <img src="/rushpic/l.webp" alt="L" loading="lazy">
         <figcaption>L<span class="al">L · Ryuzaki · Lawliet</span></figcaption>
-      </figure><figure data-nom="light" data-id="light">
+      </figure><figure data-nom="light" data-id="light" data-filtres="" data-exclusif="false">
         <img src="/rushpic/light.webp" alt="Light" loading="lazy">
         <figcaption>Light<span class="al">Yagami · Kira</span></figcaption>
-      </figure><figure data-nom="misa" data-id="misa">
+      </figure><figure data-nom="misa" data-id="misa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/misa.webp" alt="Misa" loading="lazy">
         <figcaption>Misa</figcaption>
-      </figure><figure data-nom="n" data-id="near">
+      </figure><figure data-nom="n" data-id="near" data-filtres="" data-exclusif="false">
         <img src="/rushpic/near.webp" alt="N" loading="lazy">
         <figcaption>N<span class="al">Near · Nate River</span></figcaption>
-      </figure><figure data-nom="ryuk" data-id="ryuk">
+      </figure><figure data-nom="ryuk" data-id="ryuk" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ryuk.webp" alt="Ryuk" loading="lazy">
         <figcaption>Ryuk</figcaption>
       </figure>
@@ -1610,16 +1616,16 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="gintoki" data-id="gintoki">
+      <figure data-nom="gintoki" data-id="gintoki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/gintoki.webp" alt="Gintoki" loading="lazy">
         <figcaption>Gintoki</figcaption>
-      </figure><figure data-nom="hijikata" data-id="hijikata">
+      </figure><figure data-nom="hijikata" data-id="hijikata" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hijikata.webp" alt="Hijikata" loading="lazy">
         <figcaption>Hijikata</figcaption>
-      </figure><figure data-nom="katsura" data-id="katsura">
+      </figure><figure data-nom="katsura" data-id="katsura" data-filtres="" data-exclusif="false">
         <img src="/rushpic/katsura.webp" alt="Katsura" loading="lazy">
         <figcaption>Katsura<span class="al">zura</span></figcaption>
-      </figure><figure data-nom="takasugi" data-id="takasugi">
+      </figure><figure data-nom="takasugi" data-id="takasugi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/takasugi.webp" alt="Takasugi" loading="lazy">
         <figcaption>Takasugi</figcaption>
       </figure>
@@ -1638,16 +1644,16 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="emilia" data-id="emilia">
+      <figure data-nom="emilia" data-id="emilia" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/emilia.webp" alt="Emilia" loading="lazy">
         <figcaption>Emilia</figcaption>
-      </figure><figure data-nom="ram" data-id="ram">
+      </figure><figure data-nom="ram" data-id="ram" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/ram.webp" alt="Ram" loading="lazy">
         <figcaption>Ram</figcaption>
-      </figure><figure data-nom="rem" data-id="rem">
+      </figure><figure data-nom="rem" data-id="rem" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/rem.webp" alt="Rem" loading="lazy">
         <figcaption>Rem</figcaption>
-      </figure><figure data-nom="subaru" data-id="subaru">
+      </figure><figure data-nom="subaru" data-id="subaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/subaru.webp" alt="Subaru" loading="lazy">
         <figcaption>Subaru</figcaption>
       </figure>
@@ -1666,16 +1672,16 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="askeladd" data-id="askeladd">
+      <figure data-nom="askeladd" data-id="askeladd" data-filtres="" data-exclusif="false">
         <img src="/rushpic/askeladd.webp" alt="Askeladd" loading="lazy">
         <figcaption>Askeladd<span class="al">askelad</span></figcaption>
-      </figure><figure data-nom="thorfinn" data-id="thorfinn">
+      </figure><figure data-nom="thorfinn" data-id="thorfinn" data-filtres="" data-exclusif="false">
         <img src="/rushpic/thorfinn.webp" alt="Thorfinn" loading="lazy">
         <figcaption>Thorfinn</figcaption>
-      </figure><figure data-nom="thorkell" data-id="thorkell">
+      </figure><figure data-nom="thorkell" data-id="thorkell" data-filtres="" data-exclusif="false">
         <img src="/rushpic/thorkell.webp" alt="Thorkell" loading="lazy">
         <figcaption>Thorkell</figcaption>
-      </figure><figure data-nom="thors" data-id="thors">
+      </figure><figure data-nom="thors" data-id="thors" data-filtres="" data-exclusif="false">
         <img src="/rushpic/thors.webp" alt="Thors" loading="lazy">
         <figcaption>Thors</figcaption>
       </figure>
@@ -1694,13 +1700,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="casca" data-id="casca">
+      <figure data-nom="casca" data-id="casca" data-filtres="" data-exclusif="false">
         <img src="/rushpic/casca.webp" alt="Casca" loading="lazy">
         <figcaption>Casca</figcaption>
-      </figure><figure data-nom="griffith" data-id="griffith">
+      </figure><figure data-nom="griffith" data-id="griffith" data-filtres="" data-exclusif="false">
         <img src="/rushpic/griffith.webp" alt="Griffith" loading="lazy">
         <figcaption>Griffith</figcaption>
-      </figure><figure data-nom="guts" data-id="guts">
+      </figure><figure data-nom="guts" data-id="guts" data-filtres="" data-exclusif="false">
         <img src="/rushpic/guts.webp" alt="Guts" loading="lazy">
         <figcaption>Guts</figcaption>
       </figure>
@@ -1719,13 +1725,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="chrome" data-id="chrome">
+      <figure data-nom="chrome" data-id="chrome" data-filtres="" data-exclusif="false">
         <img src="/rushpic/chrome.webp" alt="Chrome" loading="lazy">
         <figcaption>Chrome</figcaption>
-      </figure><figure data-nom="senku" data-id="senku">
+      </figure><figure data-nom="senku" data-id="senku" data-filtres="" data-exclusif="false">
         <img src="/rushpic/senku.webp" alt="Senku" loading="lazy">
         <figcaption>Senku</figcaption>
-      </figure><figure data-nom="tsukasa" data-id="tsukasa">
+      </figure><figure data-nom="tsukasa" data-id="tsukasa" data-filtres="" data-exclusif="false">
         <img src="/rushpic/tsukasa.webp" alt="Tsukasa" loading="lazy">
         <figcaption>Tsukasa</figcaption>
       </figure>
@@ -1744,13 +1750,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="benimaru" data-id="benimaru">
+      <figure data-nom="benimaru" data-id="benimaru" data-filtres="" data-exclusif="false">
         <img src="/rushpic/benimaru.webp" alt="Benimaru" loading="lazy">
         <figcaption>Benimaru</figcaption>
-      </figure><figure data-nom="maki" data-id="makioze">
+      </figure><figure data-nom="maki" data-id="makioze" data-filtres="" data-exclusif="false">
         <img src="/rushpic/makioze.webp" alt="Maki" loading="lazy">
         <figcaption>Maki</figcaption>
-      </figure><figure data-nom="shinra" data-id="shinra">
+      </figure><figure data-nom="shinra" data-id="shinra" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shinra.webp" alt="Shinra" loading="lazy">
         <figcaption>Shinra</figcaption>
       </figure>
@@ -1769,13 +1775,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="chika" data-id="chika">
+      <figure data-nom="chika" data-id="chika" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/chika.webp" alt="Chika" loading="lazy">
         <figcaption>Chika<span class="al">Fujiwara</span></figcaption>
-      </figure><figure data-nom="kaguya" data-id="kaguya">
+      </figure><figure data-nom="kaguya" data-id="kaguya" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/kaguya.webp" alt="Kaguya" loading="lazy">
         <figcaption>Kaguya</figcaption>
-      </figure><figure data-nom="shirogane" data-id="shirogane">
+      </figure><figure data-nom="shirogane" data-id="shirogane" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/shirogane.webp" alt="Shirogane" loading="lazy">
         <figcaption>Shirogane<span class="al">Miyuki · Miyuki Shirogane · Shirogane Miyuki</span></figcaption>
       </figure>
@@ -1794,13 +1800,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="lance" data-id="lance">
+      <figure data-nom="lance" data-id="lance" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lance.webp" alt="Lance" loading="lazy">
         <figcaption>Lance</figcaption>
-      </figure><figure data-nom="lemon" data-id="lemon">
+      </figure><figure data-nom="lemon" data-id="lemon" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lemon.webp" alt="Lemon" loading="lazy">
         <figcaption>Lemon</figcaption>
-      </figure><figure data-nom="mash" data-id="mash">
+      </figure><figure data-nom="mash" data-id="mash" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mash.webp" alt="Mash" loading="lazy">
         <figcaption>Mash</figcaption>
       </figure>
@@ -1819,13 +1825,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="black star" data-id="blackstar">
+      <figure data-nom="black star" data-id="blackstar" data-filtres="" data-exclusif="false">
         <img src="/rushpic/blackstar.webp" alt="Black star" loading="lazy">
         <figcaption>Black star<span class="al">Black Star</span></figcaption>
-      </figure><figure data-nom="death the kid" data-id="deaththekid">
+      </figure><figure data-nom="death the kid" data-id="deaththekid" data-filtres="" data-exclusif="false">
         <img src="/rushpic/deaththekid.webp" alt="Death the Kid" loading="lazy">
         <figcaption>Death the Kid<span class="al">kid · kid the death</span></figcaption>
-      </figure><figure data-nom="soul" data-id="soul">
+      </figure><figure data-nom="soul" data-id="soul" data-filtres="" data-exclusif="false">
         <img src="/rushpic/soul.webp" alt="Soul" loading="lazy">
         <figcaption>Soul</figcaption>
       </figure>
@@ -1844,13 +1850,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="anya" data-id="anya">
+      <figure data-nom="anya" data-id="anya" data-filtres="" data-exclusif="false">
         <img src="/rushpic/anya.webp" alt="Anya" loading="lazy">
         <figcaption>Anya</figcaption>
-      </figure><figure data-nom="loid" data-id="loid">
+      </figure><figure data-nom="loid" data-id="loid" data-filtres="" data-exclusif="false">
         <img src="/rushpic/loid.webp" alt="Loid" loading="lazy">
         <figcaption>Loid</figcaption>
-      </figure><figure data-nom="yor" data-id="yor">
+      </figure><figure data-nom="yor" data-id="yor" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yor.webp" alt="Yor" loading="lazy">
         <figcaption>Yor</figcaption>
       </figure>
@@ -1869,13 +1875,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="hiei" data-id="hiei">
+      <figure data-nom="hiei" data-id="hiei" data-filtres="" data-exclusif="false">
         <img src="/rushpic/hiei.webp" alt="Hiei" loading="lazy">
         <figcaption>Hiei</figcaption>
-      </figure><figure data-nom="kurama" data-id="kurama">
+      </figure><figure data-nom="kurama" data-id="kurama" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kurama.webp" alt="Kurama" loading="lazy">
         <figcaption>Kurama</figcaption>
-      </figure><figure data-nom="yusuke" data-id="yusuke">
+      </figure><figure data-nom="yusuke" data-id="yusuke" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yusuke.webp" alt="Yusuke" loading="lazy">
         <figcaption>Yusuke</figcaption>
       </figure>
@@ -1894,13 +1900,13 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="jaden" data-id="jaden">
+      <figure data-nom="jaden" data-id="jaden" data-filtres="" data-exclusif="false">
         <img src="/rushpic/jaden.webp" alt="Jaden" loading="lazy">
         <figcaption>Jaden<span class="al">judai</span></figcaption>
-      </figure><figure data-nom="kaiba" data-id="kaiba">
+      </figure><figure data-nom="kaiba" data-id="kaiba" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kaiba.webp" alt="Kaiba" loading="lazy">
         <figcaption>Kaiba<span class="al">seto</span></figcaption>
-      </figure><figure data-nom="yugi" data-id="yugi">
+      </figure><figure data-nom="yugi" data-id="yugi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yugi.webp" alt="Yugi" loading="lazy">
         <figcaption>Yugi<span class="al">atem · yami yugi</span></figcaption>
       </figure>
@@ -1919,10 +1925,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="akame" data-id="akame">
+      <figure data-nom="akame" data-id="akame" data-filtres="" data-exclusif="false">
         <img src="/rushpic/akame.webp" alt="Akame" loading="lazy">
         <figcaption>Akame</figcaption>
-      </figure><figure data-nom="esdeath" data-id="esdeath">
+      </figure><figure data-nom="esdeath" data-id="esdeath" data-filtres="" data-exclusif="false">
         <img src="/rushpic/esdeath.webp" alt="Esdeath" loading="lazy">
         <figcaption>Esdeath</figcaption>
       </figure>
@@ -1941,10 +1947,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="eiji" data-id="eiji">
+      <figure data-nom="eiji" data-id="eiji" data-filtres="" data-exclusif="false">
         <img src="/rushpic/eiji.webp" alt="Eiji" loading="lazy">
         <figcaption>Eiji<span class="al">nizuma</span></figcaption>
-      </figure><figure data-nom="mashiro" data-id="mashiro">
+      </figure><figure data-nom="mashiro" data-id="mashiro" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mashiro.webp" alt="Mashiro" loading="lazy">
         <figcaption>Mashiro</figcaption>
       </figure>
@@ -1963,10 +1969,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="cc" data-id="cc">
+      <figure data-nom="cc" data-id="cc" data-filtres="" data-exclusif="false">
         <img src="/rushpic/cc.webp" alt="CC" loading="lazy">
         <figcaption>CC</figcaption>
-      </figure><figure data-nom="lelouch" data-id="lelouch">
+      </figure><figure data-nom="lelouch" data-id="lelouch" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lelouch.webp" alt="Lelouch" loading="lazy">
         <figcaption>Lelouch</figcaption>
       </figure>
@@ -1985,10 +1991,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="david" data-id="david">
+      <figure data-nom="david" data-id="david" data-filtres="" data-exclusif="false">
         <img src="/rushpic/david.webp" alt="David" loading="lazy">
         <figcaption>David</figcaption>
-      </figure><figure data-nom="lucy" data-id="lucy2">
+      </figure><figure data-nom="lucy" data-id="lucy2" data-filtres="" data-exclusif="false">
         <img src="/rushpic/lucy2.webp" alt="Lucy" loading="lazy">
         <figcaption>Lucy</figcaption>
       </figure>
@@ -2007,10 +2013,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="fern" data-id="fern">
+      <figure data-nom="fern" data-id="fern" data-filtres="" data-exclusif="false">
         <img src="/rushpic/fern.webp" alt="Fern" loading="lazy">
         <figcaption>Fern</figcaption>
-      </figure><figure data-nom="frieren" data-id="frieren">
+      </figure><figure data-nom="frieren" data-id="frieren" data-filtres="" data-exclusif="false">
         <img src="/rushpic/frieren.webp" alt="Frieren" loading="lazy">
         <figcaption>Frieren</figcaption>
       </figure>
@@ -2029,10 +2035,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="akeno" data-id="akeno">
+      <figure data-nom="akeno" data-id="akeno" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/akeno.webp" alt="Akeno" loading="lazy">
         <figcaption>Akeno</figcaption>
-      </figure><figure data-nom="rias" data-id="rias">
+      </figure><figure data-nom="rias" data-id="rias" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/rias.webp" alt="Rias" loading="lazy">
         <figcaption>Rias</figcaption>
       </figure>
@@ -2051,10 +2057,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="hori" data-id="hori">
+      <figure data-nom="hori" data-id="hori" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/hori.webp" alt="Hori" loading="lazy">
         <figcaption>Hori</figcaption>
-      </figure><figure data-nom="miyamura" data-id="miyamura">
+      </figure><figure data-nom="miyamura" data-id="miyamura" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/miyamura.webp" alt="Miyamura" loading="lazy">
         <figcaption>Miyamura</figcaption>
       </figure>
@@ -2073,10 +2079,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="morgiana" data-id="morgiana">
+      <figure data-nom="morgiana" data-id="morgiana" data-filtres="" data-exclusif="false">
         <img src="/rushpic/morgiana.webp" alt="Morgiana" loading="lazy">
         <figcaption>Morgiana</figcaption>
-      </figure><figure data-nom="sinbad" data-id="sinbad">
+      </figure><figure data-nom="sinbad" data-id="sinbad" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sinbad.webp" alt="Sinbad" loading="lazy">
         <figcaption>Sinbad</figcaption>
       </figure>
@@ -2095,10 +2101,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="hikigaya" data-id="hikki">
+      <figure data-nom="hikigaya" data-id="hikki" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/hikki.webp" alt="Hikigaya" loading="lazy">
         <figcaption>Hikigaya<span class="al">hachiman · hikki · hikigaya</span></figcaption>
-      </figure><figure data-nom="yukino" data-id="yukino">
+      </figure><figure data-nom="yukino" data-id="yukino" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/yukino.webp" alt="Yukino" loading="lazy">
         <figcaption>Yukino</figcaption>
       </figure>
@@ -2117,10 +2123,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="ai" data-id="ai">
+      <figure data-nom="ai" data-id="ai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ai.webp" alt="Ai" loading="lazy">
         <figcaption>Ai</figcaption>
-      </figure><figure data-nom="ruby" data-id="ruby">
+      </figure><figure data-nom="ruby" data-id="ruby" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ruby.webp" alt="Ruby" loading="lazy">
         <figcaption>Ruby</figcaption>
       </figure>
@@ -2139,10 +2145,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="regis" data-id="regis">
+      <figure data-nom="regis" data-id="regis" data-filtres="" data-exclusif="false">
         <img src="/rushpic/regis.webp" alt="Regis" loading="lazy">
         <figcaption>Regis<span class="al">blue</span></figcaption>
-      </figure><figure data-nom="sacha" data-id="sacha">
+      </figure><figure data-nom="sacha" data-id="sacha" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sacha.webp" alt="Sacha" loading="lazy">
         <figcaption>Sacha<span class="al">ash · sasha</span></figcaption>
       </figure>
@@ -2161,10 +2167,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="asuna" data-id="asuna">
+      <figure data-nom="asuna" data-id="asuna" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/asuna.webp" alt="Asuna" loading="lazy">
         <figcaption>Asuna</figcaption>
-      </figure><figure data-nom="kirito" data-id="kirito">
+      </figure><figure data-nom="kirito" data-id="kirito" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kirito.webp" alt="Kirito" loading="lazy">
         <figcaption>Kirito</figcaption>
       </figure>
@@ -2183,10 +2189,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="kaneki" data-id="kaneki">
+      <figure data-nom="kaneki" data-id="kaneki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/kaneki.webp" alt="Kaneki" loading="lazy">
         <figcaption>Kaneki</figcaption>
-      </figure><figure data-nom="touka" data-id="touka">
+      </figure><figure data-nom="touka" data-id="touka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/touka.webp" alt="Touka" loading="lazy">
         <figcaption>Touka<span class="al">toka</span></figcaption>
       </figure>
@@ -2205,10 +2211,10 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="mikey" data-id="mikey">
+      <figure data-nom="mikey" data-id="mikey" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mikey.webp" alt="Mikey" loading="lazy">
         <figcaption>Mikey</figcaption>
-      </figure><figure data-nom="takemichi" data-id="takemichi">
+      </figure><figure data-nom="takemichi" data-id="takemichi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/takemichi.webp" alt="Takemichi" loading="lazy">
         <figcaption>Takemichi</figcaption>
       </figure>
@@ -2227,7 +2233,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="lena" data-id="lena">
+      <figure data-nom="lena" data-id="lena" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/lena.webp" alt="Lena" loading="lazy">
         <figcaption>Lena<span class="al">vladilena · milize · léna · vladiléna</span></figcaption>
       </figure>
@@ -2246,7 +2252,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="karma" data-id="karma">
+      <figure data-nom="karma" data-id="karma" data-filtres="" data-exclusif="false">
         <img src="/rushpic/karma.webp" alt="Karma" loading="lazy">
         <figcaption>Karma</figcaption>
       </figure>
@@ -2265,7 +2271,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="baki" data-id="baki">
+      <figure data-nom="baki" data-id="baki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/baki.webp" alt="Baki" loading="lazy">
         <figcaption>Baki</figcaption>
       </figure>
@@ -2284,7 +2290,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="sebastian" data-id="sebastian">
+      <figure data-nom="sebastian" data-id="sebastian" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sebastian.webp" alt="Sebastian" loading="lazy">
         <figcaption>Sebastian</figcaption>
       </figure>
@@ -2303,7 +2309,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="revy" data-id="revy">
+      <figure data-nom="revy" data-id="revy" data-filtres="" data-exclusif="false">
         <img src="/rushpic/revy.webp" alt="Revy" loading="lazy">
         <figcaption>Revy<span class="al">reby</span></figcaption>
       </figure>
@@ -2322,7 +2328,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="okumura" data-id="okumura">
+      <figure data-nom="okumura" data-id="okumura" data-filtres="" data-exclusif="false">
         <img src="/rushpic/okumura.webp" alt="Okumura" loading="lazy">
         <figcaption>Okumura<span class="al">rin</span></figcaption>
       </figure>
@@ -2341,7 +2347,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="dazai" data-id="dazai">
+      <figure data-nom="dazai" data-id="dazai" data-filtres="" data-exclusif="false">
         <img src="/rushpic/dazai.webp" alt="Dazai" loading="lazy">
         <figcaption>Dazai<span class="al">osamu</span></figcaption>
       </figure>
@@ -2360,7 +2366,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="okarun" data-id="okarun">
+      <figure data-nom="okarun" data-id="okarun" data-filtres="" data-exclusif="false">
         <img src="/rushpic/okarun.webp" alt="Okarun" loading="lazy">
         <figcaption>Okarun<span class="al">ken</span></figcaption>
       </figure>
@@ -2379,7 +2385,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="bell" data-id="bell">
+      <figure data-nom="bell" data-id="bell" data-filtres="" data-exclusif="false">
         <img src="/rushpic/bell.webp" alt="Bell" loading="lazy">
         <figcaption>Bell</figcaption>
       </figure>
@@ -2398,7 +2404,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="002" data-id="002">
+      <figure data-nom="002" data-id="002" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/002.webp" alt="002" loading="lazy">
         <figcaption>002<span class="al">zero two</span></figcaption>
       </figure>
@@ -2417,7 +2423,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="yumeko" data-id="yumeko">
+      <figure data-nom="yumeko" data-id="yumeko" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yumeko.webp" alt="Yumeko" loading="lazy">
         <figcaption>Yumeko<span class="al">jabami</span></figcaption>
       </figure>
@@ -2436,7 +2442,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="onizuka" data-id="onizuka">
+      <figure data-nom="onizuka" data-id="onizuka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/onizuka.webp" alt="Onizuka" loading="lazy">
         <figcaption>Onizuka</figcaption>
       </figure>
@@ -2455,7 +2461,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="shin" data-id="shin">
+      <figure data-nom="shin" data-id="shin" data-filtres="" data-exclusif="false">
         <img src="/rushpic/shin.webp" alt="Shin" loading="lazy">
         <figcaption>Shin<span class="al">ri shin · li shin</span></figcaption>
       </figure>
@@ -2474,7 +2480,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="medaka" data-id="medaka">
+      <figure data-nom="medaka" data-id="medaka" data-filtres="" data-exclusif="false">
         <img src="/rushpic/medaka.webp" alt="Medaka" loading="lazy">
         <figcaption>Medaka</figcaption>
       </figure>
@@ -2493,7 +2499,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="mob" data-id="mob">
+      <figure data-nom="mob" data-id="mob" data-filtres="" data-exclusif="false">
         <img src="/rushpic/mob.webp" alt="Mob" loading="lazy">
         <figcaption>Mob</figcaption>
       </figure>
@@ -2512,7 +2518,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="araragi" data-id="araragi">
+      <figure data-nom="araragi" data-id="araragi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/araragi.webp" alt="Araragi" loading="lazy">
         <figcaption>Araragi</figcaption>
       </figure>
@@ -2531,28 +2537,9 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="nana" data-id="nana">
+      <figure data-nom="nana" data-id="nana" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/nana.webp" alt="nana" loading="lazy">
         <figcaption>nana</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="anime" data-anime="Nanatsu no Taizai"
-           data-big3="false" data-main="false">
-    <h2>Nanatsu no Taizai
-      <span class="n">1</span>
-      
-      <span class="tag hors">hors Mainstream</span>
-      <!-- ⚠️ TOUT L ANIME D UN COUP. Les genres se decident presque toujours
-           par oeuvre — Haikyuu est du sport en entier. Sans ce bouton il
-           faudrait quarante-et-un clics rien que pour Naruto. -->
-      <button class="tout-anime" type="button">tout</button>
-    </h2>
-    <div class="grille">
-      <figure data-nom="arthur" data-id="arthur">
-        <img src="/rushpic/arthur.webp" alt="Arthur" loading="lazy">
-        <figcaption>Arthur</figcaption>
       </figure>
     </div>
   </section>
@@ -2569,7 +2556,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="sora" data-id="sora">
+      <figure data-nom="sora" data-id="sora" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sora.webp" alt="Sora" loading="lazy">
         <figcaption>Sora</figcaption>
       </figure>
@@ -2588,7 +2575,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="yato" data-id="yato">
+      <figure data-nom="yato" data-id="yato" data-filtres="" data-exclusif="false">
         <img src="/rushpic/yato.webp" alt="Yato" loading="lazy">
         <figcaption>Yato</figcaption>
       </figure>
@@ -2607,7 +2594,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="saiki" data-id="saiki">
+      <figure data-nom="saiki" data-id="saiki" data-filtres="" data-exclusif="false">
         <img src="/rushpic/saiki.webp" alt="Saiki" loading="lazy">
         <figcaption>Saiki</figcaption>
       </figure>
@@ -2626,7 +2613,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="naofumi" data-id="naofumi">
+      <figure data-nom="naofumi" data-id="naofumi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/naofumi.webp" alt="Naofumi" loading="lazy">
         <figcaption>Naofumi</figcaption>
       </figure>
@@ -2645,7 +2632,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="sakuragi" data-id="sakuragi">
+      <figure data-nom="sakuragi" data-id="sakuragi" data-filtres="" data-exclusif="false">
         <img src="/rushpic/sakuragi.webp" alt="Sakuragi" loading="lazy">
         <figcaption>Sakuragi<span class="al">hanamichi</span></figcaption>
       </figure>
@@ -2664,7 +2651,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="okabe" data-id="okabe">
+      <figure data-nom="okabe" data-id="okabe" data-filtres="" data-exclusif="false">
         <img src="/rushpic/okabe.webp" alt="Okabe" loading="lazy">
         <figcaption>Okabe<span class="al">kyouma</span></figcaption>
       </figure>
@@ -2683,7 +2670,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="limule" data-id="limule">
+      <figure data-nom="limule" data-id="limule" data-filtres="" data-exclusif="false">
         <img src="/rushpic/limule.webp" alt="limule" loading="lazy">
         <figcaption>limule<span class="al">rimuru</span></figcaption>
       </figure>
@@ -2702,7 +2689,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="ray" data-id="ray">
+      <figure data-nom="ray" data-id="ray" data-filtres="" data-exclusif="false">
         <img src="/rushpic/ray.webp" alt="Ray" loading="lazy">
         <figcaption>Ray</figcaption>
       </figure>
@@ -2721,7 +2708,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="toriko" data-id="toriko">
+      <figure data-nom="toriko" data-id="toriko" data-filtres="" data-exclusif="false">
         <img src="/rushpic/toriko.webp" alt="Toriko" loading="lazy">
         <figcaption>Toriko</figcaption>
       </figure>
@@ -2740,7 +2727,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="vanitas" data-id="vanitas">
+      <figure data-nom="vanitas" data-id="vanitas" data-filtres="" data-exclusif="false">
         <img src="/rushpic/vanitas.webp" alt="Vanitas" loading="lazy">
         <figcaption>Vanitas</figcaption>
       </figure>
@@ -2759,7 +2746,7 @@
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      <figure data-nom="violet" data-id="violet">
+      <figure data-nom="violet" data-id="violet" data-filtres="romance" data-exclusif="false">
         <img src="/rushpic/violet.webp" alt="Violet" loading="lazy">
         <figcaption>Violet</figcaption>
       </figure>
@@ -2788,13 +2775,20 @@ function appliquer() {
   let vus = 0;
   document.querySelectorAll('section.anime').forEach(s => {
     const nomAnime = s.dataset.anime.toLowerCase();
-    const okFiltre = filtre === 'tout'
+    /* ⚠️ UN GENRE SE JUGE SUR LE PERSONNAGE, PAS SUR LA SECTION. Les anciens
+       filtres gardent ou jettent un anime entier ; « g:romance » doit laisser
+       passer trois noms au milieu d une oeuvre de quarante. La section reste
+       donc ouverte, et c est chaque portrait qui decide. */
+    const genre = filtre.startsWith('g:') ? filtre.slice(2) : null;
+    const okFiltre = genre ? true
+      : filtre === 'tout'
       || (filtre === 'big3' && s.dataset.big3 === 'true')
       || (filtre === 'main' && s.dataset.main === 'true')
       || (filtre === 'hors' && s.dataset.main !== 'true');
     let montres = 0;
     s.querySelectorAll('figure').forEach(f => {
-      const ok = okFiltre && (!t || f.dataset.nom.includes(t) || nomAnime.includes(t));
+      const okGenre = !genre || (f.dataset.filtres || '').split(' ').includes(genre);
+      const ok = okFiltre && okGenre && (!t || f.dataset.nom.includes(t) || nomAnime.includes(t));
       f.classList.toggle('vide', !ok);
       if (ok) montres++;
     });

@@ -10930,10 +10930,30 @@ function rushFormes(perso) {
 // Tirage sans remise a l echelle du salon : on ne resert un portrait que
 // lorsque tout le lot a defile.
 function rushPiocher(gameState, combien) {
-    const filtre = RUSH_FILTRES[gameState.rush.filtre] || RUSH_FILTRES.overall;
-    const lot = filtre.animes.length
-        ? RUSH_PERSOS.filter(p => filtre.animes.includes(p.anime))
-        : RUSH_PERSOS;
+    const cle = RUSH_FILTRES[gameState.rush.filtre] ? gameState.rush.filtre : 'overall';
+    const filtre = RUSH_FILTRES[cle];
+
+    // 🎭 DEUX SORTES DE FILTRES, ET ILS NE SE CHOISISSENT PAS PAREIL.
+    //
+    // Les anciens (Big 3, Mainstream) designent des ANIMES : on prend tout ce
+    // qui en vient. Les genres (Romance, et Sport ensuite) designent des
+    // PERSONNAGES, un par un — un animé n est pas romantique en entier, et
+    // trois noms y suffisent souvent.
+    //
+    // ⚠️ `parPersonnage: true` dit lequel des deux. Sans ce drapeau il
+    // faudrait deviner a la forme — « animes vide » veut deja dire « tous »
+    // pour `overall`, et un genre vide se serait donc comporte comme lui :
+    // le filtre Romance aurait rendu les 481 portraits.
+    //
+    // ⚠️ ET « TOUT » N EST PLUS TOUT. Les personnages ajoutes POUR un genre
+    // portent `exclusif: true` : ils ne sortent que sous leur filtre, jamais
+    // dans une partie ordinaire. Sans ca, enrichir la Romance de vingt noms
+    // diluerait d autant le tirage de tout le monde.
+    const lot = filtre.parPersonnage
+        ? RUSH_PERSOS.filter(p => (p.filtres || []).includes(cle))
+        : filtre.animes.length
+            ? RUSH_PERSOS.filter(p => filtre.animes.includes(p.anime) && !p.exclusif)
+            : RUSH_PERSOS.filter(p => !p.exclusif);
 
     const tire = [];
     let restants = lot.filter(p => !gameState.rush.dejaVus.includes(p.id));

@@ -56,7 +56,7 @@ const bloc = ([nom, liste]) => `
       <button class="tout-anime" type="button">tout</button>
     </h2>
     <div class="grille">
-      ${liste.map(p => `<figure data-nom="${p.nom.toLowerCase().replace(/"/g, '&quot;')}" data-id="${p.id}">
+      ${liste.map(p => `<figure data-nom="${p.nom.toLowerCase().replace(/"/g, '&quot;')}" data-id="${p.id}" data-filtres="${(p.filtres || []).join(' ')}" data-exclusif="${p.exclusif ? 'true' : 'false'}">
         <img src="/rushpic/${p.img}" alt="${p.nom}" loading="lazy">
         <figcaption>${p.nom}${p.alias && p.alias.length ? '<span class="al">' + p.alias.join(' · ') + '</span>' : ''}</figcaption>
       </figure>`).join('')}
@@ -121,6 +121,11 @@ const html = `<!doctype html>
     <button class="f" data-f="big3">Big 3 (${nBig3})</button>
     <button class="f" data-f="main">Mainstream (${nMain})</button>
     <button class="f" data-f="hors">hors Mainstream (${P.length - nMain})</button>
+    <!-- 🎭 Les filtres PAR PERSONNAGE, ecrits depuis les donnees : le jour ou
+         « sport » arrive dans rushdata.json, son bouton parait tout seul. -->
+    ${Object.entries(F).filter(([, f]) => f.parPersonnage).map(([cle, f]) =>
+      `<button class="f genre" data-f="g:${cle}">${f.label} (${P.filter(p => (p.filtres || []).includes(cle)).length})</button>`
+    ).join('\n    ')}
     <span class="compteur" id="compteur"></span>
   </div>
 ${animes.map(bloc).join('\n')}
@@ -147,13 +152,20 @@ function appliquer() {
   let vus = 0;
   document.querySelectorAll('section.anime').forEach(s => {
     const nomAnime = s.dataset.anime.toLowerCase();
-    const okFiltre = filtre === 'tout'
+    /* ⚠️ UN GENRE SE JUGE SUR LE PERSONNAGE, PAS SUR LA SECTION. Les anciens
+       filtres gardent ou jettent un anime entier ; « g:romance » doit laisser
+       passer trois noms au milieu d une oeuvre de quarante. La section reste
+       donc ouverte, et c est chaque portrait qui decide. */
+    const genre = filtre.startsWith('g:') ? filtre.slice(2) : null;
+    const okFiltre = genre ? true
+      : filtre === 'tout'
       || (filtre === 'big3' && s.dataset.big3 === 'true')
       || (filtre === 'main' && s.dataset.main === 'true')
       || (filtre === 'hors' && s.dataset.main !== 'true');
     let montres = 0;
     s.querySelectorAll('figure').forEach(f => {
-      const ok = okFiltre && (!t || f.dataset.nom.includes(t) || nomAnime.includes(t));
+      const okGenre = !genre || (f.dataset.filtres || '').split(' ').includes(genre);
+      const ok = okFiltre && okGenre && (!t || f.dataset.nom.includes(t) || nomAnime.includes(t));
       f.classList.toggle('vide', !ok);
       if (ok) montres++;
     });
