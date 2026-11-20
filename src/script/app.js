@@ -2991,14 +2991,25 @@ createApp({
         },
 
         // Pseudo auto : un mot du folklore anime + un nombre
+        // 🪪 LE PSEUDO D ARRIVEE : « Guest-0042 ».
+        //
+        // ⚠️ IL DOIT AVOIR L AIR D UN PROVISOIRE, et c est tout le changement
+        // du 20 novembre 2026. Avant, on tirait un mot d une liste japonaise —
+        // « Hokage720 », « Sakura118 ». C etait charmant, et c etait le defaut :
+        // ca ressemblait a un pseudo CHOISI. Le joueur ne voyait aucune raison
+        // d y toucher, et entrait en partie sous un nom qui n etait pas le sien.
+        // « Guest-0042 » annonce ce qu il est. Le pseudo affiche a cote de
+        // l avatar dit le reste : c est toi, et ca se change.
+        //
+        // ⚠️ `padStart` et non `1000 + random * 9000` : le second n atteint
+        // jamais les mille premiers, et « Guest-42 » casserait l alignement de
+        // la forme annoncee — quatre chiffres, toujours.
+        //
+        // ℹ️ Dix mille combinaisons seulement : deux invites peuvent porter le
+        // meme nom dans un salon. Ce n est pas un identifiant — `playerId`
+        // l est — et le serveur n a jamais compte sur l unicite d un pseudo.
         randomPseudo() {
-            const words = [
-                'Shinobi', 'Kitsune', 'Senpai', 'Hokage', 'Samurai', 'Ronin', 'Yokai', 'Nakama',
-                'Katana', 'Ramen', 'Kaiju', 'Otaku', 'Sensei', 'Onigiri', 'Mecha', 'Tanuki',
-                'Bushido', 'Shogun', 'Kunai', 'Sakura', 'Tengu', 'Oni', 'Zanpakuto', 'Haki',
-            ];
-            const word = words[Math.floor(Math.random() * words.length)];
-            return word + Math.floor(10 + Math.random() * 990);
+            return 'Guest-' + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
         },
 
 

@@ -8081,20 +8081,35 @@ html.rendu-logiciel .v2-dust { display: none; }
    sien ne marcherait que dans un sens — l avatar s allumerait seul, le mot
    aussi, et jamais les deux ensemble. */
 .v2-moi-log {
+    /* ⚠️ A GAUCHE DU PORTRAIT, ET IL DOIT Y RESTER. Essaye a droite le
+       20 novembre 2026 : a 390 px, LA POINTE DU PANNEAU RATAIT L AVATAR DE
+       54 px. Elle se calcule depuis le bord droit du groupe en supposant que
+       l avatar est le dernier element ; le pseudo passe apres lui decale ce
+       bord de sa propre largeur. Au 1280 ca tombait juste par hasard, le
+       defaut ne se voyait que sur telephone. */
     padding: 0 0.6rem 0 0;
     margin: 0;
     border: 0;
     background: none;
     cursor: pointer;
     font-family: inherit;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    /* Discret par defaut : il annonce une possibilite, il ne reclame rien.
-       C est le survol qui le fait exister. */
-    color: rgba(255, 255, 255, 0.4);
+    /* La taille et la couleur des liens de la barre (`.v2-nav-lien`) : ce
+       pseudo est un element de navigation comme eux, il doit peser pareil. */
+    font-size: 0.67rem;
+    font-weight: 600;
+    color: #b9b3c9;
+    /* ⚠️ NI MAJUSCULES NI L INTERLETTRAGE DES LIENS, et c est la seule chose
+       qu on ne leur emprunte pas. Les liens sont des etiquettes : « RANGS »
+       s ecrit en capitales sans rien perdre. Un pseudo est un choix du
+       joueur — « NaHaSs » rendu « NAHASS » lui prend sa casse, et le
+       0.13em des liens ecarte des lettres qui ne sont pas faites pour. */
+    letter-spacing: 0.02em;
     white-space: nowrap;
+    /* Un pseudo fait 16 caracteres au plus, mais rien ne garantit la place :
+       on coupe plutot que de pousser l avatar hors de l ecran. */
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color 0.25s ease;
 }
 

@@ -426,13 +426,22 @@
                          ⚠️ UN BOUTON, PAS UN SPAN : il ouvre le meme panneau que
                          l avatar, et seul un bouton repond au clavier et s annonce
                          comme cliquable aux lecteurs d ecran.
-                         ⚠️ « Log in » EN ANGLAIS, ET C EST VOULU. C est la seule
-                         chaine anglaise de l interface, et le panneau dit bien
-                         « Se deconnecter » deux centimetres plus bas — donc non,
-                         ce n est pas un oubli de traduction : Adem a tranche pour
-                         ce mot-la le 20 novembre 2026, apres l avoir vu rendu en
-                         francais. Ne pas le « corriger ». -->
-                    <button class="v2-moi-log" v-if="!estConnecte" @click="basculerProfil">Log in</button>
+                         ⚠️ LE PSEUDO, ET SURTOUT PAS « LOG IN » NI « CONNEXION ».
+                         Les deux ont ete essayes et rejetes le 20 novembre 2026,
+                         pour une raison de produit qui vaut d etre gardee : un mot
+                         de connexion fait croire qu il FAUT un compte pour jouer.
+                         Le joueur qui n en veut pas va droit sur Creer ou Rejoindre
+                         — et ne saura jamais qu il pouvait changer son pseudo.
+                         Le pseudo affiche dit l inverse : « c est toi, et ca se
+                         change ». C est la promesse du site, ecrite dans le coin.
+
+                         ℹ️ `username` n est jamais vide pour un invite :
+                         `checkAuth()` lui attribue un `randomPseudo()` des l
+                         arrivee. Le `&& username` ne couvre que l instant d amorcage,
+                         avant que checkAuth ait repondu — sans lui, un bouton vide
+                         clignoterait au chargement. -->
+                    <button class="v2-moi-log" v-if="!estConnecte && username"
+                            @click="basculerProfil" title="Mon profil">{{ username }}</button>
                     <!-- ⚠️ `inscrit` existe POUR LE LISERE DU PORTRAIT. Avec le
                          double anneau, l or ne dit plus qu une chose :
                          l avancement. Le portrait reprend donc un cerne neutre
