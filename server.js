@@ -1155,6 +1155,43 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     }
     if (!lignes.length) return;
 
+    // 🏆 ⚠️ LA RECOLTE SE FAIT ICI, AVANT LE MOINDRE `await`, ET C EST UNE
+    // CORRECTION DE BUG, PAS UN RANGEMENT.
+    //
+    // Elle vivait plus bas, apres `comptes.crediter`. Or la fin d une partie
+    // s enchaine ainsi :
+    //
+    //     emitBombanimeGameEnded()  -> recordFinishedGame()
+    //                               -> crediterXpDeLaPartie()   (sans await)
+    //                                      await comptes.crediter(...)  ⬅ rend la main
+    //     resetBombanimeState()     -> persosParJoueur = new Map()   💥
+    //                                      ...reprend, et recolte du vide
+    //
+    // `crediterXpDeLaPartie` n est pas attendue : pendant son aller-retour
+    // Supabase, la remise a zero du mode passe. Au retour, les compteurs
+    // etaient effaces et CHAQUE record partait a zero — pour tous les modes,
+    // depuis toujours. Mesure du 20 nov. 2026 : les deux seuls records
+    // BombAnime en base valaient 0 alors que les manches avaient dure
+    // plusieurs tours.
+    //
+    // ⚠️ ET ON MATERIALISE LES VALEURS, on ne garde pas le recueil. Ses
+    // fonctions sont des fermetures sur les Map vivantes du salon : deplacer
+    // l appel sans lire les valeurs tout de suite n aurait rien change, elles
+    // auraient lu la Map vide au moment de s executer.
+    const recueil = recoltePourLeClassement(gameState, mode);
+    const scores = new Map();
+    const detailsParJoueur = new Map();
+    for (const l of lignes) {
+        scores.set(l.id, recueil.score ? recueil.score(l.id) : null);
+        detailsParJoueur.set(l.id, recueil.details ? recueil.details(l.id) : {});
+    }
+    // ⚠️ Meme raison pour ces deux-la : `reglages` survit a la remise a zero
+    // (ce sont des reglages de SALON, gardes expres), mais `players` peut
+    // avoir ete vide par `resetGameState`. On les fige pendant qu ils existent
+    // plutot que de dependre de ce que chaque mode efface ou non.
+    const reglagesFiges = reglagesDeLaPartie(gameState) || {};
+    const avecBotsFige = [...gameState.players.values()].some((p) => p.estBot);
+
     const profils = await comptes.crediter(lignes);
     if (!profils || !profils.length) return;
 
@@ -1176,8 +1213,9 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     // par ligne aurait rendu la table illisible pour tout ce qui compare des
     // joueurs entre eux.
     const partieId = randomUUID();
-    const reglages = reglagesDeLaPartie(gameState) || {};
-    const recueil = recoltePourLeClassement(gameState, mode);
+    // ℹ️ Figes AVANT l `await`, plus haut : a cet endroit le salon a pu etre
+    // remis a zero. Voir le commentaire de la recolte.
+    const reglages = reglagesFiges;
     // 🤖 La regle retenue est « pas de record dans une partie avec bot ».
     //
     // ⚠️ ON L ECRIT, ON NE L APPLIQUE PAS ICI. Mettre `score` a null quand un
@@ -1186,7 +1224,7 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     // de parties en comptaient un, il n y aurait plus rien a lire. C est une
     // regle de CLASSEMENT, donc de lecture — la ligne dit ce qui s est passe,
     // la requete dit ce qui compte.
-    const avecBots = [...gameState.players.values()].some((p) => p.estBot);
+    const avecBots = avecBotsFige;
 
     // 🥇 LA PLACE DE CHACUN DANS CETTE PARTIE.
     //
@@ -1209,9 +1247,12 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     // case vide qu un classement fabrique : un mode sans ordre de fin n en a
     // pas, et lui en inventer un se lirait comme une donnee sure.
     const placeDe = (() => {
+        // ⚠️ Les scores FIGES, pas `recueil.score` : relire le recueil ici,
+        // c est relire une Map que la remise a zero du mode a peut-etre deja
+        // videe. Toutes les places auraient valu 1, a egalite sur zero.
         if (!recueil || typeof recueil.score !== 'function') return () => null;
         const classes = lignes
-            .map((l) => ({ id: l.id, s: Number(recueil.score(l.id)) || 0 }))
+            .map((l) => ({ id: l.id, s: Number(scores.get(l.id)) || 0 }))
             .sort((a, b) => b.s - a.s);
         const rangs = new Map();
         let dernierScore = null;
@@ -1255,8 +1296,9 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         reglages,
         // `null` quand le mode n a pas de record : la colonne est indexee en
         // `nulls last`, ces lignes ne remonteront jamais dans un palmares.
-        score: recueil.score ? recueil.score(l.id) : null,
-        details: recueil.details ? recueil.details(l.id) : {},
+        // Figes avant l `await`, voir plus haut.
+        score: scores.has(l.id) ? scores.get(l.id) : null,
+        details: detailsParJoueur.get(l.id) || {},
     }))).catch(() => { /* le jeu n en depend pas */ });
 
     // Renvoyer a chacun SON total : c est ce qui fait monter la barre sans
