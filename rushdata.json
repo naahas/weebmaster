@@ -3735,6 +3735,845 @@
       "anime": "JoJo",
       "img": "trish.webp",
       "alias": []
+    },
+    {
+      "id": "remi",
+      "nom": "Remi",
+      "anime": "Horimiya",
+      "img": "remi.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "haruhi",
+      "nom": "Haruhi",
+      "anime": "Ouran High School Host Club",
+      "img": "haruhi.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tamaki",
+      "nom": "Tamaki",
+      "anime": "Ouran High School Host Club",
+      "img": "tamaki.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yuu",
+      "nom": "Yuu",
+      "anime": "Kaguya-sama",
+      "img": "yuu.webp",
+      "alias": ["Yu"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kei",
+      "nom": "Kei",
+      "anime": "Kaguya-sama",
+      "img": "kei.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ai2",
+      "nom": "Ai",
+      "anime": "Kaguya-sama",
+      "img": "ai2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nagisa",
+      "nom": "Nagisa",
+      "anime": "Clannad",
+      "img": "nagisa.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kyou",
+      "nom": "Kyou",
+      "anime": "Clannad",
+      "img": "kyou.webp",
+      "alias": ["Kyo"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "okazaki",
+      "nom": "Okazaki",
+      "anime": "Clannad",
+      "img": "okazaki.webp",
+      "alias": ["Tomoya"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yona",
+      "nom": "Yona",
+      "anime": "Akatsuki no Yona",
+      "img": "yona.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "marin",
+      "nom": "Marin",
+      "anime": "My Dress-Up Darling",
+      "img": "marin.webp",
+      "alias": [],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "gojo2",
+      "nom": "Gojo",
+      "anime": "My Dress-Up Darling",
+      "img": "gojo2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yui",
+      "nom": "Yui",
+      "anime": "Oregairu",
+      "img": "yui.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "shizuka",
+      "nom": "Shizuka",
+      "anime": "Oregairu",
+      "img": "shizuka.webp",
+      "alias": ["Hiratsuka"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "iroha",
+      "nom": "Iroha",
+      "anime": "Oregairu",
+      "img": "iroha.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nana2",
+      "nom": "Nana",
+      "anime": "Nana",
+      "img": "nana2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "reira",
+      "nom": "Reira",
+      "anime": "Nana",
+      "img": "reira.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "junko",
+      "nom": "Junko",
+      "anime": "Nana",
+      "img": "junko.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nobuo",
+      "nom": "Nobuo",
+      "anime": "Nana",
+      "img": "nobuo.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ren",
+      "nom": "Ren",
+      "anime": "Nana",
+      "img": "ren.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "shin2",
+      "nom": "Shin",
+      "anime": "Nana",
+      "img": "shin2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yasu",
+      "nom": "Yasu",
+      "anime": "Nana",
+      "img": "yasu.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "aisaka",
+      "nom": "Taiga",
+      "anime": "Toradora",
+      "img": "aisaka.webp",
+      "alias": ["Aisaka"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kushieda",
+      "nom": "Kushieda",
+      "anime": "Toradora",
+      "img": "kushieda.webp",
+      "alias": ["Minori"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ami",
+      "nom": "Ami",
+      "anime": "Toradora",
+      "img": "ami.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ryuji",
+      "nom": "Ryuji",
+      "anime": "Toradora",
+      "img": "ryuji.webp",
+      "alias": ["Ryuuji", "Takasu"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kaori",
+      "nom": "Kaori",
+      "anime": "Your Lie in April",
+      "img": "kaori.webp",
+      "alias": [],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "kosei",
+      "nom": "Kosei",
+      "anime": "Your Lie in April",
+      "img": "kosei.webp",
+      "alias": ["Kousei", "Arima"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tsubaki",
+      "nom": "Tsubaki",
+      "anime": "Your Lie in April",
+      "img": "tsubaki.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "shouko",
+      "nom": "Shouko",
+      "anime": "A Silent Voice",
+      "img": "shouko.webp",
+      "alias": ["Shoko", "Nishimiya"],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "shouya",
+      "nom": "Shouya",
+      "anime": "A Silent Voice",
+      "img": "shouya.webp",
+      "alias": ["Shoya", "Ishida"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kyo",
+      "nom": "Kyo",
+      "anime": "Fruits Basket",
+      "img": "kyo.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tooru",
+      "nom": "Tooru",
+      "anime": "Fruits Basket",
+      "img": "tooru.webp",
+      "alias": ["Tohru"],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "yuki2",
+      "nom": "Yuki",
+      "anime": "Fruits Basket",
+      "img": "yuki2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "mai",
+      "nom": "Mai",
+      "anime": "Bunny Girl Senpai",
+      "img": "mai.webp",
+      "alias": [],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "kaede",
+      "nom": "Kaede",
+      "anime": "Bunny Girl Senpai",
+      "img": "kaede.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "sakuta",
+      "nom": "Sakuta",
+      "anime": "Bunny Girl Senpai",
+      "img": "sakuta.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tomoe",
+      "nom": "Tomoe",
+      "anime": "Bunny Girl Senpai",
+      "img": "tomoe.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nodoka",
+      "nom": "Nodoka",
+      "anime": "Bunny Girl Senpai",
+      "img": "nodoka.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "fuutarou",
+      "nom": "Fuutarou",
+      "anime": "Gotoubun no Hanayome",
+      "img": "fuutarou.webp",
+      "alias": ["Futaro", "Fuutaro"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "miku",
+      "nom": "Miku",
+      "anime": "Gotoubun no Hanayome",
+      "img": "miku.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nino",
+      "nom": "Nino",
+      "anime": "Gotoubun no Hanayome",
+      "img": "nino.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yotsuba",
+      "nom": "Yotsuba",
+      "anime": "Gotoubun no Hanayome",
+      "img": "yotsuba.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "itsuki",
+      "nom": "Itsuki",
+      "anime": "Gotoubun no Hanayome",
+      "img": "itsuki.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ichika",
+      "nom": "Ichika",
+      "anime": "Gotoubun no Hanayome",
+      "img": "ichika.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "chizuru",
+      "nom": "Chizuru",
+      "anime": "Rent a Girlfriend",
+      "img": "chizuru.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "sumi",
+      "nom": "Sumi",
+      "anime": "Rent a Girlfriend",
+      "img": "sumi.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ruka",
+      "nom": "Ruka",
+      "anime": "Rent a Girlfriend",
+      "img": "ruka.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kazuya",
+      "nom": "Kazuya",
+      "anime": "Rent a Girlfriend",
+      "img": "kazuya.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "yamii",
+      "nom": "Yamii",
+      "anime": "To Love Ru",
+      "img": "yamii.webp",
+      "alias": ["Yami", "Eve"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "momo",
+      "nom": "Momo",
+      "anime": "To Love Ru",
+      "img": "momo.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "sairenji",
+      "nom": "Sairenji",
+      "anime": "To Love Ru",
+      "img": "sairenji.webp",
+      "alias": ["Haruna"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "komi",
+      "nom": "Komi",
+      "anime": "Komi-san",
+      "img": "komi.webp",
+      "alias": ["Shouko", "Shoko"],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "osana",
+      "nom": "Osana",
+      "anime": "Komi-san",
+      "img": "osana.webp",
+      "alias": ["Najimi"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tadano",
+      "nom": "Tadano",
+      "anime": "Komi-san",
+      "img": "tadano.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "sakura2",
+      "nom": "Sakura",
+      "anime": "Cardcaptor Sakura",
+      "img": "sakura2.webp",
+      "alias": [],
+      "filtres": ["romance"]
+    },
+    {
+      "id": "chitoge",
+      "nom": "Chitoge",
+      "anime": "Nisekoi",
+      "img": "chitoge.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "onodera",
+      "nom": "Onodera",
+      "anime": "Nisekoi",
+      "img": "onodera.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "tsugumi",
+      "nom": "Tsugumi",
+      "anime": "Nisekoi",
+      "img": "tsugumi.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "marika",
+      "nom": "Marika",
+      "anime": "Nisekoi",
+      "img": "marika.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "raku",
+      "nom": "Raku",
+      "anime": "Nisekoi",
+      "img": "raku.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nazuna",
+      "nom": "Nazuna",
+      "anime": "Call of the Night",
+      "img": "nazuna.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "sawako",
+      "nom": "Sawako",
+      "anime": "Kimi ni Todoke",
+      "img": "sawako.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kazehaya",
+      "nom": "Kazehaya",
+      "anime": "Kimi ni Todoke",
+      "img": "kazehaya.webp",
+      "alias": ["Shouta", "Shota"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kou",
+      "nom": "Kou",
+      "anime": "Ao Haru Ride",
+      "img": "kou.webp",
+      "alias": ["Tanako", "Mabuchi"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "futaba",
+      "nom": "Futaba",
+      "anime": "Ao Haru Ride",
+      "img": "futaba.webp",
+      "alias": ["Yoshioka"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "misaki",
+      "nom": "Misaki",
+      "anime": "Maid Sama",
+      "img": "misaki.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "takumi",
+      "nom": "Takumi",
+      "anime": "Maid Sama",
+      "img": "takumi.webp",
+      "alias": ["Usui"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ranma",
+      "nom": "Ranma",
+      "anime": "Ranma 1/2",
+      "img": "ranma.webp",
+      "alias": ["Ranko"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "akane",
+      "nom": "Akane",
+      "anime": "Ranma 1/2",
+      "img": "akane.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ryoga",
+      "nom": "Ryoga",
+      "anime": "Ranma 1/2",
+      "img": "ryoga.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "alya",
+      "nom": "Alya",
+      "anime": "Alya-san",
+      "img": "alya.webp",
+      "alias": ["Alisa"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "kakeru",
+      "nom": "Kakeru",
+      "anime": "Orange",
+      "img": "kakeru.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "naho",
+      "nom": "Naho",
+      "anime": "Orange",
+      "img": "naho.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "suwa",
+      "nom": "Suwa",
+      "anime": "Orange",
+      "img": "suwa.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "shiina",
+      "nom": "Shiina",
+      "anime": "Sakurasou",
+      "img": "shiina.webp",
+      "alias": ["Shina", "Mashiro"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "nanami2",
+      "nom": "Nanami",
+      "anime": "Sakurasou",
+      "img": "nanami2.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "rintaro",
+      "nom": "Rintaro",
+      "anime": "Bloom Into You",
+      "img": "rintaro.webp",
+      "alias": [],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "waguri",
+      "nom": "Waguri",
+      "anime": "Bloom Into You",
+      "img": "waguri.webp",
+      "alias": ["Kaoruko"],
+      "filtres": ["romance"],
+      "exclusif": true
+    },
+    {
+      "id": "ippo",
+      "nom": "Ippo",
+      "anime": "Hajime no Ippo",
+      "img": "ippo.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "takamura",
+      "nom": "Takamura",
+      "anime": "Hajime no Ippo",
+      "img": "takamura.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "sendo",
+      "nom": "Sendo",
+      "anime": "Hajime no Ippo",
+      "img": "sendo.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "volg",
+      "nom": "Volg",
+      "anime": "Hajime no Ippo",
+      "img": "volg.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "miyata",
+      "nom": "Miyata",
+      "anime": "Hajime no Ippo",
+      "img": "miyata.webp",
+      "alias": ["Ichiro"],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "mashiba",
+      "nom": "Mashiba",
+      "anime": "Hajime no Ippo",
+      "img": "mashiba.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "rukawa",
+      "nom": "Rukawa",
+      "anime": "Slam Dunk",
+      "img": "rukawa.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "miyagi",
+      "nom": "Ryota",
+      "anime": "Slam Dunk",
+      "img": "miyagi.webp",
+      "alias": ["Miyagi"],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "mitsui",
+      "nom": "Mitsui",
+      "anime": "Slam Dunk",
+      "img": "mitsui.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "akagi",
+      "nom": "Akagi",
+      "anime": "Slam Dunk",
+      "img": "akagi.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "sendou",
+      "nom": "Sendou",
+      "anime": "Slam Dunk",
+      "img": "sendou.webp",
+      "alias": ["Sendo"],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "kogure",
+      "nom": "Kogure",
+      "anime": "Slam Dunk",
+      "img": "kogure.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "sena",
+      "nom": "Sena",
+      "anime": "Eyeshield 21",
+      "img": "sena.webp",
+      "alias": [],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "hiruma",
+      "nom": "Hiruma",
+      "anime": "Eyeshield 21",
+      "img": "hiruma.webp",
+      "alias": ["Youichi", "Yoichi"],
+      "filtres": ["sport"],
+      "exclusif": true
+    },
+    {
+      "id": "tarou",
+      "nom": "Tarou",
+      "anime": "Eyeshield 21",
+      "img": "tarou.webp",
+      "alias": ["Taro", "Raimon"],
+      "filtres": ["sport"],
+      "exclusif": true
     }
   ],
   "filtres": {
