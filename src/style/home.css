@@ -8476,10 +8476,11 @@ html.rendu-logiciel .v2-dust { display: none; }
        l avatar, ou la pastille s en serait decollee. */
     .v2-topbar.site .v2-moi-grp .v2-moi-rubis { order: 0; }
     .v2-topbar.site .v2-moi-grp .v2-moi-av { order: 1; }
+    /* Le solde repasse a GAUCHE du portrait (ordre 0 contre 1) : la marge
+       repasse donc a droite. Plus de padding ni d enfoncement a reprendre. */
     .v2-topbar.site .v2-moi-rubis {
-        padding: 0 2.05rem 0 0.9rem;
         margin-left: 0;
-        margin-right: -1.1rem;
+        margin-right: 0.85rem;
     }
     .v2-topbar.site .v2-profil { left: auto; right: calc(-1 * var(--moi-marge)); }
     /* ⚠️ `var(--moi-marge)` EST DANS LE COMPTE, ET IL Y MANQUAIT. La pointe
@@ -8812,33 +8813,20 @@ html.rendu-logiciel .v2-dust { display: none; }
    ⚠️ Et elle vit dans `.v2-moi-grp`, PAS directement dans la barre : le `gap`
    de 1rem de celle-ci se serait ajoute a la marge negative, qu il aurait
    fallu creuser d autant. Deux nombres a tenir d accord au lieu d un. */
+/* 💎 LE SOLDE — PLUS DE PASTILLE, le 20 novembre 2026.
+   ⚠️ CE QUI DISPARAIT N EST PAS QU UN DECOR. La capsule s ENFONCAIT sous le
+   portrait : fond sombre, bordure doree, padding asymetrique, marge negative,
+   `z-index` pour passer dessous — et tout ce jeu en MIROIR a chaque palier,
+   puisque le solde change de cote sur telephone. Six valeurs a tenir
+   d accord, dont quatre couplees deux a deux. Un gemme et un nombre poses a
+   cote de l avatar n ont besoin de rien de tout ca.
+   ⚠️ Il ne reste donc qu une marge, et elle dit UNE chose : l ecart au
+   portrait. */
 .v2-moi-rubis {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    /* ⚠️ C est le GEMME qui decide de cette hauteur, pas le texte : a 1,15rem
-       il est le plus haut des deux contenus, et l air qui lui reste au-dessus
-       vaut `(hauteur - bordures - 1,15rem) / 2`. A 1,75rem il n en restait que
-       4 px et la pastille paraissait serree du haut — c est le gemme qu on
-       voyait toucher le bord, jamais le chiffre.
-       ⚠️ 2,45rem : l air au-dessus du gemme passe de 7,4 a 9,4 px. Et c est
-       la HAUTEUR qu on touche, pas un padding vertical — la pastille est un
-       `inline-flex` centre, un padding haut-bas n y ajouterait rien tant que
-       la hauteur est posee. */
-    height: 2.45rem;
-    /* ⚠️ Le padding DROIT est le gros : c est la part qui passe sous le
-       portrait. Trop court, le nombre disparait dessous ; c est lui qui
-       repousse le texte hors de la zone couverte.
-       ⚠️ Et c est LUI SEUL qui regle l air entre le nombre et l avatar :
-       l ecart vaut `padding-droit moins l enfoncement`, soit 0,8rem ici. Le
-       creuser en touchant a la marge, c est deplacer la pastille entiere au
-       lieu d ecarter le texte. */
-    padding: 0 2.15rem 0 1rem;
-    border-radius: 999px;
-    /* Un fond SOMBRE et non dore : la pastille passe derriere l avatar, elle
-       doit s effacer devant lui. L or ne reste que sur le filet et le texte. */
-    background: #16131c;
-    border: 1px solid rgba(240, 199, 94, 0.3);
+    padding: 0;
     /* ⚠️ DORE et non plus rouge : le gemme livré porte le S du logo et il est
        or. Un chiffre rouge à côté d un jeton doré faisait deux monnaies, et
        le rouge se lisait comme une alerte au milieu de l or de la bannière. */
@@ -8846,11 +8834,9 @@ html.rendu-logiciel .v2-dust { display: none; }
     font-size: 0.85rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    /* L enfoncement. ⚠️ Il doit rester INFERIEUR au padding droit, sinon le
-       nombre se glisse sous le portrait. */
-    margin-right: -1.15rem;
-    position: relative;
-    z-index: 0;
+    /* Le solde est a GAUCHE du portrait sur ordinateur : c est donc la marge
+       droite qui les ecarte. Elle s inverse avec l ordre, plus bas. */
+    margin-right: 0.95rem;
     user-select: none;
 }
 /* 💎 LA PASTILLE PASSE A DROITE DE L AVATAR.
@@ -8864,10 +8850,13 @@ html.rendu-logiciel .v2-dust { display: none; }
    l avatar ou la pastille s en serait decollee. */
 .v2-moi-grp .v2-moi-rubis { order: 1; }
 .v2-moi-grp .v2-moi-av { order: 0; }
+/* ⚠️ L ORDRE S INVERSE, DONC LA MARGE AUSSI — et c est tout ce qu il reste a
+   inverser depuis que la pastille a disparu. Le solde passe a DROITE du
+   portrait ici : c est la marge gauche qui les ecarte, la droite n a plus
+   rien a ecarter. */
 .v2-moi-rubis {
-    padding: 0 1rem 0 2.15rem;
     margin-right: 0;
-    margin-left: -1.15rem;
+    margin-left: 0.95rem;
 }
 /* ℹ️ UNE REGLE ≤480 A ETE RETIREE ICI. Elle resserrait la pastille en
    reecrivant ses quatre valeurs — et une SECONDE regle ≤480, plus bas,
@@ -8902,10 +8891,8 @@ html.rendu-logiciel .v2-dust { display: none; }
     .v2-topbar.site .v2-moi-rubis {
         font-size: 0.78rem;
         gap: 0.35rem;
-        height: 2.2rem;
-        padding: 0 1.9rem 0 0.8rem;
         margin-left: 0;
-        margin-right: -1.05rem;
+        margin-right: 0.7rem;
     }
     .v2-moi-rubis img { height: 1rem; }
 }
