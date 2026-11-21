@@ -168,3 +168,41 @@ alter table public.parties_jouees
 -- Pour verifier apres coup, sur les parties ecrites depuis le passage :
 -- select mode, place, count(*) from public.parties_jouees
 --   where place is not null group by mode, place order by mode, place;
+
+-- ════════════════════════════════════════════════════════════════
+-- 🚪 `abandon` — garder le RECORD de celui qui est parti
+-- ════════════════════════════════════════════════════════════════
+--
+-- Pourquoi : dans une partie de BombAnime a quatorze qui dure neuf minutes,
+-- celui qui saute a la premiere minute ferme son onglet. Il ne va pas
+-- regarder les huit autres. Jusqu au 21 nov. 2026 ses personnages trouves
+-- disparaissaient avec lui — les deux filtres `parti` et `disconnectedAt`
+-- ecartaient sa ligne entiere. Le palmares ne montrait donc que les
+-- finalistes, ce qui donnait l impression, juste, que les records ne
+-- tenaient pas.
+--
+-- Ces deux filtres existent contre le FARM D XP, et un record ne se farme
+-- pas en partant : il se perd. On garde donc la ligne pour son `score`, et
+-- on la neutralise partout ailleurs.
+--
+-- ⚠️ CETTE COLONNE N EST PAS FACULTATIVE, CONTRAIREMENT A `place`.
+--
+-- Tant qu elle manque, le serveur N ECRIT PAS ces lignes du tout, et le dit
+-- dans le journal (`sansAbandonsOrphelins`, server-comptes.js). C est voulu :
+-- `sansColonnesAbsentes` l aurait retiree en silence, et la ligne serait
+-- entree comme une partie ORDINAIRE. Le joueur aurait alors gagne une partie
+-- jouee qu il n a pas finie, son taux de victoire aurait baisse, et une
+-- defaite fantome aurait coupe sa serie de victoires — `v_series_global`
+-- numerote TOUTES les lignes avant de filtrer sur `gagnant`.
+--
+-- Mieux vaut perdre le record que fausser trois classements. Donc : tant que
+-- ce SQL n est pas passe, la correction ne fait simplement rien.
+--
+-- ⚠️ ET IL FAUT REPASSER docs/classement-vues.sql JUSTE APRES : ce sont les
+-- vues qui ecartent ces lignes. La colonne seule ne protege rien.
+alter table public.parties_jouees
+    add column if not exists abandon boolean not null default false;
+
+-- Pour verifier apres coup :
+-- select mode, abandon, count(*), count(score) as avec_record
+--   from public.parties_jouees group by mode, abandon order by mode, abandon;

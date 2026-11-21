@@ -215,7 +215,7 @@ var monPseudo = (function () {
     catch (e) { return ''; }
 })();
 var maPlaceEnCours = 0;
-var seauxConnus = { nom: null, liste: [] };
+var seauxConnus = { nom: null, unite: '', liste: [] };
 var requeteEnCours = 0;
 
 function $(id) { return document.getElementById(id); }
@@ -319,8 +319,13 @@ function peindreFiltres() {
         h += '<span class="c-groupe"><span class="c-filtres-nom">' + echappe(seauxConnus.nom || 'Réglage') + '</span>';
         for (var j = 0; j < seauxConnus.liste.length; j++) {
             var s = seauxConnus.liste[j];
+            // ⚠️ L'unité ne va QUE dans le libellé, jamais dans `data-seau` :
+            // c'est cette valeur-là qui repart au serveur et qui est comparée
+            // à `reglages->>duree`. Un « 60 s » dans l'attribut ne trouverait
+            // aucune ligne, et la page serait vide sans la moindre erreur.
+            var etiq = echappe(s.valeur) + (seauxConnus.unite ? '&nbsp;' + echappe(seauxConnus.unite) : '');
             h += '<button class="c-puce serie" data-seau="' + echappe(s.valeur) + '" '
-               + 'aria-pressed="' + (etat.seau === String(s.valeur)) + '">' + echappe(s.valeur) + '</button>';
+               + 'aria-pressed="' + (etat.seau === String(s.valeur)) + '">' + etiq + '</button>';
         }
         h += '</span>';
     }
@@ -431,7 +436,7 @@ async function charger() {
             var rs = await fetch('/api/classement/seaux?mode=' + encodeURIComponent(etat.mode || '') + DEMO);
             var js = await rs.json();
             if (monTour !== requeteEnCours) return;
-            seauxConnus = { nom: js.nom, liste: js.seaux || [] };
+            seauxConnus = { nom: js.nom, unite: js.unite || '', liste: js.seaux || [] };
             // ⚠️ Il n'y a plus de « Tous » : il faut donc qu'une série soit
             // choisie avant le premier affichage, sinon le serveur rendrait
             // toutes les parties mêlées — exactement ce qu'on vient de

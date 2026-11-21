@@ -1123,21 +1123,13 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     const gagne = new Set((gagnants || []).filter(Boolean));
     const vus = new Set();
     const lignes = [];
+    // 🚪 CEUX QUI ONT LACHE, et dont on garde quand meme le RECORD.
+    // Voir le bloc juste en dessous : ils n ont ni xp, ni rubis, ni partie
+    // comptee — seulement leur chiffre, qui est deja gagne.
+    const abandons = [];
     for (const p of humains) {
         if (!p.playerId || vus.has(p.playerId)) continue;
         vus.add(p.playerId);
-        // 🚪 Parti en cours de route : rien. Une partie terminee, c est une
-        // partie ou l on etait encore la pour l ecran du vainqueur.
-        // ⏳ LEVE HORS PRODUCTION — voir docs/restrictions-levees.md, qui
-        // tient la liste des cinq et dit comment les remettre.
-        if (p.parti && !comptes.SANS_LIMITES) continue;
-        // ⚠️ Et deconnecte au moment de la fin, c est pareil : fermer son
-        // onglet est la facon la plus courante d abandonner, et ne garder que
-        // le bouton « Quitter » aurait laisse le farm ouvert a qui ferme la
-        // fenetre. Une coupure breve ne coute rien — `disconnectedAt` est
-        // efface des le retour, et la partie dure plus longtemps qu elle.
-        // ⏳ LEVE HORS PRODUCTION — docs/restrictions-levees.md.
-        if (p.disconnectedAt && !comptes.SANS_LIMITES) continue;
         // Un invite ne cumule rien : il n a pas de ligne ou l ecrire. C est la
         // seule difference que le compte fait pendant une partie.
         // ⚠️ `p.compte` ET NON `estUnCompte(p.playerId)`. Le second ne
@@ -1145,7 +1137,31 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         // qui en recopiait un se faisait crediter SUR LE COMPTE DE L AUTRE —
         // xp, rubis, et jusqu au pseudo, que `crediter` reecrit. `p.compte`
         // est pose a l entree a partir de ce que la SOCKET a prouve.
+        //
+        // ⚠️ CE TEST PASSE EN PREMIER depuis qu il y a des abandons : un
+        // invite qui part n a rien a garder non plus, et le ranger dans
+        // `abandons` aurait fabrique une ligne sans compte ou l ecrire.
         if (!p.compte) continue;
+        // 🚪 PARTI EN COURS DE ROUTE, OU DECONNECTE A LA FIN : pas d xp, pas
+        // de rubis, pas de victoire, pas de partie comptee. Mais SON RECORD
+        // EST GARDE, et c est un changement du 21 nov. 2026.
+        //
+        // ⚠️ Ces deux filtres existent contre le FARM D XP, pas contre les
+        // records — et un record ne se farme pas en partant, il se perd. Or
+        // dans une partie de BombAnime a quatorze qui dure neuf minutes,
+        // celui qui saute a la premiere minute ferme son onglet : il ne va
+        // pas regarder les huit autres. Ses personnages trouves disparaissaient
+        // avec lui, et le palmares ne montrait plus que les finalistes — ce
+        // qui donnait l impression, juste, que « les records ne tiennent pas ».
+        //
+        // Une coupure breve ne coute toujours rien : `disconnectedAt` est
+        // efface des le retour, et la partie dure plus longtemps qu elle.
+        // ⏳ LEVE HORS PRODUCTION — voir docs/restrictions-levees.md, qui
+        // tient la liste des cinq et dit comment les remettre.
+        if ((p.parti || p.disconnectedAt) && !comptes.SANS_LIMITES) {
+            abandons.push({ id: p.playerId, pseudo: p.username });
+            continue;
+        }
         const r = comptes.xpDeLaPartie(mode, {
             gagnant: gagne.has(p.playerId),
             joueurs: nbJoueurs,
@@ -1157,7 +1173,9 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         // `crediter` ne l ecrit que s il a change.
         lignes.push({ id: p.playerId, xp: r.xp, rubis: r.rubis, victoire: r.victoire, pseudo: p.username });
     }
-    if (!lignes.length) return;
+    // ⚠️ `abandons` suffit a continuer : une manche ou tout le monde a ferme
+    // son onglet n a personne a crediter, mais elle a des records a garder.
+    if (!lignes.length && !abandons.length) return;
 
     // 🏆 ⚠️ LA RECOLTE SE FAIT ICI, AVANT LE MOINDRE `await`, ET C EST UNE
     // CORRECTION DE BUG, PAS UN RANGEMENT.
@@ -1185,7 +1203,9 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     const recueil = recoltePourLeClassement(gameState, mode);
     const scores = new Map();
     const detailsParJoueur = new Map();
-    for (const l of lignes) {
+    // ⚠️ LES ABANDONS AUSSI, et c est tout l interet : leur chiffre vit dans
+    // les memes Map du salon, que la remise a zero videra dans un instant.
+    for (const l of [...lignes, ...abandons]) {
         scores.set(l.id, recueil.score ? recueil.score(l.id) : null);
         detailsParJoueur.set(l.id, recueil.details ? recueil.details(l.id) : {});
     }
@@ -1196,8 +1216,11 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
     const reglagesFiges = reglagesDeLaPartie(gameState) || {};
     const avecBotsFige = [...gameState.players.values()].some((p) => p.estBot);
 
-    const profils = await comptes.crediter(lignes);
-    if (!profils || !profils.length) return;
+    // ⚠️ On ne credite QUE s il y a quelqu un a crediter, et un echec du
+    // credit n emporte plus l enregistrement : quand la manche n a que des
+    // abandons, `lignes` est vide et il reste pourtant des records a ecrire.
+    const profils = lignes.length ? await comptes.crediter(lignes) : [];
+    if (lignes.length && (!profils || !profils.length)) return;
 
     // 🏆 UNE LIGNE PAR JOUEUR DANS `parties_jouees` (docs/classement.md).
     //
@@ -1303,7 +1326,36 @@ async function crediterXpDeLaPartie(gameState, mode, gagnants, duree) {
         // Figes avant l `await`, voir plus haut.
         score: scores.has(l.id) ? scores.get(l.id) : null,
         details: detailsParJoueur.get(l.id) || {},
-    }))).catch(() => { /* le jeu n en depend pas */ });
+        // Une partie normale n est pas un abandon. ⚠️ Le champ est pose
+        // explicitement plutot que laisse au defaut de la colonne : s il
+        // manque encore en base, `sansColonnesAbsentes` le retire ici sans
+        // consequence, la ou une ligne d abandon, elle, est ecartee entiere.
+        abandon: false,
+    })).concat(abandons.map((a) => ({
+        compte_id: a.id,
+        partie_id: partieId,
+        mode,
+        // ⚠️ TOUT CE QUI SE COMPTE EST A ZERO OU A FAUX : cette ligne n existe
+        // que pour son `score`. Les vues du classement l ecartent sur
+        // `abandon`, donc elle ne grossit ni « parties », ni le taux de
+        // victoire, et elle ne coupe aucune serie de victoires.
+        gagnant: false,
+        // ⚠️ `place: null`, ET IL N ENTRE PAS DANS LE CLASSEMENT DE LA MANCHE
+        // — `placeDe` ne lit que `lignes`. Lui donner une place aurait decale
+        // celle des autres : un joueur parti serait passe « deuxieme » devant
+        // ceux qui sont restes jusqu au bout.
+        place: null,
+        joueurs: nbJoueurs,
+        duree: Math.round(Number(duree) || 0),
+        xp_gagne: 0,
+        rubis_gagnes: 0,
+        hote: a.id === gameState.hostPlayerId,
+        avec_bots: avecBots,
+        reglages,
+        score: scores.has(a.id) ? scores.get(a.id) : null,
+        details: detailsParJoueur.get(a.id) || {},
+        abandon: true,
+    })))).catch(() => { /* le jeu n en depend pas */ });
 
     // Renvoyer a chacun SON total : c est ce qui fait monter la barre sans
     // rechargement.
@@ -3909,8 +3961,17 @@ const CLASSEMENT_RECORDS = {
                  seau: 'serie', defaut: 'overall', precision: 'toutes séries' },
     bombanime: { libelle: 'Personnages trouvés', sens: 'max', unite: '',
                  seau: 'serie', defaut: null, seauNom: 'Série' },
+    // ⚠️ `defaut: null` ET NON 60 — c'est une correction, pas un réglage.
+    // Tant qu'un mode a un `defaut`, la route ignore `req.query.seau` (« le
+    // défaut l'emporte sur la demande ») : le classement de Rush ne pouvait
+    // montrer QUE les manches de 60 s. Or la durée se règle à 60, 90 ou 120.
+    // Les records des manches de 90 et de 120 étaient bien écrits en base, et
+    // plus rien ne pouvait les afficher — la page restait vide sans le dire.
+    // Avec `null`, les trois durées deviennent trois filtres, comme les séries
+    // de BombAnime, et `/api/classement/seaux` ne liste que celles qui ont été
+    // jouées : pas de bouton qui ne rendrait rien.
     rush:      { libelle: 'Portraits trouvés d’affilée', sens: 'max', unite: '',
-                 seau: 'duree', defaut: 60, precision: 'en 60 secondes' },
+                 seau: 'duree', defaut: null, seauNom: 'Durée', seauUnite: 's' },
     ascension: { libelle: 'Meilleur temps jusqu’au sommet', sens: 'min', unite: 's',
                  seau: 'etages', defaut: 15, precision: 'tour de 15 étages' },
     collect:   { libelle: 'Meilleur temps pour gagner', sens: 'min', unite: 's',
@@ -4426,9 +4487,14 @@ app.get('/api/classement/seaux', async (req, res) => {
         // ⚠️ Rien pour les modes à réglages figés : la démo doit montrer la
         // page telle qu'elle sera, pas une version avec des filtres en plus.
         if (!def || !def.seau || def.defaut !== null) return res.json({ seaux: [] });
-        const faux = ['overall', 'prota', 'manganime', 'naruto', 'onepiece', 'bleach', 'dragonball', 'pokemon'];
+        // ⚠️ Les durées de Rush ne sont pas des séries : une démo qui rendrait
+        // « manganime » sur Rush ferait régler l'écran sur un cas faux.
+        const faux = def.seau === 'duree'
+            ? ['60', '90', '120']
+            : ['overall', 'prota', 'manganime', 'naruto', 'onepiece', 'bleach', 'dragonball', 'pokemon'];
         return res.json({
             nom: def.seauNom,
+            unite: def.seauUnite || '',
             seaux: faux.map((v, i) => ({ valeur: v, parties: 60 - i * 7 })),
         });
     }
@@ -4449,7 +4515,17 @@ app.get('/api/classement/seaux', async (req, res) => {
         }
         res.json({
             nom: def.seauNom,
-            seaux: [...vus.entries()].sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ valeur: v, parties: n })),
+            unite: def.seauUnite || '',
+            // ⚠️ Les durées se rangent par VALEUR, pas par nombre de parties :
+            // « 60 · 90 · 120 » est un axe, et le voir dans le désordre parce
+            // qu'on a plus joué en 120 ferait chercher la logique. Les séries
+            // de BombAnime, elles, n'ont pas d'ordre naturel : la plus jouée
+            // devant reste le bon tri.
+            seaux: [...vus.entries()]
+                .sort(def.seau === 'duree'
+                    ? (a, b) => Number(a[0]) - Number(b[0])
+                    : (a, b) => b[1] - a[1])
+                .map(([v, n]) => ({ valeur: v, parties: n })),
         });
     } catch (e) {
         res.json({ seaux: [] });

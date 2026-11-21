@@ -877,17 +877,48 @@ function sansColonnesAbsentes(lignes) {
 // ⚠️ UNE SEULE REQUETE POUR TOUTE LA TABLE. Une insertion par joueur, c est
 // huit allers-retours a la fin de chaque manche, au moment precis ou le
 // serveur diffuse le podium a tout le salon.
+// ⚠️ UNE LIGNE D ABANDON SANS SA COLONNE EST PIRE QUE PAS DE LIGNE.
+//
+// Les lignes d abandon existent pour UNE chose : garder le record de celui
+// qui a ete elimine puis a ferme son onglet. Elles ne doivent compter ni
+// comme une partie, ni comme une defaite — c est `abandon` qui le dit, et
+// les vues du classement les ecartent par cette colonne.
+//
+// Si la colonne manque, `sansColonnesAbsentes` la retire en silence et la
+// ligne entre comme une partie ORDINAIRE : le joueur gagnerait une partie
+// jouee qu il n a pas finie, son taux de victoire baisserait, et une defaite
+// fantome casserait sa serie de victoires (v_series_global numerote toutes
+// les lignes avant de filtrer sur `gagnant`). On prefere donc perdre le
+// record que fausser trois classements : la ligne est ecartee tant que
+// docs/classement.sql n est pas passe.
+function sansAbandonsOrphelins(lignes) {
+    if (!colonnesAbsentes.has('abandon')) return lignes;
+    const gardees = lignes.filter((l) => !l.abandon);
+    if (gardees.length !== lignes.length) {
+        console.error('🚨 Colonne « abandon » absente : '
+            + (lignes.length - gardees.length) + ' record(s) d elimine(s) non enregistre(s).');
+    }
+    return gardees;
+}
+
 async function enregistrerParties(lignes) {
     if (!ACTIF || tablePartiesOk === false) return false;
     if (!Array.isArray(lignes) || !lignes.length) return false;
     try {
+        lignes = sansAbandonsOrphelins(lignes);
+        if (!lignes.length) return false;
         let { error } = await supabase.from('parties_jouees').insert(sansColonnesAbsentes(lignes));
         // ⚠️ UN SEUL SECOND ESSAI, et pas une boucle : si deux colonnes
         // manquent, la premiere est apprise ici et la seconde a la manche
         // suivante. Boucler sur une erreur qu on ne maitrise pas, c est
         // rejouer l insertion indefiniment a la fin de chaque partie.
         if (colonneAbsente(error)) {
-            ({ error } = await supabase.from('parties_jouees').insert(sansColonnesAbsentes(lignes)));
+            // ⚠️ On refiltre : `colonneAbsente` vient peut-etre d apprendre
+            // que c est « abandon » qui manque, et le second essai ne doit
+            // surtout pas faire entrer ces lignes depouillees de leur marque.
+            const restantes = sansAbandonsOrphelins(lignes);
+            if (!restantes.length) return false;
+            ({ error } = await supabase.from('parties_jouees').insert(sansColonnesAbsentes(restantes)));
         }
         if (error) { partiesAbsente(error); return false; }
         tablePartiesOk = true;

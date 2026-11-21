@@ -34,6 +34,12 @@ with ordonne as (
            row_number() over (partition by compte_id order by cree_le)
          - row_number() over (partition by compte_id, gagnant order by cree_le) as ile
     from public.parties_jouees
+    -- ⚠️ LES ABANDONS SORTENT AVANT LA NUMÉROTATION, pas après. Une ligne
+    -- d'abandon est `gagnant = false` : la laisser entrer ici couperait la
+    -- série de victoires de quelqu'un qui n'a pourtant rien perdu — elle
+    -- n'existe que pour garder son record. Et la filtrer plus bas, dans
+    -- `suites`, ne servirait à rien : le mal est fait au `row_number()`.
+    where not abandon
 ),
 suites as (
     select compte_id, count(*) as longueur
@@ -52,6 +58,8 @@ with ordonne as (
            row_number() over (partition by compte_id, mode order by cree_le)
          - row_number() over (partition by compte_id, mode, gagnant order by cree_le) as ile
     from public.parties_jouees
+    -- ⚠️ Même raison qu'au-dessus : avant la numérotation, jamais après.
+    where not abandon
 ),
 suites as (
     select compte_id, mode, count(*) as longueur
@@ -101,7 +109,11 @@ select
     -- requête à l'autre, sous les yeux du joueur.
     min(p.cree_le)                                     as premiere_partie
 from public.comptes c
-left join public.parties_jouees p on p.compte_id = c.id
+-- ⚠️ `and not p.abandon` DANS LE JOIN, surtout pas dans un `where` : un
+-- `where` sur la table de droite transformerait ce `left join` en `join`
+-- silencieux, et tout compte n'ayant que des abandons disparaîtrait du
+-- classement général — alors qu'il doit y figurer, à zéro.
+left join public.parties_jouees p on p.compte_id = c.id and not p.abandon
 left join public.v_series_global s on s.compte_id = c.id
 group by c.id, c.pseudo, c.avatar, c.xp, c.rubis,
          c.titre_prefixe, c.titre_suffixe, c.cree_le, s.meilleure_serie;
@@ -132,6 +144,11 @@ from public.parties_jouees p
 join public.comptes c on c.id = p.compte_id
 join public.v_classement g on g.compte_id = p.compte_id
 left join public.v_series_mode sm on sm.compte_id = p.compte_id and sm.mode = p.mode
+-- ⚠️ Ici un `where` convient, au contraire de v_classement : cette vue part
+-- de `parties_jouees` et n'a pas à faire exister une ligne par compte. Un
+-- joueur qui n'aurait QUE des abandons dans un mode n'y a pas sa place —
+-- il n'y a pas joué une partie entière.
+where not p.abandon
 group by p.compte_id, p.mode, c.pseudo, c.avatar,
          c.titre_prefixe, c.titre_suffixe, sm.meilleure_serie, g.parties;
 
