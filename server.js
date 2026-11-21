@@ -390,10 +390,13 @@ const QUESTIONS_COUNT_TTL = 5 * 60 * 1000;
 // distante qui relève leurs IP, ou pire. On n'accepte donc qu'un nom de la
 // liste, et tout le reste retombe sur le défaut.
 //
-// ⚠️ Cette liste a un JUMEAU côté client : `AVATARS` dans app.js, qui peint
-// le tiroir de l'accueil. Ajouter un avatar demande les DEUX — ici pour
-// qu'il soit accepté, là-bas pour qu'il s'affiche. Les fichiers vivent dans
-// src/img/avatarpic (servi à la racine), sauf le défaut, dans src/img/avatar.
+// ⚠️ Cette liste est la SEULE, et le commentaire d'avant disait le contraire.
+// Il annonçait un jumeau `AVATARS` dans app.js à tenir à jour en même temps :
+// il n'existe plus. Le tiroir de l'accueil reçoit la liste par /api/avatars
+// (voir `chargerAvatars` dans app.js) et ne connaît en dur que le défaut.
+// Ajouter un avatar demande donc le fichier et cette ligne, rien d'autre.
+// Les fichiers vivent dans src/img/avatarpic (servi à la racine), sauf le
+// défaut, dans src/img/avatar.
 const AVATAR_DEFAUT = 'novice.png';
 const AVATARS_AUTORISES = new Set([
     AVATAR_DEFAUT,
@@ -496,6 +499,7 @@ const AVATARS_AUTORISES = new Set([
     'sinon.webp',
     // Food Wars
     'erina.webp',
+    'soma.webp',
     // Evangelion
     'rei.webp',
 ]);
