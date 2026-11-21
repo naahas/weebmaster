@@ -567,10 +567,11 @@ async function maPlace(lignes, def) {
             // echec ; or il n y a rien d anormal a ne pas encore figurer.
             // La ligne n est plus qu une phrase.
             // ⚠️ ET LE SEUIL SE RECALCULE — `parties + manque` — plutot que
-            // de s ecrire « dix ». Il vit dans `CLASSEMENT_MIN_PARTIES`
-            // (server.js) et se regle par une variable d environnement : un
-            // nombre fige ici se serait mis a mentir au premier changement,
-            // sans que rien ne le signale.
+            // de s ecrire « dix ». Il vit dans `plancherDuClassement`
+            // (server.js), DIFFERE SELON L ONGLET — le taux de victoire en
+            // demande cinq quand les autres en demandent une — et se regle
+            // par variable d environnement : un nombre fige ici se serait mis
+            // a mentir au premier changement, sans que rien ne le signale.
             var seuil = (d.parties || 0) + (d.manque || 0);
             boite.innerHTML = '<span class="c-moi-txt">Tu n’apparais pas encore au '
                 + 'classement : il faut <b>' + seuil + ' parties</b> pour y entrer'

@@ -3896,29 +3896,48 @@ app.get('/classement', (req, res) => {
 // `service_role`, depuis ici. C'est aussi ce qui permet d'appliquer les
 // règles de lecture — plancher, bots, départage — à un seul endroit.
 
-// Le plancher d'apparition, TOUS MODES CONFONDUS, comme en v1. Sans lui, un
-// joueur à une partie et une victoire afficherait 100 % et dominerait le
-// tableau : c'est le défaut le plus courant des classements, et il le vide
-// de son sens dès la première semaine.
-// 🚪 COMBIEN DE PARTIES POUR FIGURER AUX TABLEAUX CUMULES (victoires, série,
-// parties, 30 jours). Le Rang et les Records y échappent : voir leurs routes.
+// Le plancher d'apparition, TOUS MODES CONFONDUS, comme en v1. Il se compte
+// sur le TOTAL des parties du compte, jamais sur celles du mode affiché :
+// « cinq parties de BombAnime pour figurer au classement de BombAnime »
+// enfermerait chaque tableau dans ses habitués.
+// 🚪 COMBIEN DE PARTIES POUR FIGURER AUX TABLEAUX CUMULES. Le Rang et les
+// Records y échappent : voir leurs routes.
 //
 // ⚠️ PASSÉ DE DIX À UN LE 20 NOVEMBRE 2026, et c'est un arbitrage daté, pas un
 // réglage définitif. Avec trois comptes inscrits, un plancher de dix laissait
 // le classement VIDE — et un classement vide est pire qu'un classement
 // imparfait : il donne l'impression que personne ne joue.
 //
-// ⚠️ CE QU'ON ACCEPTE EN ÉCHANGE : à une partie, le taux de victoire devient
-// une loterie. Qui gagne sa seule partie affiche 100 % et trône en tête d'un
-// tableau que personne ne peut plus lui prendre. C'est tenable aujourd'hui,
-// ça ne le sera plus avec du trafic.
+// ⚠️ MAIS UN SEUL NOMBRE POUR TOUS LES ONGLETS ÉTAIT UN AMALGAME, et c'est ce
+// que le plancher par onglet ci-dessous répare. Les onglets ne mesurent pas la
+// même chose :
 //
-// ℹ️ Et ça se corrige SANS DÉPLOIEMENT : `CLASSEMENT_MIN_PARTIES` est une
-// variable d'environnement, relevable depuis Heroku. Le jour où le tableau se
-// peuple, remonter à cinq ou dix est l'affaire d'un clic — et la page suit
-// toute seule, elle tient désormais ce nombre du serveur.
+//   • Parties, Série, 30 jours sont des CUMULS. À une partie on y est dernier,
+//     ce qui est exact — le petit nombre n'y fausse rien, il s'y voit.
+//   • Le taux de victoire est une MOYENNE. À une partie gagnée il affiche
+//     100 %, trône en tête, et personne ne peut plus le lui prendre. Ce n'est
+//     pas un classement, c'est une loterie que le premier arrivé remporte.
+//
+// D'où deux planchers : un pour le taux, un pour le reste.
+//
+// ℹ️ Et ça se corrige SANS DÉPLOIEMENT : les deux sont des variables
+// d'environnement, relevables depuis Heroku — et la page suit toute seule,
+// elle tient le nombre du serveur, onglet par onglet.
 const CLASSEMENT_MIN_PARTIES = parseInt(process.env.CLASSEMENT_MIN_PARTIES, 10) || 1;
+const CLASSEMENT_MIN_TAUX = parseInt(process.env.CLASSEMENT_MIN_TAUX, 10) || 5;
 const CLASSEMENT_LIGNES = 50;
+
+// 🚪 Le plancher de CET onglet-là, en un seul endroit — la route du tableau et
+// celle de « ta place » doivent répondre la même chose, sans quoi un joueur
+// lit « il te faut 5 parties » sur une ligne et figure au tableau sur l'autre.
+//
+// ⚠️ Zéro veut dire « aucun plancher », et c'est ce que la page attend pour
+// faire DISPARAITRE la mention au lieu d'annoncer une règle inexistante.
+function plancherDuClassement(type) {
+    if (type === 'rang' || type === 'records') return 0;
+    if (type === 'victoires') return CLASSEMENT_MIN_TAUX;
+    return CLASSEMENT_MIN_PARTIES;
+}
 
 // ⚠️ Les modes classables ne sont pas tous les modes. `choice` n'est pas
 // sorti, et `codanime` n'a pas de classement individuel défendable — la
@@ -4149,15 +4168,20 @@ app.get('/api/classement', async (req, res) => {
         let q = supabase.from(vue).select('*');
         if (mode) q = q.eq('mode', mode);
 
-        // ⚠️ LE PLANCHER PORTE SUR LE TOTAL, jamais sur le mode. Dix parties
+        // ⚠️ LE PLANCHER PORTE SUR LE TOTAL, jamais sur le mode. Cinq parties
         // de BombAnime pour figurer au classement de BombAnime enfermerait
-        // chaque tableau dans ses habitués ; la règle dit « dix parties »,
-        // pas « dix parties de ce mode ».
+        // chaque tableau dans ses habitués ; la règle dit « cinq parties »,
+        // pas « cinq parties de ce mode ».
         const colonneTotal = mode ? 'parties_total' : 'parties';
         // Le classement général par rang échappe au plancher : il mesure
         // l'xp d'une vie de compte, pas une moyenne — rien n'y est faussé
-        // par le petit nombre.
-        if (type !== 'rang') q = q.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
+        // par le petit nombre. Le taux de victoire, lui, en demande plus que
+        // les autres onglets : voir `plancherDuClassement`.
+        // ⚠️ `plancher` ET NON `plancher > 1` : à un, le filtre a encore un
+        // rôle — il écarte les comptes à ZÉRO partie, qui n'ont rien à faire
+        // dans un tableau de parties jouées. Seul zéro lève le filtre.
+        const plancher = plancherDuClassement(type);
+        if (plancher) q = q.gte(colonneTotal, plancher);
 
         const tris = {
             rang:        [['xp', false]],
@@ -4189,7 +4213,7 @@ app.get('/api/classement', async (req, res) => {
         // d environnement.
         res.json({
             lignes: (data || []).map((r) => ligneDeClassement(r, valeur(r))),
-            minParties: type === 'rang' ? 0 : CLASSEMENT_MIN_PARTIES,
+            minParties: plancher,
         });
     } catch (e) {
         // ⚠️ Les vues manquantes se disent, et une seule fois : sans ça on
@@ -4251,19 +4275,28 @@ app.get('/api/classement/joueur', async (req, res) => {
         // ⚠️ Le joueur sous le plancher n'a pas de place : il n'est dans
         // aucun tableau. On le dit, plutôt que de lui donner un rang qu'il
         // ne verrait nulle part.
-        if (type !== 'rang' && (moi[colonneTotal] || 0) < CLASSEMENT_MIN_PARTIES) {
+        //
+        // ⚠️ LE PLANCHER DE L ONGLET DEMANDÉ, le même qu'au tableau. Les deux
+        // routes lisent `plancherDuClassement` : si l'une répondait « il te
+        // faut 5 parties » quand l'autre accepte le joueur, la barre du bas
+        // contredirait la ligne que le joueur voit juste au-dessus.
+        const plancher = plancherDuClassement(type);
+        if (plancher && (moi[colonneTotal] || 0) < plancher) {
             return res.json({
                 trouve: true, souslePlancher: true,
-                parties: moi[colonneTotal] || 0, manque: CLASSEMENT_MIN_PARTIES - (moi[colonneTotal] || 0),
+                parties: moi[colonneTotal] || 0, manque: plancher - (moi[colonneTotal] || 0),
             });
         }
 
         let c = supabase.from(vue).select('*', { count: 'exact', head: true }).gt(col, moi[col] || 0);
         let t = supabase.from(vue).select('*', { count: 'exact', head: true });
         if (mode) { c = c.eq('mode', mode); t = t.eq('mode', mode); }
-        if (type !== 'rang') {
-            c = c.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
-            t = t.gte(colonneTotal, CLASSEMENT_MIN_PARTIES);
+        // ⚠️ LE MÊME PLANCHER SUR LES DEUX COMPTAGES. `devant` et `total` sont
+        // la place et le dénominateur : filtrer l'un sans l'autre donnerait un
+        // « 3e sur 47 » où les 47 incluent des joueurs absents du tableau.
+        if (plancher) {
+            c = c.gte(colonneTotal, plancher);
+            t = t.gte(colonneTotal, plancher);
         }
         const [devant, total] = await Promise.all([c, t]);
 
