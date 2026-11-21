@@ -157,6 +157,20 @@ body::before {
     padding: 0.85rem 0 0;
     border-top: 1px solid var(--c-trait);
 }
+/* ⚠️ LE SAUT DE LIGNE DE LA BARRE DE FILTRES : un élément de largeur pleine
+   et de hauteur nulle. C'est la seule façon de forcer un retour en flexbox
+   sans toucher à l'élément qui suit — mettre `flex-basis: 100%` sur le
+   groupe lui-même aurait étiré sa boîte jusqu'au bord, là où les deux
+   autres groupes épousent leurs boutons.
+
+   ⚠️ La marge négative n'est pas un réglage à l'œil : le saut occupe une
+   RANGÉE, et `.c-filtres` pose un `row-gap` de 0.5rem de part et d'autre.
+   Sans elle, les deux lignes seraient écartées de 1rem au lieu de 0.5. */
+.c-saut {
+    flex-basis: 100%;
+    height: 0;
+    margin-top: -0.5rem;
+}
 .c-groupe {
     display: flex;
     align-items: center;

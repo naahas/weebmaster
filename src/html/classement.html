@@ -316,6 +316,13 @@ function peindreFiltres() {
     // série est un sujet, et chacune a le sien. On en choisit donc toujours
     // une — la plus jouée par défaut.
     if (def.modeObligatoire && seauxConnus.liste.length) {
+        // ⚠️ UN SAUT DE LIGNE EXPLICITE. Le groupe des séries de BombAnime
+        // passait à la ligne tout seul, mais par accident : ses cinq boutons
+        // débordaient. Les deux durées de Rush tenaient sur la première
+        // ligne, et la barre n'avait plus la même forme d'un mode à l'autre.
+        // Le saut la fixe. Voir `.c-saut` — il force le retour sans étirer
+        // la boîte, qui doit épouser ses boutons comme les deux autres.
+        h += '<span class="c-saut" aria-hidden="true"></span>';
         h += '<span class="c-groupe"><span class="c-filtres-nom">' + echappe(seauxConnus.nom || 'Réglage') + '</span>';
         for (var j = 0; j < seauxConnus.liste.length; j++) {
             var s = seauxConnus.liste[j];
@@ -437,14 +444,25 @@ async function charger() {
             var js = await rs.json();
             if (monTour !== requeteEnCours) return;
             seauxConnus = { nom: js.nom, unite: js.unite || '', liste: js.seaux || [] };
-            // ⚠️ Il n'y a plus de « Tous » : il faut donc qu'une série soit
-            // choisie avant le premier affichage, sinon le serveur rendrait
+            // ⚠️ Il n'y a plus de « Tous » : il faut donc qu'un seau soit
+            // choisi avant le premier affichage, sinon le serveur rendrait
             // toutes les parties mêlées — exactement ce qu'on vient de
-            // retirer. La première de la liste est la plus jouée, le serveur
-            // les trie par nombre de parties.
+            // retirer.
+            //
+            // ⚠️ ET ON PREND LE PREMIER SEAU **QUI A DES PARTIES**, pas le
+            // premier de la liste. Les séries de BombAnime arrivent triées
+            // par fréquence, donc les deux revenaient au même ; les durées de
+            // Rush, non — elles sont triées par valeur et toutes offertes,
+            // même vides. « 60 » ouvre donc la liste, et le choisir d'office
+            // aurait montré un classement vide à l'arrivée alors que 90 et
+            // 120 en ont un.
             if (seauxConnus.liste.length
                 && !seauxConnus.liste.some(function (s) { return String(s.valeur) === etat.seau; })) {
-                etat.seau = String(seauxConnus.liste[0].valeur);
+                var plein = null;
+                for (var k = 0; k < seauxConnus.liste.length; k++) {
+                    if ((seauxConnus.liste[k].parties || 0) > 0) { plein = seauxConnus.liste[k]; break; }
+                }
+                etat.seau = String((plein || seauxConnus.liste[0]).valeur);
             }
         } catch (e) { seauxConnus = { nom: null, liste: [] }; }
         peindreFiltres();

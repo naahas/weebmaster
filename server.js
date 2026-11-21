@@ -3970,8 +3970,18 @@ const CLASSEMENT_RECORDS = {
     // Avec `null`, les trois durées deviennent trois filtres, comme les séries
     // de BombAnime, et `/api/classement/seaux` ne liste que celles qui ont été
     // jouées : pas de bouton qui ne rendrait rien.
+    //
+    // ⚠️ `seauToutes` : LES TROIS DURÉES SONT TOUJOURS OFFERTES, même vides,
+    // et c'est l'exception à la règle « jamais un filtre qui ne rendrait
+    // rien ». Cette règle vaut pour les séries de BombAnime, dont il existe
+    // une vingtaine : n'afficher que les jouées évite un mur de boutons
+    // morts. Une durée, non — il y en a trois, fixées par le jeu, et elles
+    // forment un axe. N'en montrer que deux ferait croire que Rush ne se
+    // joue qu'en 90 et 120. Un seau vide affiche « Rien à montrer pour
+    // l'instant », qui est vrai et se comprend. (Vérifié au rendu.)
     rush:      { libelle: 'Portraits trouvés d’affilée', sens: 'max', unite: '',
-                 seau: 'duree', defaut: null, seauNom: 'Durée', seauUnite: 's' },
+                 seau: 'duree', defaut: null, seauNom: 'Durée', seauUnite: 's',
+                 seauToutes: RUSH_CONFIG.DUREES.map(String) },
     ascension: { libelle: 'Meilleur temps jusqu’au sommet', sens: 'min', unite: 's',
                  seau: 'etages', defaut: 15, precision: 'tour de 15 étages' },
     collect:   { libelle: 'Meilleur temps pour gagner', sens: 'min', unite: 's',
@@ -4513,6 +4523,11 @@ app.get('/api/classement/seaux', async (req, res) => {
             if (v === undefined || v === null || v === '') continue;
             vus.set(String(v), (vus.get(String(v)) || 0) + 1);
         }
+        // ⚠️ Les seaux d'un AXE FERMÉ sont tous là, même à zéro — voir
+        // `seauToutes` dans CLASSEMENT_RECORDS. `parties: 0` n'est pas qu'un
+        // chiffre d'affichage : c'est lui qui dit au client de ne PAS choisir
+        // ce seau par défaut.
+        for (const v of def.seauToutes || []) if (!vus.has(String(v))) vus.set(String(v), 0);
         res.json({
             nom: def.seauNom,
             unite: def.seauUnite || '',
