@@ -623,7 +623,12 @@ const CHARACTER_VARIANTS = {
         ["JE PEUX ENTENDRE L'OCEAN" , "JE PEUX ENTENDRE LOCEAN"],
         ["JIBAKU SHOUNEN HANAKO KUN" , "TOILET BOUND HANAKO KUN" , "HANAKO KUN" , "HANAKO"],
         ["ADACHI AND SHINAMURA" , "ADACHI TO SHINAMURA"],
-        ["PRESQUE MARIES LOIN DETRE AMOUREUX" , "PRESQUE MARIES LOIN D'ETRE AMOUREUX" , "FUFU IJO" , "FUUFU IJOU" ,  "MORE THAN A MARRIED COUPLE"],
+        // ⚠️ « FUUFU IJOU KOIBITO MIMAN » rejoint CE groupe, il n en forme pas
+        // un second : le titre complet contient « FUUFU IJOU » mot pour mot,
+        // mais dans Manganime la regle du mot entier ne joue pas (voir plus
+        // bas), donc rien ne les reliait. Deux groupes separes auraient laisse
+        // le titre complet et « MORE THAN A MARRIED COUPLE » citables ensemble.
+        ["PRESQUE MARIES LOIN DETRE AMOUREUX" , "PRESQUE MARIES LOIN D'ETRE AMOUREUX" , "FUFU IJO" , "FUUFU IJOU" , "FUUFU IJOU KOIBITO MIMAN" ,  "MORE THAN A MARRIED COUPLE"],
         ["KIWI WA HOUKAGO INSOMNIA" , "INSOMNIACS AFTER SCHOOL"],
         ["LAID BACK CAMP" , "YURU CAMP"],
         ["HIKARU GA SHINDA NATSU" , "THE SUMMER HIKARU DIED"],
@@ -672,6 +677,28 @@ const CHARACTER_VARIANTS = {
         ["ADOLF" , "ADOLF NI TSUGU"],
         ["MORIARTY THE PATRIOT" , "YUUKOKU NO MORIARTY" , "MORIARTY"],
         ["L'ATELIER DES SORCIERS" , "WITCH HAT ATELIER" , "ATELIER DES SORCIERS" , "LATELIER DES SORCIERS", "TONGARI BOSHI NO ATELIER"],
+
+        // ============================================
+        // Lot suggere par un joueur dans /signaler, 21 nov. 2026
+        // ============================================
+        // ⚠️ CES GROUPES SONT TOUS INDISPENSABLES, et deux d entre eux pour une
+        // raison contre-intuitive. Ailleurs, la regle du MOT ENTIER relie deja
+        // un titre a celui qui le contient. Pas ici : getAllNamesToBlock sort
+        // en « exact match uniquement » des que le theme est Manganime, sinon
+        // « DRAGON BALL » bloquerait « DRAGON BALL Z ». Consequence : meme un
+        // titre contenu mot pour mot dans un autre n est relie par RIEN, et
+        // sans groupe les deux se citent a la suite en comptant deux fois.
+        ["KOI WA AMEAGARI NO YOU NI" , "AFTER THE RAIN"],
+        ["BOKUBEN" , "WE NEVER LEARN"],
+        ["MASAMUNE KUN" , "MASAMUNE KUN NO REVENGE"],
+        ["KAKKOU NO IINAZUKE" , "A COUPLE OF CUCKOOS" , "COUPLE OF CUCKOOS"],
+        ["ARABURU KISETSU NO OTOME DOMO YO" , "MAIDENS OF THE SAVAGE SEASON"],
+        // ⚠️ « BASTARD » reste DEHORS, et ce n est pas un oubli : c est le
+        // Bastard!! de Hagiwara, une autre œuvre, qui a sa propre entree en
+        // banque. L exact match la protege — mais si quelqu un rebranchait un
+        // jour la regle du mot entier sur Manganime, elle tomberait avec ce
+        // groupe. C est ecrit ici pour qu on le voie venir.
+        ["AKASHIC RECORDS OF BASTARD MAGIC INSTRUCTOR" , "BASTARD MAGIC INSTRUCTOR"],
 
     ],
 
