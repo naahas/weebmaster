@@ -304,6 +304,38 @@
         }
         .bd-e button { font-weight: 600; }
 
+        /* ════════════════════════════════════════════════════════════
+           LA FAMILLE E — SANS SOULIGNEMENT
+           ════════════════════════════════════════════════════════════
+           ⚠️ CES REGLES VIENNENT APRES `.bd-e button`, ET C EST OBLIGATOIRE.
+           Elles ont la MEME specificite (0,2,1) : a egalite, c est la
+           derniere ecrite qui gagne. Placee en dessous, la regle de base
+           reimposait son poids 600 — E3 demandait 700 et rendait 600, en
+           silence, pendant que sa couleur passait. Ne pas remonter ce bloc.
+           ⚠️ CE QU ON RETIRE EN RETIRANT LE TRAIT. « connecte-toi » est la
+           SEULE chose a cliquer de la phrase, et tout l objet du bandeau est
+           d obtenir ce clic. Le soulignement etait le signal le plus franc ;
+           sans lui il ne reste que la couleur et le poids. Sur un ecran
+           tactile il n y a pas de survol pour rattraper — ce que E2 montre
+           justement, et c est sa limite. */
+
+        /* E1 · NU — or et demi-gras, rien d autre. Le pari le plus sobre. */
+        .bd-e1 button { text-decoration: none; font-weight: 600; }
+
+        /* E2 · AU SURVOL — le trait revient sous le pointeur. Honnete sur
+           ordinateur, SANS EFFET sur telephone : a garder en tete, c est la
+           ou se joue la majorite des parties. */
+        .bd-e2 button { text-decoration: none; font-weight: 600; }
+        .bd-e2 button:hover,
+        .bd-e2 button:focus-visible { text-decoration: underline; color: #fff; }
+
+        /* E3 · COMPENSE — on rend en contraste ce qu on a retire en trait :
+           or plus vif, poids 700. Le mot pese sans etre souligne. */
+        .bd-e3 button {
+            text-decoration: none; font-weight: 700;
+            color: #ffd874;
+        }
+
         /* ── F · LA BARRE HAUTE ──
            L inverse du flottant : collee au bord, pleine largeur, un filet
            dessous. Elle devient du chrome — elle ne flotte plus SUR l ecran
@@ -332,10 +364,16 @@
     </style>
 </head>
 
-<body data-large="1280" data-texte="etat">
+<body data-large="1280" data-texte="etat" data-jeu="e">
 
     <div class="rail">
-        <h1>🪪 Le bandeau de l invite — six directions</h1>
+        <h1>🪪 Le bandeau de l invite</h1>
+
+        <div class="groupe">
+            <span>Jeu</span>
+            <button type="button" data-jeu="e" aria-pressed="true">Famille E</button>
+            <button type="button" data-jeu="six" aria-pressed="false">Les six</button>
+        </div>
 
         <div class="groupe">
             <span>Largeur</span>
@@ -357,15 +395,29 @@
            decor est RIGOUREUSEMENT identique d une variante a l autre. Six
            copies ecrites a la main auraient divergé a la premiere retouche,
            et l on aurait compare des ecrans, pas des bandeaux. */
-        var VARIANTES = [
-            { cle: '0', nom: 'Temoin — l existant', note: 'capitales serrees dans un cadre dore' },
-            { cle: 'a', nom: 'A · La mention nue', note: 'plus de cadre ; l interlettrage recule au lieu de s elargir' },
-            { cle: 'b', nom: 'B · Le filet', note: 'un seul trait au-dessus, eteint aux deux bouts' },
-            { cle: 'c', nom: 'C · La phrase', note: 'bas-de-casse, Poppins 400 — une remarque, pas une etiquette' },
-            { cle: 'd', nom: 'D · La pilule assumee', note: 'un contenant franc : rond, compact, sans or' },
-            { cle: 'e', nom: 'E · Le cachet', note: 'un cadenas devant, deux poids dans la phrase' },
-            { cle: 'f', nom: 'F · La barre haute', note: 'collee au bord, pleine largeur — du chrome' }
-        ];
+        /* ⚠️ `base` PORTE LE STYLE, `cle` LA NUANCE. Les variantes de la
+           famille E sont toutes des `bd-e` — meme cadenas, meme phrase, meme
+           graisse — et ne different que par le traitement du mot cliquable.
+           Les dupliquer en entier aurait fait diverger le reste a la
+           premiere retouche, et l on aurait compare autre chose que ce qu on
+           croit comparer. */
+        var JEUX = {
+            six: [
+                { cle: '0', nom: 'Temoin — l existant', note: 'capitales serrees dans un cadre dore' },
+                { cle: 'a', nom: 'A · La mention nue', note: 'plus de cadre ; l interlettrage recule au lieu de s elargir' },
+                { cle: 'b', nom: 'B · Le filet', note: 'un seul trait au-dessus, eteint aux deux bouts' },
+                { cle: 'c', nom: 'C · La phrase', note: 'bas-de-casse, Poppins 400 — une remarque, pas une etiquette' },
+                { cle: 'd', nom: 'D · La pilule assumee', note: 'un contenant franc : rond, compact, sans or' },
+                { cle: 'e', nom: 'E · Le cachet', note: 'un cadenas devant, deux poids dans la phrase' },
+                { cle: 'f', nom: 'F · La barre haute', note: 'collee au bord, pleine largeur — du chrome' }
+            ],
+            e: [
+                { cle: 'e', base: 'e', nom: 'E · Le cachet', note: 'tel que propose — « connecte-toi » souligne' },
+                { cle: 'e1', base: 'e', nom: 'E1 · Nu', note: 'plus de trait du tout : or et demi-gras, rien d autre' },
+                { cle: 'e2', base: 'e', nom: 'E2 · Au survol', note: 'le trait revient sous le pointeur — sans effet sur telephone' },
+                { cle: 'e3', base: 'e', nom: 'E3 · Compense', note: 'or plus vif et poids 700 : le mot pese sans etre souligne' }
+            ]
+        };
 
         /* Les deux redactions. ⚠️ La seconde est celle que le CSS de
            production REVENDIQUE sans l appliquer : « le texte dit une PERTE,
@@ -383,19 +435,20 @@
         var COURONNE = '<svg class="couronne" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
             + '<path d="M3 7l4.5 3.5L12 4l4.5 6.5L21 7l-1.8 11H4.8L3 7z"></path></svg>';
 
-        function phrase(cle) {
+        function phrase(v) {
             var t = TEXTES[document.body.dataset.texte] || TEXTES.etat;
-            var glyphe = cle === 'e' ? CADENAS : '';
+            var glyphe = (v.base || v.cle) === 'e' ? CADENAS : '';
             return '<p>' + glyphe + '<span>' + t[0] + '</span>'
                 + '<button type="button">' + t[1] + '</button>'
                 + '<span>' + t[2] + '</span></p>';
         }
 
         function scene(v) {
+            var classes = 'bd bd-' + (v.base || v.cle) + (v.base ? ' bd-' + v.cle : '');
             return '<div class="bloc">'
                 + '<div class="etiquette"><b>' + v.nom + '</b><span>' + v.note + '</span></div>'
                 + '<div class="scene">'
-                + '<div class="bd bd-' + v.cle + '">' + phrase(v.cle) + '</div>'
+                + '<div class="' + classes + '">' + phrase(v) + '</div>'
                 + '<div class="scene-corps">'
                 + COURONNE
                 + '<div class="w-titre">Victoire</div>'
@@ -410,20 +463,23 @@
         }
 
         function dessiner() {
-            document.getElementById('scenes').innerHTML = VARIANTES.map(scene).join('');
+            var jeu = JEUX[document.body.dataset.jeu] || JEUX.six;
+            document.getElementById('scenes').innerHTML = jeu.map(scene).join('');
         }
 
         document.querySelector('.rail').addEventListener('click', function (e) {
             var b = e.target.closest('button');
             if (!b) return;
-            var champ = b.dataset.large ? 'large' : (b.dataset.texte ? 'texte' : null);
+            var champ = ['large', 'texte', 'jeu'].filter(function (c) { return b.dataset[c]; })[0];
             if (!champ) return;
             document.body.dataset[champ] = b.dataset[champ];
             var freres = b.parentElement.querySelectorAll('button');
             for (var i = 0; i < freres.length; i++) {
                 freres[i].setAttribute('aria-pressed', String(freres[i] === b));
             }
-            if (champ === 'texte') dessiner();
+            /* La largeur est une pure affaire de CSS : elle n a pas besoin
+               qu on redessine. Le texte et le jeu de variantes, si. */
+            if (champ !== 'large') dessiner();
         });
 
         dessiner();
