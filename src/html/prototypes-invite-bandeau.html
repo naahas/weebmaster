@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banc — le bandeau de l invite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;900&display=swap"
+        rel="stylesheet">
+    <!--
+        🪪 LE BANDEAU DE L INVITE, EN FIN DE PARTIE — six directions.
+
+        ⚠️ CE QUI CLOCHE AUJOURD HUI, et c est ecrit noir sur blanc dans le
+        CSS de production : le commentaire annonce « SANS CADRE : c est une
+        mention, pas une boite de dialogue », puis pose un `border` et un
+        `background` douze lignes plus bas. Deux intentions qui se battent.
+
+        ⚠️ ET LA TYPO FAIT LA MEME CHOSE. Le bandeau reprend le traitement du
+        « VICTOIRE » — capitales, interlettrage large, blanc sourd — mais en
+        plus petit (0,7rem / 0,17em contre 1rem / 0,3em). Resultat : il ne se
+        lit pas comme une mention discrete, il se lit comme un SECOND TITRE
+        qui concurrence le premier. Or son role est de s effacer : il parle
+        une seconde et demie apres le podium, sur le moment du joueur.
+
+        D ou six natures, et non six boites :
+
+          A  LA MENTION NUE — on tient la promesse du commentaire. Plus de
+             cadre du tout. Ce qui la fait exister, c est le vide autour.
+          B  LE FILET — pas de boite, un seul trait qui s eteint aux deux
+             bouts. La forme du chapeau de presse.
+          C  LA PHRASE — on abandonne les capitales. Bas-de-casse, Poppins
+             400 : ca ne se lit plus comme une etiquette systeme mais comme
+             une remarque. C est la reponse la plus directe a « la font me
+             derange ».
+          D  LA PILULE ASSUMEE — s il doit y avoir un contenant, qu il soit
+             franc : une puce compacte, ronde, sans or. Une chip, pas un
+             dialogue.
+          E  LE CACHET — un cadenas minuscule, deux poids dans la phrase :
+             la perte en blanc sourd, l action en or. Aucun contenant.
+          F  LA BARRE HAUTE — l inverse du flottant : collee au bord, pleine
+             largeur, un filet dessous. Ca devient du chrome, pas du contenu.
+
+        ⚠️ LE TEXTE EST UN SECOND AXE, et le CSS de prod le dit aussi : « Le
+        texte dit une PERTE, pas un etat ». Or il dit « Tu es en mode invite »,
+        qui est un etat. L interrupteur du haut compare les deux.
+
+        ⚠️ LE DECOR EST UNE REPRODUCTION de l ecran de fin de BombAnime, aux
+        vraies valeurs (.winner-title : 1rem / 500 / .3em / blanc 50 %). Juger
+        ce bandeau sur une page blanche n aurait rien dit : tout le probleme
+        est son rapport au titre qui le suit.
+    -->
+    <style>
+        :root {
+            --or: #f0c75e;
+            --or-vif: #FFD700;
+            --fond: #07070a;
+            --rail: #0d0d12;
+            --bord: #1d1d26;
+            --txt: #e8e8ef;
+            --doux: #8b8b99;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        [hidden] { display: none !important; }
+
+        body {
+            background: var(--fond);
+            color: var(--txt);
+            font-family: 'Poppins', system-ui, sans-serif;
+            line-height: 1.55;
+            padding-bottom: 6rem;
+        }
+
+        /* ───────── Le rail de reglages ───────── */
+        .rail {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+            padding: 0.85rem 1.4rem;
+            background: rgba(10, 10, 14, 0.95);
+            backdrop-filter: blur(0.6rem);
+            border-bottom: 1px solid var(--bord);
+        }
+        .rail h1 {
+            font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em;
+            color: var(--or); margin-right: auto;
+        }
+        .groupe { display: flex; align-items: center; gap: 0.45rem; }
+        .groupe > span {
+            font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+            color: var(--doux); margin-right: 0.15rem;
+        }
+        .rail button {
+            padding: 0.34rem 0.75rem;
+            border: 1px solid var(--bord); border-radius: 0.45rem;
+            background: #14141b; color: var(--txt);
+            font: inherit; font-size: 0.74rem; cursor: pointer;
+        }
+        .rail button:hover { border-color: #2e2e3c; }
+        .rail button[aria-pressed="true"] {
+            background: var(--or); border-color: var(--or); color: #10100a; font-weight: 600;
+        }
+
+        /* ───────── La colonne des scenes ───────── */
+        .scenes {
+            display: flex; flex-direction: column; gap: 2.6rem;
+            align-items: center;
+            padding: 2.2rem 1.2rem 0;
+        }
+        .bloc { width: 100%; max-width: 1280px; transition: max-width 0.25s ease; }
+        body[data-large="390"] .bloc { max-width: 390px; }
+
+        .etiquette {
+            display: flex; align-items: baseline; gap: 0.6rem;
+            margin-bottom: 0.6rem; padding-left: 0.1rem;
+        }
+        .etiquette b {
+            font-size: 0.78rem; font-weight: 700; color: var(--or);
+            letter-spacing: 0.03em;
+        }
+        .etiquette span { font-size: 0.72rem; color: var(--doux); }
+
+        /* ───────── La reproduction de l ecran de fin ───────── */
+        /* ⚠️ `position: relative` : en production le bandeau est `fixed`. Ici
+           il doit rester DANS sa scene, sinon les six se superposeraient au
+           meme endroit de la fenetre. Seul l ancrage change, pas l aspect. */
+        .scene {
+            position: relative; overflow: hidden;
+            min-height: 500px;
+            /* ⚠️ LE HAUT EST RESERVE AU BANDEAU, 6,5rem, et ce n est pas une
+               marge de confort : sur le vrai ecran il y a un grand vide entre
+               la mention et la couronne. Sans cette reserve le halo de la
+               couronne montait dans le texte — on aurait compare des
+               chevauchements, pas des bandeaux. */
+            padding: 6.5rem 1.2rem 2.4rem;
+            border: 1px solid #16161e; border-radius: 0.9rem;
+            background:
+                radial-gradient(60% 50% at 50% 42%, rgba(240, 199, 94, 0.05), transparent 70%),
+                #08080c;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center;
+        }
+        .scene-corps {
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center;
+        }
+        .couronne {
+            width: 62px; height: 62px; color: var(--or-vif);
+            filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.45));
+            margin-bottom: 0.9rem;
+        }
+        /* ⚠️ LES VRAIES VALEURS DE `.winner-title`. Tout le banc repose sur la
+           comparaison avec cette ligne-la : la fausser viderait le test. */
+        .w-titre {
+            font-size: 1rem; font-weight: 500; color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase; letter-spacing: 0.3em;
+        }
+        .w-nom-ligne { display: flex; align-items: center; gap: 1rem; margin: 0.8rem 0 1.1rem; }
+        .w-ava {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 2px solid rgba(240, 199, 94, 0.55);
+            background: radial-gradient(circle at 35% 30%, #3a3a52, #15151f);
+            display: grid; place-items: center; font-size: 1.1rem;
+        }
+        .w-nom {
+            font-size: 2rem; font-weight: 900;
+            background: linear-gradient(135deg, #FFD700, #e0a21a);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 1.25rem rgba(255, 215, 0, 0.35));
+        }
+        .w-stats { display: flex; gap: 2.6rem; }
+        .w-stat b {
+            display: block; font-size: 1.6rem; font-weight: 900; color: #fff;
+            line-height: 1.1;
+        }
+        .w-stat span {
+            font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .w-btns { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: 1.6rem; }
+        .w-rejouer {
+            padding: 0.6rem 2.1rem; border: 0; border-radius: 999px;
+            background: var(--or-vif); color: #1a1405;
+            font: inherit; font-weight: 700; font-size: 0.92rem;
+        }
+        .w-retour {
+            padding: 0.42rem 1.6rem; border: 1px solid rgba(240, 199, 94, 0.25);
+            border-radius: 999px; background: rgba(240, 199, 94, 0.05);
+            color: rgba(240, 199, 94, 0.75); font: inherit; font-size: 0.82rem;
+        }
+
+        /* ════════════════════════════════════════════════════════════
+           LES SIX DIRECTIONS
+           ════════════════════════════════════════════════════════════
+           Socle commun : la bande traverse, ne prend pas les clics, et seul
+           le lien les reprend. C est la regle de production, elle ne change
+           pas d une variante a l autre. */
+        .bd {
+            position: absolute; left: 0; right: 0; top: 1.5rem;
+            padding: 0 1.2rem; text-align: center;
+            pointer-events: none;
+        }
+        .bd p { display: inline-block; margin: 0; max-width: min(46rem, 100%); }
+        .bd button {
+            pointer-events: auto;
+            padding: 0; border: 0; background: none; font: inherit;
+            color: var(--or); cursor: pointer;
+            text-decoration: underline; text-underline-offset: 0.22em;
+        }
+        .bd button:hover { color: #fff; }
+
+        /* ── Temoin : l existant, tel quel ── */
+        .bd-0 p {
+            padding: 0.55rem 1.3rem;
+            border: 1px solid rgba(240, 199, 94, 0.15);
+            border-radius: 0.7rem;
+            background: rgba(10, 9, 15, 0.55);
+            font-size: 0.7rem; font-weight: 500; letter-spacing: 0.17em;
+            text-transform: uppercase; line-height: 1.85;
+            color: rgba(255, 255, 255, 0.46);
+        }
+        .bd-0 button { font-weight: 700; letter-spacing: inherit; text-transform: inherit; }
+
+        /* ── A · LA MENTION NUE ──
+           Le cadre saute. Et l interlettrage RECULE (0,11em) au lieu de
+           s elargir : c est lui qui faisait concurrence au titre. */
+        .bd-a p {
+            font-size: 0.66rem; font-weight: 500; letter-spacing: 0.11em;
+            text-transform: uppercase; line-height: 1.8;
+            color: rgba(255, 255, 255, 0.34);
+        }
+        .bd-a button { font-weight: 700; letter-spacing: inherit; text-transform: inherit; color: rgba(240, 199, 94, 0.85); }
+
+        /* ── B · LE FILET ──
+           Un seul trait au-dessus, eteint aux deux bouts. Il pose la phrase
+           sans l enfermer : on borne un cote, pas quatre. */
+        .bd-b p {
+            padding-top: 0.85rem;
+            font-size: 0.66rem; font-weight: 500; letter-spacing: 0.13em;
+            text-transform: uppercase; line-height: 1.8;
+            color: rgba(255, 255, 255, 0.36);
+            position: relative;
+        }
+        .bd-b p::before {
+            content: ''; position: absolute; top: 0; left: 12%; right: 12%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(240, 199, 94, 0.38), transparent);
+        }
+        .bd-b button { font-weight: 700; letter-spacing: inherit; text-transform: inherit; }
+
+        /* ── C · LA PHRASE ──
+           Plus de capitales du tout. Bas-de-casse, Poppins 400, un poil plus
+           grand : ca cesse d etre une etiquette systeme et redevient une
+           remarque adressee au joueur. */
+        /* ⚠️ 40rem ET NON 32 : en bas-de-casse la phrase est PLUS LONGUE en
+           caracteres mais plus courte en largeur, et 32rem la cassait juste
+           avant « parties. » — un mot seul sur la deuxieme ligne, ce qui est
+           le pire des deux mondes. A 40rem elle tient sur une ligne sur ordi
+           et se casse proprement en deux sur telephone. */
+        .bd-c p {
+            max-width: 40rem;
+            font-size: 0.84rem; font-weight: 400; letter-spacing: 0;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.45);
+        }
+        .bd-c button { font-weight: 600; }
+
+        /* ── D · LA PILULE ASSUMEE ──
+           S il y a un contenant, il est franc : rond, compact, pas d or au
+           bord. Une chip de statut — la forme dit « information », pas
+           « dialogue ». */
+        .bd-d p {
+            padding: 0.4rem 1.05rem;
+            border: 0; border-radius: 999px;
+            background: rgba(255, 255, 255, 0.055);
+            font-size: 0.76rem; font-weight: 400; letter-spacing: 0;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.52);
+        }
+        .bd-d button { font-weight: 600; }
+
+        /* ── E · LE CACHET ──
+           Un cadenas minuscule devant, et deux poids dans la phrase : la
+           perte en blanc sourd, l action en or. Aucun contenant — c est le
+           glyphe qui tient le tout. */
+        /* ⚠️ PAS DE FLEX DU TOUT DANS UNE PHRASE, et les deux essais rates
+           valent d etre gardes. En `inline-flex` avec un `gap`, l ecart
+           s insere entre TOUS les enfants : on lisait « connecte-toi  pour »,
+           un blanc de trop a chaque jointure. En retirant le `gap`, c est
+           l inverse — « invite —connecte-toipour » : les items flex sont
+           BLOCKIFIES, et les blancs de tete et de fin de chaque morceau sont
+           rognes. Une phrase doit rester du texte en ligne ; l icone s y pose
+           comme un caractere, pas comme une colonne. */
+        .bd-e p {
+            display: inline-block;
+            max-width: 40rem;
+            font-size: 0.78rem; font-weight: 400; letter-spacing: 0.01em;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.4);
+        }
+        .bd-e svg {
+            width: 13px; height: 13px;
+            vertical-align: -0.12em; margin-right: 0.5rem;
+            color: rgba(240, 199, 94, 0.6);
+        }
+        .bd-e button { font-weight: 600; }
+
+        /* ── F · LA BARRE HAUTE ──
+           L inverse du flottant : collee au bord, pleine largeur, un filet
+           dessous. Elle devient du chrome — elle ne flotte plus SUR l ecran
+           de fin, elle le borde. */
+        .bd-f {
+            top: 0; padding: 0;
+            background: rgba(8, 8, 12, 0.82);
+            backdrop-filter: blur(0.4rem);
+            border-bottom: 1px solid rgba(240, 199, 94, 0.12);
+        }
+        .bd-f p {
+            display: block; max-width: none;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.68rem; font-weight: 400; letter-spacing: 0.03em;
+            color: rgba(255, 255, 255, 0.44);
+        }
+        .bd-f button { font-weight: 600; }
+
+        @media (max-width: 560px) {
+            .rail { gap: 0.8rem; padding: 0.7rem 0.9rem; }
+            .rail h1 { width: 100%; margin: 0; }
+            .scene { min-height: 400px; }
+            .w-nom { font-size: 1.6rem; }
+            .w-stats { gap: 1.8rem; }
+        }
+    </style>
+</head>
+
+<body data-large="1280" data-texte="etat">
+
+    <div class="rail">
+        <h1>🪪 Le bandeau de l invite — six directions</h1>
+
+        <div class="groupe">
+            <span>Largeur</span>
+            <button type="button" data-large="1280" aria-pressed="true">Ordi 1280</button>
+            <button type="button" data-large="390" aria-pressed="false">Tel 390</button>
+        </div>
+
+        <div class="groupe">
+            <span>Texte</span>
+            <button type="button" data-texte="etat" aria-pressed="true">Etat</button>
+            <button type="button" data-texte="perte" aria-pressed="false">Perte</button>
+        </div>
+    </div>
+
+    <div class="scenes" id="scenes"></div>
+
+    <script>
+        /* ⚠️ LES SCENES SONT GENEREES, et c est ce qui garantit le test : le
+           decor est RIGOUREUSEMENT identique d une variante a l autre. Six
+           copies ecrites a la main auraient divergé a la premiere retouche,
+           et l on aurait compare des ecrans, pas des bandeaux. */
+        var VARIANTES = [
+            { cle: '0', nom: 'Temoin — l existant', note: 'capitales serrees dans un cadre dore' },
+            { cle: 'a', nom: 'A · La mention nue', note: 'plus de cadre ; l interlettrage recule au lieu de s elargir' },
+            { cle: 'b', nom: 'B · Le filet', note: 'un seul trait au-dessus, eteint aux deux bouts' },
+            { cle: 'c', nom: 'C · La phrase', note: 'bas-de-casse, Poppins 400 — une remarque, pas une etiquette' },
+            { cle: 'd', nom: 'D · La pilule assumee', note: 'un contenant franc : rond, compact, sans or' },
+            { cle: 'e', nom: 'E · Le cachet', note: 'un cadenas devant, deux poids dans la phrase' },
+            { cle: 'f', nom: 'F · La barre haute', note: 'collee au bord, pleine largeur — du chrome' }
+        ];
+
+        /* Les deux redactions. ⚠️ La seconde est celle que le CSS de
+           production REVENDIQUE sans l appliquer : « le texte dit une PERTE,
+           pas un etat ». */
+        var TEXTES = {
+            etat: ['Tu es en mode invité — ', 'connecte-toi', ' pour enregistrer le résultat de tes parties.'],
+            perte: ['Cette partie n’a été comptée nulle part — ', 'connecte-toi', ' pour que les suivantes comptent.']
+        };
+
+        var CADENAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"'
+            + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+            + '<rect x="4" y="11" width="16" height="10" rx="2"></rect>'
+            + '<path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+
+        var COURONNE = '<svg class="couronne" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+            + '<path d="M3 7l4.5 3.5L12 4l4.5 6.5L21 7l-1.8 11H4.8L3 7z"></path></svg>';
+
+        function phrase(cle) {
+            var t = TEXTES[document.body.dataset.texte] || TEXTES.etat;
+            var glyphe = cle === 'e' ? CADENAS : '';
+            return '<p>' + glyphe + '<span>' + t[0] + '</span>'
+                + '<button type="button">' + t[1] + '</button>'
+                + '<span>' + t[2] + '</span></p>';
+        }
+
+        function scene(v) {
+            return '<div class="bloc">'
+                + '<div class="etiquette"><b>' + v.nom + '</b><span>' + v.note + '</span></div>'
+                + '<div class="scene">'
+                + '<div class="bd bd-' + v.cle + '">' + phrase(v.cle) + '</div>'
+                + '<div class="scene-corps">'
+                + COURONNE
+                + '<div class="w-titre">Victoire</div>'
+                + '<div class="w-nom-ligne"><div class="w-ava">☯</div><div class="w-nom">Master</div></div>'
+                + '<div class="w-stats">'
+                + '<div class="w-stat"><b>9</b><span>Personnages</span></div>'
+                + '<div class="w-stat"><b>0:30</b><span>Durée</span></div>'
+                + '</div>'
+                + '<div class="w-btns"><button class="w-rejouer">Rejouer</button>'
+                + '<button class="w-retour">Retour</button></div>'
+                + '</div></div></div>';
+        }
+
+        function dessiner() {
+            document.getElementById('scenes').innerHTML = VARIANTES.map(scene).join('');
+        }
+
+        document.querySelector('.rail').addEventListener('click', function (e) {
+            var b = e.target.closest('button');
+            if (!b) return;
+            var champ = b.dataset.large ? 'large' : (b.dataset.texte ? 'texte' : null);
+            if (!champ) return;
+            document.body.dataset[champ] = b.dataset[champ];
+            var freres = b.parentElement.querySelectorAll('button');
+            for (var i = 0; i < freres.length; i++) {
+                freres[i].setAttribute('aria-pressed', String(freres[i] === b));
+            }
+            if (champ === 'texte') dessiner();
+        });
+
+        dessiner();
+    </script>
+</body>
+
+</html>

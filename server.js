@@ -3678,6 +3678,14 @@ app.get('/prototypes/avatars', (req, res) => {
     res.sendFile(__dirname + '/src/html/prototypes-avatars.html');
 });
 
+// 🪪 Le bandeau de l invite en fin de partie : six natures, posees sur une
+// reproduction de l ecran de fin aux vraies valeurs. Le decor compte autant
+// que la variante — tout le defaut actuel est un rapport au titre « VICTOIRE »
+// qui le suit, et sur une page blanche il ne se verrait pas.
+app.get('/prototypes/invite-bandeau', (req, res) => {
+    res.sendFile(__dirname + '/src/html/prototypes-invite-bandeau.html');
+});
+
 // 🧪 Les VIGNETTES D'OPENINGS, à l'essai. Même esprit que la page des avatars
 // — tout voir d'un coup, au poids près — mais les deux ne pouvaient pas
 // partager la page : celle des avatars simule les SIÈGES de BombAnime, des
