@@ -5533,6 +5533,15 @@
              surtout dans la seconde qui suit une victoire. -->
         <div class="v2-fin-invite" v-if="ecranDeFin && !estConnecte">
             <p class="v2-fin-invite-txt">
+                <!-- 🔒 ⚠️ `aria-hidden` : le cadenas REPETE ce que la phrase
+                     dit deja. Annonce par un lecteur d ecran, il ajouterait
+                     un « image » avant un texte complet. -->
+                <svg class="v2-fin-invite-glyphe" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+                </svg>
                 Tu es en mode invité —
                 <button type="button" class="v2-fin-invite-lien" @click="connexionDepuisFin">connecte-toi</button>
                 pour enregistrer le résultat de tes parties.

@@ -18863,42 +18863,54 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     to   { opacity: 1; translate: 0 0; }
 }
 
-/* ⚠️ LE TRAITEMENT DU « VICTOIRE » DE L ECRAN DE FIN, repris a la lettre :
-   Poppins, capitales, interlettrage large, demi-gras, blanc sourd. Mesure sur
-   `.winner-title` : 12 px, 1,8 px d ecart, poids 500, rgba(255,255,255,.5).
-   Ce bandeau parle au meme endroit que lui, il doit parler la meme langue —
-   une font de plus sur cet ecran se serait vue comme une piece rapportee.
-   ⚠️ Et SANS CADRE : c est une mention, pas une boite de dialogue. Ce qui la
-   fait exister, c est l espacement des lettres et le vide autour. */
+/* ⚠️ LE CADRE EST PARTI, ET LE COMMENTAIRE QUI LE PRECEDAIT AUSSI. Il
+   annoncait « SANS CADRE : c est une mention, pas une boite de dialogue »
+   puis posait un `border` dore et un fond douze lignes plus bas. Deux
+   intentions qui se battaient, et c est le cadre qui a perdu : ce qui fait
+   exister cette phrase, c est le vide autour et le cadenas devant.
+
+   ⚠️ LES CAPITALES RESTENT, MAIS PAS L INTERLETTRAGE DU TITRE. C est lui,
+   et non les capitales seules, qui faisait lire ce bandeau comme un SECOND
+   « VICTOIRE » : meme traitement en plus petit (0,17em contre 0,3em), donc
+   un titre concurrent au lieu d une mention. A 0,1em la phrase reste une
+   ligne de HUD et cesse de rivaliser avec le titre qu elle surplombe. */
 .v2-fin-invite-txt {
-    /* ⚠️ `inline-block` ET C EST LE CADRE QUI L EXIGE. La bande traverse
-       l ecran — c est elle qui permet au texte de s etaler au lieu de se
-       casser en quatre lignes. Un cadre pose dessus serait une barre d un
-       bord a l autre. Le cadre appartient donc au TEXTE, qui se retrecit a
-       son contenu et se centre par le `text-align` de la bande. */
+    /* ⚠️ `inline-block` : la bande traverse l ecran — c est elle qui permet
+       au texte de s etaler au lieu de se casser en quatre lignes — mais le
+       texte, lui, doit se retrecir a son contenu pour que le `text-align`
+       de la bande le centre. */
     display: inline-block;
     margin: 0;
-    /* Un cadre DISCRET : il pose la phrase sans l encadrer au sens propre.
-       Le fond reste translucide pour que le decor de l ecran de fin passe
-       dessous. */
-    padding: 0.55rem 1.3rem;
-    border: 1px solid rgba(240, 199, 94, 0.15);
-    border-radius: 0.7rem;
-    background: rgba(10, 9, 15, 0.55);
+    padding: 0;
     /* La phrase s etale : c est la lecture sur une ou deux lignes qu on
        cherche, pas un pave de quatre. */
     max-width: min(46rem, 100%);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 500;
-    letter-spacing: 0.17em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    line-height: 1.85;
-    color: rgba(255, 255, 255, 0.46);
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+/* 🔒 LE CADENAS — il porte l argument a lui seul : ce qui vient de se jouer
+   n est pas enregistre. C est aussi ce qui remplace le cadre, en donnant a
+   la phrase un point d ancrage a gauche.
+   ⚠️ `vertical-align` ET NON UN FLEX SUR LE PARAGRAPHE. En `inline-flex`,
+   les morceaux de la phrase deviennent des items BLOCKIFIES et leurs blancs
+   de tete et de fin sont ronges : on lisait « INVITE —CONNECTE-TOIPOUR ».
+   Une phrase reste du texte en ligne ; l icone s y pose comme un caractere. */
+.v2-fin-invite-glyphe {
+    width: 0.82em;
+    height: 0.82em;
+    vertical-align: -0.1em;
+    margin-right: 0.5em;
+    color: rgba(240, 199, 94, 0.6);
 }
 
 /* Un BOUTON et non un lien : il ne change pas d adresse, il ouvre un
-   panneau. Mais il doit se lire comme un lien — c est la seule chose a
-   cliquer de la phrase. */
+   panneau. Mais il doit se lire comme a cliquer — c est la seule chose
+   cliquable de la phrase. */
 .v2-fin-invite-lien {
     /* ⚠️ Il reprend les clics que la bande entiere refuse. */
     pointer-events: auto;
@@ -18909,13 +18921,22 @@ body.v2-sheet-open .v2q-cote { opacity: 0; pointer-events: none; transition: opa
     font-weight: 700;
     letter-spacing: inherit;
     text-transform: inherit;
-    color: var(--neon-primary, #f0c75e);
-    text-decoration: underline;
-    text-underline-offset: 0.22em;
+    color: #ffd874;
+    /* ⚠️ LA LUEUR REMPLACE LE SOULIGNEMENT, elle ne s y ajoute pas. Le trait
+       etait le signal le plus franc ; en le retirant il ne restait que la
+       couleur, trop faible seule sur un ecran deja dore. Le halo rend ce
+       signal sans ramener de trait — et il est FIXE : une pulsation aurait
+       agite le seul mot qu on veut voir lu, une seconde et demie apres le
+       podium. */
+    text-shadow: 0 0 0.7rem rgba(240, 199, 94, 0.45);
+    text-decoration: none;
     cursor: pointer;
 }
 .v2-fin-invite-lien:hover,
-.v2-fin-invite-lien:focus-visible { color: #fff; }
+.v2-fin-invite-lien:focus-visible {
+    color: #fff;
+    text-shadow: 0 0 0.85rem rgba(255, 255, 255, 0.5);
+}
 
 @media (prefers-reduced-motion: reduce) {
     /* L attente reste — elle sert le joueur, pas le decor — mais le
