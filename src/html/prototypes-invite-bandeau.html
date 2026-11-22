@@ -336,6 +336,81 @@
             color: #ffd874;
         }
 
+        /* ────────────────────────────────────────────────────────────
+           E4 a E7 · LE SIGNAL CONTINU — remplacer le trait par la lumiere
+           ────────────────────────────────────────────────────────────
+           ⚠️ « CLIGNOTEMENT » EST LE MOT A NE PAS PRENDRE AU PIED DE LA
+           LETTRE. Un vrai clignotement — le mot qui s eteint et se rallume —
+           est ce que `text-decoration: blink` faisait, et il a ete retire des
+           navigateurs pour deux raisons qui valent encore : on ne peut pas
+           lire un mot qui disparait, et le papillotement est un declencheur
+           reconnu de gene chez les personnes photosensibles. Ce qu on cherche
+           ici est une RESPIRATION : lente, jamais eteinte, et de preference
+           portee par le halo plutot que par le texte.
+
+           ⚠️ LE DEPART EST RETARDE A 2,6 s dans les quatre. Le bandeau lui
+           meme n apparait qu a 1,8 s ; une pulsation qui commencerait avant
+           se jouerait pendant son glissement, et les deux mouvements se
+           marcheraient dessus.
+
+           ⚠️ ET LES QUATRE RETOMBENT SUR E5 en mouvement reduit — voir tout
+           en bas. Une lueur fixe dit la meme chose sans rien agiter. */
+
+        /* E4 · LE POULS — c est le TEXTE qui respire, en clarte seule. Le
+           plus simple, et le plus proche de ce qu on appelle « clignoter ».
+           ⚠️ Le creux est a 0,74 et pas plus bas : en dessous le mot se met
+           a disparaitre du coin de l oeil, ce qui attire l attention en
+           donnant l impression d un defaut d affichage. */
+        @keyframes bdPouls {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.74; }
+        }
+        .bd-e4 button {
+            text-decoration: none; font-weight: 700; color: #ffd874;
+            animation: bdPouls 3.2s ease-in-out 2.6s infinite;
+        }
+
+        /* E5 · LA LUEUR — aucun mouvement. Un halo dore fixe, et c est tout.
+           ⚠️ C est le temoin SOBRE de la serie : s il suffit, les trois
+           autres sont du mouvement pour rien. */
+        .bd-e5 button {
+            text-decoration: none; font-weight: 700; color: #ffd874;
+            text-shadow: 0 0 0.7rem rgba(240, 199, 94, 0.45);
+        }
+
+        /* E6 · LE POULS DE LUEUR — le texte reste a pleine opacite, SEUL LE
+           HALO respire. C est la version la plus fine des quatre : le mot
+           ne faiblit jamais, donc il reste lisible en permanence, et ce qui
+           bouge est une lumiere autour de lui — pas lui. */
+        @keyframes bdPoulsLueur {
+            0%, 100% { text-shadow: 0 0 0.4rem rgba(240, 199, 94, 0.16); }
+            50%      { text-shadow: 0 0 0.95rem rgba(240, 199, 94, 0.6); }
+        }
+        .bd-e6 button {
+            text-decoration: none; font-weight: 700; color: #ffd874;
+            animation: bdPoulsLueur 3.4s ease-in-out 2.6s infinite;
+        }
+
+        /* E7 · LE BALAYAGE — un reflet clair traverse le mot, lentement.
+           ⚠️ `color` RESTE DECLARE sous le degrade : si `background-clip:
+           text` ne prend pas, `-webkit-text-fill-color` est ignore avec lui
+           et le mot retombe sur cette couleur — sans elle il heriterait du
+           blanc sourd de la phrase et cesserait de se distinguer. */
+        @keyframes bdBalayage {
+            from { background-position: 180% 0; }
+            to   { background-position: -80% 0; }
+        }
+        .bd-e7 button {
+            text-decoration: none; font-weight: 700;
+            color: #ffd874;
+            background: linear-gradient(100deg,
+                #e8bf56 0%, #e8bf56 42%, #fff6da 50%, #e8bf56 58%, #e8bf56 100%);
+            background-size: 220% 100%;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: bdBalayage 4.6s linear 2.6s infinite;
+        }
+
         /* ── F · LA BARRE HAUTE ──
            L inverse du flottant : collee au bord, pleine largeur, un filet
            dessous. Elle devient du chrome — elle ne flotte plus SUR l ecran
@@ -353,6 +428,25 @@
             color: rgba(255, 255, 255, 0.44);
         }
         .bd-f button { font-weight: 600; }
+
+        /* ⚠️ EN MOUVEMENT REDUIT, LES QUATRE RETOMBENT SUR E5. Et c est bien
+           une RETOMBEE, pas une suppression : `animation: none` rendrait le
+           mot a son etat de base, c est-a-dire sans halo du tout — on aurait
+           retire le soulignement ET le signal qui le remplace, et il ne
+           resterait plus rien pour dire que ce mot se clique.
+           ⚠️ E7 doit en plus defaire son degrade : sans `-webkit-text-fill-
+           color: currentColor`, le texte resterait transparent et le mot
+           disparaitrait purement et simplement. */
+        @media (prefers-reduced-motion: reduce) {
+            .bd-e4 button, .bd-e6 button, .bd-e7 button {
+                animation: none;
+                text-shadow: 0 0 0.7rem rgba(240, 199, 94, 0.45);
+            }
+            .bd-e7 button {
+                background: none;
+                -webkit-text-fill-color: currentColor;
+            }
+        }
 
         @media (max-width: 560px) {
             .rail { gap: 0.8rem; padding: 0.7rem 0.9rem; }
@@ -413,9 +507,13 @@
             ],
             e: [
                 { cle: 'e', base: 'e', nom: 'E · Le cachet', note: 'tel que propose — « connecte-toi » souligne' },
-                { cle: 'e1', base: 'e', nom: 'E1 · Nu', note: 'plus de trait du tout : or et demi-gras, rien d autre' },
-                { cle: 'e2', base: 'e', nom: 'E2 · Au survol', note: 'le trait revient sous le pointeur — sans effet sur telephone' },
-                { cle: 'e3', base: 'e', nom: 'E3 · Compense', note: 'or plus vif et poids 700 : le mot pese sans etre souligne' }
+                { cle: 'e3', base: 'e', nom: 'E3 · Compense', note: 'sans trait : or vif et poids 700, rien de plus' },
+                { cle: 'e5', base: 'e', nom: 'E5 · La lueur', note: 'un halo dore FIXE — le temoin sobre : s il suffit, le reste est du mouvement pour rien' },
+                { cle: 'e4', base: 'e', nom: 'E4 · Le pouls', note: 'le TEXTE respire en clarte (1 → 0,74), 3,2 s' },
+                { cle: 'e6', base: 'e', nom: 'E6 · Le pouls de lueur', note: 'le texte reste plein, SEUL LE HALO respire — 3,4 s' },
+                { cle: 'e7', base: 'e', nom: 'E7 · Le balayage', note: 'un reflet clair traverse le mot toutes les 4,6 s' },
+                { cle: 'e1', base: 'e', nom: 'E1 · Nu', note: 'or et demi-gras, aucun signal ajoute' },
+                { cle: 'e2', base: 'e', nom: 'E2 · Au survol', note: 'le trait revient sous le pointeur — sans effet sur telephone' }
             ]
         };
 
