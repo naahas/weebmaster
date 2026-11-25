@@ -15,17 +15,20 @@ const { createApp } = Vue;
 // le mode : celui-ci s'ouvre désormais à tout le monde, mais ne DÉMARRE qu'au
 // plancher.
 //
-// ⚠️ IL A VALU DIX, PUIS TROIS, IL VAUT HUIT — tout ça le 7 novembre 2026, et
-// les trois valeurs disent la même tension. Le quiz est le mode qui demande du
-// monde : à deux ou trois il se joue en quelques questions et donne de lui une
-// idée bien plus pauvre que ce qu'il est à quinze. Mais dix, c'est un salon
-// qu'on ne remplit pas en montrant le site à un ami, et un mode qu'on ne peut
-// pas essayer ne se fait pas connaître.
+// ⚠️ IL A VALU DIX, PUIS TROIS, PUIS HUIT, IL VAUT TROIS — les trois premiers
+// le 7 novembre 2026, le dernier le 25 novembre, et tous disent la même
+// tension. Le quiz est le mode qui demande du monde : à deux ou trois il se
+// joue en quelques questions et donne de lui une idée bien plus pauvre que ce
+// qu'il est à quinze. Mais dix, c'est un salon qu'on ne remplit pas en
+// montrant le site à un ami, et un mode qu'on ne peut pas essayer ne se fait
+// pas connaître. Huit était le point d'équilibre théorique ; la première
+// soirée avec de vrais joueurs a tranché autrement — on ne réunit pas huit
+// personnes pour essayer un site, et le mode phare restait fermé à ceux qui
+// venaient le voir.
 //
-// Trois a été essayé pour débloquer une tablée de trois amis ; huit est le
-// point d'équilibre retenu. ⚠️ Et c'est un CHIFFRE DE PRODUIT, pas une
-// constante de calcul : il n'y a rien à en déduire, il se change d'une ligne
-// quand l'usage le demande.
+// ⚠️ C'est un CHIFFRE DE PRODUIT, pas une constante de calcul : il n'y a rien
+// à en déduire, il se change d'une ligne quand l'usage le demande — ce qui est
+// arrivé quatre fois.
 //
 // ⚠️ Écrit UNE fois. La carte du mode sur l'accueil et le bouton Démarrer
 // lisent cette constante, sans quoi la pastille annoncerait un chiffre et le
@@ -37,7 +40,20 @@ const { createApp } = Vue;
 // à deux. C'est délibéré — c'est un garde-fou de produit, pas de sécurité, et
 // le poser côté serveur mettrait toutes les suites à genoux, qui jouent le
 // quiz à deux joueurs.
-const MIN_CLASSIQUE = 8;
+//
+// ⚠️ IL N'EST PLUS ÉGAL AU SEUIL D'XP DU MODE, ET C'EST VOULU. Le barème
+// (`BAREME.classic.seuil`, server-comptes.js) garde HUIT. Les deux chiffres
+// ont été le même pendant un mois, et la note du barème disait « ils se
+// changent ensemble ou pas du tout » : c'est fini. Le plancher invite à
+// ESSAYER le mode — c'est son seul rôle. Le seuil, lui, décide quand une
+// victoire PAYE, et à trois une partie gagnée rapporterait 1500 rubis en
+// soixante secondes : trois onglets suffiraient. Une porte et un robinet ne
+// s'ouvrent pas du même cran.
+//
+// ⚠️ Conséquence assumée, ce n'est pas un bug : un Classique à 3–7 joueurs
+// SE LANCE, et la victoire n'y paye pas son bonus (ni XP ni rubis). L'XP de
+// base, elle, tombe toujours.
+const MIN_CLASSIQUE = 3;
 
 // ════════════════════════════════════════════════════════════════
 // 🏅 LE BAREME D XP — niveau et titre se DEDUISENT, ils ne se stockent pas
